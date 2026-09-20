@@ -102,6 +102,14 @@ remove a link it cannot identify rather than deleting someone else's hook.
   invocation exited 3 with `Command "analyze" is not defined.` There is now no
   default command: an image handed no command says so, rather than analysing
   whatever happens to be at `/app`.
+- An anonymous class's own `extends`, `implements`, header attribute, or
+  `use` no longer counts against the named class that encloses it.
+  `design.dit`, `design.noc` and their namespace/project aggregates stop
+  including a nested anonymous class's declaration, and layer membership
+  under `extends:`, `implements:` and `attributes:` (including transitive
+  ancestry) stops matching the enclosing class on that basis. Coupling,
+  ClassRank, cycle detection and `relations:` filtering are unaffected — the
+  dependency itself is still recorded and read exactly as before.
 
 ## [0.27.0] - 2026-09-18
 
