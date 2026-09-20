@@ -260,6 +260,9 @@ final class InstalledDependencyGraphRefusesDisagreementTest extends TestCase
             'git', '-C', $root,
             '-c', 'user.email=governance@qualimetrix.invalid',
             '-c', 'user.name=Governance Fixture',
+            // A developer who signs every commit globally would otherwise be
+            // prompted by this fixture, mid-suite, and read it as a defect.
+            '-c', 'commit.gpgsign=false',
             'commit', '--quiet', '--no-verify', '-m', $message,
         ]);
     }

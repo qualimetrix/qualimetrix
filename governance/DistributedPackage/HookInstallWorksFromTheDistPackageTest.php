@@ -49,10 +49,11 @@ require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
  * group's cost is the reason it exists rather than an accident of it.
  *
  * Copying `vendor/` has a consequence the dump hides, and it is refused rather
- * than accepted: {@see InstalledDependencyGraph} stops the run when this
- * checkout's installed graph is not the one HEAD's lock describes, because
- * `dump-autoload --no-dev` takes the production/development split from the
- * copied `installed.json` and never from the lock.
+ * than accepted: {@see InstalledDependencyGraph} stops the run unless the graph
+ * it would apply is the one HEAD describes, from `composer.json` through the
+ * lock to `installed.json`. `dump-autoload --no-dev` takes the
+ * production/development split from the copied `installed.json` and never from
+ * the lock, which is what makes the disagreement invisible without the check.
  */
 final class HookInstallWorksFromTheDistPackageTest extends TestCase
 {

@@ -46,8 +46,9 @@ require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
  *
  * Copying `vendor/` is what makes the dependency graph a second tree, and this
  * control does not guess which one it is looking at: {@see InstalledDependencyGraph}
- * refuses the run outright when the installed graph is not the one HEAD's lock
- * describes. The residue that leaves is versions, which are not compared.
+ * refuses the run outright unless the graph it would apply is the one HEAD
+ * describes, from `composer.json` through the lock to `installed.json`. What
+ * that leaves open is a commit landing mid-run, named there.
  */
 final class GitScopeWorksFromTheDistPackageTest extends TestCase
 {
