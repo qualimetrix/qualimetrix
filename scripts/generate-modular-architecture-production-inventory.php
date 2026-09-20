@@ -1288,6 +1288,9 @@ function validateDeclarationEntry(string $fqcn, array $entry, array $declaration
             continue;
         }
         if (($consumer['relation'] ?? 'import') === 'contract_surface') {
+            // The contract_surface oneOf variant already pins source_fqcn to a non-empty string, so
+            // this cannot fire against schema-valid data; it guards against the schema loosening that
+            // constraint.
             if (!is_string($consumer['source_fqcn'])) {
                 fail("contract_surface {$fqcn}#{$index} must name an exact source");
             }
