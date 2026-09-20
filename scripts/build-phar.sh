@@ -12,14 +12,15 @@
 # supply-chain door and a build whose output nobody can reproduce.
 #
 # The output name must end in `.phar`. amphp/parallel copies the entire running
-# archive into the temp directory on every run when it does not — measured at
-# 11,124,518 bytes per run on the artifact this script produces.
+# archive into the temp directory on every run when it does not — measured on
+# the artifact this script produces: 7,464,480 bytes per run, byte for byte the
+# archive's own size.
 #
 # The version the tool reports about itself comes from vendor/composer/installed.php,
-# which is written by `composer install` and NOT refreshed by `composer dump-autoload`.
-# So QMX_PHAR_VERSION has to be set for the install that precedes this script, not
-# for this script; passing it here is a no-op and would report `dev-main` or
-# `1.0.0+no-version-set` depending on how the tree was obtained.
+# which `composer install` writes and `composer dump-autoload` does NOT refresh.
+# So the release version has to be in the environment of the `composer install`
+# that precedes this script, as COMPOSER_ROOT_VERSION. Setting it here would do
+# nothing: box dumps the autoloader from an installed.php that is already written.
 
 set -euo pipefail
 
@@ -40,20 +41,46 @@ checksum() {
     fi
 }
 
-if [ ! -f "$box_phar" ]; then
-    echo "Fetching box $BOX_VERSION..."
-    if ! gh release download -R box-project/box "$BOX_VERSION" \
-        --pattern 'box.phar' --output "$box_phar.tmp" --clobber; then
-        echo "error: could not download box $BOX_VERSION" >&2
-        rm -f "$box_phar.tmp"
-        exit 1
-    fi
-    mv "$box_phar.tmp" "$box_phar"
+# Named before the download is attempted, because it is the one cause of a
+# failed fetch this script can tell apart from the others. Without it, a
+# missing CLI, a network outage and a withdrawn release all arrive as the same
+# message.
+if [ ! -f "$box_phar" ] && ! command -v gh >/dev/null 2>&1; then
+    echo "error: building the phar needs the GitHub CLI (gh) to fetch box $BOX_VERSION" >&2
+    echo "  install it, or place a verified box-$BOX_VERSION.phar at $box_phar" >&2
+    exit 1
 fi
 
+if [ ! -f "$box_phar" ]; then
+    echo "Fetching box $BOX_VERSION..."
+    # A unique temporary name, then a rename: two builds running at once must
+    # not have one reading the file the other is still writing.
+    download="$(mktemp "$cache_dir/box-$BOX_VERSION.XXXXXX")"
+    trap 'rm -f "$download"' EXIT
+
+    if ! gh release download -R box-project/box "$BOX_VERSION" \
+        --pattern 'box.phar' --output "$download" --clobber; then
+        echo "error: could not download box $BOX_VERSION" >&2
+        exit 1
+    fi
+
+    actual="$(checksum "$download")"
+    if [ "$actual" != "$BOX_SHA256" ]; then
+        echo "error: box $BOX_VERSION checksum mismatch, refusing to run it" >&2
+        echo "  expected $BOX_SHA256" >&2
+        echo "  got      $actual" >&2
+        exit 1
+    fi
+
+    mv "$download" "$box_phar"
+    trap - EXIT
+fi
+
+# Re-checked on every run, not only after a download: the cached file may have
+# been replaced since.
 actual="$(checksum "$box_phar")"
 if [ "$actual" != "$BOX_SHA256" ]; then
-    echo "error: box $BOX_VERSION checksum mismatch" >&2
+    echo "error: cached box $BOX_VERSION does not match its pinned checksum" >&2
     echo "  expected $BOX_SHA256" >&2
     echo "  got      $actual" >&2
     echo "  remove $box_phar and retry, or update BOX_SHA256 deliberately" >&2

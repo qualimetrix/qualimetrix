@@ -84,8 +84,9 @@ running archive's path does not end in `.phar`** — copies the entire archive t
 removed by shutdown handlers, which do not run when the process is killed.
 
 So the artifact's **filename is a design decision, not a label**: ending it in `.phar` avoids
-copying the whole archive per run. P0 measured the copy rather than citing it — 11,124,518 bytes in
-the temp directory per run, the archive byte for byte, present without the suffix and absent with it.
+copying the whole archive per run. P0 measured the copy rather than citing it — the archive copied to the temp directory
+per run, byte for byte — 11,124,518 for P0's uncompacted build, 7,464,480 for the compacted artifact
+P1 ships. Present without the suffix, absent with it.
 Record that reason next to the name, or the next person who renames it for tidiness will reintroduce
 it with nothing to say why.
 
@@ -109,12 +110,18 @@ One place in the product depended on that: `HookInstallCommand` builds
 `AbsolutePath::fromString()` with a `phar://` prefix it rejects. Measured from a built archive: exit
 3, and on stderr the invariant's own message naming a path the reader never wrote. Loud, then, but
 useless — the earlier reading of this plan predicted a quiet "not found" and was wrong about which.
+Note what the rejection is: the value object refuses the scheme before anything canonicalises, so
+`realpath()` is a neighbouring fact here rather than the cause.
 
 Shipping the script would not have helped, which is what settled P1's choice: the hook is installed
 as a **symlink**, and nothing can symlink into an archive. So P1 refuses the command from a phar with
-a message that says what to do instead. `/scripts/` is `export-ignore`d as well, so the composer dist
-does not carry the file either; that half stays as it was, because outside a phar the lookup already
-degrades to a readable "Hook script not found".
+a message that says what to do instead — and that message deliberately does not say "install with
+Composer". `/scripts/` is `export-ignore`d, so an installed package answers `Hook script not found`
+as well; measured on an extracted dist after review pointed out the advice was false. The command is
+therefore inert outside a checkout of this repository, which is a defect older and wider than this
+stage, tracked on its own rather than repaired here. Adding `-export-ignore` for the one file does
+not work: `export-ignore` on a directory prunes it and git never descends to read a per-file
+attribute — measured, and the same semantic the sibling control's docblock already records.
 
 Other `realpath()` callers in `src/` were swept and are not exposed: they canonicalize the **analysed**
 tree or the working directory, both on a real filesystem. Swept with grep over `src/` and `bin/qmx`
@@ -192,8 +199,9 @@ instead of argued. Everything below is a measurement on this tree.
 - **`--format=html`** inlined `report.css`, `d3.min.js` and `report.min.js` verbatim, and the
   document is identical to the tree's once `generatedAt` and `qmxVersion` are normalised.
 - **The filename decision is now a measurement, not a citation.** Run from a copy whose path lacks
-  the `.phar` suffix, the process leaves an **11,124,518-byte** file in the temp directory — the
-  archive, byte for byte. With the suffix, only amphp's process runner appears.
+  the `.phar` suffix, the process leaves an file in the temp directory the size of the archive — measured
+  at **11,124,518** bytes on P0's uncompacted build and re-measured at **7,464,480** on the artifact
+  P1 ships. With the suffix, only amphp's process runner appears.
 
 One question P0 leaves to P1 because answering it is design, not measurement:
 

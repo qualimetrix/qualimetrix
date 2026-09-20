@@ -49,25 +49,36 @@ phar omits unless that omission is declared with its reason.
 
 **The artifact is `build/qmx.phar`, and the suffix is load-bearing.**
 `amphp/parallel` copies the entire running archive into the temporary directory
-on every run when the path it runs from does not end in `.phar`; measured at
-11,124,518 bytes per run on this artifact. The reason is recorded in the build
-script, because `box.json` cannot hold a comment and a later rename for
-tidiness would otherwise reintroduce the copy with nothing to explain it.
+on every run when the path it runs from does not end in `.phar`; measured on the
+artifact this build produces at 7,464,480 bytes per run, byte for byte the
+archive's own size. The reason is recorded in the build script, because
+`box.json` cannot hold a comment and a later rename for tidiness would otherwise
+reintroduce the copy with nothing to explain it.
 
 **The version the archive reports comes from the install that precedes the
 build.** `Version::get()` reads `vendor/composer/installed.php`, which
 `composer install` writes and `composer dump-autoload` does **not** refresh —
 measured, after the opposite was assumed. The release job therefore exports
-`COMPOSER_ROOT_VERSION` for its install step; a shallow checkout leaves
-composer unable to guess a version from the tag and it would record
-`1.0.0+no-version-set` instead, with nothing reporting that a release answers
-`--version` with a non-version.
+`COMPOSER_ROOT_VERSION` for its install step. Without it composer records
+whatever it can work out for the root package, measured as `dev-main` in a
+checkout of this repository and `1.0.0+no-version-set` in a copy of one; both
+are a release answering `--version` with a non-version, and nothing would say
+so. The release job compares the whole line rather than searching it, because
+`1.0.0+no-version-set` contains `1.0.0`.
 
 **`hook:install` refuses from a phar.** The command installs a symlink to a
 shell script, and nothing can symlink into an archive; shipping the script
-would not have changed that. It previously failed on a path invariant naming a
-`phar://` path the reader never wrote, because `realpath()` returns `false` for
-every path inside an archive.
+would not have changed that. It previously failed with
+`AbsolutePath must start with "/"`, naming a `phar://` path the reader never
+wrote — the value object rejects the scheme before anything canonicalises it,
+so `realpath()` returning `false` inside an archive is a neighbouring fact
+rather than this one's cause.
+
+The refusal does not send the reader to Composer, although that is the obvious
+advice. `/scripts/` is `export-ignore`d, so an installed package carries no hook
+script either and the command answers `Hook script not found` there too —
+measured on an extracted dist. That is a separate defect of the command, older
+than this decision and recorded outside this record.
 
 ## Consequences
 
@@ -80,10 +91,32 @@ The control judges `box.json`'s meaning rather than a built archive's contents,
 which keeps it free of a build step and a network fetch inside `composer check`.
 It therefore cannot see box resolving the same configuration differently than
 the control resolves it — a box upgrade that changed `directories` semantics
-would pass the control and diverge in the artifact. The artifact-level
-comparison belongs to the job that builds one, and the CI phar job holds the
-archive against the tree it came from across the whole JSON report, the rule
-listing and the rendered HTML.
+would pass the control and diverge in the artifact. One box rule is reproduced
+rather than read, Finder's exclusion of dot-files, and it is marked as such
+where it is reproduced.
+
+The artifact-level comparison belongs to the job that builds one. The CI phar
+job holds the archive against the `--no-dev` tree it came from across the whole
+JSON report, the `qmx rules` listing, the rendered HTML document and the exit
+code — but not across the twelve output formats, `baseline:explain`, or the
+rest of the surface the finding gate compares, because that gate takes a tree
+root rather than a binary.
+
+Two things the comparison is structurally unable to report, both stated so the
+job is not mistaken for a proof of soundness. It compares two installs of the
+same production graph, so a defect of that graph appears on both sides and
+reads as agreement; one such defect is known and tracked on its own.
+And stack-trace line numbers inside `vendor/` shift between the archive and its
+source tree, because the compactor strips comments, so the comparison keeps a
+failure's reason and drops the frames that carry it.
+
+Reports rendered from the archive name the analysed project
+`qualimetrix/qualimetrix` unless `project-name` is passed, because the label
+falls back to the root package and inside the archive that is Qualimetrix's own.
+**Recorded, not repaired**: the Docker image and a global install have had the
+same fallback for as long as they have existed, so it is a property of the
+product rather than of this decision. The installation page names it among the
+differences a reader should expect.
 
 A phar consumer has no `hook:install`. That is a real reduction against the
 composer install, stated in the documentation rather than discovered.

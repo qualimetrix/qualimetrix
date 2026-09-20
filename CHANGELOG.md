@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `hook:install` refuses when run from the phar, naming what to do instead. The
   hook is a symlink to a shell script and cannot point inside an archive;
   previously the command failed on an internal path invariant.
+- `-vv` now reports when parallel analysis actually starts. The line saying a
+  parallel strategy was selected is written before the worker-count and
+  file-count fallbacks, so a run that went sequential looked parallel in the
+  log; the strategy's own start line was suppressed by a null logger.
 - The HTML report's four shipped assets move inside the composer package, from
   `src/Reporting/Template/` to `html-report/`: `report.html`, `report.css`,
   `dist/report.min.js` and `dist/d3.min.js`. `--format=html` is unaffected;

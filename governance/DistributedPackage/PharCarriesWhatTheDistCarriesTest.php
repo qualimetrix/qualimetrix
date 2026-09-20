@@ -4,12 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Governance\DistributedPackage;
 
-use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-use SplFileInfo;
 
 /**
  * `box.json`'s payload against the dist package's, so the two enumerations of
@@ -56,7 +52,6 @@ final class PharCarriesWhatTheDistCarriesTest extends TestCase
     private const array DIST_ONLY = [
         'AGENTS.md' => 'working rules for this repository, meaningless to a consumer',
         'CHANGELOG.md' => 'read on the release page, not from inside an archive',
-        'LICENSE' => 'carried by the release, and a phar is not a redistributable source package',
         'README.md' => 'read on the repository, not from inside an archive',
         'action.yml' => 'the GitHub Action reads it from a checkout of this repository',
         'composer.json' => 'box writes the archive\'s own autoloader; a consumer installs nothing',
@@ -64,6 +59,7 @@ final class PharCarriesWhatTheDistCarriesTest extends TestCase
         'qmx-baseline.json' => 'this repository\'s own ratchet snapshot, not a consumer\'s',
         'qmx.yaml' => 'this repository\'s own dogfooding configuration, not a consumer\'s',
         'qmx.yaml.example' => 'a sample to copy out of the repository, not to carry in the archive',
+        'src/.gitkeep' => "box resolves directories through Finder, which ignores dot-files; this one holds no code",
     ];
 
     #[Test]
@@ -122,7 +118,34 @@ final class PharCarriesWhatTheDistCarriesTest extends TestCase
     }
 
     /**
+     * Keys this control knows how to resolve. Anything else in `box.json`
+     * fails rather than being skipped: a key that adds payload and is not
+     * modelled here is invisible in exactly the direction the control exists
+     * to watch.
+     *
+     * @var list<string>
+     */
+    private const array KNOWN_KEYS = [
+        'main', 'output', 'compression', 'check-requirements', 'compactors',
+        'directories', 'files', 'finder',
+    ];
+
+    /**
      * What `box.json` puts in the archive, `vendor/` aside.
+     *
+     * Resolved from the committed tree rather than from disk. Both sides of
+     * the comparison then answer about one tree: reading `directories` off the
+     * filesystem while the dist side reads `HEAD` made an uncommitted file
+     * under `src/` look like a phar carrying something the dist excludes —
+     * a red control naming the wrong cause, on the ordinary path where
+     * `composer check` runs before the commit.
+     *
+     * Dot-files are dropped because box resolves `directories` through
+     * Symfony's Finder, which ignores them by default. That rule is reproduced
+     * here rather than inherited, and it is the one place this control models
+     * box's behaviour instead of reading it; before it was reproduced, the
+     * control believed `src/.gitkeep` shipped and the two sides balanced
+     * because the dist carries it too.
      *
      * `main` is included because box adds the entry point whether or not any
      * other setting names it, and it is a file the dist ships too.
@@ -133,41 +156,101 @@ final class PharCarriesWhatTheDistCarriesTest extends TestCase
     {
         $root = self::projectRoot();
 
-        /** @var array{main?: string, directories?: list<string>, files?: list<string>} $config */
+        /** @var array<string, mixed> $config */
         $config = json_decode((string) file_get_contents($root . '/box.json'), true, 512, \JSON_THROW_ON_ERROR);
+
+        $unknown = array_values(array_diff(array_keys($config), self::KNOWN_KEYS));
+
+        self::assertSame(
+            [],
+            $unknown,
+            \sprintf(
+                "box.json carries a key this control does not resolve, so whatever it adds to the archive is "
+                . "outside every comparison below. Teach the control the key, or remove it:\n%s",
+                implode("\n", $unknown),
+            ),
+        );
+
+        self::assertSame(
+            [['in' => ['vendor'], 'notPath' => ['#^bin/#'], 'ignoreVCS' => true]],
+            $config['finder'] ?? null,
+            'The finder block is excluded from this comparison on the grounds that it names only vendor/. '
+            . 'It no longer does, so the exclusion is now hiding payload.',
+        );
 
         $paths = [];
 
-        if (isset($config['main'])) {
+        if (isset($config['main']) && \is_string($config['main'])) {
             $paths[] = $config['main'];
         }
 
-        foreach ($config['files'] ?? [] as $file) {
+        /** @var list<string> $files */
+        $files = $config['files'] ?? [];
+
+        foreach ($files as $file) {
             $paths[] = $file;
         }
 
-        foreach ($config['directories'] ?? [] as $directory) {
-            $absolute = $root . '/' . $directory;
+        /** @var list<string> $directories */
+        $directories = $config['directories'] ?? [];
 
-            if (!is_dir($absolute)) {
-                self::fail(\sprintf('box.json names the directory "%s", which does not exist.', $directory));
-            }
+        foreach ($directories as $directory) {
+            $tracked = self::committedFilesUnder($directory);
 
-            /** @var SplFileInfo $file */
-            foreach (new RecursiveIteratorIterator(
-                new RecursiveDirectoryIterator($absolute, FilesystemIterator::SKIP_DOTS),
-            ) as $file) {
-                if (!$file->isFile()) {
+            self::assertNotSame(
+                [],
+                $tracked,
+                \sprintf('box.json names the directory "%s", and HEAD carries no file under it.', $directory),
+            );
+
+            foreach ($tracked as $path) {
+                if (self::hasDotSegment($path)) {
                     continue;
                 }
 
-                $paths[] = $directory . '/' . str_replace('\\', '/', substr($file->getPathname(), \strlen($absolute) + 1));
+                $paths[] = $path;
             }
         }
 
         sort($paths, \SORT_STRING);
 
         return array_values(array_unique($paths));
+    }
+
+    /**
+     * Files `HEAD` carries under a directory, spelled from the repository root.
+     *
+     * @return list<string>
+     */
+    private static function committedFilesUnder(string $directory): array
+    {
+        $listing = self::capture([
+            'git', '-C', self::projectRoot(), 'ls-tree', '-r', '--name-only', 'HEAD', '--', $directory,
+        ]);
+
+        $paths = [];
+
+        foreach (explode("\n", $listing) as $path) {
+            $path = trim($path);
+
+            if ($path !== '') {
+                $paths[] = $path;
+            }
+        }
+
+        return $paths;
+    }
+
+    /** Finder's default: a path is ignored when any segment of it starts with a dot. */
+    private static function hasDotSegment(string $path): bool
+    {
+        foreach (explode('/', $path) as $segment) {
+            if (str_starts_with($segment, '.')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

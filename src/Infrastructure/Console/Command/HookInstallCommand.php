@@ -40,15 +40,18 @@ final class HookInstallCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        // The hook is installed as a symlink to a shell script shipped beside
-        // the sources, and neither half survives a phar: nothing can symlink
-        // into an archive, and building the script's path reaches
-        // AbsolutePath with a "phar://" prefix it rejects — which surfaced as
-        // an invariant message naming a path the reader never wrote.
+        // Two independent reasons, so this is a refusal rather than a repair:
+        // nothing can symlink into an archive, and building the script's path
+        // reaches AbsolutePath with a "phar://" prefix it rejects, which
+        // surfaced as an invariant message naming a path nobody wrote.
+        //
+        // The message does not send the reader to Composer. `/scripts/` is
+        // export-ignored, so an installed package carries no hook script
+        // either and answers "Hook script not found" — measured, not assumed.
         if (Phar::running(false) !== '') {
             $output->writeln('<error>hook:install is not available from the phar.</error>');
             $output->writeln('The hook is a symlink to a shell script, which cannot point inside an archive.');
-            $output->writeln('Install Qualimetrix with Composer to use it, or write .git/hooks/pre-commit by hand.');
+            $output->writeln('Write .git/hooks/pre-commit by hand, calling this archive on the staged files.');
 
             return self::FAILURE;
         }

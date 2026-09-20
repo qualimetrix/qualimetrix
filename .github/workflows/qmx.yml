@@ -230,7 +230,8 @@ jobs:
 
       # --no-dev deliberately: the phar carries the production graph, so the
       # reference it is compared against has to be the same graph. A dev tree
-      # disagrees with the phar for reasons that are not the phar's.
+      # disagrees with the phar over the dev/prod split and reports it as a
+      # phar defect.
       - name: Install production dependencies
         run: composer install --no-dev --no-progress --prefer-dist --optimize-autoloader
 
@@ -242,48 +243,77 @@ jobs:
       - name: It runs and names itself
         run: php build/qmx.phar --version
 
-      # The parallel path is invisible below 100 files, which is where
-      # AmphpParallelStrategy falls back to sequential. vendor/symfony/console
-      # is a production dependency of 132 files, so it is above the threshold
-      # and pinned by composer.lock rather than by whatever the tree happens to
-      # hold. Analysing src/ instead would be both slower and blind: the phar
-      # and the tree would then share this repository's own package name and
-      # the report's project label could not disagree.
+      # Run from a scratch directory with absolute paths. From the repository
+      # root the analysis discovers this repository's own qmx.yaml and applies
+      # its declared layers to a target that is not this repository, which
+      # raises a configuration-error channel that --fail-on cannot suppress:
+      # measured exit 2 from the root against exit 0 from elsewhere.
+      #
+      # The exit codes are compared rather than required to be zero. The
+      # subject here is "the phar agrees with the tree", and a run that exits
+      # non-zero for a reason both sides share is evidence of agreement, not a
+      # broken job. Inheriting bash -e's implicit zero would have made every
+      # run of this job red.
       - name: It publishes what the tree publishes, with workers
         run: |
-          set -o pipefail
-          target="vendor/symfony/console"
+          target="$GITHUB_WORKSPACE/vendor/symfony/console"
           test "$(find "$target" -name '*.php' | wc -l)" -gt 100
+          cd "$(mktemp -d)"
 
-          php bin/qmx check "$target" --workers=4 --no-cache --no-progress \
-            --format=json --fail-on=none -vv > /tmp/tree.json 2> /tmp/tree.log
-          php build/qmx.phar check "$target" --workers=4 --no-cache --no-progress \
-            --format=json --fail-on=none -vv > /tmp/phar.json 2> /tmp/phar.log
+          set +e
+          php "$GITHUB_WORKSPACE/bin/qmx" check "$target" --workers=4 --no-cache \
+            --no-progress --format=json --fail-on=none -vv > tree.json 2> tree.log
+          tree_exit=$?
+          php "$GITHUB_WORKSPACE/build/qmx.phar" check "$target" --workers=4 --no-cache \
+            --no-progress --format=json --fail-on=none -vv > phar.json 2> phar.log
+          phar_exit=$?
+          set -e
 
-          for log in /tmp/tree.log /tmp/phar.log; do
-            grep -q 'using parallel strategy' "$log" \
+          echo "tree exited $tree_exit, phar exited $phar_exit"
+          test "$tree_exit" = "$phar_exit"
+
+          # AmphpParallelStrategy writes this line after its own four
+          # fallbacks, the 100-file threshold among them. The selector's
+          # "using parallel strategy" is written before any of them and is
+          # true of a run that then goes sequential.
+          for log in tree.log phar.log; do
+            grep -q 'starting parallel processing' "$log" \
               || { echo "no worker ran in $log, so this step proved nothing"; exit 1; }
           done
 
           python3 - <<'PY'
-          import json
+          import json, re
+
+          ARCHIVE = re.compile(r'phar://[^\s"]*?\.phar/')
+          THROWN = re.compile(r' in [^\s]+:\d+$')
+
+          def reason(message):
+              """The cause of a failure, without the trace that carries it.
+
+              The trace cannot match by construction: box's Php compactor
+              strips comments, so every line number inside vendor/ shifts
+              between the archive and the tree it was built from (measured:
+              task-runner.php(58) against (59)). What is kept is the exception
+              and its message, which is what distinguishes "the same file
+              failed for the same reason" from "the same file failed for a
+              different one". Dropping the message entirely would not.
+              """
+              return THROWN.sub('', ARCHIVE.sub('', message).split('\n')[0])
 
           def load(path):
               with open(path) as handle:
                   report = json.load(handle)
-              # The timestamp and the duration differ between any two runs.
-              # A failure's message carries the stack trace, and inside the
-              # archive every frame is spelled phar://, so the text differs
-              # while the set of failing files must not.
+              # Differ between any two runs.
               report['meta'].pop('timestamp', None)
               report['summary'].pop('duration', None)
               coverage = report.get('coverage')
               if coverage:
                   for failure in coverage.get('failures', []):
-                      failure.pop('error', None)
+                      if 'message' in failure:
+                          failure['message'] = reason(failure['message'])
               return report
 
-          tree, phar = load('/tmp/tree.json'), load('/tmp/phar.json')
+          tree, phar = load('tree.json'), load('phar.json')
           assert tree['summary']['filesAnalyzed'] > 0, 'both runs analysed nothing'
           assert tree == phar, 'the phar and the tree disagree'
           print(f"identical over {tree['summary']['filesAnalyzed']} files, "
@@ -291,32 +321,45 @@ jobs:
           PY
 
       # The rule listing is where a compactor defect would show: box strips
-      # comments, and rule metadata is read by reflection. Compared as bytes
-      # rather than counted, because a listing that lost a description is the
-      # same length in rules and a different length in text.
+      # comments, and rule metadata is read by reflection.
       - name: It lists the same rules as the tree
         run: |
-          php bin/qmx rules > /tmp/tree-rules.txt
-          php build/qmx.phar rules > /tmp/phar-rules.txt
-          diff -u /tmp/tree-rules.txt /tmp/phar-rules.txt
-          test -s /tmp/tree-rules.txt
+          cd "$(mktemp -d)"
+          php "$GITHUB_WORKSPACE/bin/qmx" rules > tree-rules.txt
+          php "$GITHUB_WORKSPACE/build/qmx.phar" rules > phar-rules.txt
+          test -s tree-rules.txt
+          diff -u tree-rules.txt phar-rules.txt
 
-      # The build omitting an asset is loud -- the formatter refuses -- so what
-      # this checks is an asset that arrived and is wrong.
-      - name: It inlines the viewer's assets
+      # Against the tree's own output, not against a list of expectations: the
+      # build omitting an asset is loud, because the formatter refuses, so what
+      # is left to catch is an asset that arrived and is wrong.
+      - name: It renders the same report as the tree
         run: |
-          set -o pipefail
-          php build/qmx.phar check src/Core --workers=0 --no-cache --no-progress \
-            --format=html --fail-on=none > /tmp/report.html
+          cd "$(mktemp -d)"
+          set +e
+          php "$GITHUB_WORKSPACE/bin/qmx" check "$GITHUB_WORKSPACE/src/Core" --workers=0 \
+            --no-cache --no-progress --format=html --fail-on=none > tree.html
+          tree_exit=$?
+          php "$GITHUB_WORKSPACE/build/qmx.phar" check "$GITHUB_WORKSPACE/src/Core" --workers=0 \
+            --no-cache --no-progress --format=html --fail-on=none > phar.html
+          phar_exit=$?
+          set -e
+          test "$tree_exit" = "$phar_exit"
+
           python3 - <<'PY'
-          page = open('/tmp/report.html', encoding='utf-8').read()
-          for asset in ('html-report/report.css', 'html-report/dist/d3.min.js',
-                        'html-report/dist/report.min.js'):
-              body = open(asset, encoding='utf-8').read().strip()
-              assert body in page, f'{asset} is not inlined verbatim'
+          import re, sys
+
+          def norm(path):
+              page = open(path, encoding='utf-8').read()
+              return re.sub(r'"generatedAt":"[^"]*"', '', page)
+
+          tree, phar = norm('tree.html'), norm('phar.html')
+          if tree != phar:
+              print(f'tree {len(tree)} bytes, phar {len(phar)} bytes', file=sys.stderr)
+              raise SystemExit('the phar renders a different report than the tree')
           for placeholder in ('__CSS__', '__DATA__', '__D3_JS__', '__APP_JS__'):
-              assert placeholder not in page, f'{placeholder} was never substituted'
-          print('four assets inlined')
+              assert placeholder not in phar, f'{placeholder} was never substituted'
+          print(f'identical report, {len(phar)} bytes')
           PY
 
       # Not "it errors": it has to say what to do instead. The command used to
@@ -324,14 +367,15 @@ jobs:
       - name: It refuses hook:install rather than failing on an invariant
         run: |
           cd "$(mktemp -d)" && git init -q .
-          if "$GITHUB_WORKSPACE/build/qmx.phar" hook:install > out.txt 2>&1; then
+          if php "$GITHUB_WORKSPACE/build/qmx.phar" hook:install > out.txt 2>&1; then
             echo 'hook:install reported success from a phar'; cat out.txt; exit 1
           fi
+          cat out.txt
           grep -q 'not available from the phar' out.txt
           ! grep -q 'AbsolutePath' out.txt
 
       - name: Upload the phar
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: qmx-phar
           path: build/qmx.phar

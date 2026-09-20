@@ -42,12 +42,20 @@ chmod +x qmx.phar
     file it runs from is not named `*.phar`. Renaming it to `qmx` costs several megabytes of copying
     per run.
 
-Two differences from a Composer install:
+Three differences from a Composer install:
 
 - `hook:install` is not available. The hook is a symlink to a shell script, and nothing can point a
-  symlink inside an archive; write `.git/hooks/pre-commit` by hand, or install with Composer.
-- A release older than this feature carries no `qmx.phar` asset. Build one with
-  `composer phar`, which writes `build/qmx.phar`.
+  symlink inside an archive. Write `.git/hooks/pre-commit` by hand, calling the archive on the
+  staged files.
+- HTML reports label the analysed project `qualimetrix/qualimetrix` unless you say otherwise. The
+  label falls back to the root package name, which inside the archive is Qualimetrix's own. Pass
+  `--format-opt=project-name=your/project` to set it.
+- Releases published before this feature carry no `qmx.phar` asset; the first release that does is
+  the one whose changelog entry announces it.
+
+!!! note "Building it yourself"
+    From a checkout of this repository, `composer phar` writes `build/qmx.phar`. It fetches its
+    build tool from GitHub, so it needs the [GitHub CLI](https://cli.github.com/) on `PATH`.
 
 ---
 

@@ -11,6 +11,7 @@
         "src"
     ],
     "files": [
+        "LICENSE",
         "html-report/report.html",
         "html-report/report.css",
         "html-report/dist/d3.min.js",
@@ -18,8 +19,12 @@
     ],
     "finder": [
         {
-            "in": ["vendor"],
-            "exclude": ["bin"],
+            "in": [
+                "vendor"
+            ],
+            "notPath": [
+                "#^bin/#"
+            ],
             "ignoreVCS": true
         }
     ]

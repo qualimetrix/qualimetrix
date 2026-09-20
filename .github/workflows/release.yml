@@ -55,10 +55,11 @@ jobs:
 
       # The version the tool reports about itself is read from
       # vendor/composer/installed.php, which `composer install` writes and
-      # `composer dump-autoload` does not refresh. The checkout is shallow, so
-      # composer cannot guess the version from the tag's history and would
-      # record 1.0.0+no-version-set -- a release archive answering --version
-      # with a non-version, and nothing would say so.
+      # `composer dump-autoload` does not refresh — measured, after the
+      # opposite was assumed. Without COMPOSER_ROOT_VERSION here, composer
+      # records whatever it can work out for the root package: `dev-main` in a
+      # checkout of this repository and `1.0.0+no-version-set` in a copy of one.
+      # Either is a release archive answering --version with a non-version.
       - name: Install production dependencies
         env:
           COMPOSER_ROOT_VERSION: ${{ steps.version.outputs.version }}
@@ -69,11 +70,14 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: composer phar
 
+      # Compared whole rather than searched for: `grep -F 1.0.0` also matches
+      # `1.0.0+no-version-set`, and that placeholder is exactly what this step
+      # exists to catch.
       - name: The phar names the version being released
         run: |
           set -o pipefail
           php build/qmx.phar --version | tee /tmp/phar-version.txt
-          grep -qF "${{ steps.version.outputs.version }}" /tmp/phar-version.txt
+          test "$(cat /tmp/phar-version.txt)" = "Qualimetrix ${{ steps.version.outputs.version }}"
 
       - name: Detect pre-release
         id: prerelease
