@@ -39,7 +39,7 @@ this decision does not pay — see below.
 ## Decision
 
 **Every test-shaped directory the tree carries is one this generator actually
-scans, and `assertEveryTestDirectoryIsClaimed()` refuses when one is not.**
+scans, and `assertEveryTestDirectoryIsScanned()` refuses when one is not.**
 
 ### The population, and why this one
 
@@ -104,7 +104,7 @@ to be the thing itself.
 
 ### The rule is stated as itself, not witnessed
 
-The judged set is the source **minus** `NON_ROOT_TEST_DIRECTORIES`, and the
+The judged set is the source **minus** `NON_SCANNED_TEST_DIRECTORIES`, and the
 subtracted set is literals in the same file.
 
 This is the form, learned expensively in this repository, that a control of this
@@ -188,14 +188,14 @@ met.
 - A root-level project whose tests live in a test-shaped directory, landing
   unregistered, reddens `composer architecture:check` by name. The scope of that
   sentence is the whole of what is claimed: see the two residues below.
-- `NON_ROOT_TEST_DIRECTORIES` is a new address in AGENTS.md's table, and it is
+- `NON_SCANNED_TEST_DIRECTORIES` is a new address in AGENTS.md's table, and it is
   the one address there that a **root** never visits: it is where a test-shaped
   directory that is *not* a root is excused. It fails **loudly** in all three
   directions — stale, redundant, reasonless.
 - A pre-existing row in that table is falsified by this change and re-derived
   with it. The scan-scope literal was marked as failing **silently**, which was
   true while nothing cross-checked scan-scope membership. It is now the thing
-  `assertEveryTestDirectoryIsClaimed()` reads, so for any test-shaped directory
+  `assertEveryTestDirectoryIsScanned()` reads, so for any test-shaped directory
   git carries, omission from the scan scope is refused by name before a single
   row is built. What stays silent there is the dead `scripts/tests` literal,
   which no candidate reaches, and the non-test-shaped shape in residue 1.
@@ -229,3 +229,23 @@ written in the first place.
    the source it covers, or a layout spelling the directory `e2e` or `cypress`.
    The source derives a candidate from a path segment, so a project wrapping its
    tests in no such segment produces none. Nothing refuses it.
+
+   **A second population over file names was designed and rejected on the
+   measurement, not on taste.** Of the 743 tracked files whose *name* is
+   test-shaped — `*.test.*`, `*.spec.*`, `*Test.php`, `test_*.py` — 741 already
+   sit inside the scan scope. The two that do not are
+   `input-doors/fixtures/main/tests/Legacy/LegacyServiceTest.php`, already
+   excused here as a directory, and `scripts/finding-gate/SelfTest.php`, which
+   is not a test at all: it is the class `QmxFindingGate\SelfTest`, the gate's
+   own self-check implementation, run by `composer gate` and by no suite.
+
+   So a file-name population would today refuse exactly one legitimate file and
+   catch exactly zero real holes. Building it would mean starting its exclusion
+   list with a false positive — the shape where a cure eats the legitimate case
+   — in exchange for no live coverage. The residue is left open deliberately and
+   the number is recorded so the next reader argues with a measurement instead
+   of an impression.
+
+   **The condition for revisiting:** a root-level project landing with
+   co-located tests, or that count of 2 growing without a fixture explaining it.
+   Re-measure before designing; the ratio, not the idea, is what decides.

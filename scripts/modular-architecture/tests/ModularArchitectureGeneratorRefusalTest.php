@@ -737,7 +737,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
      * `assertToolingTestRootRegistrationIsComplete()` cannot answer: its
      * listing comes from a `glob()` of `scripts/*` and `tools/*`, so a root
      * outside those two parents is one it cannot produce and therefore cannot
-     * miss. Before `assertEveryTestDirectoryIsClaimed()` this plant passed:
+     * miss. Before `assertEveryTestDirectoryIsScanned()` this plant passed:
      * the root was absent from the inventory entirely, with the check green.
      *
      * The probe is a `.test.js` file under a directory at the repository root,
@@ -808,21 +808,21 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
             [
                 "'input-doors/fixtures/main/tests/' =>",
                 "'input-doors/fixtures/gone/tests/' =>",
-                'input-doors/fixtures/gone/tests/ is excused in NON_ROOT_TEST_DIRECTORIES but git carries'
+                'input-doors/fixtures/gone/tests/ is excused in NON_SCANNED_TEST_DIRECTORIES but git carries'
                     . ' no file under it',
             ],
             [
-                'const NON_ROOT_TEST_DIRECTORIES = [',
-                "const NON_ROOT_TEST_DIRECTORIES = [\n    'tests/' => '   ',",
-                'tests/ is excused in NON_ROOT_TEST_DIRECTORIES with an empty reason',
+                'const NON_SCANNED_TEST_DIRECTORIES = [',
+                "const NON_SCANNED_TEST_DIRECTORIES = [\n    'tests/' => '   ',",
+                'tests/ is excused in NON_SCANNED_TEST_DIRECTORIES with an empty reason',
             ],
             [
-                'const NON_ROOT_TEST_DIRECTORIES = [',
-                "const NON_ROOT_TEST_DIRECTORIES = [\n    'html-report/tests/' => 'a planted probe',",
+                'const NON_SCANNED_TEST_DIRECTORIES = [',
+                "const NON_SCANNED_TEST_DIRECTORIES = [\n    'html-report/tests/' => 'a planted probe',",
                 // Not the shared opening of both exclusion refusals: that
                 // prefix passes whichever of the two fired, and the stale one
                 // is only unreachable here by the order of two branches.
-                'html-report/tests/ is excused in NON_ROOT_TEST_DIRECTORIES as "a planted probe" and is at'
+                'html-report/tests/ is excused in NON_SCANNED_TEST_DIRECTORIES as "a planted probe" and is at'
                     . ' the same time scanned through the inventory scan scope entry html-report/tests',
             ],
         ];
@@ -952,14 +952,14 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 $projectRoot . '/scripts/phpunit-aggregate/tests',
             );
             // Not a test root and not scanned: this is the one path
-            // NON_ROOT_TEST_DIRECTORIES excuses, and
-            // assertEveryTestDirectoryIsClaimed() refuses an excuse whose path
+            // NON_SCANNED_TEST_DIRECTORIES excuses, and
+            // assertEveryTestDirectoryIsScanned() refuses an excuse whose path
             // git no longer carries. So the copy list now has to hold every
             // path the generator's literals name, not only every root the
             // tracked configuration declares. Without this copy step (and
             // 'input-doors' in the git add list below) the stale-exclusion
             // refusal preempts every planting case whose own refusal is raised
-            // after assertEveryTestDirectoryIsClaimed() runs — stated as a
+            // after assertEveryTestDirectoryIsScanned() runs — stated as a
             // mechanism for the reason given beside the html-report copy.
             $this->copyDirectory(
                 $sourceRoot . '/input-doors/fixtures/main/tests',

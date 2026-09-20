@@ -107,7 +107,7 @@ const P7_MEASUREMENT_PATHS = [
  * independently of this file, one per direction:
  * `assertToolingTestRootRegistrationIsComplete()` answers "a registered key
  * that is no longer there", for a key of any shape; and
- * `assertEveryTestDirectoryIsClaimed()` answers "a test directory the tree
+ * `assertEveryTestDirectoryIsScanned()` answers "a test directory the tree
  * carries that this generator never scans", for a directory anywhere in the
  * tree rather than only under `scripts/` and `tools/`. That second one is
  * deliberately not phrased as "that nothing registered": a registration which
@@ -136,7 +136,7 @@ const TOOLING_TEST_ROOT_OWNERS = [
     // A root-level, non-PSR-4 npm project outside both scripts/ and tools/, so
     // it is outside actualToolingTestRootsOnDisk()'s glob the same way
     // governance/ is — assertToolingTestRootRegistrationIsComplete() checks
-    // it by direct existence instead, and assertEveryTestDirectoryIsClaimed()
+    // it by direct existence instead, and assertEveryTestDirectoryIsScanned()
     // is what would have refused for html-report/tests/ had this entry never
     // been written. Two file keys beside the directory key
     // because the retained slice is not one directory: the viewer's own
@@ -150,7 +150,7 @@ const TOOLING_TEST_ROOT_OWNERS = [
 
 /**
  * The basenames that make a directory test-shaped, for the sweep in
- * {@see assertEveryTestDirectoryIsClaimed()}.
+ * {@see assertEveryTestDirectoryIsScanned()}.
  *
  * `tests` is the only one the tree uses today; the other four are the spellings
  * the ecosystems that would land the next root-level project reach for first —
@@ -160,7 +160,7 @@ const TOOLING_TEST_ROOT_OWNERS = [
  * source, not the exclusion list, that may be generous: a directory this set
  * names and nothing claims is refused, so a spelling missing here is a root the
  * sweep cannot see, while a spelling too many is at worst one more literal in
- * {@see NON_ROOT_TEST_DIRECTORIES} the day some directory innocently uses it.
+ * {@see NON_SCANNED_TEST_DIRECTORIES} the day some directory innocently uses it.
  *
  * @var list<string>
  */
@@ -193,15 +193,15 @@ const TEST_DIRECTORY_BASENAMES = ['tests', 'test', 'Tests', '__tests__', 'spec']
 const NON_PROJECT_PATH_SEGMENTS = ['vendor', 'node_modules'];
 
 /**
- * Test-shaped directories that are deliberately not test roots — the set
- * subtracted from {@see assertEveryTestDirectoryIsClaimed()}'s source, spelled
+ * Test-shaped directories this generator deliberately does not scan — the set
+ * subtracted from {@see assertEveryTestDirectoryIsScanned()}'s source, spelled
  * out as literals so that it grows with the filter it excuses rather than
  * hiding inside a pattern.
  *
  * A pattern would have done the job in fewer characters and is the reason this
  * is a list: a glob for "anything under a `fixtures` directory" excuses the
  * entry below, and it goes on excusing every future directory that happens to
- * sit under one — including a real root someone files there by mistake. A
+ * sit under one — including a real test root someone files there by mistake. A
  * literal excuses one path and says so by name.
  *
  * Every direction is checked, so an entry cannot outlive its reason: an entry
@@ -210,9 +210,9 @@ const NON_PROJECT_PATH_SEGMENTS = ['vendor', 'node_modules'];
  * reason is blank is refused outright — an excuse that does not explain itself
  * is the thing this list exists to prevent.
  *
- * @var array<string, string> path (trailing slash) => why it is not a root
+ * @var array<string, string> path (trailing slash) => why it is not this repository's to scan
  */
-const NON_ROOT_TEST_DIRECTORIES = [
+const NON_SCANNED_TEST_DIRECTORIES = [
     'input-doors/fixtures/main/tests/' => 'the test directory of the fixture project the input-door stand'
         . ' analyses, not a test directory of this repository: its one file is input to a measurement, and'
         . ' running it as a test of this tree is exactly what it must not do.',
@@ -486,7 +486,7 @@ if ($projectRoot === false) {
 assertPathLiteralsResolve($projectRoot);
 assertSuiteClassifierAgreesWithPhpunit($projectRoot);
 assertToolingTestRootRegistrationIsComplete($projectRoot);
-assertEveryTestDirectoryIsClaimed($projectRoot);
+assertEveryTestDirectoryIsScanned($projectRoot);
 $p6CBaselinePaths = p6CBaselinePaths($projectRoot);
 if (hash('sha256', implode("\n", $p6CBaselinePaths) . "\n") !== P6_C_BASELINE_PATHS_SHA256) {
     fail('P6-C Baseline test artifact set differs from the reviewed finite path digest.');
@@ -523,7 +523,7 @@ if ($classificationProbeArguments !== []) {
     exit(0);
 }
 
-// inventoryScanScope() holds the pathspec, because assertEveryTestDirectoryIsClaimed()
+// inventoryScanScope() holds the pathspec, because assertEveryTestDirectoryIsScanned()
 // judges a directory by whether this scan reaches it and must read the scan's own
 // scope rather than a second copy that can drift from it.
 $worktreePaths = commandLines(
@@ -1390,7 +1390,7 @@ function actualToolingTestRootsOnDisk(string $projectRoot): array
  *
  * That second direction used to be the whole of what was asked about roots
  * landing unregistered, and a glob over two directories is not a population.
- * It is no longer the whole: {@see assertEveryTestDirectoryIsClaimed()} asks it
+ * It is no longer the whole: {@see assertEveryTestDirectoryIsScanned()} asks it
  * of the tree rather than of two parent directories, and what remains here is
  * the narrower question of whether the map and the glob agree where both can
  * see. The two overlap on `scripts/` and `tools/` deliberately — this one names
@@ -1453,7 +1453,7 @@ function inventoryScanScope(): array
 
 /**
  * Every test-shaped directory the tree carries — the source
- * {@see assertEveryTestDirectoryIsClaimed()} judges, derived from git rather
+ * {@see assertEveryTestDirectoryIsScanned()} judges, derived from git rather
  * than from any registration so that it cannot agree with one by construction.
  * Returned sorted; "shallowest" below describes which match is taken per path,
  * not the order of the result.
@@ -1541,7 +1541,7 @@ function trackedTestDirectories(string $projectRoot): array
  *
  * **The population is closed by being stated, not by being narrow.** The judged
  * set is exactly {@see trackedTestDirectories()} minus
- * {@see NON_ROOT_TEST_DIRECTORIES}, and the subtracted set is literals. A
+ * {@see NON_SCANNED_TEST_DIRECTORIES}, and the subtracted set is literals. A
  * witness — "some root is registered", "the ones we remembered are still there"
  * — would move the blind spot rather than remove it, because what it never
  * enumerates it can never miss. Subtraction by literal has the opposite
@@ -1569,7 +1569,7 @@ function trackedTestDirectories(string $projectRoot): array
  * that function's one-line message that prints and never this one. The two
  * overlap there on purpose, but only the earlier one speaks.
  */
-function assertEveryTestDirectoryIsClaimed(string $projectRoot): void
+function assertEveryTestDirectoryIsScanned(string $projectRoot): void
 {
     $candidates = trackedTestDirectories($projectRoot);
     if ($candidates === []) {
@@ -1580,39 +1580,39 @@ function assertEveryTestDirectoryIsClaimed(string $projectRoot): void
         );
     }
 
-    $claims = [];
+    $scannedThrough = [];
     foreach ($candidates as $candidate) {
-        $claims[$candidate] = scanScopeClaiming($candidate);
+        $scannedThrough[$candidate] = scanScopeEntryFor($candidate);
     }
 
     $problems = [];
     foreach ($candidates as $candidate) {
-        if (isset(NON_ROOT_TEST_DIRECTORIES[$candidate]) || $claims[$candidate] !== null) {
+        if (isset(NON_SCANNED_TEST_DIRECTORIES[$candidate]) || $scannedThrough[$candidate] !== null) {
             continue;
         }
         $problems[] = $candidate
             . ' holds files git reports and nothing scans it: register it in TOOLING_TEST_ROOT_OWNERS (and in every'
-            . ' other address AGENTS.md lists for a new test root), or name it in NON_ROOT_TEST_DIRECTORIES with'
-            . ' the reason it is not a test root';
+            . ' other address AGENTS.md lists for a new test root), or name it in NON_SCANNED_TEST_DIRECTORIES with'
+            . ' the reason it is not this repository\'s to scan';
     }
 
-    foreach (NON_ROOT_TEST_DIRECTORIES as $excused => $reason) {
+    foreach (NON_SCANNED_TEST_DIRECTORIES as $excused => $reason) {
         if (trim($reason) === '') {
             $problems[] = $excused
-                . ' is excused in NON_ROOT_TEST_DIRECTORIES with an empty reason, which excuses it from this'
+                . ' is excused in NON_SCANNED_TEST_DIRECTORIES with an empty reason, which excuses it from this'
                 . ' check and from explaining itself at the same time';
         }
         if (!in_array($excused, $candidates, true)) {
             $problems[] = $excused
-                . ' is excused in NON_ROOT_TEST_DIRECTORIES but git carries no file under it, so the'
+                . ' is excused in NON_SCANNED_TEST_DIRECTORIES but git carries no file under it, so the'
                 . ' exclusion excuses nothing and is holding a seat for a path that is gone';
 
             continue;
         }
-        if ($claims[$excused] !== null) {
+        if ($scannedThrough[$excused] !== null) {
             $problems[] = $excused
-                . ' is excused in NON_ROOT_TEST_DIRECTORIES as "' . $reason . '" and is at the same time'
-                . ' scanned through ' . $claims[$excused]
+                . ' is excused in NON_SCANNED_TEST_DIRECTORIES as "' . $reason . '" and is at the same time'
+                . ' scanned through ' . $scannedThrough[$excused]
                 . ' — the exclusion has outlived its reason and one of the two is wrong';
         }
     }
@@ -1636,7 +1636,7 @@ function assertEveryTestDirectoryIsClaimed(string $projectRoot): void
  * failing to match anything, which is what they should do: they register a
  * file, not a directory of tests.
  */
-function scanScopeClaiming(string $candidate): ?string
+function scanScopeEntryFor(string $candidate): ?string
 {
     foreach (inventoryScanScope() as $entry) {
         if (str_starts_with($candidate, $entry . '/')) {
