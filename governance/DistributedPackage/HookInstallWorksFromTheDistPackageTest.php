@@ -40,13 +40,26 @@ use PHPUnit\Framework\TestCase;
  *
  * Measured at roughly three seconds on the tree that added it, almost all of
  * it the `vendor/` copy. That is the price of judging the artifact instead of
- * the source; a cheaper control would be judging the source again.
+ * the source; a cheaper control would be judging the source again. A real
+ * `composer install --no-dev` inside the extracted package would be more
+ * faithful still and is deliberately not done: it needs the network, and this
+ * group's cost is the reason it exists rather than an accident of it.
+ *
+ * Copying `vendor/` has a consequence the dump hides, and it is refused rather
+ * than accepted: {@see InstalledDependencyGraph} stops the run when this
+ * checkout's installed graph is not the one HEAD's lock describes, because
+ * `dump-autoload --no-dev` takes the production/development split from the
+ * copied `installed.json` and never from the lock.
  */
 final class HookInstallWorksFromTheDistPackageTest extends TestCase
 {
     #[Test]
     public function itInstallsAWorkingHookFromWhatTheDistPackageCarries(): void
     {
+        // Before anything this run would otherwise have to clean up: a graph
+        // that is not HEAD's makes this run a verdict about neither tree.
+        InstalledDependencyGraph::assertMatchesHead(self::projectRoot());
+
         $scratch = self::scratchDirectory();
         $package = $scratch . '/package';
         $consumer = $scratch . '/consumer';

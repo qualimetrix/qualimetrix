@@ -44,20 +44,21 @@ require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
  * Like its sibling {@see HookInstallWorksFromTheDistPackageTest}, this archives
  * HEAD and copies `vendor/` rather than symlinking it.
  *
- * One consequence is worth stating plainly, because it is easy to read this
- * control as stricter than it is. Whether a package counts as production is
- * decided by `dev-package-names` in `vendor/composer/installed.json`, which
- * the copied `vendor/` brings along and which `dump-autoload` does not
- * recompute from the lock. So this judges `src/` and `composer.json` as of
- * HEAD, but the dependency graph as of the last real `composer install`. In
- * CI, where a fresh install precedes the suite, the two agree. Locally they
- * can disagree in both directions until an install is run.
+ * Copying `vendor/` is what makes the dependency graph a second tree, and this
+ * control does not guess which one it is looking at: {@see InstalledDependencyGraph}
+ * refuses the run outright when the installed graph is not the one HEAD's lock
+ * describes. The residue that leaves is versions, which are not compared.
  */
 final class GitScopeWorksFromTheDistPackageTest extends TestCase
 {
     #[Test]
     public function itAnalysesTheStagedFileFromWhatTheDistPackageCarries(): void
     {
+        // First, and before anything this run would otherwise have to clean
+        // up: a run whose dependency graph is not HEAD's cannot answer the
+        // question this control asks, in either direction.
+        InstalledDependencyGraph::assertMatchesHead(self::projectRoot());
+
         $scratch = self::scratchDirectory();
         $package = $scratch . '/package';
         $consumer = $scratch . '/consumer';
