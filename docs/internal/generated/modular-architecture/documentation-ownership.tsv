@@ -61,6 +61,7 @@ docs/adr/0065-the-manifest-records-ownership-not-a-migration-schedule.md	Archite
 docs/adr/0066-the-phar-is-built-by-a-tool-outside-the-graph-it-builds.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/adr/0067-every-test-shaped-directory-is-scanned.md	Architecture.Governance	"Move or update atomically with the named subject owner."
 docs/adr/0068-the-pre-commit-hook-is-generated-not-shipped.md	Infrastructure.Console	"Move or update atomically with the named subject owner."
+docs/adr/0069-a-metric-is-declared-by-the-collector-that-writes-it.md	Analysis.Evidence.Measurement	"Move or update atomically with the named subject owner."
 docs/adr/README.md	Architecture.Governance	"Repository-wide governance documentation; review with the manifest and generated topology."
 docs/internal/CLI_CONVENTIONS.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/COMPETITOR_COMPARISON.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."

@@ -37,7 +37,7 @@ coupling.distance	channel	?		29	91	2	2	1	40	0	45	0	0	0	0
 coupling.instability	channel	?		41	106	2	3	7	58	0	27	0	0	0	0
 coupling.unmatched-framework-namespace	channel	?		3	8	0	0	0	15	0	4	0	0	0	0
 design.data-class	channel	?		15	18	1	1	9	37	0	23	0	0	0	0
-design.dit	channel	?		12	110	2	2	0	27	0	15	0	0	0	0
+design.dit	channel	?		13	123	2	2	0	29	0	15	0	0	0	0
 design.god-class	channel	?		18	25	1	2	3	38	0	27	0	0	0	0
 design.noc	channel	?		12	37	2	2	0	26	0	11	0	0	0	0
 design.type-coverage.param	channel	?		8	55	2	1	1	30	0	14	0	0	0	0
@@ -51,7 +51,7 @@ security.hardcoded-credentials	channel	?		7	37	0	0	0	15	0	11	1	1	0	0
 security.sensitive-parameter	channel	?		6	24	0	0	0	13	0	10	1	1	0	0
 security.sql-injection	channel	?		3	9	0	0	0	13	0	8	0	0	1	1
 security.xss	channel	?		4	19	0	0	0	13	0	8	0	0	1	1
-size.class-count	channel	?		28	123	2	1	4	31	0	17	0	0	0	0
+size.class-count	channel	?		28	123	2	1	4	34	0	17	0	0	0	0
 size.method-count	channel	?		24	171	2	2	0	53	0	14	0	0	0	0
 size.property-count	channel	?		18	40	2	2	0	30	0	16	0	0	0	0
 suppression.unmatched-namespace	channel	?		1	5	0	0	0	7	0	2	0	0	0	0
@@ -86,7 +86,7 @@ coupling.instability	metric-key	?		41	106	2	3	7	58	0	27	0	0	0	0
 coupling.rfc	metric-key	?		6	33	0	0	0	0	0	2	0	0	0	0
 coupling.rfc-external	metric-key	?		1	4	0	0	0	0	0	2	0	0	0	0
 coupling.rfc-own	metric-key	?		1	4	0	0	0	0	0	2	0	0	0	0
-design.dit	metric-key	?		12	110	2	2	0	27	0	15	0	0	0	0
+design.dit	metric-key	?		13	123	2	2	0	29	0	15	0	0	0	0
 design.is-abstract	metric-key	?		2	4	0	0	0	0	0	3	0	0	0	0
 design.is-data-class	metric-key	?		2	3	0	0	0	0	0	3	0	0	0	0
 design.is-exception	metric-key	?		2	5	0	0	0	0	0	3	0	0	0	0
@@ -114,7 +114,7 @@ maintainability.mi	metric-key	?		19	183	2	2	0	33	0	21	0	0	0	0
 security.hardcoded-credentials	metric-key	?		7	37	0	0	0	15	0	11	0	0	0	0
 security.sensitive-parameter	metric-key	?		6	24	0	0	0	13	0	10	0	0	0	0
 size.abstract-class-count	metric-key	?		8	11	0	0	0	0	0	2	0	0	0	0
-size.class-count	metric-key	?		28	123	2	1	4	31	0	17	0	0	0	0
+size.class-count	metric-key	?		28	123	2	1	4	34	0	17	0	0	0	0
 size.class-loc	metric-key	?		3	30	0	0	0	0	0	5	0	0	0	0
 size.cloc	metric-key	?		5	20	0	0	0	0	0	2	0	0	0	0
 size.enum-count	metric-key	?		12	18	0	0	0	0	0	2	0	0	0	0
@@ -162,14 +162,14 @@ complexity.ccn	producer	?		74	1102	2	3	45	208	0	28	0	0	0	0
 complexity.cognitive	producer	?		22	88	2	2	28	54	0	27	0	0	0	0
 complexity.npath	producer	?		19	106	2	2	9	52	0	22	0	0	0	0
 complexity.wmc	producer	?		20	87	2	2	8	37	0	19	0	0	0	0
-computed	producer	?		118	108	0	1	0	34	0	18	0	0	0	0
+computed	producer	?		118	109	0	1	0	36	0	18	0	0	0	0
 coupling.cbo	producer	?		66	348	2	4	4	127	0	22	0	0	0	0
 coupling.class-rank	producer	?		22	115	0	2	2	38	0	40	0	0	0	0
 coupling.distance	producer	?		29	91	2	2	1	40	0	45	0	0	0	0
 coupling.instability	producer	?		41	106	2	3	7	58	0	27	0	0	0	0
 coupling.unmatched-framework-namespace	producer	?		3	8	0	0	0	15	0	4	0	0	0	0
 design.data-class	producer	?		15	18	1	1	9	37	0	23	0	0	0	0
-design.dit	producer	?		12	110	2	2	0	27	0	15	0	0	0	0
+design.dit	producer	?		13	123	2	2	0	29	0	15	0	0	0	0
 design.god-class	producer	?		18	25	1	2	3	38	0	27	0	0	0	0
 design.noc	producer	?		12	37	2	2	0	26	0	11	0	0	0	0
 design.type-coverage.param	producer	?		8	55	2	1	1	30	0	14	0	0	0	0
@@ -177,7 +177,7 @@ design.type-coverage.property	producer	?		8	27	2	1	1	29	0	16	0	0	0	0
 design.type-coverage.return	producer	?		8	34	2	1	0	29	0	15	0	0	0	0
 discovery.unmatched-exclude	producer	?		6	7	0	0	0	23	0	5	0	0	0	0
 duplication.clone	producer	?		21	73	0	2	12	48	0	10	0	0	0	0
-health.cohesion	producer	?		37	136	0	3	21	41	0	28	0	0	0	0
+health.cohesion	producer	?		38	136	0	3	21	41	0	28	0	0	0	0
 health.complexity	producer	?		55	207	0	1	1	25	0	31	0	0	0	0
 health.coupling	producer	?		43	59	0	0	0	18	0	28	0	0	0	0
 health.maintainability	producer	?		17	33	0	0	14	21	0	28	0	0	0	0
@@ -189,7 +189,7 @@ security.hardcoded-credentials	producer	?		7	37	0	0	0	15	0	11	0	0	0	0
 security.sensitive-parameter	producer	?		6	24	0	0	0	13	0	10	0	0	0	0
 security.sql-injection	producer	?		3	9	0	0	0	13	0	8	0	0	0	0
 security.xss	producer	?		4	19	0	0	0	13	0	8	0	0	0	0
-size.class-count	producer	?		28	123	2	1	4	31	0	17	0	0	0	0
+size.class-count	producer	?		28	123	2	1	4	34	0	17	0	0	0	0
 size.method-count	producer	?		24	171	2	2	0	53	0	14	0	0	0	0
 size.property-count	producer	?		18	40	2	2	0	30	0	16	0	0	0	0
 suppression.configuration	producer	?		1	0	0	0	0	16	0	2	0	0	0	0

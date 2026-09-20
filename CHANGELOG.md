@@ -71,6 +71,19 @@ remove a link it cannot identify rather than deleting someone else's hook.
   and `bin/qmx` if that binary moves. Hook commands print that path in their
   hints too, instead of `bin/qmx`, which is wrong for everyone who installed
   the package.
+- Namespace and project `design.dit` aggregates (`.avg`, `.max`, `.p95`) now
+  reflect inheritance chains that cross files. They were computed before the
+  pass that resolves such chains and kept summarising the uncorrected per-file
+  depths, so a project whose classes extend each other across files reported a
+  maximum depth of 1 while publishing the correct per-class values. Aggregate
+  DIT rises on any codebase with cross-file inheritance; per-class values are
+  unchanged.
+- `design.dit` is no longer reported for interfaces, traits and enums. They were
+  given a class-level depth of 0 while being excluded from the aggregate's
+  population, so the metric and its own denominator disagreed about what counts
+  as a class. DIT is now denominated in the named classes the per-file pass
+  measures, which is what `size.class-count` counts wherever each class name is
+  declared once.
 - Analysing a project that shares a class name with one of the tool's own
   packages no longer breaks the run. A standalone install (the Docker image, a
   global `composer global require`) ships packages without the dependencies only
