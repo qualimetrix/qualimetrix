@@ -14,6 +14,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use ReflectionClass;
 use ReflectionException;
+use Throwable;
 
 /**
  * Recalculates DIT (Depth of Inheritance Tree) using the global dependency graph.
@@ -169,20 +170,34 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
     /**
      * Try to resolve DIT for an external class via reflection.
      *
+     * The autoloader consulted here belongs to this tool, not to the analysed
+     * project, so an analysed FQCN can map onto the tool's own vendored copy.
+     * When that copy is reachable but names a parent the tool's install never
+     * ships, loading it throws instead of returning false. Nothing guards this
+     * collector -- aggregation calls it directly -- so an escaping error ends
+     * the whole run rather than one file's metric.
+     *
      * @return int DIT of the external class, or 0 if cannot resolve
      */
     private function resolveExternalClassDit(string $classFqn): int
     {
         $normalized = ltrim($classFqn, '\\');
 
-        if (!class_exists($normalized, true) && !interface_exists($normalized, true)) {
+        // Widest catch on the load step alone: it runs someone else's code and
+        // fails with a plain Error carrying nothing to match on. The walk below
+        // cannot autoload, so a throw there is this tool's own defect and keeps
+        // a narrow catch, staying loud.
+        try {
+            if (!class_exists($normalized, true) && !interface_exists($normalized, true)) {
+                return 0;
+            }
+        } catch (Throwable) {
             return 0;
         }
 
         try {
-            $reflection = new ReflectionClass($normalized);
             $depth = 0;
-            $current = $reflection;
+            $current = new ReflectionClass($normalized);
 
             while (($parent = $current->getParentClass()) !== false) {
                 ++$depth;

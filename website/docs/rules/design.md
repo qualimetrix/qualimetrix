@@ -203,6 +203,29 @@ To understand `UserEntity`, you need to read all 7 classes in the chain.
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
+
+### Implementation notes
+
+A parent outside the analysed path is resolved by loading it, using the
+autoloader of the `qmx` process. So the part of a chain that leaves your code is
+only counted when the installation running the analysis can load it, and the
+depth stops at the first ancestor it cannot.
+
+In practice the same class can score differently depending on how the tool is
+installed. Installed as a dependency of the project under analysis, `qmx` shares
+its `vendor/` and sees the whole chain. Run from a standalone install --- the
+Docker image, a phar, `composer global require` --- it cannot see the project's
+packages, and a class extending a framework base class scores only the levels
+declared inside the analysed path. An ancestor that cannot be loaded counts as a
+root class, exactly like one that cannot be found at all; there is no separate
+"unknown" value in the report.
+
+Depth derived from the analysed path itself is unaffected: when the whole chain
+is inside what you analysed, the value does not depend on the install.
+
+<!-- llms:skip-end -->
+
 ### Configuration
 
 ```yaml

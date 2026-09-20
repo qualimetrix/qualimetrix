@@ -46,6 +46,39 @@ jobs:
           # Write to file for gh release
           echo "$notes" > /tmp/release-notes.md
 
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+          tools: composer:v2
+
+      # The version the tool reports about itself is read from
+      # vendor/composer/installed.php, which `composer install` writes and
+      # `composer dump-autoload` does not refresh — measured, after the
+      # opposite was assumed. Without COMPOSER_ROOT_VERSION here, composer
+      # records whatever it can work out for the root package: `dev-main` in a
+      # checkout of this repository and `1.0.0+no-version-set` in a copy of one.
+      # Either is a release archive answering --version with a non-version.
+      - name: Install production dependencies
+        env:
+          COMPOSER_ROOT_VERSION: ${{ steps.version.outputs.version }}
+        run: composer install --no-dev --no-progress --prefer-dist --optimize-autoloader
+
+      - name: Build the phar
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: composer phar
+
+      # Compared whole rather than searched for: `grep -F 1.0.0` also matches
+      # `1.0.0+no-version-set`, and that placeholder is exactly what this step
+      # exists to catch.
+      - name: The phar names the version being released
+        run: |
+          set -o pipefail
+          php build/qmx.phar --version | tee /tmp/phar-version.txt
+          test "$(cat /tmp/phar-version.txt)" = "Qualimetrix ${{ steps.version.outputs.version }}"
+
       - name: Detect pre-release
         id: prerelease
         run: |
@@ -67,3 +100,11 @@ jobs:
               --notes-file /tmp/release-notes.md \
               ${{ steps.prerelease.outputs.flag }}
           fi
+
+      # Separate from the create above, because that step is deliberately
+      # skippable: a re-run against an existing release must still attach the
+      # archive rather than leave the release without one.
+      - name: Attach the phar
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$GITHUB_REF_NAME" build/qmx.phar --clobber

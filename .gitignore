@@ -52,8 +52,7 @@ website/site/
 website/.venv/
 __pycache__/
 
-# Test fixtures (generated)
-/tests/Fixtures/generated/
+# Analysis cache written into whatever tree is analysed
 .qmx-cache/
 
 # Demo/example files
@@ -70,9 +69,14 @@ examples/
 # in silence, which left the round's own evidence unreproducible outside one
 # machine — the very shape of defect that round was about.
 !/docs/internal/generated/input-doors/observations-before/**/*.json
+# The phar's include list. The blanket *.json above swallows it, and an
+# unshipped box.json is silent twice over: the build has no configuration to
+# read, and the control that holds this list against the dist's judges a file
+# a fresh clone does not have.
+!/box.json
 !/docs/internal/modular-architecture-manifest.json
 !/docs/internal/modular-architecture-manifest.schema.json
-!/tests/Fixtures/**/*.json
+!/tests/Reporting/Fixtures/**/*.json
 !/tests/Analysis/Evidence/Measurement/Fixtures/*.json
 !/tests/Analysis/Policy/Architecture/Fixtures/Sample/*.json
 !/tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/memory-ceiling.json

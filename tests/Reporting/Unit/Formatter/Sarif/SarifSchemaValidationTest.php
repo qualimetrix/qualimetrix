@@ -25,13 +25,13 @@ use Qualimetrix\Tests\Reporting\Support\StubChannelPresentation;
  * JSON Schema (OASIS sarif-spec).
  *
  * Complements {@see SarifFormatterTest}, which only inspects the structure
- * by hand. The schema is vendored under `tests/Fixtures/Schema/` so the
+ * by hand. The schema is vendored under `tests/Reporting/Fixtures/Schema/` so the
  * suite is hermetic (no network at test time).
  */
 #[CoversClass(SarifFormatter::class)]
 final class SarifSchemaValidationTest extends TestCase
 {
-    private const SCHEMA_FIXTURE = __DIR__ . '/../../../../Fixtures/Schema/sarif-2.1.0.schema.json';
+    private const SCHEMA_FIXTURE = __DIR__ . '/../../../Fixtures/Schema/sarif-2.1.0.schema.json';
 
     private SarifFormatter $formatter;
 

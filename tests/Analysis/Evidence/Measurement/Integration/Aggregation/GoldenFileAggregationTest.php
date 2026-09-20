@@ -22,7 +22,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
  * Integration test that runs the full analysis pipeline on fixture files
  * and asserts exact metric values at every hierarchy level.
  *
- * Fixture directory: tests/Fixtures/GoldenMetrics/
+ * Fixture directory: tests/Analysis/Evidence/Measurement/Fixtures/GoldenMetrics/
  */
 #[Group('integration')]
 final class GoldenFileAggregationTest extends TestCase

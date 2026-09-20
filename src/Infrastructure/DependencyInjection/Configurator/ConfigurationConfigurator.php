@@ -38,7 +38,7 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
     /**
      * Registers configuration pipeline with stages.
      *
-     * Stages are auto-registered from src/Configuration/Pipeline/Stage/*
+     * Stages are auto-registered from src/Analysis/Configuration/Pipeline/Stage/*
      * and automatically tagged via autoconfiguration.
      */
     private function registerConfigurationPipeline(ContainerBuilder $container): void
@@ -60,7 +60,7 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
             self::YAML_CONFIG_LOADER,
         );
 
-        // Auto-register all configuration stages from src/Configuration/Pipeline/Stage/*
+        // Auto-register all configuration stages from src/Analysis/Configuration/Pipeline/Stage/*
         // Classes implementing ConfigurationStageInterface will be auto-tagged via registerForAutoconfiguration
         $prototype = (new Definition())
             ->setAutoconfigured(true)

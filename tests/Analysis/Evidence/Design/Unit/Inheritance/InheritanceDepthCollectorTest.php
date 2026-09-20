@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Tests\Analysis\Evidence\Design\Support\UnloadableClassProbe;
 use RuntimeException;
 use SplFileInfo;
 
@@ -536,6 +537,36 @@ PHP;
     public function itDeliberatelyDoesNotProvideCallableMetrics(): void
     {
         self::assertNotContains(\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface::class, class_implements($this->collector));
+    }
+
+    /**
+     * A standalone install of the tool ships some packages without the
+     * dependencies only its own dev graph supplies, so an analysed FQCN can
+     * resolve to a vendored file the tool cannot finish loading. That used to
+     * escape as an Error and record the analysed file as a processing failure,
+     * making the whole run incomplete.
+     */
+    #[Test]
+    public function itTreatsAnUnloadableExternalParentAsUnresolvedInsteadOfFailingTheFile(): void
+    {
+        $probe = UnloadableClassProbe::start();
+
+        try {
+            $metrics = $this->collectMetrics(\sprintf(
+                "<?php\n\nnamespace App;\n\nclass Local extends \\%s\n{\n}\n",
+                $probe->childFqcn(),
+            ));
+
+            // Depth 1 is what any unresolvable parent scores, so assert the
+            // failure and whose absence caused it, not just that one occurred.
+            self::assertTrue(
+                $probe->failedOnTheMissingParent(),
+                'Loading the parent did not fail on its own missing parent',
+            );
+            self::assertSame(1, $metrics->get('design.dit:App\Local'));
+        } finally {
+            $probe->stop();
+        }
     }
 
     private function collectMetrics(string $code): MetricBag

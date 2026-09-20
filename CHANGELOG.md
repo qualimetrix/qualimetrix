@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Qualimetrix ships as a standalone `qmx.phar`, attached to every release and
+  buildable with `composer phar`. Keep the `.phar` suffix: run from a file
+  named otherwise, parallel analysis copies the whole archive into the
+  temporary directory on every run.
+- `hook:install` refuses when run from the phar, naming what to do instead. The
+  hook is a symlink to a shell script and cannot point inside an archive;
+  previously the command failed on an internal path invariant.
+- Running on PHP older than 8.4 says so, instead of failing on a parse error
+  inside `src/`. The check is in `bin/qmx`, so it covers every way the tool is
+  installed.
+- `-vv` now reports when parallel analysis actually starts. The line saying a
+  parallel strategy was selected is written before the worker-count and
+  file-count fallbacks, so a run that went sequential looked parallel in the
+  log; the strategy's own start line was suppressed by a null logger.
 - The HTML report's four shipped assets move inside the composer package, from
   `src/Reporting/Template/` to `html-report/`: `report.html`, `report.css`,
   `dist/report.min.js` and `dist/d3.min.js`. `--format=html` is unaffected;
@@ -16,6 +30,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Analysing a project that shares a class name with one of the tool's own
+  packages no longer breaks the run. A standalone install (the Docker image, a
+  global `composer global require`) ships packages without the dependencies only
+  the development graph supplies, and DIT resolution asked the tool's own
+  autoloader to load the analysed class — so a file it could reach but not
+  finish loading was recorded as a processing failure. Analysing
+  `vendor/symfony/console` from such an install reported five failed files and
+  an incomplete, non-authoritative run; it now analyses all 132 and reports, for
+  that path, the same DIT values a full install reports. A parent that still
+  cannot be loaded counts as a root class, which is what the tool already did
+  for any external class it could not find — so depth that reaches outside the
+  analysed path still depends on what the installation can load, as
+  `website/docs/rules/design.md` now records.
 - Installing without development dependencies no longer breaks git-scoped runs.
   `--report=git:...` reached `symfony/process`, which arrived only through a
   development tool, so `composer install --no-dev` left it out and the first

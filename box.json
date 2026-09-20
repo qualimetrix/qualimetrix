@@ -1,0 +1,31 @@
+{
+    "main": "bin/qmx",
+    "output": "build/qmx.phar",
+    "compression": "NONE",
+    "check-requirements": false,
+    "compactors": [
+        "KevinGH\\Box\\Compactor\\Php",
+        "KevinGH\\Box\\Compactor\\Json"
+    ],
+    "directories": [
+        "src"
+    ],
+    "files": [
+        "LICENSE",
+        "html-report/report.html",
+        "html-report/report.css",
+        "html-report/dist/d3.min.js",
+        "html-report/dist/report.min.js"
+    ],
+    "finder": [
+        {
+            "in": [
+                "vendor"
+            ],
+            "notPath": [
+                "#^bin/#"
+            ],
+            "ignoreVCS": true
+        }
+    ]
+}

@@ -15,9 +15,9 @@ parameters:
         - scripts
         - tools
     excludePaths:
-        - tests/Fixtures
         - tests/Infrastructure/Ast/Fixtures
         - tests/Infrastructure/Console/Fixtures
+        - tests/Analysis/Evidence/Design/Fixtures
         - tests/Analysis/Evidence/Measurement/Fixtures
         - tests/Analysis/Policy/Architecture/Fixtures
         - tests/Analysis/Policy/Baseline/Fixtures
