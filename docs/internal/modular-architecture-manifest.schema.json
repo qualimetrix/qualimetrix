@@ -12,7 +12,7 @@
     ],
     "properties": {
         "version": {
-            "const": 3
+            "const": 4
         },
         "owners": {
             "type": "array",
@@ -85,8 +85,7 @@
                     "additionalProperties": false,
                     "required": [
                         "owner",
-                        "source_fqcn",
-                        "closes_in"
+                        "source_fqcn"
                     ],
                     "properties": {
                         "owner": {
@@ -94,9 +93,6 @@
                             "pattern": "^[A-Z][A-Za-z0-9]*(\\.[A-Z][A-Za-z0-9]*)*$"
                         },
                         "source_fqcn": {
-                            "type": "null"
-                        },
-                        "closes_in": {
                             "type": "null"
                         }
                     }
@@ -106,8 +102,7 @@
                     "additionalProperties": false,
                     "required": [
                         "owner",
-                        "source_fqcn",
-                        "closes_in"
+                        "source_fqcn"
                     ],
                     "properties": {
                         "owner": {
@@ -117,32 +112,6 @@
                         "source_fqcn": {
                             "type": "string",
                             "minLength": 1
-                        },
-                        "closes_in": {
-                            "type": "null"
-                        }
-                    }
-                },
-                {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "required": [
-                        "owner",
-                        "source_fqcn",
-                        "closes_in"
-                    ],
-                    "properties": {
-                        "owner": {
-                            "type": "string",
-                            "pattern": "^[A-Z][A-Za-z0-9]*(\\.[A-Z][A-Za-z0-9]*)*$"
-                        },
-                        "source_fqcn": {
-                            "type": "string",
-                            "minLength": 1
-                        },
-                        "closes_in": {
-                            "type": "string",
-                            "pattern": "^P[1-8](?:-[A-E])?$"
                         }
                     }
                 },
@@ -153,7 +122,6 @@
                         "owner",
                         "relation",
                         "source_fqcn",
-                        "closes_in",
                         "carrier_fqcn",
                         "boundary_fqcn"
                     ],
@@ -166,9 +134,6 @@
                             "const": "contract_composition"
                         },
                         "source_fqcn": {
-                            "type": "null"
-                        },
-                        "closes_in": {
                             "type": "null"
                         },
                         "carrier_fqcn": {
@@ -188,7 +153,6 @@
                         "owner",
                         "relation",
                         "source_fqcn",
-                        "closes_in",
                         "carrier_fqcn"
                     ],
                     "properties": {
@@ -203,9 +167,6 @@
                             "type": "string",
                             "minLength": 1
                         },
-                        "closes_in": {
-                            "type": "null"
-                        },
                         "carrier_fqcn": {
                             "type": "string",
                             "minLength": 1
@@ -219,7 +180,6 @@
                         "owner",
                         "relation",
                         "source_fqcn",
-                        "closes_in",
                         "operations"
                     ],
                     "properties": {
@@ -232,9 +192,6 @@
                         "source_fqcn": {
                             "type": "string",
                             "minLength": 1
-                        },
-                        "closes_in": {
-                            "type": "null"
                         },
                         "operations": {
                             "type": "array",
@@ -259,8 +216,7 @@
             "additionalProperties": false,
             "required": [
                 "semantic_owner",
-                "layer",
-                "closes_in"
+                "layer"
             ],
             "properties": {
                 "semantic_owner": {
@@ -270,10 +226,6 @@
                 "layer": {
                     "type": "string",
                     "pattern": "^seam-[a-z0-9]+(-[a-z0-9]+)*$"
-                },
-                "closes_in": {
-                    "type": "string",
-                    "pattern": "^P[1-8](?:-[A-E])?$"
                 }
             }
         }
