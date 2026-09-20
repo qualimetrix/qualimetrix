@@ -6,6 +6,9 @@ namespace Qualimetrix\Governance\DistributedPackage;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Subprocess\ChildProcess;
+
+require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
 
 /**
  * `hook:install` judged against what a consumer receives, not against this
@@ -221,13 +224,14 @@ final class HookInstallWorksFromTheDistPackageTest extends TestCase
     }
 
     /**
-     * Both streams go to files rather than pipes.
+     * The repository's one drain-free-of-deadlock child runner, rather than a
+     * private one: two pipes read in sequence is the defect its own governance
+     * control exists to refuse, and a second implementation of the cure is a
+     * second thing that can lose it.
      *
-     * A parent that reads one pipe to EOF before touching the other deadlocks
-     * as soon as the child fills the OS pipe buffer on the stream read second:
-     * the child blocks mid-write, so it never exits and the first stream never
-     * reaches EOF. `git archive` over this repository is exactly the size where
-     * that starts to matter. Files have no such buffer.
+     * The streams are merged on return because every assertion below reads the
+     * command's output as one transcript -- a message printed to stderr is
+     * still the command answering.
      *
      * @param list<string> $command
      *
@@ -235,28 +239,9 @@ final class HookInstallWorksFromTheDistPackageTest extends TestCase
      */
     private static function execute(array $command, ?string $workingDirectory = null): array
     {
-        $outPath = tempnam(sys_get_temp_dir(), 'qmx-dist-out-');
-        $errPath = tempnam(sys_get_temp_dir(), 'qmx-dist-err-');
+        $result = ChildProcess::run($command, $workingDirectory);
 
-        self::assertIsString($outPath);
-        self::assertIsString($errPath);
-
-        $process = proc_open(
-            $command,
-            [1 => ['file', $outPath, 'w'], 2 => ['file', $errPath, 'w']],
-            $pipes,
-            $workingDirectory,
-        );
-
-        self::assertIsResource($process, 'Could not start ' . $command[0] . ', so nothing here was checked.');
-
-        $status = proc_close($process);
-        $output = (string) file_get_contents($outPath) . (string) file_get_contents($errPath);
-
-        unlink($outPath);
-        unlink($errPath);
-
-        return [$status, $output];
+        return [$result['exitCode'], $result['stdout'] . $result['stderr']];
     }
 
     private static function scratchDirectory(): string

@@ -10,7 +10,7 @@ use RuntimeException;
 require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
 
 /**
- * Whether `vendor/` is the dependency graph HEAD's lock describes.
+ * Whether the dependency graph a dist-package run would apply is HEAD's.
  *
  * Every control in this group judges an archive of HEAD, but runs it against a
  * `vendor/` copied from this checkout. The two are different trees, and where
@@ -30,46 +30,78 @@ require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
  *   still carries the cure. This is not hypothetical — it is how the first
  *   attempt to prove that control red produced a false green.
  *
- * In CI the two always agree: the test job installs from the lock at the
- * commit it checked out. This is a local-developer trap, and it is refused
- * here rather than documented, because a documented defect is still a defect.
+ * In CI the two always agree: the test job installs from the lock at the commit
+ * it checked out. This is a local-developer trap, and it is refused here rather
+ * than documented, because a documented defect is still a defect.
  *
  * One definition, for the same reason {@see \Qualimetrix\Governance\DeclaredDependencies\ShippedTree}
  * is one: both controls that copy `vendor/` and dump without the dev graph ask
  * this question, and two copies of it would drift — with the half that drifted
  * still passing.
  *
- * ## What is compared, and what is not
+ * ## Two links, because a consumer's graph is two derivations away
  *
- * Package *names*, per side of the split. Versions are not compared: a
- * `vendor/` installed from a lock with the same partition but different
- * versions passes this guard. That residue is deliberate — the subject of
- * these controls is which packages a consumer receives, not which revision of
- * them — and it is the residue every control in this group already carries.
+ * What a consumer resolves comes from `composer.json`. What this run applies
+ * comes from `installed.json`. The lock is the step between them, and checking
+ * only the step nearest the run leaves the other one unguarded:
  *
- * Both sides are compared, though only the production side decides the
- * controls' verdicts. The development side is what the git scope control's own
- * witness rests on: it proves the fixture is production-shaped by showing
- * PHPUnit unreachable, which means something only while PHPUnit is installed
- * *and* marked development. A split that disagrees there would redden that
- * witness with the wrong diagnosis.
+ * 1. `composer.json` at HEAD against `composer.lock` at HEAD, by asking
+ *    Composer itself. Without this link the guard is green on a HEAD that
+ *    moved a package out of `require` without a `composer update`, which is
+ *    the very defect class the git scope control exists for — measured, by
+ *    moving `symfony/process` to `require-dev` in `composer.json` alone and
+ *    watching the control stay green through 17 assertions.
+ * 2. `composer.lock` at HEAD against this checkout's `installed.json`, by
+ *    package name per side of the split.
+ *
+ * The first link is delegated rather than reimplemented. Composer's own
+ * `content-hash` covers a canonicalised subset of `composer.json` that only
+ * Composer defines; a hand-rolled comparison of `require` against the lock's
+ * package sets expresses the simple case and accepts the rest, because a
+ * package named in `require-dev` legitimately appears among the lock's
+ * production packages when something in `require` pulls it in.
+ *
+ * ## What link 2 compares
+ *
+ * Name, side and version. Version is included because it is free and because
+ * excluding it leaves a real hole: a `vendor/` holding an older revision of a
+ * production package resolves a different set of classes than HEAD's lock
+ * pins, and the callers ask exactly whether a class is reachable. It costs no
+ * false refusals — on a fresh install the two files agree on every one of the
+ * ninety-two version strings, measured, because `installed.json` is written
+ * from the lock.
+ *
+ * Both sides of the split are compared, though only the production side
+ * decides the callers' verdicts. The development side is what the git scope
+ * control's own witness rests on: it proves the fixture is production-shaped
+ * by showing PHPUnit unreachable, which means something only while PHPUnit is
+ * installed *and* marked development. A split that disagreed there would
+ * redden that witness with the wrong diagnosis.
+ *
+ * A commit landing between this check and the caller's `git archive HEAD`
+ * would move HEAD underneath the run. That window is not closed, because
+ * closing it means resolving HEAD to a revision here and threading it through
+ * every caller's archive — a contract change for a race that needs a commit
+ * during a three-second test.
  */
 final class InstalledDependencyGraph
 {
     /**
-     * Refuses when this checkout's `vendor/` is not HEAD's graph.
+     * Refuses when the graph this run would apply is not HEAD's.
      *
      * A refusal rather than a failure on purpose: the run has not judged the
      * subject and found it broken, it has found that it cannot judge the
      * subject at all. PHPUnit reports a thrown exception as an error and an
      * assertion as a failure, and that is the distinction being spent.
      *
-     * @throws RuntimeException naming the cure
+     * @throws RuntimeException naming the cure for the disagreement it found
      */
     public static function assertMatchesHead(string $root): void
     {
-        $atHead = self::sides(self::lockAtHead($root));
-        $inVendor = self::sides(self::installed($root));
+        self::assertHeadsLockAnswersItsOwnComposerJson($root);
+
+        $atHead = self::lockAtHead($root);
+        $inVendor = self::installed($root);
 
         $differences = [];
 
@@ -89,7 +121,8 @@ final class InstalledDependencyGraph
         sort($differences);
 
         throw new RuntimeException(
-            'vendor/ disagrees with HEAD, so this control cannot judge either tree — run composer install.' . \PHP_EOL
+            'vendor/ disagrees with HEAD, so this control cannot judge either tree.' . \PHP_EOL
+            . self::cureFor($root) . \PHP_EOL
             . 'The autoload dump takes the production/development split from vendor/composer/installed.json,' . \PHP_EOL
             . 'not from the lock, so the split below is what a run here would actually apply:' . \PHP_EOL
             . implode(\PHP_EOL, $differences),
@@ -97,57 +130,119 @@ final class InstalledDependencyGraph
     }
 
     /**
-     * One side per package name, so a package that merely moved between them
-     * is reported as the one move it is rather than as two absences.
+     * Which of the two disagreements this is, because they have opposite cures.
      *
-     * @param array{production: list<string>, development: list<string>} $split
-     *
-     * @return array<string, string>
+     * `composer install` installs from the *working tree's* lock. When that
+     * lock is the one `vendor/` was installed from and it is simply not
+     * committed yet, the install is a no-op and the developer gets the same
+     * refusal again. Naming the cure is what this class promises, so it has to
+     * distinguish the case rather than always say the commoner one.
      */
-    private static function sides(array $split): array
+    private static function cureFor(string $root): string
     {
-        $sides = [];
+        $lockIsCommitted = ChildProcess::run(
+            ['git', '-C', $root, 'diff', '--quiet', 'HEAD', '--', 'composer.lock'],
+        )['exitCode'] === 0;
 
-        foreach ($split as $side => $names) {
-            foreach ($names as $name) {
-                $sides[$name] = $side;
-            }
-        }
-
-        return $sides;
+        return $lockIsCommitted
+            ? 'vendor/ was installed from a different lock than HEAD carries — run composer install.'
+            : 'composer.lock is edited but not committed, and these controls judge HEAD —' . \PHP_EOL
+                . 'commit the lock, or set the edit aside until they are run again.';
     }
 
     /**
-     * The split HEAD's lock describes.
+     * Link 1: that HEAD's lock is the lock HEAD's `composer.json` resolves to.
+     *
+     * Asked of Composer, in a directory holding nothing but those two files,
+     * so the answer is about HEAD and not about the working tree. Composer
+     * separates a stale lock from an invalid manifest by exit code and says
+     * which in its own words, so its output is quoted rather than translated.
+     */
+    private static function assertHeadsLockAnswersItsOwnComposerJson(string $root): void
+    {
+        $directory = sys_get_temp_dir() . '/qmx-head-manifest-' . bin2hex(random_bytes(6));
+
+        if (!mkdir($directory, 0777, true)) {
+            throw new RuntimeException('Could not create ' . $directory . ', so nothing here was checked.');
+        }
+
+        try {
+            foreach (['composer.json', 'composer.lock'] as $name) {
+                file_put_contents($directory . '/' . $name, self::showAtHead($root, $name));
+            }
+
+            $composer = getenv('COMPOSER_BINARY');
+
+            $result = ChildProcess::run(
+                [
+                    \is_string($composer) && $composer !== '' ? $composer : 'composer',
+                    'validate', '--no-check-all', '--no-check-publish', '--no-interaction',
+                ],
+                $directory,
+            );
+
+            if ($result['exitCode'] !== 0) {
+                throw new RuntimeException(
+                    'composer.lock at HEAD does not answer composer.json at HEAD, so the graph this run would'
+                    . \PHP_EOL . 'apply is one no consumer resolves. Composer says:' . \PHP_EOL
+                    . trim($result['stdout'] . $result['stderr']),
+                );
+            }
+        } finally {
+            foreach (['composer.json', 'composer.lock'] as $name) {
+                @unlink($directory . '/' . $name);
+            }
+
+            @rmdir($directory);
+        }
+    }
+
+    /**
+     * What HEAD's lock says about each package it names.
      *
      * Read from HEAD rather than from the working tree's `composer.lock`,
      * because HEAD is what the archive these controls judge is taken from. An
      * uncommitted lock edit is a disagreement, not an exemption.
      *
-     * @return array{production: list<string>, development: list<string>}
+     * @return array<string, string>
      */
     private static function lockAtHead(string $root): array
     {
-        $result = ChildProcess::run(['git', '-C', $root, 'show', 'HEAD:composer.lock']);
+        $source = 'composer.lock at HEAD';
+        $lock = self::decode(self::showAtHead($root, 'composer.lock'), $source);
+
+        $described = [];
+
+        foreach (['packages' => 'production', 'packages-dev' => 'development'] as $key => $side) {
+            foreach (self::versions($lock, $key, $source) as $name => $version) {
+                $described[$name] = $side . ' ' . $version;
+            }
+        }
+
+        return $described;
+    }
+
+    private static function showAtHead(string $root, string $path): string
+    {
+        $result = ChildProcess::run(['git', '-C', $root, 'show', 'HEAD:' . $path]);
 
         if ($result['exitCode'] !== 0) {
             throw new RuntimeException(
-                'Could not read composer.lock at HEAD, so nothing here was checked:' . \PHP_EOL . $result['stderr'],
+                'Could not read ' . $path . ' at HEAD, so nothing here was checked:' . \PHP_EOL . $result['stderr'],
             );
         }
 
-        $lock = self::decode($result['stdout'], 'composer.lock at HEAD');
-
-        return [
-            'production' => self::names($lock, 'packages', 'composer.lock at HEAD'),
-            'development' => self::names($lock, 'packages-dev', 'composer.lock at HEAD'),
-        ];
+        return $result['stdout'];
     }
 
     /**
-     * The split the copied `vendor/` would impose.
+     * What the copied `vendor/` would impose for each package it holds.
      *
-     * @return array{production: list<string>, development: list<string>}
+     * One flat list plus a roster of development names, rather than two lists:
+     * that is the shape `installed.json` has, and it is the shape the autoload
+     * dump reads the split from.
+     *
+     * @return array<string, string>
      */
     private static function installed(string $root): array
     {
@@ -161,7 +256,6 @@ final class InstalledDependencyGraph
         }
 
         $installed = self::decode($contents, $path);
-        $all = self::names($installed, 'packages', $path);
 
         if (!isset($installed['dev-package-names']) || !\is_array($installed['dev-package-names'])) {
             throw new RuntimeException(
@@ -169,35 +263,46 @@ final class InstalledDependencyGraph
             );
         }
 
-        /** @var list<string> $development */
-        $development = array_values(array_filter($installed['dev-package-names'], '\is_string'));
+        $development = array_filter($installed['dev-package-names'], '\is_string');
+        $described = [];
 
-        return [
-            'production' => array_values(array_diff($all, $development)),
-            'development' => $development,
-        ];
+        foreach (self::versions($installed, 'packages', $path) as $name => $version) {
+            $side = \in_array($name, $development, true) ? 'development' : 'production';
+
+            $described[$name] = $side . ' ' . $version;
+        }
+
+        return $described;
     }
 
     /**
+     * The version each package in one section of a document reports.
+     *
+     * A package with no readable version reports `?` rather than being
+     * skipped: a document that cannot say which revision it holds disagrees
+     * with one that can, and dropping it would let the two agree by omission.
+     *
      * @param array<string, mixed> $document
      *
-     * @return list<string>
+     * @return array<string, string>
      */
-    private static function names(array $document, string $key, string $source): array
+    private static function versions(array $document, string $key, string $source): array
     {
         if (!isset($document[$key]) || !\is_array($document[$key])) {
             throw new RuntimeException($source . ' carries no ' . $key . ' array, so the split cannot be read from it.');
         }
 
-        $names = [];
+        $versions = [];
 
         foreach ($document[$key] as $package) {
             if (\is_array($package) && isset($package['name']) && \is_string($package['name'])) {
-                $names[] = $package['name'];
+                $versions[$package['name']] = isset($package['version']) && \is_string($package['version'])
+                    ? $package['version']
+                    : '?';
             }
         }
 
-        return $names;
+        return $versions;
     }
 
     /**

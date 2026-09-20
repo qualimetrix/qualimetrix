@@ -206,11 +206,6 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'construction instead: `git rev-parse` gets no stdin pipe and its stderr goes to a file, so stdout is '
             . 'the only blocking stream.',
 
-        'governance/DistributedPackage/HookInstallWorksFromTheDistPackageTest.php:231' => 'The dist-package '
-            . 'control\'s own runner: both of the child\'s streams go to files and it opens no pipe at all, so it '
-            . 'holds nothing to leave unserviced. It cannot use the module either — it measures what the composer '
-            . 'distribution carries, and the module is excluded from it.',
-
         'tests/Infrastructure/Console/Functional/Command/HookInstallCommandTest.php:285' => 'Arranging a git '
             . 'repository for the case under test: both streams go to `/dev/null` and no pipe is opened, so only '
             . 'the exit status is read.',
