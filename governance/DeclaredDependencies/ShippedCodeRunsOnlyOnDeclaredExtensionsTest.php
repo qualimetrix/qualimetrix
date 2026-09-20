@@ -237,21 +237,32 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
     }
 
     /**
-     * The same defect without any simulation: a call into an extension this
-     * runtime genuinely does not carry. `enchant_broker_init()` belongs to
-     * ext-enchant, which is not loaded here and is not declared anywhere, so
-     * the real surface has to refuse it on its own.
+     * The same defect with no simulation at all: the real surface, asked
+     * about a name it cannot resolve, has to refuse it by name.
+     *
+     * The witness is a name no extension provides rather than a call into a
+     * named absent extension, and that is the second attempt. The first named
+     * `enchant_broker_init()` and asserted the runner does not load
+     * ext-enchant — which is an assumption about someone else's machine
+     * wearing the costume of a test. CI disproved it on the first run: the
+     * ubuntu runners carry ext-enchant, and the guard fired instead of the
+     * case it guarded. What this runtime does or does not answer to is now
+     * derived from the runtime and asserted, so the case holds wherever it
+     * runs, and the message it proves is the same one either reading of an
+     * unresolvable name produces.
      */
     #[Test]
-    public function itRefusesACallIntoAnExtensionThisRuntimeDoesNotCarry(): void
+    public function itRefusesANameTheRealSurfaceCannotResolve(): void
     {
         $root = self::repositoryRoot();
         $surface = PhpSurface::ofThisProcess();
+        $name = 'qmxabsent_broker_init';
 
-        self::assertFalse($surface->loads('enchant'), 'This PHP loads ext-enchant, so it cannot stand in for one that does not.');
+        self::assertNull($surface->functionExtension($name), 'The witness must belong to no extension here.');
+        self::assertFalse(self::knownInSomeRole($surface, $name), 'The witness must be a name this PHP does not answer to.');
 
         $refusals = self::judge(
-            [['file' => $root . '/src/Planted.php', 'name' => 'enchant_broker_init', 'role' => ReachedNames::FUNCTION]],
+            [['file' => $root . '/src/Planted.php', 'name' => $name, 'role' => ReachedNames::FUNCTION]],
             [],
             $surface,
             self::declaredExtensions($root),
@@ -259,8 +270,9 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
         )['refusals'];
 
         self::assertCount(1, $refusals, implode(\PHP_EOL, $refusals));
-        self::assertStringContainsString('enchant_broker_init', $refusals[0]);
-        self::assertStringContainsString('enchant_', $refusals[0], 'The refusal should hand over the prefix as a lead.');
+        self::assertStringContainsString($name, $refusals[0]);
+        self::assertStringContainsString('nothing in this PHP answers to', $refusals[0]);
+        self::assertStringContainsString('qmxabsent_', $refusals[0], 'The refusal should hand over the prefix as a lead.');
     }
 
     /**
@@ -331,12 +343,10 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
     {
         $root = self::repositoryRoot();
         $surface = PhpSurface::ofThisProcess();
-
-        self::assertTrue($surface->knowsAsFunction('grapheme_strrev'), 'The witness has to be a name this process answers.');
-        self::assertNull($surface->functionExtension('grapheme_strrev'), 'The witness has to belong to no extension.');
+        $name = self::aGlobalNameOnlyAPackageProvides($surface);
 
         $refusals = self::judge(
-            [['file' => $root . '/src/Planted.php', 'name' => 'grapheme_strrev', 'role' => ReachedNames::FUNCTION]],
+            [['file' => $root . '/src/Planted.php', 'name' => $name, 'role' => ReachedNames::FUNCTION]],
             [],
             $surface,
             self::declaredExtensions($root),
@@ -344,9 +354,43 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
         )['refusals'];
 
         self::assertCount(1, $refusals, implode(\PHP_EOL, $refusals));
-        self::assertStringContainsString('grapheme_strrev', $refusals[0]);
-        self::assertStringContainsString('polyfill-intl-grapheme', $refusals[0], 'The refusal has to name the file that answered.');
+        self::assertStringContainsString($name, $refusals[0]);
+        self::assertStringContainsString('vendor/', $refusals[0], 'The refusal has to name the file that answered.');
         self::assertStringContainsString('declare the extension', $refusals[0]);
+    }
+
+    /**
+     * A global function this process answers from a Composer package and not
+     * from any extension — found by asking the process, not by naming one.
+     *
+     * Naming one is how the sibling case to this failed on CI: an extension
+     * this machine lacks is not an extension every machine lacks. The
+     * population here is a fact about the installed tree, so it is read out
+     * of the tree, and an empty population is a refusal rather than a pass —
+     * this project's production closure carries polyfills, and a run where
+     * none of them defines a global function means the read is broken, not
+     * that there is nothing to witness.
+     */
+    private static function aGlobalNameOnlyAPackageProvides(PhpSurface $surface): string
+    {
+        foreach (get_defined_functions()['user'] as $candidate) {
+            if (str_contains($candidate, '\\')) {
+                continue;
+            }
+
+            if ($surface->functionExtension($candidate) !== null) {
+                continue;
+            }
+
+            if ($surface->knowsAsFunction($candidate)) {
+                return $candidate;
+            }
+        }
+
+        self::fail(
+            'No global function in this process comes from a Composer package rather than an extension.'
+                . ' This project depends on polyfills that define exactly such names, so the surface read is broken.',
+        );
     }
 
     /**
