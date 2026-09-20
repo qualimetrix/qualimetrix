@@ -124,7 +124,8 @@ root rather than a binary.
 Two things the comparison is structurally unable to report, both stated so the
 job is not mistaken for a proof of soundness. It compares two installs of the
 same production graph, so a defect of that graph appears on both sides and
-reads as agreement; one such defect is known and tracked on its own.
+reads as agreement — this is how one was found and then missed: building the
+archive surfaced it, and the equivalence job would not have.
 And stack-trace line numbers inside `vendor/` shift between the archive and its
 source tree, because the compactor strips comments, so the comparison keeps a
 failure's reason and drops the frames that carry it.

@@ -142,12 +142,17 @@ name it happens to map. Measured on a `composer install --no-dev` tree over 132 
 tree with no phar involved. The development tree analyses all 132, which is why the defect has never
 been seen here.
 
-The reach follows from the lock, not from a chain of inferences: every standalone install shape
+The reach followed from the lock, not from a chain of inferences: every standalone install shape
 resolves the same `packages` section — the Docker image, which runs exactly this
 `composer install --no-dev`, a global composer install, and the phar. A consumer installing the tool
-as a project dependency is unaffected, because their own graph supplies the missing package. **This
-is a product defect, not a stage-01 obligation** — recorded here because P0 found it and because a
-phar comparison that does not know about it will read it as a phar regression.
+as a project dependency was unaffected, because their own graph supplies the missing package.
+
+**Closed on `main` by [#106](https://github.com/qualimetrix/qualimetrix/pull/106)**, which stopped
+DIT resolution from recording a class it can reach but not finish loading as a processing failure.
+Re-measured after that landed: all 132 files analysed, exit 0. The record stays because it is why
+DoD 1's reference is a `--no-dev` tree, and because the shape outlives the instance — a comparison
+between two installs of one graph cannot see a defect of that graph, whether or not one is live
+today.
 
 ## The include list, and how many lists there are
 
@@ -193,10 +198,11 @@ instead of argued. Everything below is a measurement on this tree.
   coverage failure messages, which carry `phar://` paths inside their stack traces.
 - **The reference must be a `--no-dev` tree, and this is the trap the stage nearly fell into.**
   Against the development tree the phar looked broken: 127 files where the tree analysed 132, six
-  findings fewer. It is not the phar. A `composer install --no-dev` tree reproduces the phar's
-  numbers exactly — so a comparison whose reference carries dev dependencies measures the dev/prod
-  split and reports it as a phar defect. DoD 1's reference is the shipped graph, not the developed
-  one.
+  findings fewer. It was not the phar — a `composer install --no-dev` tree reproduced the phar's
+  numbers exactly, because both carried the graph defect problem 5 records. That instance is closed
+  now, but the rule it produced is not about it: a comparison whose reference carries dev
+  dependencies measures the dev/prod split and reports it as a phar defect. DoD 1's reference is the
+  shipped graph, not the developed one.
 - **`--format=html`** inlined `report.css`, `d3.min.js` and `report.min.js` verbatim, and the
   document is identical to the tree's once `generatedAt` and `qmxVersion` are normalised.
 - **The filename decision is now a measurement, not a citation.** Run from a copy whose path lacks
@@ -296,8 +302,9 @@ is met more narrowly than its wording allows — see the note under it.
    `vendor/autoload.php` and the corpus, and that was not built. The gap is stated rather than
    closed: a format the comparison never renders could diverge and nothing here would say so.
    A second limit, and the sharper one: the job compares two installs of the same production graph,
-   so problem 5 sits on both sides and reads as agreement. This job is evidence that the archive
-   equals its tree, not that either is sound.
+   so a defect of that graph sits on both sides and reads as agreement. Problem 5 was exactly that
+   shape and is now closed, which changes the example and not the limit. This job is evidence that
+   the archive equals its tree, not that either is sound.
 2. **`--format=html` from the phar inlines its four assets**, checked by content. The build failing
    to include them is loud, not silent — the formatter refuses — so this item's real target is an
    asset that is present but wrong, not one that is missing.
