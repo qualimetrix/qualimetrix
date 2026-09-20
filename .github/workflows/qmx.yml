@@ -11,6 +11,16 @@ jobs:
   # `composer check`, and scrubbing one after the fact needs a history rewrite.
   # Needs full history, so it is a separate job rather than a step in the
   # PHP matrix.
+  #
+  # This job also owns the Conventional Commits verdict for everything the
+  # commit-msg hook cannot reach: a contributor who never installed the hook,
+  # anyone passing --no-verify, and the clean path of `git revert` and
+  # `git cherry-pick`, which git writes without consulting a hook at all.
+  #
+  # `name:` is pinned: branch protection requires the context
+  # "Commit messages (private terms)". Renaming it here retires that context,
+  # and every open pull request then waits forever for a check that no longer
+  # reports. Rename it only together with the protection setting.
   commit-messages:
     name: Commit messages (private terms)
     runs-on: ubuntu-latest
@@ -37,6 +47,20 @@ jobs:
             range="$base..HEAD"
           fi
           bash scripts/check-private-leaks.sh --commits "$range"
+
+      # Only on pull requests, where the range holds the commits an author
+      # actually wrote. A push range on main opens with the merge or squash
+      # commit GitHub has just written server-side: that subject is the
+      # repository's separate PR-title convention, no hook ever saw it, and
+      # judging it here would redden main after every merge.
+      #
+      # The range is the script's to compute, not this file's: a range written
+      # here would sit where no control can reach it, and a step quietly
+      # judging `HEAD..HEAD` would pass every pull request. `--pull-request`
+      # derives it from the merge ref's own parents and refuses if it cannot.
+      - name: Check commit subject format
+        if: github.event_name == 'pull_request'
+        run: bash scripts/check-commit-subject.sh --pull-request
 
   # Smoke test for the local Action. It renders warnings, but it is not the
   # warning-ratchet gate.
