@@ -39,6 +39,13 @@ remove a link it cannot identify rather than deleting someone else's hook.
 
 ### Fixed
 
+- The `hook:*` commands can no longer deadlock on git's error stream. Locating
+  the hooks directory handed that stream a pipe nothing ever read, so a `git`
+  writing more to it than the pipe buffer holds blocks on the write, never
+  closes its output, and the command waits for an end-of-output that cannot
+  arrive — producing neither output nor an exit code. Stock `git rev-parse`
+  stays far under that threshold, so this was reachable through a wrapper or
+  replacement `git` on PATH rather than through ordinary use.
 - `hook:install` works for an installed package. `/scripts/` is excluded from
   the composer distribution, so the command looked for `scripts/pre-commit-hook.sh`
   in two places a consumer never has and exited 1 with `Hook script not found`.
