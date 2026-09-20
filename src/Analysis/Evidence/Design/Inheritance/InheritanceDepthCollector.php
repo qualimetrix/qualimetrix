@@ -4,20 +4,16 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Design\Inheritance;
 
-use Override;
 use PhpParser\Node;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareTrait;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
-use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use ReflectionClass;
 use ReflectionException;
@@ -36,6 +32,11 @@ use Throwable;
  * otherwise conservatively estimated as DIT = 1.
  *
  * Anonymous classes are ignored.
+ *
+ * This collector measures DIT but does not declare it: the definition belongs
+ * to {@see DitGlobalCollector}, which writes the value the report publishes.
+ * Declaring it here as well would put DIT into the first aggregation pass,
+ * whose class values the global pass has not yet corrected.
  *
  * @qmx-ignore health.cohesion -- Visitor-backed collector methods are intentionally independent protocol operations.
  */
@@ -221,29 +222,4 @@ final class InheritanceDepthCollector extends AbstractCollector implements Decla
         return $depth;
     }
 
-    /**
-     * @return list<MetricDefinition>
-     */
-    #[Override]
-    public function getMetricDefinitions(): array
-    {
-        return [
-            new MetricDefinition(
-                name: MetricName::DESIGN_DIT,
-                collectedAt: SymbolLevel::Class_,
-                aggregations: [
-                    SymbolLevel::Namespace_->value => [
-                        AggregationStrategy::Average,
-                        AggregationStrategy::Max,
-                        AggregationStrategy::Percentile95,
-                    ],
-                    SymbolLevel::Project->value => [
-                        AggregationStrategy::Average,
-                        AggregationStrategy::Max,
-                        AggregationStrategy::Percentile95,
-                    ],
-                ],
-            ),
-        ];
-    }
 }

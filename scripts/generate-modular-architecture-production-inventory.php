@@ -2396,6 +2396,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0065-the-manifest-records-ownership-not-a-migration-schedule.md' => 'Architecture.Governance',
         'docs/adr/0067-every-test-shaped-directory-is-scanned.md' => 'Architecture.Governance',
         'docs/adr/0068-the-pre-commit-hook-is-generated-not-shipped.md' => 'Infrastructure.Console',
+        'docs/adr/0069-a-metric-is-declared-by-the-collector-that-writes-it.md' => 'Analysis.Evidence.Measurement',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/Evidence/CircularDependency/README.md' => 'Analysis.Evidence.CircularDependency',

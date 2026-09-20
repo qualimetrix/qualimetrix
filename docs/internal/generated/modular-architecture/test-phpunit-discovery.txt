@@ -404,6 +404,8 @@ Available tests:
  - Qualimetrix\Governance\LayerPolicyVocabulary\MatchModeVocabularyTest::itHasOnlyAnyAndAllCases
  - Qualimetrix\Governance\MeasurementIdentity\ClassProducerCensusTest::itCoversEveryClassMetricProducer
  - Qualimetrix\Governance\MeasurementIdentity\ClassProducerCensusTest::itFindsTheHelperCallSiteOfEveryCoveredProducer
+ - Qualimetrix\Governance\MeasurementIdentity\GlobalCollectorDeclaresWhatItWritesTest::itFindsEveryGlobalCollectorDeclaringTheMetricsItWrites
+ - Qualimetrix\Governance\MeasurementIdentity\GlobalCollectorDeclaresWhatItWritesTest::itGivesEveryMetricASingleDeclaringCollector
  - Qualimetrix\Governance\MeasurementIdentity\TraversalCompletenessTest::itFindsNoTraversalControlReturnInProductionVisitors
  - Qualimetrix\Governance\MeasurementIdentity\TraversalCompletenessTest::itUsesForbiddenNamesTakenFromTheVisitorContractAndFindsSourceFilesToScan
  - Qualimetrix\Governance\MeasurementVocabulary\MetricNameVocabularyTest::itRejectsAKeyThatCollidesWithAnAggregatedSpellingOfAnotherKey
@@ -3138,6 +3140,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itSeesOnlyMembersDeclaredByTheClassItself
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itSparesAClassWhoseComplexityExceedsTheWmcGate
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itTreatsTheThresholdItselfAsAFinding
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DitAggregateRunTest::itAggregatesTheDepthItPublishesPerClass
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DitAggregateRunTest::itCountsClassesRatherThanEveryClassLevelSymbol
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnloadableExternalParentRunTest::itConfirmsTheFixtureIsReachableAndStillCannotFinishLoading
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnloadableExternalParentRunTest::itKeepsCoverageCompleteWhenAnExternalParentCannotFinishLoading#0
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnloadableExternalParentRunTest::itKeepsCoverageCompleteWhenAnExternalParentCannotFinishLoading#1
@@ -3194,6 +3198,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itComputesDitThreeAcrossFilesForAThreeLevelInheritanceChain
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itComputesDitTwoAcrossFilesForATwoLevelInheritanceChain
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itIsNamedDitGlobal
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itLeavesSymbolsTheFilePassNeverMeasuredAlone
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itOwnsTheDitMetricDefinition
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itPreservesOtherMetricsWhileUpdatingDit
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itProvidesTheDitMetric
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itRequiresNoUpstreamMetrics
@@ -3212,10 +3218,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsStandardPhpClassInReflectionDitChain
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsThreeLevelInheritance
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsTwoLevelInheritanceInSameFile
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itDeclaresNoMetricDefinition
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itDeliberatelyDoesNotProvideCallableMetrics
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itDoesNotTreatNamespacedErrorAsStandardPhpClass
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itDoesNotTreatNamespacedExceptionAsStandardPhpClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itGetsMetricDefinitions
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itGetsName
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itHandlesClassWithoutNamespace
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itHandlesFullyQualifiedExtends

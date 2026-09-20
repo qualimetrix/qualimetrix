@@ -224,6 +224,15 @@ root class, exactly like one that cannot be found at all; there is no separate
 Depth derived from the analysed path itself is unaffected: when the whole chain
 is inside what you analysed, the value does not depend on the install.
 
+DIT is reported for classes. Interfaces, traits and enums do not receive one,
+and they are not part of the population the namespace and project aggregates
+average over --- that population is exactly what `size.class-count` counts.
+
+The aggregates summarise the per-class depths the same report publishes,
+including chains that cross files: a class whose parent is declared in another
+file is resolved from the dependency graph, and `design.dit.avg`, `.max` and
+`.p95` are computed from the resolved depths.
+
 <!-- llms:skip-end -->
 
 ### Configuration
