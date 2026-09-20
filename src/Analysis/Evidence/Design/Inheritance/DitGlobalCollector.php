@@ -13,6 +13,7 @@ use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use ReflectionClass;
+use ReflectionException;
 use Throwable;
 
 /**
@@ -182,11 +183,19 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
     {
         $normalized = ltrim($classFqn, '\\');
 
+        // Widest catch on the load step alone: it runs someone else's code and
+        // fails with a plain Error carrying nothing to match on. The walk below
+        // cannot autoload, so a throw there is this tool's own defect and keeps
+        // a narrow catch, staying loud.
         try {
             if (!class_exists($normalized, true) && !interface_exists($normalized, true)) {
                 return 0;
             }
+        } catch (Throwable) {
+            return 0;
+        }
 
+        try {
             $depth = 0;
             $current = new ReflectionClass($normalized);
 
@@ -201,7 +210,7 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
             }
 
             return $depth;
-        } catch (Throwable) {
+        } catch (ReflectionException) {
             return 0;
         }
     }

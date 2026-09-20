@@ -557,10 +557,12 @@ PHP;
                 $probe->childFqcn(),
             ));
 
-            // The value alone cannot distinguish "threw and was caught" from
-            // "was never asked": an unresolvable parent scores 0 either way.
-            self::assertSame(1, $probe->queryCount(), 'The collector never tried to load the parent');
-            self::assertTrue($probe->stillUndeclared(), 'The parent loaded successfully, so nothing threw');
+            // Depth 1 is what any unresolvable parent scores, so assert the
+            // failure and whose absence caused it, not just that one occurred.
+            self::assertTrue(
+                $probe->failedOnTheMissingParent(),
+                'Loading the parent did not fail on its own missing parent',
+            );
             self::assertSame(1, $metrics->get('design.dit:App\Local'));
         } finally {
             $probe->stop();
