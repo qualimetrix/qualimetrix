@@ -2389,6 +2389,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0063-one-declaration-answers-about-a-rules-options.md' => 'Analysis.Finding',
         'docs/adr/0050-configuration-refusal-carrier.md' => 'Analysis.Configuration',
         'docs/adr/0059-declared-layer-policy-and-architecture-governance.md' => 'Architecture.Governance',
+        'docs/adr/0065-the-manifest-records-ownership-not-a-migration-schedule.md' => 'Architecture.Governance',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/Evidence/CircularDependency/README.md' => 'Analysis.Evidence.CircularDependency',

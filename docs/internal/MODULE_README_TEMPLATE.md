@@ -13,15 +13,15 @@ not create an empty `Contract/` or internal folder merely to match the template.
 
 ## External consumers and contracts
 
-List every external owner-consumer and the exact contract types it imports. A
-permanent consumer is owner-wide for that exact target contract declaration. Do
-not generalise a declared consumer to a fourth declaration of the same owner. If there are no
-named consumers, state “Private leaf; no external contract” and do not add a
-`Contract/` directory.
+List every external owner-consumer and the exact contract types it imports. An
+owner-wide consumer names no source and covers that exact target contract
+declaration only. Do not generalise a declared consumer to a fourth declaration
+of the same owner. If there are no named consumers, state “Private leaf; no
+external contract” and do not add a `Contract/` directory.
 
-| Consumer owner | Source FQCN (`null` if permanent) | Contract type | `closes_in` | Promise used |
-| -------------- | --------------------------------- | ------------- | ----------- | ------------ |
-|                |                                   |               |             |              |
+| Consumer owner | Source FQCN (`null` if owner-wide) | Contract type | Promise used |
+| -------------- | ---------------------------------- | ------------- | ------------ |
+|                |                                    |               |              |
 
 Internal entities, holders, raw configuration and framework types must not be
 listed as contracts.
@@ -43,10 +43,10 @@ identify the implementation here without relocating the port. Record typed
 phase inputs, outputs and any proven earlier-phase dependency. Do not encode
 ordering through priorities or shared mutable state.
 
-The proposed `Analysis\Run` phase ports are non-binding hypotheses until the P3
-phase-port contract gate accepts their signatures and contract tests. Before
-that gate, document observed dependencies without presenting a proposed port as
-current API.
+`FileSetInspectionParticipantInterface` is the only accepted `Analysis\Run`
+participant port. Record an observed dependency as a dependency: a generic
+lifecycle, graph-preparation or metric-derivation participant port is a
+hypothesis, not current API, and is not documented as one.
 
 | Dependency/port | Owner | Direction | Typed input/output | Why required |
 | --------------- | ----- | --------- | ------------------ | ------------ |
@@ -68,9 +68,9 @@ consumer, deterministic id/order contract and duplicate-id behaviour. Write
 
 ## Composition bindings and locality check
 
-Document a private declaration referenced directly by the composition root as a
-permanent exact `composition_binding`: name its DI source, target, container
-operation, and the coarse qmx pair it retains. A binding is not a public
+Document a private declaration referenced directly by the composition root as an
+exact `composition_binding`: name its DI source, target, container operation,
+and the coarse qmx pair it retains. A binding is not a public
 contract, a general owner permission, or an exemption from the manifest check.
 For every change, confirm that code, tests, fixtures, support, and documentation
 move with their subject; external consumers use declared contracts; and mutable
