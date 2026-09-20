@@ -37,6 +37,10 @@ declare(strict_types=1);
  * from scratch.
  */
 
+use Qualimetrix\Subprocess\ChildProcess;
+
+require_once __DIR__ . '/subprocess/ChildProcess.php';
+
 /** @var list<string> HEALTH_METRICS */
 const HEALTH_METRICS = [
     'health.complexity',
@@ -224,36 +228,49 @@ foreach ($projects as $id => $config) {
     fprintf(STDERR, "  %-25s ", $id);
     $start = microtime(true);
 
-    // Build command with optional disable-rules
-    $cmd = sprintf(
-        'php -d memory_limit=2G %s check %s --format=metrics --workers=0',
-        escapeshellarg($qmxBin),
-        escapeshellarg($path),
-    );
+    // Build command with optional disable-rules. An argument-vector command
+    // needs no shell and therefore no escapeshellarg(): each element reaches
+    // the child exactly as written, which is also what the prior shell string
+    // achieved via escaping.
+    $cmd = [
+        'php',
+        '-d',
+        'memory_limit=2G',
+        $qmxBin,
+        'check',
+        $path,
+        '--format=metrics',
+        '--workers=0',
+    ];
 
     if (isset($config['disable_rules']) && $config['disable_rules'] !== []) {
         foreach ($config['disable_rules'] as $rule) {
-            $cmd .= ' --disable-rule=' . escapeshellarg($rule);
+            $cmd[] = '--disable-rule=' . $rule;
         }
     }
 
-    $cmd .= ' 2>/dev/null';
-
     // Run from the neutral working directory so qmx does not auto-discover the
     // repo's qmx.yaml/composer.json (see the comment above $neutralDir).
-    $process = proc_open($cmd, [1 => ['pipe', 'w']], $pipes, $neutralDir);
-    if (!is_resource($process)) {
-        fprintf(STDERR, "FAILED (could not start analysis, %.1fs)\n", round(microtime(true) - $start, 1));
-        $message = sprintf('%s: could not start analysis', $id);
+    // ChildProcess::run() always captures stderr separately; it is discarded
+    // below, matching the previous `2>/dev/null` shell redirect — this script
+    // never surfaced the child's own stderr.
+    try {
+        $result = ChildProcess::run($cmd, $neutralDir);
+    } catch (RuntimeException $exception) {
+        fprintf(
+            STDERR,
+            "FAILED (could not run analysis, %.1fs): %s\n",
+            round(microtime(true) - $start, 1),
+            $exception->getMessage(),
+        );
+        $message = sprintf('%s: could not run analysis (%s)', $id, $exception->getMessage());
         $failures[] = $message;
         $infrastructureFailures[] = $message;
 
         continue;
     }
-    $output = stream_get_contents($pipes[1]);
-    fclose($pipes[1]);
-    $exitCode = proc_close($process);
-    $json = $output === false ? '' : $output;
+    $json = $result['stdout'];
+    $exitCode = $result['exitCode'];
     $elapsed = round(microtime(true) - $start, 1);
 
     if ($exitCode > 2) {

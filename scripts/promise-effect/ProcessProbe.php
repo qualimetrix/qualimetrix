@@ -28,11 +28,14 @@ declare(strict_types=1);
 namespace Qualimetrix\PromiseEffect;
 
 use FilesystemIterator;
+use Qualimetrix\Subprocess\ChildProcess;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
 use SplFileInfo;
 use Symfony\Component\Yaml\Yaml;
+
+require_once \dirname(__DIR__) . '/subprocess/ChildProcess.php';
 
 final class ProbeFailure extends RuntimeException {}
 
@@ -173,20 +176,28 @@ final class ProcessProbe
             $extraArguments,
         );
 
-        $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
-        $process = proc_open($argv, $descriptors, $pipes, $runDirectory);
-
-        if (!\is_resource($process)) {
-            throw new ProbeFailure('cannot start the product');
+        // ProbeFailure, not the bare RuntimeException run() throws: Stand.php
+        // catches ProbeFailure by name in takeWitnesses() and rootProbe() to
+        // turn a failed launch into a reported failure or a CRASHED
+        // observation instead of an uncaught crash of the whole stand.
+        //
+        // The module's message is carried through verbatim because it is the
+        // only thing that says which failure this was: a launch that never
+        // happened and a stream that died mid-run arrive here as the same
+        // exception class, told apart solely by the prefix run() puts on the
+        // message. Restating it as "cannot start" would report a half-finished
+        // run as one that never began, with no evidence either way.
+        try {
+            $result = ChildProcess::run($argv, $runDirectory);
+        } catch (RuntimeException $failure) {
+            throw new ProbeFailure('the product could not be run: ' . $failure->getMessage(), 0, $failure);
         }
 
-        $stdout = (string) stream_get_contents($pipes[1]);
-        $stderr = (string) stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
+        $stdout = $result['stdout'];
+        $stderr = $result['stderr'];
         // Taken from the process, never from a pipeline's status: a piped exit
         // code is the last command's, and the round has been bitten by that.
-        $exit = proc_close($process);
+        $exit = $result['exitCode'];
         ++$this->runs;
 
         // Step 4, before anything is believed.
