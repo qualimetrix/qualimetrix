@@ -996,13 +996,8 @@ $enforcement = buildEnforcementProjection($manifest, $byName, $observedPairs);
 assertDag($enforcement['allow'], 'generated qmx allow graph');
 validateSeamNecessity($manifest, $byName, $observedPairs);
 $consumerCount = 0;
-$temporaryConsumerCount = 0;
 foreach ($declarations as $entry) {
     $consumerCount += count($entry['consumers']);
-    $temporaryConsumerCount += count(array_filter(
-        $entry['consumers'],
-        static fn(array $consumer): bool => $consumer['closes_in'] !== null,
-    ));
 }
 
 $ownershipRows = [];
@@ -1180,8 +1175,6 @@ $outputs = [
             ['files', (string) count(array_unique(array_column($rows, 'path')))],
             ['semantic_owners', (string) count($owners)],
             ['contract_consumer_entries', (string) $consumerCount],
-            ['temporary_contract_consumer_entries', (string) $temporaryConsumerCount],
-            ['permanent_composition_bindings', (string) count($compositionBindingRows)],
             ['exact_dependency_edges', (string) count($observedPairs)],
             ['cross_owner_imports', (string) count($crossOwnerImports)],
             ['semantic_owner_layers', (string) $enforcement['semantic_owner_layer_count']],
@@ -1279,10 +1272,9 @@ function validateDeclarationEntry(string $fqcn, array $entry, array $declaration
             if ($entry['visibility'] !== 'internal'
                 || $consumer['owner'] !== 'Infrastructure.DependencyInjection'
                 || !is_string($consumer['source_fqcn'])
-                || $consumer['closes_in'] !== null
                 || $consumer['operations'] === []
             ) {
-                fail("composition_binding {$fqcn}#{$index} must permanently authorize an exact DI source to an internal target");
+                fail("composition_binding {$fqcn}#{$index} must authorize an exact DI source to an internal target");
             }
             $source = $consumer['source_fqcn'];
             if (!isset($declarations[$source]) || $declarations[$source]['owner'] !== 'Infrastructure.DependencyInjection') {
@@ -1296,8 +1288,11 @@ function validateDeclarationEntry(string $fqcn, array $entry, array $declaration
             continue;
         }
         if (($consumer['relation'] ?? 'import') === 'contract_surface') {
-            if (!is_string($consumer['source_fqcn']) || $consumer['closes_in'] !== null) {
-                fail("contract_surface {$fqcn}#{$index} must name a permanent exact source");
+            // The contract_surface oneOf variant already pins source_fqcn to a non-empty string, so
+            // this cannot fire against schema-valid data; it guards against the schema loosening that
+            // constraint.
+            if (!is_string($consumer['source_fqcn'])) {
+                fail("contract_surface {$fqcn}#{$index} must name an exact source");
             }
             $source = $consumer['source_fqcn'];
             if (!isset($declarations[$source])) {
@@ -1313,13 +1308,14 @@ function validateDeclarationEntry(string $fqcn, array $entry, array $declaration
             $seen[$key] = true;
             continue;
         }
-        $permanentOwnerWide = $consumer['source_fqcn'] === null && $consumer['closes_in'] === null;
-        $permanentExact = is_string($consumer['source_fqcn']) && $consumer['closes_in'] === null;
-        $temporary = is_string($consumer['source_fqcn']) && is_string($consumer['closes_in']);
-        if (!$permanentOwnerWide && !$permanentExact && !$temporary) {
-            fail("consumer {$fqcn}#{$index} must be permanent owner-wide, permanent exact-source, or temporary exact-source");
+        $ownerWide = $consumer['source_fqcn'] === null;
+        $exact = is_string($consumer['source_fqcn']);
+        // Every oneOf variant already pins source_fqcn to null-or-string, so this cannot fire
+        // against schema-valid data; it guards against the schema loosening that constraint.
+        if (!$ownerWide && !$exact) {
+            fail("consumer {$fqcn}#{$index} must be owner-wide or exact-source");
         }
-        if ($permanentExact || $temporary) {
+        if ($exact) {
             $source = $consumer['source_fqcn'];
             if (!isset($declarations[$source])) {
                 fail("exact consumer {$fqcn}#{$index} names unknown source {$source}");
@@ -2397,6 +2393,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0063-one-declaration-answers-about-a-rules-options.md' => 'Analysis.Finding',
         'docs/adr/0050-configuration-refusal-carrier.md' => 'Analysis.Configuration',
         'docs/adr/0059-declared-layer-policy-and-architecture-governance.md' => 'Architecture.Governance',
+        'docs/adr/0065-the-manifest-records-ownership-not-a-migration-schedule.md' => 'Architecture.Governance',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/Evidence/CircularDependency/README.md' => 'Analysis.Evidence.CircularDependency',

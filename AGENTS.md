@@ -65,7 +65,7 @@ capabilities. The tree below is the current physical layout. Governance is
 manifest-first: the versioned internal manifest is authoritative for every
 production declaration and its semantic owner. It
 generates a coarse qmx projection with one layer per owner, no singleton
-enforcement seams, final `external`, and permanent exact composition bindings
+enforcement seams, final `external`, and exact composition bindings
 that retain the coarse owner pairs the projection would otherwise lose. Counts
 live in `docs/internal/generated/modular-architecture/`, never in prose.
 

@@ -44,10 +44,10 @@ collector configuration carrier.
 
 The versioned internal manifest implements the current enforcement model. It
 covers every production declaration, names its semantic owner, and has no
-singleton enforcement seam. Permanent exact composition bindings retain the
-coarse owner pairs the qmx projection would otherwise lose; a permanent binding
-is one observed DI source-to-private target reference, neither a public contract
-nor an owner-wide permission. Generated artifacts are deterministic projections
+singleton enforcement seam. Exact composition bindings retain the coarse owner
+pairs the qmx projection would otherwise lose; such a binding is one observed DI
+source-to-private target reference, neither a public contract nor an owner-wide
+permission. Generated artifacts are deterministic projections
 rather than a second source of truth, and they — not this document — carry the
 counts: see `docs/internal/generated/modular-architecture/`, whose
 `manifest-enforcement-summary.tsv` reports the current declaration, owner,

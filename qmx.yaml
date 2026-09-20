@@ -34,7 +34,7 @@ coupling:
 # `224` did.
 #
 # qmx layers intentionally enforce only the coarse owner/seam DAG. Exact
-# internal visibility, contract consumers and temporary source-to-target grants
+# internal visibility, contract consumers and exact source-to-target grants
 # are validated by `composer architecture:check` before self-analysis; a coarse
 # qmx allow never authorises an unlisted exact import.
 #

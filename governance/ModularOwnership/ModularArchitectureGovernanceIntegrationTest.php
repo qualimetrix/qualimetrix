@@ -63,10 +63,10 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function itPublishesOnlyPermanentExactCompositionBindingsForDiInternals(): void
+    public function itPublishesOnlyExactCompositionBindingsForDiInternals(): void
     {
         $manifest = $this->manifest();
-        self::assertSame(3, $manifest['version']);
+        self::assertSame(4, $manifest['version']);
         self::assertArrayNotHasKey('temporary_internal_grants', $manifest);
 
         $bindings = [];
@@ -77,7 +77,6 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
                 }
                 self::assertSame('internal', $declaration['visibility']);
                 self::assertSame('Infrastructure.DependencyInjection', $consumer['owner']);
-                self::assertNull($consumer['closes_in']);
                 self::assertNotEmpty($consumer['operations']);
                 self::assertArrayHasKey($consumer['source_fqcn'], $manifest['declarations']);
                 self::assertNotSame($consumer['source_fqcn'], $target);
