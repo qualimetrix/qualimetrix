@@ -35,6 +35,7 @@ src/Reporting/Formatter/FormatterRegistry.php	Qualimetrix\Reporting\Formatter\Fo
 src/Reporting/Formatter/FormatterRegistryInterface.php	Qualimetrix\Reporting\Formatter\FormatterRegistryInterface	"output projection"	Reporting
 src/Reporting/Formatter/GitLabCodeQualityFormatter.php	Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter	"output projection"	Reporting
 src/Reporting/Formatter/GithubActionsFormatter.php	Qualimetrix\Reporting\Formatter\GithubActionsFormatter	"output projection"	Reporting
+src/Reporting/Formatter/Health/HealthCoverageNarrator.php	Qualimetrix\Reporting\Formatter\Health\HealthCoverageNarrator	"output projection"	Reporting
 src/Reporting/Formatter/Health/HealthTextFormatter.php	Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter	"output projection"	Reporting
 src/Reporting/Formatter/Html/HtmlDebtCalculator.php	Qualimetrix\Reporting\Formatter\Html\HtmlDebtCalculator	"output projection"	Reporting
 src/Reporting/Formatter/Html/HtmlFindingPartitioner.php	Qualimetrix\Reporting\Formatter\Html\HtmlFindingPartitioner	"output projection"	Reporting
@@ -70,7 +71,6 @@ src/Reporting/GraphProjection/DotExporterOptions.php	Qualimetrix\Reporting\Graph
 src/Reporting/GraphProjection/JsonGraphExporter.php	Qualimetrix\Reporting\GraphProjection\JsonGraphExporter	"output projection"	Reporting
 src/Reporting/GraphProjection/NamespaceFilter.php	Qualimetrix\Reporting\GraphProjection\NamespaceFilter	"output projection"	Reporting
 src/Reporting/GroupBy.php	Qualimetrix\Reporting\GroupBy	"output projection"	Reporting
-src/Reporting/Health/HealthCoverageNarrator.php	Qualimetrix\Reporting\Health\HealthCoverageNarrator	"output projection"	Reporting
 src/Reporting/Health/HealthHintProjector.php	Qualimetrix\Reporting\Health\HealthHintProjector	"output projection"	Reporting
 src/Reporting/Health/HealthScoreResolver.php	Qualimetrix\Reporting\Health\HealthScoreResolver	"output projection"	Reporting
 src/Reporting/Health/SummaryEnricher.php	Qualimetrix\Reporting\Health\SummaryEnricher	"run orchestration"	Reporting

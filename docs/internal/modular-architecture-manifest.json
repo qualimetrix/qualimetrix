@@ -1946,7 +1946,7 @@
         {
           "owner": "Reporting",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Reporting\\Health\\HealthCoverageNarrator",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Health\\HealthCoverageNarrator",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\HealthCoverage"
         },
         {
@@ -1969,7 +1969,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Health\\HealthCoverageNarrator"
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Health\\HealthCoverageNarrator"
         }
       ]
     },
@@ -17307,8 +17307,8 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Reporting\\Health\\HealthCoverageNarrator": {
-      "path": "src/Reporting/Health/HealthCoverageNarrator.php",
+    "Qualimetrix\\Reporting\\Formatter\\Health\\HealthCoverageNarrator": {
+      "path": "src/Reporting/Formatter/Health/HealthCoverageNarrator.php",
       "kind": "class",
       "owner": "Reporting",
       "visibility": "internal",

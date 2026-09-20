@@ -2405,6 +2405,7 @@ Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter	Reporting	Qualimetrix
 Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter	Reporting	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
 Qualimetrix\Reporting\Formatter\GithubActionsFormatter	Reporting	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
 Qualimetrix\Reporting\Formatter\GithubActionsFormatter	Reporting	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
+Qualimetrix\Reporting\Formatter\Health\HealthCoverageNarrator	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage	Analysis.Evidence.ComputedMetrics.Health	contract
 Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem	Analysis.Evidence.ComputedMetrics.Health	contract
 Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore	Analysis.Evidence.ComputedMetrics.Health	contract
 Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter	Reporting	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract
@@ -2473,7 +2474,6 @@ Qualimetrix\Reporting\GraphProjection\DotExporter	Reporting.GraphProjection	Qual
 Qualimetrix\Reporting\GraphProjection\DotExporter	Reporting.GraphProjection	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
 Qualimetrix\Reporting\GraphProjection\JsonGraphExporter	Reporting.GraphProjection	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	contract
 Qualimetrix\Reporting\GraphProjection\NamespaceFilter	Reporting.GraphProjection	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
-Qualimetrix\Reporting\Health\HealthCoverageNarrator	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage	Analysis.Evidence.ComputedMetrics.Health	contract
 Qualimetrix\Reporting\Health\HealthHintProjector	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Metadata\HealthMetricMetadataCollection	Analysis.Evidence.ComputedMetrics.Health	contract
 Qualimetrix\Reporting\Health\HealthHintProjector	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Metadata\HealthMetricMetadataProviderInterface	Analysis.Evidence.ComputedMetrics.Health	contract
 Qualimetrix\Reporting\Health\HealthScoreResolver	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown	Analysis.Evidence.ComputedMetrics.Health	contract

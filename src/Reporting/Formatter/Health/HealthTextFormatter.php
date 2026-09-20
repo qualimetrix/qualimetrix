@@ -15,7 +15,6 @@ use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
-use Qualimetrix\Reporting\Health\HealthCoverageNarrator;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
 use Qualimetrix\Reporting\Report;
 

@@ -35,14 +35,15 @@ remove a link it cannot identify rather than deleting someone else's hook.
   entry or a baseline key naming the old namespace has to be respelled — this
   repository's own ratchet carried one, and renaming it was the whole edit.
 
-- `Qualimetrix\Reporting\Formatter\Support` is gone. It held four unrelated
-  subjects under a name that answered nothing. `AnsiColor` moved to
+- `Qualimetrix\Reporting\Formatter\Support` is gone; it was a name that
+  answered nothing over classes with nothing in common. `AnsiColor` moved to
   `...\Formatter\Ansi`, `FindingSorter` to `...\Formatter\Ordering`, and
   `DetailedFindingRenderer`, `FindingDetailRenderer` and
   `DebtBreakdownRenderer` — the `--detail` block — to `...\Formatter\Detail`.
-  `AcceptedLevelNarrator` and `CoverageNarrator` moved up into
-  `...\Formatter` itself, and `HealthCoverageNarrator` to
-  `Qualimetrix\Reporting\Health`, beside the contract it narrates. Class
+  The three narrators went to their consumers instead of to a directory of
+  their own: `AcceptedLevelNarrator` and `CoverageNarrator` up into
+  `...\Formatter`, `HealthCoverageNarrator` into `...\Formatter\Health`
+  beside the only formatter that asks it. Class
   names and behaviour are unchanged, and no channel name, rule name, metric
   key, CLI flag, output field or exit code is affected. Two things a consumer
   does have to respell, both for the same reason — the namespace they name no

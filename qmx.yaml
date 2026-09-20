@@ -1037,6 +1037,7 @@ architecture:
         - 'Qualimetrix\Reporting\Formatter\FormatterRegistryInterface'
         - 'Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter'
         - 'Qualimetrix\Reporting\Formatter\GithubActionsFormatter'
+        - 'Qualimetrix\Reporting\Formatter\Health\HealthCoverageNarrator'
         - 'Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter'
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlDebtCalculator'
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlFindingPartitioner'
@@ -1063,7 +1064,6 @@ architecture:
         - 'Qualimetrix\Reporting\Formatter\TextFormatter'
         - 'Qualimetrix\Reporting\Formatter\TextVerboseFormatter'
         - 'Qualimetrix\Reporting\GroupBy'
-        - 'Qualimetrix\Reporting\Health\HealthCoverageNarrator'
         - 'Qualimetrix\Reporting\Health\HealthHintProjector'
         - 'Qualimetrix\Reporting\Health\HealthScoreResolver'
         - 'Qualimetrix\Reporting\Health\SummaryEnricher'
@@ -1429,8 +1429,9 @@ rules:
         # CBO, children, and every other coupling channel active.
         - '[Q]ualimetrix\Analysis\Policy\Inline\Contract'
         # The Reporting vocabulary root, 16 against an inclusive 16. This is
-        # the same namespace-granularity artefact recorded two entries above,
-        # and here the run says so outright: `coupling.cbo` moves 15 -> 16
+        # the same namespace-granularity artefact the
+        # `Analysis\Configuration\Contract` entry in this list records, and
+        # here the run says so outright: `coupling.cbo` moves 15 -> 16
         # while `coupling.ca` (12) and `coupling.ce` (57) do not move at all.
         # No class gained or lost an edge; only the number of namespaces those
         # same edges are spread over changed. Measured with

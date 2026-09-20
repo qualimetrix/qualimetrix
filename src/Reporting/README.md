@@ -45,8 +45,7 @@ Reporting/
 ├── Health/                                 # Health output assembly over capability contracts
 │   ├── HealthScoreResolver.php            # Selects project/namespace/class contract values
 │   ├── SummaryEnricher.php                # Assembles Report, debt, and impact
-│   ├── HealthHintProjector.php             # Projects Health metadata for HTML
-│   └── HealthCoverageNarrator.php          # What share of its subject a health score was computed over
+│   └── HealthHintProjector.php             # Projects Health metadata for HTML
 ├── FindingProjection/                      # Ordered user-visible finding projection
 │   ├── Contract/                          # Framework-free Git scope port and request/result
 │   ├── FindingProjectionOptions.php      # Immutable projection controls
@@ -97,7 +96,8 @@ Reporting/
     │   ├── SarifFormatter.php             # SARIF 2.1.0
     │   └── SarifRuleCollector.php         # Collects rule metadata for SARIF tool component, joined from ChannelPresentationInterface
     ├── Health/
-    │   └── HealthTextFormatter.php         # Text-based health report with scores and decomposition
+    │   ├── HealthTextFormatter.php         # Text-based health report with scores and decomposition
+    │   └── HealthCoverageNarrator.php      # What share of its subject a health score was computed over
     ├── Html/
     │   ├── HtmlFormatter.php              # Interactive HTML report with D3 treemap
     │   ├── HtmlTreeBuilder.php            # Builds namespace tree from MetricRepository

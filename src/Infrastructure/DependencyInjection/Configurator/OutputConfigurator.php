@@ -147,27 +147,34 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
 
         // Auto-register all formatters from src/Reporting/Formatter/ (recursive)
         // Classes implementing FormatterInterface will be auto-tagged via registerForAutoconfiguration
-        // Ansi/ is excluded because AnsiColor takes a bool the container cannot supply. The
-        // other subject directories under Formatter/ are autowirable and register normally.
-        // A stale path in this exclude is silent: the extra services compile, autowiring
-        // failures are deferred to instantiation, and unused private services are removed
-        // before one can surface. RegisterClassesExcludesNameSomethingTest is what refuses one.
+        //
+        // The exclusion criterion, so that it is applied rather than argued each
+        // time: a class is excluded only when the container cannot build it, or
+        // when it is built by hand below. `Ansi/` is the first — `AnsiColor`
+        // takes a bool nothing can supply — and `FormatterRegistry` is the
+        // second. A static-only helper is neither: registering one costs an
+        // unused private definition that is removed before compilation, which
+        // is why the narrators and the sorters are simply left alone.
+        //
+        // A stale path in this exclude is silent: the extra services compile,
+        // autowiring failures are deferred to instantiation, and unused private
+        // services are removed before one can surface.
+        // RegisterClassesExcludesNameSomethingTest is what refuses one.
         $prototype = (new Definition())->setAutoconfigured(true)->setAutowired(true);
         $loader->registerClasses(
             $prototype,
             'Qualimetrix\\Reporting\\Formatter\\',
             $this->srcDir . '/Reporting/Formatter/{*,**/*}',
-            $this->srcDir . '/Reporting/Formatter/{*Interface.php,FormatterRegistry.php,Ansi/**}',
+            $this->srcDir . '/Reporting/Formatter/{FormatterRegistry.php,Ansi/**}',
         );
 
         // Auto-register health scoring services from src/Reporting/Health/
-        // HealthCoverageNarrator is static-only prose about a contract value, not a service.
+        // No exclude: every class here is an autowirable service.
         $healthPrototype = (new Definition())->setAutoconfigured(true)->setAutowired(true);
         $loader->registerClasses(
             $healthPrototype,
             'Qualimetrix\\Reporting\\Health\\',
             $this->srcDir . '/Reporting/Health/*',
-            $this->srcDir . '/Reporting/Health/HealthCoverageNarrator.php',
         );
 
         // FormatterRegistry will be populated by compiler pass

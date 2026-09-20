@@ -56,6 +56,14 @@ use SplFileInfo;
  */
 final class RegisterClassesExcludesNameSomethingTest extends TestCase
 {
+    /**
+     * Exclude members the sweep reached when this floor was taken, over 24
+     * `registerClasses()` calls. Twenty-one of them are the names inside the
+     * Baseline exclusion, which reached the sweep only once concatenated
+     * arguments were joined.
+     */
+    private const int EXPECTED_MEMBERS = 26;
+
     #[Test]
     public function itRefusesAnExcludeMemberThatNamesNoFile(): void
     {
@@ -155,11 +163,18 @@ final class RegisterClassesExcludesNameSomethingTest extends TestCase
             }
         }
 
-        self::assertGreaterThan(0, $members, \sprintf(
-            'Of %d registerClasses() call(s) the sweep reached %d exclude member(s); zero means the '
-            . 'literal shape changed and the other case is green about nothing.',
+        // A floor rather than a ceiling: a new exclusion is a normal change and
+        // must not redden this, while a shrinking sample is either a deliberate
+        // removal to re-take or the literal shape changing underneath the sweep.
+        // Both deserve a reader.
+        self::assertGreaterThanOrEqual(self::EXPECTED_MEMBERS, $members, \sprintf(
+            'Of %d registerClasses() call(s) the sweep reached %d exclude member(s), below the %d it '
+            . 'reached when this floor was taken. Either an exclusion was removed — say so by moving '
+            . 'the floor — or the literal shape changed and the other case is now green about less '
+            . 'than it was.',
             $calls,
             $members,
+            self::EXPECTED_MEMBERS,
         ));
     }
 
