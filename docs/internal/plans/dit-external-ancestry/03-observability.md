@@ -13,8 +13,8 @@ a user sees.
 Designing the channel now would fix a shape before its distribution is known.
 The one measurement in hand says the states are not evenly spread and depend on
 the install: for qmx on its own `src/`, 7 of 7 chains reach a root and the other
-two states are empty; for a library inside a shared vendor, 18 reach a root,
-3 break partway and 1 has no map. A channel justified by the second shape may
+two states are empty; for a library inside a shared vendor, 20 reach a root,
+1 breaks partway and 1 has no map. A channel justified by the second shape may
 be noise in the first.
 
 So the first work item is a count, not a design: after stage 02 lands, run the
@@ -31,6 +31,13 @@ corpus and record the distribution of the three states per project. Then choose.
 Before inventing a key, sweep `Analysis\Run` and the formats for the existing
 "incomplete" shape and say whether DIT's case fits it. A new key that
 duplicates an existing verdict is a second vocabulary for one idea.
+
+## One distinction stage 02 hands over
+
+`NoMapForIt` means the run found no autoload map at all — a normal state for a
+project analysed without an install. "The map exists and has no entry for this
+name" is a different answer and belongs to `BrokeAt`. Whatever channel is
+chosen must not merge them back together.
 
 ## Constraint carried from stage 02
 

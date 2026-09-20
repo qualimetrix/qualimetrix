@@ -2,86 +2,126 @@
 
 ## Premise, measured
 
-After #111 the per-file resolver's return value is published nowhere. A
-sentinel `return 99` in `InheritanceDepthCollector::resolveExternalClassDit()`,
-checked across **every** `design.dit` key — class level, `.avg`, `.max`,
-`.p95`, `.count` — leaves the output byte-identical on both fixtures.
+After #111 the per-file resolver's return value reaches no published surface.
+A sentinel `return 99` in
+`InheritanceDepthCollector::resolveExternalClassDit()`, checked across **every**
+`design.dit` key — class level, `.avg`, `.max`, `.p95`, `.count` — leaves the
+output byte-identical on both fixtures.
 
-It is dead by result and alive by execution: `calculateDit()` still calls it,
-so the tool still loads analysed-project classes inside the parallel workers.
-Deleting it removes real foreign-code execution, not dead arithmetic.
+Precisely: the value *is* carried into the repository by
+`getClassesWithMetrics()` through `FileProcessor::extractClassMetrics()`. What
+does not survive is the depth, which `DitGlobalCollector` overwrites. The key
+survives and is load-bearing — it is what marks the population. So "publishes
+nothing" is about the number, not about the write.
 
-> The first version of this measurement grepped only the exact key
-> `"design.dit"` and concluded the resolver was unobservable. It was observable
-> through the aggregates. Any repeat of this check reads every key.
+It is dead by result and alive by execution, and by more than the global pass:
+both collectors instrumented on `benchmarks/vendor/symfony/http-kernel`
 
-## Second defect in the same method
+| collector | calls   |
+| --------- | ------- |
+| per-file  | **195** |
+| global    | 40      |
 
-`DitGlobalCollector::calculateDit()` treats "not a key in `$parentMap`" as
-"outside the project". A parent that is itself a root has no `parentMap` entry,
-so in-project classes are sent to `class_exists()`. Measured on qmx's own
-`src/`: of 7 distinct parents reaching external resolution, 2 are Qualimetrix's
-own classes (`AbstractCollector`, `AbstractRule`).
+The pass that publishes no depth runs roughly five times more foreign code than
+the one that does, and it runs it inside the parallel workers.
 
-The project's class universe — not the parent map — answers "is this ours".
+> An earlier version of this measurement grepped only the exact key
+> `"design.dit"` and concluded the resolver was unobservable; it was observable
+> through the aggregates. Any repeat reads every key.
+
+## The second defect, in `DitGlobalCollector::calculateDit()`
+
+It treats "not a key in `$parentMap`" as "outside the project". A parent that
+is itself a root has no `parentMap` entry, so in-project classes are sent to
+`class_exists()`. This is not a corner:
+
+| tree                                    | external-resolution calls naming an in-project class |
+| --------------------------------------- | ---------------------------------------------------- |
+| `benchmarks/vendor/symfony/http-kernel` | **25 of 40 (62%)**                                   |
+| the whole `finding-gate` corpus         | **3 of 3 (100%)**                                    |
+
+The per-file collector has the same confusion in its own `calculateDit()`,
+where a parent absent from the current file is assumed external. Deleting its
+resolver settles that half by removing the branch entirely.
 
 ## Contracts
 
 ```
 InheritanceDepthCollector
-  - resolveExternalClassDit()   deleted
-  - calculateReflectionDit()    deleted with it
-  calculateDit() returns 1 for a parent it cannot see in the file
+  resolveExternalClassDit()   deleted
+  calculateReflectionDit()    deleted with it
+  calculateDit()              a parent it cannot see in this file scores 1
 
 DitGlobalCollector::calculateDit(...)
-  a parent present in the class universe but absent from $parentMap
-    -> it is an in-project root: depth 0, no external resolution
-  a parent absent from the universe
-    -> still resolveExternalClassDit() in this stage; stage 02 replaces its body
+  parent in the class universe, absent from $parentMap
+      -> in-project root: depth 0, no external resolution
+  parent absent from the universe
+      -> resolveExternalClassDit() still, its body replaced in stage 02
 ```
 
-The universe comes from what the collector already iterates
-(`$repository->all(SymbolLevel::Class_)`), collected once per run rather than
-per lookup. Verify against `DependencyGraphInterface::getAllClasses()` and use
-whichever actually contains a class carrying no dependency edges — an attribute
-class with no edges is the shape that breaks the wrong choice.
+**The universe must be chosen by measurement, not by name.** Both candidates
+are plausible and they differ exactly where it matters: a class carrying no
+dependency edge at all. `DependencyGraphInterface::getAllClasses()` may be
+built from edge endpoints, in which case an edgeless class — a bare attribute
+class is the common shape — is absent from it, is judged "external", and after
+stage 02 scores 0 for a reason no one can see. `$repository->all(Class_)` is
+the set the collector already iterates and cannot omit a measured class.
+
+Acceptance before the choice is fixed: a fixture holding an attribute class
+with no dependencies must keep its depth under both the old and the new code.
+If `getAllClasses()` drops it, that settles the choice.
 
 ## Enumeration this stage relies on
 
-"Nothing consumes the per-file resolver." Obtained by sentinel over every
-`design.dit` key on two fixtures, plus the reading that `getClassesWithMetrics()`
-writes the class-level value the global pass overwrites.
+"Nothing consumes the per-file resolver's value." Obtained by sentinel over
+every `design.dit` key, plus reading the path from `getClassesWithMetrics()`
+through `FileProcessor` to the global overwrite.
 
-Blind spots, named because they are what a sentinel cannot see: it proves the
-*value* unused, not the *call* unmade; and two fixtures are not the corpus. A
-run over `src/` and one benchmark project closes the second before the work
-lands.
+Blind spots, named: a sentinel proves the *value* unused, not the *call*
+unmade; and fixtures are not the corpus. Both are closed before the work lands
+by repeating it over `src/` and one benchmark project.
+
+## The gate cannot see this work, and that is the first thing to fix
+
+Measured: across all nineteen `finding-gate` corpus cases, external resolution
+is entered **three times, for one FQCN** — `Corpus\Design\Hierarchy\Base`,
+which is in-project and only arrives there because of the universe defect.
+There is no case in the corpus whose class extends a genuinely external parent.
+
+So after this stage the corpus enters external resolution **zero** times, and
+stage 02 could replace the mechanism entirely under a fully green gate. A DoD
+resting on that gate would be resting on a check that cannot redden.
+
+**Therefore the corpus case comes first, before either stage's code.** The
+`design` case gains a class whose parent lives outside the analysed path, with
+the parent supplied inside the case (the corpus is external to the project by
+rule — a case must never point at `src/`). That case is what makes the gate
+able to answer anything about this campaign at all.
 
 ## Test plan
 
-- The per-file collector no longer consults any autoloader. `UnloadableClassProbe`
-  is the oracle and the assertion flips from `queryCount() === 1` to `0`; the
-  message flips meaning with it, so it is rewritten rather than edited.
-- `failedOnTheMissingParent()` becomes false for the per-file path. That is the
-  intended reversal, stated in the PR, not quietly adjusted.
-- `UnloadableExternalParentRunTest` still covers the **global** pass, which
-  still loads in this stage. Check first whether the case distinguishes the two
-  collectors today; if it does not, it is the run test that must gain the
-  distinction, because otherwise deleting one of them leaves it green.
-- New: an in-project parent that is a root must not reach external resolution —
-  the probe's `queryCount()` stays 0 while the class still scores its depth.
+- The per-file pass consults no autoloader: `UnloadableClassProbe`'s
+  `queryCount()` flips from 1 to 0, and the assertion message is rewritten
+  rather than edited, because its meaning inverts.
+- `failedOnTheMissingParent()` becomes false on that path. Stated in the PR as
+  the intended reversal of the oracle, not quietly adjusted.
+- `UnloadableExternalParentRunTest` covers the global pass, which still loads
+  here. Check first whether the case can tell the two collectors apart; if it
+  cannot, it must gain that distinction in this stage, or deleting one of them
+  leaves it green for the wrong reason.
+- An in-project root parent reaches no autoloader while still scoring its
+  depth.
+- The edgeless-attribute-class fixture above.
 
 ## Definition of Done
 
-1. Sentinel measurement repeated over `src/` and one benchmark project before
-   removal, not only on fixtures.
-2. `composer check` green in full.
-3. `composer gate -- --reference=<the commit this stage starts from>`. The gate
-   base is clean since #112, so a delta here is this stage's alone and can be
-   declared. Expected shape: only in-project root parents that scored `1 + 0`
-   through a load and now score the same without one — that is, **GREEN or
-   near-GREEN**. Anything on `metrics`/`html` beyond that means the universe
-   fix is doing more than intended, and is a finding rather than a row to
+1. The gate corpus case exists and is shown to enter external resolution.
+2. Sentinel repeated over `src/` and one benchmark project, not only fixtures.
+3. `composer check` green in full.
+4. `composer gate -- --reference=<this stage's base>`: with the new case in
+   place the run can see the change. Expected shape is the in-project root
+   parents that scored `1 + 0` through a load and now score the same without
+   one. Anything beyond that on `metrics`/`html` is a finding, not a row to
    declare.
-4. `composer benchmark:check`.
-5. Review of the stage, not only of the campaign.
+5. `composer benchmark:check`.
+6. Review of the stage.

@@ -13,15 +13,24 @@ time bound and no memory bound.
 
 ## What the measurements say
 
-|                                    |                                                   |
-| ---------------------------------- | ------------------------------------------------- |
-| calls across 10 benchmark projects | 326, over 90 distinct parents                     |
-| of those, resolved                 | 172 — **170 from the tool's own vendor**          |
-| of those, actually deepening DIT   | 7 calls, **2 distinct classes**                   |
-| qmx analysing its own `src/`       | 7 distinct parents, **2 of them its own classes** |
+|                                                      |                                                    |
+| ---------------------------------------------------- | -------------------------------------------------- |
+| loading calls on one project (`symfony/http-kernel`) | **195 per-file + 40 global**                       |
+| across 10 benchmark projects, global pass only       | 326 calls over 90 distinct parents                 |
+| of those, resolved                                   | 172 — **170 from the tool's own vendor**           |
+| of those, actually deepening DIT                     | 7 calls, **2 distinct classes**                    |
+| calls naming a class *inside* the analysed path      | 25 of 40 on http-kernel; 3 of 3 in the gate corpus |
 
-So the mechanism executes analysed-project code 326 times to change 7 answers,
-and its answers come from the tool's dependency tree rather than the project's.
+So the mechanism executes analysed-project code to change very few answers, and
+those come from the tool's dependency tree rather than the project's. A large
+share of the calls are not about external classes at all: they are in-project
+parents misrouted by a second defect, which stage 01 settles.
+
+The 326 figure counted only the global pass. The per-file pass, which publishes
+no depth and runs inside the parallel workers, makes roughly five times more
+calls than that, so the case for stage 01 is stronger than the first draft of
+this page claimed.
+
 
 **One correction the ADR must carry.** When qmx is installed as a dependency of
 the analysed project, the tool's vendor *is* the project's vendor and today's
@@ -50,14 +59,22 @@ honest shapes and following each chain rather than only locating its first link:
 | shape                                         | rule "nearest `composer.json`" | rule "owner of the enclosing `vendor/`" |
 | --------------------------------------------- | ------------------------------ | --------------------------------------- |
 | qmx on its own `src/` (7 parents)             | 7 reach a root                 | same — it *is* the root                 |
-| a library inside a shared vendor (22 parents) | 8 root, **14 no file**         | 18 root, 3 broke, 1 no file             |
+| a library inside a shared vendor (22 parents) | 8 root, **14 no file**         | 20 root, 1 broke, 1 no file             |
+
 
 Two things follow. The resolution rule is a decision, not a detail: the nearest
 `composer.json` of a package inside `vendor/` describes only that package. And
 a chain can end in **three** ways, not two — reaching a root, finding no map at
 all, or breaking partway, measured on
-`Symfony\Component\HttpFoundation\ResponseHeaderBag` (depth 1, then its
+`Symfony\Component\DependencyInjection\Kernel\FileLocator` (depth 1, then its
 parent's file is absent). Today all three are reported as the same `0`.
+
+A first version of that count said three chains broke, and two of the three
+were a defect in the measuring prototype, which took the parent name as written
+instead of resolving it: `class ResponseHeaderBag extends HeaderBag` came back
+as the bare `HeaderBag` and located nothing. Corrected, one chain breaks. The
+same mistake would become product behaviour if the implementation repeated it,
+so stage 02 carries name resolution as a requirement rather than a footnote.
 
 ## Stages
 
@@ -68,7 +85,12 @@ parent's file is absent). Today all three are reported as the same `0`.
 | [03 — observability](03-observability.md) | make the three chain outcomes distinguishable                                                                   |
 
 Stage 01 is measurable without any parser and proves deletion is safe; it is
-also the cheapest thing to review. Stage 03 is deliberately last: its channel
+also the cheapest thing to review. It carries one item that is not about
+deletion and blocks everything after it: **the gate corpus does not exercise
+external resolution**. Measured across all nineteen cases, that path is entered
+three times, for one in-project name. A corpus case must exist before either
+stage can claim a gate result — otherwise stage 02 replaces the whole mechanism
+under a green gate that never looked at it. Stage 03 is deliberately last: its channel
 should be designed against a measured distribution of the three states, not
 before one exists.
 
