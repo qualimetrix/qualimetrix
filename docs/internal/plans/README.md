@@ -4,6 +4,7 @@ This index lists only work that is executable on the current tree.
 
 | Campaign                                                         | Status                                                                              |
 | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| [Phar distribution](phar-distribution/00-overview.md)            | Planned; stage 01 written, P0 not started; stage 02 written when 01 lands           |
 | [Control tooling](control-tooling/00-overview.md)                | Planned; three review rounds; stage 01 not started                                  |
 | [Health recalibration](health-recalibration/00-overview.md)      | In progress; three review rounds; instruments, corpus, model and calibration landed |
 | [Rules listing](rules-listing/01-one-declaration-two-readers.md) | Three review rounds; landed, pending review                                         |
