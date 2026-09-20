@@ -83,9 +83,9 @@ use Throwable;
  * - An empty command is not this class's failure to report. `run([])` raises
  *   PHP's own `ValueError` from `proc_open()`, and `run('')` starts a shell
  *   that does nothing and exits 0. Converting the first into the
- *   `RuntimeException` below was rejected rather than overlooked: several
- *   callers turn that exception into "cannot start the product", so a caller
- *   with a bug in how it assembled its argv would be told its launch failed.
+ *   `RuntimeException` below was rejected rather than overlooked: the
+ *   `ValueError` names the argv defect exactly, and folding it in would hide
+ *   that behind the same report any other failed command produces.
  */
 final class ChildProcess
 {

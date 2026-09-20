@@ -27,7 +27,7 @@ declare(strict_types=1);
  * Usage: php scripts/promise-effect-corpus.php
  * Exit: 0 when the legitimate-refusal count is zero, 1 when it is greater
  * than zero (offending documents are named), 2 on a probe-protocol failure
- * (a cache directory was ignored, or a process could not be started).
+ * (a cache directory was ignored, or a process did not complete).
  */
 
 namespace Qualimetrix\PromiseEffectCorpus;
@@ -228,12 +228,19 @@ function runProcess(array $command, string $workingDirectory): array
         // ProbeProtocolFailure, not the bare RuntimeException run() throws:
         // main() catches ProbeProtocolFailure by name to stop the corpus run
         // cleanly (exit 2) instead of crashing on an uncaught exception.
-        throw new ProbeProtocolFailure(\sprintf(
-            'Cannot start %s in %s: %s.',
-            implode(' ', $command),
-            $workingDirectory,
-            $error->getMessage(),
-        ));
+        //
+        // Carried whole rather than restated: only run()'s own message
+        // says which of its failures this was.
+        throw new ProbeProtocolFailure(
+            \sprintf(
+                '%s did not complete in %s: %s.',
+                implode(' ', $command),
+                $workingDirectory,
+                $error->getMessage(),
+            ),
+            0,
+            $error,
+        );
     }
 
     return ['exit' => $result['exitCode'], 'stdout' => $result['stdout'], 'stderr' => $result['stderr']];
