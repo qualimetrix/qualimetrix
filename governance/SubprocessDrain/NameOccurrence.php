@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Governance\SubprocessDrain;
 
+use InvalidArgumentException;
 use PhpToken;
 
 /**
@@ -18,6 +19,19 @@ use PhpToken;
  * reading the spelling out of the original instead of answering a boolean —
  * had to be discovered twice, because fixing one copy said nothing about the
  * other.
+ *
+ * ## Callers require this file by path
+ *
+ * The group already asks that of the subprocess module, for a reason that
+ * applies here word for word: an isolated scratch project symlinks `vendor/`,
+ * whose PSR-4 map holds absolute paths back into the source tree, so an
+ * autoloaded class resolves *there* and the copy under test is never read.
+ * That rule used to cover only the module, and moving this mechanism out of the
+ * controls — which PHPUnit loads by path — would have quietly put it back in
+ * reach of that hazard. Measured both ways on such a stand: autoloaded, a
+ * mutation of the copy is ignored and the stand is green on a broken scan;
+ * required by path, `__DIR__` points into the copy, this file is declared
+ * first, and the mutation is what runs.
  *
  * ## Case is folded, and the fold has to preserve byte length
  *
@@ -51,10 +65,14 @@ use PhpToken;
  *
  * ## The names are given in lower case
  *
- * They are the folded spelling, because that is what is searched for. A caller
- * passing `Proc_Open` would match nothing, which is why the callers spell their
- * names in halves and in lower case, and why {@see self::findIn()} is the only
- * thing in this group that lowercases anything.
+ * They are the folded spelling, because that is what is searched for. A name
+ * in any other case could never match, and a name that is empty would match at
+ * every offset while advancing by nothing — so both are refused rather than
+ * answered with an empty result. Silence there is the expensive kind: the
+ * caller asked where a name occurs, and "nowhere" is a truthful answer to a
+ * question that was never asked. Measured within the hour this was written: a
+ * needle spelled `tokenAt(` in a control here matched nothing, and it took a
+ * failing positive case to find out.
  */
 final class NameOccurrence
 {
@@ -72,12 +90,34 @@ final class NameOccurrence
      * Every occurrence of any of `$names`, outside comments, in source order
      * per name.
      *
-     * @param list<string> $names lower-case; anything else matches nothing
+     * @param list<string> $names already folded, and not empty
+     *
+     * @throws InvalidArgumentException a name this scan could never match, so
+     *                                  that a caller hears about it instead of
+     *                                  being answered with silence
      *
      * @return list<self>
      */
     public static function findIn(string $contents, array $names): array
     {
+        foreach ($names as $name) {
+            if ($name === '') {
+                throw new InvalidArgumentException(
+                    'An empty name matches at every offset and advances by nothing, so this scan would spin '
+                    . 'instead of answering. Hanging rather than failing is the defect this group exists to '
+                    . 'refuse; it does not get to arrive through the scan itself.',
+                );
+            }
+
+            if ($name !== strtolower($name)) {
+                throw new InvalidArgumentException(
+                    'The name "' . $name . '" is searched for in a lowercased copy of the file, so a name that '
+                    . 'is not already folded matches nothing anywhere. Answering that with an empty result is '
+                    . 'silence where a caller asked a question: pass the folded spelling.',
+                );
+            }
+        }
+
         $folded = strtolower($contents);
         $found = [];
         $tokens = null;

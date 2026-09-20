@@ -9,6 +9,9 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Subprocess\ChildProcess;
 
+require_once __DIR__ . '/NameOccurrence.php';
+require_once __DIR__ . '/PhpFilePopulation.php';
+
 /**
  * Every file that calls the subprocess module must also `require_once` it by
  * path.
@@ -63,8 +66,9 @@ use Qualimetrix\Subprocess\ChildProcess;
  * {@see NameOccurrence} and folds case, because PHP resolves class and method
  * names without regard to it. The tree spells every call in the class's own
  * casing today, so the fold changes no answer here and is measured on text this
- * control writes instead — which also measures that this control still reaches
- * that scan rather than searching on its own.
+ * control writes instead. That measures behaviour, not delegation: a copy of
+ * the scan written back into this file would answer the same. Keeping the
+ * group to one scan is {@see ScanIsNotReimplementedTest}'s subject.
  *
  * The comment exemption is unchanged, and it now reaches a docblock whatever
  * casing it uses. That widens the set of texts it could excuse rather than

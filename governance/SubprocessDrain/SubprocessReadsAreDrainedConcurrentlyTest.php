@@ -9,6 +9,9 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Subprocess\ChildProcess;
 
+require_once __DIR__ . '/NameOccurrence.php';
+require_once __DIR__ . '/PhpFilePopulation.php';
+
 /**
  * Every occurrence of a subprocess-spawning function's name in a PHP file this
  * repository ships or runs must be either inside
@@ -70,9 +73,11 @@ use Qualimetrix\Subprocess\ChildProcess;
  *
  * What stays here is what this control makes of an occurrence: the `file:line`
  * it declares by, the label it prints, and the case below, which measures that
- * this control still reaches that scan. That case is not a copy of the scan's
- * own — remove the fold and both go red, but replace this control's call to
- * the scan with a search of its own and only this one does.
+ * the search behind this control still folds case and still reads the bytes
+ * back out of the original. It measures behaviour and not delegation — a copy
+ * of the scan pasted back in here would satisfy it, measured — so that the
+ * search is *this group's one scan* is refused separately, by
+ * {@see ScanIsNotReimplementedTest}.
  *
  * Folding widens the population of matches by exactly one occurrence today,
  * and that occurrence is not a call: a test method name whose camelCase seam

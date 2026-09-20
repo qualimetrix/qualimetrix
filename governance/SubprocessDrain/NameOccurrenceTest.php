@@ -4,18 +4,24 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Governance\SubprocessDrain;
 
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+
+require_once __DIR__ . '/NameOccurrence.php';
 
 /**
  * The scan both controls in this group read the tree through.
  *
- * Each control keeps its own case over its own needles, and this is not a
- * third copy of those: the two controls prove that *they* still reach this
- * scan, which a case here could never show, and this proves the properties
- * neither control can observe through its own needles — a name inside a nowdoc,
- * a name inside a string literal, and the line an occurrence reports when the
- * token it sits in began several lines above it.
+ * Each control keeps its own case over its own needles, and this is not a third
+ * copy of those. The difference is what the evidence rests on. A control
+ * observes the scan through whatever the tree happens to spell today: change
+ * how the line is counted and the drain control does go red, but only because
+ * one entry is anchored at a nowdoc in a file that exists right now, and that
+ * evidence leaves with the file. The cases here put the same properties in
+ * text this class chooses, so they survive the tree changing — a name inside a
+ * nowdoc, a name inside a string literal, the line reported when the token
+ * began several lines above, and the two refusals.
  *
  * The names used here are deliberately not the ones the controls search for.
  * This file is in the scanned population like any other, and a control's needle
@@ -133,17 +139,36 @@ final class NameOccurrenceTest extends TestCase
         );
     }
 
+    /**
+     * Both refusals are about the same thing: a caller asking a question this
+     * scan cannot answer should hear so. Silence is the expensive answer,
+     * because "nowhere" is true of a name that was never searched for, and a
+     * control resting on it goes quietly green. This is not hypothetical — a
+     * needle in this group was spelled `tokenAt(` and matched nothing, and only
+     * a positive case failing revealed it.
+     */
     #[Test]
-    public function itMatchesNothingForANameThatIsNotAlreadyFolded(): void
+    public function itRefusesANameThatIsNotAlreadyFolded(): void
     {
         $source = '<?php' . "\n" . '$a = Needle_Name();' . "\n";
 
-        self::assertSame(
-            [],
-            NameOccurrence::findIn($source, ['Needle_Name']),
-            'Names are searched in a lowercased copy, so a name given in any other case matches nothing at all. '
-            . 'A caller that passed one would get silence rather than a refusal, which is why the callers spell '
-            . 'their needles in lower case and this says so.',
-        );
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Needle_Name');
+
+        NameOccurrence::findIn($source, ['Needle_Name']);
+    }
+
+    /**
+     * An empty name matches at every offset and advances the search by nothing,
+     * so the loop never ends. A control that hangs instead of failing is the
+     * exact defect this group exists to refuse, and it does not get to arrive
+     * through the scan the group reads the tree with.
+     */
+    #[Test]
+    public function itRefusesAnEmptyName(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        NameOccurrence::findIn('<?php' . "\n", ['']);
     }
 }
