@@ -317,6 +317,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             $findingConfiguration = $ruleInputValidator->resolve($document, $input);
             $runtimeConfigurator->configure(
                 $document,
+                self::runConfigurationFor($document),
                 $findingConfiguration,
                 new CacheConfiguration(PathFactory::fromCliArgument('.qmx-cache', $projectRoot), true),
                 new ParallelConfiguration(),
@@ -964,4 +965,11 @@ PHP);
     {
         return new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []);
     }
+    private static function runConfigurationFor(ConfigurationDocument $document): RunConfiguration
+    {
+        $root = $document->workingDirectory();
+
+        return new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: false, authoredPathExcludes: []);
+    }
+
 }

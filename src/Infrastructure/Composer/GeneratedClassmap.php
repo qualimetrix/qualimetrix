@@ -22,6 +22,16 @@ use Throwable;
  */
 final readonly class GeneratedClassmap
 {
+    /**
+     * Parsing builds a syntax tree, which costs a large multiple of the file's
+     * own size -- measured at roughly forty times. A generated classmap has no
+     * upper bound the analysed project is obliged to respect, so a run reads
+     * one up to this size and treats anything larger as no classmap at all: a
+     * shallower depth is a worse answer than an exhausted process, but it is
+     * still an answer.
+     */
+    private const int MAX_BYTES = 8 * 1024 * 1024;
+
     public function __construct(private ClassmapPath $path = new ClassmapPath()) {}
 
     /**
@@ -31,7 +41,9 @@ final readonly class GeneratedClassmap
     {
         $file = rtrim($vendorDirectory, '/') . '/composer/autoload_classmap.php';
 
-        if (!is_file($file)) {
+        $size = is_file($file) ? filesize($file) : false;
+
+        if ($size === false || $size > self::MAX_BYTES) {
             return [];
         }
 

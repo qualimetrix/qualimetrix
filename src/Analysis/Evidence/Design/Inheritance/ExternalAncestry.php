@@ -29,16 +29,16 @@ final class ExternalAncestry
 {
     private const int VISIT_CAP = 64;
 
-    /** @var array<string, ExternalDepth> */
-    private array $answers = [];
-
     public function __construct(private readonly ExternalParentSourceInterface $parents) {}
 
+    /**
+     * Not memoised here on purpose: the source behind the port already caches
+     * each parent lookup, which is the part that reads a file, and a second
+     * cache would be a second thing to invalidate when a run is re-aimed.
+     */
     public function depthOf(string $fqcn): ExternalDepth
     {
-        $normalized = ltrim($fqcn, '\\');
-
-        return $this->answers[$normalized] ??= $this->walk($normalized);
+        return $this->walk(ltrim($fqcn, '\\'));
     }
 
     private function walk(string $fqcn): ExternalDepth

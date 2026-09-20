@@ -78,10 +78,20 @@ inside somebody else's `vendor/` carries a manifest describing only itself.
 Measured on one such package, the nearest-manifest rule placed 8 of 22 parents
 and the enclosing-owner rule placed 20.
 
-The walk up is bounded, and stops at a filesystem root, so a run cannot read the
-configuration of a project that merely happens to contain the analysed path.
+The walk up is bounded by a level cap and by the filesystem root. That bounds
+how far it climbs; it does not confine it to the analysed project. A path with
+no `composer.json` at or under it resolves to the first manifest above it, which
+may belong to a parent repository. The bound is a limit, not a boundary, and
+saying otherwise would promise a containment this does not implement.
 
 ## Consequences
+
+Every command that runs the pipeline aims the reader, because the aiming lives
+in the one call they all make rather than at one call site. That is not
+tidiness: while it was wired only into `check`, `baseline:generate` measured the
+same tree with no install to read and recorded a DIT of 1 where `check`
+reported 2 — a baseline holding a magnitude the check never produces. Review
+found it; a test now holds it.
 
 DIT deepens wherever a chain leaves the analysed path and the install can be
 read. Per-class values move; so do the aggregates that summarise them, and so

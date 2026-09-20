@@ -25,6 +25,13 @@ final readonly class ParentLookup
         return new self(true, null);
     }
 
+    /**
+     * One answer for four causes: the map carries no entry, the file cannot be
+     * read, it cannot be parsed, or it declares some other name. The depth is
+     * the same in every case -- the chain stops here -- so the metric does not
+     * need them apart. A channel that explains *why* a chain stopped would,
+     * and that is the distinction to widen when one exists.
+     */
     public static function notPlaced(): self
     {
         return new self(false, null);

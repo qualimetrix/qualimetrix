@@ -56,7 +56,7 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
         $normalized = ltrim($fqcn, '\\');
 
         if (isset($this->classmap[$normalized])) {
-            return $this->classmap[$normalized];
+            return $this->within($this->classmap[$normalized]);
         }
 
         foreach ($this->psr4 as $prefix => $directories) {
@@ -67,9 +67,39 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
             $relative = str_replace('\\', '/', substr($normalized, \strlen($prefix))) . '.php';
 
             foreach ($directories as $directory) {
-                if (is_file($directory . '/' . $relative)) {
-                    return $directory . '/' . $relative;
+                $candidate = $this->within($directory . '/' . $relative);
+
+                if ($candidate !== null && is_file($candidate)) {
+                    return $candidate;
                 }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The same path, or null when it lies outside every project this run may
+     * read.
+     *
+     * The values behind these paths come from files the analysed tree controls:
+     * an `install-path` or a psr-4 target may contain `..`, and a classmap
+     * entry is whatever was generated into it. Without this the map would hand
+     * back a path anywhere on the machine and the reader would open it. The old
+     * mechanism had the same exposure and worse -- it executed what it found --
+     * but that is a reason to state the boundary, not to inherit the silence.
+     */
+    private function within(string $path): ?string
+    {
+        $resolved = realpath($path);
+
+        if ($resolved === false) {
+            return null;
+        }
+
+        foreach ($this->roots as $root) {
+            if ($resolved === $root || str_starts_with($resolved, $root . '/')) {
+                return $resolved;
             }
         }
 

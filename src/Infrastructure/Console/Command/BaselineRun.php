@@ -66,6 +66,7 @@ final readonly class BaselineRun implements BaselineRunInterface
         // and the two would measure different sets on the same project.
         $this->runtimeConfigurator->configure(
             $document,
+            $configuration,
             $findingConfiguration,
             $cacheConfiguration,
             $parallelConfiguration,

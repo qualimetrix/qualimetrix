@@ -137,6 +137,40 @@ final class DeclaredParentReaderTest extends TestCase
         }
     }
 
+    /**
+     * Aiming the reader at a second tree must not answer from the first.
+     *
+     * Found by review, not by this suite: the reader is a container singleton,
+     * so a second run in one process -- a test suite, or a command that
+     * analyses twice -- would otherwise read the tree it is no longer pointed
+     * at.
+     */
+    #[Test]
+    public function itForgetsTheTreeItWasPointedAtBefore(): void
+    {
+        $this->write('src/Child.php', "<?php\n\nnamespace Fixture;\n\nclass Child extends \\Fixture\\First {}\n");
+
+        $map = new ComposerAutoloadMap();
+        $reader = new DeclaredParentReader($map);
+        $reader->pointAt($this->root, [$this->root . '/src']);
+
+        self::assertSame('Fixture\\First', $reader->parentOf('Fixture\\Child')->parent);
+
+        // The same name, a different tree, a different answer.
+        $second = sys_get_temp_dir() . '/qmx_parent_reader_second_' . bin2hex(random_bytes(6));
+        mkdir($second . '/src', 0o777, true);
+        file_put_contents($second . '/composer.json', (string) json_encode(['autoload' => ['psr-4' => ['Fixture\\' => 'src/']]]));
+        file_put_contents($second . '/src/Child.php', "<?php\n\nnamespace Fixture;\n\nclass Child extends \\Fixture\\Second {}\n");
+
+        try {
+            $reader->pointAt($second, [$second . '/src']);
+
+            self::assertSame('Fixture\\Second', $reader->parentOf('Fixture\\Child')->parent);
+        } finally {
+            self::removeTree($second);
+        }
+    }
+
     private function reader(): DeclaredParentReader
     {
         $map = new ComposerAutoloadMap();

@@ -156,6 +156,76 @@ final class ComposerAutoloadMapTest extends TestCase
     }
 
     /**
+     * The paths in an install are chosen by the tree being analysed: an
+     * `install-path` may contain `..`, and a generated classmap entry is
+     * whatever was written into it. A map that handed those back would have the
+     * reader open a file anywhere on the machine.
+     */
+    #[Test]
+    public function itRefusesAPathThatEscapesTheProject(): void
+    {
+        $outside = \dirname($this->root) . '/qmx_outside_' . bin2hex(random_bytes(6)) . '.php';
+        file_put_contents($outside, "<?php\n\nnamespace Escaped;\n\nclass Secret {}\n");
+
+        $this->writeManifest(['autoload' => ['psr-4' => ['App\\' => 'src/']]]);
+        $this->write('vendor/composer/autoload_classmap.php', \sprintf(
+            "<?php\n\n\$vendorDir = dirname(__DIR__);\n\$baseDir = dirname(\$vendorDir);\n\nreturn array(\n    'Escaped\\\\Secret' => '%s',\n);\n",
+            $outside,
+        ));
+
+        try {
+            $map = new ComposerAutoloadMap();
+            $map->pointAt($this->root, [$this->root . '/src']);
+
+            self::assertNull($map->fileFor('Escaped\\Secret'));
+        } finally {
+            @unlink($outside);
+        }
+    }
+
+    #[Test]
+    public function itRefusesAPsr4TargetThatClimbsOutOfTheProject(): void
+    {
+        $outsideDirectory = \dirname($this->root) . '/qmx_outside_' . bin2hex(random_bytes(6));
+        mkdir($outsideDirectory);
+        file_put_contents($outsideDirectory . '/Secret.php', "<?php\n\nnamespace Escaped;\n\nclass Secret {}\n");
+
+        $this->writeManifest(['autoload' => ['psr-4' => ['Escaped\\' => '../' . basename($outsideDirectory) . '/']]]);
+
+        try {
+            $map = new ComposerAutoloadMap();
+            $map->pointAt($this->root, [$this->root . '/src']);
+
+            self::assertNull($map->fileFor('Escaped\\Secret'));
+        } finally {
+            @unlink($outsideDirectory . '/Secret.php');
+            @rmdir($outsideDirectory);
+        }
+    }
+
+    /**
+     * Parsing costs a multiple of the file's size and the analysed project
+     * chooses that size. A classmap past the cap is read as absent rather than
+     * as a reason to exhaust the process.
+     */
+    #[Test]
+    public function itDeclinesAClassmapTooLargeToParse(): void
+    {
+        $this->writeManifest(['autoload' => ['psr-4' => ['App\\' => 'src/']]]);
+        $file = $this->write('vendor/acme/big/src/Huge.php', "<?php\n\nnamespace Acme;\n\nclass Huge {}\n");
+
+        $padding = str_repeat("// pad\n", 1_300_000);
+        $this->write('vendor/composer/autoload_classmap.php', "<?php\n\n" . $padding . "\n\$vendorDir = dirname(__DIR__);\n\nreturn array(\n    'Acme\\\\Huge' => \$vendorDir . '/acme/big/src/Huge.php',\n);\n");
+
+        $map = new ComposerAutoloadMap();
+        $map->pointAt($this->root, [$this->root . '/src']);
+
+        self::assertGreaterThan(8 * 1024 * 1024, (int) filesize($this->root . '/vendor/composer/autoload_classmap.php'));
+        self::assertNull($map->fileFor('Acme\\Huge'), 'An oversized classmap was parsed anyway');
+        self::assertFileExists($file);
+    }
+
+    /**
      * @param array<string, mixed> $manifest
      */
     private function writeManifest(array $manifest): void

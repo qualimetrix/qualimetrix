@@ -12,6 +12,7 @@ use PhpParser\Parser;
 use PhpParser\ParserFactory;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\Contract\ExternalParentSourceInterface;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\Contract\ParentLookup;
+use Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface;
 use Throwable;
 
 /**
@@ -20,7 +21,7 @@ use Throwable;
  * Placing the file is {@see ComposerAutoloadMap}'s job; this one opens it and
  * parses it. Nothing here loads a class, so no analysed code runs.
  */
-final class DeclaredParentReader implements ExternalParentSourceInterface
+final class DeclaredParentReader implements AnalysedInstallAnchorInterface, ExternalParentSourceInterface
 {
     private readonly Parser $parser;
 
@@ -32,6 +33,19 @@ final class DeclaredParentReader implements ExternalParentSourceInterface
         ?Parser $parser = null,
     ) {
         $this->parser = $parser ?? (new ParserFactory())->createForHostVersion();
+    }
+
+    /**
+     * Aiming a run clears what the last one learned. Without this a second run
+     * in the same process -- a test suite, or a command that analyses twice --
+     * would answer from the tree it is no longer looking at.
+     *
+     * @param list<string> $analysedPaths
+     */
+    public function pointAt(string $projectRoot, array $analysedPaths): void
+    {
+        $this->answers = [];
+        $this->map->pointAt($projectRoot, $analysedPaths);
     }
 
     public function isConfigured(): bool

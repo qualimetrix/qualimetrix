@@ -85,6 +85,6 @@ final class DesignConfigurator implements ContainerConfiguratorInterface
         $container->register(self::NAMESPACE . 'Inheritance\\ExternalAncestry')->setAutowired(true);
 
         $container->setAlias(ExternalParentSourceInterface::class, self::PARENT_READER);
-        $container->setAlias(AnalysedInstallAnchorInterface::class, self::AUTOLOAD_MAP);
+        $container->setAlias(AnalysedInstallAnchorInterface::class, self::PARENT_READER);
     }
 }

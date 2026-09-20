@@ -7,6 +7,7 @@ namespace Qualimetrix\Infrastructure\Console;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
 use Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface;
@@ -54,12 +55,23 @@ final class RuntimeConfigurator
      */
     public function configure(
         ConfigurationDocument $document,
+        RunConfiguration $runConfiguration,
         FindingConfiguration $findingConfiguration,
         CacheConfiguration $cacheConfiguration,
         ParallelConfiguration $parallelConfiguration,
         InputInterface $input,
         OutputInterface $output,
     ): void {
+        // Every command that runs the pipeline passes through here, which is
+        // why the anchor lives in this call rather than at one call site: DIT's
+        // ancestor walk silently reports "no install" for any run that forgot
+        // to aim it, and `baseline:generate` forgetting it means the baseline
+        // records a magnitude `check` never produces.
+        $this->analysedAutoloadMap->pointAt(
+            (string) $runConfiguration->projectRoot,
+            array_map(static fn(object $path): string => (string) $path, $runConfiguration->paths),
+        );
+
         // Pure preflight: no store or external-effect mutation is allowed
         // until every owner has accepted its immutable value.
         $architecturePolicy = $this->analysisRuntimeConfigurator->resolveArchitecturePolicy($document);
@@ -100,22 +112,6 @@ final class RuntimeConfigurator
         }
         $this->progressConfigurator->configure($input, $output);
         $this->configureProfiler($input);
-    }
-
-    /**
-     * Point DIT's ancestor walk at the tree being analysed.
-     *
-     * The anchor is the analysed path rather than the working directory: a
-     * library analysed from inside somebody else's `vendor/` carries a
-     * `composer.json` describing only itself, and anchoring on wherever the
-     * command was invoked would answer from this tool's own install again --
-     * the defect the walk replaced.
-     *
-     * @param list<string> $analysedPaths
-     */
-    public function pointAutoloadMapAt(string $projectRoot, array $analysedPaths): void
-    {
-        $this->analysedAutoloadMap->pointAt($projectRoot, $analysedPaths);
     }
 
     public function clearCacheIfRequested(InputInterface $input): bool
