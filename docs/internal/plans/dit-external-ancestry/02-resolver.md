@@ -162,6 +162,20 @@ and written to disk. Re-taken **after stage 01 lands**, because stage 01 removes
 the in-project names from that set — on http-kernel 25 of 40, on the gate
 corpus 3 of 3. A list taken for one question is not evidence for the next.
 
+## Two registrations the fixture needs when it returns
+
+The `external-parent` corpus case carried a `vendor/` fixture in stage 01 and it
+was removed: nothing read it yet, and a tracked fixture no surface observes is
+the same defect as a suppression that suppresses nothing. It comes back here,
+where the map consumes it — and with it two addresses that are easy to miss:
+
+- `scripts/generate-rename-enumeration.php`, the `finding_gate` surface, has an
+  empty `excludeDirs`. It walks everything under `finding-gate/`, so a `vendor/`
+  fixture's names would start counting toward the rename inventory.
+- whatever else names corpus directories literally — check `.gitignore`
+  negations and `phpstan.neon` `excludePaths` against the new path before
+  assuming the tree is clean, because both fail silently.
+
 ## Test plan
 
 - The corpus case added in stage 01 exercises this path; without it the gate

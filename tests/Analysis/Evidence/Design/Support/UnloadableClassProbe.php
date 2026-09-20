@@ -20,13 +20,21 @@ use Throwable;
  * tracked file extending a missing class would fail static analysis, which
  * reads the source without ever running it.
  *
- * {@see failedOnTheMissingParent()} is what keeps a test using this probe from
- * passing vacuously, and it is deliberately a statement about the failure
- * rather than about the call. Depth 0 is what an unresolvable parent scores for
- * any reason at all, so the metric cannot tell the target case from a parent
- * nobody looked for; and "the autoloader was asked" cannot tell it from a load
- * that failed for some unrelated reason, such as a file this probe never
- * managed to write. Only the identity of the class PHP could not find can.
+ * The probe answers two different questions, and which one keeps a test honest
+ * depends on what that test claims.
+ *
+ * {@see failedOnTheMissingParent()} is the oracle for "a load was attempted and
+ * broke on this parent's absence". Depth alone cannot show that: an unresolvable
+ * parent scores the same for any reason, and "the autoloader was asked" does not
+ * separate the target case from a load that failed for something unrelated, such
+ * as a file this probe never managed to write.
+ *
+ * {@see queryCount()} is the oracle for the opposite claim — that no load was
+ * attempted at all. There `failedOnTheMissingParent()` is false precisely
+ * because nothing was tried, so it cannot carry the assertion and the count
+ * must. A caller asserting "we no longer execute the analysed project's code"
+ * reads the count; a caller asserting "the load failed the way a standalone
+ * install fails" reads the failure.
  */
 final class UnloadableClassProbe
 {
