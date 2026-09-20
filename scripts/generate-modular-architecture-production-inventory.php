@@ -1175,7 +1175,6 @@ $outputs = [
             ['files', (string) count(array_unique(array_column($rows, 'path')))],
             ['semantic_owners', (string) count($owners)],
             ['contract_consumer_entries', (string) $consumerCount],
-            ['composition_bindings', (string) count($compositionBindingRows)],
             ['exact_dependency_edges', (string) count($observedPairs)],
             ['cross_owner_imports', (string) count($crossOwnerImports)],
             ['semantic_owner_layers', (string) $enforcement['semantic_owner_layer_count']],
@@ -1308,6 +1307,8 @@ function validateDeclarationEntry(string $fqcn, array $entry, array $declaration
         }
         $ownerWide = $consumer['source_fqcn'] === null;
         $exact = is_string($consumer['source_fqcn']);
+        // Every oneOf variant already pins source_fqcn to null-or-string, so this cannot fire
+        // against schema-valid data; it guards against the schema loosening that constraint.
         if (!$ownerWide && !$exact) {
             fail("consumer {$fqcn}#{$index} must be owner-wide or exact-source");
         }
