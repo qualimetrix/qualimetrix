@@ -6,6 +6,9 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Subprocess\ChildProcess;
+
+require_once \dirname(__DIR__, 5) . '/scripts/subprocess/ChildProcess.php';
 
 final class DuplicationMemoryLimitProcessTest extends TestCase
 {
@@ -173,21 +176,9 @@ PHP;
      */
     private function runProcess(array $command): array
     {
-        $process = proc_open(
-            $command,
-            [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
-            $pipes,
-            $this->tmpDir,
-        );
+        $result = ChildProcess::run($command, $this->tmpDir);
 
-        self::assertIsResource($process);
-
-        $stdout = stream_get_contents($pipes[1]);
-        fclose($pipes[1]);
-        $stderr = stream_get_contents($pipes[2]);
-        fclose($pipes[2]);
-
-        return [proc_close($process), $stdout, $stderr];
+        return [$result['exitCode'], $result['stdout'], $result['stderr']];
     }
 
     private function projectRoot(): string

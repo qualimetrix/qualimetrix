@@ -627,9 +627,15 @@ final class BaselineChannelRenamerTest extends TestCase
         self::assertIsResource($rival);
         self::assertTrue(flock($rival, \LOCK_EX));
 
+        // Stderr is redirected to a file rather than a pipe: the parent holds
+        // the lock the child blocks on, so the deadlock window opens before
+        // the parent is free to read anything. A second blocking stream left
+        // unread here (or read only after the lock is released) would let
+        // that window bite; a file descriptor cannot block the child's write.
+        $stderrLog = $this->tempDir . '/carry-stderr.log';
         $child = proc_open(
             [\PHP_BINARY, $this->tempDir . '/carry.php', $path, $mapPath, $marker],
-            [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+            [1 => ['pipe', 'w'], 2 => ['file', $stderrLog, 'w']],
             $pipes,
         );
         self::assertIsResource($child);
@@ -654,9 +660,12 @@ final class BaselineChannelRenamerTest extends TestCase
 
         $stdout = (string) stream_get_contents($pipes[1]);
         fclose($pipes[1]);
-        fclose($pipes[2]);
 
-        self::assertSame(1, proc_close($child), 'The child must have refused: ' . $stdout);
+        $exitCode = proc_close($child);
+        $stderr = is_file($stderrLog) ? (string) file_get_contents($stderrLog) : '';
+        @unlink($stderrLog);
+
+        self::assertSame(1, $exitCode, 'The child must have refused: ' . $stdout . $stderr);
         self::assertStringContainsString('changed since it was read', $stdout);
         self::assertSame($rewritten, (string) file_get_contents($path));
     }
