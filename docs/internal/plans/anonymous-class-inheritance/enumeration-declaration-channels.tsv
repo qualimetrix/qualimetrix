@@ -1,0 +1,19 @@
+# Part 1 — the channels: every edge that describes an ANONYMOUS class's own declaration but is recorded with the enclosing class as source.
+channel	emitted_by	reaches_handler_via	declaration_readers_affected	measured
+extends	ClassLikeHandler::handleClass	consumeAnonymousClass (header)	DitGlobalCollector, NocCollector, ClassContextFactory::extendsMap	yes: Host.dit=2, L1.noc=1, layer "Matched by: extends An\L1"
+implements	ClassLikeHandler::handleClass	consumeAnonymousClass (header)	ClassContextFactory::implementsMap	no - open, measure in P1
+attributes	TypeDependencyHelper::processAttributes	consumeAnonymousClass (header)	ClassContextFactory::attributesMap	yes: layer "Matched by: attribute At\Mark"
+trait_use	TraitUseHandler	dispatchInCurrentContext (BODY - different path)	none for membership; member of the relations: inheritance alias	yes: graph:export gives Tr\Host -> Tr\T ['trait_use']
+# Part 2 — the readers, split by what they take the edge to mean. Under fork D only the declaration readers change.
+reader	file	reads_edge_as	changes_under_D
+DitGlobalCollector	src/Analysis/Evidence/Design/Inheritance/DitGlobalCollector.php:119	declaration	yes - drops flagged
+NocCollector	src/Analysis/Evidence/Design/Inheritance/NocCollector.php:126	declaration	yes - drops flagged
+InheritanceDepthCollector	src/Analysis/Evidence/Design/Inheritance/InheritanceDepthCollector.php:82	declaration, per-file	NO - its visitor never saw anonymous classes; it does not publish design.dit
+ClassContextFactory	src/Analysis/Policy/Architecture/Layer/ClassContextFactory.php:177	declaration (3 maps)	yes - drops flagged; exclude: blocks and template layers read the same ClassContext
+DependencyGraphBuilder	src/Analysis/Evidence/DependencyModel/DependencyGraphBuilder.php:73	dependency (builtin pruning keyed on Extends)	no - type unchanged, builtin edge retained
+AllowAliasExpander / LayerPolicy	Configuration/Allow/AllowAliasExpander.php:48, Layer/LayerPolicy.php:203	dependency (relations: vocabulary)	no - type unchanged, deptrac parity held
+LayerViolationFinding / LayerRoutingGuidance	LayerViolation/LayerViolationFinding.php:76, LayerRoutingGuidance.php:72	dependency (published field)	no value change; flag not surfaced - open question in the plan
+BaselineEdge / BaselineIdentity	Policy/Baseline/BaselineEdge.php:89,104	dependency (serialized identity target|type)	no - identity unchanged. Repo baseline v13 has zero architecture entries
+JsonGraphExporter	src/Reporting/GraphProjection/JsonGraphExporter.php:73	dependency	no value change; flag not surfaced
+Dependency::isStrongCoupling	Contract/Dependency.php:45	dependency	no - NO PRODUCTION CONSUMER, test only
+FileProcessingResultWireFormatTest	tests/Infrastructure/Parallel/Unit/FileProcessingResultWireFormatTest.php:107	pins Dependency's 4-arg wire shape	YES - must be extended or parallel and serial runs diverge

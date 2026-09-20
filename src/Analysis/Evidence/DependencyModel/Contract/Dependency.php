@@ -21,12 +21,20 @@ final readonly class Dependency
      * @param LogicalClassPath $target Logical class identity of the dependency target
      * @param DependencyType $type The type of dependency relationship
      * @param DependencyLocationInterface $location Where in the source code this dependency occurs
+     * @param bool $describesNestedAnonymousClass True when this edge is a declaration fact
+     *                                            (extends/implements/attribute/trait_use) of an anonymous class nested inside
+     *                                            `$source`, not of `$source` itself — the visitor has no other place to attach
+     *                                            it, since an anonymous class has no declaration identity of its own. Declaration
+     *                                            readers (DIT, NOC, layer membership) must skip a flagged edge; dependency readers
+     *                                            (coupling, ClassRank, cycles, violation checks, graph export) read it as-is,
+     *                                            because it is still the only recorded evidence of the underlying dependency.
      */
     public function __construct(
         public DeclarationPath $source,
         public LogicalClassPath $target,
         public DependencyType $type,
         public DependencyLocationInterface $location,
+        public bool $describesNestedAnonymousClass = false,
     ) {}
 
     /**

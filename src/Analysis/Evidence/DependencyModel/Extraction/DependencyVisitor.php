@@ -10,6 +10,7 @@ use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\GroupUse;
 use PhpParser\Node\Stmt\Namespace_;
+use PhpParser\Node\Stmt\TraitUse;
 use PhpParser\Node\Stmt\Use_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
@@ -47,6 +48,16 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
     private ?FileDeclarationIndex $declarationIndex = null;
     private ?string $currentClass = null;
     private ?DependencyContext $currentContext = null;
+
+    /**
+     * Counts nested anonymous-class scopes the traversal is currently inside
+     * (0 = not inside one). Raised in {@see consumeAnonymousClass()}, lowered
+     * in {@see leaveNode()}. An anonymous class never resets $currentContext
+     * (see below), so a `use T;` reached while this is > 0 is a declaration
+     * fact of the innermost anonymous class, not of $currentContext — see
+     * {@see dispatchInCurrentContext()}.
+     */
+    private int $anonymousClassDepth = 0;
 
     /** @var list<Dependency> */
     private array $dependencies = [];
@@ -91,6 +102,7 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
         $this->dependencies = [];
         $this->currentClass = null;
         $this->currentContext = null;
+        $this->anonymousClassDepth = 0;
         $this->resolver->reset();
     }
 
@@ -127,15 +139,26 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
 
     public function leaveNode(Node $node): ?int
     {
-        // Only reset class scope for named classes (skip anonymous classes —
-        // they don't set currentClass on enter, so leaving them shouldn't clear it)
-        if ($node instanceof ClassLike && $node->name !== null) {
-            if ($this->currentContext !== null) {
-                array_push($this->dependencies, ...$this->currentContext->getDependencies());
-            }
-            $this->currentClass = null;
-            $this->currentContext = null;
+        if (!$node instanceof ClassLike) {
+            return null;
         }
+
+        if ($node->name === null) {
+            // Anonymous class: it never set currentClass/currentContext on
+            // enter (see consumeAnonymousClass()), so only the depth counter
+            // needs unwinding here.
+            if ($this->anonymousClassDepth > 0) {
+                --$this->anonymousClassDepth;
+            }
+
+            return null;
+        }
+
+        if ($this->currentContext !== null) {
+            array_push($this->dependencies, ...$this->currentContext->getDependencies());
+        }
+        $this->currentClass = null;
+        $this->currentContext = null;
 
         return null;
     }
@@ -200,7 +223,15 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
             return false;
         }
 
+        // The anonymous class has no declaration identity of its own, so its
+        // header edges (extends/implements/attributes) land on $currentContext
+        // regardless. Mark them as such for the duration of this call only —
+        // see DependencyContext::$describesNestedAnonymousClass.
+        $this->currentContext->startDescribingNestedAnonymousClass();
         $this->classLikeHandler->handle($node, $this->currentContext);
+        $this->currentContext->stopDescribingNestedAnonymousClass();
+
+        ++$this->anonymousClassDepth;
 
         return true;
     }
@@ -211,6 +242,16 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
             return;
         }
 
+        // `use T;` inside an anonymous class body never reaches ClassLikeHandler
+        // (it's a separate Stmt\TraitUse child, dispatched here like any other
+        // node) — so it is the only body-level edge that still needs flagging.
+        // Other body dependencies (new, static calls, type hints) are usages,
+        // not declaration facts, and stay unflagged even at depth > 0.
+        $describesNestedAnonymousClass = $node instanceof TraitUse && $this->anonymousClassDepth > 0;
+        if ($describesNestedAnonymousClass) {
+            $this->currentContext->startDescribingNestedAnonymousClass();
+        }
         $this->handlers->dispatch($node, $this->currentContext);
+        $this->currentContext->stopDescribingNestedAnonymousClass();
     }
 }

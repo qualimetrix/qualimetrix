@@ -1,6 +1,6 @@
 {
     "id": "design",
-    "description": "A data class, an untyped class, an inheritance chain with a wide parent and namespaces sized above floored size thresholds.",
+    "description": "A data class, an untyped class, an inheritance chain with a wide parent, namespaces sized above floored size thresholds, and anonymous classes whose own extends edge (including one to a PHP builtin) and use-trait edge must not be attributed to the class enclosing them.",
     "paths": [
         "src"
     ],

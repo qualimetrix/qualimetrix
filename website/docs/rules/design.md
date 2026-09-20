@@ -79,6 +79,16 @@ class CreateOrderHandler extends BaseHandler { /* ... */ }
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
+### Implementation notes
+
+An anonymous class contributes to NOC on neither side. It cannot be counted as
+a named parent's child -- it has no declaration identity of its own -- and its
+own `extends` is not counted as the enclosing named class's inheritance either,
+however deeply it is nested.
+
+<!-- llms:skip-end -->
+
 ### Configuration
 
 ```yaml
@@ -233,6 +243,12 @@ The aggregates summarise the per-class depths the same report publishes,
 including chains that cross files: a class whose parent is declared in another
 file is resolved from the dependency graph, and `design.dit.avg`, `.max` and
 `.p95` are computed from the resolved depths.
+
+An anonymous class's own `extends` is not counted toward the enclosing named
+class's DIT. `class Host { public function make() { return new class extends
+Base {}; } }` reports `Host.design.dit = 0`: the anonymous class's parent
+chain belongs to an anonymous class, which has no declaration identity of its
+own, not to `Host`. This holds however deeply the anonymous class is nested.
 
 <!-- llms:skip-end -->
 

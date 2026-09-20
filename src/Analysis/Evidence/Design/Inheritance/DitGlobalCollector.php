@@ -120,6 +120,13 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
                 continue;
             }
 
+            // An anonymous class's own `extends` is recorded with the
+            // enclosing class as source (it has no declaration identity of
+            // its own) — not a fact about the enclosing class's ancestry.
+            if ($dependency->describesNestedAnonymousClass) {
+                continue;
+            }
+
             $childFqn = $this->symbolPathToFqn($dependency->sourceLogical());
             $parentFqn = $this->symbolPathToFqn($dependency->targetLogical());
 
