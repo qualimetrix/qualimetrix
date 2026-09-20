@@ -111,7 +111,7 @@ final class PhpSurface
             ));
         }
 
-        $reflection = new ReflectionExtension($extension);
+        $reflection = new ReflectionExtension(self::loadedNameOf($extension));
         $hidden = $this->hidden;
 
         foreach (array_keys($reflection->getFunctions()) as $function) {
@@ -201,6 +201,23 @@ final class PhpSurface
     private function hides(string $name): bool
     {
         return isset($this->hidden[strtolower($name)]);
+    }
+
+    /**
+     * The spelling PHP itself uses for an extension `loads()` accepts under
+     * its Composer spelling. Without this, `without('zend-opcache')` passes
+     * the `loads()` check and then asks reflection for a name PHP does not
+     * know.
+     */
+    private static function loadedNameOf(string $extension): string
+    {
+        foreach (get_loaded_extensions() as $name) {
+            if (self::normalize($name) === self::normalize($extension)) {
+                return $name;
+            }
+        }
+
+        throw new RuntimeException('No loaded extension answers to ' . $extension . '.');
     }
 
     private static function normalize(string $extension): string

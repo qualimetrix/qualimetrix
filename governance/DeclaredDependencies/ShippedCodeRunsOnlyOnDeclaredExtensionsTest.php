@@ -378,12 +378,51 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
     }
 
     /**
-     * And the legitimate half of the same mechanism, read end to end rather
-     * than handed to `judge()` pre-shaped: a tree that declares its own
-     * function and calls it unqualified reaches no global name, while a
-     * constant of the same name is untouched by that declaration. Checking a
-     * function against a declared constant, or the reverse, loses the reach
-     * entirely — which is the silent drop this whole control exists against.
+     * The legitimate half of the shadow mechanism: a tree that declares its
+     * own function and calls it unqualified reaches no global name.
+     */
+    #[Test]
+    public function itDoesNotCountTheTreesOwnFunctionAsAGlobalReach(): void
+    {
+        $tree = self::plantedTree(<<<'PLANTED'
+            <?php
+
+            namespace Planted;
+
+            function helper(): void {}
+
+            final class Uses
+            {
+                public function go(): void
+                {
+                    helper();
+                }
+            }
+            PLANTED);
+
+        $names = self::spelled(ReachedNames::globalsIn([$tree . '/Planted.php']));
+
+        self::assertNotContains('function:helper', $names, "The tree's own function is not a global reach.");
+    }
+
+    /**
+     * And the half that has to discriminate. A fixture where the two roles
+     * carry the *same* names crossed over, so a reader that folded functions
+     * and constants into one set would erase both reaches and a reader that
+     * keeps them apart keeps both.
+     *
+     * The earlier version of this test used different names per role and so
+     * passed either way — it witnessed nothing. Losing a reach is the silent
+     * drop this whole control exists against, which makes a test that cannot
+     * see it worse than no test.
+     *
+     * Proven against the shape the regression actually takes: one declaration
+     * set for both roles, lowercased throughout, which is what this replaced.
+     * That mutant reddens this case and the lowercase-constant one below. A
+     * hybrid that merged the sets while keeping the folding role-aware would
+     * slip past, because a lowercased entry can never match an exact-case
+     * lookup — catching it would need a fixture contrived enough to stop
+     * describing anything a reader would write.
      */
     #[Test]
     public function itSeparatesDeclaredFunctionsFromDeclaredConstants(): void
@@ -393,27 +432,63 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
 
             namespace Planted;
 
-            function helper(): void {}
+            function T_COMMENT(): void {}
 
-            const T_COMMENT = 1;
+            const token_get_all = 1;
 
             final class Uses
             {
                 public function go(string $source): array
                 {
-                    helper();
-
-                    return token_get_all($source);
+                    return [T_COMMENT, token_get_all($source)];
                 }
             }
             PLANTED);
 
-        $globals = ReachedNames::globalsIn([$tree . '/Planted.php']);
-        $names = array_map(static fn(array $record): string => $record['role'] . ':' . $record['name'], $globals);
+        $names = self::spelled(ReachedNames::globalsIn([$tree . '/Planted.php']));
 
-        self::assertNotContains('function:helper', $names, "The tree's own function is not a global reach.");
-        self::assertNotContains('constant:T_COMMENT', $names, "The tree's own constant is not a global reach.");
-        self::assertContains('function:token_get_all', $names, 'A real call must survive a same-named constant declaration.');
+        self::assertContains('constant:T_COMMENT', $names, 'A declared function must not shadow a constant of that name.');
+        self::assertContains('function:token_get_all', $names, 'A declared constant must not shadow a function of that name.');
+    }
+
+    /**
+     * PHP matches a constant name with regard to case, so a lowercase
+     * declaration shadows nothing. Folding it the way function names fold
+     * loses a real read of an extension's constant, and loses it silently:
+     * measured, the reach disappeared and no refusal took its place.
+     */
+    #[Test]
+    public function itKeepsAConstantReachALowercaseDeclarationCannotShadow(): void
+    {
+        $tree = self::plantedTree(<<<'PLANTED'
+            <?php
+
+            namespace Planted;
+
+            const t_comment = 1;
+
+            final class Uses
+            {
+                public function go(): int
+                {
+                    return T_COMMENT;
+                }
+            }
+            PLANTED);
+
+        $names = self::spelled(ReachedNames::globalsIn([$tree . '/Planted.php']));
+
+        self::assertContains('constant:T_COMMENT', $names, 'PHP would resolve this to the tokenizer constant, so the control must see it.');
+    }
+
+    /**
+     * @param list<array{file: string, name: string, role: string}> $records
+     *
+     * @return list<string>
+     */
+    private static function spelled(array $records): array
+    {
+        return array_map(static fn(array $record): string => $record['role'] . ':' . $record['name'], $records);
     }
 
     private static function plantedTree(string $source): string
@@ -519,6 +594,12 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
             );
         }
 
+        $declaredHere = [];
+
+        foreach ($declarations as $declaration) {
+            $declaredHere[self::key($declaration['name'], $declaration['role'])] = true;
+        }
+
         foreach ($reached as $record) {
             $name = $record['name'];
             $where = self::relative($record['file'], $treeRoot);
@@ -563,6 +644,15 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
                 continue;
             }
 
+            if (isset($declaredHere[self::key($name, $record['role'])])) {
+                // The tree declares this global itself, and a collision with a
+                // name PHP provides was already refused above — so what is
+                // left is the project's own, and no extension's. Saying
+                // "nothing answers to that name" while holding its
+                // declaration would be false.
+                continue;
+            }
+
             $refusals[] = self::describeUnresolvable($where, $name, $record['role'], $missing);
         }
 
@@ -590,6 +680,16 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
             self::spell($name, $role),
             $file ?? 'somewhere this control cannot locate',
         );
+    }
+
+    /**
+     * PHP matches a function name without regard to case and a constant name
+     * with it, so the two are keyed differently here for the same reason
+     * {@see ReachedNames} folds them differently.
+     */
+    private static function key(string $name, string $role): string
+    {
+        return $role . ' ' . ($role === ReachedNames::CONSTANT ? $name : strtolower($name));
     }
 
     private static function relative(string $file, string $treeRoot): string

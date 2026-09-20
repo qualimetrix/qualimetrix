@@ -130,8 +130,25 @@ final class ReachedNames
     private static function read(array $files): array
     {
         // The group asks several questions of one tree, and each would
-        // otherwise pay for its own parse of every file.
-        $key = hash('xxh128', implode("\0", $files));
+        // otherwise pay for its own parse of every file. The key covers each
+        // file's size and modification time as well as its path, so a tree
+        // that changed under the same file list is re-read rather than
+        // answered from a parse of what it used to say.
+        $signature = [];
+
+        foreach ($files as $file) {
+            $size = filesize($file);
+            $modified = filemtime($file);
+
+            $signature[] = \sprintf(
+                '%s:%s:%s',
+                $file,
+                $size === false ? 'unreadable' : (string) $size,
+                $modified === false ? 'unreadable' : (string) $modified,
+            );
+        }
+
+        $key = hash('xxh128', implode("\0", $signature));
 
         if (isset(self::$memo[$key])) {
             return self::$memo[$key];
@@ -167,7 +184,7 @@ final class ReachedNames
             $traverser->traverse($statements);
 
             foreach ($collector->declared as $declared) {
-                $declaredByRole[$declared['role']][strtolower($declared['qualified'])] = true;
+                $declaredByRole[$declared['role']][self::fold($declared['qualified'], $declared['role'])] = true;
                 $declarations[] = ['file' => $file, 'name' => $declared['short'], 'role' => $declared['role']];
             }
 
@@ -185,7 +202,7 @@ final class ReachedNames
 
             $shadowedBy = $record['shadowedBy'];
 
-            if ($shadowedBy !== null && isset($declaredByRole[$record['role']][strtolower($shadowedBy)])) {
+            if ($shadowedBy !== null && isset($declaredByRole[$record['role']][self::fold($shadowedBy, $record['role'])])) {
                 continue;
             }
 
@@ -193,6 +210,17 @@ final class ReachedNames
         }
 
         return self::$memo[$key] = ['reached' => $reached, 'declarations' => $declarations];
+    }
+
+    /**
+     * PHP resolves a function name without regard to case and a constant name
+     * with it, so a shipped `const t_comment` does not shadow `T_COMMENT`
+     * while a `function T_COMMENT` does shadow `token_get_all`'s neighbours.
+     * Folding both the same way loses the reach on one side.
+     */
+    private static function fold(string $name, string $role): string
+    {
+        return $role === self::CONSTANT ? $name : strtolower($name);
     }
 
     /**
