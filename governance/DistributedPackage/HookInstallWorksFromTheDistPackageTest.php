@@ -43,13 +43,27 @@ require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
  *
  * Measured at roughly three seconds on the tree that added it, almost all of
  * it the `vendor/` copy. That is the price of judging the artifact instead of
- * the source; a cheaper control would be judging the source again.
+ * the source; a cheaper control would be judging the source again. A real
+ * `composer install --no-dev` inside the extracted package would be more
+ * faithful still and is deliberately not done: it needs the network, and this
+ * group's cost is the reason it exists rather than an accident of it.
+ *
+ * Copying `vendor/` has a consequence the dump hides, and it is refused rather
+ * than accepted: {@see InstalledDependencyGraph} stops the run unless the graph
+ * it would apply is the one HEAD describes, from `composer.json` through the
+ * lock to `installed.json`. `dump-autoload --no-dev` takes the
+ * production/development split from the copied `installed.json` and never from
+ * the lock, which is what makes the disagreement invisible without the check.
  */
 final class HookInstallWorksFromTheDistPackageTest extends TestCase
 {
     #[Test]
     public function itInstallsAWorkingHookFromWhatTheDistPackageCarries(): void
     {
+        // Before anything this run would otherwise have to clean up: a graph
+        // that is not HEAD's makes this run a verdict about neither tree.
+        InstalledDependencyGraph::assertMatchesHead(self::projectRoot());
+
         $scratch = self::scratchDirectory();
         $package = $scratch . '/package';
         $consumer = $scratch . '/consumer';
@@ -234,6 +248,10 @@ final class HookInstallWorksFromTheDistPackageTest extends TestCase
      * terminal nobody is attending. That direction is the load-bearing half:
      * the enumeration behind "nothing started here reads stdin" was made once,
      * and nothing re-makes it.
+     *
+     * The streams are merged on return because every assertion below reads the
+     * command's output as one transcript: a message printed to stderr is still
+     * the command answering.
      *
      * @param list<string> $command
      *
