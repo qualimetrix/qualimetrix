@@ -510,7 +510,7 @@ PHP;
     }
 
     #[Test]
-    public function itAttributesAnonymousClassExtendsAndImplementsToTheEnclosingClass(): void
+    public function itFlagsAnonymousClassExtendsAndImplementsAsDeclarationFactsOfTheAnonymousClassNotTheEnclosingClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -529,12 +529,13 @@ class Outer {
 PHP;
         $deps = $this->analyze($code);
 
-        // Should have Extends(Foo) and Implements(Bar) attributed to App\Outer
-        $outerDeps = array_filter(
+        // The edges still exist, attributed to App\Outer — new class extends L1
+        // produces no separate New_ edge (New_ only fires for a Name target),
+        // so this is the sole record that Outer references Foo and Bar at all.
+        $outerDeps = array_values(array_filter(
             $deps,
             static fn($d) => $d->sourceLogical()->toString() === 'App\\Outer',
-        );
-        $outerDeps = array_values($outerDeps);
+        ));
 
         self::assertCount(2, $outerDeps);
 
@@ -545,6 +546,157 @@ PHP;
         self::assertContains('Vendor\\Bar', $targets);
         self::assertContains(DependencyType::Extends, $types);
         self::assertContains(DependencyType::Implements, $types);
+
+        // But neither is a declaration fact of Outer itself — both describe
+        // the anonymous class nested inside it (Outer has no name it could
+        // hand to `extends`/`implements`, since it does not declare them).
+        foreach ($outerDeps as $dependency) {
+            self::assertTrue(
+                $dependency->describesNestedAnonymousClass,
+                \sprintf('Expected the %s edge to Vendor\\%s to be flagged as a nested anonymous declaration', $dependency->type->value, $dependency->targetLogical()->toString()),
+            );
+        }
+    }
+
+    #[Test]
+    public function itFlagsAnAttributeOnAnAnonymousClassHeaderAsADeclarationFactOfTheAnonymousClassNotTheEnclosingClass(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+use Vendor\Mark;
+
+class Outer {
+    public function factory() {
+        return new #[Mark] class {};
+    }
+}
+PHP;
+        $deps = $this->analyze($code);
+
+        self::assertCount(1, $deps);
+        self::assertSame('App\\Outer', $deps[0]->sourceLogical()->toString());
+        self::assertSame('Vendor\\Mark', $deps[0]->targetLogical()->toString());
+        self::assertSame(DependencyType::Attribute, $deps[0]->type);
+        self::assertTrue($deps[0]->describesNestedAnonymousClass);
+    }
+
+    #[Test]
+    public function itFlagsATraitUseInsideAnAnonymousClassBodyAsADeclarationFactOfTheAnonymousClassNotTheEnclosingClass(): void
+    {
+        // The trait_use edge reaches TraitUseHandler through a different
+        // path than extends/implements/attributes (dispatchInCurrentContext,
+        // not ClassLikeHandler) — a separate fixture guards it.
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+use Vendor\SomeTrait;
+
+class Outer {
+    public function factory() {
+        return new class {
+            use SomeTrait;
+        };
+    }
+}
+PHP;
+        $deps = $this->analyze($code);
+
+        self::assertCount(1, $deps);
+        self::assertSame('App\\Outer', $deps[0]->sourceLogical()->toString());
+        self::assertSame('Vendor\\SomeTrait', $deps[0]->targetLogical()->toString());
+        self::assertSame(DependencyType::TraitUse, $deps[0]->type);
+        self::assertTrue($deps[0]->describesNestedAnonymousClass);
+    }
+
+    #[Test]
+    public function itFlagsATraitUseInAnAnonymousClassNestedTwoLevelsDeepInsideAnotherAnonymousClass(): void
+    {
+        // An anonymous class nested inside another anonymous class must
+        // still be recognised as anonymous at depth 2, not just depth 1.
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+use Vendor\SomeTrait;
+
+class Outer {
+    public function factory() {
+        return new class {
+            public function inner() {
+                return new class {
+                    use SomeTrait;
+                };
+            }
+        };
+    }
+}
+PHP;
+        $deps = $this->analyze($code);
+
+        self::assertCount(1, $deps);
+        self::assertSame('App\\Outer', $deps[0]->sourceLogical()->toString());
+        self::assertSame('Vendor\\SomeTrait', $deps[0]->targetLogical()->toString());
+        self::assertSame(DependencyType::TraitUse, $deps[0]->type);
+        self::assertTrue($deps[0]->describesNestedAnonymousClass);
+    }
+
+    #[Test]
+    public function itLeavesUsageDependenciesFromInsideAnAnonymousClassBodyUnflagged(): void
+    {
+        // Usage edges (new, type hints, ...) reached while walking an
+        // anonymous class's own body are not declaration facts of anything —
+        // they must stay unflagged even though the depth counter is > 0.
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+use Vendor\Collaborator;
+
+class Outer {
+    public function factory() {
+        return new class {
+            public function inner(): void {
+                new Collaborator();
+            }
+        };
+    }
+}
+PHP;
+        $deps = $this->analyze($code);
+
+        self::assertCount(1, $deps);
+        self::assertSame('App\\Outer', $deps[0]->sourceLogical()->toString());
+        self::assertSame('Vendor\\Collaborator', $deps[0]->targetLogical()->toString());
+        self::assertSame(DependencyType::New_, $deps[0]->type);
+        self::assertFalse($deps[0]->describesNestedAnonymousClass);
+    }
+
+    #[Test]
+    public function itFlagsAnAnonymousClassExtendingAPhpBuiltinClassAsANestedAnonymousDeclaration(): void
+    {
+        // DependencyGraphBuilder retains a builtin-parent edge only when its
+        // type is Extends — this is the sole record that the enclosing class
+        // references the builtin at all, so the flag must not change the type.
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+class Outer {
+    public function factory() {
+        return new class extends \stdClass {};
+    }
+}
+PHP;
+        $deps = $this->analyze($code);
+
+        self::assertCount(1, $deps);
+        self::assertSame('App\\Outer', $deps[0]->sourceLogical()->toString());
+        self::assertSame('stdClass', $deps[0]->targetLogical()->toString());
+        self::assertSame(DependencyType::Extends, $deps[0]->type);
+        self::assertTrue($deps[0]->describesNestedAnonymousClass);
     }
 
     #[Test]

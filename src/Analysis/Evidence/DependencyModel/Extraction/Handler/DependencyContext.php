@@ -17,6 +17,22 @@ final class DependencyContext
     /** @var list<Dependency> */
     private array $dependencies = [];
 
+    /**
+     * Ambient state set by {@see \Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor}
+     * immediately before a call reaches {@see addDependency()}: true while the
+     * dependency being recorded is a declaration fact of an anonymous class
+     * nested in the current declaration (its extends/implements/attributes
+     * header, or a `use T;` in its body), rather than a fact about the current
+     * declaration itself. The visitor is the only party able to tell — it is
+     * the one tracking anonymous-class nesting — so it brackets this flag per
+     * call rather than per traversal span, via {@see startDescribingNestedAnonymousClass()}
+     * and {@see stopDescribingNestedAnonymousClass()}: a usage edge dispatched
+     * from inside the same anonymous body (new, static call, type hint) is a
+     * different call left outside that bracket, with the flag false. See
+     * {@see Dependency::$describesNestedAnonymousClass}.
+     */
+    private bool $describesNestedAnonymousClass = false;
+
     public function __construct(
         private readonly DependencyResolver $resolver,
         private readonly RelativePath $file,
@@ -38,7 +54,28 @@ final class DependencyContext
             new LogicalClassPath(\Qualimetrix\Core\Symbol\SymbolPath::fromClassFqn($resolvedTargetClass)),
             $type,
             new DependencyLocation($this->file, $line),
+            $this->describesNestedAnonymousClass,
         );
+    }
+
+    /**
+     * Called by the visitor immediately before a call it knows will produce a
+     * declaration edge of a nested anonymous class. Never read back —
+     * {@see addDependency()} consumes the flag directly. Pair with
+     * {@see stopDescribingNestedAnonymousClass()} once that call returns.
+     */
+    public function startDescribingNestedAnonymousClass(): void
+    {
+        $this->describesNestedAnonymousClass = true;
+    }
+
+    /**
+     * Ends the span opened by {@see startDescribingNestedAnonymousClass()},
+     * or is a no-op if that span was never entered for this call.
+     */
+    public function stopDescribingNestedAnonymousClass(): void
+    {
+        $this->describesNestedAnonymousClass = false;
     }
 
     /**

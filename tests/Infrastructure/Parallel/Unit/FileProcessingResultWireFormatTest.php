@@ -109,6 +109,7 @@ final class FileProcessingResultWireFormatTest extends TestCase
             new LogicalClassPath(SymbolPath::forClass('Two', 'Port')),
             DependencyType::Implements,
             new Location($path, 11),
+            true,
         );
         $suppression = new Suppression(
             'complexity',
@@ -154,6 +155,12 @@ final class FileProcessingResultWireFormatTest extends TestCase
         self::assertSame(4, $restored->classMetrics()['class']['metrics']->get('complexity.wmc'));
         self::assertSame(3, $restored->namespaceMetrics()['namespace:One']['metrics']->get('size.loc'));
         self::assertEquals($dependency, $restored->dependencies()[0]);
+        // Pins Dependency::$describesNestedAnonymousClass surviving the
+        // worker-IPC round trip specifically (not just via assertEquals'
+        // reflection compare above) — a flag that defaults back to false on
+        // unserialize would make the default parallel run silently disagree
+        // with --workers=0 for every anonymous-class fixture in this plan.
+        self::assertTrue($restored->dependencies()[0]->describesNestedAnonymousClass);
         self::assertEquals($suppression, $restored->suppressions()[0]);
         self::assertEquals($override, $restored->thresholdOverrides()[0]);
         self::assertEquals($diagnostic, $restored->thresholdDiagnostics()[0]);
@@ -181,9 +188,21 @@ final class FileProcessingResultWireFormatTest extends TestCase
     #[RequiresPhpExtension('igbinary')]
     public function itRoundTripsFileProcessingResultViaIgbinary(): void
     {
+        $path = RelativePath::fromString('src/X.php');
+        $dependency = new Dependency(
+            DeclarationPath::of(SymbolPath::forClass('One', 'Thing'), $path, DeclarationOrdinal::fromRank(0)),
+            new LogicalClassPath(SymbolPath::forClass('Two', 'Port')),
+            DependencyType::TraitUse,
+            new Location($path, 11),
+            true,
+        );
+
         $result = FileProcessingResult::success(
-            filePath: RelativePath::fromString('src/X.php'),
-            payload: new SuccessfulFileProcessing(fileBag: MetricBag::fromArray(['size.loc' => 42])),
+            filePath: $path,
+            payload: new SuccessfulFileProcessing(
+                fileBag: MetricBag::fromArray(['size.loc' => 42]),
+                dependencies: [$dependency],
+            ),
         );
 
         $payload = igbinary_serialize($result);
@@ -194,5 +213,9 @@ final class FileProcessingResultWireFormatTest extends TestCase
         self::assertInstanceOf(FileProcessingResult::class, $restored);
         self::assertSame('src/X.php', $restored->filePath->value());
         self::assertSame(42, $restored->fileBag()->get('size.loc'));
+        self::assertEquals($dependency, $restored->dependencies()[0]);
+        // Same IPC-survival pin as the php-serialize round trip above, for
+        // the other wire format the parallel worker pool can select.
+        self::assertTrue($restored->dependencies()[0]->describesNestedAnonymousClass);
     }
 }
