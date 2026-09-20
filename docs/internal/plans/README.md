@@ -9,6 +9,7 @@ This index lists only work that is executable on the current tree.
 | [Health recalibration](health-recalibration/00-overview.md)      | In progress; three review rounds; instruments, corpus, model and calibration landed                     |
 | [Rules listing](rules-listing/01-one-declaration-two-readers.md) | Three review rounds; landed, pending review                                                             |
 | [Shorthand scope](shorthand-scope/00-overview.md)                | Planned and reviewed; implementation has not started                                                    |
+| [DIT external ancestry](dit-external-ancestry/00-overview.md)    | Planned; stage 01 is measurable without the parser; stages 02-03 written, none started                  |
 
 Completed plans are removed after their durable decisions, obligations, and
 verification assets move to their permanent owners. Current architectural
