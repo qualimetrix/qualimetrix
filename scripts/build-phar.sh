@@ -12,9 +12,11 @@
 # supply-chain door and a build whose output nobody can reproduce.
 #
 # The output name must end in `.phar`. amphp/parallel copies the entire running
-# archive into the temp directory on every run when it does not — measured on
-# the artifact this script produces: 7,464,480 bytes per run, byte for byte the
-# archive's own size.
+# archive into the temp directory on every run when it does not. The copy is
+# the archive byte for byte, so the cost is whatever this build weighs — around
+# 7 MB today. Measured as an identity rather than quoted as a constant: the
+# archive's size moves with its contents, and a pinned number here would be
+# wrong after the next dependency update without anything saying so.
 #
 # The version the tool reports about itself comes from vendor/composer/installed.php,
 # which `composer install` writes and `composer dump-autoload` does NOT refresh.
@@ -61,6 +63,8 @@ if [ ! -f "$box_phar" ]; then
     if ! gh release download -R box-project/box "$BOX_VERSION" \
         --pattern 'box.phar' --output "$download" --clobber; then
         echo "error: could not download box $BOX_VERSION" >&2
+        echo "  gh is installed, so the likeliest causes are an unauthenticated" >&2
+        echo "  CLI (try: gh auth status) or no route to github.com" >&2
         exit 1
     fi
 

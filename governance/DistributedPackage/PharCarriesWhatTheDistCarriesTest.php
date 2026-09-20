@@ -34,7 +34,15 @@ use PHPUnit\Framework\TestCase;
  *
  * **What this control cannot see.** It resolves `box.json` itself rather than
  * reading a built artifact, so it judges the configuration's meaning, not the
- * archive's contents. That keeps it free of a build step and a network fetch,
+ * archive's contents. One consequence is specific enough to name: box resolves
+ * `directories` through a Finder that calls `ignoreVCS()` but never
+ * `ignoreVCSIgnored()`, so a build carries every untracked and every ignored
+ * file under `src/` — and this repository's `.gitignore` holds a blanket
+ * `*.json`. This control reads `HEAD`, so it cannot see that payload. Reading
+ * the working tree instead is not the answer: it would redden `composer check`
+ * on every file written before its commit. The `phar` CI job holds the built
+ * archive against the same committed listing, which is the point where
+ * untracked payload is real rather than hypothetical. That keeps it free of a build step and a network fetch,
  * and it costs the case where box resolves the same configuration differently
  * than this file does — a box upgrade changing `directories` semantics would
  * pass here and diverge in the artifact. The artifact-level comparison belongs
@@ -174,8 +182,9 @@ final class PharCarriesWhatTheDistCarriesTest extends TestCase
         self::assertSame(
             [['in' => ['vendor'], 'notPath' => ['#^bin/#'], 'ignoreVCS' => true]],
             $config['finder'] ?? null,
-            'The finder block is excluded from this comparison on the grounds that it names only vendor/. '
-            . 'It no longer does, so the exclusion is now hiding payload.',
+            'The finder block is excluded from this comparison on the grounds that it adds nothing outside '
+            . 'vendor/. This control cannot resolve a finder block, so it pins the one it was written against '
+            . 'instead: any change here has to be re-argued, including one that only looks like a tidy-up.',
         );
 
         $paths = [];
@@ -224,15 +233,16 @@ final class PharCarriesWhatTheDistCarriesTest extends TestCase
      */
     private static function committedFilesUnder(string $directory): array
     {
+        // -z, because without it git quotes any path outside ASCII and the tar
+        // listing on the other side does not: the two sides would then disagree
+        // about a file both of them carry.
         $listing = self::capture([
-            'git', '-C', self::projectRoot(), 'ls-tree', '-r', '--name-only', 'HEAD', '--', $directory,
+            'git', '-C', self::projectRoot(), 'ls-tree', '-r', '-z', '--name-only', 'HEAD', '--', $directory,
         ]);
 
         $paths = [];
 
-        foreach (explode("\n", $listing) as $path) {
-            $path = trim($path);
-
+        foreach (explode("\0", $listing) as $path) {
             if ($path !== '') {
                 $paths[] = $path;
             }

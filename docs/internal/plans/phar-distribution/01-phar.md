@@ -85,8 +85,9 @@ removed by shutdown handlers, which do not run when the process is killed.
 
 So the artifact's **filename is a design decision, not a label**: ending it in `.phar` avoids
 copying the whole archive per run. P0 measured the copy rather than citing it — the archive copied to the temp directory
-per run, byte for byte — 11,124,518 for P0's uncompacted build, 7,464,480 for the compacted artifact
-P1 ships. Present without the suffix, absent with it.
+per run, byte for byte. The figure moves with the build — 11,124,518 for P0's uncompacted archive,
+around 7.4 MB for the compacted one P1 ships — so what is recorded is the identity, not a constant.
+Present without the suffix, absent with it.
 Record that reason next to the name, or the next person who renames it for tidiness will reintroduce
 it with nothing to say why.
 
@@ -199,9 +200,9 @@ instead of argued. Everything below is a measurement on this tree.
 - **`--format=html`** inlined `report.css`, `d3.min.js` and `report.min.js` verbatim, and the
   document is identical to the tree's once `generatedAt` and `qmxVersion` are normalised.
 - **The filename decision is now a measurement, not a citation.** Run from a copy whose path lacks
-  the `.phar` suffix, the process leaves an file in the temp directory the size of the archive — measured
-  at **11,124,518** bytes on P0's uncompacted build and re-measured at **7,464,480** on the artifact
-  P1 ships. With the suffix, only amphp's process runner appears.
+  the `.phar` suffix, the process leaves an file in the temp directory that is the archive byte for
+  byte — 11,124,518 bytes on P0's uncompacted build, and the same identity on the compacted one P1
+  ships. With the suffix, only amphp's process runner appears.
 
 One question P0 leaves to P1 because answering it is design, not measurement:
 

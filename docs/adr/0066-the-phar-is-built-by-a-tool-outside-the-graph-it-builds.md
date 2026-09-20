@@ -49,9 +49,10 @@ phar omits unless that omission is declared with its reason.
 
 **The artifact is `build/qmx.phar`, and the suffix is load-bearing.**
 `amphp/parallel` copies the entire running archive into the temporary directory
-on every run when the path it runs from does not end in `.phar`; measured on the
-artifact this build produces at 7,464,480 bytes per run, byte for byte the
-archive's own size. The reason is recorded in the build script, because
+on every run when the path it runs from does not end in `.phar`. The copy is the
+archive byte for byte — measured as that identity rather than as a constant,
+because the archive's size moves with its contents and a pinned figure would
+quietly stop being true. The reason is recorded in the build script, because
 `box.json` cannot hold a comment and a later rename for tidiness would otherwise
 reintroduce the copy with nothing to explain it.
 
