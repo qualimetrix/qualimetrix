@@ -55,6 +55,16 @@ delivery step for a file whose contents never varied.
 
 Three consequences follow, and each was a decision of its own:
 
+**The phar's refusal goes with it.**
+[ADR 0066](0066-the-phar-is-built-by-a-tool-outside-the-graph-it-builds.md)
+refused `hook:install` from a phar for two reasons, and this decision removes
+both: nothing symlinks any more, and no code builds a script path, so
+`AbsolutePath` never sees a `phar://` prefix. Measured on a built archive
+rather than argued — `hook:install` exits 0, the hook it writes carries the
+`.phar` in `QMX_BIN`, and a `git commit` in that repository runs the archive
+and blocks on the finding it reports. The installation page no longer lists
+the reduction.
+
 **The hook names the binary that installed it.** `QMX_BIN` is baked, with the
 old `vendor/bin/qmx` → `bin/qmx` search kept as a fallback for the binary
 moving afterwards, which `composer update` does routinely. This is also what

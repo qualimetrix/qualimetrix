@@ -45,6 +45,10 @@ remove a link it cannot identify rather than deleting someone else's hook.
   It now generates the hook, which also makes it work outside a composer
   layout. The two manual methods `quick-start` documented named the same
   missing directory and are gone.
+- `hook:install` works from the phar too, and its refusal there is gone. It
+  refused because the hook was a symlink and because building the script's path
+  reached a value object that rejects `phar://`; neither happens now. The
+  installed hook calls the archive.
 - The hook names the binary that installed it, falling back to `vendor/bin/qmx`
   and `bin/qmx` if that binary moves. Hook commands print that path in their
   hints too, instead of `bin/qmx`, which is wrong for everyone who installed
