@@ -6,6 +6,10 @@ namespace Qualimetrix\Governance\DistributedPackage;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Subprocess\ChildProcess;
+use RuntimeException;
+
+require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
 
 /**
  * `hook:install` judged against what a consumer receives, not against this
@@ -208,13 +212,23 @@ final class HookInstallWorksFromTheDistPackageTest extends TestCase
     }
 
     /**
-     * Both streams go to files rather than pipes.
+     * The repository's one drain-free-of-deadlock child runner, rather than a
+     * private one: two pipes read in sequence is the defect its own governance
+     * control exists to refuse. `GitScopeWorksFromTheDistPackageTest`, this
+     * control's twin, reaches the same module the same way.
      *
-     * A parent that reads one pipe to EOF before touching the other deadlocks
-     * as soon as the child fills the OS pipe buffer on the stream read second:
-     * the child blocks mid-write, so it never exits and the first stream never
-     * reaches EOF. `git archive` over this repository is exactly the size where
-     * that starts to matter. Files have no such buffer.
+     * That the module sits under `scripts/`, which `export-ignore` keeps out of
+     * the package this control measures, is not an obstacle and was once
+     * written down as one. The package is this control's *subject*, never its
+     * runtime: the file you are reading runs from the checkout, and
+     * `governance/` is `export-ignore`d too, so a control restricted to what
+     * the package carries could not exist at all.
+     *
+     * One difference from a bespoke runner is worth naming. The child gets a
+     * stdin pipe closed at once rather than inheriting this process's stdin.
+     * Nothing started here reads stdin — the generated hook's only `read` takes
+     * its input from a process substitution — so EOF is both unobserved and the
+     * safer answer.
      *
      * @param list<string> $command
      *
@@ -222,28 +236,15 @@ final class HookInstallWorksFromTheDistPackageTest extends TestCase
      */
     private static function execute(array $command, ?string $workingDirectory = null): array
     {
-        $outPath = tempnam(sys_get_temp_dir(), 'qmx-dist-out-');
-        $errPath = tempnam(sys_get_temp_dir(), 'qmx-dist-err-');
+        try {
+            $result = ChildProcess::run($command, $workingDirectory);
+        } catch (RuntimeException $failure) {
+            // Same vocabulary as the `assertIsResource()` this replaced: only
+            // run()'s own message says which of its failures this was.
+            self::fail('Could not start ' . $command[0] . ', so nothing here was checked: ' . $failure->getMessage());
+        }
 
-        self::assertIsString($outPath);
-        self::assertIsString($errPath);
-
-        $process = proc_open(
-            $command,
-            [1 => ['file', $outPath, 'w'], 2 => ['file', $errPath, 'w']],
-            $pipes,
-            $workingDirectory,
-        );
-
-        self::assertIsResource($process, 'Could not start ' . $command[0] . ', so nothing here was checked.');
-
-        $status = proc_close($process);
-        $output = (string) file_get_contents($outPath) . (string) file_get_contents($errPath);
-
-        unlink($outPath);
-        unlink($errPath);
-
-        return [$status, $output];
+        return [$result['exitCode'], $result['stdout'] . $result['stderr']];
     }
 
     private static function scratchDirectory(): string
