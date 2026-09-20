@@ -16134,6 +16134,14 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CollectorConfigurator",
+          "operations": [
+            "service_reference"
+          ]
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CoreServicesConfigurator",
           "operations": [
             "service_registration"

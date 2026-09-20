@@ -212,3 +212,261 @@ jobs:
           assert files > 0, f'the image analysed nothing: {files} files'
           print(f'analysed {files} files inside the image')
           PY
+
+  phar:
+    name: Phar (built, and equal to the tree it came from)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+          tools: composer:v2
+
+      # --no-dev deliberately: the phar carries the production graph, so the
+      # reference it is compared against has to be the same graph. A dev tree
+      # disagrees with the phar over the dev/prod split and reports it as a
+      # phar defect.
+      - name: Install production dependencies
+        run: composer install --no-dev --no-progress --prefer-dist --optimize-autoloader
+
+      - name: Build the phar
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: composer phar
+
+      - name: It runs and names itself
+        run: php build/qmx.phar --version
+
+      # Run from a scratch directory with absolute paths. From the repository
+      # root the analysis discovers this repository's own qmx.yaml and applies
+      # its declared layers to a target that is not this repository, which
+      # raises a configuration-error channel that --fail-on cannot suppress:
+      # measured exit 2 from the root against exit 0 from elsewhere.
+      #
+      # The exit codes are compared rather than required to be zero. The
+      # subject here is "the phar agrees with the tree", and a run that exits
+      # non-zero for a reason both sides share is evidence of agreement, not a
+      # broken job. Inheriting bash -e's implicit zero would have made every
+      # run of this job red.
+      # Run from a scratch directory with absolute paths. From the repository
+      # root the analysis discovers this repository's own qmx.yaml and applies
+      # its declared layers to a target that is not this repository, which
+      # raises a configuration-error channel that --fail-on cannot suppress:
+      # measured exit 2 from the root against exit 0 from elsewhere. The
+      # scratch directory also has no composer.json, so namespace detection is
+      # degraded and coupling figures differ from a normal run -- equally on
+      # both sides, which is all this comparison needs.
+      #
+      # The exit codes are compared rather than required to be zero. The
+      # subject here is "the phar agrees with the tree", and a run that exits
+      # non-zero for a reason both sides share is evidence of agreement, not a
+      # broken job. Inheriting bash -e's implicit zero made every run red.
+      - name: It publishes what the tree publishes, with workers
+        run: |
+          target="$GITHUB_WORKSPACE/vendor/symfony/console"
+          discovered="$(find "$target" -name '*.php' | wc -l)"
+          test "$discovered" -gt 100
+          mkdir -p "$GITHUB_WORKSPACE/build/evidence"
+          cd "$GITHUB_WORKSPACE/build/evidence"
+
+          set +e
+          php "$GITHUB_WORKSPACE/bin/qmx" check "$target" --workers=4 --no-cache \
+            --no-progress --format=json --fail-on=none -vv > tree.json 2> tree.log
+          tree_exit=$?
+          php "$GITHUB_WORKSPACE/build/qmx.phar" check "$target" --workers=4 --no-cache \
+            --no-progress --format=json --fail-on=none -vv > phar.json 2> phar.log
+          phar_exit=$?
+          set -e
+
+          echo "tree exited $tree_exit, phar exited $phar_exit"
+          if [ "$tree_exit" != "$phar_exit" ]; then
+            echo '--- tree.log (tail) ---'; tail -40 tree.log
+            echo '--- phar.log (tail) ---'; tail -40 phar.log
+            exit 1
+          fi
+
+          # AmphpParallelStrategy writes this line after its own four
+          # fallbacks, the 100-file threshold among them, so it is evidence
+          # that the parallel branch was entered. It is not evidence that a
+          # worker process completed anything; the report comparison below is.
+          for log in tree.log phar.log; do
+            grep -q 'starting parallel processing' "$log" \
+              || { echo "the parallel branch was not entered in $log"; tail -40 "$log"; exit 1; }
+          done
+
+          python3 - "$discovered" <<'PY'
+          import json, re, sys
+
+          ARCHIVE = re.compile(r'phar://[^\s"]*?\.phar/')
+          WORKSPACE = re.compile(re.escape(__import__('os').environ['GITHUB_WORKSPACE']) + '/')
+          THROWN = re.compile(r' in [^\s]+:\d+$')
+
+          def reason(message):
+              """The cause of a failure, without the trace that carries it.
+
+              The trace cannot match by construction: box's Php compactor
+              strips comments, so every line number inside vendor/ shifts
+              between the archive and the tree it was built from (measured:
+              task-runner.php(58) against (59)). What is kept is the exception
+              and its message, which is what distinguishes "the same file
+              failed for the same reason" from "the same file failed for a
+              different one". Dropping the message entirely would not.
+
+              Both spellings of the root are stripped, not just the archive's:
+              the tree's frames carry the workspace path where the phar's carry
+              phar://, and normalising only one side would make a real
+              agreement read as a difference.
+              """
+              first = WORKSPACE.sub('', ARCHIVE.sub('', message)).split('\n')[0]
+              return THROWN.sub('', first)
+
+          def load(path):
+              with open(path) as handle:
+                  report = json.load(handle)
+              # Differ between any two runs.
+              report['meta'].pop('timestamp', None)
+              report['summary'].pop('duration', None)
+              coverage = report.get('coverage')
+              if coverage:
+                  for failure in coverage.get('failures', []):
+                      if 'message' in failure:
+                          failure['message'] = reason(failure['message'])
+              return report
+
+          discovered = int(sys.argv[1])
+          tree, phar = load('tree.json'), load('phar.json')
+
+          # The floor is the number the target was chosen for. "> 0" would let
+          # a collapse to two analysed files pass: discovery still crosses the
+          # threshold, both sides still agree, and the comparison would be
+          # about almost nothing.
+          analysed = tree['summary']['filesAnalyzed']
+          assert analysed > 100, f'only {analysed} of {discovered} files were analysed'
+
+          if tree != phar:
+              for key in tree:
+                  if tree[key] != phar.get(key):
+                      print(f'--- differs: {key}', file=sys.stderr)
+                      print(f'  tree: {str(tree[key])[:600]}', file=sys.stderr)
+                      print(f'  phar: {str(phar.get(key))[:600]}', file=sys.stderr)
+              raise SystemExit('the phar and the tree disagree')
+
+          print(f'identical over {analysed} of {discovered} files, '
+                f"{tree['summary']['violationCount']} findings")
+          PY
+
+      # The rule listing is where a compactor defect would show: box strips
+      # comments, and rule metadata is read by reflection.
+      - name: It lists the same rules as the tree
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/build/evidence"
+          cd "$GITHUB_WORKSPACE/build/evidence"
+          php "$GITHUB_WORKSPACE/bin/qmx" rules > tree-rules.txt
+          php "$GITHUB_WORKSPACE/build/qmx.phar" rules > phar-rules.txt
+          test -s tree-rules.txt
+          diff -u tree-rules.txt phar-rules.txt
+
+      # Against the tree's own output, not against a list of expectations: the
+      # build omitting an asset is loud, because the formatter refuses, so what
+      # is left to catch is an asset that arrived and is wrong.
+      - name: It renders the same report as the tree
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/build/evidence"
+          cd "$GITHUB_WORKSPACE/build/evidence"
+          set +e
+          php "$GITHUB_WORKSPACE/bin/qmx" check "$GITHUB_WORKSPACE/src/Core" --workers=0 \
+            --no-cache --no-progress --format=html --fail-on=none > tree.html
+          tree_exit=$?
+          php "$GITHUB_WORKSPACE/build/qmx.phar" check "$GITHUB_WORKSPACE/src/Core" --workers=0 \
+            --no-cache --no-progress --format=html --fail-on=none > phar.html
+          phar_exit=$?
+          set -e
+          test "$tree_exit" = "$phar_exit"
+
+          python3 - <<'PY'
+          import os, re, sys
+
+          def load(path):
+              page = open(path, encoding='utf-8').read()
+              # Two runs that fail identically write nothing, and "" equals ""
+              # while containing no placeholder: without this floor the step
+              # passes over a pair of empty files.
+              assert len(page) > 100_000, f'{path} is {len(page)} bytes, which is not a report'
+              return re.sub(r'"generatedAt":"[^"]*"', '', page)
+
+          tree, phar = load('tree.html'), load('phar.html')
+          if tree != phar:
+              print(f'tree {len(tree)} bytes, phar {len(phar)} bytes', file=sys.stderr)
+              raise SystemExit('the phar renders a different report than the tree')
+
+          root = os.environ['GITHUB_WORKSPACE']
+          for asset in ('html-report/report.css', 'html-report/dist/d3.min.js',
+                        'html-report/dist/report.min.js'):
+              body = open(os.path.join(root, asset), encoding='utf-8').read().strip()
+              assert body in phar, f'{asset} is not inlined verbatim'
+          for placeholder in ('__CSS__', '__DATA__', '__D3_JS__', '__APP_JS__'):
+              assert placeholder not in phar, f'{placeholder} was never substituted'
+          print(f'identical report, {len(phar)} bytes')
+          PY
+
+      # The governance control judges box.json against HEAD, which is the right
+      # tree for a control that runs before a commit exists. Box does not build
+      # from HEAD: it resolves `directories` through a Finder that never calls
+      # ignoreVCSIgnored(), so an untracked or git-ignored file under src/ is
+      # archived. This repository's .gitignore carries a blanket *.json. Here an
+      # artifact exists, so the question can be asked of it.
+      - name: It carries no source file that HEAD does not
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          mkdir -p build/evidence
+          php -r '
+            $phar = new Phar($argv[1]);
+            $root = "phar://" . $argv[1] . "/src";
+            $carried = [];
+            foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS)) as $file) {
+                if ($file->isFile()) {
+                    $carried[] = "src/" . substr($file->getPathname(), strlen($root) + 1);
+                }
+            }
+            sort($carried);
+            file_put_contents("build/evidence/phar-src.txt", implode("\n", $carried) . "\n");
+          ' build/qmx.phar
+          git ls-tree -r --name-only HEAD -- src \
+            | grep -v -E '(^|/)\.' > build/evidence/head-src.txt
+          test -s build/evidence/phar-src.txt
+          diff -u build/evidence/head-src.txt build/evidence/phar-src.txt
+
+      # Not "it errors": it has to say what to do instead. The command used to
+      # fail on a path invariant naming a phar:// path the reader never wrote.
+      - name: It refuses hook:install rather than failing on an invariant
+        run: |
+          cd "$(mktemp -d)" && git init -q .
+          if php "$GITHUB_WORKSPACE/build/qmx.phar" hook:install > out.txt 2>&1; then
+            echo 'hook:install reported success from a phar'; cat out.txt; exit 1
+          fi
+          cat out.txt
+          grep -q 'not available from the phar' out.txt
+          if grep -q 'AbsolutePath' out.txt; then
+            echo 'the refusal leaked the path invariant it was meant to replace'; exit 1
+          fi
+
+      - name: Keep the comparison's evidence when it fails
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: qmx-phar-evidence
+          path: build/evidence/
+          if-no-files-found: ignore
+
+      - name: Upload the phar
+        uses: actions/upload-artifact@v6
+        with:
+          name: qmx-phar
+          path: build/qmx.phar
+          if-no-files-found: error

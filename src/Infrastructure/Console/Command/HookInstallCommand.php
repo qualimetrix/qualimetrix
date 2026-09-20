@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Phar;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
@@ -39,6 +40,22 @@ final class HookInstallCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        // Two independent reasons, so this is a refusal rather than a repair:
+        // nothing can symlink into an archive, and building the script's path
+        // reaches AbsolutePath with a "phar://" prefix it rejects, which
+        // surfaced as an invariant message naming a path nobody wrote.
+        //
+        // The message does not send the reader to Composer. `/scripts/` is
+        // export-ignored, so an installed package carries no hook script
+        // either and answers "Hook script not found" — measured, not assumed.
+        if (Phar::running(false) !== '') {
+            $output->writeln('<error>hook:install is not available from the phar.</error>');
+            $output->writeln('The hook is a symlink to a shell script, which cannot point inside an archive.');
+            $output->writeln('Write .git/hooks/pre-commit by hand, calling this archive on the staged files.');
+
+            return self::FAILURE;
+        }
+
         // Find .git directory
         $gitDir = $this->gitRepositoryLocator->findGitDir();
         if ($gitDir === null) {
@@ -64,24 +81,10 @@ final class HookInstallCommand extends Command
             return self::FAILURE;
         }
 
-        // Check if hook already exists
-        if (file_exists($hookPath)) {
-            if ($input->getOption('force') !== true) {
-                $output->writeln('<comment>Pre-commit hook already exists.</comment>');
-                $output->writeln('Use --force to overwrite.');
+        $refusal = $this->clearExistingHook($input, $output, $hookPath);
 
-                return self::FAILURE;
-            }
-
-            // Backup existing hook
-            $backupPath = $hookPath . '.backup';
-            if (copy($hookPath, $backupPath)) {
-                $output->writeln(\sprintf('<info>Existing hook backed up to: %s</info>', $backupPath));
-            } else {
-                $output->writeln('<error>Failed to backup existing hook</error>');
-
-                return self::FAILURE;
-            }
+        if ($refusal !== null) {
+            return $refusal;
         }
 
         // Install hook using symlink (default behavior)
@@ -113,6 +116,37 @@ final class HookInstallCommand extends Command
         $output->writeln('To bypass the hook, use: git commit --no-verify');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Makes room for a new hook, or refuses.
+     *
+     * @return int|null a command exit code to return, or null to carry on
+     */
+    private function clearExistingHook(InputInterface $input, OutputInterface $output, string $hookPath): ?int
+    {
+        if (!file_exists($hookPath)) {
+            return null;
+        }
+
+        if ($input->getOption('force') !== true) {
+            $output->writeln('<comment>Pre-commit hook already exists.</comment>');
+            $output->writeln('Use --force to overwrite.');
+
+            return self::FAILURE;
+        }
+
+        $backupPath = $hookPath . '.backup';
+
+        if (!copy($hookPath, $backupPath)) {
+            $output->writeln('<error>Failed to backup existing hook</error>');
+
+            return self::FAILURE;
+        }
+
+        $output->writeln(\sprintf('<info>Existing hook backed up to: %s</info>', $backupPath));
+
+        return null;
     }
 
     /**

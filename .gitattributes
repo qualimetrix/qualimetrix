@@ -47,6 +47,9 @@ promise-effect/promise-ledger.tsv whitespace=-blank-at-eol
 /.gitignore             export-ignore
 /.editorconfig          export-ignore
 /.dockerignore          export-ignore
+# The phar's include list. It describes how this repository builds an archive;
+# a consumer who installed the dist builds nothing.
+/box.json              export-ignore
 /.php-cs-fixer.dist.php export-ignore
 /phpunit.xml.dist       export-ignore
 /phpstan.neon           export-ignore
