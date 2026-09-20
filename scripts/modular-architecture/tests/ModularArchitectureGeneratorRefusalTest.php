@@ -364,11 +364,40 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
      * `runProcess()` used to read stdout to EOF and only then read stderr. A
      * child that blocks writing more than the OS pipe buffer (64 KB) to
      * whichever stream is read second deadlocks that shape: the child is
-     * stuck mid-write, so it never exits or closes stdout, and the parent's
-     * stdout read never reaches EOF. Both sides wait forever — this is what
-     * hung `itRejectsCompositionBindingsWhenOnlyIdentityEvidenceRemains`
-     * against a schema-invalid manifest that made the generator write ~2.6 MB
-     * to stderr in one `fwrite`.
+     * stuck mid-write, so it never exits or closes the first stream, and the
+     * parent's read of that first stream never reaches EOF. Both sides wait
+     * forever — this is what hung
+     * `itRejectsCompositionBindingsWhenOnlyIdentityEvidenceRemains` against a
+     * schema-invalid manifest that made the generator write ~2.6 MB to
+     * stderr in one `fwrite`.
+     *
+     * The property being guarded is "neither stream is left unread while the
+     * other blocks", not "stderr, specifically, is read second" — the
+     * historical bug happened to read stdout first, but its mirror (stderr
+     * first) and a concurrent-looking drain that dropped
+     * `stream_set_blocking(..., false)` deadlock the exact same way. A flood
+     * on one stream only proves the test bites for the mutation that
+     * happened; it does not bite for either of those two, since both leave
+     * the *other*, single-flooded stream fully readable. Flooding **both**
+     * streams — a plain child that writes past the buffer to stdout, then
+     * to stderr, sequentially, nothing concurrent required on the child's
+     * side — deadlocks all three shapes and still completes in well under a
+     * second against the real fix, so the stronger test costs nothing.
+     * Measured directly against the committed `drain()` copied to a scratch
+     * directory plus three mutants (sequential stdout-first, sequential
+     * stderr-first, `stream_select` kept but blocking left on): the
+     * both-flooded child deadlocks all three mutants and only them.
+     *
+     * The two streams also carry different, asymmetric, recognizable
+     * payloads (`O`s on stdout, a different length of `E`s on stderr) so the
+     * assertions below can recover which byte went through which descriptor
+     * from `runProcess()`'s single concatenated return value —
+     * `$stdout . $stderr`, always in that order — without changing that
+     * method's return shape, which the other cases in this class already
+     * depend on. A `drain()` that swapped the two slots would flip the
+     * observed order (`E`s before `O`s); one that merged both onto a single
+     * slot would fail the length split. A same-size, same-byte flood could
+     * satisfy either defect by coincidence; this one cannot.
      *
      * `runProcess()` runs in-process, so a deadlocked call would hang this
      * very PHPUnit run rather than fail it — the exact failure mode this
@@ -380,16 +409,30 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
      * a regression here fails this test instead of hanging the suite.
      */
     #[Test]
-    public function itDrainsAChildThatFloodsTheStreamReadSecondWithoutDeadlocking(): void
+    public function itDrainsAChildThatFloodsBothStreamsWithoutDeadlocking(): void
     {
-        $floodBytes = 1_048_576; // 16x the 64 KB default OS pipe buffer on both macOS and Linux.
-        $outputFile = tempnam(sys_get_temp_dir(), 'qmx-pipe-harness-output-');
+        // Both well past the 64 KB default OS pipe buffer on macOS and
+        // Linux, and deliberately unequal so neither assertion below could
+        // pass by coincidence on a same-size, same-byte flood.
+        $stdoutFloodBytes = 1_048_576;
+        $stderrFloodBytes = 2_097_152;
+        $outputFile = tempnam(sys_get_temp_dir(), 'qmx-pipe-harness-stdout-');
+        $errorFile = tempnam(sys_get_temp_dir(), 'qmx-pipe-harness-stderr-');
         $harnessPath = tempnam(sys_get_temp_dir(), 'qmx-pipe-harness-');
         self::assertIsString($outputFile);
+        self::assertIsString($errorFile);
         self::assertIsString($harnessPath);
 
         try {
-            $floodCommand = [\PHP_BINARY, '-r', \sprintf('fwrite(STDERR, str_repeat("E", %d));', $floodBytes)];
+            $floodCommand = [
+                \PHP_BINARY,
+                '-r',
+                \sprintf(
+                    'fwrite(STDOUT, str_repeat("O", %d)); fwrite(STDERR, str_repeat("E", %d));',
+                    $stdoutFloodBytes,
+                    $stderrFloodBytes,
+                ),
+            ];
 
             $template = <<<'PHP'
                 <?php
@@ -402,7 +445,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
 
                 [$exitCode, $output] = $method->invoke($instance, __FLOOD_COMMAND__);
 
-                fwrite(STDOUT, $exitCode . ':' . strlen($output));
+                fwrite(STDOUT, $exitCode . "\n" . $output);
                 PHP;
 
             $harnessSource = str_replace(
@@ -416,21 +459,44 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
             );
             self::assertNotFalse(file_put_contents($harnessPath, $harnessSource));
 
-            [$exitCode, $timedOut] = $this->runWithDeadline([\PHP_BINARY, $harnessPath], 5.0, $outputFile);
+            [$exitCode, $timedOut] = $this->runWithDeadline([\PHP_BINARY, $harnessPath], 5.0, $outputFile, $errorFile);
+            $harnessStderr = file_get_contents($errorFile);
+            self::assertIsString($harnessStderr);
 
             self::assertFalse(
                 $timedOut,
-                'runProcess() deadlocked: it must have read stdout to EOF before ever reading stderr, '
-                . 'and the child was still blocked writing ' . $floodBytes . ' bytes of stderr past the OS pipe buffer.',
+                'runProcess() did not finish within the deadline. Historically this meant a stream left '
+                . 'unread while the child blocked writing the other past the OS pipe buffer, but the '
+                . 'timeout only observes "did not finish" -- treat that as the leading hypothesis, not an '
+                . 'established cause. Harness stderr: ' . $harnessStderr,
             );
-            self::assertSame(0, $exitCode, 'harness process exit code');
+            self::assertSame(0, $exitCode, 'harness process exit code; stderr: ' . $harnessStderr);
 
             $harnessOutput = file_get_contents($outputFile);
             self::assertIsString($harnessOutput);
-            self::assertSame('0:' . $floodBytes, trim($harnessOutput), 'child exit code and drained byte count');
+            $parts = explode("\n", $harnessOutput, 2);
+            self::assertCount(2, $parts, 'harness output missing the exit-code line; stderr: ' . $harnessStderr);
+            [$childExitLine, $childOutput] = $parts;
+            self::assertSame('0', $childExitLine, 'flood child exit code; harness stderr: ' . $harnessStderr);
+            self::assertSame(
+                $stdoutFloodBytes + $stderrFloodBytes,
+                \strlen($childOutput),
+                'combined drained byte count',
+            );
+            self::assertSame(
+                str_repeat('O', $stdoutFloodBytes),
+                substr($childOutput, 0, $stdoutFloodBytes),
+                'stdout slot: bytes and count',
+            );
+            self::assertSame(
+                str_repeat('E', $stderrFloodBytes),
+                substr($childOutput, $stdoutFloodBytes),
+                'stderr slot: bytes and count',
+            );
         } finally {
             @unlink($harnessPath);
             @unlink($outputFile);
+            @unlink($errorFile);
         }
     }
 
@@ -439,18 +505,18 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
      * read on it: only `proc_get_status()` polling and, past the deadline,
      * `proc_terminate()`. A supervisor that itself read a pipe from `$command`
      * could deadlock exactly the way the code under test here might, which is
-     * why `$command`'s own stdout/stderr are redirected straight to files
-     * (`file` descriptors, not `pipe` ones) instead of being read by this
-     * process at all.
+     * why `$command`'s own stdout and stderr are redirected straight to
+     * files (`file` descriptors, not `pipe` ones) instead of being read by
+     * this process at all.
      *
      * @param list<string> $command
      *
      * @return array{int, bool} the process exit code (meaningless when the
      *                          deadline was hit) and whether the deadline was hit
      */
-    private function runWithDeadline(array $command, float $seconds, string $stdoutFile): array
+    private function runWithDeadline(array $command, float $seconds, string $stdoutFile, string $stderrFile): array
     {
-        $process = proc_open($command, [1 => ['file', $stdoutFile, 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
+        $process = proc_open($command, [1 => ['file', $stdoutFile, 'w'], 2 => ['file', $stderrFile, 'w']], $pipes);
         self::assertIsResource($process);
 
         $deadline = microtime(true) + $seconds;
