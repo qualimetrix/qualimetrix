@@ -24,11 +24,19 @@ use Symfony\Component\Process\Process;
  * returning false. Both collectors that resolve an external parent are covered
  * here, because only one of them is reachable at a time: while the per-file
  * collector still lets the error escape, the file is dropped before the global
- * collector ever sees it in the graph.
+ * collector ever sees it in the graph. Reverting either one alone reddens these
+ * cases, which is how that claim is measured rather than assumed.
  *
  * The unit tests assert that each collector survives the throw. This asserts
  * the property a user actually reads -- the run reports complete coverage --
  * through the real binary and the real autoloader.
+ *
+ * The run happens in an empty directory, with the binary addressed absolutely.
+ * Run from the repository root it would instead pick up this repository's own
+ * `qmx.yaml`, making every assertion here depend on a file that is edited for
+ * unrelated reasons: that config's layer declarations alone contributed 37
+ * findings about this repository to a run whose analysed path was one file in a
+ * temporary directory.
  */
 #[CoversClass(InheritanceDepthCollector::class)]
 #[CoversClass(DitGlobalCollector::class)]
@@ -40,15 +48,23 @@ final class UnloadableExternalParentRunTest extends TestCase
     private const UNLOADABLE_PARENT =
         'Qualimetrix\\Tests\\Analysis\\Evidence\\Design\\Fixtures\\UnloadableParent\\ReachableChild';
 
+    private string $workingDirectory;
+
     private string $analysedFile;
 
     protected function setUp(): void
     {
-        $this->analysedFile = \sprintf(
-            '%s/qmx_unloadable_parent_%s.php',
+        $this->workingDirectory = \sprintf(
+            '%s/qmx_unloadable_parent_%s',
             sys_get_temp_dir(),
             bin2hex(random_bytes(6)),
         );
+
+        if (!mkdir($this->workingDirectory) && !is_dir($this->workingDirectory)) {
+            throw new RuntimeException('Failed to create the working directory');
+        }
+
+        $this->analysedFile = $this->workingDirectory . '/Local.php';
 
         $written = file_put_contents($this->analysedFile, \sprintf(
             "<?php\n\nnamespace Probe;\n\nclass Local extends \\%s\n{\n}\n",
@@ -62,9 +78,34 @@ final class UnloadableExternalParentRunTest extends TestCase
 
     protected function tearDown(): void
     {
-        if (is_file($this->analysedFile)) {
-            unlink($this->analysedFile);
+        // Removed as a tree: the run writes a `.qmx-cache/` into its working
+        // directory even under `--no-cache`, so the directory is never empty.
+        self::removeTree($this->workingDirectory);
+    }
+
+    private static function removeTree(string $path): void
+    {
+        if (is_file($path) || is_link($path)) {
+            unlink($path);
+
+            return;
         }
+
+        if (!is_dir($path)) {
+            return;
+        }
+
+        $entries = scandir($path);
+
+        if ($entries !== false) {
+            foreach ($entries as $entry) {
+                if ($entry !== '.' && $entry !== '..') {
+                    self::removeTree($path . '/' . $entry);
+                }
+            }
+        }
+
+        rmdir($path);
     }
 
     /**
@@ -94,24 +135,20 @@ final class UnloadableExternalParentRunTest extends TestCase
      * The unrestricted case is not redundant: under `--only-rule` the run
      * executes a fraction of the system, so a future resolution of an analysed
      * name somewhere else would not be reached by the narrowed cases at all.
-     * Its exit code is left unasserted because this repository's own
-     * `qmx.yaml`, which the run picks up from the working directory, reports
-     * configuration findings that bypass `fail_on` by design.
      *
      * @param list<string> $ruleScope
      */
-    #[TestWith([0, ['--only-rule=design.dit'], 0])]
-    #[TestWith([1, ['--only-rule=design.dit'], 0])]
-    #[TestWith([0, [], null])]
+    #[TestWith([0, ['--only-rule=design.dit']])]
+    #[TestWith([1, ['--only-rule=design.dit']])]
+    #[TestWith([0, []])]
     #[Test]
     public function itKeepsCoverageCompleteWhenAnExternalParentCannotFinishLoading(
         int $workers,
         array $ruleScope,
-        ?int $expectedExitCode,
     ): void {
         $process = new Process([
             \PHP_BINARY,
-            'bin/qmx',
+            \dirname(__DIR__, 6) . '/bin/qmx',
             'check',
             $this->analysedFile,
             ...$ruleScope,
@@ -120,7 +157,7 @@ final class UnloadableExternalParentRunTest extends TestCase
             '--no-progress',
             '--format=json',
             '--fail-on=none',
-        ], \dirname(__DIR__, 6));
+        ], $this->workingDirectory);
         $process->run();
 
         /** @var array<string, mixed> $report */
@@ -130,9 +167,6 @@ final class UnloadableExternalParentRunTest extends TestCase
         self::assertTrue($report['coverage']['complete'], 'The run reported incomplete coverage');
         self::assertSame(0, $report['coverage']['failed']);
         self::assertSame(1, $report['coverage']['analyzed']);
-
-        if ($expectedExitCode !== null) {
-            self::assertSame($expectedExitCode, $process->getExitCode());
-        }
+        self::assertSame(0, $process->getExitCode());
     }
 }

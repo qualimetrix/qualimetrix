@@ -95,10 +95,12 @@ final class DitGlobalCollectorTest extends TestCase
 
             $this->collector->calculate($graph, $repository);
 
-            // Same reason as the per-file case: the metric is 1 whether the
-            // load threw or was never attempted, so assert the attempt too.
-            self::assertSame(1, $probe->queryCount(), 'The collector never tried to load the parent');
-            self::assertTrue($probe->stillUndeclared(), 'The parent loaded successfully, so nothing threw');
+            // Same reason as the per-file case: depth 1 says nothing about how
+            // the resolution ended, so assert the failure and its cause.
+            self::assertTrue(
+                $probe->failedOnTheMissingParent(),
+                'Loading the parent did not fail on its own missing parent',
+            );
             self::assertSame(1, $repository->get($path)->get('design.dit'));
         } finally {
             $probe->stop();
