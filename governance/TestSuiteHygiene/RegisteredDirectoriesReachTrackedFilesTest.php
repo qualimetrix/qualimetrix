@@ -10,6 +10,10 @@ use DOMXPath;
 use LogicException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Subprocess\ChildProcess;
+use RuntimeException;
+
+require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
 
 /**
  * Every test-root registration names a path a fresh clone will actually have.
@@ -270,28 +274,20 @@ final class RegisteredDirectoriesReachTrackedFilesTest extends TestCase
         }
 
         $command = ['git', 'ls-files', '-z'];
-        $process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, TestTree::projectRoot());
-        if ($process === false) {
-            throw new LogicException('Cannot start git ls-files');
+        try {
+            $result = ChildProcess::run($command, TestTree::projectRoot());
+        } catch (RuntimeException $exception) {
+            throw new LogicException('Cannot start git ls-files: ' . $exception->getMessage(), 0, $exception);
         }
 
-        $stdout = stream_get_contents($pipes[1]);
-        $stderr = stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-        $status = proc_close($process);
-
-        if ($stdout === false || $stderr === false) {
-            throw new LogicException('git ls-files produced no readable output');
+        if ($result['exitCode'] !== 0) {
+            throw new LogicException(\sprintf('git ls-files exited %d', $result['exitCode']));
         }
-        if ($status !== 0) {
-            throw new LogicException(\sprintf('git ls-files exited %d', $status));
-        }
-        if ($stderr !== '') {
-            throw new LogicException('git ls-files wrote to stderr: ' . $stderr);
+        if ($result['stderr'] !== '') {
+            throw new LogicException('git ls-files wrote to stderr: ' . $result['stderr']);
         }
 
-        $files = array_values(array_filter(explode("\0", $stdout), static fn(string $path): bool => $path !== ''));
+        $files = array_values(array_filter(explode("\0", $result['stdout']), static fn(string $path): bool => $path !== ''));
         if ($files === []) {
             throw new LogicException('git ls-files listed no file, so nothing here was judged against anything');
         }

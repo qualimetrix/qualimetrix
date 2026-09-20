@@ -6,6 +6,10 @@ namespace Qualimetrix\Governance\DistributedPackage;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Subprocess\ChildProcess;
+use RuntimeException;
+
+require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
 
 /**
  * What a consumer receives under the HTML report's tree, against what the
@@ -148,23 +152,20 @@ final class HtmlReportShipsOnlyWhatItReadsTest extends TestCase
     /** @param list<string> $command */
     private static function capture(array $command, string $input = ''): string
     {
-        $process = proc_open(
-            $command,
-            [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
-            $pipes,
+        try {
+            $result = ChildProcess::run($command, null, $input);
+        } catch (RuntimeException $exception) {
+            self::fail('Could not start ' . $command[0] . ', so nothing here was checked: ' . $exception->getMessage());
+        }
+
+        self::assertSame(
+            0,
+            $result['exitCode'],
+            implode(' ', $command) . ' failed, so nothing here was checked.'
+                . ($result['stderr'] !== '' ? "\n" . $result['stderr'] : ''),
         );
 
-        self::assertIsResource($process, 'Could not start ' . $command[0] . ', so nothing here was checked.');
-
-        fwrite($pipes[0], $input);
-        fclose($pipes[0]);
-        $out = (string) stream_get_contents($pipes[1]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-
-        self::assertSame(0, proc_close($process), implode(' ', $command) . ' failed, so nothing here was checked.');
-
-        return $out;
+        return $result['stdout'];
     }
 
     private static function projectRoot(): string

@@ -7,6 +7,10 @@ namespace Qualimetrix\Governance\GeneratedArtifactFreshness;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Subprocess\ChildProcess;
+use RuntimeException;
+
+require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
 
 /**
  * Runs `scripts/generate-suppression-snapshot.php --check` as a subprocess,
@@ -40,13 +44,13 @@ final class SuppressionSnapshotFreshnessTest extends TestCase
      */
     private function runProcess(array $command): array
     {
-        $process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $this->root());
-        self::assertIsResource($process);
-        $output = stream_get_contents($pipes[1]) . stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
+        try {
+            $result = ChildProcess::run($command, $this->root());
+        } catch (RuntimeException $exception) {
+            self::fail($exception->getMessage());
+        }
 
-        return [proc_close($process), $output];
+        return [$result['exitCode'], $result['stdout'] . $result['stderr']];
     }
 
     private function root(): string

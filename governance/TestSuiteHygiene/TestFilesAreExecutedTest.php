@@ -9,9 +9,13 @@ use JsonException;
 use LogicException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Subprocess\ChildProcess;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use RuntimeException;
 use SplFileInfo;
+
+require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
 
 /**
  * Every test class the tree carries is one the suite actually runs.
@@ -806,29 +810,20 @@ final class TestFilesAreExecutedTest extends TestCase
      */
     private static function runCommand(array $command, string $label): string
     {
-        $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
-        $process = proc_open($command, $descriptors, $pipes, TestTree::projectRoot());
-        if ($process === false) {
-            throw new LogicException('Cannot start ' . $label);
+        try {
+            $result = ChildProcess::run($command, TestTree::projectRoot());
+        } catch (RuntimeException $exception) {
+            throw new LogicException('Cannot start ' . $label . ': ' . $exception->getMessage(), 0, $exception);
         }
 
-        $stdout = stream_get_contents($pipes[1]);
-        $stderr = stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-        $status = proc_close($process);
-
-        if ($stdout === false || $stderr === false) {
-            throw new LogicException($label . ' produced no readable output');
+        if ($result['exitCode'] !== 0) {
+            throw new LogicException(\sprintf('%s exited %d', $label, $result['exitCode']));
         }
-        if ($status !== 0) {
-            throw new LogicException(\sprintf('%s exited %d', $label, $status));
-        }
-        if ($stderr !== '') {
+        if ($result['stderr'] !== '') {
             throw new LogicException($label . ' wrote to stderr');
         }
 
-        return $stdout;
+        return $result['stdout'];
     }
 
     /** @return list<string> */
