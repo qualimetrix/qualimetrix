@@ -28,8 +28,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\AllowListBuilder;
 
 /**
- * Regression coverage for the anonymous-class-inheritance defect (see
- * {@code docs/internal/plans/anonymous-class-inheritance/00-overview.md}, P3):
+ * Regression coverage for the anonymous-class-inheritance defect:
  * an anonymous class nested inside a named class has no declaration identity
  * of its own, so its `extends`/`implements`/`attributes` header used to be
  * recorded with the ENCLOSING named class as source. Layer membership walked
@@ -182,9 +181,8 @@ final class AnonymousClassInheritanceIntegrationTest extends TestCase
         );
     }
 
-    // NOTE on template layers (plan P3: "template layers ... read the same
-    // ClassContext — cover them too"): no test for that half is included
-    // here. Investigation found it CANNOT be exercised meaningfully with the
+    // Template layers read the same ClassContext, so they look like they
+    // belong in this file. They cannot be exercised meaningfully with the
     // current template-expansion wiring: ArchitecturePolicy::prepare()
     // (src/Analysis/Policy/Architecture/ArchitecturePolicy.php) builds the
     // ClassSet handed to LayerExpansionStage with a brand-new, UNBOUND
@@ -200,10 +198,9 @@ final class AnonymousClassInheritanceIntegrationTest extends TestCase
     //   TupleExtractor's own docblock, so a class already bound by the
     //   pattern is observed regardless of what extends says — making the
     //   criterion inert for classification either way.
-    // This is a separate, pre-existing defect, unrelated to the files P1
-    // touched and out of this package's file set (fixing it means editing
-    // ArchitecturePolicy.php in src/). Flagged separately rather than fixed
-    // here.
+    // This is a separate, pre-existing defect: it predates the anonymous-class
+    // cure and survives it. Fixing it means changing where the expansion stage
+    // gets its factory, which is a different subject from this file.
 
     /**
      * Builds a two-layer registry: the criterion under test (self-allow-only)
