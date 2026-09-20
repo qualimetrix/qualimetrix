@@ -6,6 +6,9 @@ namespace Qualimetrix\Infrastructure\Console;
 
 final class RunningBinaryLocator implements RunningBinaryLocatorInterface
 {
+    /**
+     * @qmx-ignore code-smell.superglobals -- The rule's remedy is this class: it exists so that the one read of `$_SERVER` happens behind a contract and every consumer is injected instead. Anything the rule would accept here would be a second class doing the same read for this one to wrap.
+     */
     public function path(): ?string
     {
         // Both, because neither is guaranteed: SCRIPT_FILENAME is absent under

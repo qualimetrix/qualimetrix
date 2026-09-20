@@ -4,12 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Console\Hook\PreCommitHook;
-use Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface;
-use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -17,37 +13,21 @@ use Symfony\Component\Console\Output\OutputInterface;
     name: 'hook:status',
     description: 'Show status of git pre-commit hook',
 )]
-final class HookStatusCommand extends Command
+final class HookStatusCommand extends AbstractHookCommand
 {
-    public function __construct(
-        private readonly GitRepositoryLocatorInterface $gitRepositoryLocator,
-        private readonly RunningBinaryLocatorInterface $runningBinaryLocator,
-    ) {
-        parent::__construct();
-    }
-
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $gitDir = $this->gitRepositoryLocator->findGitDir();
-        if ($gitDir === null) {
-            $output->writeln('<error>Not a git repository</error>');
-            $output->writeln('');
-            $output->writeln('Initialize git first: git init');
-
+        $hookPath = $this->hookPath($output);
+        if ($hookPath === null) {
             return self::FAILURE;
         }
 
         $output->writeln('<info>Git Pre-commit Hook Status</info>');
         $output->writeln('');
 
-        $hookPath = $gitDir->joinRelative(RelativePath::fromString('hooks/pre-commit'))->value();
-
-        // is_link first: `file_exists` follows a symlink and answers false for
-        // a broken one, which would report a hook git still tries to run as
-        // absent.
         $isSymlink = is_link($hookPath);
 
-        if (!$isSymlink && !file_exists($hookPath)) {
+        if (!self::hookExists($hookPath)) {
             $output->writeln('Status: <comment>NOT INSTALLED</comment>');
             $output->writeln('');
             $output->writeln('To install the hook, run:');

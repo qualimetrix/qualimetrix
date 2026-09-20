@@ -227,9 +227,9 @@ Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface	Analysis.Ru
 Qualimetrix\Core\Ast\FileParserInterface	Core.Neutral	8	3
 Qualimetrix\Core\Exception\ParseException	Core.Neutral	3	2
 Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	28	13
-Qualimetrix\Core\Path\AbsolutePath	Core.Path	52	12
-Qualimetrix\Core\Path\PathFactory	Core.Path	17	7
-Qualimetrix\Core\Path\RelativePath	Core.Path	87	23
+Qualimetrix\Core\Path\AbsolutePath	Core.Path	51	12
+Qualimetrix\Core\Path\PathFactory	Core.Path	16	7
+Qualimetrix\Core\Path\RelativePath	Core.Path	85	23
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	22	8
 Qualimetrix\Core\Symbol\CallableKind	Core.Symbol	9	2
 Qualimetrix\Core\Symbol\DeclarationKey	Core.Symbol	3	2
@@ -261,7 +261,7 @@ Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration	Infrastructure.Cach
 Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface	Infrastructure.Cache	5	2
 Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface	Infrastructure.Cache	4	3
 Qualimetrix\Infrastructure\Cache\FileCache	Infrastructure.Cache	1	1
-Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface	Infrastructure.Git	4	2
+Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface	Infrastructure.Git	2	2
 Qualimetrix\Infrastructure\Git\GitScope	Infrastructure.Git	1	1
 Qualimetrix\Infrastructure\Git\GitScopeResolution	Infrastructure.Git	2	1
 Qualimetrix\Infrastructure\Git\GitScopeResolver	Infrastructure.Git	1	1

@@ -4,12 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Console\Hook\PreCommitHook;
-use Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface;
-use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -18,15 +14,8 @@ use Symfony\Component\Console\Output\OutputInterface;
     name: 'hook:install',
     description: 'Install git pre-commit hook for Qualimetrix',
 )]
-final class HookInstallCommand extends Command
+final class HookInstallCommand extends AbstractHookCommand
 {
-    public function __construct(
-        private readonly GitRepositoryLocatorInterface $gitRepositoryLocator,
-        private readonly RunningBinaryLocatorInterface $runningBinaryLocator,
-    ) {
-        parent::__construct();
-    }
-
     protected function configure(): void
     {
         $this->addOption(
@@ -39,17 +28,8 @@ final class HookInstallCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $gitDir = $this->gitRepositoryLocator->findGitDir();
-        if ($gitDir === null) {
-            $output->writeln('<error>Not a git repository. Initialize git first with: git init</error>');
-
-            return self::FAILURE;
-        }
-
-        $hooksDir = $gitDir->joinRelative(RelativePath::fromString('hooks'))->value();
-        if (!is_dir($hooksDir)) {
-            $output->writeln('<error>Git hooks directory not found: ' . $hooksDir . '</error>');
-
+        $hookPath = $this->hookPath($output);
+        if ($hookPath === null) {
             return self::FAILURE;
         }
 
@@ -60,8 +40,6 @@ final class HookInstallCommand extends Command
 
             return self::FAILURE;
         }
-
-        $hookPath = $hooksDir . '/pre-commit';
 
         $refusal = $this->clearExistingHook($input, $output, $hookPath);
         if ($refusal !== null) {
@@ -96,7 +74,7 @@ final class HookInstallCommand extends Command
         // symlink into a script this package no longer carries. Treating that
         // as "no hook" would write through the link and recreate the script
         // outside the hooks directory.
-        if (!is_link($hookPath) && !file_exists($hookPath)) {
+        if (!self::hookExists($hookPath)) {
             return null;
         }
 

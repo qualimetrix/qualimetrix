@@ -1,6 +1,6 @@
 {
   "version": 13,
-  "generated": "2026-09-14T20:51:46+00:00",
+  "generated": "2026-09-20T09:58:22+00:00",
   "scope": ["src"],
   "entries": {
     "declaration:callable:Qualimetrix\\Analysis\\Configuration\\Contract\\Discovery\\ComposerAutoloadPathReaderInterface::extractAutoloadPaths@src/Analysis/Configuration/Contract/Discovery/ComposerAutoloadPathReaderInterface.php": [
@@ -216,13 +216,6 @@
     ],
     "declaration:callable:Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand::__construct@src/Infrastructure/Console/Command/CheckCommand.php": [
       {"channel":"code-smell.constructor-overinjection","magnitudes":[9]}
-    ],
-    "declaration:callable:Qualimetrix\\Infrastructure\\Console\\Command\\HookInstallCommand::execute@src/Infrastructure/Console/Command/HookInstallCommand.php": [
-      {"channel":"complexity.ccn","magnitudes":[10]},
-      {"channel":"complexity.npath","magnitudes":[320]}
-    ],
-    "declaration:callable:Qualimetrix\\Infrastructure\\Console\\Command\\HookStatusCommand::execute@src/Infrastructure/Console/Command/HookStatusCommand.php": [
-      {"channel":"complexity.ccn","magnitudes":[10]}
     ],
     "declaration:callable:Qualimetrix\\Infrastructure\\Console\\DrillDownBinding::namespaceUniverse@src/Infrastructure/Console/DrillDownBinding.php": [
       {"channel":"complexity.ccn","magnitudes":[10]}

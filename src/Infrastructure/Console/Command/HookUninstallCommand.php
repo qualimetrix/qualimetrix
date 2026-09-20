@@ -4,12 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Console\Hook\PreCommitHook;
-use Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface;
-use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -18,15 +14,8 @@ use Symfony\Component\Console\Output\OutputInterface;
     name: 'hook:uninstall',
     description: 'Uninstall git pre-commit hook for Qualimetrix',
 )]
-final class HookUninstallCommand extends Command
+final class HookUninstallCommand extends AbstractHookCommand
 {
-    public function __construct(
-        private readonly GitRepositoryLocatorInterface $gitRepositoryLocator,
-        private readonly RunningBinaryLocatorInterface $runningBinaryLocator,
-    ) {
-        parent::__construct();
-    }
-
     protected function configure(): void
     {
         $this->addOption(
@@ -40,20 +29,12 @@ final class HookUninstallCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         // Find .git directory
-        $gitDir = $this->gitRepositoryLocator->findGitDir();
-        if ($gitDir === null) {
-            $output->writeln('<error>Not a git repository</error>');
-
+        $hookPath = $this->hookPath($output);
+        if ($hookPath === null) {
             return self::FAILURE;
         }
 
-        $hookPath = $gitDir->joinRelative(RelativePath::fromString('hooks/pre-commit'))->value();
-
-        // is_link first: `file_exists` follows a symlink and answers false
-        // for a broken one. A hook installed by an earlier release points at a
-        // script this package no longer ships, and reporting it as absent
-        // would leave git running a link that leads nowhere.
-        if (!is_link($hookPath) && !file_exists($hookPath)) {
+        if (!self::hookExists($hookPath)) {
             $output->writeln('<comment>Pre-commit hook not found. Nothing to uninstall.</comment>');
 
             return self::SUCCESS;
