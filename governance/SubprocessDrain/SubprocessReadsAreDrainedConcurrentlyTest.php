@@ -154,7 +154,7 @@ require_once __DIR__ . '/PhpFilePopulation.php';
  * carry, which is also what lets one reviewed entry come to permit two. ADR 0070
  * lists the four and what each loses. Two of those losses are present in today's
  * tree rather than hypothetical: keyed on the enclosing symbol, eight of the
- * twenty-three occurrences outside the module sit four-to-a-function in two data
+ * twenty-two occurrences outside the module sit four-to-a-function in two data
  * providers, so the six entries covering them would collapse into two; and two
  * more sit in a class constant array with no enclosing function to name at all.
  *
