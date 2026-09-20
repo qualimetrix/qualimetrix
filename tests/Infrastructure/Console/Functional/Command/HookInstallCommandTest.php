@@ -8,166 +8,211 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Command\HookInstallCommand;
+use Qualimetrix\Infrastructure\Console\Hook\PreCommitHook;
+use Qualimetrix\Infrastructure\Console\Hook\RunningBinaryLocatorInterface;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
+/**
+ * No fixture here creates `scripts/pre-commit-hook.sh`, and that absence is
+ * the point. The version of this file that did create one reported a working
+ * command for two years while `hook:install` from an installed package exited
+ * 1: the fixture supplied the very file `.gitattributes` keeps out of the dist
+ * package, so the test measured a tree no consumer has.
+ */
 #[CoversClass(HookInstallCommand::class)]
 final class HookInstallCommandTest extends TestCase
 {
+    private const string BINARY = '/opt/qualimetrix/bin/qmx';
+
     private string $tempDir;
     private string $gitDir;
+    private string $originalCwd;
 
     protected function setUp(): void
     {
-        // Create temporary directory with fake git structure
+        $this->originalCwd = (string) getcwd();
+
         $this->tempDir = sys_get_temp_dir() . '/qmx-test-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0777, true);
 
-        // Create .git/hooks directory
         $this->gitDir = $this->tempDir . '/.git';
         mkdir($this->gitDir . '/hooks', 0777, true);
 
-        // Create fake pre-commit-hook.sh script
-        $scriptsDir = $this->tempDir . '/scripts';
-        mkdir($scriptsDir, 0777, true);
-        file_put_contents(
-            $scriptsDir . '/pre-commit-hook.sh',
-            "#!/bin/bash\n# Qualimetrix pre-commit hook\necho 'Running Qualimetrix'\n",
-        );
-
-        // Change to temp directory for test
         chdir($this->tempDir);
     }
 
     protected function tearDown(): void
     {
-        // Clean up temporary directory
+        // Restored, not left behind: the command reads the working directory,
+        // so a test that changes it and does not put it back decides what the
+        // next test in the run measures.
+        chdir($this->originalCwd);
+
         if (is_dir($this->tempDir)) {
             $this->removeDirectory($this->tempDir);
         }
     }
 
     #[Test]
-    public function itInstallsPreCommitHook(): void
+    public function itInstallsPreCommitHookAsAnExecutableFile(): void
     {
-        $command = new HookInstallCommand(new GitRepositoryLocator());
+        $tester = $this->install([]);
 
-        $application = new Application();
-        $application->addCommand($command);
+        self::assertSame(0, $tester->getStatusCode());
+        self::assertStringContainsString('Pre-commit hook installed', $tester->getDisplay());
 
-        $commandTester = new CommandTester($command);
-        $commandTester->execute([]);
-
-        // Assert success
-        self::assertSame(0, $commandTester->getStatusCode());
-        $output = $commandTester->getDisplay();
-        self::assertStringContainsString('Pre-commit hook installed', $output);
-
-        // Verify hook was created
-        $hookPath = $this->gitDir . '/hooks/pre-commit';
+        $hookPath = $this->hookPath();
         self::assertFileExists($hookPath);
+        self::assertFalse(is_link($hookPath));
+        self::assertTrue(is_executable($hookPath));
+    }
 
-        // Verify it's a symlink
-        self::assertTrue(is_link($hookPath));
+    #[Test]
+    public function itWritesAHookThatNamesTheBinaryThatInstalledIt(): void
+    {
+        $this->install([]);
+
+        $contents = (string) file_get_contents($this->hookPath());
+
+        self::assertTrue(PreCommitHook::isOurs($contents));
+        self::assertStringContainsString(self::BINARY, $contents);
+    }
+
+    #[Test]
+    public function itNeedsNoScriptOnDiskToInstallFrom(): void
+    {
+        self::assertDirectoryDoesNotExist($this->tempDir . '/scripts');
+
+        self::assertSame(0, $this->install([])->getStatusCode());
+
+        self::assertFileExists($this->hookPath());
+        self::assertDirectoryDoesNotExist($this->tempDir . '/scripts');
+    }
+
+    #[Test]
+    public function itRefusesWhenTheRunningBinaryCannotBeNamed(): void
+    {
+        $tester = $this->install([], null);
+
+        self::assertSame(1, $tester->getStatusCode());
+        self::assertStringContainsString('Could not determine the path', $tester->getDisplay());
+        self::assertFileDoesNotExist($this->hookPath());
     }
 
     #[Test]
     public function itFailsWhenHookExistsWithoutForceFlag(): void
     {
-        // Create existing hook
-        $hookPath = $this->gitDir . '/hooks/pre-commit';
-        file_put_contents($hookPath, "#!/bin/bash\necho 'Existing hook'\n");
+        file_put_contents($this->hookPath(), "#!/bin/bash\necho 'Existing hook'\n");
 
-        $command = new HookInstallCommand(new GitRepositoryLocator());
+        $tester = $this->install([]);
 
-        $application = new Application();
-        $application->addCommand($command);
-
-        $commandTester = new CommandTester($command);
-        $commandTester->execute([]);
-
-        // Assert failure
-        self::assertSame(1, $commandTester->getStatusCode());
-        $output = $commandTester->getDisplay();
-        self::assertStringContainsString('Pre-commit hook already exists', $output);
-        self::assertStringContainsString('Use --force to overwrite', $output);
+        self::assertSame(1, $tester->getStatusCode());
+        self::assertStringContainsString('Pre-commit hook already exists', $tester->getDisplay());
+        self::assertStringContainsString('Use --force to overwrite', $tester->getDisplay());
     }
 
     #[Test]
     public function itOverwritesExistingHookWithForceFlag(): void
     {
-        // Create existing hook
-        $hookPath = $this->gitDir . '/hooks/pre-commit';
-        file_put_contents($hookPath, "#!/bin/bash\necho 'Old hook'\n");
+        file_put_contents($this->hookPath(), "#!/bin/bash\necho 'Old hook'\n");
 
-        $command = new HookInstallCommand(new GitRepositoryLocator());
+        $tester = $this->install(['--force' => true]);
 
-        $application = new Application();
-        $application->addCommand($command);
+        self::assertSame(0, $tester->getStatusCode());
+        self::assertStringContainsString('backed up', $tester->getDisplay());
 
-        $commandTester = new CommandTester($command);
-        $commandTester->execute(['--force' => true]);
+        $backup = (string) file_get_contents($this->hookPath() . '.backup');
+        self::assertStringContainsString('Old hook', $backup);
+    }
 
-        // Assert success
-        self::assertSame(0, $commandTester->getStatusCode());
-        $output = $commandTester->getDisplay();
-        self::assertStringContainsString('Pre-commit hook installed', $output);
-        self::assertStringContainsString('backed up', $output);
+    /**
+     * The state this change creates for everyone who installed the hook
+     * before it: the symlink is still there and its target is gone.
+     *
+     * `file_exists` follows the link and answers false, so a command testing
+     * only that treats the hook as absent — and then writes *through* the
+     * link, creating the target file outside the hooks directory instead of
+     * replacing the hook.
+     */
+    #[Test]
+    public function itReplacesADanglingSymlinkInsteadOfWritingThroughIt(): void
+    {
+        $vanishedTarget = $this->tempDir . '/scripts/pre-commit-hook.sh';
+        symlink($vanishedTarget, $this->hookPath());
 
-        // Verify backup was created
-        $backupPath = $hookPath . '.backup';
-        self::assertFileExists($backupPath);
+        $tester = $this->install(['--force' => true]);
 
-        // Verify old hook content in backup
-        $backupContent = file_get_contents($backupPath);
-        self::assertIsString($backupContent);
-        self::assertStringContainsString('Old hook', $backupContent);
+        self::assertSame(0, $tester->getStatusCode());
+        self::assertFileDoesNotExist($vanishedTarget);
+        self::assertFalse(is_link($this->hookPath()));
+        self::assertTrue(PreCommitHook::isOurs((string) file_get_contents($this->hookPath())));
+    }
+
+    #[Test]
+    public function itRefusesADanglingSymlinkWithoutForce(): void
+    {
+        symlink($this->tempDir . '/scripts/pre-commit-hook.sh', $this->hookPath());
+
+        $tester = $this->install([]);
+
+        self::assertSame(1, $tester->getStatusCode());
+        self::assertStringContainsString('Pre-commit hook already exists', $tester->getDisplay());
+        self::assertTrue(is_link($this->hookPath()));
     }
 
     #[Test]
     public function itFailsWhenNotInGitRepository(): void
     {
-        // Remove .git directory
         $this->removeDirectory($this->gitDir);
 
-        $command = new HookInstallCommand(new GitRepositoryLocator());
+        $tester = $this->install([]);
 
-        $application = new Application();
-        $application->addCommand($command);
-
-        $commandTester = new CommandTester($command);
-        $commandTester->execute([]);
-
-        // Assert failure
-        self::assertSame(1, $commandTester->getStatusCode());
-        $output = $commandTester->getDisplay();
-        self::assertStringContainsString('Not a git repository', $output);
+        self::assertSame(1, $tester->getStatusCode());
+        self::assertStringContainsString('Not a git repository', $tester->getDisplay());
     }
 
-    #[Test]
-    public function itMakesHookExecutable(): void
+    /** @param array<string, mixed> $input */
+    private function install(array $input, ?string $binary = self::BINARY): CommandTester
     {
-        $command = new HookInstallCommand(new GitRepositoryLocator());
+        $command = new HookInstallCommand(
+            new GitRepositoryLocator(),
+            $this->locator($binary),
+        );
 
         $application = new Application();
         $application->addCommand($command);
 
-        $commandTester = new CommandTester($command);
-        $commandTester->execute([]);
+        $tester = new CommandTester($command);
+        $tester->execute($input);
 
-        // Assert success
-        self::assertSame(0, $commandTester->getStatusCode());
-
-        // Verify hook is executable
-        $hookPath = $this->gitDir . '/hooks/pre-commit';
-        self::assertFileExists($hookPath);
-        self::assertTrue(is_executable($hookPath));
+        return $tester;
     }
 
     /**
-     * Recursively remove a directory.
+     * Injected rather than read from the process: under `CommandTester` the
+     * running binary is phpunit, so a command reading `$_SERVER` itself would
+     * bake phpunit's path and every assertion about that path would be true
+     * of a hook no consumer could ever receive.
      */
+    private function locator(?string $binary): RunningBinaryLocatorInterface
+    {
+        return new class ($binary) implements RunningBinaryLocatorInterface {
+            public function __construct(private readonly ?string $binary) {}
+
+            public function path(): ?string
+            {
+                return $this->binary;
+            }
+        };
+    }
+
+    private function hookPath(): string
+    {
+        return $this->gitDir . '/hooks/pre-commit';
+    }
+
     private function removeDirectory(string $dir): void
     {
         if (!is_dir($dir)) {
@@ -177,7 +222,7 @@ final class HookInstallCommandTest extends TestCase
         $files = array_diff((scandir($dir) !== false ? scandir($dir) : []), ['.', '..']);
         foreach ($files as $file) {
             $path = $dir . '/' . $file;
-            is_dir($path) ? $this->removeDirectory($path) : unlink($path);
+            is_dir($path) && !is_link($path) ? $this->removeDirectory($path) : unlink($path);
         }
         rmdir($dir);
     }

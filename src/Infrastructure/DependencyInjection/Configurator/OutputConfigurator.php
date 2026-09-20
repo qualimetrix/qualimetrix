@@ -65,6 +65,8 @@ use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\ExitCodeResolver;
 use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
 use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
+use Qualimetrix\Infrastructure\Console\Hook\RunningBinaryLocator;
+use Qualimetrix\Infrastructure\Console\Hook\RunningBinaryLocatorInterface;
 use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
 use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\ProfileSummaryRenderer;
@@ -417,10 +419,15 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(GitRepositoryLocator::class);
         $container->setAlias(GitRepositoryLocatorInterface::class, GitRepositoryLocator::class);
 
+        // RunningBinaryLocator (the path hook:install bakes into the hook)
+        $container->register(RunningBinaryLocator::class);
+        $container->setAlias(RunningBinaryLocatorInterface::class, RunningBinaryLocator::class);
+
         // HookInstallCommand
         $container->register(HookInstallCommand::class)
             ->setArguments([
                 new Reference(GitRepositoryLocator::class),
+                new Reference(RunningBinaryLocator::class),
             ])
             ->setPublic(true);
 

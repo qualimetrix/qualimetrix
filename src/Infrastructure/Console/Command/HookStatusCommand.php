@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Infrastructure\Console\Hook\PreCommitHook;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -23,14 +24,8 @@ final class HookStatusCommand extends Command
         parent::__construct();
     }
 
-    /**
-     * Marker comment to identify our hook.
-     */
-    private const HOOK_MARKER = 'Qualimetrix pre-commit hook';
-
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        // Find .git directory
         $gitDir = $this->gitRepositoryLocator->findGitDir();
         if ($gitDir === null) {
             $output->writeln('<error>Not a git repository</error>');
@@ -45,8 +40,12 @@ final class HookStatusCommand extends Command
 
         $hookPath = $gitDir->joinRelative(RelativePath::fromString('hooks/pre-commit'))->value();
 
-        // Check if hook exists
-        if (!file_exists($hookPath)) {
+        // is_link first: `file_exists` follows a symlink and answers false for
+        // a broken one, which would report a hook git still tries to run as
+        // absent.
+        $isSymlink = is_link($hookPath);
+
+        if (!$isSymlink && !file_exists($hookPath)) {
             $output->writeln('Status: <comment>NOT INSTALLED</comment>');
             $output->writeln('');
             $output->writeln('To install the hook, run:');
@@ -55,61 +54,117 @@ final class HookStatusCommand extends Command
             return self::SUCCESS;
         }
 
-        // Hook exists - gather information
-        $isSymlink = is_link($hookPath);
-        $content = file_get_contents($hookPath);
-        $isOurHook = $content !== false && str_contains($content, self::HOOK_MARKER);
-        $isExecutable = is_executable($hookPath);
-
         $output->writeln('Status: <info>INSTALLED</info>');
         $output->writeln(\sprintf('Path: %s', $hookPath));
 
-        if ($isSymlink) {
-            $target = readlink($hookPath);
-            $output->writeln(\sprintf('Type: <info>Symlink</info> → %s', $target === false ? 'unknown' : $target));
-        } else {
-            $output->writeln('Type: <info>Copy</info>');
+        $contents = $isSymlink ? $this->reportSymlink($hookPath, $output) : $this->reportFile($hookPath, $output);
+
+        if ($contents === null) {
+            return self::SUCCESS;
         }
 
-        if ($isOurHook) {
-            $output->writeln('Owner: <info>Qualimetrix</info>');
-        } else {
-            $output->writeln('Owner: <comment>Third-party hook</comment>');
-            $output->writeln('');
-            $output->writeln('<comment>Warning: This is not an Qualimetrix hook.</comment>');
-            $output->writeln('It may have been installed by another tool or manually.');
-        }
-
-        if ($isExecutable) {
-            $output->writeln('Executable: <info>Yes</info>');
-        } else {
-            $output->writeln('Executable: <error>No</error>');
-            $output->writeln('');
-            $output->writeln('<error>Warning: Hook is not executable and will not run.</error>');
-            $output->writeln(\sprintf('Fix with: chmod +x %s', $hookPath));
-        }
-
-        // Check for backup
-        $backupPath = $hookPath . '.backup';
-        if (file_exists($backupPath)) {
-            $output->writeln('Backup: <info>Yes</info>');
-            $output->writeln(\sprintf('Backup path: %s', $backupPath));
-        } else {
-            $output->writeln('Backup: <comment>No</comment>');
-        }
+        $this->reportOwnership($contents, $output);
+        $this->reportExecutable($hookPath, $output);
+        $this->reportBackup($hookPath, $output);
 
         $output->writeln('');
-
-        // Show suggestions based on status
-        if ($isOurHook) {
-            $output->writeln('The hook will run Qualimetrix on staged PHP files before each commit.');
-            $output->writeln('To bypass the hook, use: git commit --no-verify');
-        } else {
-            $output->writeln('To install Qualimetrix hook, run:');
-            $output->writeln('  bin/qmx hook:install --force');
-        }
+        $this->reportSuggestions($contents, $output);
 
         return self::SUCCESS;
     }
 
+    /**
+     * @return string|null the hook's contents, or null when there is nothing
+     *                     left to say about a link that leads nowhere
+     */
+    private function reportSymlink(string $hookPath, OutputInterface $output): ?string
+    {
+        $target = readlink($hookPath);
+        $output->writeln(\sprintf('Type: <info>Symlink</info> → %s', $target === false ? 'unknown' : $target));
+
+        $contents = file_exists($hookPath) ? file_get_contents($hookPath) : false;
+
+        if ($contents === false) {
+            $output->writeln('');
+            $output->writeln('<error>Warning: the symlink leads nowhere, so this hook does nothing.</error>');
+            $output->writeln('Earlier releases installed a symlink into a script this package no longer ships.');
+            $output->writeln('Reinstall it: bin/qmx hook:install --force');
+
+            return null;
+        }
+
+        return $contents;
+    }
+
+    /** @return string|null null when the file cannot be read */
+    private function reportFile(string $hookPath, OutputInterface $output): ?string
+    {
+        $output->writeln('Type: <info>File</info>');
+
+        $contents = file_get_contents($hookPath);
+
+        if ($contents === false) {
+            $output->writeln('');
+            $output->writeln('<error>Warning: the hook file cannot be read.</error>');
+
+            return null;
+        }
+
+        return $contents;
+    }
+
+    private function reportOwnership(string $contents, OutputInterface $output): void
+    {
+        if (PreCommitHook::isOurs($contents)) {
+            $output->writeln('Owner: <info>Qualimetrix</info>');
+
+            return;
+        }
+
+        $output->writeln('Owner: <comment>Third-party hook</comment>');
+        $output->writeln('');
+        $output->writeln('<comment>Warning: This is not an Qualimetrix hook.</comment>');
+        $output->writeln('It may have been installed by another tool or manually.');
+    }
+
+    private function reportExecutable(string $hookPath, OutputInterface $output): void
+    {
+        if (is_executable($hookPath)) {
+            $output->writeln('Executable: <info>Yes</info>');
+
+            return;
+        }
+
+        $output->writeln('Executable: <error>No</error>');
+        $output->writeln('');
+        $output->writeln('<error>Warning: Hook is not executable and will not run.</error>');
+        $output->writeln(\sprintf('Fix with: chmod +x %s', $hookPath));
+    }
+
+    private function reportBackup(string $hookPath, OutputInterface $output): void
+    {
+        $backupPath = $hookPath . '.backup';
+
+        if (file_exists($backupPath)) {
+            $output->writeln('Backup: <info>Yes</info>');
+            $output->writeln(\sprintf('Backup path: %s', $backupPath));
+
+            return;
+        }
+
+        $output->writeln('Backup: <comment>No</comment>');
+    }
+
+    private function reportSuggestions(string $contents, OutputInterface $output): void
+    {
+        if (PreCommitHook::isOurs($contents)) {
+            $output->writeln('The hook will run Qualimetrix on staged PHP files before each commit.');
+            $output->writeln('To bypass the hook, use: git commit --no-verify');
+
+            return;
+        }
+
+        $output->writeln('To install Qualimetrix hook, run:');
+        $output->writeln('  bin/qmx hook:install --force');
+    }
 }

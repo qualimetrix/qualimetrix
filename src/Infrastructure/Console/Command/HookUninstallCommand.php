@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Infrastructure\Console\Hook\PreCommitHook;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -23,11 +24,6 @@ final class HookUninstallCommand extends Command
     ) {
         parent::__construct();
     }
-
-    /**
-     * Marker comment to identify our hook.
-     */
-    private const HOOK_MARKER = 'Qualimetrix pre-commit hook';
 
     protected function configure(): void
     {
@@ -51,7 +47,11 @@ final class HookUninstallCommand extends Command
 
         $hookPath = $gitDir->joinRelative(RelativePath::fromString('hooks/pre-commit'))->value();
 
-        if (!file_exists($hookPath)) {
+        // is_link first: `file_exists` follows a symlink and answers false
+        // for a broken one. A hook installed by an earlier release points at a
+        // script this package no longer ships, and reporting it as absent
+        // would leave git running a link that leads nowhere.
+        if (!is_link($hookPath) && !file_exists($hookPath)) {
             $output->writeln('<comment>Pre-commit hook not found. Nothing to uninstall.</comment>');
 
             return self::SUCCESS;
@@ -73,6 +73,20 @@ final class HookUninstallCommand extends Command
 
     private function removeHookFile(string $hookPath, OutputInterface $output): int
     {
+        // A link leading nowhere has no contents, so the only test for
+        // ownership there is cannot be applied. Guessing from the link target
+        // would mean carrying a rule about where a past release pointed it;
+        // saying so and letting the user decide costs nothing and is never
+        // wrong about someone else's hook.
+        if (is_link($hookPath) && !file_exists($hookPath)) {
+            $output->writeln('<error>Pre-commit hook is a symlink that leads nowhere.</error>');
+            $output->writeln('Nothing identifies it, so it is left alone.');
+            $output->writeln('Replace it with a working hook: bin/qmx hook:install --force');
+            $output->writeln('Or remove it by hand: rm ' . $hookPath);
+
+            return self::FAILURE;
+        }
+
         $content = file_get_contents($hookPath);
         if ($content === false) {
             $output->writeln('<error>Failed to read hook file</error>');
@@ -80,7 +94,7 @@ final class HookUninstallCommand extends Command
             return self::FAILURE;
         }
 
-        if (!str_contains($content, self::HOOK_MARKER)) {
+        if (!PreCommitHook::isOurs($content)) {
             $output->writeln('<error>Pre-commit hook exists but is not an Qualimetrix hook.</error>');
             $output->writeln('Will not remove third-party hook. Remove it manually if needed.');
 

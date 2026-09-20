@@ -17,9 +17,12 @@ final class HookUninstallCommandTest extends TestCase
 {
     private string $tempDir;
     private string $gitDir;
+    private string $originalCwd;
 
     protected function setUp(): void
     {
+        $this->originalCwd = (string) getcwd();
+
         // Create temporary directory with fake git structure
         $this->tempDir = sys_get_temp_dir() . '/qmx-test-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0777, true);
@@ -34,6 +37,11 @@ final class HookUninstallCommandTest extends TestCase
 
     protected function tearDown(): void
     {
+        // Restored, not left behind: the command reads the working directory,
+        // so a test that changes it and does not put it back decides what the
+        // next test in the run measures.
+        chdir($this->originalCwd);
+
         // Clean up temporary directory
         if (is_dir($this->tempDir)) {
             $this->removeDirectory($this->tempDir);
@@ -221,6 +229,33 @@ final class HookUninstallCommandTest extends TestCase
     }
 
     /**
+     * A symlink whose target is gone carries no contents, so the marker that
+     * decides ownership cannot be read. Removing it anyway would mean
+     * deleting a hook that may well be someone else's; the command says what
+     * it found instead.
+     */
+    #[Test]
+    public function itLeavesADanglingSymlinkAloneAndSaysWhy(): void
+    {
+        $hookPath = $this->gitDir . '/hooks/pre-commit';
+        symlink($this->tempDir . '/scripts/pre-commit-hook.sh', $hookPath);
+
+        $command = new HookUninstallCommand(new GitRepositoryLocator());
+
+        $application = new Application();
+        $application->addCommand($command);
+
+        $commandTester = new CommandTester($command);
+        $commandTester->execute([]);
+
+        self::assertSame(1, $commandTester->getStatusCode());
+        $output = $commandTester->getDisplay();
+        self::assertStringContainsString('leads nowhere', $output);
+        self::assertStringNotContainsString('Nothing to uninstall', $output);
+        self::assertTrue(is_link($hookPath));
+    }
+
+    /**
      * Recursively remove a directory.
      */
     private function removeDirectory(string $dir): void
@@ -232,7 +267,7 @@ final class HookUninstallCommandTest extends TestCase
         $files = array_diff((scandir($dir) !== false ? scandir($dir) : []), ['.', '..']);
         foreach ($files as $file) {
             $path = $dir . '/' . $file;
-            is_dir($path) ? $this->removeDirectory($path) : unlink($path);
+            is_dir($path) && !is_link($path) ? $this->removeDirectory($path) : unlink($path);
         }
         rmdir($dir);
     }
