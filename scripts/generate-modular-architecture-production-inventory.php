@@ -2392,7 +2392,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0050-configuration-refusal-carrier.md' => 'Analysis.Configuration',
         'docs/adr/0059-declared-layer-policy-and-architecture-governance.md' => 'Architecture.Governance',
         'docs/adr/0065-the-manifest-records-ownership-not-a-migration-schedule.md' => 'Architecture.Governance',
-        'docs/adr/0067-subprocess-read-discipline.md' => 'Architecture.Governance',
+        'docs/adr/0068-subprocess-read-discipline.md' => 'Architecture.Governance',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/Evidence/CircularDependency/README.md' => 'Analysis.Evidence.CircularDependency',
