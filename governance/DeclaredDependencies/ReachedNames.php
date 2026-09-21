@@ -53,8 +53,29 @@ use RuntimeException;
  * `call_user_func('mb_strlen', …)`, `define()`, a callable array -- and a
  * class constant another extension adds to someone else's class, such as
  * `PDO::MYSQL_ATTR_USE_BUFFERED_QUERY`, whose member identifier is not a name
- * node at all and which reflection cannot attribute to the extension that
- * added it. Both are blind spots by construction, not oversights.
+ * node at all. Both are blind spots by construction, not oversights.
+ *
+ * The second one is closed as unclosable rather than left open, because the
+ * reason is a property of what PHP exposes and not of how hard anyone looked.
+ * Reflection does not decline to attribute such a constant -- it attributes it
+ * to the WRONG owner, and confidently: on PHP 8.4
+ * `(new ReflectionClass('PDO'))->getReflectionConstants()` reports
+ * `MYSQL_ATTR_USE_BUFFERED_QUERY` with `getDeclaringClass()` of `PDO` and an
+ * extension of `PDO`, while asking `pdo_mysql` -- the extension that really
+ * adds it -- for its own constants yields none. A reader cannot tell that
+ * answer apart from the true one for `PDO::ATTR_ERRMODE`, so no
+ * reflection-based cure exists. The
+ * only remaining cure is a hand-kept `PDO::{MYSQL,PGSQL,SQLITE}_*` prefix
+ * table -- a list in a file standing in for a question put to PHP, which is
+ * the shape this group exists to avoid.
+ *
+ * It is also narrower than it looks. `pdo_mysql` owns the class `Pdo\Mysql`
+ * (`getExtensionName()` returns `pdo_mysql`), so the PHP 8.4 spelling
+ * `Pdo\Mysql::ATTR_USE_BUFFERED_QUERY` is attributed correctly through the
+ * class-like channel above, with no member identifier needed. Only the legacy
+ * `PDO::MYSQL_*` spelling is blind, and the extension-owned classes this tree
+ * reads constants from take those constants from the extension that provides
+ * the class.
  */
 final class ReachedNames
 {
