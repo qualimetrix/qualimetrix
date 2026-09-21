@@ -92,6 +92,7 @@ final class Declarations
      * @param array<string, Magnitude> $magnitudes `<slot>|<side>` => the two writings of it
      * @param array<string, string> $formAlternates form name => the counter-default literal of that form
      * @param array<string, string> $leafAlternates option leaf => the counter-default literal of that key
+     * @param array<string, string> $sideBLiterals form name => the literal the SECOND key of a pair is written with
      */
     private function __construct(
         public readonly array $forms,
@@ -102,6 +103,7 @@ final class Declarations
         public readonly array $magnitudes,
         public readonly array $formAlternates,
         public readonly array $leafAlternates,
+        public readonly array $sideBLiterals,
     ) {}
 
     /**
@@ -197,10 +199,17 @@ final class Declarations
 
         $formAlternates = [];
         $leafAlternates = [];
+        $sideBLiterals = [];
 
         foreach (self::rows($root . '/promise-effect/effect-magnitudes.tsv', 4) as $row) {
             if ($row[0] === 'option_leaf') {
                 $leafAlternates[$row[1]] = $row[2];
+
+                continue;
+            }
+
+            if ($row[0] === 'side_b') {
+                $sideBLiterals[$row[1]] = $row[2];
 
                 continue;
             }
@@ -223,7 +232,25 @@ final class Declarations
             $formAlternates[$row[1]] = $row[2];
         }
 
-        return new self($forms, $envelopes, $witnesses, $hits, $pairScopes, $magnitudes, $formAlternates, $leafAlternates);
+        // The same property, one side over: side B exists to be told apart
+        // from side A, which writes the canonical magnitude and falls back to
+        // the alternate. A per-side literal equal to either of those makes the
+        // two sides render identically, and `Classifier::pair()` then reads
+        // both as having survived — a GREEN verdict that says nothing, which
+        // is the defect this selector was added to remove.
+        foreach ($sideBLiterals as $form => $literal) {
+            $canonical = $forms[$form] ?? throw new LedgerError('effect-magnitudes.tsv names the form "' . $form . '", which forms.tsv does not');
+
+            if ($canonical->yamlWrite === $literal) {
+                throw new LedgerError('effect-magnitudes.tsv: the side_b literal of the form "' . $form . '" is its canonical write');
+            }
+
+            if (($formAlternates[$form] ?? null) === $literal) {
+                throw new LedgerError('effect-magnitudes.tsv: the side_b literal of the form "' . $form . '" is its alternate');
+            }
+        }
+
+        return new self($forms, $envelopes, $witnesses, $hits, $pairScopes, $magnitudes, $formAlternates, $leafAlternates, $sideBLiterals);
     }
 
     /** @return list<string> */

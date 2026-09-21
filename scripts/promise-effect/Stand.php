@@ -591,7 +591,7 @@ final class Stand
 
             $omitted = $this->pairWrite($rule, []);
             [$valueA, $a, $chosenA] = $this->pairSide($rule, $row->keyA, $omitted['object']);
-            [$valueB, $b, $chosenB] = $this->pairSide($rule, $row->keyB, $omitted['object']);
+            [$valueB, $b, $chosenB] = $this->pairSide($rule, $row->keyB, $omitted['object'], $this->declarations->sideBLiterals);
             $both = $this->pairWrite($rule, [$row->keyA => $valueA, $row->keyB => $valueB]);
 
             $coexistence = $row->coexistence;
@@ -1350,45 +1350,80 @@ final class Stand
      * One side of a pair, written with a value the product can be seen to read
      * differently from the key being absent.
      *
-     * The canonical magnitude is tried first and its observation is the one
-     * kept, so the search costs a second probe only where that magnitude turns
-     * out to be what the product already does. Where NOTHING declared moves
-     * the object the canonical write stands and the observation is stored as
-     * it came: the stand does not decide here that the row is unmeasurable —
+     * The first candidate is tried first and its observation is the one kept,
+     * so the search costs a second probe only where that magnitude turns out
+     * to be what the product already does. Where NOTHING declared moves the
+     * object that first candidate stands — the canonical write for side A, the
+     * per-side one for side B — and the observation is stored as it came: the
+     * stand does not decide here that the row is unmeasurable —
      * {@see Classifier::pair()} reads that off the four stored sides, so the
      * frozen half is judged by the same rule as the live one.
      *
+     * THE SEARCH IS OBSERVATIONAL, AND THAT IS A DECISION. The value written
+     * depends on the build under test: a magnitude equal to what the product
+     * does anyway is stepped over. Measured on this tree, inside the five
+     * rules the shorthand-scope round cures this fires on 71 of 506 sides and
+     * on one leaf, `enabled`, choosing between `true` and `false`. The
+     * alternative — declaring per leaf which magnitude is inert — puts a
+     * second source of truth beside the product's own defaults and goes stale
+     * in silence when one changes. It is also what keeps `side_b` safe: a
+     * per-side literal that turned out to be a product default would make its
+     * side inert and move a cell OUT of defect, and the fallback drops such a
+     * side back to the canonical candidate instead.
+     *
+     * Side A passes null and keeps the canonical magnitude; side B passes
+     * {@see Declarations::$sideBLiterals}.
+     *
+     * @param array<string, string>|null $sideLiterals per-side spellings by form
+     *
      * @return array{0: mixed, 1: array{door: Observation, merged: Observation, object: Observation}, 2: string}
      */
-    private function pairSide(string $rule, string $key, Observation $omitted): array
+    private function pairSide(string $rule, string $key, Observation $omitted, ?array $sideLiterals = null): array
     {
         $written = rtrim($key, ':');
-        $candidates = $this->pairCandidates($rule, $written);
+        $candidates = $this->pairCandidates($rule, $written, $sideLiterals);
+        // Whether the per-side set actually produced a first value is a
+        // property of the SHAPE, not of the argument: `bool` and a closed word
+        // set have no third spelling, so side B silently keeps side A's
+        // candidates there. Comparing against the plain list is how the label
+        // stays true for those keys instead of claiming a per-side write that
+        // was never made. Both lists are pure; neither runs the product.
+        $perSide = $sideLiterals !== null && $candidates[0] !== $this->pairCandidates($rule, $written)[0];
+        $first = $perSide ? self::MAGNITUDE_PER_SIDE : self::MAGNITUDE_CANONICAL;
         $canonical = $this->pairWrite($rule, [$written => $candidates[0]]);
 
         if ($canonical['object']->accepted() && $canonical['object']->text !== $omitted->text) {
-            return [$candidates[0], $canonical, 'canonical magnitude'];
+            return [$candidates[0], $canonical, $first];
         }
 
         /** @var mixed $candidate */
-        foreach (\array_slice($candidates, 1) as $candidate) {
+        foreach (\array_slice($candidates, 1) as $rank => $candidate) {
             $taken = $this->pairWrite($rule, [$written => $candidate]);
 
             if ($taken['object']->accepted() && $taken['object']->text !== $omitted->text) {
-                return [$candidate, $taken, 'alternate magnitude'];
+                // Side B's list is `[per-side, canonical, …alternates]`, so the
+                // FIRST fallback there is the canonical write, not an
+                // alternate. Naming it "alternate magnitude" would make the
+                // summary that counts these labels report a canonical write as
+                // a declared second value -- and the counting is by text,
+                // which is why {@see Classifier::SIDES_ALIKE} is a constant.
+                return [$candidate, $taken, $perSide && $rank === 0 ? self::MAGNITUDE_CANONICAL : self::MAGNITUDE_ALTERNATE];
             }
         }
 
-        return [$candidates[0], $canonical, 'canonical magnitude, which no declared value here can improve on'];
+        return [$candidates[0], $canonical, $first . self::MAGNITUDE_EXHAUSTED];
     }
 
     /**
-     * The ordered values one pair member may be written with: the canonical
-     * magnitude of its declared shape first, then the declared alternates.
+     * The ordered values one pair member may be written with: the per-side
+     * magnitude where one is declared and the shape accepts it, then the
+     * canonical magnitude of that shape, then the declared alternates.
+     *
+     * @param array<string, string>|null $sideLiterals see {@see self::pairSide()}
      *
      * @return non-empty-list<mixed>
      */
-    private function pairCandidates(string $rule, string $key): array
+    private function pairCandidates(string $rule, string $key, ?array $sideLiterals = null): array
     {
         // A block key — `callable:`, `class:` — is written as the map of every
         // leaf the ledger names under it for this rule, so the block carries a
@@ -1419,7 +1454,7 @@ final class Stand
         }
 
         if ($children === []) {
-            return $this->effectWritesFor($rule, $key);
+            return $this->effectWritesFor($rule, $key, $sideLiterals);
         }
 
         $perChild = [];
@@ -1429,7 +1464,7 @@ final class Stand
             // `enabled` leaf was written with the band magnitude is refused
             // for the stand's spelling, which is the defect S8 removed from
             // leaf keys and this branch used to keep.
-            $perChild[$child] = $this->effectWritesFor($rule, $key . '.' . $child);
+            $perChild[$child] = $this->effectWritesFor($rule, $key . '.' . $child, $sideLiterals);
         }
 
         return self::zip($perChild);
@@ -1462,9 +1497,17 @@ final class Stand
      * refused respectively either way, because their answer does not depend
      * on the value at all.
      *
+     * `$sideLiterals` is the ONE argument axis E must never pass. Both of its
+     * call sites are in {@see self::neighbourWrite()} and leave it null, so
+     * this method answers there exactly what it answered before the per-side
+     * magnitude existed — a cell moving on axis E would be a defect of the
+     * round that added it rather than a consequence of it.
+     *
+     * @param array<string, string>|null $sideLiterals see {@see self::pairSide()}
+     *
      * @return non-empty-list<mixed>
      */
-    private function effectWritesFor(string $rule, string $key): array
+    private function effectWritesFor(string $rule, string $key, ?array $sideLiterals = null): array
     {
         $class = $this->inProcess->optionsClasses[$rule] ?? null;
 
@@ -1496,7 +1539,23 @@ final class Stand
             return [false];
         }
 
-        $writes = [$this->writeForShape($shape, $this->literals(null), $rule . '.' . $key, $key)];
+        $writes = [];
+
+        // FIRST, so the side that declares one writes it. A shape with no
+        // per-side spelling — `bool`, or a closed set of words — answers null
+        // here and the list is the one side A gets. `$leafKey` is deliberately
+        // not passed: the enum fallback inside `writeForShape()` would hand an
+        // enum key the SAME word both sides already use.
+        if ($sideLiterals !== null) {
+            /** @var mixed $perSide */
+            $perSide = $this->writeForShape($shape, $sideLiterals, null);
+
+            if ($perSide !== null) {
+                $writes[] = $perSide;
+            }
+        }
+
+        $writes[] = $this->writeForShape($shape, $this->literals(null), $rule . '.' . $key, $key);
         $leaf = $this->declarations->leafAlternates[self::leafOf($key)] ?? null;
 
         if ($leaf !== null) {
@@ -1628,6 +1687,23 @@ final class Stand
             . ($leafKey === null ? 'no leaf was named' : 'effect-magnitudes.tsv declares nothing for its leaf'),
         );
     }
+
+    /**
+     * The three magnitudes a pair side may be written with, and the suffix for
+     * a side nothing declared could move.
+     *
+     * Constants rather than literals because the run summary and every report
+     * of property 1 count them out of `decided_by`, and a summary that
+     * recognised the state by matching prose would silently stop counting the
+     * day the prose changed -- the reason {@see Classifier::SIDES_ALIKE} exists.
+     */
+    public const string MAGNITUDE_CANONICAL = 'canonical magnitude';
+
+    public const string MAGNITUDE_PER_SIDE = 'per-side magnitude';
+
+    public const string MAGNITUDE_ALTERNATE = 'alternate magnitude';
+
+    public const string MAGNITUDE_EXHAUSTED = ', which no declared value here can improve on';
 
     private static function leafOf(string $key): string
     {
