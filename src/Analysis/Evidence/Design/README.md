@@ -4,8 +4,10 @@
 
 `Analysis\Evidence\Design` owns evidence and policy for class design:
 type declaration coverage, inheritance depth (DIT), number of direct children
-(NOC), data-class detection, and god-class detection. It is a private leaf
-capability: it publishes no `Contract/` namespace.
+(NOC), data-class detection, and god-class detection. Its one public surface is
+`Inheritance/Contract/`, promised to the composer adapter in
+`Infrastructure\Composer` so that a chain leaving the analysed path can be
+followed by reading (ADR 0074). Nothing else here is published.
 
 Collectors consume Measurement's existing collection and repository contracts.
 `DitGlobalCollector` and `NocCollector` also consume DependencyModel's public
@@ -27,7 +29,13 @@ Design/
 │   ├── GodClassOptions.php
 │   └── GodClassRule.php
 ├── Inheritance/
+│   ├── Contract/
+│   │   ├── ExternalParentSourceInterface.php
+│   │   └── ParentLookup.php
 │   ├── DitGlobalCollector.php
+│   ├── ExternalAncestry.php
+│   ├── ExternalChainOutcome.php
+│   ├── ExternalDepth.php
 │   ├── InheritanceClassInfo.php
 │   ├── InheritanceDepthCollector.php
 │   ├── InheritanceDepthResolver.php
@@ -36,7 +44,8 @@ Design/
 │   ├── InheritanceRule.php
 │   ├── NocCollector.php
 │   ├── NocOptions.php
-│   └── NocRule.php
+│   ├── NocRule.php
+│   └── UnreadChainTally.php
 └── TypeCoverage/
     ├── AbstractTypeCoverageRule.php
     ├── ParamTypeCoverageRule.php
@@ -57,6 +66,18 @@ from opposite ends, and NOC contributes one collector with no visitor of its
 own. Do not recreate `Metrics/`, `Rules/`, or a generic helper subdirectory
 inside any of them, and do not put a type back in the root: a type that would
 belong to no family is the signal that a fifth family is being named.
+
+`Inheritance/Contract/` is the one public surface here. It exists because
+following a chain out of the analysed path needs a file placed and read, which
+is delivery: the port is promised to the composer adapter in
+`Infrastructure\Composer`, and this capability imports neither a composer type
+nor a parser (ADR 0074).
+
+`ExternalAncestry` decides what counts as a depth and how a chain ended;
+`UnreadChainTally` collects those endings for one `calculate()` call so the
+collector can say once what the run could not read. The tally is deliberately
+not a service: it lives and dies inside the call, which is why nothing resets
+it.
 
 ## Behaviour and lifecycle
 
@@ -154,7 +175,8 @@ Integration/
     ├── AnonymousClassDeclarationEdgeRunTest.php
     ├── DitAggregateRunTest.php
     ├── DuplicateDeclarationDepthRunTest.php
-    └── UnloadableExternalParentRunTest.php
+    ├── UnloadableExternalParentRunTest.php
+    └── UnreadAncestryDiagnosticRunTest.php
 Unit/
 ├── DataClass/
 │   └── DataClassRuleTest.php

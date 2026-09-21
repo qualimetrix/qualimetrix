@@ -237,19 +237,43 @@ To understand `UserEntity`, you need to read all 7 classes in the chain.
 
 ### Implementation notes
 
-A parent outside the analysed path is resolved by loading it, using the
-autoloader of the `qmx` process. So the part of a chain that leaves your code is
-only counted when the installation running the analysis can load it, and the
-depth stops at the first ancestor it cannot.
+A parent outside the analysed path is resolved by reading its file, not by
+loading it. The file is located through **your** project's composer install ---
+its `composer.json`, the psr-4 sections of `vendor/composer/installed.json`, and
+composer's generated classmap --- and its `extends` clause is parsed. Nothing
+from the analysed project is executed, and the answer comes from your install
+rather than from whichever packages happen to sit beside `qmx`.
 
-In practice the same class can score differently depending on how the tool is
-installed. Installed as a dependency of the project under analysis, `qmx` shares
-its `vendor/` and sees the whole chain. Run from a standalone install --- the
-Docker image, a phar, `composer global require` --- it cannot see the project's
-packages, and a class extending a framework base class scores only the levels
-declared inside the analysed path. An ancestor that cannot be loaded counts as a
-root class, exactly like one that cannot be found at all; there is no separate
-"unknown" value in the report.
+So the depth beyond your own code is the depth your install declares. Where the
+walk cannot reach a root --- the dependencies are not installed, the package
+carrying an ancestor is absent, its file cannot be parsed --- the value reported
+is what was actually walked. Usually that is a floor, and a class whose walk
+stopped early reports the same kind of value as one that genuinely has no
+parent.
+
+The report does not distinguish them, but the run says so. `qmx` writes one
+warning naming how many chains were not followed to a root and where the walk
+stopped:
+
+```
+[12:34:56] [WARNING] DIT: 2 inheritance chain(s) leaving the analysed path were
+not followed to a root -- the walk stopped at:
+Symfony\Component\Config\Loader\FileLoader. The depth published for the classes
+below them is what this run did follow.
+```
+
+The wording is deliberately narrow, because "a floor" is not true of every case.
+An inheritance loop between two external classes publishes the length of the
+loop, which is not a depth at all, and the walk also gives up after 64 steps.
+The warning therefore says where the walk stopped and leaves the interpretation
+to you.
+
+It goes to the error stream, so `--format=json` and the other machine formats
+stay parseable. `-q` silences it; `--log-level=error` does so only together with
+`-v`, because without `-v` the console level is pinned at `WARNING`. It is a
+statement about what this run could follow, not about your code: analysing a
+project without running `composer install` is a normal thing to do, and this is
+what it costs.
 
 Depth derived from the analysed path itself is unaffected: when the whole chain
 is inside what you analysed, the value does not depend on the install.

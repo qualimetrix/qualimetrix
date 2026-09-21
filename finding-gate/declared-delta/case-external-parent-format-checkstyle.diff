@@ -1,5 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -4,1 +4,1 @@
--    <error line="9" severity="warning" message="DIT (Depth of Inheritance) is 2, exceeds threshold of 1. Prefer composition over deep inheritance" source="qmx.design.dit"/>
-+    <error line="9" severity="warning" message="DIT (Depth of Inheritance) is 1, exceeds threshold of 1. Prefer composition over deep inheritance" source="qmx.design.dit"/>

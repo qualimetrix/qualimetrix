@@ -105,6 +105,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0073 — A Depth Belongs to a Declaration, a Child Count to a Name](0073-a-depth-belongs-to-a-declaration-a-child-count-to-a-name.md) — `design.dit` is resolved and published per class declaration, because one name can be declared in two files with two parents; the parent side stays a name and takes the deepest of its declarations, and `design.noc` counts distinct child names rather than edges.
 - [0074 — DIT Reads the Ancestors It Measures](0074-dit-reads-the-ancestors-it-measures.md) — depth beyond the analysed path is followed by parsing the project's own sources, never by loading them; the port is Design's and the adapter is Infrastructure's.
 - [0075 — The Builtin-Class List Is Compared, Never Generated](0075-the-builtin-class-list-is-compared-never-generated.md) — the hand-written registry of PHP's own classes stays hand-written so metrics do not become a function of the analysing machine; a governance control compares it against the loaded extensions in both directions, and the extension and version metadata that comparison needs lives in the control rather than in the product.
+- [0076 — A Floor Is Reported, and Said to Be One](0076-a-floor-is-reported-and-said-to-be-one.md) — `design.dit` keeps publishing the depth it could reach and the run logs one warning naming the chains it did not follow to a root; withholding the value was rejected, and the diagnostic is deliberately not a published key.
 
 ## Superseded history
 

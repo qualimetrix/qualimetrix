@@ -27,6 +27,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 use Qualimetrix\Tests\Analysis\Evidence\Design\Support\FixedParentSource;
 use Qualimetrix\Tests\Analysis\Evidence\Design\Support\UnloadableClassProbe;
+use Qualimetrix\Tests\TestSupport\Logging\Support\RecordingLogger;
 use RuntimeException;
 
 #[CoversClass(DitGlobalCollector::class)]
@@ -42,11 +43,28 @@ final class DitGlobalCollectorTest extends TestCase
 
     private DitGlobalCollector $collector;
 
+    private RecordingLogger $logger;
+
     protected function setUp(): void
     {
         // No install to read: every external parent stays unresolved, which is
         // what these cases assume unless they say otherwise.
-        $this->collector = new DitGlobalCollector(new ExternalAncestry(FixedParentSource::unconfigured()));
+        $this->logger = new RecordingLogger();
+        $this->collector = new DitGlobalCollector(
+            new ExternalAncestry(FixedParentSource::unconfigured()),
+            $this->logger,
+        );
+    }
+
+    /**
+     * @return list<string> the warning messages this collector emitted
+     */
+    private function warnings(): array
+    {
+        return array_values(array_map(
+            static fn(array $record): string => $record['message'],
+            array_filter($this->logger->records, static fn(array $record): bool => $record['level'] === 'warning'),
+        ));
     }
 
     /**
@@ -399,9 +417,10 @@ final class DitGlobalCollectorTest extends TestCase
     #[Test]
     public function itCountsABuiltinInsideAnExternalChain(): void
     {
-        $collector = new DitGlobalCollector(new ExternalAncestry(
-            new FixedParentSource(['Vendor\\Upstream' => 'RuntimeException']),
-        ));
+        $collector = new DitGlobalCollector(
+            new ExternalAncestry(new FixedParentSource(['Vendor\\Upstream' => 'RuntimeException'])),
+            new RecordingLogger(),
+        );
 
         $repository = new InMemoryMetricRepository();
         $graph = $this->graph([$this->createExtends('App\\MyException', 'Vendor\\Upstream')]);
@@ -625,6 +644,199 @@ final class DitGlobalCollectorTest extends TestCase
 
         self::assertSame(2, $repository->getSubject($declarationX)->get('design.dit'));
         self::assertSame(1, $repository->getSubject($declarationY)->get('design.dit'));
+    }
+
+    /**
+     * The diagnostic is about this run's input, so a run that read every chain
+     * to its end has nothing to say.
+     */
+    #[Test]
+    public function itSaysNothingWhenEveryExternalChainReachesARoot(): void
+    {
+        $collector = new DitGlobalCollector(
+            new ExternalAncestry(new FixedParentSource(['Vendor\\Base' => null])),
+            $logger = new RecordingLogger(),
+        );
+
+        $repository = new InMemoryMetricRepository();
+        $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+
+        $collector->calculate($this->graph([$this->createExtends('App\\Child', 'Vendor\\Base')]), $repository);
+
+        self::assertSame([], $logger->records);
+    }
+
+    /**
+     * A tree whose parents are all absent, builtin or in-project never asks the
+     * external source anything, so there is nothing to report even without an
+     * install. The silence has to be observable, because it is what makes the
+     * no-install case below a statement about chains rather than about config.
+     */
+    #[Test]
+    public function itSaysNothingWhenNoChainLeavesTheAnalysedPath(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $this->seedDeclaration($repository, 'App\\Root', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+
+        $this->collector->calculate(
+            $this->graph([$this->createExtends('App\\Child', 'App\\Root')]),
+            $repository,
+        );
+
+        self::assertSame([], $this->warnings());
+    }
+
+    #[Test]
+    public function itReportsOnceAndNamesWhereReadingStopped(): void
+    {
+        $collector = new DitGlobalCollector(
+            new ExternalAncestry(new FixedParentSource([])),
+            $logger = new RecordingLogger(),
+        );
+
+        $repository = new InMemoryMetricRepository();
+        $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+
+        $collector->calculate($this->graph([$this->createExtends('App\\Child', 'Vendor\\Gone')]), $repository);
+
+        $warnings = array_values(array_map(
+            static fn(array $record): string => $record['message'],
+            array_filter($logger->records, static fn(array $record): bool => $record['level'] === 'warning'),
+        ));
+
+        self::assertCount(1, $warnings);
+        self::assertStringContainsString('Vendor\\Gone', $warnings[0]);
+    }
+
+    /**
+     * The unit is the child declaration, not the ancestor: two classes whose
+     * depth stops early are two classes, and counting distinct ancestors would
+     * report one.
+     */
+    #[Test]
+    public function itCountsChildDeclarationsRatherThanDistinctAncestors(): void
+    {
+        $collector = new DitGlobalCollector(
+            new ExternalAncestry(new FixedParentSource([])),
+            $logger = new RecordingLogger(),
+        );
+
+        $repository = new InMemoryMetricRepository();
+        $this->seedDeclaration($repository, 'App\\First', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'App\\Second', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+
+        $collector->calculate($this->graph([
+            $this->createExtends('App\\First', 'Vendor\\Gone'),
+            $this->createExtends('App\\Second', 'Vendor\\Gone'),
+        ]), $repository);
+
+        $warnings = array_values(array_map(
+            static fn(array $record): string => $record['message'],
+            array_filter($logger->records, static fn(array $record): bool => $record['level'] === 'warning'),
+        ));
+
+        self::assertCount(1, $warnings);
+        self::assertStringContainsString('2 inheritance chain(s)', $warnings[0]);
+    }
+
+    /**
+     * With no install the run cannot name a class -- it never placed one -- so
+     * the sentence has to say what happened instead of listing nothing.
+     */
+    #[Test]
+    public function itSeparatesHavingNoInstallFromHavingNoEntryInTheMessage(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+
+        $this->collector->calculate($this->graph([$this->createExtends('App\\Child', 'Vendor\\Gone')]), $repository);
+
+        $warnings = $this->warnings();
+
+        self::assertCount(1, $warnings);
+        self::assertStringContainsString('no composer install', $warnings[0]);
+        self::assertStringNotContainsString('Vendor\\Gone', $warnings[0]);
+    }
+
+    /**
+     * A cycle is the outcome a looser wording would lie about: the steps walked
+     * are the length of a loop, so the message must not call the number a lower
+     * bound on a real depth, and must not tell anyone to install anything.
+     */
+    #[Test]
+    public function itStaysTrueForACycleAndPrescribesNothing(): void
+    {
+        $collector = new DitGlobalCollector(
+            new ExternalAncestry(new FixedParentSource([
+                'Vendor\\A' => 'Vendor\\B',
+                'Vendor\\B' => 'Vendor\\A',
+            ])),
+            $logger = new RecordingLogger(),
+        );
+
+        $repository = new InMemoryMetricRepository();
+        $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+
+        $collector->calculate($this->graph([$this->createExtends('App\\Child', 'Vendor\\A')]), $repository);
+
+        $warnings = array_values(array_map(
+            static fn(array $record): string => $record['message'],
+            array_filter($logger->records, static fn(array $record): bool => $record['level'] === 'warning'),
+        ));
+
+        self::assertCount(1, $warnings);
+        // The walk books the cycle against the name it revisited, so the
+        // message has to name it: without this the case asserts only that
+        // something was said.
+        self::assertStringContainsString('Vendor\\A', $warnings[0]);
+        // Two wordings this outcome forbids. `floor` is the one the plan
+        // rejected outright; the no-install text is the other branch of the
+        // same sentence, and a message that fell into it here would be wrong
+        // about an install that exists.
+        self::assertStringNotContainsString('floor', $warnings[0]);
+        self::assertStringNotContainsString('no composer install', $warnings[0]);
+    }
+
+    /**
+     * The other outcome a looser wording would lie about: the walk gives up
+     * after `ExternalAncestry::VISIT_CAP` steps and books the class it had
+     * reached -- a class that reads perfectly well, and whose package is
+     * installed. "Reading stopped at" would be false of it; "the walk stopped
+     * at" is what is true.
+     */
+    #[Test]
+    public function itStaysTrueWhenTheWalkGivesUpOnALongChain(): void
+    {
+        $links = [];
+
+        // Longer than the cap, so the walk runs out of steps rather than
+        // reaching a root or failing to place anything.
+        for ($step = 0; $step < 80; ++$step) {
+            $links['Vendor\\C' . $step] = 'Vendor\\C' . ($step + 1);
+        }
+
+        $collector = new DitGlobalCollector(
+            new ExternalAncestry(new FixedParentSource($links)),
+            $logger = new RecordingLogger(),
+        );
+
+        $repository = new InMemoryMetricRepository();
+        $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+
+        $collector->calculate($this->graph([$this->createExtends('App\\Child', 'Vendor\\C0')]), $repository);
+
+        $warnings = array_values(array_map(
+            static fn(array $record): string => $record['message'],
+            array_filter($logger->records, static fn(array $record): bool => $record['level'] === 'warning'),
+        ));
+
+        self::assertCount(1, $warnings);
+        self::assertStringContainsString('the walk stopped at:', $warnings[0]);
+        self::assertStringNotContainsString('no composer install', $warnings[0]);
+        // Every link here is placed and readable, so a message blaming reading
+        // would be describing something that did not happen.
+        self::assertStringNotContainsString('could not be read', $warnings[0]);
     }
 
     /** @param list<Dependency> $dependencies */

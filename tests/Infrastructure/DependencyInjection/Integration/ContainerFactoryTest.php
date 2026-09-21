@@ -823,6 +823,48 @@ PHP;
     }
 
     /**
+     * Registration is not wiring, and for this collector the difference is the
+     * whole feature.
+     *
+     * `Psr\Log\LoggerInterface` is not a service id in this container -- it is
+     * reachable only through an alias keyed by the holder's class name -- so
+     * autowiring cannot fill an argument called `$logger`. The collector's
+     * diagnostic about chains it could not read would then be addressed to a
+     * logger nobody listens to, with every unit test still green, which is why
+     * the argument is asserted on the instance the container actually built
+     * rather than on one a test constructed.
+     */
+    #[Test]
+    public function itGivesTheDitCollectorTheRunsLogger(): void
+    {
+        $container = $this->factory->create();
+
+        $pipeline = $container->get(AnalysisPipelineInterface::class);
+        self::assertInstanceOf(AnalysisPipeline::class, $pipeline);
+
+        $aggregation = (new ReflectionProperty(AnalysisPipeline::class, 'measurementAggregation'))->getValue($pipeline);
+        self::assertInstanceOf(MeasurementAggregationService::class, $aggregation);
+
+        /** @var list<object> $collectors */
+        $collectors = (new ReflectionProperty(MeasurementAggregationService::class, 'sortedCollectors'))
+            ->getValue($aggregation);
+
+        $dit = null;
+
+        foreach ($collectors as $collector) {
+            if ($collector instanceof DitGlobalCollector) {
+                $dit = $collector;
+            }
+        }
+
+        self::assertInstanceOf(DitGlobalCollector::class, $dit);
+
+        $logger = (new ReflectionProperty(DitGlobalCollector::class, 'logger'))->getValue($dit);
+
+        self::assertInstanceOf(DelegatingLogger::class, $logger);
+    }
+
+    /**
      * Verifies that all expected rules are registered in RuleRegistry.
      * This test protects against accidental omission of rules in ContainerFactory.
      */

@@ -44,6 +44,7 @@ final class InheritanceDepthResolver
         private readonly array $projectClasses,
         private readonly array $measured,
         private readonly ExternalAncestry $externalAncestry,
+        private readonly UnreadChainTally $tally,
     ) {}
 
     /**
@@ -67,8 +68,9 @@ final class InheritanceDepthResolver
      * @param array<string, true> $projectClasses
      * @param array<string, true> $measured declaration canonicals carrying this metric
      * @param ExternalAncestry $externalAncestry follows the part of a chain that leaves the analysed path, by reading rather than loading
+     * @param UnreadChainTally $tally records the chains that stopped early; this walk is the only place an outcome is seen on the way to a depth
      */
-    public static function fromGraph(DependencyGraphInterface $graph, array $projectClasses, array $measured, ExternalAncestry $externalAncestry): self
+    public static function fromGraph(DependencyGraphInterface $graph, array $projectClasses, array $measured, ExternalAncestry $externalAncestry, UnreadChainTally $tally): self
     {
         $parentOfDeclaration = [];
         $declarationsByName = [];
@@ -98,7 +100,7 @@ final class InheritanceDepthResolver
             }
         }
 
-        return new self($parentOfDeclaration, $declarationsByName, $projectClasses, $measured, $externalAncestry);
+        return new self($parentOfDeclaration, $declarationsByName, $projectClasses, $measured, $externalAncestry, $tally);
     }
 
     /**
@@ -162,8 +164,14 @@ final class InheritanceDepthResolver
             return $this->depths[$declaration] = 1;
         }
 
-        // Genuinely outside the analysed path.
-        return $this->depths[$declaration] = 1 + $this->externalAncestry->depthOf($parentFqn)->depth;
+        // Genuinely outside the analysed path. The outcome is recorded here
+        // because this is the only place it is seen: what travels on is the
+        // depth alone, and a chain that stopped early is indistinguishable
+        // from one that reached a root by the time anyone downstream looks.
+        $external = $this->externalAncestry->depthOf($parentFqn);
+        $this->tally->record($external);
+
+        return $this->depths[$declaration] = 1 + $external->depth;
     }
 
     /**

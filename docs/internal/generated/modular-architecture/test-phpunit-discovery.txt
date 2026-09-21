@@ -3309,6 +3309,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnloadableExternalParentRunTest::itKeepsCoverageCompleteWhenAnExternalParentCannotFinishLoading#0
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnloadableExternalParentRunTest::itKeepsCoverageCompleteWhenAnExternalParentCannotFinishLoading#1
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnloadableExternalParentRunTest::itKeepsCoverageCompleteWhenAnExternalParentCannotFinishLoading#2
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnreadAncestryDiagnosticRunTest::itNamesTheClassWhenAnInstallExistsButDoesNotCarryIt
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnreadAncestryDiagnosticRunTest::itReportsABreakDeeperThanTheFirstLink
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnreadAncestryDiagnosticRunTest::itSaysNothingWhenTheChainReachesARoot
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnreadAncestryDiagnosticRunTest::itSaysTheRunHadNoInstallToReadThrough
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnreadAncestryDiagnosticRunTest::itSaysTheSameThingWhileGeneratingABaseline
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itAnalyzeDisabledReturnsEmpty
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itDetectsLowWocLowWmc
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itDisablesWhenLoadedFromEmptyArray
@@ -3362,6 +3367,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itComputesDitThreeAcrossFilesForAThreeLevelInheritanceChain
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itComputesDitTwoAcrossFilesForATwoLevelInheritanceChain
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itCountsABuiltinInsideAnExternalChain
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itCountsChildDeclarationsRatherThanDistinctAncestors
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itDoesNotLookOutsideForAParentTheProjectDeclares
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itGivesEachDeclarationOfADuplicatedNameItsOwnDepth
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itGivesTheSameDitRegardlessOfDeclarationInsertionOrder
@@ -3372,10 +3378,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itPreservesOtherMetricsWhileUpdatingDit
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itProjectsTheDuplicatedNameToTheMaximumDepthAcrossDeclarations
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itProvidesTheDitMetric
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itReportsOnceAndNamesWhereReadingStopped
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itRequiresNoUpstreamMetrics
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itSaysNothingWhenEveryExternalChainReachesARoot
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itSaysNothingWhenNoChainLeavesTheAnalysedPath
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itScoresAChildOfADuplicatedParentNameAtMaxPlusOne
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itScoresDitOneForAClassExtendingAStandardPhpClass
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itScoresDitZeroForAClassWithNoParent
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itSeparatesHavingNoInstallFromHavingNoEntryInTheMessage
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itStaysTrueForACycleAndPrescribesNothing
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itStaysTrueWhenTheWalkGivesUpOnALongChain
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itTerminatesACycleThroughADuplicatedNameWithoutGivingBothTheFallback
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itAnswersTheSameWayTwice
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itCountsEveryStepToTheRoot
@@ -8060,6 +8072,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\CompilerPass\SharedRuleOptionsContainerTest::itCreatesIndependentlyConfiguredOptionsForEverySharedOptionsProducer
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itAllowsConfiguringRuleOptionsAtRuntime
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itCreatesCompiledContainer
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itGivesTheDitCollectorTheRunsLogger
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itHasAnalysisPipeline
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itHasBaselineCleanupCommandWithAllDependencies
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itHasCache
