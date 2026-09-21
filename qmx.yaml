@@ -877,7 +877,6 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter'
         - 'Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter'
         - 'Qualimetrix\Infrastructure\Console\DirectiveVerdictTally'
-        - 'Qualimetrix\Infrastructure\Console\DrillDownBinding'
         - 'Qualimetrix\Infrastructure\Console\ErrorStream'
         - 'Qualimetrix\Infrastructure\Console\ExitCodeResolver'
         - 'Qualimetrix\Infrastructure\Console\ExitPolicy'
@@ -1019,6 +1018,7 @@ architecture:
         - 'Qualimetrix\Reporting\Contract\OutputFormat'
         - 'Qualimetrix\Reporting\Contract\OutputFormatResolverInterface'
         - 'Qualimetrix\Reporting\CoverageFailure'
+        - 'Qualimetrix\Reporting\DrillDown\DrillDownBinding'
         - 'Qualimetrix\Reporting\DrillDown\FindingFilter'
         - 'Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions'
@@ -1279,7 +1279,6 @@ architecture:
       - analysis-configuration
       - analysis-evidence-cohesion
       - analysis-evidence-computedmetrics
-      - analysis-evidence-computedmetrics-health
       - analysis-evidence-coupling
       - analysis-evidence-dependencymodel
       - analysis-evidence-measurement
@@ -1505,15 +1504,25 @@ rules:
         # refused under the `Configuration error:` framing. No refactoring is
         # offered here for the same reason as the entry above.
         - '[Q]ualimetrix\Reporting\Formatter'
-        # The Measurement contract namespace, whose union is 45 against a
-        # threshold of 25 and had been ratcheted at 44. The one edge that moved
-        # it is `Infrastructure\DependencyInjection\CompilerPass`: the channel
+        # The Measurement contract namespace, whose union is 47 against a
+        # threshold of 25 — measured 2026-09-21, and the number is a dated
+        # measurement rather than a ceiling, because this channel is suppressed
+        # outright for this namespace. It was ratcheted at 44. The one edge that
+        # moved it to 45 is `Infrastructure\DependencyInjection\CompilerPass`: the channel
         # compiler pass now reads `MetricName`'s constants by reflection to
         # check at build time that a channel's declared judged metric exists
         # (ADR 0046), and the union is counted at namespace granularity, so one
         # new importing namespace is one edge. Measured: reverting the second
         # new importer (`HealthDimensionCatalog`) leaves the union at 45, so it
-        # is this namespace alone. The check cannot move anywhere cheaper —
+        # is this namespace alone. Two importing namespaces joined after that.
+        # The one this file can attribute is the 47th, `Reporting\DrillDown`:
+        # `DrillDownBinding` moved there to sit beside the `FindingFilter` its
+        # docblock says it must agree with, and it reads this repository through
+        # `MetricRepositoryInterface` and `NamespaceTree`. `Infrastructure\Console`
+        # did not leave the union with it — `LayerAssignmentResolver` still
+        # imports from here — which is why the step is +1 and not 0. The 46th
+        # predates that move and is not attributed here. The check cannot move
+        # anywhere cheaper —
         # every namespace already in the union is an analysis capability, not a
         # composition root — and a namespace channel is not addressable by
         # `@qmx-threshold`. Class CBO inside this namespace stays measured:

@@ -180,7 +180,7 @@ duplication.clone	producer	?		21	73	0	2	12	48	0	8	0	0	0	0
 health.cohesion	producer	?		36	136	0	3	18	41	0	28	0	0	0	0
 health.complexity	producer	?		55	207	0	1	1	25	0	31	0	0	0	0
 health.coupling	producer	?		43	59	0	0	0	18	0	28	0	0	0	0
-health.maintainability	producer	?		17	33	0	0	14	21	0	28	0	0	0	0
+health.maintainability	producer	?		17	33	0	0	13	21	0	28	0	0	0	0
 health.overall	producer	?		115	181	0	0	0	32	0	28	0	0	0	0
 health.typing	producer	?		26	86	0	1	1	24	0	28	0	0	0	0
 maintainability.mi	producer	?		19	183	2	2	0	33	0	11	0	0	0	0
