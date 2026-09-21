@@ -85,6 +85,31 @@ use PHPUnit\Framework\TestCase;
  * -- but if the tree reaches one of its names, that name is unattributable and
  * refused like any other, and the refusal names the declared extensions this
  * runtime is missing so the reader knows what to install.
+ *
+ * # What an `ext-` entry in `require` promises
+ *
+ * That the requirement is written down -- not that the consumer's PHP has the
+ * extension. Composer satisfies an `ext-*` requirement from any package that
+ * `provide`s that name, and this lock does exactly that twice:
+ * `symfony/polyfill-ctype` provides `ext-ctype` and `symfony/polyfill-mbstring`
+ * provides `ext-mbstring`, both reaching the production closure through other
+ * packages' requirements rather than through a declaration here. So
+ * `composer install` succeeds on a PHP built without ctype or mbstring, and
+ * the code runs on the polyfill's functions.
+ *
+ * That is the install-time half of the bullet above about a name this PHP
+ * answers from a file: it is what puts a consumer on such a build in the
+ * first place. What this control does once there is already settled -- the
+ * precondition stops the judgement, because a required extension this runtime
+ * does not load makes both verdicts meaningless. What nothing settled is the
+ * set itself, so {@see self::itNamesEveryExtensionRequirementAPolyfillSatisfies}
+ * reads it out of `composer.lock` and refuses a silent change: a third entry
+ * means one more requirement is held up by a transitive polyfill, a vanished
+ * one means a requirement that used to install anywhere now needs the real
+ * extension. It is the one question in this group whose live population is
+ * above zero, so it is the one that bites without a planted fixture, and it
+ * reads `replace` beside `provide` because either key satisfies a Composer
+ * requirement.
  */
 final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
 {
@@ -102,6 +127,21 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
      * Everything outside this list is an extension a conforming PHP may lack.
      */
     private const array ALWAYS_COMPILED_IN = ['core', 'standard', 'spl', 'pcre', 'date', 'reflection', 'random'];
+
+    /**
+     * The `ext-*` entries of `require` that a production package satisfies
+     * through `provide` or `replace`, rather than the consumer's PHP
+     * satisfying them.
+     *
+     * Written down rather than derived, because the point is to notice the
+     * set changing; what it is checked against is read from the lock.
+     *
+     * @var array<string, string> the require entry => the package satisfying it
+     */
+    private const array POLYFILLED_EXTENSIONS = [
+        'ext-ctype' => 'symfony/polyfill-ctype',
+        'ext-mbstring' => 'symfony/polyfill-mbstring',
+    ];
 
     #[Test]
     public function itCallsIntoNoExtensionTheInstallDoesNotGuarantee(): void
@@ -168,6 +208,110 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
             'composer.json requires extensions the shipped code never reaches: ' . implode(', ', $stale)
                 . \PHP_EOL . 'A requirement nobody needs narrows where this installs for nothing.',
         );
+    }
+
+    /**
+     * Which declared extension requirements a package satisfies instead of
+     * the runtime.
+     *
+     * `isset($declared['ext-mbstring'])` — what the controls above ask — is
+     * true whether the consumer's PHP has mbstring or whether Composer found
+     * a package promising to stand in for it. This case names the second, so
+     * the difference is a row someone reviewed rather than a fact nobody
+     * wrote down.
+     *
+     * It needs no planted fixture: the population is two and lives in
+     * `composer.lock`. That also makes it self-guarding in the direction that
+     * matters — a read that broke and resolved nothing returns an empty set,
+     * which does not equal a non-empty expectation, so the failure mode is
+     * red rather than a green scan of nothing.
+     */
+    #[Test]
+    public function itNamesEveryExtensionRequirementAPolyfillSatisfies(): void
+    {
+        $root = self::repositoryRoot();
+        $required = ShippedTree::manifest($root)['require'] ?? [];
+
+        self::assertIsArray($required);
+
+        self::assertSame(
+            self::POLYFILLED_EXTENSIONS,
+            self::extensionsSatisfiedByAPackage(ShippedTree::productionLockPackages($root), $required),
+            'The set of extension requirements satisfied by a package rather than by the runtime has changed.'
+                . \PHP_EOL
+                . 'Each entry is an ext-* this manifest requires that composer.lock shows a production package '
+                . 'standing in for, so the requirement installs on a PHP without that extension.'
+                . \PHP_EOL
+                . 'Update POLYFILLED_EXTENSIONS once the new set has been read and accepted.',
+        );
+    }
+
+    /**
+     * The `replace` half of the read above, planted.
+     *
+     * `provide` is witnessed twice by the live lock; `replace` is witnessed by
+     * nothing, because no package in this lock replaces anything. Both keys
+     * satisfy a Composer requirement, so leaving the second unexercised would
+     * mean half this control had never been seen to work.
+     */
+    #[Test]
+    public function itCountsAnExtensionReplacedByAPackageToo(): void
+    {
+        $satisfied = self::extensionsSatisfiedByAPackage(
+            [
+                ['name' => 'vendor/replaces-it', 'replace' => ['ext-mbstring' => '*']],
+                ['name' => 'vendor/provides-it', 'provide' => ['ext-ctype' => '*']],
+                ['name' => 'vendor/undeclared', 'provide' => ['ext-gd' => '*']],
+            ],
+            ['ext-mbstring' => '*', 'ext-ctype' => '*'],
+        );
+
+        self::assertSame([
+            'ext-ctype' => 'vendor/provides-it',
+            'ext-mbstring' => 'vendor/replaces-it',
+        ], $satisfied);
+    }
+
+    /**
+     * Which declared extension requirements a package CLAIMS, by name, to
+     * satisfy instead of the runtime. `provide` and `replace` both count:
+     * Composer accepts either as meeting an `ext-*` requirement.
+     *
+     * By name only. The version a claim announces is not compared against
+     * the constraint `require` asks for, because Composer decides that and
+     * reimplementing its semver here would be a second resolver to keep
+     * correct. The pinned set above is what makes that safe: every new entry
+     * reddens this control and is read by a person before it is accepted.
+     *
+     * @param list<array<string, mixed>> $packages
+     * @param array<string, mixed> $required
+     *
+     * @return array<string, string>
+     */
+    private static function extensionsSatisfiedByAPackage(array $packages, array $required): array
+    {
+        $satisfied = [];
+
+        foreach ($packages as $package) {
+            foreach (['provide', 'replace'] as $key) {
+                $entries = $package[$key] ?? [];
+
+                if (!\is_array($entries)) {
+                    continue;
+                }
+
+                foreach (array_keys($entries) as $name) {
+                    if (\is_string($name) && str_starts_with($name, 'ext-') && isset($required[$name])) {
+                        self::assertIsString($package['name'] ?? null);
+                        $satisfied[$name] = $package['name'];
+                    }
+                }
+            }
+        }
+
+        ksort($satisfied);
+
+        return $satisfied;
     }
 
     /**

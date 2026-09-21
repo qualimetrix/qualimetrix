@@ -48,14 +48,27 @@ use RuntimeException;
  * {@see ShippedCodeRunsOnlyOnDeclaredExtensionsTest} refuses the collision
  * itself rather than letting it silence a name.
  *
- * What this does not see, for the reason the sibling gives about namespaces
- * written as strings: a name spelled in a string literal -- a dynamic call,
- * `call_user_func('mb_strlen', …)`, `define()`, a callable array -- and a
- * class constant another extension adds to someone else's class, such as
- * `PDO::MYSQL_ATTR_USE_BUFFERED_QUERY`, whose member identifier is not a name
- * node at all. Both are blind spots by construction, not oversights.
+ * A name spelled inside a string literal is not one of those roles and never
+ * becomes one. The language did not resolve it, so calling it a reach would be
+ * a guess. Class-shaped ones are still worth reading, because a class reached
+ * through `class_exists()`, a service id or a callable array is spelled
+ * exactly that way, so {@see self::quotedClassNamesIn()} hands them over
+ * through a door of their own, labelled as candidates. Which of them mean
+ * anything is not decided here:
+ * {@see ShippedCodeReachesOnlyDeclaredPackagesTest} judges them under a
+ * weaker stance than it applies to the roles above, and says there why the
+ * two differ.
  *
- * The second one is closed as unclosable rather than left open, because the
+ * What nothing here sees: a name built by concatenation or reached by
+ * reflection; a function or constant named in a string, such as
+ * `call_user_func('mb_strlen', …)` or `define()`, which is a bare word no
+ * shape can tell from prose the way a backslash-separated name can; and a class
+ * constant another extension adds to someone else's class, such as
+ * `PDO::MYSQL_ATTR_USE_BUFFERED_QUERY`, whose member identifier is not a name
+ * node at all and which reflection cannot attribute to the extension that
+ * added it. Blind spots by construction, not oversights.
+ *
+ * That last one is closed as unclosable rather than left open, because the
  * reason is a property of what PHP exposes and not of how hard anyone looked.
  * Reflection does not decline to attribute such a constant -- it attributes it
  * to the WRONG owner, and confidently: on PHP 8.4
@@ -90,7 +103,32 @@ final class ReachedNames
      */
     private const array LITERALS = ['true', 'false', 'null'];
 
-    /** @var array<string, array{reached: list<array{file: string, name: string, role: string}>, declarations: list<array{file: string, name: string, role: string}>}> */
+    /**
+     * What a quoted string has to look like before it is offered as a class
+     * name: two or more PHP identifier segments separated by single
+     * backslashes.
+     *
+     * A filter rather than a judgement. It decides which literals are worth
+     * offering, never which ones mean anything -- that is the caller's
+     * question, and the caller answers it by asking whether an installed
+     * package owns the name.
+     *
+     * The segments follow PHP's identifier grammar rather than the
+     * convention that they are capitalized. Composer carries packages that
+     * do not capitalize -- `phpDocumentor\Reflection\`, `voku\helper\` --
+     * and under a capitalized-only shape a quoted name of such a package is
+     * not a candidate at all, so the loose stance ignores it and nothing
+     * anywhere reports it. Measured on this tree, the wider grammar returns
+     * the same population the narrow one did, so the narrowness bought
+     * nothing and cost a blind spot.
+     *
+     * `D` is load-bearing: without it `$` also matches before a trailing
+     * newline, so a literal ending in one would be offered as a class name
+     * and attributed by prefix to a package it merely starts with.
+     */
+    private const string CLASS_NAME_SHAPE = '/^\\\\?[A-Za-z_][A-Za-z0-9_]*(\\\\[A-Za-z_][A-Za-z0-9_]*)+$/D';
+
+    /** @var array<string, array{reached: list<array{file: string, name: string, role: string}>, declarations: list<array{file: string, name: string, role: string}>, quoted: list<array{file: string, name: string}>}> */
     private static array $memo = [];
 
     /**
@@ -114,6 +152,25 @@ final class ReachedNames
     public static function declarationsIn(array $files): array
     {
         return self::read($files)['declarations'];
+    }
+
+    /**
+     * Quoted literals shaped like a namespaced class name, deduplicated per
+     * file, with any leading backslash removed so both spellings of one name
+     * arrive the same way.
+     *
+     * A candidate, not a reach. This is the one thing this class reports that
+     * the language did not resolve, which is why it has a door of its own
+     * instead of a role: a caller that wants resolved names cannot be handed
+     * guesses by accident, and a caller that wants these has to ask.
+     *
+     * @param list<string> $files absolute paths
+     *
+     * @return list<array{file: string, name: string}>
+     */
+    public static function quotedClassNamesIn(array $files): array
+    {
+        return self::read($files)['quoted'];
     }
 
     /**
@@ -146,7 +203,7 @@ final class ReachedNames
     /**
      * @param list<string> $files
      *
-     * @return array{reached: list<array{file: string, name: string, role: string}>, declarations: list<array{file: string, name: string, role: string}>}
+     * @return array{reached: list<array{file: string, name: string, role: string}>, declarations: list<array{file: string, name: string, role: string}>, quoted: list<array{file: string, name: string}>}
      */
     private static function read(array $files): array
     {
@@ -183,6 +240,8 @@ final class ReachedNames
         $declarations = [];
         /** @var array<string, array<string, true>> $declaredByRole */
         $declaredByRole = [self::FUNCTION => [], self::CONSTANT => []];
+        /** @var list<array{file: string, name: string}> $quoted */
+        $quoted = [];
 
         foreach ($files as $file) {
             $source = file_get_contents($file);
@@ -212,6 +271,18 @@ final class ReachedNames
             foreach ($collector->reached as $record) {
                 $raw[] = ['file' => $file, ...$record];
             }
+
+            $candidates = [];
+
+            foreach ($collector->strings as $literal) {
+                if (preg_match(self::CLASS_NAME_SHAPE, $literal) === 1) {
+                    $candidates[ltrim($literal, '\\')] = true;
+                }
+            }
+
+            foreach (array_keys($candidates) as $candidate) {
+                $quoted[] = ['file' => $file, 'name' => $candidate];
+            }
         }
 
         $reached = [];
@@ -230,7 +301,7 @@ final class ReachedNames
             $reached[] = ['file' => $record['file'], 'name' => $record['name'], 'role' => $record['role']];
         }
 
-        return self::$memo[$key] = ['reached' => $reached, 'declarations' => $declarations];
+        return self::$memo[$key] = ['reached' => $reached, 'declarations' => $declarations, 'quoted' => $quoted];
     }
 
     /**
@@ -245,7 +316,7 @@ final class ReachedNames
     }
 
     /**
-     * @return NodeVisitorAbstract&object{reached: list<array{name: string, role: string, shadowedBy: ?string}>, declared: list<array{short: string, qualified: string, role: string}>}
+     * @return NodeVisitorAbstract&object{reached: list<array{name: string, role: string, shadowedBy: ?string}>, declared: list<array{short: string, qualified: string, role: string}>, strings: list<string>}
      */
     private static function collector(): object
     {
@@ -255,6 +326,9 @@ final class ReachedNames
 
             /** @var list<array{short: string, qualified: string, role: string}> */
             public array $declared = [];
+
+            /** @var list<string> every quoted literal, unfiltered */
+            public array $strings = [];
 
             /** @var array<int, true> */
             private array $claimed = [];
@@ -302,6 +376,13 @@ final class ReachedNames
                 // nobody thought of, and this direction misses nothing.
                 if ($node instanceof Node\Name\FullyQualified && !isset($this->claimed[spl_object_id($node)])) {
                     $this->record($node->toString(), ReachedNames::CLASS_LIKE, null);
+                }
+
+                // Collected whole and filtered afterwards: what makes a
+                // literal a candidate is a shape the caller's question
+                // defines, not a fact about this node.
+                if ($node instanceof Node\Scalar\String_) {
+                    $this->strings[] = $node->value;
                 }
 
                 return null;
