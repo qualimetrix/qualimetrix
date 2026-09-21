@@ -127,11 +127,22 @@ jobs:
       # refuses it by name. Before that control refused, a runner without
       # igbinary dropped the call silently and a green run said nothing about
       # whether `ext-igbinary` was declared at all.
+      #
+      # The rest are here for the same reason, for a different control.
+      # `PhpBuiltinClassRegistryCensusTest` can only compare the builtin-class
+      # registry against extensions this runtime loads, so on the default set
+      # roughly seventy registered names -- the whole Intl block, mysqli, the
+      # `Pdo\*` subclasses, LDAP, PgSql, GD, Soap, Zip, pcntl -- were checked
+      # by nothing, in either direction. Without them pinned here, how much of
+      # the registry CI verifies is a function of setup-php's defaults for the
+      # current runner image rather than a property of this repository.
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
-          extensions: igbinary
+          extensions: igbinary, intl, soap, ldap, snmp, tidy, xsl, gmp, sockets, pgsql, odbc,
+            dba, ftp, bcmath, mysqli, gd, zip, pcntl, shmop, sysvmsg, sysvsem, sysvshm, ffi,
+            enchant, calendar, exif, gettext, bz2, iconv, pdo_mysql, pdo_pgsql, pdo_odbc
           coverage: none
           tools: composer:v2
 

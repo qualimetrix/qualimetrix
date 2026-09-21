@@ -7,12 +7,29 @@ namespace Qualimetrix\Core\Symbol;
 /**
  * Registry of PHP built-in classes.
  *
- * Single source of truth for identifying classes provided by PHP and common extensions.
- * Used by dependency analysis, inheritance depth calculation, and other components
- * that need to distinguish user-defined classes from built-in ones.
+ * Single source of truth for identifying classes provided by PHP and the
+ * extensions php-src bundles. Used by dependency analysis, inheritance depth
+ * calculation, and other components that need to distinguish user-defined
+ * classes from built-in ones.
  *
- * This static list ensures deterministic results across environments.
- * Update when adding support for new PHP versions.
+ * This static list ensures deterministic results across environments: a name
+ * is answered the same way on a runner without `intl` and on a box with every
+ * extension built, so the metrics it feeds do not become a function of the
+ * analysing machine. It is therefore never generated from the running PHP.
+ *
+ * What keeps it honest instead is `PhpBuiltinClassRegistryCensusTest`, which
+ * compares it against the extensions this PHP loads and refuses on divergence
+ * in either direction -- a name PHP declares and this list omits, and a name
+ * this list carries that PHP denies. Both directions had found a real defect
+ * when the control was written.
+ *
+ * Scope is php-src's bundled extensions on Unix builds. A class from a PECL
+ * extension is deliberately absent, so code extending one is measured as
+ * extending a class the analysed project does not own and whose depth is
+ * unknown.
+ *
+ * Update when adding support for new PHP versions; the control names what is
+ * missing, and its attribution table is the second edit each name needs.
  */
 final class PhpBuiltinClassRegistry
 {
@@ -115,13 +132,13 @@ final class PhpBuiltinClassRegistry
         'DOMCharacterData' => true, 'DOMCdataSection' => true, 'DOMDocumentFragment' => true,
         'DOMDocumentType' => true, 'DOMEntity' => true, 'DOMEntityReference' => true,
         'DOMNotation' => true, 'DOMProcessingInstruction' => true, 'DOMNameSpaceNode' => true,
-        'DOMChildNode' => true, 'DOMParentNode' => true,
+        'DOMChildNode' => true, 'DOMParentNode' => true, 'Dom\\DOMException' => true,
         // XML
         'XMLReader' => true, 'XMLWriter' => true, 'XMLParser' => true,
         'SimpleXMLElement' => true, 'SimpleXMLIterator' => true,
         // Curl
         'CurlHandle' => true, 'CurlMultiHandle' => true, 'CurlShareHandle' => true,
-        'CURLFile' => true, 'CURLStringFile' => true,
+        'CURLFile' => true, 'CURLStringFile' => true, 'CurlSharePersistentHandle' => true,
         // GD
         'GdImage' => true, 'GdFont' => true,
         // Intl
@@ -144,8 +161,38 @@ final class PhpBuiltinClassRegistry
         'LDAP\\Connection' => true, 'LDAP\\Result' => true, 'LDAP\\ResultEntry' => true,
         'Odbc\\Connection' => true, 'Odbc\\Result' => true,
         'PgSql\\Connection' => true, 'PgSql\\Result' => true, 'PgSql\\Lob' => true,
-        'Pcntl\\QueuedSignalInfo' => true,
+        'Pcntl\\QosClass' => true,
         'Soap\\Url' => true, 'Soap\\Sdl' => true,
+        // Session
+        'SessionHandler' => true, 'SessionHandlerInterface' => true,
+        'SessionIdInterface' => true, 'SessionUpdateTimestampHandlerInterface' => true,
+        // SQLite3
+        'SQLite3' => true, 'SQLite3Stmt' => true, 'SQLite3Result' => true, 'SQLite3Exception' => true,
+        // Phar
+        'Phar' => true, 'PharData' => true, 'PharFileInfo' => true, 'PharException' => true,
+        // Soap
+        'SoapClient' => true, 'SoapServer' => true, 'SoapFault' => true,
+        'SoapHeader' => true, 'SoapParam' => true, 'SoapVar' => true,
+        // FFI
+        'FFI' => true, 'FFI\\CData' => true, 'FFI\\CType' => true,
+        'FFI\\Exception' => true, 'FFI\\ParserException' => true,
+        // Uri (PHP 8.5+)
+        'Uri\\Rfc3986\\Uri' => true, 'Uri\\WhatWg\\Url' => true, 'Uri\\UriComparisonMode' => true,
+        'Uri\\UriException' => true, 'Uri\\UriError' => true, 'Uri\\InvalidUriException' => true,
+        'Uri\\WhatWg\\InvalidUrlException' => true, 'Uri\\WhatWg\\UrlValidationError' => true,
+        'Uri\\WhatWg\\UrlValidationErrorType' => true,
+        // Sockets and System V IPC
+        'Socket' => true, 'AddressInfo' => true, 'Shmop' => true,
+        'SysvMessageQueue' => true, 'SysvSemaphore' => true, 'SysvSharedMemory' => true,
+        // Tidy, XSL, SNMP, Enchant
+        'tidy' => true, 'tidyNode' => true, 'XSLTProcessor' => true,
+        'SNMP' => true, 'SNMPException' => true,
+        'EnchantBroker' => true, 'EnchantDictionary' => true,
+        // Opaque handles and value types from the remaining bundled extensions
+        'finfo' => true, 'PhpToken' => true, 'HashContext' => true, 'LibXMLError' => true,
+        'GMP' => true, 'SodiumException' => true, 'DeflateContext' => true, 'InflateContext' => true,
+        'OpenSSLAsymmetricKey' => true, 'OpenSSLCertificate' => true,
+        'OpenSSLCertificateSigningRequest' => true,
     ];
 
     public static function isBuiltin(string $className): bool

@@ -42,6 +42,8 @@ Core/
 │   ├── MetricSubject.php                  # Declaration, class, or aggregate metric subject
 │   ├── MetricSubjectCodec.php             # Scalar wire codec for metric subjects
 │   ├── PhpBuiltinClassRegistry.php        # Single source of truth for PHP built-in classes
+│   │                                      # (hand-written; PhpBuiltinClassRegistryCensusTest
+│   │                                      #  compares it against the loaded extensions)
 │   ├── SymbolInfo.php
 │   ├── SymbolLevel.php                    # The project's one level vocabulary
 │   ├── SymbolLevelProjection.php          # The one projection of declaration kind onto level
