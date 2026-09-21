@@ -131,6 +131,25 @@ remove a link it cannot identify rather than deleting someone else's hook.
   complaint instead of the refusal, and under `--format=json` printed nothing
   at all — no `{error, exit_code}` envelope — while still exiting 3.
 
+**59 classes PHP provides were measured as the analysed project's own, and one
+class the list named does not exist.** The builtin-class registry was missing
+every ext-session type — so `NativeFileSessionHandler extends \SessionHandler`
+reported an unresolvable external parent at depth 0 instead of a builtin at
+depth 1 — along with all of `Phar`, `SQLite3*`, `Soap*`, `FFI*`, `Uri\*`,
+`finfo`, `PhpToken`, `HashContext`, `OpenSSL*`, `Socket`, the System V IPC
+handles, `tidy`, `XSLTProcessor`, `GMP` and `EnchantBroker`; it also listed
+`Pcntl\QueuedSignalInfo`, which exists in no branch of php-src. Two metric
+families move. `design.dit` **rises** where a chain now reaches a builtin
+instead of breaking. Coupling numbers — `coupling.cbo`, efferent coupling,
+ClassRank — **fall** for code typed on any of the newly recognised names,
+because a non-inheritance edge reaching a builtin is dropped as PHP's rather
+than counted as the project's. The list stays hand-written so that results do
+not depend on which extensions the analysing machine has; it is now compared
+against the running PHP by a governance control that refuses in both
+directions. See
+[ADR 0075](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0075-the-builtin-class-list-is-compared-never-generated.md).
+
+
 - Analysing a project no longer runs that project's code. Resolving an external
   parent called `class_exists($fqcn, true)`, which includes the file and
   executes its top-level statements; a `exit` or a fatal there ended the run

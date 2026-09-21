@@ -673,6 +673,12 @@ Available tests:
  - Qualimetrix\Governance\SubprocessDrain\SubprocessReadsAreDrainedConcurrentlyTest::itScansAPopulationThatReachesEveryKindOfPhpFile
  - Qualimetrix\Governance\SubprocessDrain\SubprocessReadsAreDrainedConcurrentlyTest::itSeesANameWhateverCaseItIsWrittenIn
  - Qualimetrix\Governance\SuppressionOptionKeys\SuppressionOptionKeyReaderCensusTest::itIsTheOnlyPlaceInSourceThatReadsASuppressionOptionKey
+ - Qualimetrix\Governance\SymbolVocabulary\PhpBuiltinClassRegistryCensusTest::itAgreesWithEveryLoadedExtensionOnWhatItDeclares
+ - Qualimetrix\Governance\SymbolVocabulary\PhpBuiltinClassRegistryCensusTest::itAttributesEveryRegisteredNameToExactlyOneExtension
+ - Qualimetrix\Governance\SymbolVocabulary\PhpBuiltinClassRegistryCensusTest::itKeepsEveryDispositionInsideTheDeclaredScope
+ - Qualimetrix\Governance\SymbolVocabulary\PhpBuiltinClassRegistryCensusTest::itRefusesAnEnvironmentTooBareToJudgeTheRegistry
+ - Qualimetrix\Governance\SymbolVocabulary\PhpBuiltinClassRegistryCensusTest::itRefusesAnExtensionNoDispositionCovers
+ - Qualimetrix\Governance\SymbolVocabulary\PhpBuiltinClassRegistryCensusTest::itRegistersNoNameThisPhpDenies
  - Qualimetrix\Governance\SymbolVocabulary\SymbolTypeDeclarationPositionCensusTest::itGivesEveryDeclarationKindAPublicationPosition
  - Qualimetrix\Governance\SymbolVocabulary\SymbolTypeProjectionCensusTest::itCoversEverySymbolType
  - Qualimetrix\Governance\TestSuiteHygiene\CoverageIsRequestedExplicitlyTest::itKeepsTheCoverageReportWritersOutOfTheTrackedConfiguration
@@ -9351,14 +9357,34 @@ Available tests:
  - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"Closure"
  - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"DateTime"
  - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"Dom\Document"
+ - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"EnchantBroker"
  - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"Exception"
+ - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"FFI\CData"
+ - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"HashContext"
  - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"Iterator"
  - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"JsonSerializable"
+ - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"OpenSSLCertificate"
  - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"PDO"
+ - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"Pcntl\QosClass"
+ - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"Phar"
+ - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"PhpToken"
  - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"Random\Randomizer"
+ - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"SQLite3"
+ - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"SessionHandler"
+ - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"SessionHandlerInterface"
+ - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"SessionIdInterface"
+ - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"SessionUpdateTimestampHandlerInterface"
+ - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"SoapClient"
+ - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"Socket"
  - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"SplStack"
  - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"Throwable"
+ - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"Uri\Rfc3986\Uri"
+ - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"XSLTProcessor"
+ - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"finfo"
  - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"stdClass"
+ - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itDoesNotRecogniseNamesOutsideItsScope"APCUIterator"
+ - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itDoesNotRecogniseNamesOutsideItsScope"Pcntl\QueuedSignalInfo"
+ - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itDoesNotRecogniseNamesOutsideItsScope"Redis"
  - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itUserClassesAreNotBuiltin"App\Exception"
  - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itUserClassesAreNotBuiltin"App\Service"
  - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itUserClassesAreNotBuiltin"MyClass"
