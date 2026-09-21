@@ -76,8 +76,8 @@ use Throwable;
  *   floor, so `--workers=4` there starts workers instead of falling back, and
  *   four `amphp/parallel` processes were confirmed running: stdout reached EOF
  *   in the same 20 ms window the child was reaped, so those workers do not
- *   hold the parent's stdout. A deadline
- *   here would be supervision, which is deliberately a different subject.
+ *   hold the parent's stdout. A deadline here would be supervision, which is
+ *   deliberately a different subject.
  * - `stream_select()` is interrupted by a signal: it returns `false`, which
  *   this class reports as a failure, where an old-style blocking read would
  *   have resumed. Nothing retries on EINTR. No caller installs a signal
