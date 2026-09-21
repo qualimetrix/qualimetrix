@@ -21,6 +21,10 @@ use SplFileInfo;
  * `composer.json`'s `bin` is read rather than assumed: the console entry point
  * is extensionless, so a directory walk over `src/` alone would miss the one
  * file every consumer certainly runs.
+ *
+ * The lock's production section is here for the same reason. Both controls
+ * ask what a `--no-dev` install resolves, and a second copy of "production
+ * packages" would drift from this one without either copy failing.
  */
 final class ShippedTree
 {
@@ -75,6 +79,63 @@ final class ShippedTree
         }
 
         return $entryPoints;
+    }
+
+    /**
+     * The `packages` section of `composer.lock`.
+     *
+     * Production only: a dev-only package standing in for something says
+     * nothing about what a consumer's `--no-dev` install resolves.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function productionLockPackages(string $root): array
+    {
+        $contents = file_get_contents($root . '/composer.lock');
+
+        if ($contents === false) {
+            throw new RuntimeException('composer.lock is unreadable at ' . $root . '.');
+        }
+
+        $lock = json_decode($contents, true, 512, \JSON_THROW_ON_ERROR);
+
+        if (!\is_array($lock)) {
+            throw new RuntimeException('composer.lock does not contain a JSON object.');
+        }
+
+        return self::productionPackagesOf($lock);
+    }
+
+    /**
+     * The production half of an already-decoded lock document.
+     *
+     * Split from the read above so the section boundary can be planted. Which
+     * half is taken is the whole promise of this method, and a decoded
+     * document is the only input that can carry a dev-only package to prove
+     * the boundary holds — this lock has none that would show the
+     * difference.
+     *
+     * @param array<string, mixed> $lock
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function productionPackagesOf(array $lock): array
+    {
+        if (!\is_array($lock['packages'] ?? null) || $lock['packages'] === []) {
+            throw new RuntimeException('composer.lock lists no production package.');
+        }
+
+        $packages = [];
+
+        foreach ($lock['packages'] as $package) {
+            if (!\is_array($package)) {
+                throw new RuntimeException('composer.lock carries a non-object package entry.');
+            }
+
+            $packages[] = $package;
+        }
+
+        return $packages;
     }
 
     /**
