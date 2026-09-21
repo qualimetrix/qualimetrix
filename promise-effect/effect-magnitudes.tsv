@@ -25,7 +25,11 @@
 # told from the omitted one is read NOT OBSERVABLE by the classifier; it is
 # never written with a third value chosen to win.
 #
-# TWO SELECTORS, ONE QUESTION.
+# THREE SELECTORS, TWO QUESTIONS.
+#
+# The first two answer "what SECOND value to write instead of the canonical
+# one". The third answers a different question — "what value to write for
+# THIS SIDE" — and is described under ONE MAGNITUDE PER SIDE below.
 #
 #   `form`        the alternate magnitude of a whole form, applied through the
 #                 same shape match the canonical write goes through, so the
@@ -38,8 +42,38 @@
 #                 `axis-a-hits.tsv` is, so one row covers the same key at every
 #                 depth it is accepted at.
 #
+#   `side_b`      the magnitude the SECOND key of an axis-B pair is written
+#                 with, so that two keys contending for one pointer can be
+#                 told apart. Axis E does not see it: it is threaded through
+#                 `Stand::pairSide()` only.
+#
 # A leaf row wins over the form row for its key. A leaf row whose value the
 # declared shape refuses is a `LedgerError`, not a silently skipped candidate.
+#
+# ONE MAGNITUDE PER SIDE, MANY SPELLINGS.
+#
+# When a pair's two keys reach the same pointer — which is what "a top-level
+# key beside the level key it reaches" means — writing both sides the same
+# value makes `both` equal to whichever side one looks at, and the leaf-wise
+# comparison in `Classifier::pair()` reads every side as having survived. That
+# is not a blind verdict but a GREEN one: measured on this tree, all 465 axis-B
+# cells read COEXISTENCE_OK or MISCOMPOSED and none reads NOT OBSERVABLE.
+#
+# Side A keeps the canonical magnitude and side B takes 5519, declared below.
+# It is ONE number in every spelling, exactly as 7331 and 9137 are: a shape
+# decides which form the value is written in, and a magnitude split across
+# forms would put a different value on one side depending on a decision nobody
+# reads. `string-nonnumber` is the one form whose canonical is not a number at
+# all, so its third value is a third word.
+#
+# TWO FORMS GET NO ROW, AND THAT IS THE ANSWER FOR THEM.
+#
+# `bool` has two values and one of them is the standing value of most `enabled`
+# keys; the `scope` enum has two and `all` is the default. No third value
+# exists, so those sides cannot be made distinguishable by any declaration.
+# They get no row, `writeForShape()` finds no match in the per-side set and
+# answers null, and side B falls back to today's candidates with no special
+# case in the code.
 #
 # The magnitude 9137 is the same kind of number as `forms.tsv`'s 7331 and axis
 # C's 4211/8623: far above every threshold default in this tree, so a write of
@@ -57,3 +91,9 @@ option_leaf	scope	application	`ClassCboOptions::parseScope()` accepts `all` and 
 option_leaf	unused-directive-severity	warning	`InlineDirectiveOptions::resolveSeverity()` refuses any word outside `info`/`warning`/`error`, so the canonical magnitude is refused for the stand's spelling and the row reads MISCOMPOSED for a reason that is not the product's
 option_leaf	mode	warn	`UnassignedClassOptions::resolveMode()` accepts `ignore`, `warn` and `error` and refuses everything else, so the canonical magnitude is refused for a spelling the pair row is not about
 option_leaf	severity	error	`LayerViolationOptions::resolveSeverity()` refuses any word outside `info`/`warning`/`error` and defaults to `warning`, so the canonical magnitude is refused and `warning` itself is the standing value; this leaf was the sibling of `unused-directive-severity` and `mode` all along and was missed when they were declared
+side_b	int	5519	the second side of a pair, far from every threshold default in this tree and different from both 7331 and 9137
+side_b	float	5519.9	the same magnitude, for a shape that accepts a fractional value
+side_b	string-number	"5519"	the same magnitude, for a shape that accepts it only as text
+side_b	string-nonnumber	pqr	a third non-numeric word, for a shape whose two declared values are `abc` and `xyz`
+side_b	list	[5519]	the list container carrying the second side's magnitude
+side_b	map	{a: 5519}	the map container carrying the second side's magnitude

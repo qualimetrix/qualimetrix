@@ -777,6 +777,45 @@ foreach ($cells as $cell) {
     }
 }
 
+// A fact about the LEDGER, printed beside axis B's cells because the two
+// numbers are not the same number and one of them has been read as the other.
+// Nineteen `same-source` triples are judged under two kinds at once, so the
+// same document is probed twice and both cells count. They are NOT
+// deduplicated: `PairRow::key()` carries the kind deliberately, because a
+// row's promise belongs to its kind and two kinds may promise different things
+// about one document. What was missing is this line — the count of documents
+// beside the count of cells, so "axis B is N" cannot be read as N documents.
+if (\in_array('B', $axes, true)) {
+    $documents = [];
+    $defectiveDocuments = [];
+
+    foreach ($ledger->pairs as $row) {
+        if ($row->sourceScope !== 'same-source') {
+            continue;
+        }
+
+        $documents[$row->rule . '|' . $row->keyA . '|' . $row->keyB . '|' . $row->sourceScope] = true;
+    }
+
+    foreach ($cells as $cell) {
+        if ($cell->axis !== 'B' || !$cell->defect) {
+            continue;
+        }
+
+        $parts = explode('|', $cell->key);
+        $defectiveDocuments[implode('|', \array_slice($parts, 1, 4))] = true;
+    }
+
+    printf(
+        "\n  %-22s %d document(s) over %d cell(s), %d defective over %d\n",
+        'axis B documents',
+        \count($documents),
+        \count(array_filter($cells, static fn(Cell $cell): bool => $cell->axis === 'B')),
+        \count($defectiveDocuments),
+        \count(array_filter($cells, static fn(Cell $cell): bool => $cell->axis === 'B' && $cell->defect)),
+    );
+}
+
 // Printed apart from the verdict counts because it is a fact about the
 // LEDGER, not about the product: a row whose carriers decide nothing cannot be
 // contradicted, whatever its cell says happened. 03-grid.md asks for this
