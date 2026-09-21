@@ -37,7 +37,7 @@ final readonly class GeneratedClassmap
     /**
      * @return array<string, string> FQCN => file
      */
-    public function read(string $vendorDirectory): array
+    public function read(string $projectRoot, string $vendorDirectory): array
     {
         $file = rtrim($vendorDirectory, '/') . '/composer/autoload_classmap.php';
 
@@ -63,7 +63,7 @@ final readonly class GeneratedClassmap
         // strings, so the two variables the file defines are substituted here.
         $variables = [
             'vendorDir' => rtrim($vendorDirectory, '/'),
-            'baseDir' => \dirname(rtrim($vendorDirectory, '/')),
+            'baseDir' => rtrim($projectRoot, '/'),
         ];
 
         $entries = [];

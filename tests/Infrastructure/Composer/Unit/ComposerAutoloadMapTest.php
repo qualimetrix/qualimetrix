@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Composer\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap;
@@ -79,33 +80,59 @@ final class ComposerAutoloadMapTest extends TestCase
      * The generated classmap is PHP, so it is parsed rather than included:
      * including it would execute a file from the tree under measurement.
      */
+    #[DataProvider('provideVendorDirectories')]
     #[Test]
-    public function itPlacesAClassDeclaredOnlyByTheGeneratedClassmap(): void
-    {
-        $this->writeManifest(['autoload' => ['psr-4' => ['App\\' => 'src/']]]);
-        $file = $this->write('vendor/acme/tool/src/Deep/Runner.php', "<?php\n\nnamespace Acme\\Tool;\n\nclass Runner {}\n");
-        $this->writeInstalled([[
-            'name' => 'acme/tool',
-            'autoload' => ['classmap' => ['src/']],
-            'install-path' => '../acme/tool',
-        ]]);
+    public function itResolvesComposerClassmapVariablesFromTheProjectAndVendorRoots(
+        string $vendorDirectory,
+        string $composerBaseDirectoryExpression,
+    ): void {
+        $this->writeManifest([
+            'autoload' => ['psr-4' => ['App\\' => 'src/']],
+            'config' => ['vendor-dir' => $vendorDirectory],
+        ]);
+        $rootParent = $this->write('src/RootParent.php', "<?php\n\nnamespace App;\n\nclass RootParent {}\n");
+        $dependencyParent = $this->write(
+            $vendorDirectory . '/acme/tool/src/DependencyParent.php',
+            "<?php\n\nnamespace Acme\\Tool;\n\nclass DependencyParent {}\n",
+        );
+
         // Values are `$vendorDir . '/…'` concatenations, exactly as composer
-        // writes them, so the reader has to substitute the variables.
-        $this->write('vendor/composer/autoload_classmap.php', <<<'PHP'
+        // writes them. `$baseDir` varies with the configured vendor depth, but
+        // both variables must resolve against the project Composer configured.
+        $this->write($vendorDirectory . '/composer/autoload_classmap.php', \sprintf(<<<'PHP'
             <?php
 
             $vendorDir = dirname(__DIR__);
-            $baseDir = dirname($vendorDir);
+            $baseDir = %s;
 
             return array(
-                'Acme\\Tool\\Runner' => $vendorDir . '/acme/tool/src/Deep/Runner.php',
+                'App\\RootParent' => $baseDir . '/src/RootParent.php',
+                'Acme\\Tool\\DependencyParent' => $vendorDir . '/acme/tool/src/DependencyParent.php',
             );
-            PHP);
+            PHP, $composerBaseDirectoryExpression));
 
         $map = new ComposerAutoloadMap();
         $map->pointAt($this->root, [$this->root . '/src']);
 
-        self::assertSame(realpath($file), realpath((string) $map->fileFor('Acme\\Tool\\Runner')));
+        $placedRootParent = $map->fileFor('App\\RootParent');
+        $placedDependencyParent = $map->fileFor('Acme\\Tool\\DependencyParent');
+
+        self::assertNotNull($placedRootParent);
+        self::assertNotNull($placedDependencyParent);
+        self::assertSame(realpath($rootParent), realpath($placedRootParent));
+        self::assertSame(realpath($dependencyParent), realpath($placedDependencyParent));
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function provideVendorDirectories(): iterable
+    {
+        yield 'default vendor directory' => ['vendor', 'dirname($vendorDir)'];
+        yield 'nested dependency directory' => ['build/dependencies', 'dirname($vendorDir, 2)'];
+        yield 'nested directory named vendor' => ['lib/vendor', 'dirname($vendorDir, 2)'];
+        yield 'deeply nested directory named vendor' => ['deps/php/vendor', 'dirname($vendorDir, 3)'];
+        yield 'project root' => ['.', '$vendorDir'];
     }
 
     #[Test]

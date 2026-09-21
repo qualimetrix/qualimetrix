@@ -3313,7 +3313,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnloadableExternalParentRunTest::itKeepsCoverageCompleteWhenAnExternalParentCannotFinishLoading#1
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnloadableExternalParentRunTest::itKeepsCoverageCompleteWhenAnExternalParentCannotFinishLoading#2
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnreadAncestryDiagnosticRunTest::itNamesTheClassWhenAnInstallExistsButDoesNotCarryIt
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnreadAncestryDiagnosticRunTest::itReadsACompleteAncestryFromANestedComposerClassmap
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnreadAncestryDiagnosticRunTest::itReportsABreakDeeperThanTheFirstLink
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnreadAncestryDiagnosticRunTest::itReportsAnUnreadChainWhenAnExternalFilesAliasesCollide
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnreadAncestryDiagnosticRunTest::itSaysNothingWhenTheChainReachesARoot
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnreadAncestryDiagnosticRunTest::itSaysTheRunHadNoInstallToReadThrough
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnreadAncestryDiagnosticRunTest::itSaysTheSameThingWhileGeneratingABaseline
@@ -7478,21 +7480,27 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itUsesShardingForStorage
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itWritesSerializerMarkerOnFirstAccess
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itDeclinesAClassmapTooLargeToParse
- - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itPlacesAClassDeclaredOnlyByTheGeneratedClassmap
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itPlacesAClassFromAnInstalledPackage
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itPlacesAClassFromTheRootPackagesOwnPsr4
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itReadsTheInstallTheAnalysedPathSitsInside
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itReadsTheVendorDirectoryTheProjectDeclares
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itRefusesAPathThatEscapesTheProject
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itRefusesAPsr4TargetThatClimbsOutOfTheProject
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itResolvesComposerClassmapVariablesFromTheProjectAndVendorRoots"deeply nested directory named vendor"
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itResolvesComposerClassmapVariablesFromTheProjectAndVendorRoots"default vendor directory"
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itResolvesComposerClassmapVariablesFromTheProjectAndVendorRoots"nested dependency directory"
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itResolvesComposerClassmapVariablesFromTheProjectAndVendorRoots"nested directory named vendor"
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itResolvesComposerClassmapVariablesFromTheProjectAndVendorRoots"project root"
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itSaysSoWhenTheRunHasNoInstallToRead
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itCallsAClassWithNoParentARoot
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itDoesNotSuppressUnexpectedParserFailures
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itExecutesNothingWhileReading
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itForgetsTheTreeItWasPointedAtBefore
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itReadsAnInterfacesFirstParent
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itReadsTheParentAClassDeclares
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itRefusesAFileThatDeclaresAnotherName
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itRefusesAFileThisPhpCannotParse
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itRefusesAFileWhoseImportedAliasesCannotBeResolved
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itRefusesToPlaceANameNoFileDeclares
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itResolvesAParentImportedUnderAnAlias
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itResolvesAParentWrittenWithoutItsNamespace
@@ -8002,9 +8010,22 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"single quote"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"space"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDoesNotClaimAThirdPartyHook
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itFailsBeforeGitWhenTheTemporaryFileCannotBeCreated
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itFailsClosedWhenGitEnumerationFailsAfterWritingPaths
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itFailsClosedWhenReadingStopsBeforeTheCompleteStagedFileList"after the first entry"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itFailsClosedWhenReadingStopsBeforeTheCompleteStagedFileList"before the first entry"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itFailsClosedWhenTheStagedFileListCannotBeRead
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itGeneratesAScriptTheShellAccepts
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itLeavesNoPlaceholderBehind
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itLeavesTheShellsOwnVariablesForTheShell
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itPassesStagedPathsContainingSpacesAndNewlinesAsSingleArguments
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itPropagatesQmxFailureExitCodes"configuration error"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itPropagatesQmxFailureExitCodes"errors"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itPropagatesQmxFailureExitCodes"incomplete analysis"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itPropagatesQmxFailureExitCodes"not executable"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itPropagatesQmxFailureExitCodes"not found"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itPropagatesQmxFailureExitCodes"warnings"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itSkipsAnalysisWhenNoPhpFilesAreStaged
  - Qualimetrix\Tests\Infrastructure\Console\Unit\MeasuredFindingSetTest::itBuildsDefaultDiscoveryFromTheRunPathExcludes
  - Qualimetrix\Tests\Infrastructure\Console\Unit\MeasuredFindingSetTest::itDefinesTheSetFromConfigurationAloneAndNotFromCheckFlags
  - Qualimetrix\Tests\Infrastructure\Console\Unit\MeasuredFindingSetTest::itLeavesOutWhatTheConfiguredExclusionsRemoved

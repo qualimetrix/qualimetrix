@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Composer;
 
+use PhpParser\Error as ParserError;
 use PhpParser\Node;
 use PhpParser\NodeFinder;
 use PhpParser\NodeTraverser;
@@ -13,7 +14,6 @@ use PhpParser\ParserFactory;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\Contract\ExternalParentSourceInterface;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\Contract\ParentLookup;
 use Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface;
-use Throwable;
 
 /**
  * Reads the parent a class declares, out of the analysed project's own files.
@@ -72,22 +72,22 @@ final class DeclaredParentReader implements AnalysedInstallAnchorInterface, Exte
             return ParentLookup::notPlaced();
         }
 
-        try {
-            $ast = $this->parser->parse($source) ?? [];
-        } catch (Throwable) {
-            // A file this PHP version cannot parse is a chain that stops being
-            // readable, not a depth to report.
-            return ParentLookup::notPlaced();
-        }
-
         // Without this the parent arrives as the source wrote it --
         // `class ResponseHeaderBag extends HeaderBag` yields the bare
         // `HeaderBag` -- which places nothing and reads as a broken chain. Most
         // parents are written relatively, so this is the common path.
-        $traverser = new NodeTraverser();
-        $traverser->addVisitor(new NameResolver());
+        try {
+            $ast = $this->parser->parse($source) ?? [];
+            $traverser = new NodeTraverser();
+            $traverser->addVisitor(new NameResolver());
+            $resolvedAst = $traverser->traverse($ast);
+        } catch (ParserError) {
+            // A file this PHP version cannot parse or resolve is a chain that
+            // stops being readable, not a depth to report.
+            return ParentLookup::notPlaced();
+        }
 
-        return $this->declaredParent($traverser->traverse($ast), $fqcn);
+        return $this->declaredParent($resolvedAst, $fqcn);
     }
 
     /**

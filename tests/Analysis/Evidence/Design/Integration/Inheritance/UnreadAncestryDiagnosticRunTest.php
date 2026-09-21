@@ -126,6 +126,79 @@ final class UnreadAncestryDiagnosticRunTest extends TestCase
         self::assertStringNotContainsString('were not followed to a root', $this->runBinary());
     }
 
+    #[Test]
+    public function itReadsACompleteAncestryFromANestedComposerClassmap(): void
+    {
+        $this->writeAnalysedClass('Acme\\Nested\\ParentClass');
+        $this->writeRootManifest('build/dependencies');
+        $this->write('/build/dependencies/acme/nested/src/ParentClass.php', <<<'PHP'
+            <?php
+
+            namespace Acme\Nested;
+
+            class ParentClass extends \Probe\External\BaseClass {}
+            PHP);
+        $this->write('/external/BaseClass.php', <<<'PHP'
+            <?php
+
+            namespace Probe\External;
+
+            class BaseClass {}
+            PHP);
+        $this->write('/build/dependencies/composer/autoload_classmap.php', <<<'PHP'
+            <?php
+
+            $vendorDir = dirname(__DIR__);
+            $baseDir = dirname($vendorDir, 2);
+
+            return array(
+                'Acme\Nested\ParentClass' => $vendorDir . '/acme/nested/src/ParentClass.php',
+                'Probe\External\BaseClass' => $baseDir . '/external/BaseClass.php',
+            );
+            PHP);
+
+        $run = $this->runBinaryReport(['--dit-warning=0', '--dit-error=999']);
+
+        self::assertSame(0, $run['exitCode']);
+        self::assertCompleteCoverage($run['report']);
+        self::assertSame(2, self::ditValue($run['report']));
+        self::assertStringNotContainsString('were not followed to a root', $run['stderr']);
+    }
+
+    #[Test]
+    public function itReportsAnUnreadChainWhenAnExternalFilesAliasesCollide(): void
+    {
+        $this->writeAnalysedClass('Acme\\Broken\\ParentClass');
+        $this->writeRootManifest();
+        $this->write('/vendor/acme/broken/src/ParentClass.php', <<<'PHP'
+            <?php
+
+            namespace Acme\Broken;
+
+            use First\Package\BaseClass as ImportedBase;
+            use Second\Package\BaseClass as ImportedBase;
+
+            class ParentClass extends ImportedBase {}
+            PHP);
+        $this->write('/vendor/composer/installed.json', json_encode([
+            'packages' => [[
+                'name' => 'acme/broken',
+                'version' => '1.0.0',
+                'install-path' => '../acme/broken',
+                'autoload' => ['psr-4' => ['Acme\\Broken\\' => 'src/']],
+            ]],
+            'dev' => false,
+        ], \JSON_THROW_ON_ERROR));
+
+        $run = $this->runBinaryReport(['--dit-warning=0', '--dit-error=999']);
+
+        self::assertSame(0, $run['exitCode']);
+        self::assertCompleteCoverage($run['report']);
+        self::assertSame(1, self::ditValue($run['report']));
+        self::assertStringContainsString('the walk stopped at: Acme\\Broken\\ParentClass', $run['stderr']);
+        self::assertStringNotContainsString('Internal error', $run['stderr']);
+    }
+
     /**
      * `baseline:generate` is the command that most needs the sentence: it
      * writes the depths into a file that outlives the run and gets diffed
@@ -163,12 +236,18 @@ final class UnreadAncestryDiagnosticRunTest extends TestCase
         ));
     }
 
-    private function writeRootManifest(): void
+    private function writeRootManifest(?string $vendorDirectory = null): void
     {
-        $this->write('/composer.json', json_encode([
+        $manifest = [
             'name' => 'probe/unread-ancestry',
             'autoload' => ['psr-4' => ['Probe\\App\\' => 'src/']],
-        ], \JSON_THROW_ON_ERROR));
+        ];
+
+        if ($vendorDirectory !== null) {
+            $manifest['config'] = ['vendor-dir' => $vendorDirectory];
+        }
+
+        $this->write('/composer.json', json_encode($manifest, \JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -214,6 +293,16 @@ final class UnreadAncestryDiagnosticRunTest extends TestCase
      */
     private function runBinary(): string
     {
+        return $this->runBinaryReport()['stderr'];
+    }
+
+    /**
+     * @param list<string> $extraArguments
+     *
+     * @return array{report: array<string, mixed>, stderr: string, exitCode: int|null}
+     */
+    private function runBinaryReport(array $extraArguments = []): array
+    {
         $process = new Process([
             \PHP_BINARY,
             \dirname(__DIR__, 6) . '/bin/qmx',
@@ -224,6 +313,7 @@ final class UnreadAncestryDiagnosticRunTest extends TestCase
             '--no-progress',
             '--format=json',
             '--fail-on=none',
+            ...$extraArguments,
         ], $this->workingDirectory);
         $process->run();
 
@@ -231,7 +321,42 @@ final class UnreadAncestryDiagnosticRunTest extends TestCase
         $report = json_decode($process->getOutput(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertArrayNotHasKey('error', $report, 'The run ended with an internal error');
 
-        return $process->getErrorOutput();
+        return [
+            'report' => $report,
+            'stderr' => $process->getErrorOutput(),
+            'exitCode' => $process->getExitCode(),
+        ];
+    }
+
+    /** @param array<string, mixed> $report */
+    private static function assertCompleteCoverage(array $report): void
+    {
+        $coverage = $report['coverage'] ?? null;
+
+        self::assertIsArray($coverage);
+        self::assertSame(true, $coverage['complete'] ?? null);
+        self::assertSame(1, $coverage['analyzed'] ?? null);
+        self::assertSame(0, $coverage['failed'] ?? null);
+    }
+
+    /** @param array<string, mixed> $report */
+    private static function ditValue(array $report): int
+    {
+        $violations = $report['violations'] ?? null;
+        self::assertIsArray($violations);
+
+        foreach ($violations as $violation) {
+            if (!\is_array($violation) || ($violation['rule'] ?? null) !== 'design.dit') {
+                continue;
+            }
+
+            $value = $violation['metricValue'] ?? null;
+            self::assertIsInt($value);
+
+            return $value;
+        }
+
+        self::fail('The report did not contain a design.dit finding');
     }
 
     private static function removeTree(string $path): void
