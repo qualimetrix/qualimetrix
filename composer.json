@@ -103,7 +103,7 @@
             "python3 scripts/phpunit-aggregate.py"
         ],
         "test:coverage": "phpunit --coverage-html coverage --coverage-clover coverage/clover.xml",
-        "phpstan": "phpstan analyse --memory-limit=512M",
+        "phpstan": "phpstan analyse --memory-limit=1G",
         "test:js": "cd html-report && npm test",
         "test:cross-tool": [
             "python3 --version",

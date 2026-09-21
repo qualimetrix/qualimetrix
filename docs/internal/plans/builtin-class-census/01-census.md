@@ -131,7 +131,9 @@ pins the extensions the control needs, exactly as it already pinned `igbinary`.
 ## Residue
 
 - Case-insensitive spellings, above — ADR 0075 names it.
-- `Pdo\Firebird` is verified by nothing and says so in a named constant.
+- `Pdo\Firebird` is verified on CI, which loads `pdo_firebird`, and nowhere
+  else. The "unverifiable" disposition written for it is gone: the control
+  refused the excuse as stale the first time it ran somewhere that loads it.
 - A corpus fixture extending `\SessionHandler` would let the finding gate
   witness this fix rather than be silent about it. It belongs in its own commit
   *before* the census commit — added after, it moves the gate's input in the

@@ -104,7 +104,12 @@ enumerate it.
   The census compares canonical spellings on both sides and structurally cannot
   reach it; a green census is agreement on a set of strings, not proof that
   `isBuiltin()` answers correctly for every spelling source may use.
-- Names attributed to an extension no reachable witness loads — today only
-  `Pdo\Firebird` — are listed on the authority of php-src's stub and verified by
-  nothing. They are named as such rather than left indistinguishable from names
-  that were simply never checked.
+- A name is verified wherever its extension is loaded, and nowhere else. No
+  attributed extension is currently unloadable everywhere: `Pdo\Firebird` was
+  recorded as such on the assumption that no runner builds `pdo_firebird`, and
+  the GitHub-hosted runner does. The control refused that excuse by name rather
+  than letting it stand, which is why the disposition for it no longer exists.
+- Which PECL extensions must be excused is a property of the machine, not of
+  php-src: the GitHub runner preinstalls eleven the developer boxes here do not.
+  Each costs one row with a reason, and an unknown one reds rather than being
+  assumed PECL — the assumption that would have let `uri` through in 8.5.

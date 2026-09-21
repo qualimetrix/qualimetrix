@@ -114,25 +114,19 @@ final class PhpBuiltinClassRegistryCensusTest extends TestCase
      */
     private const array UNLISTED_EXTENSIONS = [
         'apcu' => 'PECL; not shipped with PHP',
+        'amqp' => 'PECL; preinstalled on the GitHub-hosted Ubuntu runner',
+        'ast' => 'PECL; preinstalled on the GitHub-hosted Ubuntu runner',
+        'ds' => 'PECL; preinstalled on the GitHub-hosted Ubuntu runner',
         'igbinary' => 'PECL; not shipped with PHP',
+        'imagick' => 'PECL; preinstalled on the GitHub-hosted Ubuntu runner',
+        'imap' => 'Bundled through 8.3, moved to PECL in 8.4; out of scope on every supported version',
+        'memcache' => 'PECL; preinstalled on the GitHub-hosted Ubuntu runner',
+        'memcached' => 'PECL; preinstalled on the GitHub-hosted Ubuntu runner',
+        'mongodb' => 'PECL; preinstalled on the GitHub-hosted Ubuntu runner',
+        'msgpack' => 'PECL; preinstalled on the GitHub-hosted Ubuntu runner',
+        'redis' => 'PECL; preinstalled on the GitHub-hosted Ubuntu runner',
         'xdebug' => 'PECL; not shipped with PHP',
-    ];
-
-    /**
-     * Bundled extensions no witness reachable from here can load, so the names
-     * attributed to them are listed on authority of php-src's stub and are
-     * verified by nothing.
-     *
-     * This is a third disposition, distinct from "attributed" and from
-     * "excused": without naming it, such a name falls through the
-     * loaded-extension guard below and is indistinguishable from a name that
-     * was simply never checked.
-     *
-     * @var array<string, string>
-     */
-    private const array UNVERIFIABLE_EXTENSIONS = [
-        'pdo_firebird' => 'Needs a Firebird client library; no CI image or developer box here builds it. '
-            . '`Pdo\Firebird` is listed on the authority of ext/pdo_firebird/pdo_firebird.stub.php.',
+        'zmq' => 'PECL; preinstalled on the GitHub-hosted Ubuntu runner',
     ];
 
     /**
@@ -519,12 +513,14 @@ final class PhpBuiltinClassRegistryCensusTest extends TestCase
     #[Test]
     public function itRefusesAnExtensionNoDispositionCovers(): void
     {
+        $disposed = array_change_key_case(self::ATTRIBUTION) + array_change_key_case(self::UNLISTED_EXTENSIONS);
+
         $undisposed = [];
         foreach (get_loaded_extensions() as $extension) {
             if (self::canonicalClassNames($extension) === []) {
                 continue;
             }
-            if (isset(self::ATTRIBUTION[$extension]) || isset(self::UNLISTED_EXTENSIONS[$extension])) {
+            if (isset($disposed[strtolower($extension)])) {
                 continue;
             }
             $undisposed[] = $extension;
@@ -564,18 +560,6 @@ final class PhpBuiltinClassRegistryCensusTest extends TestCase
             'Both excused and attributed: %s.',
             implode(', ', $contradictory),
         ));
-
-        foreach (self::UNVERIFIABLE_EXTENSIONS as $extension => $reason) {
-            self::assertArrayHasKey($extension, self::ATTRIBUTION, \sprintf(
-                '%s is recorded as unverifiable but attributes nothing, so the record excuses no name.',
-                $extension,
-            ));
-            self::assertFalse(\extension_loaded($extension), \sprintf(
-                '%s is loaded here, so it is verifiable after all and the excuse -- "%s" -- is stale.',
-                $extension,
-                $reason,
-            ));
-        }
     }
 
     /**
