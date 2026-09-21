@@ -1,5 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -10,1 +10,1 @@
--         design.dit: DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy
-+         design.dit: DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy

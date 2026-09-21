@@ -1,5 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -1,1 +1,1 @@
--src/LocalWidget.php: warning[design.dit]: DIT (Depth of Inheritance) is 2, exceeds threshold of 1. Prefer composition over deep inheritance (LocalWidget)
-+src/LocalWidget.php: warning[design.dit]: DIT (Depth of Inheritance) is 1, exceeds threshold of 1. Prefer composition over deep inheritance (LocalWidget)
