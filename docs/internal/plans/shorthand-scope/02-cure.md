@@ -7,12 +7,17 @@ sequential packages — P2 may not start until P0 has landed. P1 and P5 are
 independent of each other and of the code; P3 must land before P4; P6 closes the
 accounting and can only run after P4.
 
-Revision 3, after two rounds of review. Round 1: K5 is new, K1 says which path's
-form is checked, the floor edit moved into its own package. Round 2: K5 is
-generalised from one instance to the requirement, with the top-level spelling mix
-as its second and measured instance; `scope` is pushed down rather than excluded;
-P0's DoD is split into the three different requirements it had run together; and
-P3 names the `LONE_THRESHOLD` gate it has to open for the complexity family.
+Revision 4. Rounds 1 and 2 were plan review: K5 is new, K1 says which path's form
+is checked, the floor edit moved into its own package, K5 is generalised from one
+instance to the requirement with the top-level spelling mix as its second, `scope`
+is pushed down rather than excluded, and P3 names the `LONE_THRESHOLD` gate it has
+to open for the complexity family. Round 3 is not review but measurement: P0's
+premises were taken on the tree before any code
+(`measurement/p0-premises.md`), seven of them did not hold, and P0's section is
+rewritten whole rather than patched — including its file set, which omitted the
+file its own price named, and its proof, which could not be given without
+circularity. No other package's section has been re-measured yet; each is
+re-measured as it starts.
 
 ## Constraints the cure has to satisfy
 
@@ -103,43 +108,202 @@ somebody did.
 
 ## P0 — the instrument, before every other package
 
+Revision 4, rewritten rather than amended after the premises were measured on the
+tree (`measurement/p0-premises.md`, run #0 at `1bda6f95`). Nine of the round's
+numbers held cell for cell; seven premises did not, and three of those bear on
+what P0 is: `axis-b-rows.tsv` has no generator, `PairRow::key()` carries `kind`
+deliberately so the duplicate cannot be deduplicated in the ledger, and no axis-B
+cell reads NOT OBSERVABLE today — identical sides are reported **green**, not
+blind.
+
 **Files:** `promise-effect/effect-magnitudes.tsv`,
-`scripts/promise-effect/Stand.php`, `promise-effect/pair-kind-scope.tsv`, and the
-stand's own tests.
+`scripts/promise-effect/Declarations.php`, `scripts/promise-effect/Stand.php`,
+`scripts/promise-effect.php`, `scripts/promise-effect/tests/`,
+`scripts/promise-effect-axis-b-rows.php` (new, the derive mode below),
+`docs/internal/plans/shorthand-scope/measurement/`, and the regenerated
+`docs/internal/generated/promise-effect/`.
 
-The stand writes one canonical magnitude per numeric key, so the two keys of a
-pair that contend for the same pointer write the same value and no leaf-wise
-comparison can say which won. At those magnitudes `compose` goes green after the
-cure on all eighteen rows of this round's own kind — the prediction would come
-true for a reason unrelated to the cure. The second half: nineteen triples are
-judged twice, under two kinds, so ten of axis B's defects are second copies.
+Revision 3 named `pair-kind-scope.tsv` and omitted `Declarations.php`, which is
+where `effect-magnitudes.tsv` is parsed, and `promise-effect.php`, which is the
+only place a count is reported. The first is dropped — document identity is not
+what that table is about — and the other two are added. Nothing may run beside
+P0, so widening its set costs no parallelism.
 
-Three requirements, which revision 3 ran together into one phrase:
+### The defect, confirmed in the form it was described
 
-1. **the two sides of a pair write different values.** Not expressible in
-   `effect-magnitudes.tsv` as it stands: its two selectors (`form`, `option_leaf`)
-   both answer "what SECOND value to write instead of the canonical one", not
-   "what value to write for THIS side". A third selector is a new mechanism, and
-   its price — a column in the file, a read in `Declarations`, a branch in
-   `pairSide()`, a guard — must be costed the way `deeper-wins:` was.
-2. **the choice of magnitude must not depend on the product under test.**
-   `pairSide()` picks the canonical value only when the object differs from the
-   omitted case *on the current build*, and falls back otherwise. So the document
-   written is a function of the behaviour being measured, and the product changes
-   between this round's runs. Whether the observational fallback survives is a
-   decision P0 must take explicitly; if it does, the rows where inertness moves
-   with the product are not comparable between runs and must be named.
-3. **two forms admit no third value at all.** `bool` has two, one of which is the
-   level default; the `scope` enum is `all`/`application`, and `all` is the
-   default. These are the six cells that stay NOT OBSERVABLE after P0 — four
-   `complexity.npath | *.enabled × enabled` and two `coupling.cbo |
-   class.scope × scope`. A DoD stated as a property to reach is not reachable on
-   them, and run #1 is judged without them rather than despite them.
+Measured on the frozen observations of
+`pair|coupling.cbo|class:|threshold|same-source|3-shorthand-vs-level-block`:
 
-`03-acceptance.md` carries the measurement and the numeric DoD.
+| side                              | `class`    | `namespace` |
+| --------------------------------- | ---------- | ----------- |
+| omitted                           | 14, 20     | 14, 20      |
+| onlyA (the `class:` block)        | 7331, 7331 | 14, 20      |
+| onlyB (the top-level `threshold`) | 7331, 7331 | 7331, 7331  |
+| both                              | 7331, 7331 | 7331, 7331  |
 
-Nothing else in this round may start before P0 lands, because every number the
-other packages are judged by is produced by this instrument.
+`both` is `onlyB` byte for byte. Both sides write the canonical 7331 into the
+contested pointer, so `Classifier::pair()`'s `compose` branch finds each side's
+moved leaves intact and returns `COEXISTENCE_OK, "both effects present"`.
+
+### Distinguishable sides, declared
+
+`effect-magnitudes.tsv` gains a third selector kind, `side_b`: the literal the
+**second** key of a pair is written with. Side A keeps the canonical magnitude, so
+its candidate list and its fallback semantics do not move; side B tries the
+declared per-side literal first and keeps the existing candidates behind it.
+
+The selector is declared per form and only for forms that admit a third value.
+`bool` has two and one of them is a level default; the `scope` enum has two and
+one of them is the default. Those get no `side_b` row, `writeForShape()` finds no
+match in the per-side set and answers null, and side B degrades to today's
+candidates with no special case in the code. That is how the six permanently
+unobservable cells stay unobservable **by the shape of their values** rather than
+by an exclusion list.
+
+**One magnitude, many spellings — the rule `forms.tsv` already follows and a
+per-form table invites breaking.** The canonical write is 7331 as an int, `7331.9`
+as a float, `"7331"` as text, `[7331]` and `{a: 7331}` in the two containers: one
+number wearing five spellings, so a value surviving a merge is attributable
+whatever form the shape picked. The alternate does the same with 9137. `side_b` is
+therefore **5519** in all five, and `pqr` for `string-nonnumber`, whose canonical
+`abc` and alternate `xyz` are not numbers at all.
+
+This is not tidiness. `writeForShape()` walks `forms.tsv` in file order — `null`,
+`bool`, `int`, `float`, `string-number`, `string-nonnumber`, `list`, `map` — and
+returns the first form the shape accepts, so a text-shaped key is written
+`"7331"` and never reaches `abc`. Declaring 5519 for `int` but 4877 for
+`string-number` would put two different magnitudes on one side depending on a
+shape decision nobody reads, and the per-form guard below would not see it,
+because each row would be distinct from its own form's canonical.
+
+`Declarations` carries the same guard this file already carries twice: a `side_b`
+literal equal to that form's canonical write, or to its alternate, is a
+`LedgerError`, because a side that cannot be told from the other side reports a
+typo here as a property of the product. The guard is per form and catches a typo,
+not a magnitude split across spellings — that one is held by the one-magnitude
+rule above and by DoD property 1, which reads the two sides' **observations**
+rather than their declarations.
+
+**Axis E must not move.** `effectWritesFor()` is shared with the neighbourhood
+probe (`Stand.php:926, 944`). The per-side set is therefore threaded as an
+optional argument that defaults to today's behaviour, and only `pairSide()` and
+`pairCandidates()` pass it. A cell moving on axes A, C, D or E is a falsification
+of the round.
+
+### The observational fallback stays, and that is a decision
+
+`pairSide()` writes the canonical magnitude and falls back to a declared alternate
+only when the canonical does not move the object **on the build under test**, so
+the document written is a function of the behaviour being measured. Revision 3
+left the decision open. It is taken here: **the fallback stays.**
+
+Measured. Inside the five cured rules the fallback fires on 71 of 506 sides and on
+exactly one leaf — `enabled` — choosing between `true` and `false`, both already
+declared. The product-dependence is real and visible in one pair of rows:
+`complexity.npath` is written `false` at `callable.enabled` (level default `true`)
+and `true` at `class.enabled` (level default `false`). Those four rows are about
+different documents on run #1 and run #3, and `03-acceptance.md` already excludes
+them from row-wise comparison.
+
+Three reasons the alternatives lose:
+
+- Removing the fallback and declaring the leaf instead puts a second source of
+  truth beside the product's own defaults, and it goes stale **silently** when a
+  default changes — the stand's own header names observation as the reason this
+  file exists.
+- A declared `false` at `npath|class.enabled` is inert there by construction
+  (the level defaults to `false`), so the declaration would blind the very row B3
+  is about. B3 is observed directly in P4 through
+  `bin/qmx directives --format=json`, not through these rows.
+- The fallback is what keeps the new per-side literals safe: a `side_b` value that
+  turned out to be a product default would otherwise make its side inert and move
+  a cell **out** of defect, which is the one direction P0 must not produce. With
+  the fallback, such a side falls through to the next candidate instead.
+
+### What P0 proves, and why the planned proof cannot be given
+
+Revision 3's proof was "a stand run on the unfixed product whose axis-B number
+matches the regenerated table's count". That is not obtainable without circularity.
+`today_verdict` at the new magnitudes cannot be predicted from the observations
+taken at the old ones: what `both` contains at the contested pointer is *which key
+won*, and that is the thing under measurement. A table that predicted it would be
+a model of the product, built by the same round that is changing the product.
+
+P0's proof is therefore a property, checkable cell by cell against run #0 and
+needing no predicted verdict:
+
+1. **Distinguishability.** For every axis-B cell in the cure's radius other than
+   the six named above, `onlyA` and `onlyB` carry different literals at every leaf
+   they both move. Read off the two observations; no verdict involved.
+2. **Monotonicity.** Axis B's defect count may rise or stay, never fall, and every
+   newly red cell is one whose two sides were indistinguishable at a contested
+   leaf on run #0. This follows from `Classifier::effectSurvives()`: at a leaf both
+   sides move to the same literal, `both` carries that literal whichever key won,
+   so both sides read as surviving — the branch is green regardless of the truth.
+   Giving the sides different literals can only reveal a loss, never hide one.
+   The one way it could fall is a `side_b` literal that is itself a product
+   default, which would make its side inert and move the cell to NOT OBSERVABLE;
+   `pairSide()`'s fallback is what forecloses it, by dropping such a side back to
+   the canonical candidate. **This is an argument over the code, and run #1 is
+   where it is checked** — the report states both, and a cell that goes from
+   MISCOMPOSED to anything else falsifies P0.
+3. **Axes A, C, D and E unchanged**, cell for cell.
+
+### The duplicate, counted and reported
+
+Nineteen `same-source` triples `(rule, key_a, key_b)` are judged under two kinds;
+ten of them are defects on both, so **ten of axis B's eighty-one are second
+copies of a document already counted**.
+
+They are not deduplicated. `PairRow::key()` puts `kind` in the key deliberately —
+its docblock records that removing it collapses nineteen rows onto thirteen and
+that a divergence between two kinds "would have been silently averaged". A row's
+promise belongs to its kind, and two kinds may promise different things about one
+document.
+
+**So requirement 1's "counted once" is not delivered, and the substitute is named
+rather than passed off as it.** The defect count stays keyed by cell, because a
+cell is a promise and two kinds may promise different things about one document.
+What P0 adds is the count nothing keeps: the run reports axis B's **documents**
+beside its cells, a document being `rule|key_a|key_b|source_scope`. No verdict, no
+key and no exit code moves; the number that was silently a row count stops being
+readable as a document count. A test over the ledger names the nineteen triples as
+a literal list, so a triple that quietly gains or loses a kind is refused rather
+than absorbed — the list is written out rather than derived, or the test rewrites
+itself.
+
+Two consequences follow and are carried, not left implicit: `03-acceptance.md`
+reads 81 cells as 71 documents wherever it counts documents, and
+`axis-b-rows.tsv` is keyed by document, which is why its 465 rows are 465 cells
+and its duplicate pairs share a row.
+
+### `axis-b-rows.tsv`, and what "re-derive" can honestly mean
+
+The table has no generator (465 rows, no script in the tree names it), and four of
+its twelve columns are predictions. P0 does not build a classifier simulator to
+produce them — an oracle widened on faith is the failure this programme already
+has a name for. The promise is narrowed instead:
+
+- `today_verdict` and `today_coexistence` are **written from run #1 and the
+  ledger** by a derive mode that is a write and not a check;
+- `affected` and `assigned` are decisions and are carried forward, unchanged, as
+  P2's input;
+- `post_cure_under_today_value`, `post_cure_under_assigned` and
+  `assigned_on_todays_product` stay predictions, marked as unverified, and run #3
+  is what checks them.
+
+The pre-P0 table is kept as the witness of what P0 changed.
+
+### DoD
+
+- Every `side_b` row's literal is refused by `Declarations` when it equals that
+  form's canonical write or its alternate; a control proves each refusal fires.
+- Properties 1-3 above hold on run #1, each reported with its number.
+- Axis B's document count is reported and the nineteen multi-kind triples are
+  named by a test.
+- `measurement/axis-b-rows.tsv` regenerated in its two measured columns, with the
+  pre-P0 copy kept beside it.
+- `composer check` green as an aggregate.
 
 ## P1 — the corpus witness (finding-gate)
 
