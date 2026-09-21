@@ -178,10 +178,10 @@ final class HtmlReportShipsOnlyWhatItReadsTest extends TestCase
     }
 
     /** @param list<string> $command */
-    private static function capture(array $command, string $input = ''): string
+    private static function capture(array $command): string
     {
         try {
-            $result = ChildProcess::run($command, null, $input);
+            $result = ChildProcess::run($command);
         } catch (RuntimeException $exception) {
             // Carried whole rather than restated: only run()'s own message
             // says which of its failures this was.
