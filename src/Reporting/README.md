@@ -58,6 +58,7 @@ Reporting/
 │   ├── SuppressionCompositionBuilder.php  # Builds SuppressionComposition for the five global stages; delegates the ledger halves
 │   └── RuleExclusionLedgerAttributor.php  # Publishes each ledger-excluded finding from the RuleExclusionAttribution the ledger recorded; finds inert patterns, including suppress_namespace_channels
 ├── DrillDown/
+│   ├── DrillDownBinding.php             # How many analyzed namespaces/classes a `--namespace` / `--class` value selects; zero is refused instead of emptying the report
 │   └── FindingFilter.php                # What `--namespace` / `--class` selects from findings and offenders
 └── Formatter/
     ├── FormatterInterface.php              # Formatter contract

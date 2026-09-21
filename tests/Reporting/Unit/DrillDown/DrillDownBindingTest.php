@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
+namespace Qualimetrix\Tests\Reporting\Unit\DrillDown;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -17,7 +17,7 @@ use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Console\DrillDownBinding;
+use Qualimetrix\Reporting\DrillDown\DrillDownBinding;
 
 #[CoversClass(DrillDownBinding::class)]
 final class DrillDownBindingTest extends TestCase

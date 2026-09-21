@@ -1893,8 +1893,8 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DrillDownBinding"
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\DrillDown\\DrillDownBinding"
         }
       ]
     },
@@ -4436,8 +4436,8 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline"
         },
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DrillDownBinding"
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\DrillDown\\DrillDownBinding"
         },
         {
           "owner": "Infrastructure.Console",
@@ -4524,8 +4524,8 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\PreparedRun"
         },
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DrillDownBinding"
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\DrillDown\\DrillDownBinding"
         }
       ]
     },
@@ -12932,8 +12932,8 @@
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressionCompositionBuilder"
         },
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DrillDownBinding"
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\DrillDown\\DrillDownBinding"
         },
         {
           "owner": "Analysis.Finding",
@@ -14139,8 +14139,8 @@
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineConfiguredThresholds"
         },
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DrillDownBinding"
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\DrillDown\\DrillDownBinding"
         },
         {
           "owner": "Infrastructure.Console",
@@ -14443,8 +14443,8 @@
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand"
         },
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DrillDownBinding"
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\DrillDown\\DrillDownBinding"
         },
         {
           "owner": "Infrastructure.Console",
@@ -15428,13 +15428,6 @@
     },
     "Qualimetrix\\Infrastructure\\Console\\DirectiveVerdictTally": {
       "path": "src/Infrastructure/Console/DirectiveVerdictTally.php",
-      "kind": "class",
-      "owner": "Infrastructure.Console",
-      "visibility": "internal",
-      "consumers": []
-    },
-    "Qualimetrix\\Infrastructure\\Console\\DrillDownBinding": {
-      "path": "src/Infrastructure/Console/DrillDownBinding.php",
       "kind": "class",
       "owner": "Infrastructure.Console",
       "visibility": "internal",
@@ -16944,6 +16937,18 @@
     },
     "Qualimetrix\\Reporting\\CoverageFailure": {
       "path": "src/Reporting/CoverageFailure.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter"
+        }
+      ]
+    },
+    "Qualimetrix\\Reporting\\DrillDown\\DrillDownBinding": {
+      "path": "src/Reporting/DrillDown/DrillDownBinding.php",
       "kind": "class",
       "owner": "Reporting",
       "visibility": "contract",
