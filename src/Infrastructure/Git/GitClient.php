@@ -98,8 +98,19 @@ final class GitClient
             throw new UnresolvedGitReferenceException($reference);
         }
 
+        // Deliberately without `--quiet`. That flag suppresses the one line
+        // saying why the revision was refused, and what it leaves behind does
+        // not replace it: the exit code separates nothing, because a typo and
+        // a damaged repository both reach this point as 128 with an empty
+        // stderr. Measured over eighteen forms of refusal, every failure of
+        // this command exits 128 and every one puts text on stderr, so there
+        // is nothing here to classify and nothing to withhold — git's own
+        // words are the answer, and they are relayed rather than read.
+        // Relayed, so the environment is left alone and the text reaches the
+        // user in the system's language; nothing reads it, so nothing breaks
+        // when it is not English.
         $process = new Process(
-            ['git', 'rev-parse', '--verify', '--quiet', $reference . '^{commit}'],
+            ['git', 'rev-parse', '--verify', $reference . '^{commit}'],
             $this->projectRoot->value(),
         );
         $process->run();
@@ -108,15 +119,7 @@ final class GitClient
             return;
         }
 
-        if ($process->getExitCode() === 1) {
-            throw new UnresolvedGitReferenceException($reference);
-        }
-
-        throw new RuntimeException(\sprintf(
-            'Git command failed while resolving "%s": %s',
-            $reference,
-            trim($process->getErrorOutput()),
-        ));
+        throw new UnresolvedGitReferenceException($reference, trim($process->getErrorOutput()));
     }
 
     /**

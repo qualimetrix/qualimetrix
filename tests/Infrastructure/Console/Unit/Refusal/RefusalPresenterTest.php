@@ -207,6 +207,45 @@ final class RefusalPresenterTest extends TestCase
         self::assertStringContainsString('Configuration error: Unknown direction', $decoded['error']);
     }
 
+    /**
+     * The sibling of the invalid-UTF-8 case above. A refusal quotes what the
+     * user typed and, for a git scope, what git printed — and git prints
+     * commit subjects, which repository authors write. A well-formed console
+     * tag with a bad value makes the formatter throw; the ladder above then
+     * reports the formatter's complaint and the refusal is lost.
+     */
+    #[Test]
+    public function itKeepsTheRefusalSentenceIntactForAMessageCarryingConsoleMarkup(): void
+    {
+        $output = self::terminalOutput();
+
+        $exit = $this->presenter()->fallbackRefusal(
+            $output,
+            null,
+            new RuntimeException('Git reference "<fg=bogus>x" does not resolve to a commit.'),
+        );
+
+        self::assertSame(3, $exit);
+        self::assertStringContainsString(
+            'Git reference "<fg=bogus>x" does not resolve to a commit.',
+            $output->errorOutputContent(),
+        );
+    }
+
+    #[Test]
+    public function itKeepsTheEnvelopeParseableForAMessageCarryingConsoleMarkup(): void
+    {
+        $output = self::terminalOutput();
+        $message = 'Git reference "a6e7" does not resolve to a commit. git: hint: subj <fg=bogus> 422';
+
+        $exit = $this->presenter()->fallbackRefusal($output, 'json', new RuntimeException($message));
+
+        self::assertSame(3, $exit);
+        $decoded = json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(3, $decoded['exit_code']);
+        self::assertSame($message, $decoded['error']);
+    }
+
     #[Test]
     public function itStopsALiveProgressFrameBeforePresenting(): void
     {

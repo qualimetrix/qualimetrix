@@ -115,6 +115,22 @@ remove a link it cannot identify rather than deleting someone else's hook.
 
 ### Fixed
 
+- A `--report=git:*` revision that git cannot resolve is now refused by name
+  and quotes git's own explanation, instead of failing as an internal error
+  with an empty one. `git:HEAD@{999}..HEAD` reported `Git command failed while
+  resolving "HEAD@{999}":` — a dangling colon, and exit 1 — and now reports
+  `Git reference "HEAD@{999}" does not resolve to a commit. git: fatal: log for
+  'HEAD' only has 1 entries`, with exit 3 like any other bad input. Every
+  unresolvable revision now carries git's reason, including one the repository
+  is too damaged to read, which is refused with git's diagnosis rather than
+  surfacing as an internal error.
+
+- A refusal whose message quotes something the user or git wrote no longer
+  destroys itself when that text happens to look like console markup. A scope
+  such as `--report='git:<fg=bogus>x..HEAD'` printed the console formatter's
+  complaint instead of the refusal, and under `--format=json` printed nothing
+  at all — no `{error, exit_code}` envelope — while still exiting 3.
+
 - Analysing a project no longer runs that project's code. Resolving an external
   parent called `class_exists($fqcn, true)`, which includes the file and
   executes its top-level statements; a `exit` or a fatal there ended the run

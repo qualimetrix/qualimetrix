@@ -117,17 +117,32 @@ whose message carries git's stderr, so a broken scope names the reason git
 gave. `askGit()` asks one short question, discards stderr and reads a single
 pipe safely; it has no such message to build.
 
-Two supports this section used to claim do not hold, and neither is the
-reason. `assertInsideWorkTree()` reads `isSuccessful()` and stdout, and needs
-no stderr at all. `assertCommitReference()` is worse than redundant. `--quiet`
-makes an unknown ref exit 1 with empty stderr, so its own `getErrorOutput()`
-report is reached only on some other exit code — and the reachable one is 128
-*inside* a healthy repository, for a reflog position git cannot walk
-(`HEAD@{999}`), where stderr is empty as well. The report therefore fires with
-nothing to say: it names the ref, then a bare colon. Meanwhile the one probe
-that does put text on stderr, a ref dereferencing to a tree (`HEAD^{tree}`),
-exits 1 and is reported without it. Measured, `LC_ALL=C`, in this repository.
-That branch is a defect to fix, not a support to cite.
+One support this section used to claim does not hold: `assertInsideWorkTree()`
+reads `isSuccessful()` and stdout, and needs no stderr at all.
+`assertCommitReference()` does read stderr, but only to relay it — never to
+decide anything. It once ran `rev-parse` with `--quiet` and classified on what
+survived the flag, and that axis turned out not to exist. Measured over
+eighteen forms of refusal in this repository, `LC_ALL=C`: every failure of
+`git rev-parse --verify` exits 128, so the code says nothing; and under
+`--quiet` the stderr left behind is empty for a plain typo, for a reflog
+position git cannot walk (`HEAD@{999}`) and for a *damaged* reflog alike,
+while a revision dereferencing to a tree (`HEAD^{tree}`) keeps its `error:`
+line. Neither signal separates the user's mistake from a broken repository —
+and which cases fall silent is a property of the flag, not of git: `--quiet`
+was itself buggy for `@{u}` before git 2.41.
+
+Dropping `--quiet` dissolves the question rather than answering it. All
+eighteen forms then carry git's own sentence — `log for 'HEAD' only has 1
+entries` for the walked-off position, `log for HEAD is empty` for the damage,
+`loose object … is corrupt` for the unreadable one — and every refusal is
+raised as `UnresolvedGitReferenceException` quoting it verbatim, so a bad
+scope is an input refusal whatever went wrong behind it. Nothing parses that
+text, so no locale and no git version can move a verdict; the quote itself is
+left in whatever language the user's environment gives git, because relaying
+it is all this does. The only refusal without a quote is the empty revision,
+caught before git is asked — and the one branch that then has to suppress the
+`git:` tail is what keeps the colon from dangling, so it carries its own test
+rather than waiting for an input that never arrives.
 
 The timeout is the second support that does hold, and it cuts both ways.
 Process applies 60 s to every call by default, so a git that hangs is bounded.

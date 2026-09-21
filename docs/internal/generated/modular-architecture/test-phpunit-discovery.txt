@@ -7998,8 +7998,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAFallbackRefusalWithTheCaughtMessageUnframed
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAnInternalErrorAsAnEnvelopeUnderAJsonFormat
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAnInternalErrorWithTheInternalHeaderAndCodeOne
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheEnvelopeParseableForAMessageCarryingConsoleMarkup
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheEnvelopeParseableForAMessageContainingInvalidUtf8
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheEnvelopeVisibleUnderQuiet
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheRefusalSentenceIntactForAMessageCarryingConsoleMarkup
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheRefusalSentenceVisibleUnderQuiet
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itNeverPrintsATraceForARefusal
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itOmitsTheTraceBelowVerboseVerbosity
@@ -8116,6 +8118,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itGetsUncommittedFiles
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itHandlesEmptyDiff
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itIgnoresNonStandardGitOutput
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itOmitsTheQuoteWhenGitOfferedNoReason#0
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itOmitsTheQuoteWhenGitOfferedNoReason#1
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itParsesAddedFiles
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itParsesCopiedFilesFromNameStatusOutput
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itParsesCopiedFilesWithPartialSimilarity
@@ -8126,6 +8130,14 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itPassesAShellSignificantRangeToGitLiterally"command separator and redirection"
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itPassesAShellSignificantRangeToGitLiterally"command substitution"
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itPassesAShellSignificantRangeToGitLiterally"pipe"
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itRefusesARevisionAndQuotesGitsReason"ancestor past the root commit"
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itRefusesARevisionAndQuotesGitsReason"branch without an upstream"
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itRefusesARevisionAndQuotesGitsReason"dereferences to a tree"
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itRefusesARevisionAndQuotesGitsReason"reflog position past the end of HEAD"
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itRefusesARevisionAndQuotesGitsReason"reflog position past the end of a branch"
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itRefusesARevisionAndQuotesGitsReason"unknown name"
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itRefusesARevisionTheRepositoryIsTooDamagedToRead
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itRefusesAnEmptyRevisionWithoutQuotingGit
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itReturnsFalseWhenGitDirectoryDoesNotExist
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itReturnsTrueWhenGitDirectoryExists
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itReturnsTrueWhenGitIsAFile

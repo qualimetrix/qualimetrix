@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console\Refusal;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Output\StreamOutput;
 use Throwable;
@@ -69,7 +70,7 @@ final class RefusalPresenter
 
         if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
             $this->writeStderr($output, '<comment>Stack trace:</comment>');
-            $this->writeStderr($output, $failure->getTraceAsString());
+            $this->writeStderr($output, OutputFormatter::escape($failure->getTraceAsString()));
         }
 
         return ConsoleExitCode::InternalError->value;
@@ -87,7 +88,13 @@ final class RefusalPresenter
             return;
         }
 
-        $this->writeStderr($output, \sprintf('<error>%s</error>', $message));
+        // `escape()` because `$message` is not ours: it quotes what the user
+        // typed and, for a git refusal, what git printed — which can carry a
+        // commit subject. An unknown tag would pass through, but a well-formed
+        // one with a bad value (`<fg=bogus>`) makes the formatter throw, and
+        // the exit ladder above reports that instead of this refusal. Only
+        // the frame below is ours to have the formatter read.
+        $this->writeStderr($output, \sprintf('<error>%s</error>', OutputFormatter::escape($message)));
     }
 
     /**
@@ -141,6 +148,10 @@ final class RefusalPresenter
             stream_set_blocking($output->getStream(), true);
         }
 
-        $output->write($payload, false, OutputInterface::VERBOSITY_QUIET);
+        // `OUTPUT_RAW`: the payload is already JSON and has nothing for the
+        // console formatter to do. Left to read it, the formatter would parse
+        // markup embedded in `$message` and throw on a malformed style, and
+        // the envelope this refusal promised would never be written at all.
+        $output->write($payload, false, OutputInterface::OUTPUT_RAW | OutputInterface::VERBOSITY_QUIET);
     }
 }
