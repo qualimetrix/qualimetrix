@@ -72,9 +72,11 @@ use Throwable;
  *   child is gone, and the parent waits for it:
  *   `['/bin/sh', '-c', '( sleep 6 ) & echo parent-done']` keeps `run()` there
  *   for the full six seconds. No caller in this tree has that shape —
- *   `bin/qmx --workers=4` returns in 0.78 s, because amphp's workers do not
- *   hold the parent's stdout — and a deadline here would be supervision,
- *   which is deliberately a different subject.
+ *   `bin/qmx check src/ --workers=4`, measured over 973 files with four
+ *   `amphp/parallel` worker processes running, reaches EOF on stdout in the
+ *   same 20 ms window the child is reaped, so those workers do not hold the
+ *   parent's stdout — and a deadline here would be supervision, which is
+ *   deliberately a different subject.
  * - `stream_select()` is interrupted by a signal: it returns `false`, which
  *   this class reports as a failure, where an old-style blocking read would
  *   have resumed. Nothing retries on EINTR. No caller installs a signal

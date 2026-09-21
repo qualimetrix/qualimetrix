@@ -42,7 +42,22 @@ on macOS 25.6.0 with this repository's PHP, 2026-09-20.
 | `[1 => ['pipe','w'], 2 => ['pty']]`, child floods the pty, parent reads the stdout pipe to EOF                 | **deadlock** — parent still blocked at 5 s, SIGKILLed (exit 137). The child filled the pty master's kernel buffer and blocked mid-write, so it never closed stdout                                                      |
 | `popen($cmd, 'w')` — one stream, write direction — parent writes 1 MB, child never reads stdin                 | **deadlock** — after the first 64 KB the parent sat inside `fwrite()` for the child's entire 30 s life, released only by the child's exit turning the write into `EPIPE`. A child that never exits blocks it forever    |
 | `run(['/bin/sh','-c','( sleep 6 ) & echo parent-done'])` — child exits at once, grandchild inherits its stdout | **returns at 6.01 s**, not at the child's exit: `run()` waits for pipe EOF, and the grandchild holds the descriptor open                                                                                                |
-| `run([…,'bin/qmx','check','src/Core','--workers=4'])` — the product's own parallel workers                     | **0.70 s**, 158 KB on stdout: amphp's workers do not hold the parent's stdout, so the row above reaches no caller in this tree                                                                                          |
+| `run([…,'bin/qmx','check','src/','--workers=4'])` — the product's own parallel workers, 973 files              | **11.5 s**, 270 KB on stdout, and stdout reaches EOF in the same 20 ms window the child is reaped: amphp's workers do not hold the parent's stdout, so the row above reaches no caller in this tree                     |
+
+That last row was re-measured on 2026-09-21, because the first attempt measured
+nothing it claimed: it ran `src/Core`, 29 files, and the parallel strategy falls
+back to sequential below a hundred, so no worker ever started and the 0.70 s it
+recorded was a sequential run. `--workers=4` picks the strategy and the worker
+count; it does not lower that floor. The row now names a tree above it, and
+both halves of its claim are witnessed rather than assumed. The branch: stderr
+under `-vv` carried `starting parallel processing` with
+`{"files_count":973,"workers":4}` and no `file count below threshold`, and four
+`amphp/parallel` worker processes were visible mid-run against none before or
+after. The timing: the same command with no pipes at all — stdout and stderr
+straight to `/dev/null`, where nothing *can* be held open — returned in
+11.475 s, which is the pipe run's own figure. And the exit-versus-EOF instants
+come from a probe that reports `+2.980 s` on the shape in the row above cut to
+`sleep 3`, so a held pipe is something it can see.
 
 Three consequences follow, and each killed a mechanism that had looked
 reasonable:
@@ -135,9 +150,11 @@ child's stdout holds the call open after the child is gone. Measured:
 `['/bin/sh', '-c', '( sleep 6 ) & echo parent-done']` returned at 6.01 s rather
 than at the shell's own immediate exit, and a descendant that never exits would
 hold it forever. Nothing in this tree touches that: measured separately, a
-`bin/qmx check --workers=4` through `run()` returned in 0.70 s, because amphp's
-workers do not hold the parent's stdout. A caller that backgrounds a
-long-running descendant needs supervision, not this module.
+`bin/qmx check src/ --workers=4` through `run()` — 973 files, four worker
+processes seen running — returned with stdout at EOF in the same 20 ms window
+the child was reaped, so amphp's workers do not hold the parent's stdout. A
+caller that backgrounds a long-running descendant needs supervision, not this
+module.
 
 Two families therefore keep their own implementations:
 
