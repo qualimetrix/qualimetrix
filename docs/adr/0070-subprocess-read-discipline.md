@@ -32,32 +32,34 @@ purpose changes.
 ### What was measured
 
 Recorded here so a future reader does not have to re-measure any of it. Taken
-on macOS 25.6.0 with this repository's PHP, 2026-09-20.
+on macOS 25.6.0 with this repository's PHP, 2026-09-20 — except the last row,
+re-measured 2026-09-21 for the reason under the table.
 
-| Shape                                                                                                          | Result                                                                                                                                                                                                                  |
-| -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Two read pipes, read sequentially, child floods the second                                                     | **deadlock** — reproduced three times plus a three-line standalone repro                                                                                                                                                |
-| One read pipe, never read, then `proc_close()`, child floods it                                                | **no deadlock** — the child died with `errno=32 Broken pipe` and the parent returned exit 255 at once, because `proc_close()` closes the pipes it created *before* waiting, so the child gets EPIPE instead of blocking |
-| One **write** (stdin) pipe, parent writes 1 MB, child never reads stdin                                        | **deadlock** — the parent was still blocked in `fwrite()` at 5 s and had to be SIGKILLed (exit 137)                                                                                                                     |
-| `[1 => ['pipe','w'], 2 => ['pty']]`, child floods the pty, parent reads the stdout pipe to EOF                 | **deadlock** — parent still blocked at 5 s, SIGKILLed (exit 137). The child filled the pty master's kernel buffer and blocked mid-write, so it never closed stdout                                                      |
-| `popen($cmd, 'w')` — one stream, write direction — parent writes 1 MB, child never reads stdin                 | **deadlock** — after the first 64 KB the parent sat inside `fwrite()` for the child's entire 30 s life, released only by the child's exit turning the write into `EPIPE`. A child that never exits blocks it forever    |
-| `run(['/bin/sh','-c','( sleep 6 ) & echo parent-done'])` — child exits at once, grandchild inherits its stdout | **returns at 6.01 s**, not at the child's exit: `run()` waits for pipe EOF, and the grandchild holds the descriptor open                                                                                                |
-| `run([…,'bin/qmx','check','src/','--workers=4'])` — the product's own parallel workers, 973 files              | **11.5 s**, 270 KB on stdout, and stdout reaches EOF in the same 20 ms window the child is reaped: amphp's workers do not hold the parent's stdout, so the row above reaches no caller in this tree                     |
+| Shape                                                                                                                   | Result                                                                                                                                                                                                                  |
+| ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Two read pipes, read sequentially, child floods the second                                                              | **deadlock** — reproduced three times plus a three-line standalone repro                                                                                                                                                |
+| One read pipe, never read, then `proc_close()`, child floods it                                                         | **no deadlock** — the child died with `errno=32 Broken pipe` and the parent returned exit 255 at once, because `proc_close()` closes the pipes it created *before* waiting, so the child gets EPIPE instead of blocking |
+| One **write** (stdin) pipe, parent writes 1 MB, child never reads stdin                                                 | **deadlock** — the parent was still blocked in `fwrite()` at 5 s and had to be SIGKILLed (exit 137)                                                                                                                     |
+| `[1 => ['pipe','w'], 2 => ['pty']]`, child floods the pty, parent reads the stdout pipe to EOF                          | **deadlock** — parent still blocked at 5 s, SIGKILLed (exit 137). The child filled the pty master's kernel buffer and blocked mid-write, so it never closed stdout                                                      |
+| `popen($cmd, 'w')` — one stream, write direction — parent writes 1 MB, child never reads stdin                          | **deadlock** — after the first 64 KB the parent sat inside `fwrite()` for the child's entire 30 s life, released only by the child's exit turning the write into `EPIPE`. A child that never exits blocks it forever    |
+| `run(['/bin/sh','-c','( sleep 6 ) & echo parent-done'])` — child exits at once, grandchild inherits its stdout          | **returns at 6.01 s**, not at the child's exit: `run()` waits for pipe EOF, and the grandchild holds the descriptor open                                                                                                |
+| `run([…,'bin/qmx','check','src/','--workers=4','--format=json','-vv'])` — the product's own parallel workers, 973 files | **11.5–12.0 s** over two runs, 270 KB on stdout, and stdout reaches EOF in the same 20 ms window the child is reaped: amphp's workers do not hold the parent's stdout, so the row above reaches no caller in this tree  |
 
 That last row was re-measured on 2026-09-21, because the first attempt measured
-nothing it claimed: it ran `src/Core`, 29 files, and the parallel strategy falls
-back to sequential below a hundred, so no worker ever started and the 0.70 s it
-recorded was a sequential run. `--workers=4` picks the strategy and the worker
-count; it does not lower that floor. The row now names a tree above it, and
-both halves of its claim are witnessed rather than assumed. The branch: stderr
-under `-vv` carried `starting parallel processing` with
-`{"files_count":973,"workers":4}` and no `file count below threshold`, and four
-`amphp/parallel` worker processes were visible mid-run against none before or
-after. The timing: the same command with no pipes at all — stdout and stderr
-straight to `/dev/null`, where nothing *can* be held open — returned in
-11.475 s, which is the pipe run's own figure. And the exit-versus-EOF instants
-come from a probe that reports `+2.980 s` on the shape in the row above cut to
-`sleep 3`, so a held pipe is something it can see.
+nothing it claimed: it ran `src/Core`, 29 files, and the parallel strategy
+falls back to sequential below a hundred, so no worker ever started and the
+0.70 s it recorded was a sequential run. `--workers=4` picks the strategy and
+the worker count; it does not lower that floor. Both halves of the replacement
+are therefore witnessed rather than assumed. That workers ran: the run's own
+log named the parallel branch and not the fallback, and four `amphp/parallel`
+worker processes were up mid-run against none before or after. That nothing
+held the pipe: the same command with stdout and stderr sent straight to
+`/dev/null`, where nothing *can* be held open, finished inside the two piped
+runs' own spread, and the exit-versus-EOF instants come from a probe that
+reports `+2.980 s` on the shape in the row above cut to `sleep 3`, so a held
+pipe is something it can see. The shape is not synthetic:
+`generate-suppression-snapshot.php` runs `bin/qmx check src --workers=4`
+through `run()` over the same tree.
 
 Three consequences follow, and each killed a mechanism that had looked
 reasonable:
