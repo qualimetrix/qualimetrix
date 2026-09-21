@@ -211,9 +211,9 @@ final class HookInstallWorksFromTheDistPackageTest extends TestCase
      *
      * @param list<string> $command
      */
-    private static function capture(array $command, ?string $workingDirectory = null): string
+    private static function capture(array $command): string
     {
-        [$status, $output] = self::execute($command, $workingDirectory);
+        [$status, $output] = self::execute($command);
 
         self::assertSame(
             0,
