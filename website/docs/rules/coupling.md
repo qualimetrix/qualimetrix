@@ -582,6 +582,17 @@ bin/qmx check src/ --rule-opt="coupling.distance:max_distance_error=0.6"
 bin/qmx check src/ --rule-opt="coupling.distance:min_class_count=5"
 ```
 
+**`min_class_count`** -- minimum number of classes a namespace must hold to be
+checked. Default: `3`, compared strictly, so a namespace of one or two classes
+is skipped and reports nothing however far from the main sequence it sits: a
+two-class namespace at D = 1.00 and a balanced one look the same in the report,
+because silence here means "not measured", not "clean". The gate exists because
+A and I are ratios, and over a handful of classes one class moving swings D
+across the whole range. Set it to `0` to judge every namespace. Note the
+consequence for refactoring: splitting a directory into smaller namespaces can
+switch this rule on for the parts, and it starts reporting at the third class,
+not the second.
+
 By default, project namespaces are auto-detected from `composer.json` (`autoload.psr-4`).
 
 `include_namespaces` also takes a single string, which stands for a one-element

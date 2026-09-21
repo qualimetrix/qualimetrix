@@ -16,6 +16,7 @@ use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Infrastructure\Git\GitScope;
 use Qualimetrix\Reporting\Contract\OutputFormat;
 use Qualimetrix\Reporting\CoverageFailure;
+use Qualimetrix\Reporting\DrillDown\DrillDownBinding;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;

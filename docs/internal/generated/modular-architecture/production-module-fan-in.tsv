@@ -69,7 +69,7 @@ Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface	Analysis.Evidence.Measurement	5	3
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	25	11
 Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceMetricProviderInterface	Analysis.Evidence.Measurement	3	2
-Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree	Analysis.Evidence.Measurement	10	6
+Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree	Analysis.Evidence.Measurement	10	5
 Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceWithMetrics	Analysis.Evidence.Measurement	2	1
 Qualimetrix\Analysis\Evidence\Measurement\Contract\ParallelSafeCollectorInterface	Analysis.Evidence.Measurement	3	3
 Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface	Analysis.Evidence.Measurement	2	2
@@ -233,7 +233,7 @@ Qualimetrix\Core\Path\AbsolutePath	Core.Path	51	12
 Qualimetrix\Core\Path\PathFactory	Core.Path	16	7
 Qualimetrix\Core\Path\RelativePath	Core.Path	85	23
 Qualimetrix\Core\Pattern\GlobSyntax	Core.Neutral	1	1
-Qualimetrix\Core\Pattern\NamespaceMatcher	Core.Neutral	13	6
+Qualimetrix\Core\Pattern\NamespaceMatcher	Core.Neutral	13	5
 Qualimetrix\Core\Pattern\PathMatcher	Core.Neutral	6	2
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	22	8
 Qualimetrix\Core\Symbol\CallableKind	Core.Symbol	9	2
@@ -284,6 +284,7 @@ Qualimetrix\Infrastructure\Serializer\SerializerSelector	Infrastructure.Serializ
 Qualimetrix\Reporting\Contract\OutputFormat	Reporting	2	1
 Qualimetrix\Reporting\Contract\OutputFormatResolverInterface	Reporting	2	2
 Qualimetrix\Reporting\CoverageFailure	Reporting	1	1
+Qualimetrix\Reporting\DrillDown\DrillDownBinding	Reporting	1	1
 Qualimetrix\Reporting\DrillDown\FindingFilter	Reporting	2	2
 Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions	Reporting	2	1
 Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface	Reporting	3	2

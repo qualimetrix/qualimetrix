@@ -221,9 +221,6 @@
     "declaration:callable:Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand::__construct@src/Infrastructure/Console/Command/CheckCommand.php": [
       {"channel":"code-smell.constructor-overinjection","magnitudes":[9]}
     ],
-    "declaration:callable:Qualimetrix\\Infrastructure\\Console\\DrillDownBinding::namespaceUniverse@src/Infrastructure/Console/DrillDownBinding.php": [
-      {"channel":"complexity.ccn","magnitudes":[10]}
-    ],
     "declaration:callable:Qualimetrix\\Infrastructure\\Console\\FormatterContextFactory::create@src/Infrastructure/Console/FormatterContextFactory.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"c7fac59b0cebc45a","count":1},
       {"channel":"complexity.ccn","magnitudes":[13]},
@@ -246,6 +243,9 @@
     ],
     "declaration:callable:Qualimetrix\\Infrastructure\\Parallel\\Strategy\\WorkerCountDetector::detect@src/Infrastructure/Parallel/Strategy/WorkerCountDetector.php": [
       {"channel":"complexity.ccn","magnitudes":[11]}
+    ],
+    "declaration:callable:Qualimetrix\\Reporting\\DrillDown\\DrillDownBinding::namespaceUniverse@src/Reporting/DrillDown/DrillDownBinding.php": [
+      {"channel":"complexity.ccn","magnitudes":[10]}
     ],
     "declaration:callable:Qualimetrix\\Reporting\\FormatterContext::withDetail@src/Reporting/FormatterContext.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"5fa5b671726ab567","count":1}
@@ -388,9 +388,6 @@
     "declaration:class:Qualimetrix\\Core\\Symbol\\SymbolPath@src/Core/Symbol/SymbolPath.php": [
       {"channel":"complexity.wmc","magnitudes":[65]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\DrillDownBinding@src/Infrastructure/Console/DrillDownBinding.php": [
-      {"channel":"health.cohesion","magnitudes":[40]}
-    ],
     "declaration:class:Qualimetrix\\Infrastructure\\Console\\FilteredInputDefinition@src/Infrastructure/Console/FilteredInputDefinition.php": [
       {"channel":"design.data-class","magnitudes":[0]}
     ],
@@ -424,6 +421,9 @@
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\Parallel\\Strategy\\AmphpParallelStrategy@src/Infrastructure/Parallel/Strategy/AmphpParallelStrategy.php": [
       {"channel":"coupling.instability","magnitudes":[0.846154]}
+    ],
+    "declaration:class:Qualimetrix\\Reporting\\DrillDown\\DrillDownBinding@src/Reporting/DrillDown/DrillDownBinding.php": [
+      {"channel":"health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Reporting\\Formatter\\GithubActionsFormatter@src/Reporting/Formatter/GithubActionsFormatter.php": [
       {"channel":"health.cohesion","magnitudes":[40]}
@@ -506,9 +506,6 @@
     ],
     "ns:Qualimetrix\\Infrastructure\\Serializer": [
       {"channel":"health.cohesion","magnitudes":[43.7]}
-    ],
-    "ns:Qualimetrix\\Reporting\\DrillDown": [
-      {"channel":"health.maintainability","magnitudes":[49.3]}
     ],
     "ns:Qualimetrix\\Reporting\\Formatter\\Html": [
       {"channel":"health.cohesion","magnitudes":[37.5]}

@@ -7906,23 +7906,6 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itSetsTheCommandNameAndDescription
  - Qualimetrix\Tests\Infrastructure\Console\Unit\DirectiveAuditSummaryProjectionTest::itPrintsOneTallyPerVerdictTheVocabularyDefinesInTheTextSummary
  - Qualimetrix\Tests\Infrastructure\Console\Unit\DirectiveAuditSummaryProjectionTest::itPublishesOneSummaryKeyPerVerdictTheVocabularyDefines
- - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsAClassByItsFullyQualifiedName
- - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsAGlobNamespacePattern
- - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsAGlobThatOnlyTheCanonicalSymbolNameSatisfies
- - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsANamespaceThatNamesAnAnalyzedOne
- - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsANamespaceThatOnlyTheNamespaceTreeKnows
- - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsASubtreeByItsPrefixTheWayTheFilterMatchesIt
- - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsAnIntermediateNamespaceByGlobWithoutANamespaceTree
- - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsNothingForAClassNoAnalyzedSymbolCarries
- - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsNothingForANamespaceNoAnalyzedSymbolCarries
- - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itCountsTheClassUniverseTheRefusalNames
- - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itCountsTheNamespaceUniverseTheRefusalNames
- - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itDoesNotAcceptANamespaceInPlaceOfAClass
- - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itDoesNotBindAValueToACallableCanonicalNameNoFilterCompares
- - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itDoesNotBindAValueToAFileCanonicalNameNoFilterCompares
- - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itKeepsTheProjectSentinelOutOfTheNamespaceUniverse
- - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itRefusesAPrefixThatOnlyLooksLikeOne
- - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itTreatsATrailingBackslashAsCosmetic
  - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itCarriesTheEmptyStringThroughToTheOwner"--cache-dir"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itCarriesTheEmptyStringThroughToTheOwner"--fail-on"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itCarriesTheEmptyStringThroughToTheOwner"--format"
@@ -8601,6 +8584,23 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleCollectorTest::itReturnsDescriptionsForKnownChannelsFromTheRealPresentation
  - Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleCollectorTest::itReturnsHelpUriForKnownChannelsFromTheRealPresentation
  - Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleDescriptorCoverageTest::itKeepsTheHumanisedFallbackAndTheRepositoryUrlForAnUnknownCode
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsAClassByItsFullyQualifiedName
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsAGlobNamespacePattern
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsAGlobThatOnlyTheCanonicalSymbolNameSatisfies
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsANamespaceThatNamesAnAnalyzedOne
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsANamespaceThatOnlyTheNamespaceTreeKnows
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsASubtreeByItsPrefixTheWayTheFilterMatchesIt
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsAnIntermediateNamespaceByGlobWithoutANamespaceTree
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsNothingForAClassNoAnalyzedSymbolCarries
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsNothingForANamespaceNoAnalyzedSymbolCarries
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itCountsTheClassUniverseTheRefusalNames
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itCountsTheNamespaceUniverseTheRefusalNames
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itDoesNotAcceptANamespaceInPlaceOfAClass
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itDoesNotBindAValueToACallableCanonicalNameNoFilterCompares
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itDoesNotBindAValueToAFileCanonicalNameNoFilterCompares
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itKeepsTheProjectSentinelOutOfTheNamespaceUniverse
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itRefusesAPrefixThatOnlyLooksLikeOne
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itTreatsATrailingBackslashAsCosmetic
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itDoesNotMatchFindingsBySimilarNamespacePrefix
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itExcludesFindingByClassWhenNoType
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersFindingsByAGlobNamespaceSelector

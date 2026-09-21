@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Infrastructure\Console;
+namespace Qualimetrix\Reporting\DrillDown;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\RankedOffenderLevels;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
@@ -19,8 +19,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * subtree that is genuinely clean, and the count is what separates them: zero
  * bindings means the value pointed at nothing, not that nothing was wrong.
  *
- * The comparison must stay the one
- * {@see \Qualimetrix\Reporting\DrillDown\FindingFilter} makes, or a value
+ * The comparison must stay the one {@see FindingFilter} makes, or a value
  * could be accepted here and filter nothing there: namespaces go through
  * {@see NamespaceMatcher::matchesSingle()}, classes are compared as the exact
  * `Namespace\Class` string the filter builds from a finding's symbol path.

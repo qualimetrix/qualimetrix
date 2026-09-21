@@ -63,6 +63,18 @@ remove a link it cannot identify rather than deleting someone else's hook.
   entry or a baseline key naming the old namespace has to be respelled — this
   repository's own ratchet carried one, and renaming it was the whole edit.
 
+- `DrillDownBinding` moved from `Qualimetrix\Infrastructure\Console` to
+  `Qualimetrix\Reporting\DrillDown`, beside the `FindingFilter` its own
+  docblock says it must agree with. It was never an adapter — it imports
+  nothing from Symfony and takes the run as an argument — so the rule that
+  keeps adapters in `Infrastructure` never applied to it. The class name, its
+  four methods and their behaviour are unchanged, and no channel name, rule
+  name, metric key, configuration key, CLI flag, output field or exit code is
+  affected. A baseline key naming the old class or its old path has to be
+  respelled; this repository's own ratchet carried two, and a third entry
+  stopped being produced at all because the namespace it named got healthier
+  when the class landed in it.
+
 - `Qualimetrix\Reporting\Formatter\Support` is gone; it was a name that
   answered nothing over classes with nothing in common. `AnsiColor` moved to
   `...\Formatter\Ansi`, `FindingSorter` to `...\Formatter\Ordering`, and
