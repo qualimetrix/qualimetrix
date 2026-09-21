@@ -12,7 +12,7 @@ This index lists only work that is executable on the current tree.
 | [Health recalibration](health-recalibration/00-overview.md)                              | In progress; three review rounds; instruments, corpus, model and calibration landed                                |
 | [Phar distribution](phar-distribution/00-overview.md)                                    | Stage 01 P0-P3 landed, pending review and one branch-protection setting; stage 02 written when 01 ships            |
 | [Rules listing](rules-listing/01-one-declaration-two-readers.md)                         | Three review rounds; landed, pending review                                                                        |
-| [Shorthand scope](shorthand-scope/00-overview.md)                                        | Planned and reviewed; implementation has not started                                                               |
+| [Shorthand scope](shorthand-scope/00-overview.md)                                        | P0 landed (#145): the stand can now tell which of two keys won, axis B 81 to 111. P1-P6 written, not started       |
 | [Subprocess drain](subprocess-drain/00-overview.md)                                      | Landed: three stages, two plan-review rounds and a code review, all findings closed                                |
 
 Completed plans are removed after their durable decisions, obligations, and
