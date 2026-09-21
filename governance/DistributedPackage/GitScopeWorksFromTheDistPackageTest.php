@@ -36,13 +36,11 @@ require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
  * resolved the staged path and analysis reached it, rather than merely saying
  * the process did not crash.
  *
- * `--no-dev` on the autoload dump is required, not a preference: `autoload-dev`
- * names `tools/phpstan/tests/Fixtures/`, which is `export-ignore`d and so
- * absent from the archive, and a dev dump inside the extracted package fails
- * outright.
- *
- * Like its sibling {@see HookInstallWorksFromTheDistPackageTest}, this archives
- * HEAD and copies `vendor/` rather than symlinking it.
+ * {@see ExtractedDistPackage} puts that tree on disk — archived from HEAD, with
+ * `vendor/` copied rather than symlinked — and says what dumping the autoload
+ * map without the dev graph buys. This control rests on the dev graph leaving
+ * the map, and asserts it below rather than trusting it: a dev-only class must
+ * be unreachable through the extracted package's own map.
  *
  * Copying `vendor/` is what makes the dependency graph a second tree, and this
  * control does not guess which one it is looking at: {@see InstalledDependencyGraph}
@@ -60,13 +58,13 @@ final class GitScopeWorksFromTheDistPackageTest extends TestCase
         // question this control asks, in either direction.
         InstalledDependencyGraph::assertMatchesHead(self::projectRoot());
 
-        $scratch = self::scratchDirectory();
+        $scratch = ScratchTree::create('qmx-dist-git-scope-');
         $package = $scratch . '/package';
         $consumer = $scratch . '/consumer';
 
         try {
-            self::extractDistPackage($package);
-            self::copyVendor($package);
+            ExtractedDistPackage::extract(self::projectRoot(), $package);
+            ExtractedDistPackage::makeRunnable(self::projectRoot(), $package);
 
             // Without this the control could go green for the wrong reason:
             // if the dump ever stopped excluding the dev graph, the fixture
@@ -110,7 +108,7 @@ final class GitScopeWorksFromTheDistPackageTest extends TestCase
                 'The git scope did not analyse the one staged file, so the scope resolved nothing:' . \PHP_EOL . $stdout,
             );
         } finally {
-            self::removeDirectory($scratch);
+            ScratchTree::remove($scratch);
         }
     }
 
@@ -140,33 +138,6 @@ final class GitScopeWorksFromTheDistPackageTest extends TestCase
             . ' echo (new ReflectionClass(\Qualimetrix\Infrastructure\Git\GitClient::class))->getFileName();',
             $package,
         ]));
-    }
-
-    private static function extractDistPackage(string $into): void
-    {
-        $archive = \dirname($into) . '/package.tar';
-
-        self::capture(['git', '-C', self::projectRoot(), 'archive', '--worktree-attributes', '--format=tar', '-o', $archive, 'HEAD']);
-
-        self::assertTrue(mkdir($into, 0777, true));
-        self::capture(['tar', '-xf', $archive, '-C', $into]);
-    }
-
-    /**
-     * Third-party dependencies, plus an autoload map rebuilt without the dev
-     * graph — which is what makes a dev-only package unreachable here even
-     * though its files were copied in.
-     */
-    private static function copyVendor(string $package): void
-    {
-        self::capture(['cp', '-R', self::projectRoot() . '/vendor', $package . '/vendor']);
-
-        $composer = getenv('COMPOSER_BINARY');
-
-        self::capture([
-            \is_string($composer) && $composer !== '' ? $composer : 'composer',
-            'dump-autoload', '--no-dev', '--no-scripts', '--no-interaction', '--quiet', '-d', $package,
-        ]);
     }
 
     /**
@@ -232,39 +203,6 @@ final class GitScopeWorksFromTheDistPackageTest extends TestCase
         $result = ChildProcess::run($command, $workingDirectory);
 
         return [$result['exitCode'], $result['stdout'], $result['stderr']];
-    }
-
-    private static function scratchDirectory(): string
-    {
-        $path = sys_get_temp_dir() . '/qmx-dist-git-scope-' . bin2hex(random_bytes(6));
-
-        self::assertTrue(mkdir($path, 0777, true));
-
-        // Resolved, because the guard above compares this prefix against a
-        // path PHP reports from inside the extracted tree, and on macOS the
-        // temporary directory is reached through a symlink.
-        $resolved = realpath($path);
-
-        self::assertIsString($resolved);
-
-        return $resolved;
-    }
-
-    private static function removeDirectory(string $path): void
-    {
-        if (!is_dir($path)) {
-            return;
-        }
-
-        // The extracted tree carries symlinks of its own under vendor/bin, and
-        // descending into one would walk out of the scratch directory.
-        foreach (array_diff((array) scandir($path), ['.', '..']) as $entry) {
-            $child = $path . '/' . $entry;
-
-            is_dir($child) && !is_link($child) ? self::removeDirectory($child) : unlink($child);
-        }
-
-        rmdir($path);
     }
 
     private static function projectRoot(): string

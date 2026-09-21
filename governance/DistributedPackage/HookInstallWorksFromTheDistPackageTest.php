@@ -22,30 +22,20 @@ require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
  * functional tests were green — they fabricated that file in their own
  * fixture, so they measured a tree nobody installs.
  *
- * Every step below is the cheapest thing that keeps the answer true of the
- * package:
+ * {@see ExtractedDistPackage} puts that tree on disk and states what each step
+ * of it costs, including why `vendor/` is copied rather than symlinked. Two
+ * things are this control's own rather than the fixture's:
  *
- * - `git archive --worktree-attributes` is the oracle for "what ships",
- *   because an `export-ignore` row naming a directory marks the directory and
- *   not the files under it, so reading attributes per file reports every
- *   excluded file as shipped. It archives HEAD: a file nobody committed is a
- *   file no consumer receives. The cost of that is real and worth naming — a
- *   regression that exists only in the working tree passes here, and reddens
- *   on the first run after it is committed.
- * - `vendor/` is **copied**, never symlinked. A symlinked `vendor/` keeps the
- *   PSR-4 map pointing at this checkout's `src/`, and the run then loads the
- *   checkout's code and finds the checkout's `scripts/`. Measured on the tree
- *   that introduced this control: with a symlink the defective command exits
- *   0 here, and with a copy it exits 1. The `assertStringStartsWith` guard
- *   below is what makes that difference impossible to reintroduce silently.
+ * - the `assertStringStartsWith` guard below, which is what keeps a run that
+ *   resolved the command out of this checkout from reading as a green one. It
+ *   is the guard the copied `vendor/` exists for; the measurement behind that
+ *   choice is stated once, with the copy, rather than again here.
  * - the hook is installed into a repository of its own, so the command's
  *   working directory is a consumer's project and not the package.
  *
  * Measured at roughly three seconds on the tree that added it, almost all of
  * it the `vendor/` copy. That is the price of judging the artifact instead of
- * the source; a cheaper control would be judging the source again. A real
- * `composer install --no-dev` inside the extracted package would be more
- * faithful still and is deliberately not done: it needs the network, and this
+ * the source; a cheaper control would be judging the source again, and this
  * group's cost is the reason it exists rather than an accident of it.
  *
  * Copying `vendor/` has a consequence the dump hides, and it is refused rather
@@ -64,12 +54,12 @@ final class HookInstallWorksFromTheDistPackageTest extends TestCase
         // that is not HEAD's makes this run a verdict about neither tree.
         InstalledDependencyGraph::assertMatchesHead(self::projectRoot());
 
-        $scratch = self::scratchDirectory();
+        $scratch = ScratchTree::create('qmx-dist-hook-');
         $package = $scratch . '/package';
         $consumer = $scratch . '/consumer';
 
         try {
-            self::extractDistPackage($package);
+            ExtractedDistPackage::extract(self::projectRoot(), $package);
 
             self::assertDirectoryDoesNotExist(
                 $package . '/scripts',
@@ -77,7 +67,7 @@ final class HookInstallWorksFromTheDistPackageTest extends TestCase
             );
             self::assertFileExists($package . '/bin/qmx', 'The dist package carries no binary, so there is nothing to run.');
 
-            self::copyVendor($package);
+            ExtractedDistPackage::makeRunnable(self::projectRoot(), $package);
 
             self::assertStringStartsWith(
                 $package . '/',
@@ -104,7 +94,7 @@ final class HookInstallWorksFromTheDistPackageTest extends TestCase
 
             self::assertHookRunsTheAnalysis($consumer);
         } finally {
-            self::removeDirectory($scratch);
+            ScratchTree::remove($scratch);
         }
     }
 
@@ -140,35 +130,6 @@ final class HookInstallWorksFromTheDistPackageTest extends TestCase
             $output,
             'The hook ran but the packaged binary produced no analysis:' . \PHP_EOL . $output,
         );
-    }
-
-    private static function extractDistPackage(string $into): void
-    {
-        $archive = \dirname($into) . '/package.tar';
-
-        self::capture(['git', '-C', self::projectRoot(), 'archive', '--worktree-attributes', '--format=tar', '-o', $archive, 'HEAD']);
-
-        self::assertTrue(mkdir($into, 0777, true));
-        self::capture(['tar', '-xf', $archive, '-C', $into]);
-    }
-
-    /**
-     * Third-party dependencies, plus an autoload map rebuilt to address the
-     * extracted tree rather than this one.
-     */
-    private static function copyVendor(string $package): void
-    {
-        self::capture(['cp', '-R', self::projectRoot() . '/vendor', $package . '/vendor']);
-
-        // Composer exports its own path when it runs a script, which is how
-        // this control reaches it under `composer test`; a bare name is for
-        // running phpunit directly.
-        $composer = getenv('COMPOSER_BINARY');
-
-        self::capture([
-            \is_string($composer) && $composer !== '' ? $composer : 'composer',
-            'dump-autoload', '--no-dev', '--no-scripts', '--no-interaction', '--quiet', '-d', $package,
-        ]);
     }
 
     /**
@@ -247,7 +208,9 @@ final class HookInstallWorksFromTheDistPackageTest extends TestCase
      * a command that did read stdin would see EOF rather than block on a
      * terminal nobody is attending. That direction is the load-bearing half:
      * the enumeration behind "nothing started here reads stdin" was made once,
-     * and nothing re-makes it.
+     * and nothing re-makes it. It now has to hold across two files rather than
+     * one — {@see ExtractedDistPackage} starts `git archive`, `tar`, `cp` and
+     * Composer on this control's behalf, and none of the four reads stdin.
      *
      * The streams are merged on return because every assertion below reads the
      * command's output as one transcript: a message printed to stderr is still
@@ -262,39 +225,6 @@ final class HookInstallWorksFromTheDistPackageTest extends TestCase
         $result = ChildProcess::run($command, $workingDirectory);
 
         return [$result['exitCode'], $result['stdout'] . $result['stderr']];
-    }
-
-    private static function scratchDirectory(): string
-    {
-        $path = sys_get_temp_dir() . '/qmx-dist-hook-' . bin2hex(random_bytes(6));
-
-        self::assertTrue(mkdir($path, 0777, true));
-
-        // Resolved, because the guard below compares this prefix against a
-        // path PHP reports from inside the extracted tree, and on macOS the
-        // temporary directory is reached through a symlink.
-        $resolved = realpath($path);
-
-        self::assertIsString($resolved);
-
-        return $resolved;
-    }
-
-    private static function removeDirectory(string $path): void
-    {
-        if (!is_dir($path)) {
-            return;
-        }
-
-        // The extracted tree carries symlinks of its own under vendor/bin, and
-        // descending into one would walk out of the scratch directory.
-        foreach (array_diff((array) scandir($path), ['.', '..']) as $entry) {
-            $child = $path . '/' . $entry;
-
-            is_dir($child) && !is_link($child) ? self::removeDirectory($child) : unlink($child);
-        }
-
-        rmdir($path);
     }
 
     private static function projectRoot(): string

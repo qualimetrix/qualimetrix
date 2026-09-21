@@ -160,11 +160,7 @@ final class InstalledDependencyGraph
      */
     private static function assertHeadsLockAnswersItsOwnComposerJson(string $root): void
     {
-        $directory = sys_get_temp_dir() . '/qmx-head-manifest-' . bin2hex(random_bytes(6));
-
-        if (!mkdir($directory, 0777, true)) {
-            throw new RuntimeException('Could not create ' . $directory . ', so nothing here was checked.');
-        }
+        $directory = ScratchTree::create('qmx-head-manifest-');
 
         try {
             foreach (['composer.json', 'composer.lock'] as $name) {
@@ -189,11 +185,7 @@ final class InstalledDependencyGraph
                 );
             }
         } finally {
-            foreach (['composer.json', 'composer.lock'] as $name) {
-                @unlink($directory . '/' . $name);
-            }
-
-            @rmdir($directory);
+            ScratchTree::remove($directory);
         }
     }
 
