@@ -95,7 +95,8 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
     /**
      * Sets the minimum number of files required to enable parallelization.
      *
-     * @param int $minFiles Minimum file count (default: 10)
+     * @param int $minFiles Minimum file count
+     *                      ({@see self::DEFAULT_MIN_FILES_FOR_PARALLEL})
      */
     public function setMinFilesForParallel(int $minFiles): void
     {
