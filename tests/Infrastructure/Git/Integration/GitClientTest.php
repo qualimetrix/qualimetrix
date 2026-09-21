@@ -7,10 +7,12 @@ namespace Qualimetrix\Tests\Infrastructure\Git\Integration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Git\ChangedFile;
 use Qualimetrix\Infrastructure\Git\ChangeStatus;
+use Qualimetrix\Infrastructure\Git\Exception\UnresolvedGitReferenceException;
 use Qualimetrix\Infrastructure\Git\GitClient;
 use ReflectionMethod;
 use RuntimeException;
@@ -448,6 +450,147 @@ final class GitClientTest extends TestCase
 
         // Should parse only valid lines
         self::assertNotEmpty($files);
+    }
+
+    /**
+     * Revisions git refuses.
+     *
+     * Measured with git 2.55 across eighteen forms of refusal, including a
+     * damaged repository: `git rev-parse --verify` without `--quiet` fails
+     * with text every time, so every refusal below reaches the user carrying
+     * git's own reason. What that reason says is git's and the system
+     * locale's; these cases assert that it arrived, never how it is worded.
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function provideRefusedRevisions(): iterable
+    {
+        yield 'unknown name' => ['nosuchref'];
+        yield 'reflog position past the end of HEAD' => ['HEAD@{999}'];
+        yield 'reflog position past the end of a branch' => ['main@{999}'];
+        yield 'dereferences to a tree' => ['HEAD^{tree}'];
+        yield 'branch without an upstream' => ['main@{u}'];
+        yield 'ancestor past the root commit' => ['HEAD~50'];
+    }
+
+    #[Test]
+    #[DataProvider('provideRefusedRevisions')]
+    public function itRefusesARevisionAndQuotesGitsReason(string $reference): void
+    {
+        $this->initGitRepoWithCommit();
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
+
+        try {
+            $client->getChangedFiles($reference . '..HEAD');
+            self::fail('Expected the revision to be refused.');
+        } catch (UnresolvedGitReferenceException $refusal) {
+            $this->assertRefusalQuotesGit($refusal->getMessage(), $reference);
+        }
+    }
+
+    #[Test]
+    public function itRefusesARevisionTheRepositoryIsTooDamagedToRead(): void
+    {
+        $this->initGitRepoWithCommit();
+        $this->corruptHeadCommitObject();
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
+
+        try {
+            $client->getChangedFiles('HEAD..HEAD');
+            self::fail('Expected the damaged repository to be refused.');
+        } catch (UnresolvedGitReferenceException $refusal) {
+            $this->assertRefusalQuotesGit($refusal->getMessage(), 'HEAD');
+        }
+    }
+
+    #[Test]
+    public function itRefusesAnEmptyRevisionWithoutQuotingGit(): void
+    {
+        $this->initGitRepoWithCommit();
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
+
+        try {
+            $client->getChangedFiles('..');
+            self::fail('Expected the empty revision to be refused.');
+        } catch (UnresolvedGitReferenceException $refusal) {
+            // The one refusal raised without asking git, so the one with no tail.
+            self::assertSame(
+                'Git reference "" does not resolve to a commit.',
+                $refusal->getMessage(),
+            );
+        }
+    }
+
+    /**
+     * The guard that makes "no dangling colon" structural rather than lucky.
+     * No measured input reaches it — every refusal git answers carries text —
+     * so without this it would be a claim no test makes.
+     */
+    #[Test]
+    #[TestWith([null])]
+    #[TestWith([''])]
+    public function itOmitsTheQuoteWhenGitOfferedNoReason(?string $gitReport): void
+    {
+        $refusal = new UnresolvedGitReferenceException('HEAD@{9}', $gitReport);
+
+        self::assertSame('Git reference "HEAD@{9}" does not resolve to a commit.', $refusal->getMessage());
+        self::assertDoesNotMatchRegularExpression('/:\s*$/', $refusal->getMessage());
+    }
+
+    /**
+     * Asserts the refusal names the revision and carries git's reason. What
+     * git says is deliberately not pinned: the wording is git's to change.
+     */
+    private function assertRefusalQuotesGit(string $message, string $reference): void
+    {
+        $prefix = \sprintf('Git reference "%s" does not resolve to a commit. git: ', $reference);
+
+        self::assertStringStartsWith($prefix, $message);
+        self::assertNotSame('', trim(substr($message, \strlen($prefix))));
+        self::assertDoesNotMatchRegularExpression('/:\s*$/', $message);
+    }
+
+    private function initGitRepoWithCommit(): void
+    {
+        $this->initGitRepo();
+
+        file_put_contents($this->repoRoot . '/test.php', '<?php');
+        $this->exec('git add test.php');
+        $this->exec('git commit -m "Initial commit"');
+    }
+
+    /**
+     * Overwrites the loose object holding the HEAD commit, so that resolving a
+     * reference through it fails for a reason that is not the reference.
+     */
+    private function corruptHeadCommitObject(): void
+    {
+        $sha = $this->execOutput('git rev-parse HEAD');
+        $objectPath = \sprintf(
+            '%s/.git/objects/%s/%s',
+            $this->repoRoot,
+            substr($sha, 0, 2),
+            substr($sha, 2),
+        );
+
+        if (!is_file($objectPath)) {
+            self::fail('Expected the HEAD commit to be a loose object: ' . $objectPath);
+        }
+
+        chmod($objectPath, 0644);
+        file_put_contents($objectPath, 'not a zlib stream');
+    }
+
+    private function execOutput(string $command): string
+    {
+        $process = Process::fromShellCommandline($command, $this->repoRoot);
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            throw new RuntimeException(\sprintf('Command failed: %s', $process->getErrorOutput()));
+        }
+
+        return trim($process->getOutput());
     }
 
     private function initGitRepo(): void
