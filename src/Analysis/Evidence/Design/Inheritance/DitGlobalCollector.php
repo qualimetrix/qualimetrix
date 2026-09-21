@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Design\Inheritance;
 
+use Psr\Log\LoggerInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
@@ -32,7 +33,19 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
 {
     private const NAME = 'dit-global';
 
-    public function __construct(private readonly ExternalAncestry $externalAncestry) {}
+    /**
+     * The logger is required rather than defaulted on purpose.
+     *
+     * `LoggerInterface` is not a service id in this container -- it is reachable
+     * only through an alias keyed by the holder's class name -- so an optional
+     * parameter would autowire to its default and the diagnostic below would be
+     * addressed to nobody, with every unit test still green. A required one
+     * turns a missing registration into a container that refuses to compile.
+     */
+    public function __construct(
+        private readonly ExternalAncestry $externalAncestry,
+        private readonly LoggerInterface $logger,
+    ) {}
 
     public function getName(): string
     {
@@ -90,7 +103,8 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
             $measured[$declaration->toCanonical()] = true;
         }
 
-        $resolver = InheritanceDepthResolver::fromGraph($graph, $this->projectClassNames($repository), $measured, $this->externalAncestry);
+        $tally = new UnreadChainTally();
+        $resolver = InheritanceDepthResolver::fromGraph($graph, $this->projectClassNames($repository), $measured, $this->externalAncestry, $tally);
 
         /** @var array<string, non-empty-list<int>> $depthsByName */
         $depthsByName = [];
@@ -119,6 +133,42 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
                 $resolver->deepestForName($classFqn) ?? max($depths),
             );
         }
+
+        $this->reportUnreadChains($tally);
+    }
+
+    /**
+     * Say once what this run did not follow to a root, or say nothing.
+     *
+     * The statement is about this run, never about the analysed code: a project
+     * with no install is a normal thing to measure.
+     *
+     * Every word has to hold for all seven ways a walk ends, and two of them
+     * rule out the obvious phrasings. A cycle publishes `1 + the length of the
+     * loop`, so calling the number a truncated depth or a lower bound on a real
+     * one is false -- a loop has no real depth. A genuine builtin missing from
+     * {@see \Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry} is not placed by
+     * any install, so it books the same outcome while its depth is in fact
+     * correct; saying the chain was not followed to a root stays true of it,
+     * saying the depth was cut short does not. At the visit cap the class named
+     * reads perfectly well, which is why the walk stopped *at* it rather than
+     * reading stopping *at* it.
+     */
+    private function reportUnreadChains(UnreadChainTally $tally): void
+    {
+        if ($tally->isEmpty()) {
+            return;
+        }
+
+        $where = $tally->sawMissingInstall()
+            ? 'this run found no composer install to follow them through'
+            : \sprintf('the walk stopped at: %s', implode(', ', $tally->names()));
+
+        $this->logger->warning(\sprintf(
+            'DIT: %d inheritance chain(s) leaving the analysed path were not followed to a root -- %s. The depth published for the classes below them is what this run did follow.',
+            $tally->chains(),
+            $where,
+        ));
     }
 
     /**

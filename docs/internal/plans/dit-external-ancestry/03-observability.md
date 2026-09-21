@@ -50,10 +50,14 @@ Four results carry the design.
 3. **`BrokeAt` is an aggregate of at least six causes.** `ParentLookup::notPlaced()`
    returns for four (no entry in the map, unreadable file, unparseable file,
    file declares another name); `walk()` books `BrokeAt` for two more, a cycle
-   and the visit cap. A seventh is a defect elsewhere: `PhpBuiltinClassRegistry`
-   omits `SessionHandler`, so a genuine builtin books a break. One of the ten
-   measured breaks is that. The docblock on `notPlaced()` already says a channel
-   explaining *why* a chain stopped would need the distinction widened.
+   and the visit cap. A seventh comes from elsewhere: a genuine PHP builtin the
+   hand-written `PhpBuiltinClassRegistry` does not list is placed by no install
+   and books a break while its depth is correct. At the time of this measurement
+   `SessionHandler` was such a class, and one of the ten breaks is it; ADR 0075
+   has since closed that instance and put a control behind the list, which
+   narrows the cause without removing it. The docblock on `notPlaced()` already
+   says a channel explaining *why* a chain stopped would need the distinction
+   widened.
 
 4. **The walk moves numbers, but not on this tree.** 21 of 58 distinct roots
    (36%) have depth > 0 — laravel 15, doctrine/orm 5, monolog 1. On qmx's own
@@ -111,10 +115,10 @@ two predicates, two owners.
 
 The fact is stated where it is known, by the logger the repository already uses
 for exactly this — a metric caveat raised from inside an Evidence capability.
-`Coupling\DistanceRule:69,108` takes `LoggerInterface $logger = new NullLogger()`
-and calls `->warning()`; `Duplication\DuplicationDetector:54` and
-`Measurement\MeasurementAggregationService:37` carry the same parameter in the
-same shape. Nothing new is invented.
+`Coupling\DistanceRule:69,108` takes `?LoggerInterface $logger = null` and calls
+`->warning()`; `Duplication\DuplicationDetector:54` and
+`Measurement\MeasurementAggregationService:37` carry the same dependency as
+`LoggerInterface $logger = new NullLogger()`. Nothing new is invented.
 
 ```
 DitGlobalCollector::__construct(
@@ -129,15 +133,17 @@ registration line disables the feature in silence; without one, the container
 refuses to compile. Reject beats silence.
 
 At the end of `calculate()` the collector logs at most one `warning` naming how
-many chains this run could not read to their end and the distinct classes where
-reading stopped.
+many chains this run did not follow to a root and the distinct classes where the
+walk stopped.
 
-**"Could not read to the end" is the phrase, not "is a floor."** The floor claim
-is true for the four `notPlaced()` causes and false for the other two: for a
-cycle the steps walked are the length of a loop, which `walk()`'s own comment
-says is not a depth, and for the visit cap 64 is a fact about the tool. One
-sentence has to be true for all six outcomes, so it states what the run could
-not do and names where; the lower-bound reading is left where it is provable. Outcomes are accumulated in
+**"Not followed to a root" is the phrase, not "is a floor" and not "reading
+stopped".** Each shorter wording is false somewhere: a cycle publishes the
+length of a loop, which `walk()`'s own comment says is not a depth; at the visit
+cap the class named reads perfectly well; and a genuine builtin absent from
+`PhpBuiltinClassRegistry` books this outcome while its depth is correct. One
+sentence has to hold for every ending, so it states what the walk did not reach
+and names where it stopped; the lower-bound reading is left where it is
+provable. Outcomes are accumulated in
 a local of that one call, so there is **no object state and therefore no reset
 seam**: `calculate()` builds a fresh `InheritanceDepthResolver` every time, and
 it runs even when `design.dit` is disabled by `--disable-rule` (measured).
@@ -220,11 +226,13 @@ No console file is touched: `CheckCommand`, `BaselineRun`, `RuntimeConfigurator`
 and `OutputConfigurator` are all out of scope, and `baseline:generate` is covered
 because it passes through the same `RuntimeConfigurator::configure()`.
 
-No new production declaration is introduced, so the hand-written
-`docs/internal/modular-architecture-manifest.json` needs no entry: it is keyed by
-declaration, and `Coupling\DistanceRule`, which imports the same
-`Psr\Log\LoggerInterface`, carries no special record for it. Run
-`composer architecture:check` anyway — registration addresses redden one per run.
+The accumulator is a new production declaration, so it needs a record in the
+hand-written `docs/internal/modular-architecture-manifest.json`, which is keyed
+by declaration. The `Psr\Log\LoggerInterface` **import** needs none:
+`Coupling\DistanceRule` imports the same contract and carries no special entry
+for it. Expect several passes of `composer architecture:check` — registration
+addresses redden one per run, and an ADR additionally needs an owner row in
+`scripts/generate-modular-architecture-production-inventory.php`.
 
 An ADR is required by the repository's own rule: the decision is non-obvious and
 rejects a named alternative (withholding the value).
@@ -238,9 +246,9 @@ Each check must be observed red under a planted mutation before it is believed.
 - The count is of **child declarations**, not distinct parents: two children of
   one unresolvable parent count two. `depthOf` is memoized by the child
   declaration's canonical form, which is what makes that the unit.
-- The message names every class where reading stopped and claims only that the
-  run could not read those chains to their end — no instruction to install
-  anything, and no "floor" for a cycle or a capped walk.
+- The message names every class where the walk stopped and claims only that
+  those chains were not followed to a root — no instruction to install anything,
+  and no "floor" for a cycle or a capped walk.
 - A cycle and a visit-cap exhaustion are counted, and the sentence stays true of
   them. These two are the witnesses that the wording is right, because they are
   the outcomes a looser wording would lie about.
@@ -295,11 +303,14 @@ Stage 03's own number is read directly, with nothing to subtract.
 
 ## Out of scope
 
-- **`PhpBuiltinClassRegistry` omits `SessionHandler`**, a real ext-session
-  builtin, so `NativeFileSessionHandler` books a `BrokeAt` where the answer is
-  "builtin, depth 1". One of the ten measured breaks is this. The new warning
-  over-reports by it until the registry is fixed; that is a `Core` defect with
-  its own oracle and its own change.
+- **A builtin the registry does not list.** When this stage was measured,
+  `PhpBuiltinClassRegistry` omitted `SessionHandler`, so `NativeFileSessionHandler`
+  booked a `BrokeAt` where the answer is "builtin, depth 1" — one of the ten
+  breaks in the table above. That instance landed separately as ADR 0075, which
+  keeps the list hand-written and adds a control comparing it against the loaded
+  extensions. The shape survives the fix: a list that a machine's extensions can
+  disagree with can still be short, so the wording here does not assume it never
+  is.
 - **Widening `ParentLookup` to say why a chain stopped.** Its docblock asks for
   it and result 3 shows the need, but a warning that names classes is honest
   without it.

@@ -301,6 +301,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\NocCollector'
         - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\NocOptions'
         - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\NocRule'
+        - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\UnreadChainTally'
         - 'Qualimetrix\Analysis\Evidence\Design\TypeCoverage\AbstractTypeCoverageRule'
         - 'Qualimetrix\Analysis\Evidence\Design\TypeCoverage\ParamTypeCoverageRule'
         - 'Qualimetrix\Analysis\Evidence\Design\TypeCoverage\PropertyTypeCoverageRule'

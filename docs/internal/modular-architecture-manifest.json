@@ -17659,6 +17659,13 @@
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter"
         }
       ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\UnreadChainTally": {
+      "path": "src/Analysis/Evidence/Design/Inheritance/UnreadChainTally.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Design",
+      "visibility": "internal",
+      "consumers": []
     }
   },
   "enforcement_seams": {}

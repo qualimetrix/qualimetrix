@@ -236,6 +236,7 @@ src/Analysis/Evidence/Design/Inheritance/InheritanceRule.php	Qualimetrix\Analysi
 src/Analysis/Evidence/Design/Inheritance/NocCollector.php	Qualimetrix\Analysis\Evidence\Design\Inheritance\NocCollector	class	Analysis.Evidence.Design	internal	[]
 src/Analysis/Evidence/Design/Inheritance/NocOptions.php	Qualimetrix\Analysis\Evidence\Design\Inheritance\NocOptions	class	Analysis.Evidence.Design	internal	[]
 src/Analysis/Evidence/Design/Inheritance/NocRule.php	Qualimetrix\Analysis\Evidence\Design\Inheritance\NocRule	class	Analysis.Evidence.Design	internal	[]
+src/Analysis/Evidence/Design/Inheritance/UnreadChainTally.php	Qualimetrix\Analysis\Evidence\Design\Inheritance\UnreadChainTally	class	Analysis.Evidence.Design	internal	[]
 src/Analysis/Evidence/Design/TypeCoverage/AbstractTypeCoverageRule.php	Qualimetrix\Analysis\Evidence\Design\TypeCoverage\AbstractTypeCoverageRule	class	Analysis.Evidence.Design	internal	[]
 src/Analysis/Evidence/Design/TypeCoverage/ParamTypeCoverageRule.php	Qualimetrix\Analysis\Evidence\Design\TypeCoverage\ParamTypeCoverageRule	class	Analysis.Evidence.Design	internal	[]
 src/Analysis/Evidence/Design/TypeCoverage/PropertyTypeCoverageRule.php	Qualimetrix\Analysis\Evidence\Design\TypeCoverage\PropertyTypeCoverageRule	class	Analysis.Evidence.Design	internal	[]

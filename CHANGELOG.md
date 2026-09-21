@@ -94,6 +94,12 @@ remove a link it cannot identify rather than deleting someone else's hook.
 
 ### Changed
 
+- `design.dit` says when it did not follow an inheritance chain to a root. A
+  run writes one warning naming how many chains leaving the analysed path
+  stopped early and where the walk stopped, so a depth that stopped short is no
+  longer indistinguishable from a class that genuinely has no parent. It goes
+  to the error stream, leaving `--format=json` and the other machine formats
+  parseable, and `-q` silences it.
 - Qualimetrix ships as a standalone `qmx.phar`, attached to every release and
   buildable with `composer phar`. Keep the `.phar` suffix: run from a file
   named otherwise, parallel analysis copies the whole archive into the
