@@ -231,6 +231,13 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'a pipe from it: both of the child\'s streams go to files and only `proc_get_status()` is polled, '
             . 'because a supervisor that read a pipe here could deadlock the same way the code under test might.',
 
+        'scripts/subprocess/tests/ChildProcessFailurePrefixTest.php:155' => 'Not a spawn, and the only occurrence '
+            . 'here that prevents one: source text for a function of this name declared inside the module\'s own '
+            . 'namespace, so that the module\'s unqualified call resolves to it and reports failure. That is how '
+            . 'the prefix a caller is given for a failed spawn is measured at all — no portable condition makes the '
+            . 'real function fail in the parent. The generated harness it goes into opens nothing of its own and '
+            . 'reaches the module through its ordinary entry point, like any other caller.',
+
         'src/Infrastructure/Git/GitRepositoryLocator.php:94' => 'Production code, which may not import a '
             . 'development namespace, and the module lives outside `src/` deliberately. The deadlock is removed by '
             . 'construction instead: `git rev-parse` gets no stdin pipe and its stderr goes to a file, so stdout is '
