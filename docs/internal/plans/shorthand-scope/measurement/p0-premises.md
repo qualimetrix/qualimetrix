@@ -1,16 +1,24 @@
 # P0 — premise measurement, before any code
 
 Tree: worktree at 1bda6f95 (== origin/main, fetched 2026-09-21).
-Source of every number below: `docs/internal/generated/promise-effect/verdicts.tsv`
+
+**Two runs are reported here and their numbers differ on purpose.** Run #0 is the
+baseline, taken on an untouched tree; run #1 is the same product measured by the
+repaired instrument. Everything down to and including "The fallback, measured" is
+**run #0**; the two sections at the end carry run #1 and say so in their headings.
+Where a number moved, the run-#1 section names both values.
+
+Source of every run-#0 number: `docs/internal/generated/promise-effect/verdicts.tsv`
 (7218 data rows), `observations-before/raw.tsv`, `promise-effect/promise-ledger.tsv`.
-No stand run was taken; the frozen grid is read directly.
+The premises below were taken before any stand run, by reading the frozen grid;
+run #0 then reproduced it byte for byte.
 
 ## Premises that HOLD
 
 | #   | premise (plan)                                         | measured                                                                                                                                                                                                                                                                          |
 | --- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | grid = 122 defects, A 4 / B 81 / C 0 / D 37 / E 0      | exactly, cell for cell                                                                                                                                                                                                                                                            |
-| 2   | axis B = 465 cells                                     | 465                                                                                                                                                                                                                                                                               |
+| 1   | grid = 122 defects, A 4 / B 81 / C 0 / D 37 / E 0      | exactly, cell for cell **on run #0**; run #1 moves axis B to 111 and the total to 152, and nothing else                                                                                                                                                                           |
+| 2   | axis B = 465 cells                                     | 465, on both runs                                                                                                                                                                                                                                                                 |
 | 3   | 19 triples `(rule,key_a,key_b)` judged under two kinds | 19, all `2-same-name-top-vs-level` + (`4-cross-level` x18 / `6-precedence-fill-in` x1)                                                                                                                                                                                            |
 | 4   | 10 of axis B's 81 defects are second copies            | 20 defect cells over 10 duplicated triples -> exactly 10 copies                                                                                                                                                                                                                   |
 | 5   | both sides of a contended pointer write the same value | confirmed verbatim on `pair|coupling.cbo|class:|threshold|same-source|3-shorthand-vs-level-block`: omitted class{14,20} ns{14,20}; onlyA class{7331,7331} ns{14,20}; onlyB class{7331,7331} ns{7331,7331}; both == onlyB byte for byte                                            |
@@ -136,3 +144,61 @@ axes A and D block). Duration ~9 min wall.
 reproduced byte for byte, so #135 moved nothing the stand measures and R7's
 exposure did not fire this time. The 122 is now a measurement on HEAD, not an
 inherited number -- which is what makes run #1 comparable to anything.
+
+## Run #1 — the instrument with per-side magnitudes, on the unfixed product
+
+Same tree, same product, `side_b` declared and threaded through `pairSide()`.
+
+    axis A  NOT OBSERVABLE 1697  OK 793   REFUSES 2790     (identical to run #0)
+    axis B  COEXISTENCE_OK  354  MISCOMPOSED 111           (was 384 / 81)
+    axis C  COMPOSED_AS_PROMISED 18  NOT OBSERVABLE 3      (identical)
+    axis D  COLLAPSED 5  NOT OBSERVABLE 139  OK 47  REFUSES 353   (identical)
+    axis E  NOT OBSERVABLE 14  PRESENCE_NEUTRAL 894        (identical)
+    axis B documents  446 document(s) over 465 cell(s), 93 defective over 111
+    defects (all axes) 152
+    defect floor  1 still defective, 21 cured as declared, 4 pending  (identical)
+
+### The three properties, each with its number
+
+**1. Distinguishability.** 415 of 465 axis-B cells took the per-side magnitude on
+side B. The 50 that did not carry a side-B leaf of `enabled`, `exclude-readonly`,
+`exclude-promoted-only`, `exclude-tests`, `exclude-data-classes`,
+`exclude-exceptions`, `flag-promoted-properties` — all `bool` — or `scope`,
+`severity`, `mode`, `unused-directive-severity`, `unreachable-layer-severity` —
+all closed word sets. **No leaf outside those two categories appears**, which is
+the property the design predicted: a form with no third value cannot be given
+one. Inside the cure's radius the exceptions are 23 cells, 18 on `enabled` and 5
+on `scope`.
+
+This corrects what revision 4 of the P0 section first wrote. It said "every cell
+except the six named above", conflating two different sets: the six are cells that
+stay unobservable **after the cure under P2's assigned values**; these 23 are
+cells whose sides cannot be told apart **today**. Measured, neither the set nor
+the size matches.
+
+**2. Monotonicity.** Joined cell by cell against run #0:
+
+    354  COEXISTENCE_OK -> COEXISTENCE_OK
+     81  MISCOMPOSED    -> MISCOMPOSED
+     30  COEXISTENCE_OK -> MISCOMPOSED
+      0  in any other direction
+
+No cell left MISCOMPOSED, which is the direction the argument over
+`Classifier::effectSurvives()` forbids and the one a `side_b` literal equal to a
+product default would have produced.
+
+**3. Axes A, C, D and E unchanged.** 6753 cells outside axis B, joined on
+`axis + row + point`: zero differ in verdict or defect flag.
+
+### Where the thirty came from
+
+All 30 newly red rows are `affected=yes` in `axis-b-rows.tsv` — inside the cure's
+radius, every one — and all 30 carry an assigned value the cure acts on: 24
+`deeper-wins:<key>` and 6 `one-wins:<key>`. The instrument revealed defects only
+in its own subject; there is no collateral to explain.
+
+### What the instrument was blind to, in one sentence
+
+Thirty documents in which a top-level key and the level key it reaches were both
+written, both applied their value, and the grid reported **"both effects
+present"** — because the two keys had been written the same number.

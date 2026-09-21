@@ -232,9 +232,25 @@ a model of the product, built by the same round that is changing the product.
 P0's proof is therefore a property, checkable cell by cell against run #0 and
 needing no predicted verdict:
 
-1. **Distinguishability.** For every axis-B cell in the cure's radius other than
-   the six named above, `onlyA` and `onlyB` carry different literals at every leaf
-   they both move. Read off the two observations; no verdict involved.
+1. **Distinguishability, stated as the property and not as a count.** Revision 4
+   first wrote this as "every cell except the six named above", which is two
+   different claims run together: the six are cells that stay unobservable
+   **after the cure under P2's assigned values**, and what this property is about
+   is which sides can be told apart **today**. Measured, those are not the same
+   set and not the same size.
+
+   The property is therefore derived rather than carried: **side B is written
+   with the per-side magnitude wherever its key's declared shape admits a third
+   value, and the exceptions are exactly the keys whose shape is `bool` or a
+   closed set of words.** Run #1 over the whole of axis B: 415 cells took the
+   per-side magnitude, and the 50 that did not carry a side-B leaf of `enabled`,
+   `exclude-readonly`, `exclude-promoted-only`, `exclude-tests`,
+   `exclude-data-classes`, `exclude-exceptions`, `flag-promoted-properties`
+   (`bool`), or `scope`, `severity`, `mode`, `unused-directive-severity`,
+   `unreachable-layer-severity` (a closed set). No leaf outside those two
+   categories appears. Inside the cure's radius the exceptions are 23 cells — 18
+   on `enabled` and 5 on `scope` — which is how many cells the two valueless
+   forms reach, not a list anyone maintains.
 2. **Monotonicity.** Axis B's defect count may rise or stay, never fall, and every
    newly red cell is one whose two sides were indistinguishable at a contested
    leaf on run #0. This follows from `Classifier::effectSurvives()`: at a leaf both
@@ -272,10 +288,11 @@ a literal list, so a triple that quietly gains or loses a kind is refused rather
 than absorbed — the list is written out rather than derived, or the test rewrites
 itself.
 
-Two consequences follow and are carried, not left implicit: `03-acceptance.md`
-reads 81 cells as 71 documents wherever it counts documents, and
-`axis-b-rows.tsv` is keyed by document, which is why its 465 rows are 465 cells
-and its duplicate pairs share a row.
+One consequence is carried rather than left implicit: `03-acceptance.md` reads 81
+cells as 71 documents wherever it counts documents. `axis-b-rows.tsv` is **not**
+re-keyed — measured, its 465 rows are 465 cells over 446 distinct documents, so
+each of the nineteen occupies two rows there exactly as it occupies two cells in
+the grid, and the two artefacts stay addressable by the same key.
 
 ### `axis-b-rows.tsv`, and what "re-derive" can honestly mean
 
@@ -298,11 +315,16 @@ The pre-P0 table is kept as the witness of what P0 changed.
 
 - Every `side_b` row's literal is refused by `Declarations` when it equals that
   form's canonical write or its alternate; a control proves each refusal fires.
-- Properties 1-3 above hold on run #1, each reported with its number.
-- Axis B's document count is reported and the nineteen multi-kind triples are
-  named by a test.
-- `measurement/axis-b-rows.tsv` regenerated in its two measured columns, with the
-  pre-P0 copy kept beside it.
+- Properties 1-3 above hold on run #1, each reported with its number. Measured:
+  415 of 465 sides took the per-side magnitude and every exception is a `bool` or
+  a closed word set; axis B goes 81 to 111 with 354 green cells unmoved, 81 red
+  cells unmoved and 30 green becoming red, none in the other direction; and all
+  6753 cells outside axis B are identical to run #0.
+- Axis B's document count is reported — 446 documents over 465 cells, 93
+  defective over 111 — and the nineteen multi-kind triples are named by a test.
+- `measurement/axis-b-rows.tsv` regenerated in its two measured columns by
+  `scripts/promise-effect-axis-b-rows.php`, with the pre-P0 copy kept beside it as
+  `measurement/axis-b-rows-before-p0.tsv`.
 - `composer check` green as an aggregate.
 
 ## P1 — the corpus witness (finding-gate)
@@ -338,7 +360,7 @@ after the cure would leave no witness of what the cure moved.
 **Files:** `promise-effect/promise-ledger.tsv`,
 `docs/internal/plans/shorthand-scope/measurement/axis-b-mechanisms.tsv`,
 `scripts/promise-effect/Ledger.php`, `scripts/promise-effect/Classifier.php`,
-`scripts/promise-effect/Stand.php`, `tests/Unit/PromiseEffect/LedgerVocabularyTest.php`.
+`scripts/promise-effect/Stand.php`, `scripts/promise-effect/tests/LedgerVocabularyTest.php`.
 
 `Stand.php` is in the set because the key→side translation lives there in two
 places: without it the live path reads the new value as "the second key won",
