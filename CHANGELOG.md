@@ -121,6 +121,13 @@ remove a link it cannot identify rather than deleting someone else's hook.
 
 ### Fixed
 
+- Generated pre-commit hooks now fail closed when staged-file enumeration fails
+  and preserve the actual `qmx` exit status.
+- `design.dit` now resolves `$baseDir` entries in Composer classmaps when the
+  project's configured vendor directory is nested.
+- Malformed or unresolvable external PHP ancestry now emits the unread-chain
+  warning instead of terminating analysis with `Internal error`.
+
 - A `--report=git:*` revision that git cannot resolve is now refused by name
   and quotes git's own explanation, instead of failing as an internal error
   with an empty one. `git:HEAD@{999}..HEAD` reported `Git command failed while

@@ -7,6 +7,7 @@ Infrastructure contains external adapters and entry points:
 - **DependencyInjection**: Unified Symfony DI container with lazy services
 - **Ast**: PHP parser implementation with factory
 - **Cache**: AST caching ([details](Cache/README.md))
+- **Composer**: safe readers for the analysed project's install and external DIT ancestry
 - **Git**: Git integration for analyzing staged/changed files ([details](Git/README.md))
 - **Logging**: PSR-3 logging ([details](Logging/README.md))
 - **Parallel**: Parallel processing strategies
@@ -19,7 +20,7 @@ Infrastructure sub-packages are declared as `infra-*` sub-layers in the project'
 own `qmx.yaml` to prevent circular dependencies (see
 [ADR 0014](../../docs/adr/0014-deptrac-retirement.md)):
 
-- **Leaf** (no Infrastructure siblings): Serializer, Logging, Profiler, Rule, Git
+- **Leaf** (no Infrastructure siblings): Serializer, Logging, Profiler, Rule, Git, Composer
 - **Mid** (depends on specific siblings): Cache -> Serializer, Ast -> Cache, Parallel -> Ast + Cache + Serializer
 - **Hub** (wide dependencies): Console -> Git, Rule, Cache, Logging, Profiler; DI -> all
 
@@ -37,6 +38,14 @@ Infrastructure/
 │   ├── CacheFactory.php
 │   ├── CacheKeyGenerator.php
 │   └── CacheWriteException.php      # Cache write failure exception
+├── Composer/
+│   ├── ClassmapPath.php              # Resolves generated classmap path expressions without executing them
+│   ├── ComposerAutoloadMap.php       # Places classes from the analysed project's Composer roots
+│   ├── DeclaredParentReader.php      # Reads external inheritance declarations for Design DIT
+│   ├── GeneratedClassmap.php         # Parses Composer's generated classmap without including it
+│   ├── InstallLocator.php            # Finds the bounded set of Composer roots a run may read
+│   └── Contract/
+│       └── AnalysedInstallAnchorInterface.php # Re-aims install-backed adapters for each run
 ├── Git/                              # -> See Git/README.md
 │   ├── GitClient.php
 │   ├── GitScopeParser.php

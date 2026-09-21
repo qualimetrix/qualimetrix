@@ -16,6 +16,9 @@ require_once \dirname(__DIR__, 5) . '/scripts/subprocess/ChildProcess.php';
 #[CoversClass(PreCommitHook::class)]
 final class PreCommitHookTest extends TestCase
 {
+    /** @var list<string> */
+    private array $temporaryDirectories = [];
+
     #[Test]
     public function itCarriesTheMarkerThatMakesAHookOurs(): void
     {
@@ -88,6 +91,122 @@ final class PreCommitHookTest extends TestCase
         yield 'backslash' => ['/opt/back\\slash/qmx'];
     }
 
+    #[Test]
+    public function itSkipsAnalysisWhenNoPhpFilesAreStaged(): void
+    {
+        [$result, $gitInvocation, $qmxInvocation] = $this->executeGeneratedHook([]);
+
+        self::assertSame(0, $result['exitCode']);
+        self::assertFileExists($gitInvocation);
+        self::assertFileDoesNotExist($qmxInvocation);
+    }
+
+    #[Test]
+    public function itPassesStagedPathsContainingSpacesAndNewlinesAsSingleArguments(): void
+    {
+        $stagedPaths = [
+            'src/space in name.php',
+            "src/line\nbreak.php",
+        ];
+        [$result, , $qmxInvocation, $qmxArguments] = $this->executeGeneratedHook($stagedPaths);
+
+        self::assertSame(0, $result['exitCode']);
+        self::assertFileExists($qmxInvocation);
+        self::assertSame(['check', ...$stagedPaths], self::readNulDelimitedArguments($qmxArguments));
+    }
+
+    #[Test]
+    public function itFailsClosedWhenGitEnumerationFailsAfterWritingPaths(): void
+    {
+        [$result, $gitInvocation, $qmxInvocation] = $this->executeGeneratedHook(
+            ['src/partial.php'],
+            gitExitCode: 19,
+        );
+
+        self::assertSame(19, $result['exitCode']);
+        self::assertFileExists($gitInvocation);
+        self::assertFileDoesNotExist($qmxInvocation);
+        self::assertStringContainsString('Could not enumerate staged PHP files (exit 19). Nothing was analysed.', $result['stdout']);
+    }
+
+    #[Test]
+    public function itFailsBeforeGitWhenTheTemporaryFileCannotBeCreated(): void
+    {
+        [$result, $gitInvocation, $qmxInvocation] = $this->executeGeneratedHook(
+            ['src/never-read.php'],
+            mktempExitCode: 23,
+        );
+
+        self::assertSame(23, $result['exitCode']);
+        self::assertFileDoesNotExist($gitInvocation);
+        self::assertFileDoesNotExist($qmxInvocation);
+        self::assertStringContainsString('Could not create a temporary staged-file list (exit 23). Nothing was analysed.', $result['stdout']);
+    }
+
+    #[Test]
+    public function itFailsClosedWhenTheStagedFileListCannotBeRead(): void
+    {
+        [$result, $gitInvocation, $qmxInvocation] = $this->executeGeneratedHook(
+            ['src/never-read.php'],
+            replaceStagedFileListWithDirectory: true,
+        );
+
+        self::assertSame(1, $result['exitCode']);
+        self::assertFileExists($gitInvocation);
+        self::assertFileDoesNotExist($qmxInvocation);
+        self::assertStringContainsString('Could not read the staged-file list. Nothing was analysed.', $result['stdout']);
+    }
+
+    #[Test]
+    #[DataProvider('provideInterruptedReads')]
+    public function itFailsClosedWhenReadingStopsBeforeTheCompleteStagedFileList(
+        int $successfulReadsBeforeFailure,
+        string $expectedPath,
+    ): void {
+        [$result, $gitInvocation, $qmxInvocation] = $this->executeGeneratedHook(
+            ['src/first.php', 'src/second.php'],
+            readFailureAfter: $successfulReadsBeforeFailure,
+        );
+
+        self::assertSame(1, $result['exitCode']);
+        self::assertFileExists($gitInvocation);
+        self::assertFileDoesNotExist($qmxInvocation);
+        self::assertStringContainsString('Could not read the complete staged-file list. Nothing was analysed.', $result['stdout']);
+        self::assertStringNotContainsString($expectedPath, $result['stdout']);
+    }
+
+    /** @return iterable<string, array{int, string}> */
+    public static function provideInterruptedReads(): iterable
+    {
+        yield 'before the first entry' => [0, 'src/first.php'];
+        yield 'after the first entry' => [1, 'src/second.php'];
+    }
+
+    #[Test]
+    #[DataProvider('provideQmxFailureExitCodes')]
+    public function itPropagatesQmxFailureExitCodes(int $exitCode, string $expectedDiagnostic): void
+    {
+        [$result, , $qmxInvocation] = $this->executeGeneratedHook(
+            ['src/staged.php'],
+            qmxExitCode: $exitCode,
+        );
+
+        self::assertSame($exitCode, $result['exitCode']);
+        self::assertFileExists($qmxInvocation);
+        self::assertStringContainsString($expectedDiagnostic, $result['stdout']);
+    }
+
+    /** @return iterable<string, array{int, string}> */
+    public static function provideQmxFailureExitCodes(): iterable
+    {
+        yield 'warnings' => [1, '❌ Qualimetrix found issues.'];
+        yield 'errors' => [2, '❌ Qualimetrix found issues.'];
+        yield 'configuration error' => [3, '❌ Qualimetrix found issues.'];
+        yield 'incomplete analysis' => [4, '❌ Qualimetrix found issues.'];
+        yield 'not executable' => [126, '(exit 126). Nothing was analysed.'];
+        yield 'not found' => [127, '(exit 127). Nothing was analysed.'];
+    }
+
     /**
      * What `$QMX_BIN` holds after the shell has read the hook's assignment.
      */
@@ -134,5 +253,184 @@ final class PreCommitHookTest extends TestCase
         $result = ChildProcess::run($command ?? ['bash', '-s'], null, (string) $script);
 
         return [$result['stdout'], $result['stderr']];
+    }
+
+    /**
+     * @param list<string> $stagedPaths
+     *
+     * @return array{array{stdout: string, stderr: string, exitCode: int}, string, string, string}
+     */
+    private function executeGeneratedHook(
+        array $stagedPaths,
+        int $gitExitCode = 0,
+        int $qmxExitCode = 0,
+        ?int $mktempExitCode = null,
+        bool $replaceStagedFileListWithDirectory = false,
+        ?int $readFailureAfter = null,
+    ): array {
+        $workspace = $this->createTemporaryDirectory();
+        $binDirectory = $workspace . '/bin';
+        self::assertTrue(mkdir($binDirectory, 0700));
+
+        $gitInvocation = $workspace . '/git-invoked';
+        $qmxInvocation = $workspace . '/qmx-invoked';
+        $qmxArguments = $workspace . '/qmx-arguments';
+        $qmxBinary = $workspace . '/qmx';
+        $hookPath = $workspace . '/pre-commit';
+        $bashEnvironment = $workspace . '/bash-env';
+
+        $this->writeExecutable(
+            $binDirectory . '/git',
+            $this->fakeGitScript($stagedPaths, $gitExitCode, $replaceStagedFileListWithDirectory),
+        );
+        $this->writeExecutable($qmxBinary, $this->fakeQmxScript());
+        if ($mktempExitCode !== null) {
+            $this->writeExecutable($binDirectory . '/mktemp', "#!/bin/bash\nexit $mktempExitCode\n");
+        }
+        self::assertNotFalse(file_put_contents($hookPath, PreCommitHook::script($qmxBinary)));
+        self::assertTrue(chmod($hookPath, 0700));
+
+        if ($readFailureAfter !== null) {
+            self::assertNotFalse(file_put_contents($bashEnvironment, $this->failingReadFunction($readFailureAfter)));
+        }
+
+        $path = getenv('PATH');
+        self::assertIsString($path);
+        $result = ChildProcess::run(
+            ['/bin/bash', $hookPath],
+            $workspace,
+            environment: [
+                'GIT_INVOCATION_FILE' => $gitInvocation,
+                'PATH' => $binDirectory . ':' . $path,
+                'QMX_ARGUMENTS_FILE' => $qmxArguments,
+                'QMX_EXIT' => (string) $qmxExitCode,
+                'QMX_INVOCATION_FILE' => $qmxInvocation,
+                'TMPDIR' => $workspace,
+                ...($readFailureAfter === null ? [] : ['BASH_ENV' => $bashEnvironment]),
+            ],
+        );
+
+        return [$result, $gitInvocation, $qmxInvocation, $qmxArguments];
+    }
+
+    /** @param list<string> $stagedPaths */
+    private function fakeGitScript(array $stagedPaths, int $exitCode, bool $replaceStagedFileListWithDirectory): string
+    {
+        $script = <<<'SH'
+            #!/bin/bash
+            if [ -n "${GIT_INVOCATION_FILE:-}" ]; then
+                : > "$GIT_INVOCATION_FILE"
+            fi
+
+            SH;
+
+        if ($stagedPaths !== []) {
+            $arguments = implode(' ', array_map(self::shellLiteral(...), $stagedPaths));
+            $script .= "printf '%s\\0' $arguments\n";
+        }
+
+        if ($replaceStagedFileListWithDirectory) {
+            $script .= <<<'SH'
+                for staged_file_list in "$TMPDIR"/qmx-pre-commit.*; do
+                    rm -f -- "$staged_file_list"
+                    mkdir -- "$staged_file_list"
+                done
+
+                SH;
+        }
+
+        return $script . "exit $exitCode\n";
+    }
+
+    private function fakeQmxScript(): string
+    {
+        return <<<'SH'
+            #!/bin/bash
+            if [ -n "${QMX_INVOCATION_FILE:-}" ]; then
+                : > "$QMX_INVOCATION_FILE"
+            fi
+            printf '%s\0' "$@" > "$QMX_ARGUMENTS_FILE"
+            exit "$QMX_EXIT"
+            SH;
+    }
+
+    private function failingReadFunction(int $successfulReadsBeforeFailure): string
+    {
+        return <<<SH
+            QMX_TEST_READ_CALLS=0
+            read() {
+                if [ "\$QMX_TEST_READ_CALLS" -ge "$successfulReadsBeforeFailure" ]; then
+                    return 1
+                fi
+
+                QMX_TEST_READ_CALLS=\$((QMX_TEST_READ_CALLS + 1))
+                builtin read "\$@"
+            }
+            SH;
+    }
+
+    /** @return list<string> */
+    private function readNulDelimitedArguments(string $path): array
+    {
+        $arguments = file_get_contents($path);
+        self::assertIsString($arguments);
+        self::assertStringEndsWith("\0", $arguments);
+
+        return \array_slice(explode("\0", $arguments), 0, -1);
+    }
+
+    private function createTemporaryDirectory(): string
+    {
+        $directory = sys_get_temp_dir() . '/qmx-pre-commit-hook-' . bin2hex(random_bytes(8));
+        self::assertTrue(mkdir($directory, 0700));
+        $this->temporaryDirectories[] = $directory;
+
+        return $directory;
+    }
+
+    private function writeExecutable(string $path, string $contents): void
+    {
+        self::assertNotFalse(file_put_contents($path, $contents));
+        self::assertTrue(chmod($path, 0700));
+    }
+
+    private static function shellLiteral(string $value): string
+    {
+        return "'" . str_replace("'", "'\\''", $value) . "'";
+    }
+
+    protected function tearDown(): void
+    {
+        foreach ($this->temporaryDirectories as $directory) {
+            $this->removeTemporaryDirectory($directory);
+        }
+
+        parent::tearDown();
+    }
+
+    private function removeTemporaryDirectory(string $directory): void
+    {
+        $entries = scandir($directory);
+
+        if ($entries === false) {
+            return;
+        }
+
+        foreach ($entries as $entry) {
+            if ($entry === '.' || $entry === '..') {
+                continue;
+            }
+
+            $path = $directory . '/' . $entry;
+            if (is_dir($path)) {
+                $this->removeTemporaryDirectory($path);
+
+                continue;
+            }
+
+            unlink($path);
+        }
+
+        rmdir($directory);
     }
 }

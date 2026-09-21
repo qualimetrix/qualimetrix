@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Composer\Unit;
 
+use LogicException;
+use PhpParser\ErrorHandler;
+use PhpParser\Parser;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -112,6 +115,49 @@ final class DeclaredParentReaderTest extends TestCase
         $this->write('src/Child.php', "<?php\n\nnamespace Fixture;\n\nclass Child extends { !!!\n");
 
         self::assertFalse($this->reader()->parentOf('Fixture\\Child')->placed);
+    }
+
+    #[Test]
+    public function itRefusesAFileWhoseImportedAliasesCannotBeResolved(): void
+    {
+        $this->write('src/Child.php', <<<'PHP'
+            <?php
+
+            namespace Fixture;
+
+            use First\Package\Base as ParentClass;
+            use Second\Package\Base as ParentClass;
+
+            class Child extends ParentClass {}
+            PHP);
+
+        self::assertFalse($this->reader()->parentOf('Fixture\\Child')->placed);
+    }
+
+    #[Test]
+    public function itDoesNotSuppressUnexpectedParserFailures(): void
+    {
+        $this->write('src/Child.php', "<?php\n\nnamespace Fixture;\n\nclass Child {}\n");
+
+        $parser = new class implements Parser {
+            public function parse(string $code, ?ErrorHandler $errorHandler = null): ?array
+            {
+                throw new LogicException('Injected parser failure');
+            }
+
+            public function getTokens(): array
+            {
+                return [];
+            }
+        };
+        $map = new ComposerAutoloadMap();
+        $map->pointAt($this->root, [$this->root . '/src']);
+        $reader = new DeclaredParentReader($map, $parser);
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Injected parser failure');
+
+        $reader->parentOf('Fixture\\Child');
     }
 
     /**

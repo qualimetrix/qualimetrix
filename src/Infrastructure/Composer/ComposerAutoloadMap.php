@@ -132,7 +132,7 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
         $this->addPsr4($manifest['autoload-dev']['psr-4'] ?? null, $root);
         $this->readInstalledPackages($vendor);
 
-        foreach ($this->generatedClassmap->read($vendor) as $fqcn => $file) {
+        foreach ($this->generatedClassmap->read($root, $vendor) as $fqcn => $file) {
             $this->classmap[$fqcn] ??= $file;
         }
     }

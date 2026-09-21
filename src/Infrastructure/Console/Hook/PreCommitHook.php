@@ -55,6 +55,7 @@ final class PreCommitHook
         # ============================================================================
 
         set -e
+        set -o pipefail
 
         # The binary that installed this hook. The fallbacks below cover it moving
         # afterwards, which `composer update` does to vendor/ routinely.
@@ -75,11 +76,86 @@ final class PreCommitHook
         fi
 
         # NUL-delimited, because a path may contain a space and splitting on one
-        # would hand the analyser two paths that do not exist.
+        # would hand the analyser two paths that do not exist. Do not use process
+        # substitution here: it hides git's status, so a failed enumeration could
+        # otherwise look like an empty staged-file set.
+        if STAGED_FILE_LIST=$(mktemp "${TMPDIR:-/tmp}/qmx-pre-commit.XXXXXX"); then
+            :
+        else
+            EXIT_CODE=$?
+            echo "❌ Could not create a temporary staged-file list (exit $EXIT_CODE). Nothing was analysed."
+            exit $EXIT_CODE
+        fi
+
+        if [ -z "$STAGED_FILE_LIST" ]; then
+            echo "❌ Could not create a temporary staged-file list. Nothing was analysed."
+            exit 1
+        fi
+
+        cleanup_staged_file_list() {
+            EXIT_CODE=$?
+            rm -f -- "$STAGED_FILE_LIST" || :
+            trap - EXIT
+            exit $EXIT_CODE
+        }
+        trap cleanup_staged_file_list EXIT
+
+        if git diff --cached --name-only -z --diff-filter=ACM -- '*.php' > "$STAGED_FILE_LIST"; then
+            :
+        else
+            EXIT_CODE=$?
+            echo "❌ Could not enumerate staged PHP files (exit $EXIT_CODE). Nothing was analysed."
+            exit $EXIT_CODE
+        fi
+
+        if [ ! -f "$STAGED_FILE_LIST" ] || [ ! -r "$STAGED_FILE_LIST" ]; then
+            echo "❌ Could not read the staged-file list. Nothing was analysed."
+            exit 1
+        fi
+
+        if STAGED_FILE_COUNT=$(LC_ALL=C tr -cd '\000' < "$STAGED_FILE_LIST" | wc -c | tr -d '[:space:]'); then
+            :
+        else
+            EXIT_CODE=$?
+            echo "❌ Could not read the staged-file list (exit $EXIT_CODE). Nothing was analysed."
+            exit $EXIT_CODE
+        fi
+
+        if [ -s "$STAGED_FILE_LIST" ]; then
+            if LAST_STAGED_FILE_BYTE=$(LC_ALL=C tail -c 1 "$STAGED_FILE_LIST" | od -An -t u1 | tr -d '[:space:]'); then
+                :
+            else
+                EXIT_CODE=$?
+                echo "❌ Could not read the staged-file list (exit $EXIT_CODE). Nothing was analysed."
+                exit $EXIT_CODE
+            fi
+
+            if [ "$LAST_STAGED_FILE_BYTE" != "0" ]; then
+                echo "❌ The staged-file list is incomplete. Nothing was analysed."
+                exit 1
+            fi
+        fi
+
+        if exec 3< "$STAGED_FILE_LIST"; then
+            :
+        else
+            EXIT_CODE=$?
+            echo "❌ Could not read the staged-file list (exit $EXIT_CODE). Nothing was analysed."
+            exit $EXIT_CODE
+        fi
+
         STAGED_FILES=()
+        STAGED_FILES_READ=0
         while IFS= read -r -d '' staged_file; do
             STAGED_FILES+=("$staged_file")
-        done < <(git diff --cached --name-only -z --diff-filter=ACM -- '*.php')
+            STAGED_FILES_READ=$((STAGED_FILES_READ + 1))
+        done <&3
+        exec 3<&-
+
+        if [ "$STAGED_FILES_READ" -ne "$STAGED_FILE_COUNT" ]; then
+            echo "❌ Could not read the complete staged-file list. Nothing was analysed."
+            exit 1
+        fi
 
         if [ ${#STAGED_FILES[@]} -eq 0 ]; then
             exit 0
@@ -100,9 +176,9 @@ final class PreCommitHook
             echo ""
             echo "✅ Qualimetrix passed."
             exit 0
+        else
+            EXIT_CODE=$?
         fi
-
-        EXIT_CODE=$?
 
         # 126 and 127 come from the shell, not from the analysis: the binary could
         # not be executed or was not found at all. Reporting them as findings would
