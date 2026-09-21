@@ -207,10 +207,6 @@ final class ChildProcess
      */
     private static function drain($stdinPipe, $stdoutPipe, $stderrPipe, string $stdin): array
     {
-        stream_set_blocking($stdinPipe, false);
-        stream_set_blocking($stdoutPipe, false);
-        stream_set_blocking($stderrPipe, false);
-
         $reads = [
             (int) $stdoutPipe => ['stream' => $stdoutPipe, 'index' => 0],
             (int) $stderrPipe => ['stream' => $stderrPipe, 'index' => 1],
@@ -222,6 +218,41 @@ final class ChildProcess
         if ($pending === '') {
             fclose($stdinPipe);
             $writeStream = null;
+        }
+
+        // Only what the loop goes on to service, which is why this stands
+        // after stdin's fate is settled rather than at the top of the method:
+        // a stdin pipe closed unread above is never selected on and never
+        // written to, so its mode cannot affect anything, and refusing over it
+        // would fail a run that had nothing left to go wrong.
+        //
+        // Left unchecked, a refusal here is reported by hanging rather than by
+        // saying so. A read pipe still in blocking mode makes
+        // `stream_get_contents()` below read to EOF instead of returning what
+        // is there, which is the sequential read the opening paragraph exists
+        // to rule out; a blocking stdin pipe parks `fwrite()` the same way.
+        //
+        // `READ_FAILURE_PREFIX` for all of them, stdin included. Putting a
+        // descriptor into non-blocking mode is neither a read nor a write, and
+        // the contract deliberately has three kinds rather than one per throw
+        // site, so the choice is which of the three says something true here.
+        // The loop has not run: nothing has been captured, so "its output is
+        // incomplete" holds whichever descriptor refused, while "received a
+        // truncated stdin" is simply false whenever there was none to deliver.
+        // Reaching for `WRITE_FAILURE_PREFIX` when the stdin pipe is the one
+        // that refused would hand callers two different prefixes for one kind
+        // of failure, told apart by a descriptor identity they cannot see.
+        $serviced = [$stdoutPipe, $stderrPipe];
+        if ($writeStream !== null) {
+            $serviced[] = $writeStream;
+        }
+
+        foreach ($serviced as $pipe) {
+            if (stream_set_blocking($pipe, false) === false) {
+                throw new RuntimeException(
+                    self::READ_FAILURE_PREFIX . 'a pipe could not be put into non-blocking mode.',
+                );
+            }
         }
 
         while ($reads !== [] || $writeStream !== null) {

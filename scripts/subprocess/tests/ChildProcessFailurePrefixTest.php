@@ -34,22 +34,22 @@ require_once \dirname(__DIR__) . '/ChildProcess.php';
  * ## How the correspondence is measured
  *
  * By making the operation each throw site guards fail, and reading back which
- * prefix came out. The module calls `proc_open()`, `stream_select()`,
- * `stream_get_contents()` and `fwrite()` by their unqualified names inside
- * `Qualimetrix\Subprocess`, so a function of that name declared in the same
- * namespace is what those call sites resolve to — PHP looks in the current
- * namespace before falling back to the global one. Each case runs in its own
- * process, because that declaration is process-wide and cannot be undone.
+ * prefix came out. The module calls `proc_open()`, `stream_set_blocking()`,
+ * `stream_select()`, `stream_get_contents()` and `fwrite()` by their unqualified
+ * names inside `Qualimetrix\Subprocess`, so a function of that name declared in
+ * the same namespace is what those call sites resolve to — PHP looks in the
+ * current namespace before falling back to the global one. Each case runs in its
+ * own process, because that declaration is process-wide and cannot be undone.
  *
  * The unqualified spelling is not a lucky accident, and this is the one style
  * fact the mechanism rests on. `native_function_invocation` here is
  * `['include' => ['@compiler_optimized'], 'scope' => 'namespaced',
  * 'strict' => true]`. Measured against the fixer's own set: `is_array` and
  * `is_resource` are in it, which is why those are the two names the module
- * writes with a leading backslash, and none of the four names above is — so
+ * writes with a leading backslash, and none of the five names above is — so
  * `strict` would *remove* a backslash written on them. The spelling the
  * injection needs is the spelling the style rule enforces. Measured rather than
- * argued: widening that rule to `@all` on a copy qualifies all four names and
+ * argued: widening that rule to `@all` on a copy qualifies all five names and
  * turns all of these cases red.
  *
  * ## Three ways a case could pass without measuring anything, and what stops each
@@ -65,18 +65,20 @@ require_once \dirname(__DIR__) . '/ChildProcess.php';
  *   the start failure needs a child that cannot be created, and whether an
  *   unusable working directory surfaces in the *parent* depends on whether the
  *   build changes directory before or after the fork; the read failure needs a
- *   failing `stream_select()` or an unreadable pipe beside a live child; the
- *   write failure needs a stdin descriptor that dies for a reason other than the
- *   far end closing, which is a normal path the module handles without raising.
- *   Nothing portable produces any of the three.
- * - **Some other failure produced the same prefix.** The two read sites share
- *   `READ_FAILURE_PREFIX`, and `stream_select()` is reached before
- *   `stream_get_contents()`, so a real select failure — `EINTR`, which the module
- *   names as a boundary it does not survive — would satisfy a prefix assertion in
- *   the case that injects the *other* read site. Each shadow therefore records
- *   that it ran, and every case asserts that its own operation, and only its
- *   own, is what failed. A prefix alone is not accepted as evidence that the
- *   injected operation is the one that failed.
+ *   pipe that refuses to go non-blocking, a failing `stream_select()` or an
+ *   unreadable pipe, each beside a live child; the write failure needs a stdin
+ *   descriptor that dies for a reason other than the far end closing, which is a
+ *   normal path the module handles without raising. Nothing portable produces
+ *   any of the three.
+ * - **Some other failure produced the same prefix.** The three read sites share
+ *   `READ_FAILURE_PREFIX`, and the module reaches them in a fixed order —
+ *   `stream_set_blocking()`, then `stream_select()`, then
+ *   `stream_get_contents()` — so a real select failure — `EINTR`, which the
+ *   module names as a boundary it does not survive — would satisfy a prefix
+ *   assertion in a case that injects one of the *other* read sites. Each shadow
+ *   therefore records that it ran, and every case asserts that its own
+ *   operation, and only its own, is what failed. A prefix alone is not accepted
+ *   as evidence that the injected operation is the one that failed.
  * - **The module stopped throwing and the run hung instead of reddening.** A
  *   shadow that failed on every call left `drain()` spinning when its throw site
  *   was removed — exactly the defect these cases exist to catch, turned into a
@@ -91,7 +93,7 @@ require_once \dirname(__DIR__) . '/ChildProcess.php';
  *
  * A prefix chosen from the *state of the drain loop* rather than from the throw
  * site would be a different defect with the same symptom, and it is reachable by
- * an ordinary-looking refactor: collapse the three throws into one helper that
+ * an ordinary-looking refactor: collapse the throws into one helper that
  * decides the failure kind from `$writeStream` or from which stream failed.
  * Measured, on a copy: with every case carrying an empty stdin except the write
  * one, and stdout the only stream ever failing, two such mutants passed every
@@ -104,9 +106,21 @@ require_once \dirname(__DIR__) . '/ChildProcess.php';
  * bytes, and a child writing only to stdout and one writing only to stderr make
  * that stdout in one case and stderr in another.
  *
- * One axis is left unpinned and named rather than implied: the failure always
- * falls on the loop's first iteration. Pinning it would need a shadow that
- * counts iterations, and no mutant has been shown to exploit it.
+ * The non-blocking switch has neither axis, and a third one of its own. It runs
+ * once per serviced descriptor, before the loop, so no iteration of the loop is
+ * involved; and a case cannot say which descriptor its call carried, because the
+ * module hands the shadow no name. What can be lifted is a guard, and there are
+ * three to lift. Measured, when one shadow served both cases and could only fail
+ * on the first call: a mutant that kept the check on stdin and dropped it from
+ * the two read pipes passed every case — while the hazard the whole site exists
+ * for lives on exactly those two. The shadow therefore counts its calls and
+ * there is a case per call, so dropping any single guard moves a case off its
+ * own operation and reddens it. The third call is also where this site meets a
+ * payload: stdin is serviced, and so guarded, only when there is one.
+ *
+ * One axis is left unpinned and named rather than implied: in the loop, the
+ * failure always falls on its first iteration. Pinning it would need a shadow
+ * that counts iterations, and no mutant has been shown to exploit it.
  *
  * ## What is still not held
  *
@@ -120,9 +134,14 @@ require_once \dirname(__DIR__) . '/ChildProcess.php';
  *   module built it from. Nothing in the tree reads the human-readable text, and
  *   the property dispatch needs — that the three stay tellable apart — is held
  *   above.
- * - Which of the two read sites failed, *from a caller's seat*. The contract has
- *   three kinds and not four; both sites are measured separately here, but a
- *   caller cannot tell a failed select from an unreadable pipe.
+ * - Which of the three read sites failed, *from a caller's seat*. The contract
+ *   has three kinds and not five; all three sites are measured separately here,
+ *   but a caller cannot tell a pipe that would not go non-blocking from a failed
+ *   select or from an unreadable pipe.
+ * - Which descriptor a non-blocking-switch case made refuse. The cases select a
+ *   call number, and nothing carries the descriptor back, so reordering the two
+ *   read pipes is invisible here. What is held instead is that no guard may go
+ *   missing, which is the property the site exists for.
  * - That the module still *declines* to raise on a stdin pipe whose far end
  *   merely closed. A mutant that dropped the `errno=32` guard and always threw
  *   would pass the write case here.
@@ -156,6 +175,42 @@ final class ChildProcessFailurePrefixTest extends TestCase
         {
             $GLOBALS['reached'][] = __FUNCTION__;
             $pipes = [];
+
+            return false;
+        }
+        PHP;
+
+    /**
+     * Counts its calls instead of failing on the first, which is what reaches
+     * the later guards at all. The module switches the pipes it services in a
+     * fixed order, so the call number picks one out: 1 and 2 are the read pipes,
+     * 3 is stdin, reached only when there is a payload to deliver.
+     * {@see self::failingOnCall()} fills the number in.
+     *
+     * What a case then holds is that the guard on *that call* is present, not
+     * which descriptor the call carried: `$GLOBALS['reached']` records that the
+     * shadow ran, and the module hands it no name. Measured: exchanging
+     * `$stdoutPipe` and `$stderrPipe` in the serviced list leaves every case
+     * green — an equivalent mutant, since the two are read pipes serviced
+     * alike.
+     *
+     * Failing once and delegating afterwards is the shared rule of this file,
+     * and here it is not what rules the hang out: measured, a variant refusing
+     * on *every* call also returns rather than hanging, because these children
+     * write one byte and exit, so even a read to EOF on a blocking descriptor
+     * ends. What is held is the outcome — with the throw site removed each of
+     * these cases reports `RETURNED` in about a second — not a mechanism that
+     * produces it.
+     */
+    private const string SHADOW_SET_BLOCKING_FAILS = <<<'PHP'
+        function stream_set_blocking($stream, $enable)
+        {
+            static $calls = 0;
+            if (++$calls !== __NTH_CALL__) {
+                return \stream_set_blocking($stream, $enable);
+            }
+
+            $GLOBALS['reached'][] = __FUNCTION__;
 
             return false;
         }
@@ -269,11 +324,12 @@ final class ChildProcessFailurePrefixTest extends TestCase
      * Every throw site, and for each the operation whose failure it guards, the
      * child it runs, the stdin it is given and the prefix the caller must get.
      *
-     * The two read sites are separate entries although they share a prefix: a
-     * wrong constant at one is invisible in the other. Beyond that, the spread
-     * is what pins the axes named in the class docblock — the same shadow
-     * appears with and without a payload, and the read shadow appears against a
-     * child that writes only to stdout and one that writes only to stderr.
+     * The three read sites are separate entries although they share a prefix: a
+     * wrong constant at one is invisible in the others. Beyond that, the spread
+     * is what pins the axes named in the class docblock — the spawn and select
+     * shadows appear with and without a payload, the read shadow appears against
+     * a child that writes only to stdout and one that writes only to stderr, and
+     * the non-blocking shadow is aimed at each serviced descriptor in turn.
      *
      * The write site takes a payload in every case that reaches it, and cannot
      * be measured without one: with no stdin the module closes that descriptor
@@ -300,6 +356,24 @@ final class ChildProcessFailurePrefixTest extends TestCase
                 $writesToStdout,
                 'payload',
                 ChildProcess::START_FAILURE_PREFIX,
+            ],
+            'the stdout pipe cannot be put into non-blocking mode' => [
+                self::failingOnCall(1),
+                $writesToStdout,
+                '',
+                ChildProcess::READ_FAILURE_PREFIX,
+            ],
+            'the stderr pipe cannot be put into non-blocking mode' => [
+                self::failingOnCall(2),
+                $writesToStderr,
+                '',
+                ChildProcess::READ_FAILURE_PREFIX,
+            ],
+            'the stdin pipe cannot be put into non-blocking mode, with stdin to deliver' => [
+                self::failingOnCall(3),
+                $writesToStdout,
+                'payload',
+                ChildProcess::READ_FAILURE_PREFIX,
             ],
             'the select over the pipes fails, with no stdin' => [
                 self::SHADOW_SELECT_FAILS,
@@ -338,6 +412,17 @@ final class ChildProcessFailurePrefixTest extends TestCase
                 ChildProcess::WRITE_FAILURE_PREFIX,
             ],
         ];
+    }
+
+    /**
+     * The non-blocking shadow aimed at one descriptor, by the number of the call
+     * that reaches it. Kept next to the table rather than inside the shadow so
+     * that the shadow stays one function declaration, which
+     * {@see self::operationOf()} refuses anything else.
+     */
+    private static function failingOnCall(int $nth): string
+    {
+        return str_replace('__NTH_CALL__', (string) $nth, self::SHADOW_SET_BLOCKING_FAILS);
     }
 
     #[Test]

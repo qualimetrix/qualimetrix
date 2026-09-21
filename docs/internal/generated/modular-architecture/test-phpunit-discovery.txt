@@ -1103,7 +1103,10 @@ Available tests:
  - Qualimetrix\Subprocess\Tests\ChildProcessFailurePrefixTest::itReportsAFailureWithThePrefixOfTheOperationThatFailed"the select over the pipes fails, with stdin to deliver"
  - Qualimetrix\Subprocess\Tests\ChildProcessFailurePrefixTest::itReportsAFailureWithThePrefixOfTheOperationThatFailed"the spawn fails, with no stdin"
  - Qualimetrix\Subprocess\Tests\ChildProcessFailurePrefixTest::itReportsAFailureWithThePrefixOfTheOperationThatFailed"the spawn fails, with stdin to deliver"
+ - Qualimetrix\Subprocess\Tests\ChildProcessFailurePrefixTest::itReportsAFailureWithThePrefixOfTheOperationThatFailed"the stderr pipe cannot be put into non-blocking mode"
  - Qualimetrix\Subprocess\Tests\ChildProcessFailurePrefixTest::itReportsAFailureWithThePrefixOfTheOperationThatFailed"the stderr pipe cannot be read"
+ - Qualimetrix\Subprocess\Tests\ChildProcessFailurePrefixTest::itReportsAFailureWithThePrefixOfTheOperationThatFailed"the stdin pipe cannot be put into non-blocking mode, with stdin to deliver"
+ - Qualimetrix\Subprocess\Tests\ChildProcessFailurePrefixTest::itReportsAFailureWithThePrefixOfTheOperationThatFailed"the stdout pipe cannot be put into non-blocking mode"
  - Qualimetrix\Subprocess\Tests\ChildProcessFailurePrefixTest::itReportsAFailureWithThePrefixOfTheOperationThatFailed"the stdout pipe cannot be read"
  - Qualimetrix\Subprocess\Tests\ChildProcessFailurePrefixTest::itReportsAFailureWithThePrefixOfTheOperationThatFailed"the write to stdin fails for a reason other than EPIPE"
  - Qualimetrix\SuppressionSnapshot\Tests\SuppressionSnapshotKeyTest::itAcceptsEquivalentSequentialAndParallelMeasurements

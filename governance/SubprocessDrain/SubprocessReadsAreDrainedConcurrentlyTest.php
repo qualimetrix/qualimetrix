@@ -231,7 +231,7 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'a pipe from it: both of the child\'s streams go to files and only `proc_get_status()` is polled, '
             . 'because a supervisor that read a pipe here could deadlock the same way the code under test might.',
 
-        'scripts/subprocess/tests/ChildProcessFailurePrefixTest.php:155' => 'Not a spawn, and the only occurrence '
+        'scripts/subprocess/tests/ChildProcessFailurePrefixTest.php:174' => 'Not a spawn, and the only occurrence '
             . 'here that prevents one: source text for a function of this name declared inside the module\'s own '
             . 'namespace, so that the module\'s unqualified call resolves to it and reports failure. That is how '
             . 'the prefix a caller is given for a failed spawn is measured at all — no portable condition makes the '
