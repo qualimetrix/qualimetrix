@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 /**
- * Rewrite the two MEASURED columns of the shorthand-scope round's axis-B
- * assignment table from a grid that has just been taken.
+ * Rewrite the two MEASURED columns of an axis-B assignment table from a grid
+ * that has just been taken. The table is given as the one argument.
  *
  * WHY THIS IS A WRITE AND NEVER A CHECK. The table has twelve columns and only
  * two of them are measurements. `today_verdict` is what the grid says now;
@@ -62,7 +62,21 @@ function readRows(string $path): array
 }
 
 $root = \dirname(__DIR__);
-$table = $root . '/docs/internal/plans/shorthand-scope/measurement/axis-b-rows.tsv';
+
+// The table is named by the caller and never by this file. A table of this
+// shape belongs to whatever round is asking the question, and a round's
+// records are removed once its decisions have moved to their permanent owners
+// -- so a path written here would outlive the file it points at. The same rule
+// is held by `governance/PlanningRecords/PlanningRecordIsolationTest.php` for
+// every executable source in the tree.
+$table = $argv[1] ?? '';
+
+if ($table === '' || !is_file($table)) {
+    fwrite(\STDERR, "usage: php scripts/promise-effect-axis-b-rows.php <axis-b-assignment-table.tsv>\n");
+
+    exit(5);
+}
+
 $grid = $root . '/docs/internal/generated/promise-effect/verdicts.tsv';
 $ledger = $root . '/promise-effect/promise-ledger.tsv';
 

@@ -323,8 +323,16 @@ The pre-P0 table is kept as the witness of what P0 changed.
 - Axis B's document count is reported — 446 documents over 465 cells, 93
   defective over 111 — and the nineteen multi-kind triples are named by a test.
 - `measurement/axis-b-rows.tsv` regenerated in its two measured columns by
-  `scripts/promise-effect-axis-b-rows.php`, with the pre-P0 copy kept beside it as
+  `php scripts/promise-effect-axis-b-rows.php docs/internal/plans/shorthand-scope/measurement/axis-b-rows.tsv`,
+  with the pre-P0 copy kept beside it as
   `measurement/axis-b-rows-before-p0.tsv`.
+
+  The table is an argument and not a path inside the script, because
+  `governance/PlanningRecords/PlanningRecordIsolationTest.php` refuses an
+  executable source that names a planning record — and it is right to: this
+  round's records are removed once its decisions reach their permanent owners,
+  and a path written into `scripts/` would outlive the file it points at. The
+  invocation therefore lives here, where the table does.
 - `composer check` green as an aggregate.
 
 ## P1 — the corpus witness (finding-gate)
