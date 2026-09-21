@@ -180,10 +180,10 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
     /** @param list<string> $command
      * @return array{int, string}
      */
-    private function runProcess(array $command, ?string $workingDirectory = null): array
+    private function runProcess(array $command): array
     {
         try {
-            $result = ChildProcess::run($command, $workingDirectory ?? $this->root());
+            $result = ChildProcess::run($command, $this->root());
         } catch (RuntimeException $exception) {
             self::fail($exception->getMessage());
         }

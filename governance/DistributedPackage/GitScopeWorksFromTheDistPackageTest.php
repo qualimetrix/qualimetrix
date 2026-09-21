@@ -205,9 +205,9 @@ final class GitScopeWorksFromTheDistPackageTest extends TestCase
      *
      * @param list<string> $command
      */
-    private static function capture(array $command, ?string $workingDirectory = null): string
+    private static function capture(array $command): string
     {
-        [$status, $stdout, $stderr] = self::execute($command, $workingDirectory);
+        [$status, $stdout, $stderr] = self::execute($command);
 
         self::assertSame(
             0,
