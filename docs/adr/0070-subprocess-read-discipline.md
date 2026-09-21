@@ -54,12 +54,15 @@ are therefore witnessed rather than assumed. That workers ran: the run's own
 log named the parallel branch and not the fallback, and four `amphp/parallel`
 worker processes were up mid-run against none before or after. That nothing
 held the pipe: the same command with stdout and stderr sent straight to
-`/dev/null`, where nothing *can* be held open, finished inside the two piped
-runs' own spread, and the exit-versus-EOF instants come from a probe that
-reports `+2.980 s` on the shape in the row above cut to `sleep 3`, so a held
-pipe is something it can see. The shape is not synthetic:
-`generate-suppression-snapshot.php` runs `bin/qmx check src --workers=4`
-through `run()` over the same tree.
+`/dev/null`, where nothing *can* be held open, was no slower than either piped
+run — 22 ms under the faster of the two, against the 454 ms the two piped runs
+differ by between themselves — so the pipes cost nothing the measurement can
+see; and the exit-versus-EOF instants come from a probe that reports
+`+2.980 s` on the shape in the row above cut to `sleep 3`, so a held pipe is
+something it can see. The shape is not synthetic:
+`generate-suppression-snapshot.php` runs `bin/qmx check src` with
+`--format=suppressed --workers=4 --no-cache` through `run()` over the same
+tree.
 
 Three consequences follow, and each killed a mechanism that had looked
 reasonable:

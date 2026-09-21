@@ -72,10 +72,11 @@ use Throwable;
  *   child is gone, and the parent waits for it:
  *   `['/bin/sh', '-c', '( sleep 6 ) & echo parent-done']` keeps `run()` there
  *   for the full six seconds. No caller in this tree has that shape. Measured
- *   over `src/`, 973 files, where `--workers=4` is above the product's own
- *   sequential-fallback floor and four `amphp/parallel` worker processes were
- *   confirmed running: stdout reached EOF in the same 20 ms window the child
- *   was reaped, so those workers do not hold the parent's stdout. A deadline
+ *   over `src/` — 973 files, above the product's own sequential-fallback
+ *   floor, so `--workers=4` there starts workers instead of falling back, and
+ *   four `amphp/parallel` processes were confirmed running: stdout reached EOF
+ *   in the same 20 ms window the child was reaped, so those workers do not
+ *   hold the parent's stdout. A deadline
  *   here would be supervision, which is deliberately a different subject.
  * - `stream_select()` is interrupted by a signal: it returns `false`, which
  *   this class reports as a failure, where an old-style blocking read would
