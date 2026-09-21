@@ -4,54 +4,257 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Subprocess\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Subprocess\ChildProcess;
+use RuntimeException;
 
 require_once \dirname(__DIR__) . '/ChildProcess.php';
 
 /**
  * The three prefixes are the whole of how a caller tells one failure from
- * another: `run()` raises one exception class, and its docblock names
- * `str_starts_with($error->getMessage(), ChildProcess::START_FAILURE_PREFIX)`
- * as the way to dispatch on which failure happened. Callers across the tree
- * now report a failure without claiming which of the three it was, so the
- * prefix is the only thing left that says so.
+ * another. All three operational failures arrive as the same `RuntimeException`
+ * — the argument-shaped `\ValueError` the module deliberately lets through on an
+ * empty command is a different subject, named in the module's own docblock — and
+ * `run()`'s docblock names
+ * `str_starts_with($error->getMessage(), ChildProcess::START_FAILURE_PREFIX)` as
+ * the way to dispatch on which failure happened. Callers across the tree report
+ * a failure without claiming which of the three it was, so the prefix is the
+ * only thing left that says so.
  *
- * ## What this holds, and what it deliberately does not
+ * Two halves, and they fail for different reasons. The *shape* of the prefixes
+ * is what dispatch mechanically depends on: each non-empty, pairwise distinct,
+ * none a prefix of another. The *correspondence* is what makes the shape worth
+ * anything: that each `throw` reaches for the constant naming the failure that
+ * actually happened. Swapping two constants at the throw sites keeps every
+ * shape property true and makes every caller report the opposite of what
+ * occurred.
  *
- * It holds the properties that dispatch depends on and nothing else: each
- * prefix is non-empty, they are pairwise distinct, and none is a prefix of
- * another. The last is the one that is easy to lose and impossible to see by
- * reading: if `READ_FAILURE_PREFIX` ever became `'Cannot '`, a
- * `str_starts_with` test for it would also match a start failure, and the
- * caller would be told the opposite of what happened.
+ * ## How the correspondence is measured
  *
- * It does **not** hold that each `throw` inside the module reaches for the
- * right constant. Swapping two of them at the throw sites keeps every
- * property here true. Catching that needs the failures themselves, and this
- * is where the cost lands:
+ * By making the operation each throw site guards fail, and reading back which
+ * prefix came out. The module calls `proc_open()`, `stream_select()`,
+ * `stream_get_contents()` and `fwrite()` by their unqualified names inside
+ * `Qualimetrix\Subprocess`, so a function of that name declared in the same
+ * namespace is what those call sites resolve to — PHP looks in the current
+ * namespace before falling back to the global one. Each case runs in its own
+ * process, because that declaration is process-wide and cannot be undone.
  *
- * - The start failure is raised when the child cannot be brought into
- *   existence, which in practice means an unusable working directory. Whether
- *   that surfaces in the parent at all depends on how the PHP build spawns:
- *   where the directory change happens after a fork, it is the *child* that
- *   fails, and the parent sees a started process. That differs between builds
- *   and between platforms, and this branch has already paid for assuming
- *   otherwise — `10978986` was green on the machine it was written on and red
- *   on both CI runners, for a platform difference of exactly this kind.
- * - The read failure needs `stream_select()` to fail or a pipe to become
- *   unreadable while the child is alive. Nothing portable produces either.
- * - The write failure needs a stdin descriptor that dies for a reason other
- *   than the far end closing, since that one is a normal path the module
- *   handles without raising.
+ * The unqualified spelling is not a lucky accident, and this is the one style
+ * fact the mechanism rests on. `native_function_invocation` here is
+ * `['include' => ['@compiler_optimized'], 'scope' => 'namespaced',
+ * 'strict' => true]`. Measured against the fixer's own set: `is_array` and
+ * `is_resource` are in it, which is why those are the two names the module
+ * writes with a leading backslash, and none of the four names above is — so
+ * `strict` would *remove* a backslash written on them. The spelling the
+ * injection needs is the spelling the style rule enforces. Measured rather than
+ * argued: widening that rule to `@all` on a copy qualifies all four names and
+ * turns all of these cases red.
  *
- * So the rest of the contract stays unheld rather than held by a test that
- * passes for the wrong reason on one platform. That is a gap, named here so
- * the next reader does not have to rediscover why it is a gap.
+ * ## Three ways a case could pass without measuring anything, and what stops each
+ *
+ * Every one of them was a live defect in an earlier revision of this file, so
+ * each is written down beside the thing that closes it.
+ *
+ * - **The shadow never reached the call.** Then the real function runs, `run()`
+ *   succeeds, and the harness reports `RETURNED`: a red naming the mechanism, on
+ *   every platform where the mechanism is broken. That is the inverse of
+ *   `10978986`, which was green on the machine it was written on and red on both
+ *   CI runners. It is also why the failures are injected rather than provoked:
+ *   the start failure needs a child that cannot be created, and whether an
+ *   unusable working directory surfaces in the *parent* depends on whether the
+ *   build changes directory before or after the fork; the read failure needs a
+ *   failing `stream_select()` or an unreadable pipe beside a live child; the
+ *   write failure needs a stdin descriptor that dies for a reason other than the
+ *   far end closing, which is a normal path the module handles without raising.
+ *   Nothing portable produces any of the three.
+ * - **Some other failure produced the same prefix.** The two read sites share
+ *   `READ_FAILURE_PREFIX`, and `stream_select()` is reached before
+ *   `stream_get_contents()`, so a real select failure — `EINTR`, which the module
+ *   names as a boundary it does not survive — would satisfy a prefix assertion in
+ *   the case that injects the *other* read site. Each shadow therefore records
+ *   that it ran, and every case asserts that its own operation, and only its
+ *   own, is what failed. A prefix alone is not accepted as evidence that the
+ *   injected operation is the one that failed.
+ * - **The module stopped throwing and the run hung instead of reddening.** A
+ *   shadow that failed on every call left `drain()` spinning when its throw site
+ *   was removed — exactly the defect these cases exist to catch, turned into a
+ *   hang that eats the aggregate's whole deadline and names no case. Each shadow
+ *   therefore fails *once* and then delegates to the real function, so the loop
+ *   makes progress whether or not the module throws. A missing throw now reports
+ *   `RETURNED` like any other non-failure. That is a stronger guarantee than a
+ *   deadline: the hang is impossible rather than bounded, and nothing here
+ *   depends on timing or on the correctness of the code under measurement.
+ *
+ * ## The axes, and which ones are pinned
+ *
+ * A prefix chosen from the *state of the drain loop* rather than from the throw
+ * site would be a different defect with the same symptom, and it is reachable by
+ * an ordinary-looking refactor: collapse the three throws into one helper that
+ * decides the failure kind from `$writeStream` or from which stream failed.
+ * Measured, on a copy: with every case carrying an empty stdin except the write
+ * one, and stdout the only stream ever failing, two such mutants passed every
+ * case while telling a caller with stdin that a failed select was a failed
+ * write.
+ *
+ * So two axes are pinned by running the same shadow against both values. Stdin:
+ * the spawn and select failures are each measured with and without a payload.
+ * Which stream failed: the read shadow fails on the stream that actually carried
+ * bytes, and a child writing only to stdout and one writing only to stderr make
+ * that stdout in one case and stderr in another.
+ *
+ * One axis is left unpinned and named rather than implied: the failure always
+ * falls on the loop's first iteration. Pinning it would need a shadow that
+ * counts iterations, and no mutant has been shown to exploit it.
+ *
+ * ## What is still not held
+ *
+ * - That an operating-system condition *reaches* these return values in the
+ *   parent on a given platform. What is injected is the value the module
+ *   branches on, so what is held is "when the spawn reports failure, the caller
+ *   is told the child never started" — not that an unusable working directory
+ *   makes the spawn report failure here.
+ * - The wording of the constants. Exchanging the three string values passes every
+ *   case here, because a case compares a message against the same constant the
+ *   module built it from. Nothing in the tree reads the human-readable text, and
+ *   the property dispatch needs — that the three stay tellable apart — is held
+ *   above.
+ * - Which of the two read sites failed, *from a caller's seat*. The contract has
+ *   three kinds and not four; both sites are measured separately here, but a
+ *   caller cannot tell a failed select from an unreadable pipe.
+ * - That the module still *declines* to raise on a stdin pipe whose far end
+ *   merely closed. A mutant that dropped the `errno=32` guard and always threw
+ *   would pass the write case here.
+ *   `ChildProcessDrainTest::itTreatsAChildThatNeverReadsStdinAsASuccess()` is
+ *   what exercises that branch, with a payload twice the pipe buffer at a child
+ *   that never reads stdin; its assertions observe the successful outcome rather
+ *   than the errno, so that the branch was entered is an inference from the
+ *   buffer size recorded in that test's own docblock, not something either file
+ *   asserts.
+ *
+ * Which builtin each throw site guards is knowledge of the implementation, and
+ * the table below is the only place this file holds any. What it asserts is the
+ * contract: the failure a caller is told about is the one that happened.
  */
 final class ChildProcessFailurePrefixTest extends TestCase
 {
+    /**
+     * Returning `false` is this function's documented way of reporting that it
+     * could not start the command, and `$pipes` is left with nothing in it. The
+     * name is spelled plainly, so this line carries an entry in
+     * `SubprocessReadsAreDrainedConcurrentlyTest::ENTRIES` — not because
+     * anything here spawns a child, but because that control refuses the name
+     * wherever it appears outside the module, which is what keeps a real
+     * undeclared spawn from hiding in a string.
+     *
+     * Nothing to delegate to on a second call: the module calls this once per
+     * run, and a run whose spawn failed has nothing further to spawn.
+     */
+    private const string SHADOW_SPAWN_FAILS = <<<'PHP'
+        function proc_open($command, $descriptors, &$pipes, $cwd = null, $environment = null)
+        {
+            $GLOBALS['reached'][] = __FUNCTION__;
+            $pipes = [];
+
+            return false;
+        }
+        PHP;
+
+    private const string SHADOW_SELECT_FAILS = <<<'PHP'
+        function stream_select(&$read, &$write, &$except, $seconds, $microseconds = null)
+        {
+            if (($GLOBALS['reached'] ?? []) !== []) {
+                return \stream_select($read, $write, $except, $seconds, $microseconds);
+            }
+
+            $GLOBALS['reached'][] = __FUNCTION__;
+
+            return false;
+        }
+        PHP;
+
+    /**
+     * Fails on the stream that actually carried bytes, not on the first stream
+     * it is handed. That is what makes "which stream failed" an axis this file
+     * can set: with a child writing only to stdout the failure falls on stdout,
+     * with one writing only to stderr it falls on stderr, and neither depends on
+     * the order `stream_select()` happens to report the two in.
+     *
+     * Reading for real first is what identifies the carrier. The bytes are then
+     * dropped, which costs nothing: the module is about to be told the read
+     * failed, and if it wrongly carries on, the next call delegates and the loop
+     * still reaches EOF.
+     */
+    private const string SHADOW_CARRYING_READ_FAILS = <<<'PHP'
+        function stream_get_contents($stream, $length = -1, $offset = -1)
+        {
+            $chunk = \stream_get_contents($stream, $length, $offset);
+            if ($chunk === '' || $chunk === false || ($GLOBALS['reached'] ?? []) !== []) {
+                return $chunk;
+            }
+
+            $GLOBALS['reached'][] = __FUNCTION__;
+
+            return false;
+        }
+        PHP;
+
+    /**
+     * The notice is the point, not decoration. The module suppresses the write
+     * with `@`, then reads `error_get_last()` to recover the errno, because that
+     * message is the only place the stream layer exposes it to userland. Raising
+     * one with an errno that is *not* 32 exercises the branch a real
+     * non-`EPIPE` write failure would take; returning `false` silently would
+     * instead land on the `??` fallback and leave that branch unmeasured.
+     */
+    private const string SHADOW_WRITE_FAILS = <<<'PHP'
+        function fwrite($stream, $data, $length = null)
+        {
+            if (($GLOBALS['reached'] ?? []) !== []) {
+                return \fwrite($stream, $data);
+            }
+
+            $GLOBALS['reached'][] = __FUNCTION__;
+            trigger_error(
+                'Write of ' . strlen($data) . ' bytes failed with errno=28 No space left on device',
+                E_USER_NOTICE,
+            );
+
+            return false;
+        }
+        PHP;
+
+    /**
+     * Loads the module by path, the way the vendor-less callers load it, with
+     * one shadow in place. Output goes out through `echo`, a language construct:
+     * `fwrite()` is one of the names a case shadows, and a harness printing
+     * through it would report nothing at all in that case.
+     *
+     * Three lines, in this order: the outcome, which shadow ran, and the
+     * message. The message comes last because it may itself contain newlines.
+     */
+    private const string HARNESS_TEMPLATE = <<<'PHP'
+        <?php
+
+        namespace Qualimetrix\Subprocess;
+
+        __SHADOW__
+
+        require_once __MODULE_PATH__;
+
+        try {
+            $result = ChildProcess::run(__COMMAND__, null, __STDIN__);
+            $outcome = 'RETURNED';
+            $detail = 'exit code ' . $result['exitCode'];
+        } catch (\Throwable $failure) {
+            $outcome = $failure::class;
+            $detail = $failure->getMessage();
+        }
+
+        echo $outcome, "\n", implode(',', $GLOBALS['reached'] ?? []), "\n", $detail;
+        PHP;
+
     /** @return list<array{string, string}> */
     public static function providePrefixes(): array
     {
@@ -59,6 +262,81 @@ final class ChildProcessFailurePrefixTest extends TestCase
             ['START_FAILURE_PREFIX', ChildProcess::START_FAILURE_PREFIX],
             ['READ_FAILURE_PREFIX', ChildProcess::READ_FAILURE_PREFIX],
             ['WRITE_FAILURE_PREFIX', ChildProcess::WRITE_FAILURE_PREFIX],
+        ];
+    }
+
+    /**
+     * Every throw site, and for each the operation whose failure it guards, the
+     * child it runs, the stdin it is given and the prefix the caller must get.
+     *
+     * The two read sites are separate entries although they share a prefix: a
+     * wrong constant at one is invisible in the other. Beyond that, the spread
+     * is what pins the axes named in the class docblock — the same shadow
+     * appears with and without a payload, and the read shadow appears against a
+     * child that writes only to stdout and one that writes only to stderr.
+     *
+     * The write site takes a payload in every case that reaches it, and cannot
+     * be measured without one: with no stdin the module closes that descriptor
+     * at once and never writes. The payload is short deliberately, so that a
+     * real `fwrite()` swallows it whole and the case reports `RETURNED` — the
+     * red this file wants when a shadow fails to take.
+     *
+     * @return array<string, array{string, list<string>, string, non-empty-string}>
+     */
+    public static function provideInjectedFailures(): array
+    {
+        $writesToStdout = [\PHP_BINARY, '-r', 'fwrite(STDOUT, "o");'];
+        $writesToStderr = [\PHP_BINARY, '-r', 'fwrite(STDERR, "e");'];
+
+        return [
+            'the spawn fails, with no stdin' => [
+                self::SHADOW_SPAWN_FAILS,
+                $writesToStdout,
+                '',
+                ChildProcess::START_FAILURE_PREFIX,
+            ],
+            'the spawn fails, with stdin to deliver' => [
+                self::SHADOW_SPAWN_FAILS,
+                $writesToStdout,
+                'payload',
+                ChildProcess::START_FAILURE_PREFIX,
+            ],
+            'the select over the pipes fails, with no stdin' => [
+                self::SHADOW_SELECT_FAILS,
+                $writesToStdout,
+                '',
+                ChildProcess::READ_FAILURE_PREFIX,
+            ],
+            'the select over the pipes fails, with stdin to deliver' => [
+                self::SHADOW_SELECT_FAILS,
+                $writesToStdout,
+                'payload',
+                ChildProcess::READ_FAILURE_PREFIX,
+            ],
+            'the stdout pipe cannot be read' => [
+                self::SHADOW_CARRYING_READ_FAILS,
+                $writesToStdout,
+                '',
+                ChildProcess::READ_FAILURE_PREFIX,
+            ],
+            'the stderr pipe cannot be read' => [
+                self::SHADOW_CARRYING_READ_FAILS,
+                $writesToStderr,
+                '',
+                ChildProcess::READ_FAILURE_PREFIX,
+            ],
+            'a pipe cannot be read, with stdin to deliver' => [
+                self::SHADOW_CARRYING_READ_FAILS,
+                $writesToStdout,
+                'payload',
+                ChildProcess::READ_FAILURE_PREFIX,
+            ],
+            'the write to stdin fails for a reason other than EPIPE' => [
+                self::SHADOW_WRITE_FAILS,
+                $writesToStdout,
+                'payload',
+                ChildProcess::WRITE_FAILURE_PREFIX,
+            ],
         ];
     }
 
@@ -95,5 +373,158 @@ final class ChildProcessFailurePrefixTest extends TestCase
                 );
             }
         }
+    }
+
+    /**
+     * The assertions run outermost fact first, so that a case which measured
+     * nothing says so instead of reporting a prefix mismatch: the harness has to
+     * have finished, then it has to have reached the shadow, and only then is
+     * the prefix it produced worth comparing.
+     *
+     * @param list<string> $command
+     * @param non-empty-string $expectedPrefix
+     */
+    #[Test]
+    #[DataProvider('provideInjectedFailures')]
+    public function itReportsAFailureWithThePrefixOfTheOperationThatFailed(
+        string $shadow,
+        array $command,
+        string $stdin,
+        string $expectedPrefix,
+    ): void {
+        $operation = self::operationOf($shadow);
+        $harness = $this->runWithShadow($shadow, $command, $stdin);
+
+        self::assertSame(
+            0,
+            $harness['exitCode'],
+            'The harness process did not finish cleanly, so it reported nothing about the prefix. Its stderr: '
+            . $harness['stderr'],
+        );
+
+        $parts = explode("\n", $harness['stdout'], 3);
+        self::assertCount(
+            3,
+            $parts,
+            'The harness printed no outcome. Its stdout was ' . var_export($harness['stdout'], true)
+            . ' and its stderr: ' . $harness['stderr'],
+        );
+        [$outcome, $reached, $detail] = $parts;
+
+        self::assertSame(
+            $operation,
+            self::shortNameOf($reached),
+            'This case did not measure what it claims to. It injects a failure of ' . $operation
+            . '(), and that function has to be the one that failed -- an empty value here means the shadow was '
+            . 'never reached, so the real function ran and the prefix below, if any, came from somewhere else. '
+            . 'The harness reported outcome ' . var_export($outcome, true) . ' and '
+            . var_export($detail, true),
+        );
+        self::assertSame(
+            RuntimeException::class,
+            $outcome,
+            'The injected failure of ' . $operation . '() was reached but not reported as a '
+            . RuntimeException::class . ', which the callers dispatching on a message prefix cannot see at all. '
+            . '`RETURNED` means run() carried on past the failure instead of raising: the throw site guarding '
+            . $operation . '() no longer throws. The harness said ' . var_export($detail, true),
+        );
+        self::assertStringStartsWith(
+            $expectedPrefix,
+            $detail,
+            'The failure of ' . $operation . '() was raised with the wrong prefix, so every caller dispatching '
+            . 'on it is told a cause that did not happen. Expected '
+            . var_export($expectedPrefix, true) . ', got ' . var_export($detail, true),
+        );
+    }
+
+    /**
+     * The operation a shadow makes fail, read out of the shadow itself rather
+     * than named a second time beside it. Two reasons, and the first is the
+     * governing one: every spelling of a subprocess spawner's name outside the
+     * module needs its own line-anchored entry in
+     * `SubprocessReadsAreDrainedConcurrentlyTest::ENTRIES`, and naming the
+     * operation again here would multiply those entries — each one going stale
+     * the next time a line is inserted above it. Second, a name written twice
+     * can disagree with itself; this one cannot.
+     *
+     * Refuses rather than guesses: a shadow is exactly one function declaration,
+     * and anything else means the table above no longer holds what this method
+     * assumes.
+     */
+    private static function operationOf(string $shadow): string
+    {
+        self::assertSame(
+            1,
+            preg_match_all('/^function (\\w+)\\(/m', $shadow, $matches),
+            'A shadow must declare exactly one function, whose name is the operation the case makes fail: '
+            . $shadow,
+        );
+
+        return $matches[1][0];
+    }
+
+    /**
+     * `__FUNCTION__` inside the shadow reports the name the declaration got,
+     * which is namespaced — the whole point being that it sits in the module's
+     * namespace rather than the global one.
+     */
+    private static function shortNameOf(string $function): string
+    {
+        $separator = strrpos($function, '\\');
+
+        return $separator === false ? $function : substr($function, $separator + 1);
+    }
+
+    /**
+     * Runs the harness through the module itself, which is deliberate: the
+     * transport is a plain successful run, a shape every other case in this
+     * directory already covers, and a defect in it makes these cases red rather
+     * than green. It also keeps this file from opening a child of its own.
+     *
+     * No deadline supervision, unlike the drain cases, and the reason is a
+     * property of the shadows rather than of the module: each one fails once and
+     * then delegates, so the harness terminates whether or not the module raises
+     * at the site under measurement.
+     *
+     * @param list<string> $command
+     *
+     * @return array{exitCode: int, stdout: string, stderr: string}
+     */
+    private function runWithShadow(string $shadow, array $command, string $stdin): array
+    {
+        $harnessPath = tempnam(sys_get_temp_dir(), 'qmx-failure-prefix-harness-');
+        self::assertIsString($harnessPath);
+
+        try {
+            $source = str_replace(
+                ['__SHADOW__', '__MODULE_PATH__', '__COMMAND__', '__STDIN__'],
+                [
+                    $shadow,
+                    var_export($this->modulePath(), true),
+                    var_export($command, true),
+                    var_export($stdin, true),
+                ],
+                self::HARNESS_TEMPLATE,
+            );
+            self::assertNotFalse(file_put_contents($harnessPath, $source));
+
+            return ChildProcess::run([\PHP_BINARY, $harnessPath]);
+        } finally {
+            @unlink($harnessPath);
+        }
+    }
+
+    /**
+     * Resolved from this file's own directory rather than through the
+     * autoloader, so that a copy of this directory measures the module beside
+     * it. Measured, and only this far: a throw-site swap planted in a copy
+     * reddens that copy's own run.
+     */
+    private function modulePath(): string
+    {
+        $path = realpath(\dirname(__DIR__) . '/ChildProcess.php');
+        self::assertIsString($path);
+
+        return $path;
     }
 }

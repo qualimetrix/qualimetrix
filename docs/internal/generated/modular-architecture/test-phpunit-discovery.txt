@@ -1070,6 +1070,14 @@ Available tests:
  - Qualimetrix\Subprocess\Tests\ChildProcessDrainTest::itTreatsAChildThatNeverReadsStdinAsASuccess
  - Qualimetrix\Subprocess\Tests\ChildProcessFailurePrefixTest::itGivesEveryFailureANonEmptyPrefix
  - Qualimetrix\Subprocess\Tests\ChildProcessFailurePrefixTest::itKeepsThePrefixesTellableApart
+ - Qualimetrix\Subprocess\Tests\ChildProcessFailurePrefixTest::itReportsAFailureWithThePrefixOfTheOperationThatFailed"a pipe cannot be read, with stdin to deliver"
+ - Qualimetrix\Subprocess\Tests\ChildProcessFailurePrefixTest::itReportsAFailureWithThePrefixOfTheOperationThatFailed"the select over the pipes fails, with no stdin"
+ - Qualimetrix\Subprocess\Tests\ChildProcessFailurePrefixTest::itReportsAFailureWithThePrefixOfTheOperationThatFailed"the select over the pipes fails, with stdin to deliver"
+ - Qualimetrix\Subprocess\Tests\ChildProcessFailurePrefixTest::itReportsAFailureWithThePrefixOfTheOperationThatFailed"the spawn fails, with no stdin"
+ - Qualimetrix\Subprocess\Tests\ChildProcessFailurePrefixTest::itReportsAFailureWithThePrefixOfTheOperationThatFailed"the spawn fails, with stdin to deliver"
+ - Qualimetrix\Subprocess\Tests\ChildProcessFailurePrefixTest::itReportsAFailureWithThePrefixOfTheOperationThatFailed"the stderr pipe cannot be read"
+ - Qualimetrix\Subprocess\Tests\ChildProcessFailurePrefixTest::itReportsAFailureWithThePrefixOfTheOperationThatFailed"the stdout pipe cannot be read"
+ - Qualimetrix\Subprocess\Tests\ChildProcessFailurePrefixTest::itReportsAFailureWithThePrefixOfTheOperationThatFailed"the write to stdin fails for a reason other than EPIPE"
  - Qualimetrix\SuppressionSnapshot\Tests\SuppressionSnapshotKeyTest::itAcceptsEquivalentSequentialAndParallelMeasurements
  - Qualimetrix\SuppressionSnapshot\Tests\SuppressionSnapshotKeyTest::itBuildsADifferentKeyWhenOnlySeverityChanges
  - Qualimetrix\SuppressionSnapshot\Tests\SuppressionSnapshotKeyTest::itBuildsTheSameKeyForTwoDirectiveLocatorsAtDifferentLines
