@@ -202,3 +202,37 @@ in its own subject; there is no collateral to explain.
 Thirty documents in which a top-level key and the level key it reaches were both
 written, both applied their value, and the grid reported **"both effects
 present"** — because the two keys had been written the same number.
+
+## Run #2 — the residue, measured after review
+
+Review found what the three properties did not: P0 repairs the numeric instance
+of "the instrument reports agreement where it is blind" and leaves cells of the
+same instance in the grid it regenerates. The run now counts them.
+
+    axis B documents  446 document(s) over 465 cell(s), 93 defective over 111
+    axis B vacuous    11 cell(s) whose two sides moved a shared pointer to one
+                      literal, 11 of them green
+
+Every verdict is identical to run #1, joined on `axis + row + point`: the count
+observes and changes nothing. The number was reached by two independent routes —
+a reviewer's `awk` over the committed grid and the frozen observations, and the
+stand's own per-pointer comparison through `Classifier::leaves()` — and they
+agree.
+
+**What the eleven are.** Sides written `bool` or a closed word set, at kinds this
+round is about, where both sides moved the same pointer to the same literal:
+`effectSurvives()` is then true of both whichever key won, and the `compose`
+branch answers "both effects present". No declaration can separate them, because
+`bool` has two values and one is a level default.
+
+**What P0 does not do about them.** It does not convert the verdict. That needs a
+per-side, per-pointer sensitivity gate in `Classifier::pair()`, which
+`Stand::before()` also uses to re-judge the frozen half — so it moves the floor,
+and it belongs with the package that owns that file. Two properties the gate must
+have, both measured here rather than assumed: for nine of the eleven the whole
+texts of `onlyA` and `onlyB` differ, so the existing whole-text `SIDES_ALIKE`
+comparison would not fire; and the floor has to be re-read in the same change.
+
+**The honest reading of the three properties.** They hold, and they were the
+wrong three to stop at. Property 1 says which sides could be told apart;
+nothing said what the cells that could not are still publishing.

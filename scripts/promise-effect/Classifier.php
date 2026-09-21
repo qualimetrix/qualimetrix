@@ -684,8 +684,18 @@ final class Classifier
         return true;
     }
 
-    /** @return array<string, string> */
-    private static function leaves(string $json): array
+    /**
+     * One observation flattened to `pointer => literal`.
+     *
+     * Public because the run summary asks the same question of the same
+     * strings when it counts the cells whose two sides moved a shared pointer
+     * to the same literal. A second flattener written next door would be a
+     * second parser of one format, and this file already carries what that
+     * would have copied.
+     *
+     * @return array<string, string>
+     */
+    public static function leaves(string $json): array
     {
         /** @var mixed $decoded */
         $decoded = json_decode($json, true);

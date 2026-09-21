@@ -38,12 +38,42 @@ threshold` occurs under both kinds.
 
 **DoD, in two parts, because the second is what revision 3 got wrong.**
 
-First: distinguishable magnitudes per side **wherever a third value exists**,
-declared rather than computed, in the file whose subject this already is; the
-duplicate documents counted once. "Wherever a third value exists" is not a hedge —
-a `bool` has two values and one of them is the level default, and the `scope`
-enum's `all` is the default too, so six cells cannot be made distinguishable by any
-declaration. They are excluded from the DoD by name rather than left to fail it.
+First: distinguishable magnitudes per side **wherever a third value exists and
+a shared pointer makes it matter**, declared rather than computed, in the file
+whose subject this already is.
+
+Revision 4 said "wherever a third value exists" and gave every exception the
+same reason. Measured, there are two. `bool` has two values and one of them is
+the level default; the `scope` enum is `all`/`application` and `all` is the
+default — for those no third value exists at all. But `severity` is
+`info|warning|error` and `mode` is `ignore|warn|error`, and there a third word
+is there for the taking; what those five cells lack is a pointer their two
+sides share, and two of them are `refuse` promises where the value decides
+nothing. Right outcome, and revision 4 had the wrong reason for half of it.
+
+**"The duplicate documents counted once" was not delivered, and P0 says so
+rather than passing off the substitute.** `PairRow::key()` carries the kind
+deliberately — its docblock records that removing it collapses nineteen rows
+onto thirteen and that a divergence between two kinds "would have been silently
+averaged" — so a row's promise belongs to its kind and the count stays keyed by
+cell. What P0 adds is the second number: the run reports axis B's documents
+beside its cells, 446 over 465, 93 defective over 111. Wherever this file counts
+documents it means the former.
+
+**And the residue is not six cells.** Measured on run #1: of the 465 axis-B
+cells, 50 took no per-side magnitude, and twelve of those sit at a kind this
+round is about — eleven of them published as `COEXISTENCE_OK, "both effects
+present"` on a question nothing could answer. The six named later in this file
+are the cells that stay unobservable **after the cure under its assigned
+values**, which is a different set answering a different question; running the
+two together is what produced the number six.
+
+P0 counts this residue in its run output — the `axis B vacuous` line — rather
+than arguing it, and does not convert it. Turning a green verdict into a gate
+means a sensitivity branch in `Classifier::pair()`, which also re-judges the
+frozen half and therefore moves the floor; that is the obligation of the package
+owning that file, and `02-cure.md`'s P2 carries it with the two properties the
+gate must have.
 
 Second: **P0 invalidates the table below and must re-derive it.** Every verdict in
 `measurement/axis-b-rows.tsv` was measured at the canonical magnitudes P0 removes,

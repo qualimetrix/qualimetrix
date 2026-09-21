@@ -814,6 +814,84 @@ if (\in_array('B', $axes, true)) {
         \count($defectiveDocuments),
         \count(array_filter($cells, static fn(Cell $cell): bool => $cell->axis === 'B' && $cell->defect)),
     );
+
+    // THE RESIDUE OF THE PER-SIDE MAGNITUDE, COUNTED RATHER THAN ARGUED.
+    //
+    // A side whose every moved leaf was moved to the SAME literal by the other
+    // side has a survival nothing could have refuted: `both` carries that
+    // literal whichever key won, so `Classifier::effectSurvives()` is true of
+    // it either way and the compose branch answers "both effects present".
+    // That is a green verdict on an unanswerable question, and it is the exact
+    // state the per-side magnitude was added to remove.
+    //
+    // It cannot be removed everywhere. `bool` has two values and one is a
+    // level default; a closed set of words is no wider. Those sides get no
+    // third magnitude and no declaration can give them one. What must not
+    // happen is that they go unnamed: the run prints 111 for the cells it can
+    // judge, and until this line it printed nothing for the cells it cannot.
+    //
+    // The verdict itself is NOT changed here. A sensitivity gate belongs in
+    // `Classifier::pair()`'s compose branch, which also re-judges the frozen
+    // half, so it moves the floor -- it is named as an obligation of the
+    // package that owns that file rather than smuggled in beside a count.
+    $sides = [];
+
+    foreach ($stand->rawObservations() as [$axis, $key, $side, , $text]) {
+        if ($axis === 'B') {
+            $sides[$key][$side] = $text;
+        }
+    }
+
+    $vacuous = [];
+
+    foreach ($sides as $key => $observation) {
+        if (!isset($observation['omitted'], $observation['onlyA'], $observation['onlyB'])) {
+            continue;
+        }
+
+        $omitted = Classifier::leaves($observation['omitted']);
+        $a = Classifier::leaves($observation['onlyA']);
+        $b = Classifier::leaves($observation['onlyB']);
+
+        foreach ([[$a, $b], [$b, $a]] as [$moved, $other]) {
+            $shared = false;
+
+            foreach ($moved as $pointer => $literal) {
+                if (($omitted[$pointer] ?? null) === $literal) {
+                    continue;
+                }
+
+                if (($other[$pointer] ?? null) !== $literal) {
+                    $shared = false;
+
+                    break;
+                }
+
+                $shared = true;
+            }
+
+            if ($shared) {
+                $vacuous[$key] = true;
+
+                break;
+            }
+        }
+    }
+
+    $green = 0;
+
+    foreach ($cells as $cell) {
+        if ($cell->axis === 'B' && isset($vacuous[$cell->key]) && !$cell->defect) {
+            ++$green;
+        }
+    }
+
+    printf(
+        "  %-22s %d cell(s) whose two sides moved a shared pointer to one literal, %d of them green\n",
+        'axis B vacuous',
+        \count($vacuous),
+        $green,
+    );
 }
 
 // Printed apart from the verdict counts because it is a fact about the

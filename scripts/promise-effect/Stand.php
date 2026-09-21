@@ -1350,11 +1350,12 @@ final class Stand
      * One side of a pair, written with a value the product can be seen to read
      * differently from the key being absent.
      *
-     * The canonical magnitude is tried first and its observation is the one
-     * kept, so the search costs a second probe only where that magnitude turns
-     * out to be what the product already does. Where NOTHING declared moves
-     * the object the canonical write stands and the observation is stored as
-     * it came: the stand does not decide here that the row is unmeasurable —
+     * The first candidate is tried first and its observation is the one kept,
+     * so the search costs a second probe only where that magnitude turns out
+     * to be what the product already does. Where NOTHING declared moves the
+     * object that first candidate stands — the canonical write for side A, the
+     * per-side one for side B — and the observation is stored as it came: the
+     * stand does not decide here that the row is unmeasurable —
      * {@see Classifier::pair()} reads that off the four stored sides, so the
      * frozen half is judged by the same rule as the live one.
      *
@@ -1388,7 +1389,7 @@ final class Stand
         // stays true for those keys instead of claiming a per-side write that
         // was never made. Both lists are pure; neither runs the product.
         $perSide = $sideLiterals !== null && $candidates[0] !== $this->pairCandidates($rule, $written)[0];
-        $first = $perSide ? 'per-side magnitude' : 'canonical magnitude';
+        $first = $perSide ? self::MAGNITUDE_PER_SIDE : self::MAGNITUDE_CANONICAL;
         $canonical = $this->pairWrite($rule, [$written => $candidates[0]]);
 
         if ($canonical['object']->accepted() && $canonical['object']->text !== $omitted->text) {
@@ -1396,15 +1397,21 @@ final class Stand
         }
 
         /** @var mixed $candidate */
-        foreach (\array_slice($candidates, 1) as $candidate) {
+        foreach (\array_slice($candidates, 1) as $rank => $candidate) {
             $taken = $this->pairWrite($rule, [$written => $candidate]);
 
             if ($taken['object']->accepted() && $taken['object']->text !== $omitted->text) {
-                return [$candidate, $taken, 'alternate magnitude'];
+                // Side B's list is `[per-side, canonical, …alternates]`, so the
+                // FIRST fallback there is the canonical write, not an
+                // alternate. Naming it "alternate magnitude" would make the
+                // summary that counts these labels report a canonical write as
+                // a declared second value -- and the counting is by text,
+                // which is why {@see Classifier::SIDES_ALIKE} is a constant.
+                return [$candidate, $taken, $perSide && $rank === 0 ? self::MAGNITUDE_CANONICAL : self::MAGNITUDE_ALTERNATE];
             }
         }
 
-        return [$candidates[0], $canonical, $first . ', which no declared value here can improve on'];
+        return [$candidates[0], $canonical, $first . self::MAGNITUDE_EXHAUSTED];
     }
 
     /**
@@ -1680,6 +1687,23 @@ final class Stand
             . ($leafKey === null ? 'no leaf was named' : 'effect-magnitudes.tsv declares nothing for its leaf'),
         );
     }
+
+    /**
+     * The three magnitudes a pair side may be written with, and the suffix for
+     * a side nothing declared could move.
+     *
+     * Constants rather than literals because the run summary and every report
+     * of property 1 count them out of `decided_by`, and a summary that
+     * recognised the state by matching prose would silently stop counting the
+     * day the prose changed -- the reason {@see Classifier::SIDES_ALIKE} exists.
+     */
+    public const string MAGNITUDE_CANONICAL = 'canonical magnitude';
+
+    public const string MAGNITUDE_PER_SIDE = 'per-side magnitude';
+
+    public const string MAGNITUDE_ALTERNATE = 'alternate magnitude';
+
+    public const string MAGNITUDE_EXHAUSTED = ', which no declared value here can improve on';
 
     private static function leafOf(string $key): string
     {

@@ -152,13 +152,26 @@ moved leaves intact and returns `COEXISTENCE_OK, "both effects present"`.
 its candidate list and its fallback semantics do not move; side B tries the
 declared per-side literal first and keeps the existing candidates behind it.
 
-The selector is declared per form and only for forms that admit a third value.
-`bool` has two and one of them is a level default; the `scope` enum has two and
-one of them is the default. Those get no `side_b` row, `writeForShape()` finds no
-match in the per-side set and answers null, and side B degrades to today's
-candidates with no special case in the code. That is how the six permanently
-unobservable cells stay unobservable **by the shape of their values** rather than
-by an exclusion list.
+The selector is declared per form, and the forms that get no row get none for
+two different reasons — revision 4 gave them both the first one and was wrong
+about half of them.
+
+*No third value exists.* `bool` has two and one of them is a level default; the
+`scope` enum is `all`/`application` and `all` is the default. Nothing declarable
+can tell those sides apart.
+
+*A third value exists and would decide nothing.* `severity` is
+`info|warning|error` and `mode` is `ignore|warn|error`, so a third word is there
+for the taking. The five cells that write them — `enabled × severity`,
+`empty-template-severity × severity`, `potential-shadow-severity × severity`,
+`enabled × mode`, `enabled × unused-directive-severity` — share no pointer
+between their two sides, and two of them are `refuse` promises where the value
+decides nothing at all. A per-side word there would be a magnitude spent where
+no question is being asked, and `effect-magnitudes.tsv` has no side dimension on
+`option_leaf` rows to spend it through.
+
+Either way the code needs no special case: `writeForShape()` finds no match in
+the per-side set, answers null, and side B degrades to today's candidates.
 
 **One magnitude, many spellings — the rule `forms.tsv` already follows and a
 per-form table invites breaking.** The canonical write is 7331 as an int, `7331.9`
@@ -251,18 +264,32 @@ needing no predicted verdict:
    categories appears. Inside the cure's radius the exceptions are 23 cells — 18
    on `enabled` and 5 on `scope` — which is how many cells the two valueless
    forms reach, not a list anyone maintains.
-2. **Monotonicity.** Axis B's defect count may rise or stay, never fall, and every
-   newly red cell is one whose two sides were indistinguishable at a contested
-   leaf on run #0. This follows from `Classifier::effectSurvives()`: at a leaf both
-   sides move to the same literal, `both` carries that literal whichever key won,
-   so both sides read as surviving — the branch is green regardless of the truth.
-   Giving the sides different literals can only reveal a loss, never hide one.
-   The one way it could fall is a `side_b` literal that is itself a product
-   default, which would make its side inert and move the cell to NOT OBSERVABLE;
-   `pairSide()`'s fallback is what forecloses it, by dropping such a side back to
-   the canonical candidate. **This is an argument over the code, and run #1 is
-   where it is checked** — the report states both, and a cell that goes from
-   MISCOMPOSED to anything else falsifies P0.
+2. **Monotonicity, proved for one branch and measured for the other three.**
+   Axis B's defect count may rise or stay, never fall, and every newly red cell
+   is one whose two sides were indistinguishable at a contested leaf on run #0.
+
+   *Proved* for `Classifier::pair()`'s `compose` branch and its inert gate: at a
+   leaf both sides move to the same literal, `both` carries that literal
+   whichever key won, so `effectSurvives()` is true of both sides and the branch
+   is green regardless of the truth. Giving the sides different literals can
+   only reveal a loss, never hide one. A `side_b` literal that was itself a
+   product default would make its side inert and move the cell to NOT
+   OBSERVABLE instead; `pairSide()`'s fallback forecloses that by dropping such
+   a side back to the canonical candidate.
+
+   *Not proved* for the three exits the argument never reaches, and revision 4
+   said "the one way it could fall" as though it had. `refuse` reads a refusal
+   as green and never consults `effectSurvives()`. The `!$both->accepted()` and
+   `!$onlyX->accepted()` exits turn on acceptance, which is value-sensitive —
+   5519 is a value 7331 was not. And `one-wins:` has no acceptance gate at all,
+   so a refused side-B write could make `both->text === expected->text` read as
+   "the promised key won".
+
+   None of the three fired: run #1 measured zero cells in the red-to-green
+   direction, and no axis-B MISCOMPOSED reads "refused where the ledger promised
+   composition". **That is a measurement holding them, not an argument**, and
+   the distinction is the finding. A cell that goes from MISCOMPOSED to anything
+   else falsifies P0.
 3. **Axes A, C, D and E unchanged**, cell for cell.
 
 ### The duplicate, counted and reported
@@ -379,7 +406,20 @@ same false witness one layer up.
 **Content.** The row-by-row account in `03-acceptance.md` — which rows take
 `compose`, which take `one-wins:<key>`, which need the new `deeper-wins:<key>`
 value — plus that value's constant, its classifier branch and its vocabulary
-test. `scripts/promise-effect/` is in this package's file set because the new
+test.
+
+**And the sensitivity gate P0 could only count.** The `compose` branch has none:
+a side whose every moved leaf was moved to the same literal by the other side
+survives whatever the merge did, so the branch answers "both effects present" on
+a question nothing could answer. `bool` and the closed word sets admit no third
+magnitude, so P0 cannot make those sides differ and instead prints their number
+— `axis B vacuous` in the run output. P2 owns `Classifier.php` and turns that
+count into a verdict. Two properties the gate must have, both measured rather
+than assumed: it is per-side and per-pointer, because for nine of the eleven the
+whole texts of `onlyA` and `onlyB` differ and the existing whole-text
+`SIDES_ALIKE` comparison would not fire; and it moves the frozen half too, since
+`Stand::before()` re-judges the shot with the same classifier — so the floor is
+re-read in the same package, not discovered after it. `scripts/promise-effect/` is in this package's file set because the new
 value cannot be added to the ledger without the branch that awards it: the guard
 landed by #68 refuses a value no branch recognises, deliberately.
 
