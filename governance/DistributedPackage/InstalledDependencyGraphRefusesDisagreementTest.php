@@ -64,7 +64,7 @@ final class InstalledDependencyGraphRefusesDisagreementTest extends TestCase
                 'One package moved sides did not change the answer, so the accepting half proves nothing.',
             );
         } finally {
-            self::removeDirectory($root);
+            ScratchTree::remove($root);
         }
     }
 
@@ -132,7 +132,7 @@ final class InstalledDependencyGraphRefusesDisagreementTest extends TestCase
             self::assertStringContainsString('installed.json', $refusal);
             self::assertStringContainsString('composer install', $refusal);
         } finally {
-            self::removeDirectory($root);
+            ScratchTree::remove($root);
         }
     }
 
@@ -163,7 +163,7 @@ final class InstalledDependencyGraphRefusesDisagreementTest extends TestCase
             self::assertStringContainsString('commit the lock', $refusal);
             self::assertStringNotContainsString('run composer install', $refusal);
         } finally {
-            self::removeDirectory($root);
+            ScratchTree::remove($root);
         }
     }
 
@@ -195,7 +195,7 @@ final class InstalledDependencyGraphRefusesDisagreementTest extends TestCase
             self::assertStringContainsString('no consumer resolves', $refusal);
             self::assertStringContainsString('not up to date', $refusal, 'Composer\'s own words are what name the cure.');
         } finally {
-            self::removeDirectory($root);
+            ScratchTree::remove($root);
         }
     }
 
@@ -213,7 +213,7 @@ final class InstalledDependencyGraphRefusesDisagreementTest extends TestCase
 
             return self::refusalFrom($root);
         } finally {
-            self::removeDirectory($root);
+            ScratchTree::remove($root);
         }
     }
 
@@ -235,12 +235,7 @@ final class InstalledDependencyGraphRefusesDisagreementTest extends TestCase
      */
     private static function fixture(): string
     {
-        $root = sys_get_temp_dir() . '/qmx-graph-guard-' . bin2hex(random_bytes(6));
-
-        self::assertTrue(mkdir($root, 0777, true));
-
-        $resolved = realpath($root);
-        self::assertIsString($resolved);
+        $resolved = ScratchTree::create('qmx-graph-guard-');
 
         self::git(['git', 'init', '--quiet', $resolved]);
 
@@ -325,20 +320,5 @@ final class InstalledDependencyGraphRefusesDisagreementTest extends TestCase
             $result['exitCode'],
             implode(' ', $command) . ' failed, so nothing here was checked:' . \PHP_EOL . $result['stderr'],
         );
-    }
-
-    private static function removeDirectory(string $path): void
-    {
-        if (!is_dir($path)) {
-            return;
-        }
-
-        foreach (array_diff((array) scandir($path), ['.', '..']) as $entry) {
-            $child = $path . '/' . $entry;
-
-            is_dir($child) && !is_link($child) ? self::removeDirectory($child) : unlink($child);
-        }
-
-        rmdir($path);
     }
 }
