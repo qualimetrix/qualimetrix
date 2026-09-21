@@ -61,6 +61,27 @@ honest shapes and following each chain rather than only locating its first link:
 | qmx on its own `src/` (7 parents)             | 7 reach a root                 | same — it *is* the root                 |
 | a library inside a shared vendor (22 parents) | 8 root, **14 no file**         | 20 root, 1 broke, 1 no file             |
 
+**Stage 03 re-measured this on the landed code and two rows above are wrong.**
+qmx's own `src/` has **5** external parents, not 7, all reaching a root — the
+external non-builtin parents are `AbstractLogger`, `Application`, `Command`,
+`InputDefinition` and `NodeVisitorAbstract`, cross-checked by enumerating
+`extends` in `src/` without the probe. Why the prototype saw 7 was not
+re-measured on the old tree; the likely cause, at medium confidence, is that it
+predates stage 01, which stopped routing in-project parents to external
+resolution. The shared-vendor row's "1 no map" **cannot occur** under the code
+that landed: `isConfigured()` is fixed once per run before any chain is walked,
+so a run is entirely no-map or not at all, and a mixed result is structurally
+impossible. That row was taken on a private tree this repository does not have
+and is not reproducible here.
+
+Its "1 broke" is a different matter and **stands**. The `FileLocator` chain
+itself was not re-measured — the tree it was taken on is gone — but the shape it
+claims was reproduced on a constructed partial install: a package the install
+carries whose own parent's package it does not, giving `brokeAt(1)` and a
+published DIT of 2 where a genuine root gives 1. So a break deeper than zero is
+an ordinary consequence of a partly installed `vendor/`, not a prototype
+artifact. The measured distribution that replaces the rest of this table is in
+[03-observability.md](03-observability.md).
 
 Two things follow. The resolution rule is a decision, not a detail: the nearest
 `composer.json` of a package inside `vendor/` describes only that package. And
@@ -82,7 +103,7 @@ so stage 02 carries name resolution as a requirement rather than a footnote.
 | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | [01 — delete](01-delete.md)               | the per-file resolver is dead after #111; remove it, and stop sending in-project parents to external resolution |
 | [02 — resolver](02-resolver.md)           | the autoload map as a subject, and the parsing walk that consumes it                                            |
-| [03 — observability](03-observability.md) | make the three chain outcomes distinguishable                                                                   |
+| [03 — observability](03-observability.md) | keep the value, and say when it is a floor the run could not finish reading                                     |
 
 Stage 01 is measurable without any parser and proves deletion is safe; it is
 also the cheapest thing to review. It carries one item that is not about

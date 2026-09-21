@@ -186,9 +186,11 @@ where the map consumes it — and with it two addresses that are easy to miss:
 - A classmap-only parent resolves — `PHPUnit\Framework\TestCase` is the
   measured example.
 - A relatively-written parent resolves, which is what `NameResolver` buys.
-- Each of the three states has a case, including a chain that breaks partway;
-  `Symfony\Component\DependencyInjection\Kernel\FileLocator` is the measured
-  real example.
+- Each of the three states has a case, including a chain that breaks partway.
+  The `FileLocator` instance named here came from a prototype on a tree this
+  repository does not have and was never re-measured; stage 03 reproduced the
+  shape instead, on a constructed partial install — a package the install
+  carries whose own parent's package it does not.
 - Determinism: two runs agree; `--workers=0` agrees with `--workers=4`.
 
 ## Definition of Done
