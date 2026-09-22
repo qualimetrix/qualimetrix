@@ -8820,6 +8820,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\GithubActionsFormatterTest::itReturnsNoneAsDefaultGroupBy
  - Qualimetrix\Tests\Reporting\Unit\Formatter\GithubActionsFormatterTest::itUsesCodeAsTitle
  - Qualimetrix\Tests\Reporting\Unit\Formatter\GithubActionsFormatterTest::itUsesNoticeCommandForInfoFinding
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itCarriesTheDocumentationPointerWhenHealthDataIsPresent
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itDoesNotShowContributorsInNarrowTerminal
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itFormatsOnNarrowTerminal
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itFormatsWithAllDimensions
@@ -9090,6 +9091,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HealthBarRendererTest::itRendersOverallAndDimensions
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HealthBarRendererTest::itRendersScaleExplanationWhenDifferentThresholds
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HealthBarRendererTest::itRendersUnicodeBar
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HintRendererTest::itAddsTheDocumentationPointerAsItsOwnLineBelowHints
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HintRendererTest::itAlwaysShowsHtmlFormatHint
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HintRendererTest::itEscapesBackslashesInNamespaceHint
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HintRendererTest::itHidesHintDetailInDetailMode
@@ -9165,6 +9167,8 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itPublishesNeverMatchedSuppressorsSeparatelyFromSuppressedFindings
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itPublishesTheMultisetNoteSoCountsAreNotMisreadAsFindings
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itTreatsAMissingCompositionAsEmptyRatherThanFailing
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itCarriesTheDocumentationPointerInDetailMode
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itCarriesTheDocumentationPointerInFlatMode
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itColorsSummaryGreenForNoFindings
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itColorsSummaryRedForErrors
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itFormatsClassLevelFinding
@@ -9194,6 +9198,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itFormatsGroupedByFile
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itFormatsGroupedByRule
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itFormatsGroupedBySeverity
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itInheritsTheDocumentationPointerFromTextFormatter
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itOutputsDebtBreakdown
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itReturnsDefaultGroupByFile
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itReturnsTextVerboseName

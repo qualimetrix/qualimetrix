@@ -2469,6 +2469,7 @@ Qualimetrix\Reporting\Formatter\Health\HealthCoverageNarrator	Reporting	Qualimet
 Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem	Analysis.Evidence.ComputedMetrics.Health	contract
 Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore	Analysis.Evidence.ComputedMetrics.Health	contract
 Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter	Reporting	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract
+Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter	Reporting	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter	Reporting	Qualimetrix\Core\Version	Core.Neutral	contract
 Qualimetrix\Reporting\Formatter\Html\HtmlDebtCalculator	Reporting	Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator	Analysis.Evidence.Prioritization	contract
 Qualimetrix\Reporting\Formatter\Html\HtmlFindingPartitioner	Reporting	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
@@ -2516,6 +2517,7 @@ Qualimetrix\Reporting\Formatter\Summary\HealthBarRenderer	Reporting	Qualimetrix\
 Qualimetrix\Reporting\Formatter\Summary\HealthBarRenderer	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore	Analysis.Evidence.ComputedMetrics.Health	contract
 Qualimetrix\Reporting\Formatter\Summary\HealthBarRenderer	Reporting	Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	contract
 Qualimetrix\Reporting\Formatter\Summary\HealthBarRenderer	Reporting	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
+Qualimetrix\Reporting\Formatter\Summary\HintRenderer	Reporting	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Reporting\Formatter\Summary\OffenderListRenderer	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown	Analysis.Evidence.ComputedMetrics.Health	contract
 Qualimetrix\Reporting\Formatter\Summary\OffenderListRenderer	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender	Analysis.Evidence.ComputedMetrics.Health	contract
 Qualimetrix\Reporting\Formatter\Summary\SummaryFormatter	Reporting	Qualimetrix\Core\Version	Core.Neutral	contract
@@ -2528,6 +2530,7 @@ Qualimetrix\Reporting\Formatter\Suppressed\SuppressedFormatter	Reporting	Qualime
 Qualimetrix\Reporting\Formatter\TextFormatter	Reporting	Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator	Analysis.Evidence.Prioritization	contract
 Qualimetrix\Reporting\Formatter\TextFormatter	Reporting	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
 Qualimetrix\Reporting\Formatter\TextFormatter	Reporting	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
+Qualimetrix\Reporting\Formatter\TextFormatter	Reporting	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Reporting\Formatter\TextFormatter	Reporting	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract
 Qualimetrix\Reporting\Formatter\TextFormatter	Reporting	Qualimetrix\Core\Version	Core.Neutral	contract
 Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface	Reporting.GraphProjection	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	contract

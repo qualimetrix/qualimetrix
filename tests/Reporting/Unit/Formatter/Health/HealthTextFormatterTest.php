@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCo
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
@@ -61,6 +62,20 @@ final class HealthTextFormatterTest extends TestCase
         self::assertStringContainsString('Health Report', $output);
         self::assertStringContainsString('No health data available', $output);
         self::assertStringContainsString('computed metrics enabled', $output);
+        self::assertStringContainsString(ProductIdentity::pointerText(), $output);
+    }
+
+    #[Test]
+    public function itCarriesTheDocumentationPointerWhenHealthDataIsPresent(): void
+    {
+        $report = $this->createReportWithHealthScores([
+            'overall' => new HealthScore('overall', 67.4, 'Good', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+        ]);
+
+        $context = new FormatterContext(useColor: false);
+        $output = $this->formatter->format($report, $context);
+
+        self::assertStringContainsString(ProductIdentity::pointerText(), $output);
     }
 
     #[Test]

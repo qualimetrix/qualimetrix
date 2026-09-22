@@ -14853,6 +14853,18 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Health\\HealthTextFormatter"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Summary\\HintRenderer"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\TextFormatter"
         }
       ]
     },

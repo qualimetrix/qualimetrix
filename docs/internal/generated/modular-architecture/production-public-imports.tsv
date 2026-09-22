@@ -1979,6 +1979,9 @@ Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Reporting\Formatt
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Reporting\Formatter\Summary\HealthBarRenderer	Reporting	src/Reporting/Formatter/Summary/HealthBarRenderer.php	ast-name
 Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Infrastructure\Console\Application	Infrastructure.Console	src/Infrastructure/Console/Application.php	ast-name
 Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter	Infrastructure.Console	src/Infrastructure/Console/Refusal/RefusalPresenter.php	ast-name
+Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter	Reporting	src/Reporting/Formatter/Health/HealthTextFormatter.php	ast-name
+Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Reporting\Formatter\Summary\HintRenderer	Reporting	src/Reporting/Formatter/Summary/HintRenderer.php	ast-name
+Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Reporting\Formatter\TextFormatter	Reporting	src/Reporting/Formatter/TextFormatter.php	ast-name
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule	Analysis.Evidence.ComputedMetrics	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	ast-name
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator	Analysis.Evidence.ComputedMetrics	src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricEvaluator.php	ast-name
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	Qualimetrix\Analysis\Evidence\Measurement\Aggregation\CallableToClassAggregator	Analysis.Evidence.Measurement	src/Analysis/Evidence/Measurement/Aggregation/CallableToClassAggregator.php	ast-name
