@@ -1862,6 +1862,7 @@ Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand	Infrastructure
 Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\EntrySelector	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException	Analysis.Policy.Baseline	contract
+Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineLoader	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\RunScope	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract

@@ -34,6 +34,11 @@ use Throwable;
  * It does not cover the `configureIO()` window inside `run()`: that stays on
  * Symfony's own `catchExceptions` handling; no accepted input can raise a
  * {@see ConfigurationRefusal} in that window.
+ *
+ * @qmx-threshold cohesion.lcom 6 -- this is the composition root: wiring
+ * together the otherwise-unrelated errorStream, refusalPresenter and
+ * exit-code ladder is its job, not a sign that unrelated responsibilities
+ * accreted onto one class.
  */
 final class Application extends BaseApplication
 {

@@ -33,6 +33,7 @@ Core/
 │   ├── SelectorDefinition.php             # Authored exact/subtree/regex selector and budgets
 │   ├── SelectorKind.php                   # Explicit open-universe selector grammar
 │   └── SelectorMatchFailure.php           # Controlled PCRE resource failure
+├── ProductIdentity.php                    # Docs/llms.txt addresses and the pointer text every output channel appends
 ├── Profiler/
 │   └── Contract/
 │       └── ProfilerInterface.php          # Neutral instrumentation vocabulary

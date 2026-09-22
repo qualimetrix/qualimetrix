@@ -1,1 +1,139 @@
 surface	file	reason
+case:annotations|explain:file:src/Directives.php	declared-delta/case-annotations-explain-file-src-Directives-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:annotations|format:health	declared-delta/case-annotations-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:annotations|format:summary	declared-delta/case-annotations-format-summary.diff	check now appends the documentation pointer line to the summary format's tail
+case:annotations|format:text	declared-delta/case-annotations-format-text.diff	check now appends the documentation pointer line to the text format's tail
+case:annotations|format:text-verbose	declared-delta/case-annotations-format-text-verbose.diff	text-verbose delegates to text and inherits the documentation pointer line now appended to its tail
+case:annotations|show-suppressed	declared-delta/case-annotations-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
+case:applied-threshold|explain:declaration:callable:Corpus\AppliedThreshold\Accepted::assemble@src/Accepted.php	declared-delta/case-applied-threshold-explain-declaration-callable-Corpus-AppliedThreshold-Accepted-assemble-src-Accepted-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:applied-threshold|explain:declaration:callable:Corpus\AppliedThreshold\ClassScoped::walk@src/ClassScoped.php	declared-delta/case-applied-threshold-explain-declaration-callable-Corpus-AppliedThreshold-ClassScoped-walk-src-ClassScoped-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:applied-threshold|explain:declaration:callable:Corpus\AppliedThreshold\Neighbour::classify@src/Neighbour.php	declared-delta/case-applied-threshold-explain-declaration-callable-Corpus-AppliedThreshold-Neighbour-classify-src-Neighbour-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:applied-threshold|explain:declaration:callable:Corpus\AppliedThreshold\Retuned::classify@src/Retuned.php	declared-delta/case-applied-threshold-explain-declaration-callable-Corpus-AppliedThreshold-Retuned-classify-src-Retuned-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:applied-threshold|format:health	declared-delta/case-applied-threshold-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:applied-threshold|format:summary	declared-delta/case-applied-threshold-format-summary.diff	check now appends the documentation pointer line to the summary format's tail
+case:applied-threshold|format:text	declared-delta/case-applied-threshold-format-text.diff	check now appends the documentation pointer line to the text format's tail
+case:applied-threshold|format:text-verbose	declared-delta/case-applied-threshold-format-text-verbose.diff	text-verbose delegates to text and inherits the documentation pointer line now appended to its tail
+case:applied-threshold|show-suppressed	declared-delta/case-applied-threshold-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
+case:complexity|explain:declaration:callable:Corpus\Complexity\Router::route@src/Router.php	declared-delta/case-complexity-explain-declaration-callable-Corpus-Complexity-Router-route-src-Router-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:complexity|explain:declaration:class:Corpus\Complexity\Router@src/Router.php	declared-delta/case-complexity-explain-declaration-class-Corpus-Complexity-Router-src-Router-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:complexity|format:health	declared-delta/case-complexity-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:complexity|format:summary	declared-delta/case-complexity-format-summary.diff	check now appends the documentation pointer line to the summary format's tail
+case:complexity|format:text	declared-delta/case-complexity-format-text.diff	check now appends the documentation pointer line to the text format's tail
+case:complexity|format:text-verbose	declared-delta/case-complexity-format-text-verbose.diff	text-verbose delegates to text and inherits the documentation pointer line now appended to its tail
+case:complexity|show-suppressed	declared-delta/case-complexity-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
+case:coupling|explain:declaration:class:Corpus\Coupling\Service\CacheService@src/Service/CacheService.php	declared-delta/case-coupling-explain-declaration-class-Corpus-Coupling-Service-CacheService-src-Service-CacheService-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:coupling|explain:declaration:class:Corpus\Coupling\Service\ReportService@src/Service/ReportService.php	declared-delta/case-coupling-explain-declaration-class-Corpus-Coupling-Service-ReportService-src-Service-ReportService-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:coupling|format:health	declared-delta/case-coupling-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:coupling|format:summary	declared-delta/case-coupling-format-summary.diff	check now appends the documentation pointer line to the summary format's tail
+case:coupling|format:text	declared-delta/case-coupling-format-text.diff	check now appends the documentation pointer line to the text format's tail
+case:coupling|format:text-verbose	declared-delta/case-coupling-format-text-verbose.diff	text-verbose delegates to text and inherits the documentation pointer line now appended to its tail
+case:coupling|show-suppressed	declared-delta/case-coupling-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
+case:cycle|explain:project:	declared-delta/case-cycle-explain-project.diff	baseline:explain now appends the documentation pointer line to its output
+case:cycle|format:health	declared-delta/case-cycle-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:cycle|format:summary	declared-delta/case-cycle-format-summary.diff	check now appends the documentation pointer line to the summary format's tail
+case:cycle|format:text	declared-delta/case-cycle-format-text.diff	check now appends the documentation pointer line to the text format's tail
+case:cycle|format:text-verbose	declared-delta/case-cycle-format-text-verbose.diff	text-verbose delegates to text and inherits the documentation pointer line now appended to its tail
+case:cycle|show-suppressed	declared-delta/case-cycle-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
+case:design|explain:declaration:class:Corpus\Design\Model\Order@src/Model/Order.php	declared-delta/case-design-explain-declaration-class-Corpus-Design-Model-Order-src-Model-Order-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:design|explain:declaration:class:Corpus\Design\Model\Untyped@src/Model/Untyped.php	declared-delta/case-design-explain-declaration-class-Corpus-Design-Model-Untyped-src-Model-Untyped-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:design|format:health	declared-delta/case-design-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:design|format:summary	declared-delta/case-design-format-summary.diff	check now appends the documentation pointer line to the summary format's tail
+case:design|format:text	declared-delta/case-design-format-text.diff	check now appends the documentation pointer line to the text format's tail
+case:design|format:text-verbose	declared-delta/case-design-format-text-verbose.diff	text-verbose delegates to text and inherits the documentation pointer line now appended to its tail
+case:design|show-suppressed	declared-delta/case-design-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
+case:disabled-rule-duplication|explain:declaration:callable:Corpus\DisabledRuleDuplication\Statements::run@src/Statements.php	declared-delta/case-disabled-rule-duplication-explain-declaration-callable-Corpus-DisabledRuleDuplication-Statements-run-src-Statements-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:disabled-rule-duplication|format:health	declared-delta/case-disabled-rule-duplication-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:disabled-rule-duplication|format:summary	declared-delta/case-disabled-rule-duplication-format-summary.diff	check now appends the documentation pointer line to the summary format's tail
+case:disabled-rule-duplication|format:text	declared-delta/case-disabled-rule-duplication-format-text.diff	check now appends the documentation pointer line to the text format's tail
+case:disabled-rule-duplication|format:text-verbose	declared-delta/case-disabled-rule-duplication-format-text-verbose.diff	text-verbose delegates to text and inherits the documentation pointer line now appended to its tail
+case:disabled-rule-duplication|show-suppressed	declared-delta/case-disabled-rule-duplication-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
+case:disabled-rule|explain:declaration:callable:Corpus\DisabledRule\Statements::run@src/Statements.php	declared-delta/case-disabled-rule-explain-declaration-callable-Corpus-DisabledRule-Statements-run-src-Statements-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:disabled-rule|format:health	declared-delta/case-disabled-rule-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:disabled-rule|format:summary	declared-delta/case-disabled-rule-format-summary.diff	check now appends the documentation pointer line to the summary format's tail
+case:disabled-rule|format:text	declared-delta/case-disabled-rule-format-text.diff	check now appends the documentation pointer line to the text format's tail
+case:disabled-rule|format:text-verbose	declared-delta/case-disabled-rule-format-text-verbose.diff	text-verbose delegates to text and inherits the documentation pointer line now appended to its tail
+case:disabled-rule|show-suppressed	declared-delta/case-disabled-rule-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
+case:discovery|explain:project:	declared-delta/case-discovery-explain-project.diff	baseline:explain now appends the documentation pointer line to its output
+case:discovery|format:health	declared-delta/case-discovery-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:discovery|format:summary	declared-delta/case-discovery-format-summary.diff	check now appends the documentation pointer line to the summary format's tail
+case:discovery|format:text	declared-delta/case-discovery-format-text.diff	check now appends the documentation pointer line to the text format's tail
+case:discovery|format:text-verbose	declared-delta/case-discovery-format-text-verbose.diff	text-verbose delegates to text and inherits the documentation pointer line now appended to its tail
+case:discovery|show-suppressed	declared-delta/case-discovery-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
+case:duplicate-declaration|explain:declaration:class:Corpus\DuplicateDeclaration\Shim@src/ShimNative.php	declared-delta/case-duplicate-declaration-explain-declaration-class-Corpus-DuplicateDeclaration-Shim-src-ShimNative-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:duplicate-declaration|explain:declaration:class:Corpus\DuplicateDeclaration\Shim@src/ShimPolyfill.php	declared-delta/case-duplicate-declaration-explain-declaration-class-Corpus-DuplicateDeclaration-Shim-src-ShimPolyfill-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:duplicate-declaration|format:health	declared-delta/case-duplicate-declaration-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:duplicate-declaration|format:summary	declared-delta/case-duplicate-declaration-format-summary.diff	check now appends the documentation pointer line to the summary format's tail
+case:duplicate-declaration|format:text	declared-delta/case-duplicate-declaration-format-text.diff	check now appends the documentation pointer line to the text format's tail
+case:duplicate-declaration|format:text-verbose	declared-delta/case-duplicate-declaration-format-text-verbose.diff	text-verbose delegates to text and inherits the documentation pointer line now appended to its tail
+case:duplicate-declaration|show-suppressed	declared-delta/case-duplicate-declaration-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
+case:duplication|explain:project:	declared-delta/case-duplication-explain-project.diff	baseline:explain now appends the documentation pointer line to its output
+case:duplication|format:health	declared-delta/case-duplication-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:duplication|format:summary	declared-delta/case-duplication-format-summary.diff	check now appends the documentation pointer line to the summary format's tail
+case:duplication|format:text	declared-delta/case-duplication-format-text.diff	check now appends the documentation pointer line to the text format's tail
+case:duplication|format:text-verbose	declared-delta/case-duplication-format-text-verbose.diff	text-verbose delegates to text and inherits the documentation pointer line now appended to its tail
+case:duplication|show-suppressed	declared-delta/case-duplication-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
+case:excluded-path|explain:declaration:callable:Corpus\ExcludedPath\Reported::run@src/Reported.php	declared-delta/case-excluded-path-explain-declaration-callable-Corpus-ExcludedPath-Reported-run-src-Reported-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:excluded-path|format:health	declared-delta/case-excluded-path-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:excluded-path|format:summary	declared-delta/case-excluded-path-format-summary.diff	check now appends the documentation pointer line to the summary format's tail
+case:excluded-path|format:text	declared-delta/case-excluded-path-format-text.diff	check now appends the documentation pointer line to the text format's tail
+case:excluded-path|format:text-verbose	declared-delta/case-excluded-path-format-text-verbose.diff	text-verbose delegates to text and inherits the documentation pointer line now appended to its tail
+case:excluded-path|show-suppressed	declared-delta/case-excluded-path-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
+case:external-parent|explain:declaration:class:Corpus\ExternalParent\LocalWidget@src/LocalWidget.php	declared-delta/case-external-parent-explain-declaration-class-Corpus-ExternalParent-LocalWidget-src-LocalWidget-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:external-parent|format:health	declared-delta/case-external-parent-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:external-parent|format:summary	declared-delta/case-external-parent-format-summary.diff	check now appends the documentation pointer line to the summary format's tail
+case:external-parent|format:text	declared-delta/case-external-parent-format-text.diff	check now appends the documentation pointer line to the text format's tail
+case:external-parent|format:text-verbose	declared-delta/case-external-parent-format-text-verbose.diff	text-verbose delegates to text and inherits the documentation pointer line now appended to its tail
+case:external-parent|show-suppressed	declared-delta/case-external-parent-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
+case:health|explain:declaration:class:Corpus\Health\Engine\Pipeline@src/Engine/Pipeline.php	declared-delta/case-health-explain-declaration-class-Corpus-Health-Engine-Pipeline-src-Engine-Pipeline-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:health|explain:ns:Corpus\Health\Engine	declared-delta/case-health-explain-ns-Corpus-Health-Engine.diff	baseline:explain now appends the documentation pointer line to its output
+case:health|format:health	declared-delta/case-health-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:health|format:summary	declared-delta/case-health-format-summary.diff	check now appends the documentation pointer line to the summary format's tail
+case:health|format:text	declared-delta/case-health-format-text.diff	check now appends the documentation pointer line to the text format's tail
+case:health|format:text-verbose	declared-delta/case-health-format-text-verbose.diff	text-verbose delegates to text and inherits the documentation pointer line now appended to its tail
+case:health|show-suppressed	declared-delta/case-health-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
+case:layered-threshold|explain:declaration:callable:Corpus\LayeredThreshold\Tangled::score@src/Tangled.php	declared-delta/case-layered-threshold-explain-declaration-callable-Corpus-LayeredThreshold-Tangled-score-src-Tangled-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:layered-threshold|format:health	declared-delta/case-layered-threshold-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:layered-threshold|format:summary	declared-delta/case-layered-threshold-format-summary.diff	check now appends the documentation pointer line to the summary format's tail
+case:layered-threshold|format:text	declared-delta/case-layered-threshold-format-text.diff	check now appends the documentation pointer line to the text format's tail
+case:layered-threshold|format:text-verbose	declared-delta/case-layered-threshold-format-text-verbose.diff	text-verbose delegates to text and inherits the documentation pointer line now appended to its tail
+case:layered-threshold|show-suppressed	declared-delta/case-layered-threshold-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
+case:layers|explain:declaration:class:Corpus\Layers\Repository\UserRepository@src/Repository/UserRepository.php	declared-delta/case-layers-explain-declaration-class-Corpus-Layers-Repository-UserRepository-src-Repository-UserRepository-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:layers|explain:project:	declared-delta/case-layers-explain-project.diff	baseline:explain now appends the documentation pointer line to its output
+case:layers|format:health	declared-delta/case-layers-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:layers|format:summary	declared-delta/case-layers-format-summary.diff	check now appends the documentation pointer line to the summary format's tail
+case:layers|format:text	declared-delta/case-layers-format-text.diff	check now appends the documentation pointer line to the text format's tail
+case:layers|format:text-verbose	declared-delta/case-layers-format-text-verbose.diff	text-verbose delegates to text and inherits the documentation pointer line now appended to its tail
+case:layers|show-suppressed	declared-delta/case-layers-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
+case:only-rules|explain:declaration:callable:Corpus\OnlyRules\Statements::run@src/Statements.php	declared-delta/case-only-rules-explain-declaration-callable-Corpus-OnlyRules-Statements-run-src-Statements-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:only-rules|format:health	declared-delta/case-only-rules-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:only-rules|format:summary	declared-delta/case-only-rules-format-summary.diff	check now appends the documentation pointer line to the summary format's tail
+case:only-rules|format:text	declared-delta/case-only-rules-format-text.diff	check now appends the documentation pointer line to the text format's tail
+case:only-rules|format:text-verbose	declared-delta/case-only-rules-format-text-verbose.diff	text-verbose delegates to text and inherits the documentation pointer line now appended to its tail
+case:only-rules|show-suppressed	declared-delta/case-only-rules-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
+case:rule-exclusion-ledger|explain:declaration:callable:Corpus\RuleExclusionLedger\Reported::run@src/Reported.php	declared-delta/case-rule-exclusion-ledger-explain-declaration-callable-Corpus-RuleExclusionLedger-Reported-run-src-Reported-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:rule-exclusion-ledger|format:health	declared-delta/case-rule-exclusion-ledger-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:rule-exclusion-ledger|format:summary	declared-delta/case-rule-exclusion-ledger-format-summary.diff	check now appends the documentation pointer line to the summary format's tail
+case:rule-exclusion-ledger|format:text	declared-delta/case-rule-exclusion-ledger-format-text.diff	check now appends the documentation pointer line to the text format's tail
+case:rule-exclusion-ledger|format:text-verbose	declared-delta/case-rule-exclusion-ledger-format-text-verbose.diff	text-verbose delegates to text and inherits the documentation pointer line now appended to its tail
+case:rule-exclusion-ledger|show-suppressed	declared-delta/case-rule-exclusion-ledger-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
+case:security|explain:declaration:callable:Corpus\Security\Login::authenticate@src/Login.php	declared-delta/case-security-explain-declaration-callable-Corpus-Security-Login-authenticate-src-Login-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:security|explain:declaration:callable:Corpus\Security\Output::greet@src/Output.php	declared-delta/case-security-explain-declaration-callable-Corpus-Security-Output-greet-src-Output-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:security|format:health	declared-delta/case-security-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:security|format:summary	declared-delta/case-security-format-summary.diff	check now appends the documentation pointer line to the summary format's tail
+case:security|format:text	declared-delta/case-security-format-text.diff	check now appends the documentation pointer line to the text format's tail
+case:security|format:text-verbose	declared-delta/case-security-format-text-verbose.diff	text-verbose delegates to text and inherits the documentation pointer line now appended to its tail
+case:security|show-suppressed	declared-delta/case-security-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
+case:smells|explain:declaration:callable:Corpus\Smells\Smells::report@src/Smells.php	declared-delta/case-smells-explain-declaration-callable-Corpus-Smells-Smells-report-src-Smells-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:smells|explain:declaration:class:Corpus\Smells\Injection@src/Injection.php	declared-delta/case-smells-explain-declaration-class-Corpus-Smells-Injection-src-Injection-php.diff	baseline:explain now appends the documentation pointer line to its output
+case:smells|format:health	declared-delta/case-smells-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:smells|format:summary	declared-delta/case-smells-format-summary.diff	check now appends the documentation pointer line to the summary format's tail
+case:smells|format:text	declared-delta/case-smells-format-text.diff	check now appends the documentation pointer line to the text format's tail
+case:smells|format:text-verbose	declared-delta/case-smells-format-text-verbose.diff	text-verbose delegates to text and inherits the documentation pointer line now appended to its tail
+case:smells|show-suppressed	declared-delta/case-smells-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
+case:suppression|explain:project:	declared-delta/case-suppression-explain-project.diff	baseline:explain now appends the documentation pointer line to its output
+case:suppression|format:health	declared-delta/case-suppression-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:suppression|format:summary	declared-delta/case-suppression-format-summary.diff	check now appends the documentation pointer line to the summary format's tail
+case:suppression|format:text	declared-delta/case-suppression-format-text.diff	check now appends the documentation pointer line to the text format's tail
+case:suppression|format:text-verbose	declared-delta/case-suppression-format-text-verbose.diff	text-verbose delegates to text and inherits the documentation pointer line now appended to its tail
+case:suppression|show-suppressed	declared-delta/case-suppression-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
+tree|rules	declared-delta/tree-rules.diff	the rules command now appends the documentation pointer line after its Usage: block

@@ -24,6 +24,10 @@ use Qualimetrix\Reporting\Report;
  *
  * Renders a table of health dimensions with scores, status labels,
  * and threshold info, followed by decomposition details for each dimension.
+ *
+ * @qmx-threshold complexity.wmc warning=60 -- average per-method complexity
+ * here is about 3.5; WMC is high because of how many small rendering
+ * methods the formatter has, not because any one of them is complex.
  */
 final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysInterface
 {

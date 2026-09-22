@@ -12,7 +12,6 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateResult;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -55,39 +54,30 @@ final class BaselineUpdateCommand extends BaselineCommand
         BaselineCommandDefinition::addBaselineFileArgument($this, 'Path of the baseline file to update in place');
         BaselineCommandDefinition::addMeasuredRunInput($this);
 
-        $this
-            ->addOption(
-                'force',
-                null,
-                InputOption::VALUE_NONE,
-                'Write even when this run does not cover the scope the baseline records',
-            )
-            ->setHelp(self::withDocsPointer(
-                'Replaces each entry with what its group reports now, but only where that'
-                . "\n" . 'is no more permissive than what the entry already accepted. A group'
-                . "\n" . 'that worsened is refused and its entry is written back unchanged.' . "\n\n"
-                . 'An identity that no longer reports anything is left alone: a vanished'
-                . "\n" . 'group is `baseline:cleanup`\'s business, and rewriting the entry to'
-                . "\n" . 'nothing would delete an acceptance by inference.',
-            ));
+        BaselineCommandDefinition::addScopeOverrideOption($this);
+
+        $this->setHelp(self::withDocsPointer(
+            'Replaces each entry with what its group reports now, but only where that'
+            . "\n" . 'is no more permissive than what the entry already accepted. A group'
+            . "\n" . 'that worsened is refused and its entry is written back unchanged.' . "\n\n"
+            . 'An identity that no longer reports anything is left alone: a vanished'
+            . "\n" . 'group is `baseline:cleanup`\'s business, and rewriting the entry to'
+            . "\n" . 'nothing would delete an acceptance by inference.',
+        ));
     }
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         /** @var string $baselinePath */
         $baselinePath = $input->getArgument('baseline');
-        $force = $input->getOption('force') === true;
 
-        // The run first, then the file (ADR 0017): a `computed.*` channel resolves
-        // its shape and direction from configuration this run resolves, and a
-        // file read before it loads every such entry inert — which here means
-        // silently declining to tighten entries `check` applies normally.
-        $context = $this->baselineRun->measure($input, $output);
-        $baseline = $this->loader->load($baselinePath);
+        $measured = $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $baselinePath);
 
-        if (!$this->assertScopeCovers($context->scope, $baseline->scope, $force, $output)) {
+        if ($measured === null) {
             return self::FAILURE;
         }
+
+        [$context, $baseline] = $measured;
 
         $result = $this->updater->update($baseline, $context->findings(), $context->scope);
 

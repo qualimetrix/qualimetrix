@@ -7,6 +7,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Core\ProductIdentity;
@@ -27,6 +28,13 @@ use Throwable;
  * exist. Left to each command those become five slightly different
  * spellings of the same three sentences, and the one that forgets a `catch`
  * answers a bad path with a stack trace.
+ *
+ * @qmx-ignore health.cohesion -- the final execute() / abstract doExecute()
+ * split is a template-method seam: this base class carries the shared
+ * ladder and none of a subcommand's own state, so it measures as low
+ * cohesion by construction, not as a defect. `@qmx-threshold` cannot retune
+ * this instead: `health.cohesion` is a computed metric with no per-symbol
+ * override support.
  */
 abstract class BaselineCommand extends Command
 {
@@ -179,5 +187,37 @@ abstract class BaselineCommand extends Command
         ));
 
         return false;
+    }
+
+    /**
+     * The preamble `baseline:cleanup` and `baseline:update` share (ADR 0017):
+     * measure before loading — a `computed.*` / `health.*` declaration only
+     * exists once the run has resolved configuration, so loading the file
+     * first would leave every such entry inert, and each command would
+     * answer differently than the `check` applying the very same entry —
+     * then refuse when the run's scope does not cover what the file records.
+     *
+     * Returns `null` when the caller must answer with `self::FAILURE`; the
+     * scope guard has already written its own message to `$output`.
+     *
+     * @return array{0: BaselineRunContext, 1: \Qualimetrix\Analysis\Policy\Baseline\Baseline}|null
+     */
+    protected function measureAgainstBaseline(
+        BaselineRunInterface $baselineRun,
+        BaselineLoader $loader,
+        InputInterface $input,
+        OutputInterface $output,
+        string $baselinePath,
+    ): ?array {
+        $force = $input->getOption('force') === true;
+
+        $context = $baselineRun->measure($input, $output);
+        $baseline = $loader->load($baselinePath);
+
+        if (!$this->assertScopeCovers($context->scope, $baseline->scope, $force, $output)) {
+            return null;
+        }
+
+        return [$context, $baseline];
     }
 }

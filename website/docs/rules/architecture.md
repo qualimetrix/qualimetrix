@@ -811,6 +811,7 @@ Class: App\Service\UserService
 
   Would also match (in declaration order):
     (none — the assignment is unique)
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 Example output for a shadowed class:
@@ -827,6 +828,7 @@ Class: App\Service\Foo
   Diagnostic hint:
     Class is shadowed: would have matched 'service' if 'any-foo' was declared later.
     See architecture.potential-shadow diagnostic for the broader picture.
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 Exit codes follow the standard convention, and `0` is a statement about a class the run analysed: `0` for any informational result about such a class (including "it matches no declared layer"), `3` for a refusal — an empty or malformed FQN, a configuration-load error, or an FQN that names none of the declarations this configuration parsed, which is what an unanalysed class looks like from here — and `1` only for a defect the input could not have caused.

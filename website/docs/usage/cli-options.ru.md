@@ -1087,6 +1087,8 @@ Every rule also takes: suppress-namespace-channels, suppress-namespaces, suppres
 
 Usage: bin/qmx check --disable-rule=<name> | --only-rule=<name>
         bin/qmx check --rule-opt=<name>:<option>=<value>
+
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 Правила сгруппированы по категориям. Строка `options:` называет то, что

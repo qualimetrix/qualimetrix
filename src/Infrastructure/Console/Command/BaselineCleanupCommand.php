@@ -57,50 +57,39 @@ final class BaselineCleanupCommand extends BaselineCommand
         BaselineCommandDefinition::addBaselineFileArgument($this, 'Path of the baseline file to inspect');
         BaselineCommandDefinition::addMeasuredRunInput($this);
 
-        $this
-            ->addOption(
-                'remove',
-                null,
-                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Selector of an entry to remove (repeat for more than one)',
-                [],
-            )
-            ->addOption(
-                'force',
-                null,
-                InputOption::VALUE_NONE,
-                'Write even when this run does not cover the scope the baseline records',
-            )
-            ->setHelp(self::withDocsPointer(
-                'Without --remove the command only reports: no entry is removed and the'
-                . "\n" . 'file is not touched.' . "\n\n"
-                . 'An entry is listed when the run reported nothing for its identity, or'
-                . "\n" . 'when no rule declares its channel any more, or when the entry could'
-                . "\n" . 'not be read at all. None of those proves the debt is gone — a'
-                . "\n" . 'loosened threshold silences a finding just as effectively as a fix —'
-                . "\n" . 'so removal is always yours to assert, one selector at a time.',
-            ));
+        $this->addOption(
+            'remove',
+            null,
+            InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+            'Selector of an entry to remove (repeat for more than one)',
+            [],
+        );
+
+        BaselineCommandDefinition::addScopeOverrideOption($this);
+
+        $this->setHelp(self::withDocsPointer(
+            'Without --remove the command only reports: no entry is removed and the'
+            . "\n" . 'file is not touched.' . "\n\n"
+            . 'An entry is listed when the run reported nothing for its identity, or'
+            . "\n" . 'when no rule declares its channel any more, or when the entry could'
+            . "\n" . 'not be read at all. None of those proves the debt is gone — a'
+            . "\n" . 'loosened threshold silences a finding just as effectively as a fix —'
+            . "\n" . 'so removal is always yours to assert, one selector at a time.',
+        ));
     }
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         /** @var string $baselinePath */
         $baselinePath = $input->getArgument('baseline');
-        $force = $input->getOption('force') === true;
 
-        // The run comes first, and the order is load-bearing (ADR 0017). The
-        // `computed.*` / `health.*` family declares its shape and direction
-        // from configuration resolved during the run, so a file read before
-        // it has no declaration to match: every entry on a user-defined
-        // computed metric would load inert and this command would list it for
-        // removal — an answer contradicting the `check` that applies the very
-        // same entry.
-        $context = $this->baselineRun->measure($input, $output);
-        $baseline = $this->loader->load($baselinePath);
+        $measured = $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $baselinePath);
 
-        if (!$this->assertScopeCovers($context->scope, $baseline->scope, $force, $output)) {
+        if ($measured === null) {
             return self::FAILURE;
         }
+
+        [$context, $baseline] = $measured;
 
         $candidates = $this->cleaner->candidates($baseline, $context->findings(), $this->declarations);
         self::reportCandidates($candidates, $output);

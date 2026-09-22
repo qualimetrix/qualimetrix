@@ -112,6 +112,14 @@ remove a link it cannot identify rather than deleting someone else's hook.
 
 ### Changed
 
+- Every human-readable output channel now points to the documentation: the
+  `summary`, `text`, and `health` tails, the free-text refusal on stderr, the
+  header of bare `qmx`/`qmx list`, the `Help:` section of every command, the
+  `rules` listing, the baseline lifecycle commands' tails, the `directives`
+  and `debug:layer-assignment` text reports, and the `hook:*` commands. An
+  agent or reader who lands on any one of these now has a way to reach the
+  full documentation and the agent-facing index without already knowing the
+  project.
 - `design.dit` says when it did not follow an inheritance chain to a root. A
   run writes one warning naming how many chains leaving the analysed path
   stopped early and where the walk stopped, so a depth that stopped short is no

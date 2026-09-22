@@ -395,6 +395,7 @@ Worst namespaces
 1251 findings (384 errors, 867 warnings) | Tech debt: 63d 5h 35min
 
 Hints: --format=text to see all findings | --namespace='subtree:App\Metrics\Halstead' to drill down | --format=html -o report.html for full report
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 ### TextFormatter (`--format=text`)

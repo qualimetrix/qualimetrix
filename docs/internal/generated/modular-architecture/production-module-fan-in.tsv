@@ -171,7 +171,7 @@ Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException	Analysis.Policy.B
 Qualimetrix\Analysis\Policy\Baseline\BaselineEntry	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator	Analysis.Policy.Baseline	2	2
-Qualimetrix\Analysis\Policy\Baseline\BaselineLoader	Analysis.Policy.Baseline	5	3
+Qualimetrix\Analysis\Policy\Baseline\BaselineLoader	Analysis.Policy.Baseline	6	3
 Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateDisposition	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateResult	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater	Analysis.Policy.Baseline	2	2

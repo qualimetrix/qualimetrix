@@ -54,12 +54,14 @@ src/Analysis/Evidence/Measurement/Contract/VisitorCallableScope.php	15	code-smel
 src/Analysis/Evidence/Measurement/Visitor/VisitorLexicalScope.php	112	code-smell.long-parameter-list	warning=9 error=9 -- Sole mutable traversal scope atomically validates and constructs callable identity from eight context inputs.
 src/Analysis/Run/Contract/Pipeline/AnalysisResult.php	55	code-smell.long-parameter-list	warning=9 error=9 -- Same VO, same unsplit shape; see the
 src/Infrastructure/Console/RuntimeConfigurator.php	29	code-smell.long-parameter-list	warning=9 error=10 -- Same constructor, same reason: the list is the composition, and a ninth parameter reports again.
+src/Infrastructure/Console/Application.php	38	cohesion.lcom	6 -- this is the composition root: wiring
 src/Analysis/Evidence/Complexity/NpathExpressionCalculator.php	52	complexity.ccn	warning=15 error=15 -- Finite php-parser expression dispatch preserves the closed NPath contribution algebra (grew by one arm for the       assignment-coalesce operator).
 src/Core/Symbol/MetricSubjectCodec.php	68	complexity.ccn	warning=13 error=13 — Canonical finite wire grammar keeps four closed subject shapes and exact validation together.
 src/Reporting/Formatter/Html/HtmlFindingPartitioner.php	74	complexity.ccn	warning=11 error=11 — Finite attachment projection keeps node lookup, magnitude normalization, and payload fields together.
 src/Core/Symbol/MetricSubjectCodec.php	69	complexity.npath	warning=289 error=289 — Canonical finite wire grammar keeps four closed subject shapes and exact validation together.
 src/Analysis/Evidence/Complexity/NpathExpressionCalculator.php	30	complexity.wmc	warning=52 error=52 -- Finite php-parser expression algebra keeps exact NPath composition and saturation together (grew by one arm for the       assignment-coalesce operator).
 src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php	31	complexity.wmc	warning=62 error=62 — Publishing what a score covers cost this class one short method, and WMC charges a method's existence: the same code inline scored 60 and the extraction that made each method simpler scored 61. One-method headroom, not a licence to grow.
+src/Reporting/Formatter/Health/HealthTextFormatter.php	28	complexity.wmc	warning=60 -- average per-method complexity
 src/Analysis/Evidence/Coupling/CboRule.php	41	coupling.cbo	22 -- Raw CBO 21: this hierarchical rule's own dependencies plus
 src/Analysis/Evidence/Coupling/DistanceRule.php	51	coupling.cbo	21 -- Raw CBO 20: this hierarchical rule's own dependencies plus
 src/Analysis/Evidence/Measurement/Contract/AbstractCollector.php	18	coupling.cbo	27 -- Measurement collector base is a stable provider-owned extension hub; current raw CBO 26 gets one-edge headroom.
@@ -74,7 +76,6 @@ src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	25	coupling.c
 src/Analysis/Policy/Inline/Directive/Audit/ThresholdDirectiveAudit.php	80	coupling.cbo	21 -- Raw CBO 20: an audit that answers what a directive did must
 src/Reporting/FormatterContext.php	15	coupling.cbo	warning=33 error=33 -- Formatter context is the immutable Reporting input boundary every formatter's                                    signature depends on.                                          also names it directly to refuse a               or           value that selects nothing, and the bound namespace selector is now part of that stable boundary. Raw CBO 32 gets one-edge headroom from the inclusive threshold of 33.
 src/Reporting/Report.php	19	coupling.cbo	warning=31 error=31 -- Report is the transport VO every formatter's
-src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php	28	coupling.class-rank	warning=0.024 error=0.024 -- ClassRank
 src/Analysis/Evidence/Measurement/Contract/MetricBag.php	15	coupling.class-rank	warning=0.035 error=0.035 -- Intentional Measurement
 src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php	21	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/Complexity/ClassComplexityOptions.php	21	coupling.instability	warning=0.81 -- The eighth efferent edge is

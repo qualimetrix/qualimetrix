@@ -19,6 +19,13 @@ use Symfony\Component\Console\Output\OutputInterface;
  * spell `hooks/pre-commit` for itself. The three copies of that had already
  * drifted — one checked that the hooks directory exists and two did not, and
  * the refusal read differently in each.
+ *
+ * @qmx-ignore health.cohesion -- the final execute() / abstract doExecute()
+ * split is a template-method seam: this base class carries the shared
+ * ladder and none of a subcommand's own state, so it measures as low
+ * cohesion by construction, not as a defect. `@qmx-threshold` cannot retune
+ * this instead: `health.cohesion` is a computed metric with no per-symbol
+ * override support.
  */
 abstract class AbstractHookCommand extends Command
 {
