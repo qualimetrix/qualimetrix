@@ -30,8 +30,14 @@ So the value and its first consumer are one package.
   the regenerated test inventories if this package adds a test.
 - `Application::getHelp()` is overridden to return the stock long version plus the
   pointer. Symfony's `TextDescriptor` renders `getHelp()` as the header of bare
-  `qmx`, `list` and `--help`; `--version` calls `getLongVersion()` directly and is
-  untouched. This seam was measured in `vendor/symfony/console`.
+  `qmx` and `qmx list`, because `ListCommand::execute()` describes the application
+  object; `--version` calls `getLongVersion()` directly and is untouched.
+- **`--help` with no command is a third path, not this seam.** It is rewritten to
+  the `help` command with `command_name = 'list'`, and `HelpCommand` describes the
+  *command* object, so `describeCommand()` runs and the application header never
+  renders. The package covers it by calling `setHelp()` on the existing `list`
+  command instance from `Application`: public API, no vendor code touched, and not
+  the same as replacing a framework command.
 - `RefusalPresenter`: the free-text stderr shape gains the pointer. The JSON
   envelope stays closed at two keys.
 - **The `--quiet` rule does not apply to refusals.** `RefusalPresenter` writes at

@@ -12,6 +12,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode;
@@ -356,6 +357,51 @@ final class ApplicationTest extends TestCase
             $screen,
             'the frame must be cleared before the refusal is printed, not left stranded above it',
         );
+    }
+
+    /**
+     * {@see \Symfony\Component\Console\Descriptor\TextDescriptor::describeApplication()}
+     * renders `getHelp()`'s return value verbatim as the header of bare
+     * `qmx` and `list` — both run {@see \Symfony\Component\Console\Command\ListCommand},
+     * which describes the {@see Application} itself.
+     */
+    #[Test]
+    public function itAppendsTheDocumentationPointerToGetHelp(): void
+    {
+        $app = self::application();
+
+        self::assertStringContainsString($app->getLongVersion(), $app->getHelp());
+        self::assertStringContainsString(ProductIdentity::pointerText(), $app->getHelp());
+    }
+
+    /**
+     * `--version` calls {@see Application::getLongVersion()} directly and
+     * never reaches the `getHelp()` override — a unix convention scripts
+     * parse, so it must stay exactly "name version" with no pointer.
+     */
+    #[Test]
+    public function itLeavesGetLongVersionFreeOfTheDocumentationPointer(): void
+    {
+        $app = self::application();
+
+        self::assertStringNotContainsString(ProductIdentity::pointerText(), $app->getLongVersion());
+    }
+
+    /**
+     * Bare `--help` (no target command) never reaches {@see Application::getHelp()}:
+     * Symfony rewrites it into the `help` command describing the `list`
+     * *command* object, which is `TextDescriptor::describeCommand()`, not
+     * `describeApplication()`. The pointer reaches that path through `list`'s
+     * own `Help:` section instead — see
+     * {@see Application::appendPointerToListCommandHelp()} (private, exercised
+     * here through the public `list` command it configures).
+     */
+    #[Test]
+    public function itAppendsTheDocumentationPointerToTheListCommandsOwnHelp(): void
+    {
+        $app = self::application();
+
+        self::assertStringContainsString(ProductIdentity::pointerText(), $app->get('list')->getHelp());
     }
 
     private static function application(?ErrorStream $errorStream = null): Application

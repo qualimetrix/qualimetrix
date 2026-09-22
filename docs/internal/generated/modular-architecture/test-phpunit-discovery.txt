@@ -7376,6 +7376,12 @@ Available tests:
  - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itRefusesAnOverBudgetValue"regex"
  - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itRefusesAnOverBudgetValue"subtree"
  - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itRefusesAnUnknownKind
+ - Qualimetrix\Tests\Core\Unit\ProductIdentityTest::itCarriesNoConsoleMarkupInThePointerText
+ - Qualimetrix\Tests\Core\Unit\ProductIdentityTest::itReturnsExactlyTheDesignedPointerLine
+ - Qualimetrix\Tests\Core\Unit\ProductIdentityTest::itReturnsIdentityFieldsConsistentWithTheirOwnAccessors
+ - Qualimetrix\Tests\Core\Unit\ProductIdentityTest::itReturnsIdentityWithExactlyTheDesignedKeys
+ - Qualimetrix\Tests\Core\Unit\ProductIdentityTest::itReturnsTheDocsUrl
+ - Qualimetrix\Tests\Core\Unit\ProductIdentityTest::itReturnsTheLlmsTxtUrlUnderTheDocsUrl
  - Qualimetrix\Tests\Core\Unit\VersionTest::itReportsTheVersionOfTheQualimetrixPackage
  - Qualimetrix\Tests\Core\Unit\VersionTest::itReturnsANonEmptyVersionString
  - Qualimetrix\Tests\Infrastructure\Ast\Unit\CachedFileParserTest::itCachesAstFromTheSameSnapshotUsedForKeyGeneration
@@ -7866,10 +7872,13 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itRestoresStaticOnlyChannelsBeforeAnyConfigurationResolution
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itRestoresThePreviousErrorHandlerAfterApplyFailure
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itRestoresThePreviousErrorHandlerAfterResetFailure
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itAppendsTheDocumentationPointerToGetHelp
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itAppendsTheDocumentationPointerToTheListCommandsOwnHelp
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itChangesTheWorkingDirectoryWhenWorkingDirIsGiven
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itDemotesSilentVerbosityToQuiet
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itFoldsTheMessageIntoAnOutputWithNoErrorChannelRatherThanDroppingIt
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itIgnoresTheCaughtThrowablesOwnCode
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itLeavesGetLongVersionFreeOfTheDocumentationPointer
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itLeavesTheRefusalSentenceReadableAboveALiveProgressFrame
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itLeavesTheWorkingDirectoryUnchangedWhenWorkingDirIsOmitted
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itReturnsInternalErrorExitCodeForAConsoleLogicException
@@ -8043,6 +8052,11 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAFallbackRefusalWithTheCaughtMessageUnframed
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAnInternalErrorAsAnEnvelopeUnderAJsonFormat
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAnInternalErrorWithTheInternalHeaderAndCodeOne
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAppendsTheDocumentationPointerOnAConfigurationRefusal
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAppendsTheDocumentationPointerOnAFallbackRefusal
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAppendsTheDocumentationPointerOnAnInternalError
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheDocumentationPointerOutOfTheJsonEnvelope
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheDocumentationPointerVisibleUnderQuiet
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheEnvelopeParseableForAMessageCarryingConsoleMarkup
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheEnvelopeParseableForAMessageContainingInvalidUtf8
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheEnvelopeVisibleUnderQuiet

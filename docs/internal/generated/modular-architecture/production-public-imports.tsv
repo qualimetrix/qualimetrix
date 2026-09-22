@@ -1977,6 +1977,8 @@ Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Finding\
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Run\Discovery\DirectoryPruner	Analysis.Run	src/Analysis/Run/Discovery/DirectoryPruner.php	ast-name
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Reporting\Formatter\Json\JsonHealthSection	Reporting	src/Reporting/Formatter/Json/JsonHealthSection.php	ast-name
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Reporting\Formatter\Summary\HealthBarRenderer	Reporting	src/Reporting/Formatter/Summary/HealthBarRenderer.php	ast-name
+Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Infrastructure\Console\Application	Infrastructure.Console	src/Infrastructure/Console/Application.php	ast-name
+Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter	Infrastructure.Console	src/Infrastructure/Console/Refusal/RefusalPresenter.php	ast-name
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule	Analysis.Evidence.ComputedMetrics	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	ast-name
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator	Analysis.Evidence.ComputedMetrics	src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricEvaluator.php	ast-name
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	Qualimetrix\Analysis\Evidence\Measurement\Aggregation\CallableToClassAggregator	Analysis.Evidence.Measurement	src/Analysis/Evidence/Measurement/Aggregation/CallableToClassAggregator.php	ast-name

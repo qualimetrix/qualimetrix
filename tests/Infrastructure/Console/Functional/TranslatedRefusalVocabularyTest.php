@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
@@ -338,14 +339,17 @@ final class TranslatedRefusalVocabularyTest extends TestCase
 
     /**
      * The refusal, separated from the scope warning every run over a single
-     * fixture file emits — that warning is the same in every case
-     * and would make every sentence read alike.
+     * fixture file emits, and from the documentation pointer every refusal
+     * now carries — both are the same in every case and would make every
+     * sentence read alike.
      */
     private static function refusalLine(string $stderr): string
     {
         $lines = array_values(array_filter(
             array_map(trim(...), explode("\n", $stderr)),
-            static fn(string $line): bool => $line !== '' && !str_starts_with($line, 'Warning: Analyzed paths'),
+            static fn(string $line): bool => $line !== ''
+                && !str_starts_with($line, 'Warning: Analyzed paths')
+                && $line !== ProductIdentity::pointerText(),
         ));
 
         return implode(' ', $lines);

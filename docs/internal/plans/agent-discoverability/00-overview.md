@@ -90,7 +90,8 @@ second address instead of skimming past a generic docs link.
 ## Channel decisions
 
 **Carries the line (15):** `summary` tail, `text` tail, `health` tail, the
-`getHelp()` header (bare `qmx`, `list`, `--help`), the `Usage:` block of `rules`,
+`getHelp()` header (bare `qmx` and `list`), the `list` command's `Help:` section
+(which is what `--help` renders), the `Usage:` block of `rules`,
 the tails of `baseline:generate|update|cleanup|explain`, the text branch of
 `baseline:rename-channels`, the `Diagnostic hint:` block of
 `debug:layer-assignment`, the text branch of `directives`, the tails of
@@ -105,6 +106,18 @@ gain a `meta` object, having none today.
 
 **Carries the short form:** the `Help:` section of every command. Five commands
 have none today and get one.
+
+**`--help` is its own path, and the plan first got it wrong.** One seam does not
+cover all three header invocations. Bare `qmx` and `qmx list` execute
+`ListCommand`, which describes the application object, so the overridden
+`getHelp()` renders. `--help` with no command name is rewritten to the `help`
+command with `command_name = 'list'`, and `HelpCommand` describes the *command*
+object — `TextDescriptor` runs `describeCommand()` and the application header
+never appears. Measured on the tree, after this plan asserted otherwise. It is
+covered by calling `setHelp()` on the existing `list` command instance, which is
+public API and not the same as replacing a framework command. Keeping the four
+framework commands out of the *invariant's population* is a statement about what
+the guard asserts over, not about which channels carry the pointer.
 
 **Excluded, with cause:**
 

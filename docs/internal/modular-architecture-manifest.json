@@ -14840,6 +14840,22 @@
         }
       ]
     },
+    "Qualimetrix\\Core\\ProductIdentity": {
+      "path": "src/Core/ProductIdentity.php",
+      "kind": "class",
+      "owner": "Core.Neutral",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Application"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter"
+        }
+      ]
+    },
     "Qualimetrix\\Infrastructure\\Ast\\CachedFileParser": {
       "path": "src/Infrastructure/Ast/CachedFileParser.php",
       "kind": "class",
