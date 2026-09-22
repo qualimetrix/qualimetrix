@@ -15,7 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  *
  * On by default, unlike most opt-in diagnostics: the rule can only report
  * about prefixes the author wrote, so a project that declares no
- * `coupling.frameworkNamespaces` never hears from it, and one that does has
+ * `coupling.frameworkNamespaces` never hears from it, and a selector that does has
  * asked for the classification this rule checks actually happened.
  *
  * No severity key. The signal is one thing — the application scope is wider

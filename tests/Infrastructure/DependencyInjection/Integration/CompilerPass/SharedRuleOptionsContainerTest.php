@@ -62,10 +62,10 @@ final class SharedRuleOptionsContainerTest extends TestCase
         $registry->setConfigFileOptions([
             EvalRule::NAME => [
                 'enabled' => false,
-                'suppress_paths' => ['src/Eval'],
+                'suppress_paths' => [['subtree' => 'src/Eval']],
             ],
             GotoRule::NAME => [
-                'suppress_namespaces' => ['App\\Legacy'],
+                'suppress_namespaces' => [['subtree' => 'App\\Legacy']],
             ],
             SqlInjectionRule::NAME => ['enabled' => false],
         ]);

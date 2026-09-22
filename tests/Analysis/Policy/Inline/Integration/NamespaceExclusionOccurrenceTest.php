@@ -92,7 +92,7 @@ PHP);
             '--no-cache' => true,
             '--no-progress' => true,
             '--only-rule' => ['code-smell.eval'],
-            '--suppress-namespace' => ['Foo'],
+            '--suppress-namespace' => ['subtree:Foo'],
         ]);
 
         $report = json_decode(self::extractJsonObject($tester->getDisplay()), true, 512, \JSON_THROW_ON_ERROR);

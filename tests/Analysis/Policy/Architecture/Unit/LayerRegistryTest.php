@@ -286,8 +286,8 @@ final class LayerRegistryTest extends TestCase
         // identifiers follow the standard PHP rules). Layer matching must
         // therefore route a class whose FQN contains multibyte characters to
         // the layer whose pattern declares the same characters. The pattern
-        // matcher relies on byte-level operations (str_starts_with /
-        // NamespaceMatcher::matchesSingle), so byte-equal multibyte sequences
+        // matcher relies on byte-level operations in CapturePattern, so
+        // byte-equal multibyte sequences
         // must continue to match without surprises.
         $registry = new LayerRegistry([
             new LayerDefinition('domain', new MembershipSpec(['Приложение\\Домен'])),

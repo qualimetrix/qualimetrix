@@ -7,6 +7,7 @@ namespace Qualimetrix\Reporting\Formatter\Summary;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
+use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
@@ -106,7 +107,7 @@ final class HealthBarRenderer
     private function buildHeaderSuffix(FormatterContext $context, AnsiColor $color): string
     {
         if ($context->namespace !== null) {
-            return ' ' . $color->dim(\sprintf('[namespace: %s]', $context->namespace));
+            return ' ' . $color->dim(\sprintf('[namespace: %s]', $context->namespaceDisplay()));
         }
 
         if ($context->class !== null) {
@@ -118,11 +119,13 @@ final class HealthBarRenderer
 
     private function buildFlatScoreNote(Report $report, FormatterContext $context, float $overallScore, AnsiColor $color): ?string
     {
-        if ($context->namespace === null || $report->metrics === null) {
+        if ($context->namespace === null
+            || $context->namespace->definition->kind !== SelectorKind::Exact
+            || $report->metrics === null) {
             return null;
         }
 
-        $nsPath = SymbolPath::forNamespace($context->namespace);
+        $nsPath = SymbolPath::forNamespace($context->namespace->definition->value);
         $flatOverall = $report->metrics->get($nsPath)->get(HealthDimension::Overall->value);
         if ($flatOverall === null) {
             return null;

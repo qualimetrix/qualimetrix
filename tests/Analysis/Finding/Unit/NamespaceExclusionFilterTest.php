@@ -20,6 +20,9 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationVali
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\NamespaceMatcher;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -31,7 +34,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     #[Test]
     public function itFiltersSuppressedNamespace(): void
     {
-        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher([self::namespace(SelectorKind::Subtree, 'App\\Entity')]), self::declaredFileScope());
 
         $finding = $this->createFinding('App\\Entity', 'complexity.ccn');
 
@@ -41,7 +44,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     #[Test]
     public function itPassesNonMatchingNamespace(): void
     {
-        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher([self::namespace(SelectorKind::Subtree, 'App\\Entity')]), self::declaredFileScope());
 
         $finding = $this->createFinding('App\\Service', 'complexity.ccn');
 
@@ -51,7 +54,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     #[Test]
     public function itKeepsLayerViolationRuleInExcludedNamespace(): void
     {
-        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher([self::namespace(SelectorKind::Subtree, 'App\\Entity')]), self::declaredFileScope());
 
         $finding = $this->createFinding('App\\Entity', LayerViolationRule::NAME);
 
@@ -61,7 +64,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     #[Test]
     public function itKeepsCircularDependencyRuleInExcludedNamespace(): void
     {
-        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher([self::namespace(SelectorKind::Subtree, 'App\\Entity')]), self::declaredFileScope());
 
         $finding = $this->createFinding('App\\Entity', CircularDependencyRule::NAME);
 
@@ -71,7 +74,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     #[Test]
     public function itKeepsArchitectureCoverageDiagnosticEvenIfNamePrefixMatchesByCoincidence(): void
     {
-        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher([self::namespace(SelectorKind::Subtree, 'App\\Entity')]), self::declaredFileScope());
 
         // architecture.coverage-gap and friends are project-level (empty namespace) diagnostics,
         // but the exemption is driven purely by the rule-name prefix — verify it still applies.
@@ -83,7 +86,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     #[Test]
     public function itKeepsArchitectureRuleEvenWhenItIsAFileSymbolFindingInExcludedNamespace(): void
     {
-        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher([self::namespace(SelectorKind::Subtree, 'App\\Entity')]), self::declaredFileScope());
 
         // Occurrence-style findings carry a file symbol path; the architecture
         // exemption is decided before any namespace resolution, so it must hold
@@ -106,7 +109,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     #[Test]
     public function itFiltersFileSymbolFindingWhoseSubjectNamespaceMatches(): void
     {
-        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher([self::namespace(SelectorKind::Subtree, 'App\\Entity')]), self::declaredFileScope());
 
         $finding = $this->createFileSymbolFinding('App\\Entity', 'code-smell.eval');
 
@@ -116,7 +119,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     #[Test]
     public function itPassesFileSymbolFindingWhoseSubjectNamespaceDoesNotMatch(): void
     {
-        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher([self::namespace(SelectorKind::Subtree, 'App\\Entity')]), self::declaredFileScope());
 
         $finding = $this->createFileSymbolFinding('App\\Service', 'code-smell.eval');
 
@@ -126,7 +129,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     #[Test]
     public function itPassesFileSymbolFindingWithoutDeclaringNamespace(): void
     {
-        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App']), self::declaredFileScope());
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher([self::namespace(SelectorKind::Subtree, 'App')]), self::declaredFileScope());
 
         // A file-symbol finding with no declaration subject has no namespace
         // to resolve, so it cannot be matched by any namespace exclusion.
@@ -184,7 +187,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     #[Test]
     public function itKeepsEveryDeclaredProjectScopedChannelInAnExcludedNamespace(): void
     {
-        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher([self::namespace(SelectorKind::Subtree, 'App\\Entity')]), self::declaredFileScope());
 
         foreach (self::declaredProjectScopedChannelKeys() as $key) {
             $channel = new FindingChannel($key);
@@ -199,7 +202,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     #[Test]
     public function itFiltersAChannelNoCapabilityDeclaredProjectScoped(): void
     {
-        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher([self::namespace(SelectorKind::Subtree, 'App\\Entity')]), self::declaredFileScope());
         $undeclared = new FindingChannel('architecture.layer-violation.invented');
 
         self::assertFalse(
@@ -240,5 +243,10 @@ final class NamespaceExclusionFilterTest extends TestCase
             ...LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS,
             ...CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS,
         ];
+    }
+
+    private static function namespace(SelectorKind $kind, string $value): NamespacePattern
+    {
+        return new NamespacePattern(SelectorDefinition::fromKindAndValue($kind->value, $value));
     }
 }

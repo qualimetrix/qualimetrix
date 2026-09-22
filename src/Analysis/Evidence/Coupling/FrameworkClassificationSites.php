@@ -10,7 +10,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 /**
  * Every name {@see CouplingCollector} asks its framework predicate about, in
  * the FQCN spelling that predicate builds — the classification a
- * `coupling.frameworkNamespaces` prefix can actually perform.
+ * `coupling.frameworkNamespaces` selector can actually perform.
  *
  * **Its own subject is the classification, not the metric.** Two consumers ask
  * different things of it: the collector performs the classification while

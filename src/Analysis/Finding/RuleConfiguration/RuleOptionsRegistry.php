@@ -184,14 +184,16 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
         $this->pathExclusionProvider->reset();
     }
 
-    public function configureNamespaceExclusions(string $ruleName, mixed $patterns): void
+    public function configureNamespaceExclusions(string $ruleName, array $patterns): void
     {
-        $this->exclusionProvider->configureExclusions($ruleName, $patterns);
+        $this->exclusionProvider->setExclusions($ruleName, $patterns);
     }
 
-    public function configureNamespaceChannelExclusions(string $ruleName, mixed $patterns): void
+    public function configureNamespaceChannelExclusions(string $ruleName, array $patterns): void
     {
-        $this->exclusionProvider->configureChannelExclusions($ruleName, $patterns);
+        foreach ($patterns as $selector => $namespacePatterns) {
+            $this->exclusionProvider->setChannelExclusions($ruleName, $selector, $namespacePatterns);
+        }
     }
 
     public function configurePathExclusions(string $ruleName, array $patterns): void
@@ -212,5 +214,20 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
     public function isPathExcluded(string $ruleName, RelativePath $path): bool
     {
         return $this->pathExclusionProvider->isExcluded($ruleName, $path);
+    }
+
+    public function namespaceExclusions(string $ruleName): array
+    {
+        return $this->exclusionProvider->getExclusions($ruleName);
+    }
+
+    public function namespaceChannelExclusions(string $ruleName): array
+    {
+        return $this->exclusionProvider->getChannelExclusions($ruleName);
+    }
+
+    public function pathExclusions(string $ruleName): array
+    {
+        return $this->pathExclusionProvider->getExclusions($ruleName);
     }
 }

@@ -8,6 +8,7 @@ use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Run\Discovery\DirectoryPruner;
 use Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery;
 use Qualimetrix\Core\Path\AbsolutePath;
 use RecursiveDirectoryIterator;
@@ -35,7 +36,7 @@ final class FinderFileDiscoveryTest extends TestCase
     {
         $file = $this->createFile('Test.php', '<?php class Test {}');
 
-        $discovery = new FinderFileDiscovery();
+        $discovery = $this->discovery();
         $files = iterator_to_array($discovery->discover(AbsolutePath::fromString($file)), false);
 
         self::assertCount(1, $files);
@@ -50,7 +51,7 @@ final class FinderFileDiscoveryTest extends TestCase
         $this->createFile('B.php', '<?php class B {}');
         $this->createFile('readme.txt', 'not php');
 
-        $discovery = new FinderFileDiscovery();
+        $discovery = $this->discovery();
         $files = iterator_to_array($discovery->discover(AbsolutePath::fromString($this->fixturesDir)), false);
 
         self::assertCount(2, $files);
@@ -71,7 +72,7 @@ final class FinderFileDiscoveryTest extends TestCase
         mkdir($this->fixturesDir . '/vendor', 0755, true);
         $this->createFileInDir('vendor', 'VendorClass.php', '<?php class VendorClass {}');
 
-        $discovery = new FinderFileDiscovery();
+        $discovery = $this->discovery();
         $files = iterator_to_array($discovery->discover(AbsolutePath::fromString($this->fixturesDir)), false);
 
         self::assertCount(1, $files);
@@ -87,7 +88,7 @@ final class FinderFileDiscoveryTest extends TestCase
         $this->createFileInDir('src', 'Src.php', '<?php class Src {}');
         $this->createFileInDir('lib', 'Lib.php', '<?php class Lib {}');
 
-        $discovery = new FinderFileDiscovery();
+        $discovery = $this->discovery();
         $files = iterator_to_array($discovery->discover([
             AbsolutePath::fromString($this->fixturesDir . '/src'),
             AbsolutePath::fromString($this->fixturesDir . '/lib'),
@@ -99,7 +100,7 @@ final class FinderFileDiscoveryTest extends TestCase
     #[Test]
     public function itReturnsEmptyForEmptyPaths(): void
     {
-        $discovery = new FinderFileDiscovery();
+        $discovery = $this->discovery();
         $files = iterator_to_array($discovery->discover([]), false);
 
         self::assertSame([], $files);
@@ -108,7 +109,7 @@ final class FinderFileDiscoveryTest extends TestCase
     #[Test]
     public function itSkipsNonExistentPaths(): void
     {
-        $discovery = new FinderFileDiscovery();
+        $discovery = $this->discovery();
         $files = iterator_to_array($discovery->discover(AbsolutePath::fromString('/non/existent/path')), false);
 
         self::assertSame([], $files);
@@ -121,7 +122,7 @@ final class FinderFileDiscoveryTest extends TestCase
         $this->createFile('A.php', '<?php class A {}');
         $this->createFile('M.php', '<?php class M {}');
 
-        $discovery = new FinderFileDiscovery();
+        $discovery = $this->discovery();
         $files = iterator_to_array($discovery->discover(AbsolutePath::fromString($this->fixturesDir)), false);
 
         $filenames = array_map(
@@ -139,7 +140,7 @@ final class FinderFileDiscoveryTest extends TestCase
         $this->createFile('Root.php', '<?php class Root {}');
         $this->createFileInDir('sub', 'Sub.php', '<?php class Sub {}');
 
-        $discovery = new FinderFileDiscovery();
+        $discovery = $this->discovery();
         $files = iterator_to_array($discovery->discover(AbsolutePath::fromString($this->fixturesDir)), false);
 
         self::assertCount(2, $files);
@@ -152,7 +153,7 @@ final class FinderFileDiscoveryTest extends TestCase
         $singleFile = $this->createFile('Single.php', '<?php class Single {}');
         $this->createFileInDir('src', 'InDir.php', '<?php class InDir {}');
 
-        $discovery = new FinderFileDiscovery();
+        $discovery = $this->discovery();
         $files = iterator_to_array($discovery->discover([
             AbsolutePath::fromString($singleFile),
             AbsolutePath::fromString($this->fixturesDir . '/src'),
@@ -167,6 +168,13 @@ final class FinderFileDiscoveryTest extends TestCase
         file_put_contents($path, $content);
 
         return $path;
+    }
+
+    private function discovery(): FinderFileDiscovery
+    {
+        $root = AbsolutePath::fromString($this->fixturesDir);
+
+        return new FinderFileDiscovery(new DirectoryPruner($root, DirectoryPruner::builtInPatterns()));
     }
 
     private function createFileInDir(string $dir, string $name, string $content): string

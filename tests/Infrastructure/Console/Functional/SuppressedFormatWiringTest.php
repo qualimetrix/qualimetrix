@@ -52,9 +52,9 @@ final class SuppressedFormatWiringTest extends TestCase
             rules:
               code-smell.long-parameter-list:
                 suppress_namespaces:
-                  - App\Excluded
+                  - {subtree: App\Excluded}
                 suppress_paths:
-                  - src/DoesNotExist.php
+                  - {exact: src/DoesNotExist.php}
             YAML,
         );
     }
@@ -86,7 +86,7 @@ final class SuppressedFormatWiringTest extends TestCase
         $payload = $this->decode($display);
         self::assertGreaterThanOrEqual(1, $payload['byMechanism']['rule-namespace-suppression']);
         self::assertContainsEquals(
-            ['mechanism' => 'rule-path-suppression', 'suppressor' => 'code-smell.long-parameter-list: src/DoesNotExist.php'],
+            ['mechanism' => 'rule-path-suppression', 'suppressor' => 'code-smell.long-parameter-list: exact:src/DoesNotExist.php'],
             $payload['neverMatched'],
         );
     }
@@ -116,9 +116,9 @@ final class SuppressedFormatWiringTest extends TestCase
             rules:
               code-smell.long-parameter-list:
                 suppress_namespaces:
-                  - App\Excluded
+                  - {subtree: App\Excluded}
                 suppress_paths:
-                  - src/DoesNotExist.php
+                  - {exact: src/DoesNotExist.php}
             YAML,
         );
 

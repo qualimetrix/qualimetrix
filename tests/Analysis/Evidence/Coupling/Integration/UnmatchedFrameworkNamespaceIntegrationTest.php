@@ -81,7 +81,7 @@ final class UnmatchedFrameworkNamespaceIntegrationTest extends TestCase
     #[Test]
     public function itReportsAFrameworkPrefixThatMatchedNothing(): void
     {
-        $findings = $this->findingsOnChannel($this->check($this->config("['Nope\\Missing']")));
+        $findings = $this->findingsOnChannel($this->check($this->config("[{subtree: 'Nope\\Missing'}]")));
 
         self::assertCount(1, $findings);
         self::assertSame('warning', $findings[0]['severity'] ?? null);
@@ -93,7 +93,7 @@ final class UnmatchedFrameworkNamespaceIntegrationTest extends TestCase
     #[Test]
     public function itStaysSilentWhenTheFrameworkPrefixMatched(): void
     {
-        self::assertSame([], $this->findingsOnChannel($this->check($this->config("['Symfony']"))));
+        self::assertSame([], $this->findingsOnChannel($this->check($this->config("[{subtree: Symfony}]"))));
     }
 
     /**
@@ -108,8 +108,8 @@ final class UnmatchedFrameworkNamespaceIntegrationTest extends TestCase
     #[Test]
     public function itMovesTheApplicationScopeOnlyOnAHit(): void
     {
-        $miss = $this->classMetrics($this->check($this->config("['Nope\\Missing']"), ['--format' => 'metrics']));
-        $hit = $this->classMetrics($this->check($this->config("['Symfony']"), ['--format' => 'metrics']));
+        $miss = $this->classMetrics($this->check($this->config("[{subtree: 'Nope\\Missing'}]"), ['--format' => 'metrics']));
+        $hit = $this->classMetrics($this->check($this->config("[{subtree: Symfony}]"), ['--format' => 'metrics']));
 
         self::assertSame(3, $miss['coupling.cbo-app'] ?? null, 'The miss must leave every class in the application scope.');
         self::assertSame(0, $miss['coupling.ce-framework'] ?? null);
@@ -151,7 +151,7 @@ final class UnmatchedFrameworkNamespaceIntegrationTest extends TestCase
         unlink($this->fixture . '/src/Service.php');
 
         try {
-            self::assertSame([], $this->findingsOnChannel($this->check($this->config("['Symfony', 'Nope\\Missing']"))));
+            self::assertSame([], $this->findingsOnChannel($this->check($this->config("[{subtree: Symfony}, {subtree: 'Nope\\Missing'}]"))));
         } finally {
             @unlink($this->fixture . '/src/Standalone.php');
         }
@@ -161,7 +161,7 @@ final class UnmatchedFrameworkNamespaceIntegrationTest extends TestCase
     #[Test]
     public function itReportsEveryUnboundPrefixSeparately(): void
     {
-        $findings = $this->findingsOnChannel($this->check($this->config("['Nope\\Missing', 'Symfony', 'Doctrine\\ORM']")));
+        $findings = $this->findingsOnChannel($this->check($this->config("[{subtree: 'Nope\\Missing'}, {subtree: Symfony}, {subtree: 'Doctrine\\ORM'}]")));
 
         $messages = array_map(static fn(array $finding): string => (string) ($finding['message'] ?? ''), $findings);
 
@@ -191,7 +191,7 @@ final class UnmatchedFrameworkNamespaceIntegrationTest extends TestCase
     #[Test]
     public function itLeavesTheRunGreenUnderFailOnNone(): void
     {
-        $tester = $this->check($this->config("['Nope\\Missing']"));
+        $tester = $this->check($this->config("[{subtree: 'Nope\\Missing'}]"));
 
         self::assertNotSame([], $this->findingsOnChannel($tester));
         self::assertSame(0, $tester->getStatusCode(), $tester->getErrorOutput());
@@ -206,7 +206,7 @@ final class UnmatchedFrameworkNamespaceIntegrationTest extends TestCase
     #[Test]
     public function itFailsTheRunUnderFailOnWarning(): void
     {
-        $tester = $this->check($this->config("['Nope\\Missing']"), ['--fail-on' => 'warning']);
+        $tester = $this->check($this->config("[{subtree: 'Nope\\Missing'}]"), ['--fail-on' => 'warning']);
 
         self::assertSame(2, $tester->getStatusCode(), 'Findings at or above --fail-on exit 2.');
     }
@@ -219,7 +219,7 @@ final class UnmatchedFrameworkNamespaceIntegrationTest extends TestCase
     #[Test]
     public function itIsSilencedByDisablingTheProducingRule(): void
     {
-        $tester = $this->check($this->config("['Nope\\Missing']"), ['--disable-rule' => [UnmatchedFrameworkNamespaceRule::NAME]]);
+        $tester = $this->check($this->config("[{subtree: 'Nope\\Missing'}]"), ['--disable-rule' => [UnmatchedFrameworkNamespaceRule::NAME]]);
 
         self::assertSame([], $this->findingsOnChannel($tester));
     }

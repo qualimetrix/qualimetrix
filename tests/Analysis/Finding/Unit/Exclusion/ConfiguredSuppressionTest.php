@@ -16,16 +16,12 @@ use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
 final class ConfiguredSuppressionTest extends TestCase
 {
     #[Test]
-    public function itReadsEitherSpellingOfEachOption(): void
+    public function itReadsTheRawChannelMapNeededByInputValidation(): void
     {
-        self::assertSame(['a'], ConfiguredSuppression::paths(['suppress_paths' => ['a']]));
-        self::assertSame(['a'], ConfiguredSuppression::paths(['suppressPaths' => 'a']));
-        self::assertSame(['n'], ConfiguredSuppression::namespaces(['suppress_namespaces' => ['n']]));
-        self::assertSame(['n'], ConfiguredSuppression::namespaces(['suppressNamespaces' => 'n']));
         self::assertSame(
-            [['selector' => 'coupling.cbo:namespace', 'pattern' => 'n']],
-            ConfiguredSuppression::namespaceChannelPatterns([
-                'suppressNamespaceChannels' => ['coupling.cbo:namespace' => ['n']],
+            ['coupling.cbo:namespace' => [['subtree' => 'App']]],
+            ConfiguredSuppression::rawNamespaceChannels([
+                'suppressNamespaceChannels' => ['coupling.cbo:namespace' => [['subtree' => 'App']]],
             ]),
         );
     }
@@ -34,11 +30,6 @@ final class ConfiguredSuppressionTest extends TestCase
     #[Test]
     public function itReadsNothingRatherThanThrowingOnAMalformedValue(): void
     {
-        self::assertSame([], ConfiguredSuppression::paths(['suppress_paths' => 42]));
-        self::assertSame([], ConfiguredSuppression::namespaces([]));
         self::assertSame([], ConfiguredSuppression::rawNamespaceChannels(['suppress_namespace_channels' => 'x']));
-        self::assertSame([], ConfiguredSuppression::namespaceChannelPatterns([
-            'suppress_namespace_channels' => ['ok' => [1, 2]],
-        ]));
     }
 }

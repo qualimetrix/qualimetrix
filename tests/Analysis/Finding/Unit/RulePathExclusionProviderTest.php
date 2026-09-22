@@ -9,6 +9,9 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 
 #[CoversClass(RulePathExclusionProvider::class)]
 final class RulePathExclusionProviderTest extends TestCase
@@ -25,7 +28,7 @@ final class RulePathExclusionProviderTest extends TestCase
     public function itMatchesPathPrefix(): void
     {
         $provider = new RulePathExclusionProvider();
-        $provider->setExclusions('coupling.cbo', ['src/Metrics']);
+        $provider->setExclusions('coupling.cbo', $this->subtrees(['src/Metrics']));
 
         self::assertTrue($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Metrics/CodeSmellVisitor.php')));
         self::assertFalse($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Rules/SomeRule.php')));
@@ -35,7 +38,7 @@ final class RulePathExclusionProviderTest extends TestCase
     public function itMatchesDirectoryPrefix(): void
     {
         $provider = new RulePathExclusionProvider();
-        $provider->setExclusions('coupling.cbo', ['src/Infrastructure/DependencyInjection']);
+        $provider->setExclusions('coupling.cbo', $this->subtrees(['src/Infrastructure/DependencyInjection']));
 
         self::assertTrue($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Infrastructure/DependencyInjection/ContainerFactory.php')));
         self::assertFalse($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Infrastructure/Console/Command.php')));
@@ -45,7 +48,7 @@ final class RulePathExclusionProviderTest extends TestCase
     public function itDoesNotMatchPartialPrefix(): void
     {
         $provider = new RulePathExclusionProvider();
-        $provider->setExclusions('coupling.cbo', ['src/Entity']);
+        $provider->setExclusions('coupling.cbo', $this->subtrees(['src/Entity']));
 
         self::assertTrue($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Entity/User.php')));
         self::assertFalse($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/EntityManager/Foo.php')));
@@ -55,7 +58,7 @@ final class RulePathExclusionProviderTest extends TestCase
     public function itIsExclusionIsolatedPerRule(): void
     {
         $provider = new RulePathExclusionProvider();
-        $provider->setExclusions('coupling.cbo', ['src/Metrics']);
+        $provider->setExclusions('coupling.cbo', $this->subtrees(['src/Metrics']));
 
         self::assertTrue($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Metrics/SomeFile.php')));
         self::assertFalse($provider->isExcluded('complexity.ccn', RelativePath::fromString('src/Metrics/SomeFile.php')));
@@ -74,7 +77,7 @@ final class RulePathExclusionProviderTest extends TestCase
     public function itClearsAllExclusionsOnReset(): void
     {
         $provider = new RulePathExclusionProvider();
-        $provider->setExclusions('coupling.cbo', ['src']);
+        $provider->setExclusions('coupling.cbo', $this->subtrees(['src']));
 
         self::assertTrue($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/File.php')));
 
@@ -87,7 +90,7 @@ final class RulePathExclusionProviderTest extends TestCase
     public function itMatchesGlobPattern(): void
     {
         $provider = new RulePathExclusionProvider();
-        $provider->setExclusions('coupling.cbo', ['src/Metrics/*Visitor.php']);
+        $provider->setExclusions('coupling.cbo', [new PathPattern(new SelectorDefinition(SelectorKind::Regex, 'src/Metrics/.*Visitor\\.php'))]);
 
         self::assertTrue($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Metrics/CboVisitor.php')));
         self::assertFalse($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Metrics/CboCollector.php')));
@@ -97,9 +100,22 @@ final class RulePathExclusionProviderTest extends TestCase
     public function itMatchesExactFileWithSinglePrefix(): void
     {
         $provider = new RulePathExclusionProvider();
-        $provider->setExclusions('coupling.cbo', ['src/Entity/User.php']);
+        $provider->setExclusions('coupling.cbo', [new PathPattern(new SelectorDefinition(SelectorKind::Exact, 'src/Entity/User.php'))]);
 
         self::assertTrue($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Entity/User.php')));
         self::assertFalse($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Entity/Order.php')));
+    }
+
+    /**
+     * @param list<string> $paths
+     *
+     * @return list<PathPattern>
+     */
+    private function subtrees(array $paths): array
+    {
+        return array_map(
+            static fn(string $path): PathPattern => new PathPattern(new SelectorDefinition(SelectorKind::Subtree, $path)),
+            $paths,
+        );
     }
 }

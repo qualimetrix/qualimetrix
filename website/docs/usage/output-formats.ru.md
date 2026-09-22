@@ -77,7 +77,7 @@ Top issues by impact
          complexity.ccn: Cyclomatic complexity: 13 (threshold: 10) — too many code paths (OrderRepository::findByCriteria)
 82 violations (19 errors, 63 warnings) | Tech debt: 6h 20min (54.3 min/kLOC to fix)
 
-Hints: --detail to see violations (top 200) | --namespace='App\Billing\Invoice' to drill down | --format=html -o report.html for full report
+Hints: --detail to see violations (top 200) | --namespace='subtree:App\Billing\Invoice' to drill down | --format=html -o report.html for full report
 ```
 
 Флаг, управляющий числом записей в `Top issues by impact`, описан на странице [CLI Options](cli-options.md).
@@ -86,7 +86,7 @@ Hints: --detail to see violations (top 200) | --namespace='App\Billing\Invoice' 
 
 ```bash
 # Показать нарушения для конкретного поддерева пространства имён
-bin/qmx check src/ --namespace=App\\Service
+bin/qmx check src/ --namespace='subtree:App\Service'
 
 # Показать нарушения для конкретного класса
 bin/qmx check src/ --class=App\\Service\\UserService
@@ -697,7 +697,7 @@ bin/qmx check src/ --format=health --format-opt=contributors=5
 
 ```bash
 bin/qmx check src/ --format=health
-bin/qmx check src/ --format=health --namespace='App\Service'
+bin/qmx check src/ --format=health --namespace='subtree:App\Service'
 ```
 
 ---

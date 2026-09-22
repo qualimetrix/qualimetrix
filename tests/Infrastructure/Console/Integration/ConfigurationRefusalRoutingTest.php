@@ -135,7 +135,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
             $this->inert(AnalysisPipelineInterface::class),
             $this->inert('Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator'),
             $this->realRuntimeConfigurator(),
-            $this->inert('Qualimetrix\\Infrastructure\\Console\\ResultPresenter'),
+            $this->realResultPresenter(),
             $this->realRuleInputValidator(),
             $this->inert('Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver'),
             $this->throwingConfigurationInputAdapter(),
@@ -146,7 +146,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
         $tester = new CommandTester($command);
         $code = $tester->execute(['paths' => ['src']], ['capture_stderr_separately' => true]);
 
-        self::assertSame(3, $code);
+        self::assertSame(3, $code, $tester->getDisplay() . $tester->getErrorOutput());
         self::assertSame('', $tester->getDisplay());
         self::assertStringContainsString(self::REFUSAL_SUMMARY, $tester->getErrorOutput());
     }

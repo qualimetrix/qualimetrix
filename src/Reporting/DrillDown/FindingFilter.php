@@ -6,7 +6,6 @@ namespace Qualimetrix\Reporting\DrillDown;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Core\Pattern\NamespaceMatcher;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Reporting\FormatterContext;
 
@@ -21,7 +20,7 @@ use Qualimetrix\Reporting\FormatterContext;
  *
  * Project-wide findings are excluded from every namespace selection. Their
  * symbol path carries the internal project sentinel where a namespace would
- * be, which a glob selector such as `*` would otherwise capture — selecting a
+ * be, which a regex selector such as `.*` would otherwise capture — selecting a
  * namespace subtree must never surface a finding about the whole project.
  */
 final class FindingFilter
@@ -48,7 +47,7 @@ final class FindingFilter
                     return false;
                 }
 
-                return NamespaceMatcher::matchesSingle($context->namespace, $ns);
+                return $context->namespace->matches($ns);
             }
 
             if ($context->class !== null && $class !== null) {
@@ -82,7 +81,7 @@ final class FindingFilter
                     return false;
                 }
 
-                return NamespaceMatcher::matchesSingle($context->namespace, $canonical);
+                return $context->namespace->matches($canonical);
             }
 
             if ($context->class !== null) {

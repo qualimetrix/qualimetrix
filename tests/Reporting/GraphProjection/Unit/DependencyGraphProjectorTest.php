@@ -20,6 +20,7 @@ use Qualimetrix\Reporting\GraphProjection\Contract\GraphDirection;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest;
 use Qualimetrix\Reporting\GraphProjection\DependencyGraphProjector;
+use Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub;
 
 final class DependencyGraphProjectorTest extends TestCase
 {
@@ -46,8 +47,8 @@ final class DependencyGraphProjectorTest extends TestCase
             format: GraphExportFormat::Dot,
             direction: GraphDirection::TB,
             groupByNamespace: false,
-            includeNamespaces: ['App'],
-            excludeNamespaces: ['App\\Excluded'],
+            includeNamespaces: [NamespacePatternStub::subtree('App')],
+            excludeNamespaces: [NamespacePatternStub::subtree('App\\Excluded')],
         ));
 
         self::assertStringContainsString('rankdir=TB', $projection);
@@ -61,8 +62,8 @@ final class DependencyGraphProjectorTest extends TestCase
     {
         $projection = (new DependencyGraphProjector())->project($this->graph(), new GraphProjectionRequest(
             format: GraphExportFormat::Json,
-            includeNamespaces: ['App'],
-            excludeNamespaces: ['App\\Excluded'],
+            includeNamespaces: [NamespacePatternStub::subtree('App')],
+            excludeNamespaces: [NamespacePatternStub::subtree('App\\Excluded')],
         ));
         /** @var array{nodes: list<array{fqn: string}>} $decoded */
         $decoded = json_decode($projection, true, 512, \JSON_THROW_ON_ERROR);

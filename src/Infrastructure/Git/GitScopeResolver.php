@@ -46,7 +46,7 @@ final class GitScopeResolver
             $gitClient->validateScope($reportScope->ref);
         }
 
-        $fileDiscovery = $this->fileDiscoveryFactory->create($configuration->pathExcludes);
+        $fileDiscovery = $this->fileDiscoveryFactory->create($projectRoot, $configuration->pathExcludes);
 
         return new GitScopeResolution(
             paths: $paths,

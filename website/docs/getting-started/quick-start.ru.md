@@ -44,7 +44,7 @@ Worst namespaces
 
 45 violations (12 errors, 33 warnings) | Tech debt: 2d 4h (8.5 min/kLOC)
 
-Hints: --detail to see violations (top 200) | --namespace='App\Service' to drill down | --format=html -o report.html for full report
+Hints: --detail to see violations (top 200) | --namespace='subtree:App\Service' to drill down | --format=html -o report.html for full report
 ```
 
 Каждая категория получает метку: **Excellent** (отлично), **Good** (хорошо), **Fair** (есть куда расти), **Poor** (требует внимания) или **Critical** (необходимы действия). Секция "Worst namespaces" показывает, на чём стоит сосредоточиться в первую очередь.
@@ -56,7 +56,7 @@ Hints: --detail to see violations (top 200) | --namespace='App\Service' to drill
 Изучите конкретное пространство имён, чтобы увидеть его классы и нарушения:
 
 ```bash
-vendor/bin/qmx check src/ --namespace='App\Service'
+vendor/bin/qmx check src/ --namespace='subtree:App\Service'
 ```
 
 ### Просмотр детальных нарушений
@@ -258,7 +258,7 @@ docker-compose run --rm qmx
 
 ## Исключение путей
 
-Подавление нарушений для файлов, соответствующих glob-паттернам. Полезно для сгенерированного кода, DTO или классов сущностей.
+Подавление нарушений явными селекторами путей. Полезно для сгенерированного кода, DTO или классов сущностей.
 
 !!! note "Примечание"
     Исключённые файлы всё равно анализируются (метрики собираются) -- подавляется только вывод нарушений.
@@ -268,17 +268,17 @@ docker-compose run --rm qmx
     ```yaml
     # qmx.yaml
     suppress_paths:
-      - src/Entity/*
-      - src/DTO/*
+      - subtree: src/Entity
+      - subtree: src/DTO
     ```
 
 === "CLI"
 
     ```bash
-    vendor/bin/qmx check src/ --suppress-path='src/Entity/*' --suppress-path='*/DTO/*'
+    vendor/bin/qmx check src/ --suppress-path='subtree:src/Entity' --suppress-path='regex:.*/DTO/.*'
     ```
 
-CLI-паттерны объединяются с паттернами из конфигурационного файла.
+CLI-селекторы объединяются с селекторами из конфигурационного файла.
 
 ---
 

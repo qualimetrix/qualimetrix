@@ -69,7 +69,7 @@ final readonly class AnalysisPreflight
         return new PreparedAnalysisInput(
             $runConfiguration,
             $findingConfiguration,
-            $this->fileDiscoveryFactory->create($runConfiguration->pathExcludes),
+            $this->fileDiscoveryFactory->create($runConfiguration->projectRoot, $runConfiguration->pathExcludes),
         );
     }
 

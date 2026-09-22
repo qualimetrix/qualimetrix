@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract;
 
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+
 /**
  * Why one finding in {@see RuleExclusionStats::$excludedFindings} was removed,
  * recorded by {@see \Qualimetrix\Analysis\Finding\FindingExclusionLedger} at
@@ -30,11 +32,11 @@ namespace Qualimetrix\Analysis\Finding\Contract;
 final readonly class RuleExclusionAttribution
 {
     /**
-     * @param list<string> $matchedPatterns Every `suppress_namespaces` (or, for a path
-     *                                      exclusion, `suppress_paths`) pattern matching this finding.
-     * @param list<array{selector: string, pattern: string}> $matchedChannelPatterns Every
-     *                                                                               `suppress_namespace_channels` selector/pattern pair matching
-     *                                                                               this finding. Populated only for a namespace-channel exclusion.
+     * @param list<SelectorDefinition> $matchedPatterns Every `suppress_namespaces` (or, for a path
+     *                                                  exclusion, `suppress_paths`) pattern matching this finding.
+     * @param list<array{selector: string, pattern: SelectorDefinition}> $matchedChannelPatterns Every
+     *                                                                                           `suppress_namespace_channels` selector/pattern pair matching
+     *                                                                                           this finding. Populated only for a namespace-channel exclusion.
      */
     public function __construct(
         public string $producerRuleName,

@@ -84,7 +84,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
             rules:
               code-smell.long-parameter-list:
                 suppress_namespaces:
-                  - App\Excluded
+                  - {subtree: App\Excluded}
             YAML,
         );
 
@@ -168,7 +168,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
             rules:
               {$owner}:
                 suppress_namespaces:
-                  - App\Excluded
+                  - {subtree: App\Excluded}
             YAML,
         );
 
@@ -242,7 +242,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
             rules:
               code-smell.long-parameter-list:
                 suppress_namespaces:
-                  - App\Excluded
+                  - {subtree: App\Excluded}
             YAML,
         );
 

@@ -12,8 +12,10 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Discovery\FileDiscoveryFactory;
 use Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Infrastructure\Git\GitScopeResolver;
-use ReflectionProperty;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
@@ -28,7 +30,7 @@ final class GitScopeResolverTest extends TestCase
 
         $resolved = new RunConfiguration(
             paths: [AbsolutePath::fromString($projectRoot->value() . '/src')],
-            pathExcludes: ['vendor', 'node_modules', '.git'],
+            pathExcludes: self::patterns('vendor', 'node_modules', '.git'),
             projectRoot: $projectRoot,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
             coversProjectScope: true,
@@ -60,7 +62,7 @@ final class GitScopeResolverTest extends TestCase
         $projectRoot = AbsolutePath::fromString('/some/project');
         $resolved = new RunConfiguration(
             paths: [AbsolutePath::fromString('/some/project/src')],
-            pathExcludes: ['vendor', 'node_modules', '.git'],
+            pathExcludes: self::patterns('vendor', 'node_modules', '.git'),
             projectRoot: $projectRoot,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
             coversProjectScope: true,
@@ -82,33 +84,40 @@ final class GitScopeResolverTest extends TestCase
     #[Test]
     public function itAlwaysUsesFinderFileDiscoveryWithExcludes(): void
     {
-        $projectRoot = AbsolutePath::fromString(\dirname(__DIR__, 4)); // repo root
+        $root = sys_get_temp_dir() . '/qmx-git-scope-' . bin2hex(random_bytes(6));
+        mkdir($root . '/src', 0o755, true);
+        mkdir($root . '/tests', 0o755, true);
+        file_put_contents($root . '/src/App.php', "<?php\n");
+        file_put_contents($root . '/tests/AppTest.php', "<?php\n");
+        $projectRoot = AbsolutePath::fromString($root);
 
         $resolved = new RunConfiguration(
             paths: [AbsolutePath::fromString($projectRoot->value() . '/src')],
-            pathExcludes: ['vendor', 'tests'],
+            pathExcludes: self::patterns('vendor', 'tests'),
             projectRoot: $projectRoot,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
             coversProjectScope: true,
             authoredPathExcludes: [],
         );
 
-        $definition = new InputDefinition([
-            new InputOption('report', null, InputOption::VALUE_REQUIRED),
-        ]);
+        try {
+            $definition = new InputDefinition([
+                new InputOption('report', null, InputOption::VALUE_REQUIRED),
+            ]);
+            $input = new ArrayInput([], $definition);
 
-        // Keep this wiring assertion independent from local branch names.
-        // Missing-reference rejection is covered by direct GitClient/CLI tests.
-        $input = new ArrayInput(['--report' => 'git:HEAD'], $definition);
+            $result = (new GitScopeResolver(new FileDiscoveryFactory()))->resolve($input, $resolved);
 
-        $resolver = new GitScopeResolver(new FileDiscoveryFactory());
-        $result = $resolver->resolve($input, $resolved);
-
-        // Always uses FinderFileDiscovery for full project collection
-        self::assertInstanceOf(FinderFileDiscovery::class, $result->fileDiscovery);
-
-        $excludedDirsProperty = new ReflectionProperty($result->fileDiscovery, 'excludedDirs');
-        self::assertSame(['vendor', 'tests'], $excludedDirsProperty->getValue($result->fileDiscovery));
+            self::assertInstanceOf(FinderFileDiscovery::class, $result->fileDiscovery);
+            $files = iterator_to_array($result->fileDiscovery->discover($projectRoot), false);
+            self::assertSame(['App.php'], array_map(static fn($file): string => $file->getFilename(), $files));
+        } finally {
+            unlink($root . '/src/App.php');
+            unlink($root . '/tests/AppTest.php');
+            rmdir($root . '/src');
+            rmdir($root . '/tests');
+            rmdir($root);
+        }
     }
 
     #[Test]
@@ -117,7 +126,7 @@ final class GitScopeResolverTest extends TestCase
         $projectRoot = AbsolutePath::fromString('/some/project');
         $resolved = new RunConfiguration(
             paths: [AbsolutePath::fromString('/some/project/src')],
-            pathExcludes: ['vendor', 'node_modules', '.git'],
+            pathExcludes: self::patterns('vendor', 'node_modules', '.git'),
             projectRoot: $projectRoot,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
             coversProjectScope: true,
@@ -134,5 +143,14 @@ final class GitScopeResolverTest extends TestCase
         $result = $resolver->resolve($input, $resolved);
 
         self::assertInstanceOf(FinderFileDiscovery::class, $result->fileDiscovery);
+    }
+
+    /** @return list<PathPattern> */
+    private static function patterns(string ...$values): array
+    {
+        return array_values(array_map(
+            static fn(string $value): PathPattern => new PathPattern(new SelectorDefinition(SelectorKind::Subtree, $value)),
+            $values,
+        ));
     }
 }

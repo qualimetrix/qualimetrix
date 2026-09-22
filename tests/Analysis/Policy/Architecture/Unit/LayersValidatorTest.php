@@ -681,12 +681,11 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function itTreatsATrailingBackslashPatternAsTheSameDuplicate(): void
+    public function itRejectsATrailingNamespaceSeparatorBeforeDuplicateAnalysis(): void
     {
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessageMatches('/unreachable/');
+        $this->expectExceptionMessage('trailing');
 
-        // 'App\\Service' and 'App\\Service\\' are normalized identically
         $this->validator->validate([
             ['name' => 'a', 'patterns' => ['App\\Service']],
             ['name' => 'b', 'patterns' => ['App\\Service\\']],
@@ -844,8 +843,8 @@ final class LayersValidatorTest extends TestCase
     public function itAppliesTheModeAwareDuplicateSkipToTemplateLayerEntries(): void
     {
         // The skip walks LayerDefinition and TemplateLayerDefinition
-        // uniformly through `membership()`, so template-vs-template and
-        // template-vs-static collisions follow the same rule.
+        // uniformly through `membership()`, so template-vs-template
+        // collisions follow the same rule.
         $entries = $this->validator->validate([
             [
                 'name' => 'module-{m}',
@@ -853,10 +852,10 @@ final class LayersValidatorTest extends TestCase
                 'suffix' => 'Service',
                 'match' => 'all',
             ],
-            ['name' => 'shared', 'patterns' => ['App\\Module\\{m}\\**']],
+            ['name' => 'shared-{m}', 'patterns' => ['App\\Module\\{m}\\**']],
         ]);
 
-        self::assertSame(['module-{m}', 'shared'], self::namesOf($entries));
+        self::assertSame(['module-{m}', 'shared-{m}'], self::namesOf($entries));
     }
 
     #[Test]

@@ -18,6 +18,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphDirection;
 use Qualimetrix\Reporting\GraphProjection\DotExporter;
 use Qualimetrix\Reporting\GraphProjection\DotExporterOptions;
+use Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub;
 
 final class DotExporterTest extends TestCase
 {
@@ -202,7 +203,7 @@ final class DotExporterTest extends TestCase
 
         $graph = $this->createGraph($dependencies);
         $exporter = new DotExporter(new DotExporterOptions(
-            includeNamespaces: ['App\\Service'],
+            includeNamespaces: [NamespacePatternStub::subtree('App\\Service')],
         ));
         $dot = $exporter->export($graph);
 
@@ -231,7 +232,7 @@ final class DotExporterTest extends TestCase
 
         $graph = $this->createGraph($dependencies);
         $exporter = new DotExporter(new DotExporterOptions(
-            excludeNamespaces: ['App\\Tests'],
+            excludeNamespaces: [NamespacePatternStub::subtree('App\\Tests')],
         ));
         $dot = $exporter->export($graph);
 
@@ -323,7 +324,7 @@ final class DotExporterTest extends TestCase
 
         $graph = $this->createGraph($dependencies);
         $exporter = new DotExporter(new DotExporterOptions(
-            excludeNamespaces: ['App\\Tests'],
+            excludeNamespaces: [NamespacePatternStub::subtree('App\\Tests')],
         ));
         $dot = $exporter->export($graph);
 

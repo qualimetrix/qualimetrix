@@ -212,10 +212,10 @@ final readonly class FindingProjector
         if ($options->suppressPaths !== []) {
             $stages[] = new PredicateFilterStage(
                 FindingFilterStage::PathExclusion,
-                new PathExclusionFilter(new PathMatcher(array_values($options->suppressPaths)), $fileScope),
+                new PathExclusionFilter(new PathMatcher($options->suppressPaths), $fileScope),
             );
         }
-        $matcher = new NamespaceMatcher(array_values($options->suppressNamespaces));
+        $matcher = new NamespaceMatcher($options->suppressNamespaces);
         if (!$matcher->isEmpty()) {
             $stages[] = new PredicateFilterStage(
                 FindingFilterStage::NamespaceExclusion,

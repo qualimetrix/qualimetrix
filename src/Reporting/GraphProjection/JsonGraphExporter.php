@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\GraphProjection;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Core\Pattern\NamespacePattern;
 
 /**
  * Exports dependency graphs to JSON format.
@@ -18,8 +19,8 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 final class JsonGraphExporter
 {
     /**
-     * @param array<string>|null $includeNamespaces
-     * @param array<string> $excludeNamespaces
+     * @param list<NamespacePattern>|null $includeNamespaces
+     * @param list<NamespacePattern> $excludeNamespaces
      */
     public function __construct(
         private readonly ?array $includeNamespaces = null,

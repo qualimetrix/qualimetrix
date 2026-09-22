@@ -15,6 +15,9 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Infrastructure\Console\CheckScopeResolver;
 use Qualimetrix\Infrastructure\Console\ResolvedCheckScope;
 use Qualimetrix\Infrastructure\Console\ScopeWarningChecker;
@@ -62,7 +65,13 @@ final class CheckScopeResolverTest extends TestCase
         file_put_contents($projectRoot . '/composer.json', '{}');
         $factory = $this->createMock(FileDiscoveryFactoryInterface::class);
         $discovery = self::createStub(FileDiscoveryInterface::class);
-        $factory->expects(self::once())->method('create')->with(['vendor'])->willReturn($discovery);
+        $factory->expects(self::once())->method('create')->with(
+            self::callback(static fn(AbsolutePath $root): bool => $root->value() === $projectRoot),
+            self::callback(static fn(array $patterns): bool => array_map(
+                static fn(PathPattern $pattern): string => $pattern->definition->display(),
+                $patterns,
+            ) === ['subtree:vendor']),
+        )->willReturn($discovery);
         $reader = $this->createMock(ComposerAutoloadPathReaderInterface::class);
         $reader->expects(self::once())->method('productionAutoloadTargets')->with(
             self::callback(static fn(string $path): bool => str_ends_with($path, '/composer.json')),
@@ -130,7 +139,7 @@ final class CheckScopeResolverTest extends TestCase
                 ),
                 $paths,
             ),
-            pathExcludes: ['vendor'],
+            pathExcludes: [new PathPattern(new SelectorDefinition(SelectorKind::Subtree, 'vendor'))],
             projectRoot: $root,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
             coversProjectScope: true,

@@ -74,6 +74,15 @@ boolean policy argument. Its `DiscoveredAnalysisFiles` result keeps eligible
 files, project-relative paths excluded as generated, and the post-deduplication,
 pre-filter discovery count together.
 
+`DirectoryPruner` owns directory exclusion during discovery. It evaluates
+typed `PathPattern` values against one canonical subject: the directory path
+relative to the project root with `/` separators. The check happens before
+descent and returns the first matching selector for attribution. Explicit file
+arguments remain exact inputs and are not filtered as directories. The
+built-in `vendor`, `node_modules`, and `.git` exclusions are internal regex
+selectors that match those directory names at any depth; user selectors do not
+inherit that special basename behavior.
+
 Collection is the only parallel phase. `FileProcessingResult` holds the path and
 exactly one terminal state: a `SuccessfulFileProcessing` payload, or a failure
 kind plus error. The success payload carries the file metric bag, callable,
@@ -123,12 +132,14 @@ Three pieces, in the order the run reaches them:
   `RunConfiguration::$authoredPathExcludes`. The merged `pathExcludes` cannot
   answer for them: it also carries the built-in `vendor`, `node_modules` and
   `.git`, and `node_modules` is legitimately absent from most PHP trees.
-- `ExcludeBindingProbe` walks the run's roots and answers, per pattern, whether
-  any directory matched — by Symfony's own two-branch rule, read from
-  `ExcludeDirectoryFilterIterator`. It has to be asked *during* discovery:
-  `Finder::exclude()` removes the matching directories before anything
-  downstream can count them, so a pattern that worked and one that matched
-  nothing are indistinguishable from the output.
+- `ExcludeBindingProbe` walks the run's roots through the same
+  `DirectoryPruner` and answers, per typed selector, whether any directory
+  matched. It has to be asked *during* discovery: pruned directories disappear
+  before anything downstream can count them, so a selector that worked and one
+  that matched nothing are indistinguishable from the output. A selector whose
+  possible match lies below an already-pruned parent is unjudgeable and is not
+  reported as stale; exact and subtree selectors are located precisely, while
+  arbitrary regex selectors are treated conservatively.
 - `UnmatchedExcludeAudit` turns that answer into findings, and
   `AnalysisFileDiscovery` asks it, so they ride out of discovery with the
   files (`DiscoveredAnalysisFiles::$unmatchedExcludeFindings`) and are

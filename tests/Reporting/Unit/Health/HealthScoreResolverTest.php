@@ -77,7 +77,7 @@ final class HealthScoreResolverTest extends TestCase
             healthScores: $projectScores,
         );
 
-        $context = new FormatterContext(namespace: 'App');
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App'));
 
         $result = $this->resolver->resolve($report, $context);
 
@@ -113,7 +113,7 @@ final class HealthScoreResolverTest extends TestCase
             healthScores: [],
         );
 
-        $context = new FormatterContext(namespace: 'App\\Service');
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
 
         $result = $this->resolver->resolve($report, $context);
 
@@ -138,7 +138,7 @@ final class HealthScoreResolverTest extends TestCase
             healthScores: [],
         );
 
-        $context = new FormatterContext(namespace: 'NonExistent');
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('NonExistent'));
 
         $result = $this->resolver->resolve($report, $context);
 

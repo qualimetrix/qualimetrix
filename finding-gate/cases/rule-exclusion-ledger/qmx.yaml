@@ -1,11 +1,11 @@
 suppress_namespaces:
-  - Corpus\RuleExclusionLedger\GloballyExcluded
+  - subtree: Corpus\RuleExclusionLedger\GloballyExcluded
 rules:
   code-smell.long-parameter-list:
     suppress_namespaces:
-      - Corpus\RuleExclusionLedger\Excluded
+      - subtree: Corpus\RuleExclusionLedger\Excluded
     suppress_paths:
-      - src/SilencedByPath.php
+      - exact: src/SilencedByPath.php
 computed_metrics:
   health.complexity: { enabled: false }
   health.cohesion: { enabled: false }

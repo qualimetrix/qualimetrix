@@ -26,6 +26,10 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -73,8 +77,8 @@ final class MeasuredFindingSetTest extends TestCase
         $reported = self::finding('src/Service/UserService.php', 'App\\Service', 'UserService');
 
         $options = new FindingProjectionOptions(
-            suppressPaths: ['generated'],
-            suppressNamespaces: ['App\\Vendor'],
+            suppressPaths: [self::path('generated')],
+            suppressNamespaces: [self::namespace('App\\Vendor')],
         );
         $set = $this->createSet(
             [$excludedByPath, $excludedByNamespace, $reported],
@@ -110,7 +114,7 @@ final class MeasuredFindingSetTest extends TestCase
         // run — it just does not redefine what the baseline measures.
         self::assertSame([], $set->forRun(
             $this->configuration(),
-            options: new FindingProjectionOptions(suppressPaths: ['vendor']),
+            options: new FindingProjectionOptions(suppressPaths: [self::path('vendor')]),
         ));
     }
 
@@ -118,8 +122,8 @@ final class MeasuredFindingSetTest extends TestCase
     public function itListsOnlyStagesThatDefineTheMeasuredSet(): void
     {
         $set = $this->createSet([], new FindingProjectionOptions(
-            suppressPaths: ['generated'],
-            suppressNamespaces: ['App\\Vendor'],
+            suppressPaths: [self::path('generated')],
+            suppressNamespaces: [self::namespace('App\\Vendor')],
         ));
 
         foreach ([FindingFilterStage::Suppression, FindingFilterStage::PathExclusion, FindingFilterStage::NamespaceExclusion] as $stage) {
@@ -161,7 +165,10 @@ final class MeasuredFindingSetTest extends TestCase
         $root = AbsolutePath::fromString(sys_get_temp_dir());
         $configuration = new RunConfiguration(
             [$root],
-            ['vendor', 'node_modules', '.git', 'generated'],
+            array_map(
+                static fn(string $value): PathPattern => new PathPattern(new SelectorDefinition(SelectorKind::Subtree, $value)),
+                ['vendor', 'node_modules', '.git', 'generated'],
+            ),
             $root,
             GeneratedFilePolicy::Exclude,
             coversProjectScope: true,
@@ -171,7 +178,7 @@ final class MeasuredFindingSetTest extends TestCase
         $factory = self::createMock(FileDiscoveryFactoryInterface::class);
         $factory->expects(self::once())
             ->method('create')
-            ->with($configuration->pathExcludes)
+            ->with($configuration->projectRoot, $configuration->pathExcludes)
             ->willReturn($discovery);
         $analyzer = self::createMock(AnalysisPipelineInterface::class);
         $analyzer->expects(self::once())
@@ -273,5 +280,15 @@ final class MeasuredFindingSetTest extends TestCase
             severity: Severity::Warning,
             metricValue: 25,
         );
+    }
+
+    private static function path(string $value): PathPattern
+    {
+        return new PathPattern(SelectorDefinition::fromKindAndValue(SelectorKind::Subtree->value, $value));
+    }
+
+    private static function namespace(string $value): NamespacePattern
+    {
+        return new NamespacePattern(SelectorDefinition::fromKindAndValue(SelectorKind::Subtree->value, $value));
     }
 }

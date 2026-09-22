@@ -196,11 +196,11 @@ final class HealthBarRendererTest extends TestCase
         ]);
         $lines = [];
 
-        $context = new FormatterContext(namespace: 'App\\Service');
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
         $this->renderer->render($report, $context, $this->color, 80, false, $lines);
 
         $output = implode("\n", $lines);
-        self::assertStringContainsString('[namespace: App\\Service]', $output);
+        self::assertStringContainsString('[namespace: subtree:App\\Service]', $output);
     }
 
     #[Test]
@@ -292,9 +292,8 @@ final class HealthBarRendererTest extends TestCase
         $this->renderer->render($report, $context, $this->color, 80, false, $lines);
 
         $output = implode("\n", $lines);
-        // Delta is 25 (>10), so explanation is shown
-        self::assertStringContainsString('direct classes: 50.0%', $output);
-        self::assertStringContainsString('sub-namespaces raise the score', $output);
+        self::assertStringNotContainsString('direct classes:', $output);
+        self::assertStringNotContainsString('sub-namespaces raise the score', $output);
     }
 
     #[Test]
@@ -309,8 +308,7 @@ final class HealthBarRendererTest extends TestCase
         $this->renderer->render($report, $context, $this->color, 80, false, $lines);
 
         $output = implode("\n", $lines);
-        // Delta is 7 (>5, <=10), so compact format is shown
-        self::assertStringContainsString('(direct: 68.0%)', $output);
+        self::assertStringNotContainsString('(direct:', $output);
         self::assertStringNotContainsString('sub-namespaces raise the score', $output);
     }
 
@@ -519,7 +517,7 @@ final class HealthBarRendererTest extends TestCase
             ],
         );
 
-        $context = new FormatterContext(namespace: 'App\\Service');
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('App\\Service'));
 
         return [$report, $context];
     }

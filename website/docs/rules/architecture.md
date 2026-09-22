@@ -268,7 +268,7 @@ architecture:
   coverage-gap: ignore
 ```
 
-Patterns support both prefix matching (no wildcards, e.g. `App\Controller`) and glob matching (`*`, `**`, `?`, `[…]`). Same-layer dependencies are always allowed (sub-module isolation is intentionally out of scope for the MVP).
+Architecture patterns use their own closed binding DSL, not the public `exact | subtree | regex` selector language. A wildcard-free FQN selects an inclusive namespace subtree; `*` and `?` stay inside one namespace segment, `**` may cross segments, and `{module}` / `{path:**}` capture values for template layers. Character classes and raw PCRE are rejected. Same-layer dependencies are always allowed (sub-module isolation is intentionally out of scope for the MVP).
 
 **Ordering and the catch-all idiom.** Declaration order is meaningful. Put **narrow** layers first and **broad** layers after — `App\Service\Internal\**` before `App\Service\**`. To capture everything left, declare a final layer with the pattern `**`:
 
@@ -325,7 +325,7 @@ Phase 1 decided layer membership purely from class FQN matched against `patterns
 
 | Criterion    | Matches when…                                                                                  |
 | ------------ | ---------------------------------------------------------------------------------------------- |
-| `patterns`   | Class FQN matches one of the listed glob patterns (Phase 1 behaviour).                         |
+| `patterns`   | Class FQN matches one of the listed Architecture DSL patterns (Phase 1 behaviour).             |
 | `suffix`     | Class short-name ends with one of the listed strings (e.g. `Repository`, `Controller`).        |
 | `attributes` | Class is annotated with one of the listed PHP attribute FQNs (use-statement-aware resolution). |
 | `implements` | Class implements one of the listed interface FQNs, directly or transitively.                   |

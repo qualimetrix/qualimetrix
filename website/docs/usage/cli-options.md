@@ -36,10 +36,10 @@ bin/qmx check src/ --config=qmx.yaml
 
 ### `--exclude`
 
-Exclude directories from analysis. Can be repeated:
+Exclude directories from analysis with an explicit path selector. Can be repeated:
 
 ```bash
-bin/qmx check src/ --exclude=src/Generated --exclude=src/Legacy
+bin/qmx check src/ --exclude=subtree:src/Generated --exclude=exact:src/Legacy
 ```
 
 A value that removes no directory is reported as
@@ -64,10 +64,10 @@ include_generated: true
 
 ### `--suppress-path`
 
-Suppress violations for files matching a glob pattern. The files are still analyzed (their metrics contribute to namespace-level calculations), but violations are not reported. Can be repeated:
+Suppress violations for files selected by `exact:`, `subtree:`, or `regex:`. CLI values split on the first colon; regex fragments are delimiterless and automatically full-anchored. The files are still analyzed, and the option can be repeated:
 
 ```bash
-bin/qmx check src/ --suppress-path="src/Entity/*" --suppress-path="src/DTO/*"
+bin/qmx check src/ --suppress-path='subtree:src/Entity' --suppress-path='regex:src/DTO/.*\.php'
 ```
 
 Merged with `suppress_paths` from `qmx.yaml` — both sources are combined.
@@ -79,10 +79,10 @@ Merged with `suppress_paths` from `qmx.yaml` — both sources are combined.
 
 ### `--suppress-namespace`
 
-Suppress violations for classes in namespaces matching a prefix or glob pattern. The classes are still analyzed (their metrics contribute to aggregated calculations), but violations are not reported. Can be repeated:
+Suppress violations for classes selected by an explicit namespace selector. `subtree:` follows namespace boundaries; `regex:` is a full-subject PCRE fragment. The classes are still analyzed, and the option can be repeated:
 
 ```bash
-bin/qmx check src/ --suppress-namespace="App\Entity" --suppress-namespace="App\DTO\*"
+bin/qmx check src/ --suppress-namespace='subtree:App\Entity' --suppress-namespace='regex:App\\DTO(?:\\[^\\]+)*'
 ```
 
 Merged with `suppress_namespaces` from `qmx.yaml` — both sources are combined.
@@ -303,21 +303,16 @@ Cannot be combined with `--format-opt=violations=N` (numeric limit) — this pro
 
 ### `--namespace`
 
-Filter output to a specific namespace subtree. The value is a namespace *pattern*, not a literal prefix:
-
-- Without glob characters it matches on namespace boundaries — `App\Service` matches `App\Service` and everything under it, but not `App\ServiceBus`.
-- With `*`, `?` or `[` it is matched as a glob, so `App\*\Order` selects `App\Billing\Order` and `App\Sales\Order` rather than a namespace literally spelled with an asterisk.
-- A trailing `\` is cosmetic: `App\Service\` and `App\Service` are the same pattern.
-- An empty value matches nothing at all, the global namespace included.
+Filter output with an explicit namespace selector. Use `exact:` for one namespace, `subtree:` for it and its boundary-separated descendants, or `regex:` for a delimiterless PCRE fragment. Bare and empty values are refused; regex always covers the full namespace.
 
 ```bash
-bin/qmx check src/ --namespace=App\\Service
-bin/qmx check src/ --namespace='App\*\Order'
+bin/qmx check src/ --namespace='subtree:App\Service'
+bin/qmx check src/ --namespace='regex:App\\(?:Billing|Sales)\\Order'
 ```
 
 Filters violations and worst offenders to the selected namespaces. Shows subtree health scores. Auto-enables `--detail`.
 
-Project-wide findings (`architecture.coverage-gap` and the other diagnostics that judge the run as a whole) are never selected by a namespace pattern, not even `*`: they belong to no namespace.
+Project-wide findings (`architecture.coverage-gap` and the other diagnostics that judge the run as a whole) are never selected by a namespace selector: they belong to no namespace.
 
 The same matching rule governs the health drill-down and the worst-offender lists this option turns on, and the `include_namespaces` option of `coupling.distance`.
 
@@ -995,10 +990,10 @@ bin/qmx graph:export src/ -o graph.dot
 bin/qmx graph:export src/ --format=json -o graph.json
 
 # Filter by namespace
-bin/qmx graph:export src/ --namespace=App\\Service --namespace=App\\Repository
+bin/qmx graph:export src/ --namespace='subtree:App\Service' --namespace='subtree:App\Repository'
 
 # Exclude namespaces
-bin/qmx graph:export src/ --exclude-namespace=App\\Generated
+bin/qmx graph:export src/ --exclude-namespace='subtree:App\Generated'
 
 # Change layout direction
 bin/qmx graph:export src/ --direction=TB
@@ -1007,14 +1002,14 @@ bin/qmx graph:export src/ --direction=TB
 bin/qmx graph:export src/ --no-clusters
 ```
 
-| Option                   | Description                                             |
-| ------------------------ | ------------------------------------------------------- |
-| `-o`, `--output=FILE`    | Output file (default: stdout)                           |
-| `-f`, `--format=FORMAT`  | `dot` (default) or `json`                               |
-| `-d`, `--direction=DIR`  | Graph direction: `LR`, `TB`, `RL`, `BT` (default: `LR`) |
-| `--no-clusters`          | Do not group nodes by namespace                         |
-| `--namespace=NS`         | Include only these namespaces (repeatable)              |
-| `--exclude-namespace=NS` | Exclude these namespaces (repeatable)                   |
+| Option                         | Description                                                                        |
+| ------------------------------ | ---------------------------------------------------------------------------------- |
+| `-o`, `--output=FILE`          | Output file (default: stdout)                                                      |
+| `-f`, `--format=FORMAT`        | `dot` (default) or `json`                                                          |
+| `-d`, `--direction=DIR`        | Graph direction: `LR`, `TB`, `RL`, `BT` (default: `LR`)                            |
+| `--no-clusters`                | Do not group nodes by namespace                                                    |
+| `--namespace=SELECTOR`         | Include only namespaces selected by `exact:`, `subtree:`, or `regex:` (repeatable) |
+| `--exclude-namespace=SELECTOR` | Exclude namespaces using the same explicit forms (repeatable)                      |
 
 A `--namespace` value matching no vertex is refused with exit 3 rather than
 exporting an empty graph. `--exclude-namespace` keeps its silence on purpose: a

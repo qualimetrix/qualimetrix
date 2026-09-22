@@ -21,6 +21,10 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -89,7 +93,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
         $excluded = self::finding('generated/Proxy.php', 'App\\Generated', 'Proxy');
         $reported = self::finding('src/Service/UserService.php', 'App\\Service', 'UserService');
 
-        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressPaths: ['generated']));
+        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressPaths: [self::path('generated')]));
 
         $baseline = $this->capture($this->project($pipeline, [$excluded, $reported], new FindingProjectionOptions())->measuredFindings);
 
@@ -107,7 +111,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
         $excluded = self::finding('src/Generated/Proxy.php', 'App\\Generated', 'Proxy');
         $reported = self::finding('src/Service/UserService.php', 'App\\Service', 'UserService');
 
-        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressNamespaces: ['App\\Generated']));
+        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressNamespaces: [self::namespace('App\\Generated')]));
 
         $baseline = $this->capture($this->project($pipeline, [$excluded, $reported], new FindingProjectionOptions())->measuredFindings);
 
@@ -131,7 +135,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
             LayerViolationRule::NAME,
         );
 
-        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressNamespaces: ['App\\Generated']));
+        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressNamespaces: [self::namespace('App\\Generated')]));
 
         $baseline = $this->capture($this->project($pipeline, [$architecture], new FindingProjectionOptions())->measuredFindings);
 
@@ -254,6 +258,16 @@ final class CaptureFromMeasuredSetTest extends TestCase
             annotationSuppressionDisabled: $options->annotationSuppressionDisabled,
             gitScope: $options->gitScope,
         ));
+    }
+
+    private static function path(string $value): PathPattern
+    {
+        return new PathPattern(new SelectorDefinition(SelectorKind::Subtree, $value));
+    }
+
+    private static function namespace(string $value): NamespacePattern
+    {
+        return new NamespacePattern(new SelectorDefinition(SelectorKind::Subtree, $value));
     }
 
     private static function finding(

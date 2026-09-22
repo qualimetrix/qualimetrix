@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Integration;
 
 use PHPUnit\Framework\Attributes\Group;
-
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
@@ -124,8 +123,8 @@ final class Phase1ConfigCompatibilityTest extends TestCase
                 ],
                 [
                     'name' => 'service',
-                    // Trailing backslash — must normalise to the bare prefix.
-                    'patterns' => ['Fixtures\\Sample\\Service\\'],
+                    // Bare FQN — inclusive boundary-aware subtree.
+                    'patterns' => ['Fixtures\\Sample\\Service'],
                 ],
                 [
                     'name' => 'repository',

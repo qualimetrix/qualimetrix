@@ -22,8 +22,10 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Pattern\NamespaceMatcher;
-use Qualimetrix\Core\Pattern\PathMatcher;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
@@ -83,13 +85,13 @@ final class SuppressionCompositionBuilderTest extends TestCase
             $filterResult,
             $this->ruleExecution(),
             $this->ruleConfiguration([]),
-            new FindingProjectionOptions(suppressPaths: ['src/Excluded']),
+            new FindingProjectionOptions(suppressPaths: $this->paths(['src/Excluded'])),
             suppressions: [],
         );
 
         self::assertCount(1, $composition->all);
         self::assertSame(SuppressionMechanism::PathSuppression, $composition->all[0]->mechanism);
-        self::assertSame('src/Excluded', $composition->all[0]->suppressor);
+        self::assertSame('subtree:src/Excluded', $composition->all[0]->suppressor);
     }
 
     #[Test]
@@ -105,13 +107,13 @@ final class SuppressionCompositionBuilderTest extends TestCase
             $filterResult,
             $this->ruleExecution(),
             $this->ruleConfiguration([]),
-            new FindingProjectionOptions(suppressNamespaces: ['App\\Excluded']),
+            new FindingProjectionOptions(suppressNamespaces: $this->namespaces(['App\\Excluded'])),
             suppressions: [],
         );
 
         self::assertCount(1, $composition->all);
         self::assertSame(SuppressionMechanism::NamespaceSuppression, $composition->all[0]->mechanism);
-        self::assertSame('App\\Excluded', $composition->all[0]->suppressor);
+        self::assertSame('subtree:App\\Excluded', $composition->all[0]->suppressor);
     }
 
     #[Test]
@@ -171,13 +173,13 @@ final class SuppressionCompositionBuilderTest extends TestCase
         $ruleExecution = new RuleExecutionResult([$finding], [], new RuleExclusionStats(
             namespaceExclusionsByRule: ['coupling.cbo' => 1],
             excludedFindings: [$finding],
-            attributions: [new RuleExclusionAttribution('coupling.cbo', isPathExclusion: false, matchedPatterns: ['App\\Excluded'])],
+            attributions: [new RuleExclusionAttribution('coupling.cbo', isPathExclusion: false, matchedPatterns: $this->definitions(['App\\Excluded']))],
         ), LevelActivity::empty());
 
         $composition = $this->builder->build(
             new FindingProjectionResult(findings: []),
             $ruleExecution,
-            $this->ruleConfiguration(['coupling.cbo' => ['suppress_namespaces' => ['App\\Excluded']]]),
+            $this->ruleConfiguration(['coupling.cbo' => ['suppress_namespaces' => $this->namespaces(['App\\Excluded'])]]),
             new FindingProjectionOptions(),
             suppressions: [],
         );
@@ -194,13 +196,13 @@ final class SuppressionCompositionBuilderTest extends TestCase
         $ruleExecution = new RuleExecutionResult([$finding], [], new RuleExclusionStats(
             pathExclusionsByRule: ['code-smell.long-parameter-list' => 1],
             excludedFindings: [$finding],
-            attributions: [new RuleExclusionAttribution('code-smell.long-parameter-list', isPathExclusion: true, matchedPatterns: ['src/Excluded'])],
+            attributions: [new RuleExclusionAttribution('code-smell.long-parameter-list', isPathExclusion: true, matchedPatterns: $this->pathDefinitions(['src/Excluded']))],
         ), LevelActivity::empty());
 
         $composition = $this->builder->build(
             new FindingProjectionResult(findings: []),
             $ruleExecution,
-            $this->ruleConfiguration(['code-smell.long-parameter-list' => ['suppress_paths' => ['src/Excluded']]]),
+            $this->ruleConfiguration(['code-smell.long-parameter-list' => ['suppress_paths' => $this->paths(['src/Excluded'])]]),
             new FindingProjectionOptions(),
             suppressions: [],
         );
@@ -217,13 +219,13 @@ final class SuppressionCompositionBuilderTest extends TestCase
             new FindingProjectionResult(findings: []),
             $this->ruleExecution(),
             $this->ruleConfiguration([]),
-            new FindingProjectionOptions(suppressPaths: ['src/NeverMatched.php']),
+            new FindingProjectionOptions(suppressPaths: $this->exactPaths(['src/NeverMatched.php'])),
             suppressions: [],
         );
 
         self::assertCount(1, $composition->neverMatched);
         self::assertSame(SuppressionMechanism::PathSuppression, $composition->neverMatched[0]->mechanism);
-        self::assertSame('src/NeverMatched.php', $composition->neverMatched[0]->suppressor);
+        self::assertSame('exact:src/NeverMatched.php', $composition->neverMatched[0]->suppressor);
     }
 
     /**
@@ -237,14 +239,14 @@ final class SuppressionCompositionBuilderTest extends TestCase
         $composition = $this->builder->build(
             new FindingProjectionResult(findings: []),
             $this->ruleExecution(),
-            $this->ruleConfiguration(['coupling.cbo' => ['suppress_paths' => ['src/DoesNotExist.php']]]),
+            $this->ruleConfiguration(['coupling.cbo' => ['suppress_paths' => $this->exactPaths(['src/DoesNotExist.php'])]]),
             new FindingProjectionOptions(),
             suppressions: [],
         );
 
         self::assertCount(1, $composition->neverMatched);
         self::assertSame(SuppressionMechanism::RulePathSuppression, $composition->neverMatched[0]->mechanism);
-        self::assertSame('coupling.cbo: src/DoesNotExist.php', $composition->neverMatched[0]->suppressor);
+        self::assertSame('coupling.cbo: exact:src/DoesNotExist.php', $composition->neverMatched[0]->suppressor);
     }
 
     /**
@@ -263,13 +265,13 @@ final class SuppressionCompositionBuilderTest extends TestCase
         $ruleExecution = new RuleExecutionResult([$finding], [], new RuleExclusionStats(
             namespaceExclusionsByRule: [$channel => 1],
             excludedFindings: [$finding],
-            attributions: [new RuleExclusionAttribution($channel, isPathExclusion: false, matchedPatterns: ['App\\Excluded'])],
+            attributions: [new RuleExclusionAttribution($channel, isPathExclusion: false, matchedPatterns: $this->definitions(['App\\Excluded']))],
         ), LevelActivity::empty());
 
         $composition = $this->builder->build(
             new FindingProjectionResult(findings: []),
             $ruleExecution,
-            $this->ruleConfiguration([$channel => ['suppress_namespaces' => ['App\\Excluded']]]),
+            $this->ruleConfiguration([$channel => ['suppress_namespaces' => $this->namespaces(['App\\Excluded'])]]),
             new FindingProjectionOptions(),
             suppressions: [],
         );
@@ -292,7 +294,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
             attributions: [new RuleExclusionAttribution(
                 'computed.health',
                 isPathExclusion: false,
-                matchedChannelPatterns: [['selector' => $channel, 'pattern' => 'App\\Excluded']],
+                matchedChannelPatterns: [['selector' => $channel, 'pattern' => $this->definitions(['App\\Excluded'])[0]]],
             )],
         ), LevelActivity::empty());
 
@@ -300,8 +302,8 @@ final class SuppressionCompositionBuilderTest extends TestCase
             new FindingProjectionResult(findings: []),
             $ruleExecution,
             $this->ruleConfiguration(['computed.health' => ['suppress_namespace_channels' => [
-                $channel => ['App\\Excluded'],
-                $siblingChannel => ['App\\NeverMatched'],
+                $channel => $this->namespaces(['App\\Excluded']),
+                $siblingChannel => $this->namespaces(['App\\NeverMatched']),
             ]]]),
             new FindingProjectionOptions(),
             suppressions: [],
@@ -313,7 +315,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
 
         self::assertCount(1, $composition->neverMatched);
         self::assertSame(SuppressionMechanism::RuleNamespaceSuppression, $composition->neverMatched[0]->mechanism);
-        self::assertSame('computed.health: ' . $siblingChannel . ' App\\NeverMatched', $composition->neverMatched[0]->suppressor);
+        self::assertSame('computed.health: ' . $siblingChannel . ' subtree:App\\NeverMatched', $composition->neverMatched[0]->suppressor);
     }
 
     /**
@@ -336,7 +338,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
             $filterResult,
             $this->ruleExecution(),
             $this->ruleConfiguration([]),
-            new FindingProjectionOptions(suppressPaths: ['src', 'src/Reporting']),
+            new FindingProjectionOptions(suppressPaths: $this->paths(['src', 'src/Reporting'])),
             suppressions: [],
         );
 
@@ -457,14 +459,24 @@ final class SuppressionCompositionBuilderTest extends TestCase
 
             public function configurePathExclusions(string $ruleName, array $patterns): void {}
 
+            public function namespaceExclusions(string $ruleName): array
+            {
+                return $this->rulesConfig[$ruleName]['suppress_namespaces'] ?? [];
+            }
+
+            public function namespaceChannelExclusions(string $ruleName): array
+            {
+                return $this->rulesConfig[$ruleName]['suppress_namespace_channels'] ?? [];
+            }
+
+            public function pathExclusions(string $ruleName): array
+            {
+                return $this->rulesConfig[$ruleName]['suppress_paths'] ?? [];
+            }
+
             public function isNamespaceExcluded(string $ruleName, string $namespace): bool
             {
-                /** @var list<string> $patterns */
-                $patterns = \is_array($this->rulesConfig[$ruleName]['suppress_namespaces'] ?? null)
-                    ? $this->rulesConfig[$ruleName]['suppress_namespaces']
-                    : [];
-
-                return (new NamespaceMatcher($patterns))->matches($namespace) !== null;
+                return false;
             }
 
             public function isNamespaceChannelExcluded(string $ruleName, FindingChannel $channel, string $namespace): bool
@@ -474,15 +486,60 @@ final class SuppressionCompositionBuilderTest extends TestCase
 
             public function isPathExcluded(string $ruleName, RelativePath $path): bool
             {
-                /** @var list<string> $patterns */
-                $patterns = \is_array($this->rulesConfig[$ruleName]['suppress_paths'] ?? null)
-                    ? $this->rulesConfig[$ruleName]['suppress_paths']
-                    : [];
-
-                return (new PathMatcher($patterns))->matches($path) !== null;
+                return false;
             }
 
             public function resetRuntimeState(): void {}
         };
+    }
+
+    /**
+     * @param list<string> $values
+     *
+     * @return list<PathPattern>
+     */
+    private function paths(array $values): array
+    {
+        return array_map(static fn(string $value): PathPattern => new PathPattern(new SelectorDefinition(SelectorKind::Subtree, $value)), $values);
+    }
+
+    /**
+     * @param list<string> $values
+     *
+     * @return list<PathPattern>
+     */
+    private function exactPaths(array $values): array
+    {
+        return array_map(static fn(string $value): PathPattern => new PathPattern(new SelectorDefinition(SelectorKind::Exact, $value)), $values);
+    }
+
+    /**
+     * @param list<string> $values
+     *
+     * @return list<NamespacePattern>
+     */
+    private function namespaces(array $values): array
+    {
+        return array_map(static fn(string $value): NamespacePattern => new NamespacePattern(new SelectorDefinition(SelectorKind::Subtree, $value)), $values);
+    }
+
+    /**
+     * @param list<string> $values
+     *
+     * @return list<SelectorDefinition>
+     */
+    private function definitions(array $values): array
+    {
+        return array_map(static fn(string $value): SelectorDefinition => new SelectorDefinition(SelectorKind::Subtree, $value), $values);
+    }
+
+    /**
+     * @param list<string> $values
+     *
+     * @return list<SelectorDefinition>
+     */
+    private function pathDefinitions(array $values): array
+    {
+        return array_map(static fn(string $value): SelectorDefinition => new SelectorDefinition(SelectorKind::Subtree, $value), $values);
     }
 }

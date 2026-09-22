@@ -84,7 +84,7 @@ final class ChannelExclusionKeySpellingTest extends TestCase
     #[Test]
     public function itExcludesTheNamespaceAggregateOfAHyphenatedChannel(): void
     {
-        $tester = $this->runCheck($this->config("      size.class-count: ['Fx\\Deep']"));
+        $tester = $this->runCheck($this->config("      size.class-count:\n        - subtree: Fx\\Deep"));
 
         self::assertSame(2, $tester->getStatusCode(), $tester->getErrorOutput());
         self::assertNotContains('size.class-count', $this->channelsOf($tester));
@@ -93,7 +93,7 @@ final class ChannelExclusionKeySpellingTest extends TestCase
     #[Test]
     public function itExcludesUnderTheHyphenatedChannelLevelPair(): void
     {
-        $tester = $this->runCheck($this->config("      size.class-count:namespace: ['Fx\\Deep']"));
+        $tester = $this->runCheck($this->config("      size.class-count:namespace:\n        - subtree: Fx\\Deep"));
 
         self::assertSame(2, $tester->getStatusCode(), $tester->getErrorOutput());
         self::assertNotContains('size.class-count', $this->channelsOf($tester));
@@ -109,7 +109,7 @@ final class ChannelExclusionKeySpellingTest extends TestCase
     public function itAcceptsAKeyForAChannelThatNeverReportsAtNamespaceLevel(): void
     {
         $tester = $this->runCheck($this->config(
-            "      code-smell.boolean-argument: ['Fx\\Deep']",
+            "      code-smell.boolean-argument:\n        - subtree: Fx\\Deep",
             owner: 'code-smell.boolean-argument',
         ));
 
@@ -122,7 +122,7 @@ final class ChannelExclusionKeySpellingTest extends TestCase
     public function itAcceptsAHyphenatedGroupKey(): void
     {
         $tester = $this->runCheck($this->config(
-            "      code-smell.*: ['Fx\\Deep']",
+            "      code-smell.*:\n        - subtree: Fx\\Deep",
             owner: 'code-smell.boolean-argument',
         ));
 
@@ -149,7 +149,7 @@ final class ChannelExclusionKeySpellingTest extends TestCase
 
         $withoutKey = $this->runCheck($metric, disableComputed: false);
         $withKey = $this->runCheck(
-            $metric . "\nrules:\n  computed:\n    suppress_namespace_channels:\n      computed.my-score: ['Fx\\Deep']\n",
+            $metric . "\nrules:\n  computed:\n    suppress_namespace_channels:\n      computed.my-score:\n        - subtree: Fx\\Deep\n",
             disableComputed: false,
         );
 
@@ -168,7 +168,7 @@ final class ChannelExclusionKeySpellingTest extends TestCase
     #[Test]
     public function itRefusesTheRetiredPairSpellingUnderTheWrittenKey(): void
     {
-        $tester = $this->runCheck($this->config("      size.class-count#size.class-count: ['Fx\\Deep']"));
+        $tester = $this->runCheck($this->config("      size.class-count#size.class-count:\n        - subtree: Fx\\Deep"));
 
         self::assertSame(3, $tester->getStatusCode());
         /** @var array{error: string, exit_code: int} $envelope */

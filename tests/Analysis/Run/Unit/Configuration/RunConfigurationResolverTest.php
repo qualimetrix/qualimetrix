@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Pattern\PathPattern;
 
 final class RunConfigurationResolverTest extends TestCase
 {
@@ -19,12 +20,15 @@ final class RunConfigurationResolverTest extends TestCase
     public function itResolvesOwnerDefaultsAndLastPathContributionAgainstTheInvocationRoot(): void
     {
         $configuration = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))->resolve(new ConfigurationDocument([
-            ['source' => 'composer', 'values' => ['paths' => ['lib'], 'excludes' => ['build']]],
+            ['source' => 'composer', 'values' => ['paths' => ['lib'], 'excludes' => [['subtree' => 'build']]]],
             ['source' => 'cli', 'values' => ['paths' => ['src'], 'include_generated' => true]],
         ], AbsolutePath::fromString(sys_get_temp_dir())));
 
         self::assertSame([sys_get_temp_dir() . '/src'], array_map(static fn($path): string => $path->value(), $configuration->paths));
-        self::assertSame(['vendor', 'node_modules', '.git', 'build'], $configuration->pathExcludes);
+        self::assertSame(
+            ['regex:(?:[^/]+/)*vendor', 'regex:(?:[^/]+/)*node_modules', 'regex:(?:[^/]+/)*\\.git', 'subtree:build'],
+            array_map(static fn(PathPattern $pattern): string => $pattern->definition->display(), $configuration->pathExcludes),
+        );
         self::assertSame(GeneratedFilePolicy::Include, $configuration->generatedFilePolicy);
     }
 

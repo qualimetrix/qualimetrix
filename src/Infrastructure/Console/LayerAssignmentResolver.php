@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
+use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
@@ -38,7 +39,7 @@ final readonly class LayerAssignmentResolver
 
     /**
      * @param list<string> $paths
-     * @param list<string> $pathExcludes
+     * @param list<PathPattern> $pathExcludes
      *
      * @return array{matches: list<\Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch>, hasLayers: bool}
      */
@@ -49,7 +50,7 @@ final readonly class LayerAssignmentResolver
         SymbolPath $symbol,
     ): array {
         return $this->resolveFiles(
-            $this->generatedFileFilter->filter($this->discoverFiles($paths, $pathExcludes)),
+            $this->generatedFileFilter->filter($this->discoverFiles($paths, $pathExcludes, $projectRoot)),
             $projectRoot,
             $symbol,
         );
@@ -57,7 +58,7 @@ final readonly class LayerAssignmentResolver
 
     /**
      * @param list<string> $paths
-     * @param list<string> $pathExcludes
+     * @param list<PathPattern> $pathExcludes
      *
      * @return array{matches: list<\Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch>, hasLayers: bool}
      */
@@ -67,7 +68,7 @@ final readonly class LayerAssignmentResolver
         AbsolutePath $projectRoot,
         SymbolPath $symbol,
     ): array {
-        return $this->resolveFiles($this->discoverFiles($paths, $pathExcludes), $projectRoot, $symbol);
+        return $this->resolveFiles($this->discoverFiles($paths, $pathExcludes, $projectRoot), $projectRoot, $symbol);
     }
 
     /**
@@ -100,13 +101,13 @@ final readonly class LayerAssignmentResolver
 
     /**
      * @param list<string> $paths
-     * @param list<string> $pathExcludes
+     * @param list<PathPattern> $pathExcludes
      *
      * @return list<SplFileInfo>
      */
-    private function discoverFiles(array $paths, array $pathExcludes): array
+    private function discoverFiles(array $paths, array $pathExcludes, AbsolutePath $projectRoot): array
     {
-        $fileDiscovery = $this->fileDiscoveryFactory->create($pathExcludes);
+        $fileDiscovery = $this->fileDiscoveryFactory->create($projectRoot, $pathExcludes);
         $cwd = AbsolutePath::fromString((string) getcwd());
         $absolutePaths = array_map(
             static fn(string $raw): AbsolutePath => PathFactory::fromCliArgument($raw, $cwd),

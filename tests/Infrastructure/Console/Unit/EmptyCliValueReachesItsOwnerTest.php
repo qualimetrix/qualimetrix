@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
@@ -60,8 +61,21 @@ final class EmptyCliValueReachesItsOwnerTest extends TestCase
         self::assertSame('json', self::overrides(['format' => 'json'])[ConfigSchema::FORMAT] ?? null);
     }
 
+    #[Test]
+    public function itDecodesExplicitExcludeSelectorsAtTheCliBoundary(): void
+    {
+        $patterns = self::overrides(['exclude' => ['subtree:build', 'regex:(?:[^/]+/)*cache']])[ConfigSchema::EXCLUDES] ?? null;
+
+        self::assertIsArray($patterns);
+        self::assertContainsOnlyInstancesOf(PathPattern::class, $patterns);
+        self::assertSame(
+            ['subtree:build', 'regex:(?:[^/]+/)*cache'],
+            array_map(static fn(PathPattern $pattern): string => $pattern->definition->display(), $patterns),
+        );
+    }
+
     /**
-     * @param array<string, string> $options
+     * @param array<string, string|list<string>> $options
      *
      * @return array<string, mixed>
      */

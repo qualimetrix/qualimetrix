@@ -6,67 +6,59 @@ namespace Qualimetrix\Reporting\FindingProjection\Configuration;
 
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\SelectorYamlDecoder;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 
 final class ConfiguredFindingExclusionsResolver implements ConfiguredFindingExclusionsResolverInterface
 {
+    public function __construct(private readonly SelectorYamlDecoder $decoder = new SelectorYamlDecoder()) {}
+
     public function resolve(ConfigurationDocument $document): ConfiguredFindingExclusions
     {
         return new ConfiguredFindingExclusions(
-            array_values(array_unique(self::suppressedPaths($document))),
-            array_values(array_unique(self::suppressedNamespaces($document))),
+            $this->unique($this->suppressedPaths($document)),
+            $this->unique($this->suppressedNamespaces($document)),
         );
     }
 
-    /**
-     * A directory may legitimately be called `2024`, and YAML hands such an
-     * unquoted segment over as an int — so the entry is converted, which is the
-     * position the product already takes for `--exclude=7`. Everything a path
-     * cannot be is still refused.
-     *
-     * @return list<string>
-     */
-    private static function suppressedPaths(ConfigurationDocument $document): array
+    /** @return list<PathPattern> */
+    private function suppressedPaths(ConfigurationDocument $document): array
     {
-        $values = [];
-
-        foreach (self::entries($document, ConfigSchema::SUPPRESS_PATHS) as $entry) {
-            $values[] = \is_int($entry) || \is_float($entry)
-                ? (string) $entry
-                : self::acceptedString($entry, ConfigSchema::SUPPRESS_PATHS);
+        $patterns = [];
+        foreach ($this->entries($document, ConfigSchema::SUPPRESS_PATHS) as $index => $entry) {
+            $patterns[] = $this->decoder->decodePath(
+                $entry,
+                ConfigurationOrigin::of(ConfigurationSource::Resolved, ConfigSchema::SUPPRESS_PATHS),
+                [ConfigSchema::SUPPRESS_PATHS, (string) $index],
+            );
         }
 
-        return $values;
+        return $patterns;
     }
 
-    /**
-     * No conversion here, and for a reason: a namespace segment cannot start
-     * with a digit, so a bare number is a mistake rather than a name written
-     * without quotes.
-     *
-     * @return list<string>
-     */
-    private static function suppressedNamespaces(ConfigurationDocument $document): array
+    /** @return list<NamespacePattern> */
+    private function suppressedNamespaces(ConfigurationDocument $document): array
     {
-        $values = [];
-
-        foreach (self::entries($document, ConfigSchema::SUPPRESS_NAMESPACES) as $entry) {
-            $values[] = self::acceptedString($entry, ConfigSchema::SUPPRESS_NAMESPACES);
+        $patterns = [];
+        foreach ($this->entries($document, ConfigSchema::SUPPRESS_NAMESPACES) as $index => $entry) {
+            $patterns[] = $this->decoder->decodeNamespace(
+                $entry,
+                ConfigurationOrigin::of(ConfigurationSource::Resolved, ConfigSchema::SUPPRESS_NAMESPACES),
+                [ConfigSchema::SUPPRESS_NAMESPACES, (string) $index],
+            );
         }
 
-        return $values;
+        return $patterns;
     }
 
-    /**
-     * Every entry every contribution wrote, in order, once the container of
-     * each is known to be a list. A map here used to reach `array_push()` as
-     * named arguments and abort the run with an internal error.
-     *
-     * @return iterable<mixed>
-     */
-    private static function entries(ConfigurationDocument $document, string $key): iterable
+    /** @return iterable<mixed> */
+    private function entries(ConfigurationDocument $document, string $key): iterable
     {
         foreach ($document->contributions($key) as $contribution) {
             if (!\is_array($contribution) || ($contribution !== [] && !array_is_list($contribution))) {
@@ -84,20 +76,20 @@ final class ConfiguredFindingExclusionsResolver implements ConfiguredFindingExcl
         }
     }
 
-    /** A list of non-strings used to be dropped without a word. */
-    private static function acceptedString(mixed $entry, string $key): string
+    /**
+     * @template T of PathPattern|NamespacePattern
+     *
+     * @param list<T> $patterns
+     *
+     * @return list<T>
+     */
+    private function unique(array $patterns): array
     {
-        if (\is_string($entry)) {
-            return $entry;
+        $unique = [];
+        foreach ($patterns as $pattern) {
+            $unique[$pattern->definition->display()] = $pattern;
         }
 
-        throw ConfigurationRefusal::aboutResolvedInput(
-            \sprintf(
-                'Invalid entry in "%s": every entry must be a string, got %s.',
-                $key,
-                get_debug_type($entry),
-            ),
-            $key,
-        );
+        return array_values($unique);
     }
 }

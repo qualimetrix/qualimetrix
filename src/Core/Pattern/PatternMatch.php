@@ -5,13 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Core\Pattern;
 
 /**
- * The pattern that matched, returned by {@see PathMatcher::matches()} and
- * {@see NamespaceMatcher::matches()} alongside the yes/no answer so a caller
- * never has to re-scan the pattern list to learn what fired.
+ * The authored selector definition that fired in an ordered matcher set.
  */
 final readonly class PatternMatch
 {
     public function __construct(
-        public string $pattern,
+        public SelectorDefinition $definition,
     ) {}
 }

@@ -111,6 +111,16 @@ final class RuleOptionSurfaceTest extends TestCase
     }
 
     #[Test]
+    public function itPublishesAClassValidatedWritableKeyWithoutInventingAGenericShape(): void
+    {
+        $surface = RuleOptionSurface::of(FlatOptionsStub::class);
+
+        self::assertContains('selector', $surface->writableAt(null));
+        self::assertSame('selector', $surface->locate('selector')?->key);
+        self::assertNull($surface->ownKeySet()->shapeOf('selector'));
+    }
+
+    #[Test]
     public function itLocatesABareTargetAtTheRulesOwnDepth(): void
     {
         $address = RuleOptionSurface::of(FlatOptionsStub::class)->locate('minLines');
@@ -207,7 +217,9 @@ final class FlatOptionsStub implements RuleOptionsInterface
         return RuleOptionKeySet::of([
             'min-lines' => RuleOptionShape::text()->orNull(),
             'threshold' => RuleOptionShape::text()->orNull(),
-        ])->alsoAnsweredByTheClass('enabled');
+        ])
+            ->alsoAcceptedAndValidatedByTheClass('selector')
+            ->alsoAnsweredByTheClass('enabled');
     }
 }
 

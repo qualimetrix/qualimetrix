@@ -304,13 +304,13 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
     {
         self::assertSame(
             self::LAYER_DIAGNOSTICS,
-            $this->diagnosticsFrom(['--rule-opt' => [self::DIRECTIVE_PRODUCER . ':suppress_paths=**']]),
+            $this->diagnosticsFrom(['--rule-opt' => [self::DIRECTIVE_PRODUCER . ':suppress_paths=regex:.*']]),
             'A directive diagnostic carries its file, so a path exclusion keyed by its producer reaches it.',
         );
 
         self::assertSame(
             self::allDiagnostics(),
-            $this->diagnosticsFrom(['--rule-opt' => [self::LAYER_PRODUCER . ':suppress_paths=**']]),
+            $this->diagnosticsFrom(['--rule-opt' => [self::LAYER_PRODUCER . ':suppress_paths=regex:.*']]),
             'A layer diagnostic has no file, so a path exclusion cannot reach it. This is today\'s behaviour,'
             . ' pinned so the move out of the rule class does not change it by accident.',
         );
@@ -327,8 +327,8 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
         self::assertSame(
             self::allDiagnostics(),
             $this->diagnosticsFrom(['--rule-opt' => [
-                self::LAYER_PRODUCER . ':suppress_namespaces=Silencing',
-                self::DIRECTIVE_PRODUCER . ':suppress_namespaces=Silencing',
+                self::LAYER_PRODUCER . ':suppress_namespaces=subtree:Silencing',
+                self::DIRECTIVE_PRODUCER . ':suppress_namespaces=subtree:Silencing',
             ]]),
         );
     }

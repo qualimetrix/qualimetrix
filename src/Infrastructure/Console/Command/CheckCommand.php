@@ -188,6 +188,7 @@ final class CheckCommand extends Command
         // Refuse an unwritable `--output` before analysis starts. This fast
         // precheck is not a guarantee because writability can change later.
         $this->resultPresenter->assertOutputIsWritable($input);
+        $namespacePattern = $this->resultPresenter->prepareNamespaceDrillDown($input);
 
         // Resolve configuration through pipeline
         $document = $this->configurationInputAdapter->resolve($input);
@@ -280,6 +281,7 @@ final class CheckCommand extends Command
             reportScope: $scopeResolution->reportScope,
             filterResult: $filterResult,
             projectionOptions: $projectionOptions,
+            namespacePattern: $namespacePattern,
         );
 
         $this->resultPresenter->presentProfile($input, $output);

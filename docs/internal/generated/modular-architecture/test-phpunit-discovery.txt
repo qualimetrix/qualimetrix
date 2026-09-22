@@ -651,9 +651,9 @@ Available tests:
  - Qualimetrix\Governance\RuleOptionKeys\RuleOptionWordSetDeclarationAgreementTest::itRefusesAWordOutsideTheDeclaredSet"annotation.directive unused-directive-severity"
  - Qualimetrix\Governance\RuleOptionKeys\RuleOptionWordSetDeclarationAgreementTest::itRefusesAWordOutsideTheDeclaredSet"architecture.layer-violation severity"
  - Qualimetrix\Governance\RuleOptionKeys\RuleOptionWordSetDeclarationAgreementTest::itRefusesAWordOutsideTheDeclaredSet"architecture.unassigned-class mode"
- - Qualimetrix\Governance\SelectorSyntax\GlobAlphabetSoleEnumerationTest::itHasSourceFilesToScanAndAPatternThatStillMatchesARestatedAlphabet
- - Qualimetrix\Governance\SelectorSyntax\GlobAlphabetSoleEnumerationTest::itIsTheOnlyPlaceInSourceThatEnumeratesTheGlobCharacters
- - Qualimetrix\Governance\SelectorSyntax\NamespaceMatcherNormalizationSurfaceTest::itLeavesPatternNormalizationToThePrimitiveOnEverySurface
+ - Qualimetrix\Governance\SelectorSyntax\SelectorImplementationBoundaryTest::itHasNoPrivateGlobMatcherInProduction
+ - Qualimetrix\Governance\SelectorSyntax\SelectorImplementationBoundaryTest::itKnowsEveryPatternConstructionSite
+ - Qualimetrix\Governance\SelectorSyntax\SelectorSurfaceRegistryTest::itRegistersEverySurfaceWithResolvableEvidence
  - Qualimetrix\Governance\SubprocessDrain\ModuleIsLoadedByPathTest::itFindsCallersAcrossTheTreeAndExcusesDocumentation
  - Qualimetrix\Governance\SubprocessDrain\ModuleIsLoadedByPathTest::itRefusesACallerThatDoesNotRequireTheModuleByPath
  - Qualimetrix\Governance\SubprocessDrain\ModuleIsLoadedByPathTest::itRefusesAGroupFileThatDoesNotRequireItsSupportClassesByPath
@@ -1267,6 +1267,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itKeepsPathsAsIs
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itKeepsRulesUnchanged
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itLeavesNullsInsideTheRulesSubtreeAlone
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itPreservesAnAuthoredSelectorMappingForTheSelectorDecoder
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReadsANullDocumentRootAsAnUnwrittenKey#0
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReadsANullDocumentRootAsAnUnwrittenKey#1
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReadsANullDocumentRootAsAnUnwrittenKey#2
@@ -1335,6 +1336,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\RetiredSuppressionOptionsTest::itRefusesARetiredCliOptionWithTheRuleOptDoorAsItsDefaultOrigin
  - Qualimetrix\Tests\Analysis\Configuration\Unit\RetiredSuppressionOptionsTest::itRefusesARetiredKeyInsideARulesBlockWithTheConfigFileOrigin
  - Qualimetrix\Tests\Analysis\Configuration\Unit\RetiredSuppressionOptionsTest::itRefusesARetiredRootKeyWithTheConfigFileOriginAndAnOpenPosition
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\SelectorYamlDecoderTest::itAttachesCoreValidationFailureToTheAuthoredSelectorKind
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\SelectorYamlDecoderTest::itBuildsANamespacePatternFromAnExplicitYamlMapping
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\SelectorYamlDecoderTest::itBuildsAPathPatternFromAnExplicitYamlMapping
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\SelectorYamlDecoderTest::itRefusesEveryMalformedYamlSelectorEntry"bare string"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\SelectorYamlDecoderTest::itRefusesEveryMalformedYamlSelectorEntry"empty mapping"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\SelectorYamlDecoderTest::itRefusesEveryMalformedYamlSelectorEntry"empty value"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\SelectorYamlDecoderTest::itRefusesEveryMalformedYamlSelectorEntry"multiple kinds"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\SelectorYamlDecoderTest::itRefusesEveryMalformedYamlSelectorEntry"non-string value"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\SelectorYamlDecoderTest::itRefusesEveryMalformedYamlSelectorEntry"unknown kind"
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyAnalysisTest::itReplacesResultsAcrossSequentialPrepares
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyAnalysisTest::itResetsPreparedCyclesWithoutTraversingTheGraph
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyDetectorTest::itDetectsDirectCycle
@@ -2553,8 +2563,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itBuildClassHealthScoresReturnsDimensionScores
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itBuildClassHealthScoresReturnsEmptyWhenClassNotFound
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itBuildClassHealthScoresSkipsMissingDimensions
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itBuildsHealthScoresForAnExactSelector
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itSubtreeHealthScoresDoesNotMatchSimilarPrefix
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itSubtreeHealthScoresIgnoreATrailingBackslashInTheSelector
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itSubtreeHealthScoresMatchesChildNamespaces
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itSubtreeHealthScoresMatchesExactNamespace
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itSubtreeHealthScoresReturnsEmptyForNoMatchingNamespaces
@@ -2601,9 +2611,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstClassDrillDownTest::itBuildWorstClassesSkipsClassesWithoutHealthOverall
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstClassDrillDownTest::itBuildWorstClassesSkipsNamespaceLevelFindings
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstClassDrillDownTest::itBuildWorstClassesSortedByHealthAscending
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderBuilderTest::itIgnoresATrailingBackslashInTheSelector
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderBuilderTest::itMatchesGlobSelectors
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderBuilderTest::itMatchesRegexSelectors
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderBuilderTest::itSelectsClassesByNamespaceBoundary
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderBuilderTest::itSupportsAnExactSelector
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderTest::itCarriesEveryOptionalEvidenceFieldThroughFromEvidence
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderTest::itConstructsWithDefaults
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\HealthCoverageAgreesWithCountsTest::itPublishesTheCountTheSameRunMeasured
@@ -2934,6 +2944,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::itSkipsClassesThatHaveNoClassRankMetric
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::itStaysDisabledWhenExplicitlyDisabledInArray
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::itUsesCustomThresholdsFromArray
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itAppliesExactAndRegexFrameworkSelectorsWithoutReparsingThem
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itBindsOnTheSameBoundaryIsFrameworkMatchesOn
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itIsEmptyWhenNoFrameworkPrefixesAreConfigured
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itIsNotEmptyWhenFrameworkPrefixesAreConfigured
@@ -2987,6 +2998,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itRequiresNoUpstreamMetrics
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itScoresZeroCePackagesForAClassWithOnlyIncomingDependencies
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itScoresZeroInstabilityForAClassWithOnlyIncomingDependencies
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingConfigurationRefusalTest::itRefusesWithTheProductFraming"a bare string entry"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingConfigurationRefusalTest::itRefusesWithTheProductFraming"a non-string entry"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingConfigurationRefusalTest::itRefusesWithTheProductFraming"the leaf as a boolean"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingConfigurationRefusalTest::itRefusesWithTheProductFraming"the leaf as a map"
@@ -3003,9 +3015,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itScoresMaximumDistanceForAnAbstractUnstableZoneOfUselessness
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itScoresTheAbsoluteDeviationFromTheMainSequence
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itScoresZeroDistanceOnTheMainSequence
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceOptionsTest::itCoercesAStringIncludeNamespacesEntryToAnArray
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceOptionsTest::itAcceptsATypedCliSelector
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceOptionsTest::itDecodesAYamlSelectorList
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceOptionsTest::itLeavesIncludeNamespacesNullWhenAbsent
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceOptionsTest::itPreservesAnArrayIncludeNamespacesEntry
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceOptionsTest::itRefusesABareYamlString
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itAnalyzesAllWhenMinClassCountIsZero
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itAnalyzesMultipleNamespaces
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itCountsEveryMatchedNamespaceWhenSmallMissingOrBelowThreshold
@@ -4880,8 +4893,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itJoinsTheProducersDescriptionAndDeclaredDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itReturnsNullForACodeNoChannelCarries
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itReturnsNullWhenTheResolvedDescriptionIsEmpty
- - Qualimetrix\Tests\Analysis\Finding\Unit\Exclusion\ConfiguredSuppressionTest::itReadsEitherSpellingOfEachOption
  - Qualimetrix\Tests\Analysis\Finding\Unit\Exclusion\ConfiguredSuppressionTest::itReadsNothingRatherThanThrowingOnAMalformedValue
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Exclusion\ConfiguredSuppressionTest::itReadsTheRawChannelMapNeededByInputValidation
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itAdvisesTheNameToWriteInsteadOfTheRetiredPair
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itDistinguishesTwoChannelsOfOneRule
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itIsEqualToAnIdenticallyAddressedChannel
@@ -4972,7 +4985,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itRejectsAnEmptyKindOrEvidenceName
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itTruncatesTheSameSha256ItWouldHaveReturnedInFull
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itFiltersAChannelNoCapabilityDeclaredProjectScoped
- - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itFiltersGlobPattern
+ - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itFiltersRegexPattern
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itFiltersSuppressedPath
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itKeepsArchitectureProjectWideDiagnosticsRegardlessOfPathMatcher
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itKeepsCircularDependencyRuleInExcludedPath
@@ -5145,6 +5158,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itUsesGroupSelectorSemanticsForChannelExclusions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itAcceptsAnEmptyDeclaration
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itAnswersAboutEveryKeyOfBothHalvesAndNoOther
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itDisplaysAndLocatesAWritableKeyWhoseCarrierTheClassValidates
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itDisplaysTheDeclaredKebabSpellingRatherThanTheFoldedOne
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itFoldsSnakeCamelAndKebabIntoOneKey"camel"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itFoldsSnakeCamelAndKebabIntoOneKey"kebab"
@@ -5156,6 +5170,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itPlacesAnAcceptedKeyInTheAcceptedStateOnly
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itPlacesAnUndeclaredKeyInNeitherState
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesABlankKey
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesAClassValidatedKeyThatWasAlreadyDeclaredElsewhere
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesAKeyDeclaredInAnythingButKebab
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesAKeyThatWouldSitInTwoStatesAtOnce
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesALevelSlotThatWasAlreadyDeclaredByHand
@@ -5220,6 +5235,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itLocatesEverySpellingOfOneTargetAtOneAddress
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itLocatesNothingForATargetNobodyAccepts
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itNamesTheLevelSlotsInDeclarationOrder
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itPublishesAClassValidatedWritableKeyWithoutInventingAGenericShape
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itReadsADotThatNamesNoSlotAsPartOfTheKey
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itSortsWhatIsWritableAtEachDepth
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionValueWrittennessTest::itAgreesWithThresholdParserOnWhetherAKeyIsWritten"empty string"
@@ -5242,7 +5258,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAppliesNestedThresholdShorthandThroughTheFactory
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itClearsTheExclusionProviderOnReset
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itCliOptionsOverrideConfigFile
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itCoercesAScalarSuppressNamespacesValueIntoAnArray
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itComparesEachSlotAgainstItsOwnLevelClass
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itCreatesNestedStructureFromDotNotationDuringMerge
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itCreatesWithCliOptions
@@ -5312,17 +5327,19 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAMistypedFrameworkKeyAndPrintsTheSpellingThatWorks
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesANonMapLevelSlotWithoutInventingAdvice
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesANumericStringForAWholeNumberOption
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAScalarSuppressNamespacesValue
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAWholeNumberWhereANamespacePatternWasDeclared
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAWholeNumberWhereAPathPatternWasDeclared
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAWholeNumberWhereASeverityWordWasDeclared
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAWronglyShapedValueInsideALevelSlot
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAnUnknownKeyInsideALevelSlotAndNamesThatSlotsOwnSet
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesBarePathStringsInsteadOfCoercingThem
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesTheRetiredCamelCaseExcludeNamespacesSpelling
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesTheRetiredCamelCaseExcludePathsSpelling
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesTheRetiredExcludeNamespaceChannelsSpelling
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesTheRetiredSnakeCaseExcludeNamespacesSpelling
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesTheRetiredSnakeCaseExcludePathsSpelling
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRejectsChannelMapsUnderLegacyExcludeNamespaces
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRejectsChannelMapsWhereASelectorListIsRequired
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRejectsEmptyCodeScopedNamespaceExclusions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRejectsEmptyCodeSelectorsInNamespaceChannelExclusions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRejectsEmptyNamespacePatternsInChannelExclusions
@@ -5338,7 +5355,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itStillSwitchesARuleOffWithAnExplicitBoolean
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itStillTakesASeverityWord
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itStillTakesAWholeNumberInsideALevelSlot
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itStillTakesPathPatternsAsOneStringAndAsAList
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itStillThrowsWhenThresholdAndPrefixedGraduatedKeysComeFromTheSameLayer
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itStillThrowsWhenThresholdAndWarningComeFromTheSameLayer
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itStripsSuppressNamespacesFromOptionsBeforeBuildingThem
@@ -5433,21 +5449,21 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itSeverityOrderingByExitCode
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itSeverityValues
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itDoesNotTreatAPrefixOfANameAsABinding
- - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itHonoursTheGlobAndPrefixModesTheSuppressionFiltersUse
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itHonoursTheRegexAndSubtreeModesTheSuppressionFiltersUse
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesAChannelSuppressionPatternTheLedgerApplies
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesAnUnmatchedNamespaceRegexOnAWholeProjectRun
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNamespacesAgainstAnEmptyTree
- - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNoNamespaceValueThatBeginsWithAGlobEvenOnAWholeProjectRun
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNoNamespaceWhenTheRunBuiltNoNamespaceTree
- - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNoValueThatBeginsWithAGlob
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNoValueWhoseSubjectTheRunDidNotAnalyse
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNothingWhenTheProducerIsDisabled
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesTheSameValuesOnARunThatReachesTheirSubject
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itLeavesAnUnmatchedRegexSilentOnAPartialRun
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itReadsBothSpellingsOfThePerRuleLedgerOptions
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itStaysSilentOnAChannelSuppressionPatternThatBinds
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itStillNamesAnAnchoredNamespaceValueOnThatSameRun
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itAnchorsAValueOnACharacterOnlyTheJudgeUsedToCallAGlob
- - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itAnswersTheSameForAGlobHeadedPathValue
- - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itDoesNotJudgeAGlobHeadedNamespaceValueEvenOnAWholeProjectRun
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itAnswersTheSameForRegexPathValue
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itJudgesRegexOnlyWhenTheWholeProjectIsAnalysed
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itStillDeclinesToJudgeAValueServedFromAnUnanalysedRoot
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itStillJudgesAnAnchoredNamespaceValueOnAWholeProjectRun
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdOverrideTest::itFieldsAreAccessible
@@ -5610,7 +5626,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAcceptsACapturedTargetWithASubsetOfSourceVariables
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAcceptsAnAllowCrossInstanceFlagInALongFormAllowEntry
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAcceptsBothRelationsAndAllowCrossInstanceInALongFormAllowEntry
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAcceptsMatchingMultiSegmentShapes
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAcceptsMatchingExplicitSingleSegmentShapes
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAddressesTheResolvedDocumentForAllErrors
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itDeduplicatesAMixOfRelationsAliasAndDirectValuesInALongFormAllowEntry
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itDeduplicatesDuplicateExactTargets
@@ -5629,8 +5645,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRecognisesACapturedSourceSelector
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRecognisesACapturedTargetSelector
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRecognisesAGlobSourceSelector
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsACaptureVariableWhoseSourceDeclaresMultiSegmentButTargetDoesNot
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsACaptureVariableWhoseTargetDeclaresMultiSegmentButSourceDoesNot
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsACapturedTargetWithAGlobSource
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsACapturedTargetWithAnExactSource
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsACapturedTargetWithAnUndeclaredVariable
@@ -5641,6 +5655,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsALongFormAllowEntryWithAnUnknownRelationToken
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsALongFormAllowEntryWithNonListRelations
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsALongFormAllowEntryWithoutATargetKey
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsAMultiSegmentCaptureOnTheSource
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsAMultiSegmentCaptureOnTheTarget
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsANonBooleanAllowCrossInstanceInALongFormAllowEntry
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsANonBooleanCamelCaseAllowCrossInstanceInALongFormAllowEntry
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsAllowAsAScalar
@@ -5757,6 +5773,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itRejectsAShortNameEntryForAFullyQualifiedCriterion"attributes"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itRejectsAShortNameEntryForAFullyQualifiedCriterion"extends"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itRejectsAShortNameEntryForAFullyQualifiedCriterion"implements"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itRejectsATrailingNamespaceSeparatorBeforeDuplicateAnalysis
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itRejectsAnEmptyArrayExcludeBlock
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itRejectsAnEmptyListForAnyCriterionKind"attributes"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itRejectsAnEmptyListForAnyCriterionKind"extends"
@@ -5777,7 +5794,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itRejectsPendingOnATemplateLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itRejectsTheLegacyMapShapeForLayers
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itRejectsTheSingleKeyMapShorthandForALayerEntry
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itTreatsATrailingBackslashPatternAsTheSameDuplicate
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\WildcardSelfAllowDetectorTest::itAccumulatesMultipleSelfGlobEntriesIntoASingleWarning
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\WildcardSelfAllowDetectorTest::itEmitsNoWarningForACapturedSelfReferenceBoundAtRuntime
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\WildcardSelfAllowDetectorTest::itEmitsNoWarningForAGlobToExactEntry
@@ -5792,7 +5808,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itCapturesMultipleVariablesInOneSelector
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itDegradesToAShapeMatchWhenTheSourceBindingIsEmpty
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itDetectsTheSelectorKindFromItsContent"bare alphanumeric"
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itDetectsTheSelectorKindFromItsContent"capture with quantifier"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itDetectsTheSelectorKindFromItsContent"capture with explicit quantifier"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itDetectsTheSelectorKindFromItsContent"kebab-case"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itDetectsTheSelectorKindFromItsContent"leading star"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itDetectsTheSelectorKindFromItsContent"numeric suffix"
@@ -5804,7 +5820,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itFailsOnAShapeMismatchWhenACapturedSelectorMatchesTheSource
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itIgnoresTheBindingWhenAnExactSelectorMatchesTheTarget
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itListsTheDeclaredCaptureVariableNames
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itMatchesAMultiSegmentCaptureAcrossSeparators
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itMatchesViaFnmatchOnBothSidesForAGlobSelector
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itReflectsTheSelectorKindInItsKindPredicates
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itRejectsABracketInTheSelectorWithACaptureHint"bracket alongside capture"
@@ -5816,6 +5831,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itRejectsACaptureNameContainingAHyphen
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itRejectsACaptureNameStartingWithADigit
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itRejectsADuplicateCaptureNameAtParseTime
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itRejectsAMultiSegmentCaptureForConcreteLayerNames
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itRejectsATrailingBackslash
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itRejectsAnEmptyCapture
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itRejectsAnEmptyString
@@ -5827,7 +5843,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itReturnsAnEmptyBindingWhenAnExactSelectorMatchesTheSource
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itReturnsNullWhenAnExactSelectorMissesTheSource
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itStillParsesGlobAndCapturedPatternsWithoutBrackets
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itSubstitutesAMultiSegmentBindingAcrossSeparators
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itSubstitutesAnExplicitSingleSegmentBinding
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itSubstitutesEachVariableForACapturedTargetWithMultipleBindings
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itSubstitutesTheSourceBindingIntoACapturedTarget
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow\LayerSelectorTest::itTreatsCaptureVariableNamesAsCaseSensitive
@@ -5844,6 +5860,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\CoverageModeTest::itResolvesAKnownValueCaseInsensitively"ignore uppercase"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\CoverageModeTest::itResolvesAKnownValueCaseInsensitively"warn lowercase"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\CoverageModeTest::itResolvesAKnownValueCaseInsensitively"warn uppercase"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\CapturePatternTest::itAcceptsTheExplicitSingleSegmentCaptureSpelling
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\CapturePatternTest::itAppliesASubstitutionToAMultiSegmentCapture
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\CapturePatternTest::itAppliesASubstitutionWhilePreservingGlobs
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\CapturePatternTest::itDistinguishesAPlainGlobFromACapturingPattern
@@ -5852,6 +5869,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\CapturePatternTest::itExtractsNoVariablesFromAPatternWithoutCaptures
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\CapturePatternTest::itExtractsTheVariableNameOfAMultiSegmentCapture
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\CapturePatternTest::itLeavesAnUnknownVariablePlaceholderUnsubstituted
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\CapturePatternTest::itLetsAMiddleDoubleStarSpanZeroOrMoreNamespaceSegments
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\CapturePatternTest::itMatchesADoubleStarGlobAcrossSeparators
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\CapturePatternTest::itMatchesAMultiSegmentCaptureAcrossSeparators
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\CapturePatternTest::itMatchesANonCapturePatternWithAnEmptyBindingArray
@@ -5870,6 +5888,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\CapturePatternTest::itRejectsPatternsWithInvalidCaptureGrammar"unbalanced open"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\CapturePatternTest::itRejectsPatternsWithInvalidCaptureGrammar"unknown quantifier"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\CapturePatternTest::itSubstitutesVariablesWhilePreservingGlobs
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\CapturePatternTest::itTreatsABareFqnAsAnInclusiveBoundaryAwareSubtree
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\CapturePatternTest::itTreatsEveryBackslashAsALiteralSeparator
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itBuildsAMinimalContextForANamespacePathEvenWithABoundGraph
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itBuildsAMinimalContextWithoutABoundGraph
@@ -5915,7 +5934,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itAcceptsAnExplicitAllMatchMode
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itAcceptsAnExtendsOnlySpec
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itAcceptsAnImplementsOnlySpec
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itAgreesWithNamespaceMatcherAcrossGlobAndPrefixCases
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itAppliesTheExclusionAsAHardFilterRegardlessOfThePositiveMode
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itCarriesTheCriterionListOnAMatchResult
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itCombinesCriteriaWithOrInAnyMode
@@ -5924,7 +5942,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itDescribesItselfWithItsKindAndValue
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itDoesNotMatchASuffixThatAppearsInTheMiddleOfTheShortName
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itDowngradesAMatchToTheExcludedVariantWhenTheClauseFires
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itEchoesTheOriginalPatternStringIncludingATrailingBackslash
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itEvaluatesPositiveAllModeAndExcludeAllModeTogether
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itExcludesASubtreeMatchedByAPositivePattern
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itExcludesByAParentClass
@@ -5936,7 +5953,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itKeepsThePhase1RestrictionRejectingUppercaseInTheStrictConstructor
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itKeepsUnchangedSemanticsWhenNoExcludeIsDeclared
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itLeavesTheCriteriaListEmptyOnANoMatchResult
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itMatchesACharacterClassWildcard
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itMatchesAGlobWithADoubleStarSegment
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itMatchesAGlobWithATrailingDoubleStar
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itMatchesAPureLiteralAgainstAChildNamespace
@@ -5949,16 +5965,17 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itMatchesATransitivelyImplementedInterface
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itMatchesAnAttributeByItsFqn
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itMatchesWhenAnyOfMultiplePatternsIsSatisfied
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itNormalizesATrailingBackslashInThePattern
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itOrsMultipleSuffixEntriesTogether
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itPermitsAnEmptyFqnAndShortName
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRecordsEveryMatchingCriterionInAnyMode
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRecordsOnlyTheFirstMatchingPatternDescriptor
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsACharacterClassWildcard
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsAClassMissingOneCriterionInAllMode
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsANonStringPatternEntryAtANonZeroIndex
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsANonStringPatternEntryAtIndexZero
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsANullPatternEntry
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsASpecWhereEveryCriterionListIsEmpty
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsATrailingNamespaceSeparator
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsAnArrayPatternEntry
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsAnEmptyCriteriaListOnTheMatchFactory
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsAnEmptyCriterionValue
@@ -5975,6 +5992,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsAnInvalidName"starts with underscore"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsAnInvalidName"uppercase"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsAnObjectPatternEntry
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsMalformedPatternsBeforeTheyCanProduceAReportedCriterion
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itReportsAnExcludedResultAsANonMatchThatKnowsItsCause
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRequiresEveryDeclaredExclusionCriterionToFireInAllMode
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRespectsTheNamespaceBoundaryOfAPureLiteralPattern
@@ -5987,6 +6005,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itReturnsTheOriginalPatternsUnchanged
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itSkipsExclusionEvaluationWhenThePositiveCriteriaDidNotMatch
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itTreatsUndeclaredCriteriaAsTriviallySatisfiedInAllMode
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itUsesTheArchitectureDslAcrossGlobAndSubtreeCases
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerPolicyTest::itAcceptsADependencyTypeListedInTheRelationsFilter
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerPolicyTest::itAcceptsAnyBindingForACapturedTargetWhenCrossInstanceIsAllowed
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerPolicyTest::itAcceptsAnyDependencyTypeWhenNoRelationsFilterIsSet
@@ -6049,11 +6068,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itStillAnswersAPatternLayerWithNoGraphBound
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itStillResolvesAnExcludedClassToNoLayerAtAll
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itThrowsOnConstructionWithDuplicateLayerNames
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\TemplateLayerDefinitionTest::itAcceptsAMultiSegmentAuxiliaryCaptureNotUsedInTheLayerName
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\TemplateLayerDefinitionTest::itAcceptsANameVariableBoundByOneOfMultiplePatterns
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\TemplateLayerDefinitionTest::itAcceptsExcludePatternsUsingADeclaredVariable
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\TemplateLayerDefinitionTest::itAcceptsExcludePatternsWithoutAnyCaptures
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\TemplateLayerDefinitionTest::itCollectsTheSingleVariableFromNameAndPatterns
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\TemplateLayerDefinitionTest::itRecognisesCaptureVariablesInAString
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\TemplateLayerDefinitionTest::itRejectsAMultiSegmentCaptureUsedInTheConcreteLayerName
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\TemplateLayerDefinitionTest::itRejectsANameTemplateWithoutVariables
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\TemplateLayerDefinitionTest::itRejectsANameVariableNotBoundByAnyPattern
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\TemplateLayerDefinitionTest::itRejectsAnEmptyNameTemplate
@@ -6071,10 +6092,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itDecidesStrictContainmentOfNamespaceSubtrees"parent subtree contains a child subtree"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itDecidesStrictContainmentOfNamespaceSubtrees"segment boundary is respected"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itDecidesStrictContainmentOfNamespaceSubtrees"siblings are unrelated"
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itDecidesStrictContainmentOfNamespaceSubtrees"single star behaves like a strict subtree"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itDecidesStrictContainmentOfNamespaceSubtrees"strict subtree does not contain its inclusive prefix"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itDecidesStrictContainmentOfNamespaceSubtrees"subtree does not contain the catch-all"
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itDecidesStrictContainmentOfNamespaceSubtrees"trailing backslash is cosmetic"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"attribute criterion"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"backslash-only pattern"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"character class"
@@ -6083,7 +6102,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"mid-pattern wildcard"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"partial segment wildcard"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"single-character wildcard"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"single-segment star"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"suffix criterion"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"trailing backslash"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"unexpanded capture"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PendingLayerDiagnosticsTest::itCountsEachMatchedSymbolOnceAcrossEveryEdgeItTouches
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PendingLayerDiagnosticsTest::itDeclaresTheChannelAsAConfigurationError
@@ -6139,14 +6160,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itDedupesAndLexicallySortsTuplesForASingleVariableTemplate
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itDoesNotNarrowTheTupleSetBySuffixUnderMatchAny
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itDropsATupleWhoseOnlyCandidateIsExcluded
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itExtractsAGenuinelyMultiSegmentAuxiliaryBinding
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itFiltersTupleObservationByAStaticExcludePatternWithoutCaptures
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itFiltersTupleObservationByExcludeSuffix
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itIgnoresATrailingBackslashInANonCaptureFilter
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itKeepsATupleWhenAtLeastOneClassSurvivesExclusion
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itNarrowsTheTupleSetBySuffixUnderMatchAll
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itObservesAPatternOnlyTemplateWithAnUnboundFactory
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itObservesOnlyTheActualCombinationsForAMultiVariableTemplate
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itRefusesAGraphBackedCriterionWhenTheFactoryIsUnbound
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itRejectsATrailingBackslashInANonCaptureFilter
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itRequiresEveryDeclaredExcludeKindToMatchUnderModeAll
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itReturnsAnEmptyListForAnEmptyClassSet
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itReturnsAnEmptyListWhenNoClassMatches
@@ -7064,7 +7086,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Integration\DirectiveAuditUniverseTest::itStillReportsASuppressionThatCoveredNothingProduced
  - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedDiscoveryExcludeIntegrationTest::itDoesNotDoubleReportAcrossOverlappingRoots
  - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedDiscoveryExcludeIntegrationTest::itFailsTheRunUnderFailOnWarning
- - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedDiscoveryExcludeIntegrationTest::itHonoursBothFormsOfTheFinderExcludePattern
+ - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedDiscoveryExcludeIntegrationTest::itHonoursExactAndSubtreeDirectorySelectors
  - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedDiscoveryExcludeIntegrationTest::itIsSilencedByDisablingTheProducingRule
  - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedDiscoveryExcludeIntegrationTest::itIsSilencedByDisablingTheRuleThroughItsOptions
  - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedDiscoveryExcludeIntegrationTest::itJudgesAnExcludePatternAgainstTheWholeTreeAndNotTheAnalysedPaths
@@ -7201,6 +7223,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\AnalysisFileDiscoveryTest::itKeepsGeneratedFilesAsExplicitExcludedTerminalStates
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\AnalysisFileDiscoveryTest::itUsesTheDefaultDiscoveryWhenNoOverrideIsProvided
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\AnalysisFileDiscoveryTest::itUsesTheExplicitOverrideWithoutCallingTheDefaultDiscovery
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\DirectoryPrunerTest::itKeepsSiblingPrefixesSeparate
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\DirectoryPrunerTest::itMatchesProjectRelativeDirectoriesAndReturnsTheFirstAttribution
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\DirectoryPrunerTest::itProvidesBuiltInsThatMatchReservedDirectoriesAtAnyDepth
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryAbsolutePathTest::itDeduplicatesOverlappingDirectoryInputs
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryAbsolutePathTest::itDeduplicatesSingleFileOverlappingWithDirectory
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryAbsolutePathTest::itHandlesSymlinkedFile
@@ -7238,30 +7263,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\GeneratedFileFilterTest::itKeepsAllFilesWhenNoneAreGenerated
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\GeneratedFileFilterTest::itOnlyChecksFirst2KbOfFile
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\GeneratedFileFilterTest::itReturnsReindexedArray
- - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsABareNameToADirectoryAtAnyDepth
- - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsANumericDirectoryNamePrunedByItsOwnPattern
- - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsAPatternNamingAPrunedDirectoryItself
- - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsASlashedPatternAtAnySegmentBoundaryRatherThanOnlyAtTheRoot
- - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"bare name at the top"
- - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"bare name deep in the tree"
- - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"bare name matching nothing"
- - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"bare name that is only a prefix of a directory"
- - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"rooted two-segment path"
- - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"slash pattern whose segments exist apart but not in order"
- - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"the search root itself is never a candidate"
- - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"trailing slash is cosmetic"
- - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"two-segment path matching nothing"
- - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"two-segment path naming the nested copy"
- - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"two-segment path that starts below the root"
- - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsThatSamePatternWhenNothingPrunesTheWayToIt
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsASelectorToTheDirectoryThatPrunesIt
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itDoesNotDuplicateAnAnswerAcrossOverlappingRoots
- - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itIgnoresATrailingSlashTheWayFinderDoes
- - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itKeepsEachPatternsAnswerSeparate
- - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itPrunesOnASlashAnchoredPatternTheWayFinderDoes
- - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itReportsAPatternNoDirectoryMatches
- - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itReportsAPatternPointingInsideAPrunedDirectory
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itDoesNotRestoreFindersImplicitBasenameAtAnyDepthRule
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itKeepsALiteralSelectorBelowAPrunedParentUnjudgeable
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itKeepsARegexUnjudgeableWhenAPrunedSubtreeCouldContainAMatch
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itReportsEachDistinctUnmatchedAuthoredSelectorOnce
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itStaysSilentWhenNoRootIsADirectory
- - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itStillReportsAnUnmatchedNumericPatternAsUnbound
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itStillReportsAnUnmatchedLiteralOutsideThePrunedParent
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itUsesProjectRelativeSelectorSemantics
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itAcceptsAnEmptyParticipantSet
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itClearsPriorCapabilityStateOnAnEnabledThenDisabledRun
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itExecutesEnabledParticipantsInCompilerOrder
@@ -7328,87 +7338,39 @@ Available tests:
  - Qualimetrix\Tests\Core\Unit\Observation\WorseDirectionTest::itPicksTheBoundaryBaselineUpdateMayWidenTowards"lower: onset below captured"
  - Qualimetrix\Tests\Core\Unit\Observation\WorseDirectionTest::itPicksTheBoundaryBaselineUpdateMayWidenTowards"lower: tie between float and int promotes to float"
  - Qualimetrix\Tests\Core\Unit\Observation\WorseDirectionTest::itPicksTheBoundaryBaselineUpdateMayWidenTowards"lower: tie between int and float promotes to float"
- - Qualimetrix\Tests\Core\Unit\Pattern\GlobSyntaxTest::itAgreesWithTheMatcherThatAppliesTheValue
- - Qualimetrix\Tests\Core\Unit\Pattern\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"brace"
- - Qualimetrix\Tests\Core\Unit\Pattern\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"bracket"
- - Qualimetrix\Tests\Core\Unit\Pattern\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"empty"
- - Qualimetrix\Tests\Core\Unit\Pattern\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"plain literal"
- - Qualimetrix\Tests\Core\Unit\Pattern\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"question mark"
- - Qualimetrix\Tests\Core\Unit\Pattern\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"star"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsEmptyReturnsFalseWhenPrefixesExist
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsEmptyReturnsTrueForEmptyPrefixes
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsGlobReturnsFalseForLiteralPatterns"empty string"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsGlobReturnsFalseForLiteralPatterns"plain namespace"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsGlobReturnsFalseForLiteralPatterns"single segment"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsGlobReturnsFalseForLiteralPatterns"trailing backslash"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsGlobReturnsTrueForGlobCharacters"char class"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsGlobReturnsTrueForGlobCharacters"double star"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsGlobReturnsTrueForGlobCharacters"multiple wildcards"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsGlobReturnsTrueForGlobCharacters"question mark"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsGlobReturnsTrueForGlobCharacters"single star"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsGlobReturnsTrueForGlobCharacters"star in middle"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsFalse"different namespace"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsFalse"empty prefix is skipped"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsFalse"glob: no match"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsFalse"partial prefix boundary"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsFalse"sibling namespace"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsNullForEmptyNamespace
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsNullForEmptyPrefixes
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsNullForZeroMatches
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsTheFirstMatchedPatternWhenSeveralPrefixesMatch
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsTheMatchedPatternForOneConfiguredPrefix
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsTheNormalizedPatternWhenItHasATrailingBackslash
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsTrue"exact match"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsTrue"glob: wildcard in middle"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsTrue"glob: wildcard matches namespace"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsTrue"multiple prefixes second matches"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsTrue"prefix matches child namespace"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsTrue"prefix matches deeply nested namespace"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsTrue"trailing backslash normalization"
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSingleGlobCharClass
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSingleGlobNoMatch
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSingleGlobQuestionMark
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSingleGlobStarMiddle
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSingleGlobStarWildcard
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSinglePrefixChild
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSinglePrefixDeeplyNested
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSinglePrefixDoesNotMatchSibling
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSinglePrefixExact
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSinglePrefixRespectsNamespaceBoundary
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSingleReturnsFalseForEmptyNamespace
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSingleReturnsFalseForEmptyPattern
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSingleReturnsFalseWhenBothEmpty
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itNormalizesTrailingBackslashForInstancePatternsToo
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itNormalizesTrailingBackslashInGlobMode
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itNormalizesTrailingBackslashInPrefixMode
- - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itTreatsAnAllBackslashPatternAsEmpty
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itIsEmptyReturnsFalseWhenPatternsExist
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itIsEmptyReturnsTrueForEmptyPatterns
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsFalse"glob: filename pattern mismatch"
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsFalse"glob: no match"
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsFalse"prefix: boundary check"
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsFalse"prefix: different directory"
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsFalse"prefix: empty pattern is skipped"
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsFalse"prefix: sibling file"
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsNullForEmptyPatterns
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsNullForZeroMatches
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTheFirstMatchedPatternWhenSeveralPatternsMatch
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTheMatchedPatternForOneConfiguredPattern
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"glob: filename pattern"
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"glob: question mark wildcard"
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"glob: recursive pattern"
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"glob: star matches file in directory"
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"glob: star matches nested file"
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"glob: wildcard in middle"
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"mixed: glob pattern matches"
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"mixed: prefix pattern matches"
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"prefix: directory matches file inside"
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"prefix: directory matches itself"
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"prefix: directory matches nested file"
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"prefix: exact file match"
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"prefix: multiple patterns second matches"
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"prefix: trailing slash normalization on file path"
- - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"prefix: trailing slash normalization on pattern"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesANamespaceSubtreeWithItsOwnSeparator
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesAnExplicitNamespaceRegex
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itRefusesPathSeparatorsAndNonCanonicalNamespaceSeparators
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itReturnsNoMatchForAnEmptyMatcherOrAnUnmatchedNamespace
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itReturnsTheFirstMatchedDefinition
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itTreatsMetacharactersAsLiteralInAnExactNamespace
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itIsEmptyOnlyWhenNoBoundPatternsWereGiven
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesASubtreeRootAndDescendantsButNotAPrefixSibling
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesAnExplicitRegexWithScopedOptions
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itPreservesTheFirstAuthoredDefinitionForOverlappingAndDuplicatePatterns
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itRaisesATypedFailureWhenPcreExhaustsTheMatchBudget
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itRefusesASelectorListOverTheFixedBudget
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itRefusesAnInvalidPcreFragmentAtBindingTime
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itRefusesLeadingTrailingAndEmptyPathSegmentsInsteadOfNormalizingThem
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itRejectsAPcreSuccessWhoseSpanWasResetByK
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itRejectsAPcreSuccessWhoseSpanWasShortCircuitedByAccept
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itRendersAnExactPathAsALiteralFullSubjectPredicate
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itUsesThePathSeparatorForASubtree
+ - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itAllowsALiteralTildeInExactAndSubtreeForms
+ - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itBuildsTheExplicitKindsFromSeparatedAuthoredValues
+ - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itDoesNotGuessADelimitedLookingRegexFragment
+ - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itPreservesTheAuthoredValueInItsDisplaySpelling
+ - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itRefusesANulByteInEveryForm"exact"
+ - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itRefusesANulByteInEveryForm"regex"
+ - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itRefusesANulByteInEveryForm"subtree"
+ - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itRefusesARawTildeOnlyInARegexFragment
+ - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itRefusesAnEmptyValue"exact"
+ - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itRefusesAnEmptyValue"regex"
+ - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itRefusesAnEmptyValue"subtree"
+ - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itRefusesAnOverBudgetValue"exact"
+ - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itRefusesAnOverBudgetValue"regex"
+ - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itRefusesAnOverBudgetValue"subtree"
+ - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itRefusesAnUnknownKind
  - Qualimetrix\Tests\Core\Unit\VersionTest::itReportsTheVersionOfTheQualimetrixPackage
  - Qualimetrix\Tests\Core\Unit\VersionTest::itReturnsANonEmptyVersionString
  - Qualimetrix\Tests\Infrastructure\Ast\Unit\CachedFileParserTest::itCachesAstFromTheSameSnapshotUsedForKeyGeneration
@@ -7541,6 +7503,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itClassifiesMissingGitReferenceAsInputErrorBeforePayload
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itFailsClosedForUnknownRuleSelectorWithoutPollutingStdout
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itFormatsIncompleteAnalysisAndGivesItExitCodePriority
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsABareNamespaceDrillDownSelector
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsAChannelAsRuleOptionOwner
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsARetiredRuleOptionInTheSpellingTheCommandLineUsed
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsARetiredSuppressionFlagByName"namespace"
@@ -7722,6 +7685,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itKeepsAMissedExcludeNamespaceSilentAndUnchanged"json"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itNamesEveryUnboundIncludeNamespaceInAJsonEnvelope
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itPreservesExistingOutputBytesOnPartialAnalysis
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesABareNamespaceBeforeProjection
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesABogusDirectionOrFormatWithoutRunningAnalysis
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesABogusDirectionWithAParseableJsonEnvelope
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAllFailedAnalysisWithoutCreatingAnArtifact"DOT output file"
@@ -7924,6 +7888,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CheckScopeResolverTest::itDoesNotComputeWarningsWhenGitScopeResolutionFails
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CheckScopeResolverTest::itResolvesGitScopeBeforeComputingWarnings
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CheckScopeResolverTest::itReturnsTheUnchangedGitScopeWithWarnings
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itDecodesPerRuleSuppressionSelectors
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itDecodesTheDistanceNamespaceSelectorAfterRawRuleOptionParsing
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itNormalizesAliasValuesToBooleans
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itNormalizesAnAliasValueToFloat
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itNormalizesAnAliasValueToInt
@@ -7931,12 +7897,19 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itNormalizesScientificNotationWithADecimalPointToFloat
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itPrefersRuleOptOverAConflictingAlias
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itProcessesEveryRegisteredAliasNotJustTheHardcodedOnes
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itRefusesABareDistanceNamespaceCliValue
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itRefusesAnEmptyAliasValueInsteadOfFoldingItToAOneElementEmptyString
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itRefusesAnEmptyValueOnAnUndocumentedAliasTheSameWay
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itSkipsAnAbsentValueNoneAlias
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itSkipsAnAliasThatWasNotPassedOnTheCommandLine
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itStillParsesANonEmptyAliasValueAsBefore
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itTreatsAPresentValueNoneAliasAsTrue
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\CliSelectorDecoderTest::itBuildsANamespaceSubtreePattern
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\CliSelectorDecoderTest::itBuildsAPathPatternAndSplitsOnlyAtTheFirstColon
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\CliSelectorDecoderTest::itRefusesMalformedCliSelectorScalars"bare string"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\CliSelectorDecoderTest::itRefusesMalformedCliSelectorScalars"empty value"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\CliSelectorDecoderTest::itRefusesMalformedCliSelectorScalars"invalid pcre"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\CliSelectorDecoderTest::itRefusesMalformedCliSelectorScalars"unknown kind"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\HookStatusCommandTest::itDefinesNoArguments
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\HookStatusCommandTest::itDefinesNoCustomOptions
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\HookStatusCommandTest::itIsAddressedAsHookStatus
@@ -7961,6 +7934,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itCarriesTheEmptyStringThroughToTheOwner"--fail-on"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itCarriesTheEmptyStringThroughToTheOwner"--format"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itCarriesTheEmptyStringThroughToTheOwner"--memory-limit"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itDecodesExplicitExcludeSelectorsAtTheCliBoundary
  - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itStillCarriesAnOrdinaryValue
  - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itStillWritesNothingForAnArrayOptionNobodyRepeated
  - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itStillWritesNothingWhenTheOptionIsAbsent"--cache-dir"
@@ -7992,9 +7966,11 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itAcceptsAKeyReadByAnotherFormatterThanTheOneSelected
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itAcceptsAllFlagTogetherWithAnEquivalentFormatOptViolationsAll
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itAcceptsFormatOptViolationsAllWithoutTheAllFlag
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itBindsAnExplicitNamespaceSelectorOnceAtTheCliBoundary
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itLeavesDefaultsUnchangedWhenAllFlagIsAbsent
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itLetsAllFlagOverrideAnExplicitDetailLimit
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itNamesEveryUnknownKeyAtOnce
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesABareNamespaceSelector
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAFormatOptKeyNoFormatterReads
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesTheViolationsKeyTheAllFlagWritesWhenNoFormatterDeclaresIt
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itSetsTheDetailLimitToUnlimitedWhenAllFlagIsPassed
@@ -8527,6 +8503,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itOutputsPrettyPrintedJson
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itPreservesAllDependencyTypes
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itSortsEdgesByFromThenTo
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itCombinesIncludesWithOrAndLetsARegexExclusionWin
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itIgnoresExcludeNamespacesThatMatchNothing
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itReportsOnlyIncludeValuesThatMatchNoClass"a partial namespace name is not a binding"
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itReportsOnlyIncludeValuesThatMatchNoClass"a value emptied by an exclude still binds"
@@ -8662,12 +8639,12 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleCollectorTest::itReturnsHelpUriForKnownChannelsFromTheRealPresentation
  - Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleDescriptorCoverageTest::itKeepsTheHumanisedFallbackAndTheRepositoryUrlForAnUnknownCode
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsAClassByItsFullyQualifiedName
- - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsAGlobNamespacePattern
- - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsAGlobThatOnlyTheCanonicalSymbolNameSatisfies
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsANamespaceThatNamesAnAnalyzedOne
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsANamespaceThatOnlyTheNamespaceTreeKnows
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsARegexNamespacePattern
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsARegexThatOnlyTheCanonicalSymbolNameSatisfies
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsASubtreeByItsPrefixTheWayTheFilterMatchesIt
- - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsAnIntermediateNamespaceByGlobWithoutANamespaceTree
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsAnIntermediateNamespaceByRegexWithoutANamespaceTree
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsNothingForAClassNoAnalyzedSymbolCarries
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsNothingForANamespaceNoAnalyzedSymbolCarries
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itCountsTheClassUniverseTheRefusalNames
@@ -8677,10 +8654,9 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itDoesNotBindAValueToAFileCanonicalNameNoFilterCompares
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itKeepsTheProjectSentinelOutOfTheNamespaceUniverse
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itRefusesAPrefixThatOnlyLooksLikeOne
- - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itTreatsATrailingBackslashAsCosmetic
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itDoesNotMatchFindingsBySimilarNamespacePrefix
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itExcludesFindingByClassWhenNoType
- - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersFindingsByAGlobNamespaceSelector
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersFindingsByARegexNamespaceSelector
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersFindingsByClassExactMatch
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersFindingsByClassWithGlobalNamespace
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersFindingsByNamespaceExactMatch
@@ -8688,20 +8664,17 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersWorstOffendersByClass
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersWorstOffendersByNamespace
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersWorstOffendersByNamespaceMatchingChildren
- - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itIgnoresATrailingBackslashInTheNamespaceSelector
- - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itIgnoresATrailingBackslashWhenFilteringWorstOffenders
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itNeverSelectsProjectWideFindingsByNamespace
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itReturnsAllFindingsWhenNoFilter
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itReturnsAllWorstOffendersWhenNoFilter
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itReturnsEmptyWhenWorstOffendersByClassNoMatch
- - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itSelectsNothingForAnEmptyNamespaceSelector
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"a path entry that cannot be a name at all"
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"suppress_namespaces as a map"
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"suppress_paths as a scalar"
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itStillAcceptsAnEmptyList
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itStillAccumulatesLawfulLists
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\Configuration\ConfiguredFindingExclusionsResolverTest::itAccumulatesAndDeduplicatesConfiguredExclusions
- - Qualimetrix\Tests\Reporting\Unit\FindingProjection\Configuration\ConfiguredFindingExclusionsResolverTest::itReadsABareNumberAsTheDirectoryNameItIs
+ - Qualimetrix\Tests\Reporting\Unit\FindingProjection\Configuration\ConfiguredFindingExclusionsResolverTest::itRefusesABareNumberWhereASelectorBelongs
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\Configuration\ConfiguredFindingExclusionsResolverTest::itRefusesAMapWhereAListOfEntriesBelongs
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\Configuration\ConfiguredFindingExclusionsResolverTest::itStillRefusesABareNumberWhereANamespaceBelongs
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\DeclaredChannelFileScopeTest::itLeavesAnUndeclaredChannelFileScoped

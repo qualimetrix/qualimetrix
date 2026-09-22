@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
 use LogicException;
-use Qualimetrix\Core\Pattern\NamespaceMatcher;
 
 /**
  * Stateless evaluator that walks the five criterion kinds (patterns,
@@ -20,9 +19,9 @@ use Qualimetrix\Core\Pattern\NamespaceMatcher;
  *
  * Lives next to {@see LayerDefinition} because it implements the
  * criterion-walking primitive that {@see LayerDefinition::matches()}
- * orchestrates. Per-pattern FQN matching is delegated to
- * {@see NamespaceMatcher::matchesSingle()} so this class shares a single
- * source of truth with the wider namespace-matching utility.
+ * orchestrates. Architecture patterns retain their own capture-aware DSL and
+ * therefore compile through {@see CapturePattern}, not the Core selector
+ * language.
  *
  * @internal Consumed by {@see LayerDefinition} and, for the refusal alone,
  * by {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\TupleExtractor}.
@@ -35,11 +34,7 @@ final class LayerCriteriaMatcher
      * suffix, attributes, implements, extends). Empty/missing criterion
      * kinds produce no descriptor.
      *
-     * @param list<string> $patterns Patterns exactly as the user wrote them:
-     *                               {@see NamespaceMatcher::matchesSingle()}
-     *                               normalizes them itself, and the
-     *                               resulting {@see MatchedCriterion} must
-     *                               label what the user wrote.
+     * @param list<string> $patterns Patterns exactly as the user wrote them.
      * @param list<string> $suffix
      * @param list<string> $attributes
      * @param list<string> $implements
@@ -164,7 +159,7 @@ final class LayerCriteriaMatcher
     private static function matchPatterns(ClassContext $context, array $patterns): ?MatchedCriterion
     {
         foreach ($patterns as $pattern) {
-            if (NamespaceMatcher::matchesSingle($pattern, $context->fqn)) {
+            if (CapturePattern::matches($pattern, $context->fqn)) {
                 return new MatchedCriterion(MatchedCriterionKind::Pattern, $pattern);
             }
         }

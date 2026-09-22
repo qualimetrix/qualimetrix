@@ -8,48 +8,38 @@ use InvalidArgumentException;
 use RuntimeException;
 
 /**
- * Compiles an FQN glob pattern containing capture variables (D4 grammar)
- * into a PCRE regex with named subpatterns. Used by
+ * Compiles the Architecture namespace-pattern DSL into an anchored PCRE
+ * expression with optional named captures. Used by
  * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage} to extract
  * observed binding tuples from the project's class set when expanding a
  * {@see TemplateLayerDefinition}, and by {@see TemplateLayerDefinition}
  * itself for the construction-time "variable in name → variable in some
  * capture-producing pattern" invariant.
  *
- * **Grammar (Phase 2 direction 2 — template layers).**
+ * **Grammar.**
  *
  * | Source                | Regex                                                                   | Semantics                                                                                    |
  * | --------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
  * | {@code {var}}         | {@code (?P<var>[^\\]+)}                                                 | Captures exactly one namespace segment (between backslashes), at least one char.             |
  * | {@code {var:**}}      | {@code (?P<var>[^\\]+(?:\\[^\\]+)*)}                                    | Captures one or more namespace segments, separator-aware.                                    |
- * | {@code **}            | {@code .+}                                                              | Matches one or more characters, including separators (cross-segment wildcard).               |
+ * | {@code **}            | contextual                                                              | Cross-segment wildcard; a trailing {@code \**} selects strict descendants.                   |
  * | {@code *}             | {@code [^\\]*}                                                          | Matches any chars within one segment.                                                        |
  * | {@code ?}             | {@code [^\\]}                                                           | Matches one char within one segment.                                                         |
  * | {@code \}             | {@code \\}                                                              | Namespace separator — always literal; no escape semantics.                                   |
  * | other                 | {@code preg_quote()}                                                    | Literal char.                                                                                |
  *
+ * A wildcard-free pattern denotes an inclusive namespace subtree: both the
+ * named namespace and its descendants match. Wildcard patterns are anchored
+ * and must match the complete FQN. Character classes and raw PCRE syntax are
+ * deliberately outside this DSL.
+ *
  * Unlike the {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelectorParser}
- * grammar (which DOES treat {@code \{} / {@code \}} as escaped literal braces),
+ * grammar (which treats {@code \{} / {@code \}} as escaped literal braces),
  * FQN patterns reserve {@code \} as the namespace separator only. PHP FQNs
  * never contain literal {@code &#123;} / {@code &#125;}, so the escape
- * affordance has no use case and is omitted to keep the grammar one-to-one
- * with {@see \Qualimetrix\Core\Pattern\NamespaceMatcher}'s glob syntax for any
- * pattern without capture variables.
- *
- * **Semantic note vs {@see \Qualimetrix\Core\Pattern\NamespaceMatcher}.** For
- * patterns containing glob metacharacters ({@code *}, {@code ?}, {@code [}),
- * both engines produce equivalent results (CapturePattern's regex is a
- * straightforward translation of {@code fnmatch()} semantics for FQN-shaped
- * input). For NON-glob, non-capture patterns the two engines diverge:
- * {@see \Qualimetrix\Core\Pattern\NamespaceMatcher} treats {@code App\Foo} as
- * a namespace PREFIX (matches {@code App\Foo} and {@code App\Foo\Bar}),
- * whereas {@see CapturePattern} compiles {@code App\Foo} to an exact-match
- * regex ({@code /^App\\Foo$/}) — there is no prefix-expansion fallback
- * because a substituted concrete pattern produced by template expansion is
- * already a full pattern in its own right. Call sites that need Phase-1
- * prefix semantics for non-capture filter patterns route through
- * {@see \Qualimetrix\Core\Pattern\NamespaceMatcher} directly (see
- * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage}).
+ * affordance has no use case and is omitted. This is an intentionally
+ * independent, closed DSL; it is not a Core selector and does not accept the
+ * public {@code exact/subtree/regex} selector shape.
  *
  * **Variable name regex** ({@see VARIABLE_NAME_REGEX}) intentionally mirrors
  * {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelectorParser::VARIABLE_NAME_REGEX}.
@@ -72,11 +62,13 @@ final readonly class CapturePattern
      * @param string $regex Compiled PCRE pattern with delimiters and anchors.
      * @param list<string> $variableNames Capture variables referenced in
      *                                    {@code rawPattern}, in first-occurrence order.
+     * @param list<string> $multiSegmentVariableNames Variables declared with {@code :**}.
      */
     private function __construct(
         public string $rawPattern,
         public string $regex,
         public array $variableNames,
+        public array $multiSegmentVariableNames,
     ) {}
 
     /**
@@ -93,8 +85,21 @@ final readonly class CapturePattern
             throw new InvalidArgumentException('CapturePattern: source pattern must not be empty.');
         }
 
-        $regex = '/^';
+        self::rejectUnsupportedSyntax($rawPattern);
+
+        $hasWildcardOrCapture = strpbrk($rawPattern, '*?{}') !== false;
+        if (!$hasWildcardOrCapture) {
+            return new self(
+                $rawPattern,
+                '~\\A(?:' . preg_quote($rawPattern, '~') . ')(?:\\\\.+)?\\z~',
+                [],
+                [],
+            );
+        }
+
+        $regex = '~\\A(?:';
         $variables = [];
+        $multiSegmentVariables = [];
         $seenVariables = [];
 
         $cursor = 0;
@@ -108,7 +113,21 @@ final readonly class CapturePattern
                 // no escape semantics for `{` / `}` (PHP FQNs cannot contain
                 // braces anyway, and treating `\{` as escaped would collide
                 // with the natural `App\{var}` shape).
-                $regex .= preg_quote('\\', '/');
+                if ($cursor + 3 === $length && substr($rawPattern, $cursor + 1) === '**') {
+                    $regex .= '\\\\.+';
+                    $cursor += 3;
+
+                    continue;
+                }
+
+                if (substr($rawPattern, $cursor, 4) === '\\**\\') {
+                    $regex .= '\\\\(?:[^\\\\]+\\\\)*';
+                    $cursor += 4;
+
+                    continue;
+                }
+
+                $regex .= preg_quote('\\', '~');
                 $cursor++;
 
                 continue;
@@ -149,6 +168,9 @@ final readonly class CapturePattern
 
                 $seenVariables[$variableName] = true;
                 $variables[] = $variableName;
+                if ($multiSegment) {
+                    $multiSegmentVariables[] = $variableName;
+                }
 
                 $regex .= $multiSegment
                     ? '(?P<' . $variableName . '>[^\\\\]+(?:\\\\[^\\\\]+)*)'
@@ -159,8 +181,15 @@ final readonly class CapturePattern
             }
 
             if ($char === '*') {
+                if ($cursor === 0 && str_starts_with($rawPattern, '**\\')) {
+                    $regex .= '(?:[^\\\\]+\\\\)*';
+                    $cursor += 3;
+
+                    continue;
+                }
+
                 if ($cursor + 1 < $length && $rawPattern[$cursor + 1] === '*') {
-                    $regex .= '.+';
+                    $regex .= '.*';
                     $cursor += 2;
                 } else {
                     $regex .= '[^\\\\]*';
@@ -177,13 +206,22 @@ final readonly class CapturePattern
                 continue;
             }
 
-            $regex .= preg_quote($char, '/');
+            if (str_contains('()|+^$', $char)) {
+                throw new InvalidArgumentException(\sprintf(
+                    'CapturePattern: raw PCRE syntax is not supported; found "%s" at offset %d in pattern "%s".',
+                    $char,
+                    $cursor,
+                    $rawPattern,
+                ));
+            }
+
+            $regex .= preg_quote($char, '~');
             $cursor++;
         }
 
-        $regex .= '$/';
+        $regex .= ')\\z~';
 
-        return new self($rawPattern, $regex, $variables);
+        return new self($rawPattern, $regex, $variables, $multiSegmentVariables);
     }
 
     /**
@@ -198,12 +236,26 @@ final readonly class CapturePattern
         return self::compile($rawPattern)->variableNames;
     }
 
+    /** @return list<string> */
+    public static function extractMultiSegmentVariables(string $rawPattern): array
+    {
+        return self::compile($rawPattern)->multiSegmentVariableNames;
+    }
+
     /**
      * Returns true if the pattern references at least one capture variable.
      */
     public static function isCaptureProducing(string $rawPattern): bool
     {
         return self::extractVariables($rawPattern) !== [];
+    }
+
+    public static function matches(string $rawPattern, string $fqn): bool
+    {
+        /** @var array<string, self> $compiled */
+        static $compiled = [];
+
+        return ($compiled[$rawPattern] ??= self::compile($rawPattern))->match($fqn) !== null;
     }
 
     /**
@@ -246,8 +298,8 @@ final readonly class CapturePattern
     }
 
     /**
-     * Substitutes the bindings into the raw pattern, producing a concrete
-     * pattern string suitable for {@see \Qualimetrix\Core\Pattern\NamespaceMatcher::matchesSingle()}.
+     * Substitutes the bindings into the raw pattern, producing another
+     * Architecture namespace pattern.
      *
      * The substitution preserves any non-capture glob metacharacters
      * ({@code **}, {@code *}, {@code ?}) verbatim — the result is still a
@@ -342,14 +394,14 @@ final readonly class CapturePattern
         $name = $body;
         if (str_contains($body, ':')) {
             [$name, $quantifier] = explode(':', $body, 2);
-            if ($quantifier !== '**') {
+            if ($quantifier !== '*' && $quantifier !== '**') {
                 throw new InvalidArgumentException(\sprintf(
-                    "CapturePattern: unknown capture quantifier ':%s' in pattern \"%s\" (only ':**' is supported).",
+                    "CapturePattern: unknown capture quantifier ':%s' in pattern \"%s\" (only ':*' and ':**' are supported).",
                     $quantifier,
                     $template,
                 ));
             }
-            $multiSegment = true;
+            $multiSegment = $quantifier === '**';
         }
 
         if (preg_match('/^' . self::VARIABLE_NAME_REGEX . '$/', $name) !== 1) {
@@ -362,5 +414,42 @@ final readonly class CapturePattern
         }
 
         return [$name, $multiSegment, $closeAt + 1];
+    }
+
+    private static function rejectUnsupportedSyntax(string $rawPattern): void
+    {
+        if (str_starts_with($rawPattern, '\\')
+            || str_ends_with($rawPattern, '\\')
+            || str_contains($rawPattern, '\\\\')) {
+            throw new InvalidArgumentException(\sprintf(
+                'CapturePattern: pattern "%s" must not have leading, trailing, or empty namespace segments.',
+                $rawPattern,
+            ));
+        }
+
+        $insideCapture = false;
+        for ($offset = 0, $length = \strlen($rawPattern); $offset < $length; $offset++) {
+            $char = $rawPattern[$offset];
+            if ($char === '[' || $char === ']') {
+                throw new InvalidArgumentException(\sprintf(
+                    'CapturePattern: character classes are not supported; found "%s" at offset %d in pattern "%s".',
+                    $char,
+                    $offset,
+                    $rawPattern,
+                ));
+            }
+            if ($char === '{') {
+                $insideCapture = true;
+            } elseif ($char === '}') {
+                $insideCapture = false;
+            } elseif (!$insideCapture && str_contains('()|+^$', $char)) {
+                throw new InvalidArgumentException(\sprintf(
+                    'CapturePattern: raw PCRE syntax is not supported; found "%s" at offset %d in pattern "%s".',
+                    $char,
+                    $offset,
+                    $rawPattern,
+                ));
+            }
+        }
     }
 }

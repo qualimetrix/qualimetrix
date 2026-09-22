@@ -8,6 +8,7 @@ use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Run\Discovery\DirectoryPruner;
 use Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery;
 use Qualimetrix\Core\Path\AbsolutePath;
 use RecursiveDirectoryIterator;
@@ -42,7 +43,7 @@ final class FinderFileDiscoveryAbsolutePathTest extends TestCase
         $this->createFile('A.php', '<?php class A {}');
         $this->createFile('B.php', '<?php class B {}');
 
-        $discovery = new FinderFileDiscovery();
+        $discovery = $this->discovery();
         $generator = $discovery->discover(AbsolutePath::fromString($this->fixturesDir));
 
         $count = 0;
@@ -60,7 +61,7 @@ final class FinderFileDiscoveryAbsolutePathTest extends TestCase
     {
         $file = $this->createFile('Solo.php', '<?php class Solo {}');
 
-        $discovery = new FinderFileDiscovery();
+        $discovery = $this->discovery();
         $generator = $discovery->discover(AbsolutePath::fromString($file));
 
         $count = 0;
@@ -84,7 +85,7 @@ final class FinderFileDiscoveryAbsolutePathTest extends TestCase
         $input = AbsolutePath::fromString($this->fixturesDir . '/./Norm.php');
         self::assertSame($this->fixturesDir . '/Norm.php', $input->value());
 
-        $discovery = new FinderFileDiscovery();
+        $discovery = $this->discovery();
         $observedKeys = [];
         $observedNames = [];
         foreach ($discovery->discover($input) as $pathKey => $splFileInfo) {
@@ -103,7 +104,7 @@ final class FinderFileDiscoveryAbsolutePathTest extends TestCase
         $link = $this->fixturesDir . '/Link.php';
         symlink($real, $link);
 
-        $discovery = new FinderFileDiscovery();
+        $discovery = $this->discovery();
         $observedKeys = [];
         $observedNames = [];
         foreach ($discovery->discover(AbsolutePath::fromString($link)) as $pathKey => $splFileInfo) {
@@ -128,7 +129,7 @@ final class FinderFileDiscoveryAbsolutePathTest extends TestCase
         $this->createFile('Outer.php', '<?php class Outer {}');
         $this->createFileInDir('sub', 'Inner.php', '<?php class Inner {}');
 
-        $discovery = new FinderFileDiscovery();
+        $discovery = $this->discovery();
         $files = iterator_to_array(
             $discovery->discover([
                 AbsolutePath::fromString($this->fixturesDir),
@@ -159,7 +160,7 @@ final class FinderFileDiscoveryAbsolutePathTest extends TestCase
         // dedup must collapse them.
         $file = $this->createFile('Shared.php', '<?php class Shared {}');
 
-        $discovery = new FinderFileDiscovery();
+        $discovery = $this->discovery();
         $files = iterator_to_array(
             $discovery->discover([
                 AbsolutePath::fromString($file),
@@ -177,7 +178,7 @@ final class FinderFileDiscoveryAbsolutePathTest extends TestCase
     {
         $existing = $this->createFile('Real.php', '<?php class Real {}');
 
-        $discovery = new FinderFileDiscovery();
+        $discovery = $this->discovery();
         $files = iterator_to_array(
             $discovery->discover([
                 AbsolutePath::fromString('/non/existent/qmx-vo-list'),
@@ -196,6 +197,13 @@ final class FinderFileDiscoveryAbsolutePathTest extends TestCase
         file_put_contents($path, $content);
 
         return $path;
+    }
+
+    private function discovery(): FinderFileDiscovery
+    {
+        $root = AbsolutePath::fromString($this->fixturesDir);
+
+        return new FinderFileDiscovery(new DirectoryPruner($root, DirectoryPruner::builtInPatterns()));
     }
 
     private function createFileInDir(string $dir, string $name, string $content): string

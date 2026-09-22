@@ -7,7 +7,8 @@ namespace Qualimetrix\Reporting\FindingProjection;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionAttribution;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
-use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\PathPattern;
 
 /**
  * The two per-rule exclusion ledger halves — {@see SuppressionMechanism::RuleNamespaceSuppression}
@@ -65,7 +66,7 @@ final readonly class RuleExclusionLedgerAttributor
             $this->recordHits($attribution, $pathHitsByRule, $namespaceHitsByRule, $channelHitsByRule);
         }
 
-        $inert = $this->inertSuppressors($ruleConfiguration->all(), $pathHitsByRule, $namespaceHitsByRule, $channelHitsByRule);
+        $inert = $this->inertSuppressors($ruleConfiguration, $pathHitsByRule, $namespaceHitsByRule, $channelHitsByRule);
 
         return [$suppressed, $inert];
     }
@@ -80,7 +81,7 @@ final readonly class RuleExclusionLedgerAttributor
     /**
      * @param array<string, array<string, true>> $pathHitsByRule
      * @param array<string, array<string, true>> $namespaceHitsByRule
-     * @param array<string, array<string, array<string, true>>> $channelHitsByRule rule => selector => pattern => true
+     * @param array<string, array<string, array<string, true>>> $channelHitsByRule rule => selector => selector identity => true
      */
     private function recordHits(
         RuleExclusionAttribution $attribution,
@@ -90,43 +91,42 @@ final readonly class RuleExclusionLedgerAttributor
     ): void {
         if ($attribution->isPathExclusion) {
             foreach ($attribution->matchedPatterns as $pattern) {
-                $pathHitsByRule[$attribution->producerRuleName][$pattern] = true;
+                $pathHitsByRule[$attribution->producerRuleName][$pattern->display()] = true;
             }
 
             return;
         }
 
         foreach ($attribution->matchedPatterns as $pattern) {
-            $namespaceHitsByRule[$attribution->producerRuleName][$pattern] = true;
+            $namespaceHitsByRule[$attribution->producerRuleName][$pattern->display()] = true;
         }
 
         foreach ($attribution->matchedChannelPatterns as $hit) {
-            $channelHitsByRule[$attribution->producerRuleName][$hit['selector']][$hit['pattern']] = true;
+            $channelHitsByRule[$attribution->producerRuleName][$hit['selector']][$hit['pattern']->display()] = true;
         }
     }
 
     /**
-     * @param array<string, mixed> $rulesConfig
      * @param array<string, array<string, true>> $pathHitsByRule
      * @param array<string, array<string, true>> $namespaceHitsByRule
      * @param array<string, array<string, array<string, true>>> $channelHitsByRule rule => selector => pattern => true
      *
      * @return list<InertSuppressor>
      */
-    private function inertSuppressors(array $rulesConfig, array $pathHitsByRule, array $namespaceHitsByRule, array $channelHitsByRule): array
+    private function inertSuppressors(RuleConfigurationInterface $ruleConfiguration, array $pathHitsByRule, array $namespaceHitsByRule, array $channelHitsByRule): array
     {
         $inert = [];
 
-        foreach ($rulesConfig as $ruleName => $ruleOptions) {
+        foreach ($ruleConfiguration->all() as $ruleName => $ruleOptions) {
             if (!\is_array($ruleOptions)) {
                 continue;
             }
 
             $inert = [
                 ...$inert,
-                ...$this->inertFor(SuppressionMechanism::RulePathSuppression, $ruleName, ConfiguredSuppression::paths($ruleOptions), $pathHitsByRule),
-                ...$this->inertFor(SuppressionMechanism::RuleNamespaceSuppression, $ruleName, ConfiguredSuppression::namespaces($ruleOptions), $namespaceHitsByRule),
-                ...$this->inertForChannels($ruleName, $this->configuredChannelPatterns($ruleOptions), $channelHitsByRule),
+                ...$this->inertFor(SuppressionMechanism::RulePathSuppression, $ruleName, $ruleConfiguration->pathExclusions($ruleName), $pathHitsByRule),
+                ...$this->inertFor(SuppressionMechanism::RuleNamespaceSuppression, $ruleName, $ruleConfiguration->namespaceExclusions($ruleName), $namespaceHitsByRule),
+                ...$this->inertForChannels($ruleName, $ruleConfiguration->namespaceChannelExclusions($ruleName), $channelHitsByRule),
             ];
         }
 
@@ -134,7 +134,7 @@ final readonly class RuleExclusionLedgerAttributor
     }
 
     /**
-     * @param list<string> $patterns
+     * @param list<PathPattern|NamespacePattern> $patterns
      * @param array<string, array<string, true>> $hitsByRule
      *
      * @return list<InertSuppressor>
@@ -144,8 +144,8 @@ final readonly class RuleExclusionLedgerAttributor
         $inert = [];
 
         foreach ($patterns as $pattern) {
-            if (!isset($hitsByRule[$ruleName][$pattern])) {
-                $inert[] = new InertSuppressor($mechanism, $ruleName . ': ' . $pattern);
+            if (!isset($hitsByRule[$ruleName][$pattern->definition->display()])) {
+                $inert[] = new InertSuppressor($mechanism, $ruleName . ': ' . $pattern->definition->display());
             }
         }
 
@@ -153,7 +153,7 @@ final readonly class RuleExclusionLedgerAttributor
     }
 
     /**
-     * @param array<string, list<string>> $channelPatterns selector => patterns
+     * @param array<string, list<NamespacePattern>> $channelPatterns selector => patterns
      * @param array<string, array<string, array<string, true>>> $channelHitsByRule rule => selector => pattern => true
      *
      * @return list<InertSuppressor>
@@ -164,10 +164,10 @@ final readonly class RuleExclusionLedgerAttributor
 
         foreach ($channelPatterns as $selector => $patterns) {
             foreach ($patterns as $pattern) {
-                if (!isset($channelHitsByRule[$ruleName][$selector][$pattern])) {
+                if (!isset($channelHitsByRule[$ruleName][$selector][$pattern->definition->display()])) {
                     $inert[] = new InertSuppressor(
                         SuppressionMechanism::RuleNamespaceSuppression,
-                        $ruleName . ': ' . $selector . ' ' . $pattern,
+                        $ruleName . ': ' . $selector . ' ' . $pattern->definition->display(),
                     );
                 }
             }
@@ -176,19 +176,4 @@ final readonly class RuleExclusionLedgerAttributor
         return $inert;
     }
 
-    /**
-     * @param array<string, mixed> $ruleOptions
-     *
-     * @return array<string, list<string>> selector => patterns
-     */
-    private function configuredChannelPatterns(array $ruleOptions): array
-    {
-        $result = [];
-
-        foreach (ConfiguredSuppression::rawNamespaceChannels($ruleOptions) as $selector => $patterns) {
-            $result[$selector] = ConfiguredSuppression::patternsOf($patterns);
-        }
-
-        return $result;
-    }
 }

@@ -42,6 +42,9 @@ use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 use SplFileInfo;
@@ -67,7 +70,7 @@ final class AnalysisPipelineTest extends TestCase
         $pipeline = $this->pipeline($discovery, $collection);
         $configuration = new RunConfiguration(
             [$root],
-            ['vendor'],
+            [new PathPattern(new SelectorDefinition(SelectorKind::Subtree, 'vendor'))],
             $root,
             GeneratedFilePolicy::Include,
             coversProjectScope: true,

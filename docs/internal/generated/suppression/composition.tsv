@@ -40,7 +40,6 @@ rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Symbol/SymbolType.
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Reporting/CoverageFailure.php	Qualimetrix\Reporting	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Reporting/Formatter/AcceptedLevelNarrator.php	Qualimetrix\Reporting\Formatter	warning	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Evidence/DependencyModel/Contract/DependencyGraphInterface.php	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	warning	1
-rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/ChannelShape.php	Qualimetrix\Analysis\Finding\Contract\ChannelShape	warning	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/Finding.php	Qualimetrix\Analysis\Finding\Contract\Finding	warning	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/FindingChannel.php	Qualimetrix\Analysis\Finding\Contract\FindingChannel	warning	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/Rule/RuleOptionShape.php	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape	warning	1
@@ -65,7 +64,7 @@ rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Find
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Finding/Contract/Rule/Override/IndependentAxisValidator.php	Qualimetrix\Analysis\Finding\Contract\Rule\Override	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Policy/Architecture/Layer/CapturePattern.php	Qualimetrix\Analysis\Policy\Architecture\Layer	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path	error	1
-rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Pattern/GlobSyntax.php	Qualimetrix\Core\Pattern	error	1
+rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Pattern/NamespaceMatcher.php	Qualimetrix\Core\Pattern	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Symbol/CallableKind.php	Qualimetrix\Core\Symbol	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Version.php	Qualimetrix\Core	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Infrastructure/Serializer/IgbinarySerializer.php	Qualimetrix\Infrastructure\Serializer	error	1

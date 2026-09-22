@@ -13,6 +13,8 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Infrastructure\Console\CliSelectorDecoder;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
@@ -42,6 +44,7 @@ final class GraphExportCommand extends Command
         private readonly ErrorStream $errorStream,
         private readonly RefusalPresenter $refusalPresenter,
         private readonly LoggerInterface $logger = new NullLogger(),
+        private readonly CliSelectorDecoder $selectorDecoder = new CliSelectorDecoder(),
     ) {
         parent::__construct();
     }
@@ -148,6 +151,7 @@ final class GraphExportCommand extends Command
 
         $cwd = AbsolutePath::fromString((string) getcwd());
         $paths = self::resolvePaths($input, $cwd);
+        $request = $this->buildProjectionRequest($input, $format, $direction);
 
         $this->logger->info('Starting dependency graph export', [
             'paths' => array_map(static fn(AbsolutePath $p): string => $p->value(), $paths),
@@ -183,7 +187,6 @@ final class GraphExportCommand extends Command
             'dependencies' => \count($result->graph->getAllDependencies()),
         ]);
 
-        $request = self::buildProjectionRequest($input, $format, $direction);
         $this->assertIncludeNamespacesBind($result, $request);
         $content = $this->projection->project($result->graph, $request);
 
@@ -271,7 +274,7 @@ final class GraphExportCommand extends Command
         );
     }
 
-    private static function buildProjectionRequest(InputInterface $input, GraphExportFormat $format, GraphDirection $direction): GraphProjectionRequest
+    private function buildProjectionRequest(InputInterface $input, GraphExportFormat $format, GraphDirection $direction): GraphProjectionRequest
     {
         /** @var array<string> $includeNamespaces */
         $includeNamespaces = $input->getOption('namespace');
@@ -282,8 +285,14 @@ final class GraphExportCommand extends Command
             format: $format,
             direction: $direction,
             groupByNamespace: $input->getOption('no-clusters') !== true,
-            includeNamespaces: $includeNamespaces !== [] ? $includeNamespaces : null,
-            excludeNamespaces: $excludeNamespaces,
+            includeNamespaces: $includeNamespaces !== [] ? array_values(array_map(
+                fn(string $value): NamespacePattern => $this->selectorDecoder->decodeNamespace($value, '--namespace'),
+                $includeNamespaces,
+            )) : null,
+            excludeNamespaces: array_values(array_map(
+                fn(string $value): NamespacePattern => $this->selectorDecoder->decodeNamespace($value, '--exclude-namespace'),
+                $excludeNamespaces,
+            )),
         );
     }
 

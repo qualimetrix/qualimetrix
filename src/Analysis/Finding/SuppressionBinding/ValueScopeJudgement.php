@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\SuppressionBinding;
 
-use Qualimetrix\Core\Pattern\GlobSyntax;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorKind;
 
 /**
  * Whether this run is wide enough to judge one configured value.
@@ -42,14 +44,14 @@ use Qualimetrix\Core\Pattern\GlobSyntax;
  * `qmx check src/` did not analyse, so it is unjudgeable there and judgeable
  * on `qmx check src tests` — where a genuine miss is still reported.
  *
- * **The anchor, and the cost of using it.** The anchor is the value's literal
- * leading path or namespace segments, up to the first glob character. Its
+ * **The anchor, and the cost of using it.** Exact and subtree definitions carry
+ * a literal path or namespace subject. Its
  * deepest *existing* ancestor is where the subject would be, so
- * `tests/Gone/Deep` anchors at `tests/`. A value that starts with a glob has
- * no anchor and is never judged: the price of the safe direction is a genuine
- * miss left unreported until a run whose paths reach it. Silence about a stale
- * entry costs one uncleaned line of configuration; the opposite error fails a
- * `--fail-on=warning` pipeline over a correct one.
+ * `tests/Gone/Deep` anchors at `tests/`. A regex definition has no literal
+ * anchor, so it is judged only when the run covers the complete project
+ * universe. Silence about a stale entry on a partial run costs one uncleaned
+ * line of configuration; the opposite error fails a `--fail-on=warning`
+ * pipeline over a correct one.
  *
  * **Namespaces are located through the PSR-4 map, prefixes included.** A
  * namespace value cannot be resolved by walking the disk, so the map answers
@@ -59,14 +61,9 @@ use Qualimetrix\Core\Pattern\GlobSyntax;
  * `"Acme\\Tests\\": "tests/"` on `qmx check src/` is therefore silent, while
  * `Acme\Gone`, compatible with no unanalysed root, is judged.
  *
- * **A glob-headed namespace value is never judged, exactly as a glob-headed
- * path value is not.** `*\Gone` has no literal head, so there is no place to
- * locate it and no root to compare the run against. Deriving the answer from
- * the map instead — "compatible with every prefix, so judged once every root
- * was analysed" — makes the same value judgeable or not depending on the
- * caller's paths, and on a whole-project run it published an unmatched warning
- * for a value this class cannot locate at all. One shape of value, one answer,
- * on both branches.
+ * **Regex definitions are judged only on a complete universe.** Their fragment
+ * does not promise a locatable subject, so a partial run stays silent rather
+ * than guessing where a match might have existed.
  */
 final readonly class ValueScopeJudgement
 {
@@ -86,13 +83,13 @@ final readonly class ValueScopeJudgement
      * Whether a path-shaped value — `suppress_paths`, a per-rule ledger
      * entry — names a place this run analysed.
      */
-    public function judgesPathValue(string $pattern): bool
+    public function judgesPathValue(PathPattern $pattern): bool
     {
-        $anchor = self::literalHead($pattern, '/');
-
-        if ($anchor === '') {
-            return false;
+        if ($pattern->definition->kind === SelectorKind::Regex) {
+            return $this->coversCompleteUniverse();
         }
+
+        $anchor = $pattern->definition->value;
 
         $root = self::normalize($this->projectRoot);
         $candidate = $root . '/' . trim($anchor, '/');
@@ -112,16 +109,13 @@ final readonly class ValueScopeJudgement
      * Whether a namespace-shaped value names code this run could have
      * declared.
      */
-    public function judgesNamespaceValue(string $pattern): bool
+    public function judgesNamespaceValue(NamespacePattern $pattern): bool
     {
-        $head = trim(self::literalHead($pattern, '\\'), '\\');
-
-        // Same answer as the path branch gives an unanchored value: with no
-        // literal head there is no place to locate, so there is nothing to
-        // compare the run's paths against.
-        if ($head === '') {
-            return false;
+        if ($pattern->definition->kind === SelectorKind::Regex) {
+            return $this->coversCompleteUniverse();
         }
+
+        $head = trim($pattern->definition->value, '\\');
 
         // No map, no location: a project without a PSR-4 manifest is judged
         // by the project-wide predicate alone, which already closes the gate
@@ -143,24 +137,17 @@ final readonly class ValueScopeJudgement
         return true;
     }
 
-    /**
-     * The value's literal leading segments: everything before the first glob
-     * character, cut back to the last separator so a half-typed segment
-     * (`src/Le*`) does not pose as a directory name.
-     */
-    private static function literalHead(string $value, string $separator): string
+    private function coversCompleteUniverse(): bool
     {
-        $trimmed = rtrim($value, $separator);
-        $glob = strcspn($trimmed, GlobSyntax::CHARACTERS);
+        $root = self::resolve($this->projectRoot);
 
-        if ($glob === \strlen($trimmed)) {
-            return $trimmed;
+        foreach ($this->analyzedPaths as $analyzedPath) {
+            if (self::resolve($analyzedPath) === $root) {
+                return true;
+            }
         }
 
-        $literal = substr($trimmed, 0, $glob);
-        $lastSeparator = strrpos($literal, $separator);
-
-        return $lastSeparator === false ? '' : substr($literal, 0, $lastSeparator);
+        return false;
     }
 
     /**

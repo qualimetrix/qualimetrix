@@ -95,6 +95,29 @@ final class TemplateLayerDefinitionTest extends TestCase
     }
 
     #[Test]
+    public function itRejectsAMultiSegmentCaptureUsedInTheConcreteLayerName(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Concrete layer names cannot contain namespace separators');
+
+        new TemplateLayerDefinition(
+            'domain-{module}',
+            new MembershipSpec(patterns: ['App\\Module\\{module:**}\\Domain']),
+        );
+    }
+
+    #[Test]
+    public function itAcceptsAMultiSegmentAuxiliaryCaptureNotUsedInTheLayerName(): void
+    {
+        $template = new TemplateLayerDefinition(
+            'domain-{module}',
+            new MembershipSpec(patterns: ['App\\{path:**}\\Module\\{module}\\Domain\\**']),
+        );
+
+        self::assertSame(['module', 'path'], $template->variables());
+    }
+
+    #[Test]
     public function itRejectsInvalidCaptureGrammarInTheName(): void
     {
         $this->expectException(InvalidArgumentException::class);

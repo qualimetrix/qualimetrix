@@ -46,7 +46,7 @@ final class LayerSelectorTest extends TestCase
 
         yield 'single capture' => ['app-{m}', SelectorKind::Captured];
         yield 'two captures' => ['{a}-{b}', SelectorKind::Captured];
-        yield 'capture with quantifier' => ['app-{path:**}', SelectorKind::Captured];
+        yield 'capture with explicit quantifier' => ['app-{path:*}', SelectorKind::Captured];
     }
 
     #[Test]
@@ -149,14 +149,12 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function itMatchesAMultiSegmentCaptureAcrossSeparators(): void
+    public function itRejectsAMultiSegmentCaptureForConcreteLayerNames(): void
     {
-        $selector = LayerSelectorParser::parse('app-{m:**}');
+        $this->expectException(InvalidSelectorException::class);
+        $this->expectExceptionMessage("quantifier ':**' is not supported");
 
-        $binding = $selector->matchSource('app-Order\\Sub\\Leaf');
-
-        self::assertNotNull($binding);
-        self::assertSame('Order\\Sub\\Leaf', $binding->get('m'));
+        LayerSelectorParser::parse('app-{m:**}');
     }
 
     #[Test]
@@ -218,14 +216,14 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function itSubstitutesAMultiSegmentBindingAcrossSeparators(): void
+    public function itSubstitutesAnExplicitSingleSegmentBinding(): void
     {
-        $target = LayerSelectorParser::parse('app-{path:**}');
+        $target = LayerSelectorParser::parse('app-{path:*}');
 
-        $binding = new CaptureBinding(['path' => 'Order\\Sub\\Leaf']);
+        $binding = new CaptureBinding(['path' => 'Order']);
 
-        self::assertTrue($target->matchesTarget('app-Order\\Sub\\Leaf', $binding));
-        self::assertFalse($target->matchesTarget('app-Order\\Sub', $binding));
+        self::assertTrue($target->matchesTarget('app-Order', $binding));
+        self::assertFalse($target->matchesTarget('app-Inventory', $binding));
     }
 
     #[Test]
@@ -243,8 +241,8 @@ final class LayerSelectorTest extends TestCase
         $multiCapture = LayerSelectorParser::parse('{a}-{b}');
         self::assertSame(['a', 'b'], $multiCapture->captureVariables());
 
-        $multiSegmentCapture = LayerSelectorParser::parse('app-{path:**}');
-        self::assertSame(['path'], $multiSegmentCapture->captureVariables());
+        $explicitCapture = LayerSelectorParser::parse('app-{path:*}');
+        self::assertSame(['path'], $explicitCapture->captureVariables());
     }
 
     // -------------------------------------------------------------------------
@@ -300,7 +298,7 @@ final class LayerSelectorTest extends TestCase
     public function itRejectsAnUnknownCaptureQuantifier(): void
     {
         $this->expectException(InvalidSelectorException::class);
-        $this->expectExceptionMessage("only ':**' is supported");
+        $this->expectExceptionMessage("only ':*' is supported");
 
         LayerSelectorParser::parse('app-{m:weird}');
     }
@@ -407,7 +405,7 @@ final class LayerSelectorTest extends TestCase
         self::assertSame(SelectorKind::Glob, LayerSelectorParser::parse('*-repository')->kind);
         self::assertSame(SelectorKind::Captured, LayerSelectorParser::parse('app-{m}')->kind);
         self::assertSame(SelectorKind::Captured, LayerSelectorParser::parse('{a}-{b}')->kind);
-        self::assertSame(SelectorKind::Captured, LayerSelectorParser::parse('app-{path:**}')->kind);
+        self::assertSame(SelectorKind::Captured, LayerSelectorParser::parse('app-{path:*}')->kind);
     }
 
     #[Test]

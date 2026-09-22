@@ -200,18 +200,18 @@ bin/qmx check src/ --disable-rule=code-smell.*
 
 ## Исключение неймспейсов
 
-Любое правило поддерживает `suppress_namespaces` для подавления нарушений из конкретных пространств имён (сопоставление по префиксу). Файлы по-прежнему анализируются и метрики собираются, но нарушения не выводятся:
+Любое правило поддерживает явные namespace-селекторы `exact`, `subtree` и `regex`. Файлы по-прежнему анализируются и метрики собираются, но нарушения не выводятся:
 
 ```yaml
 rules:
   complexity.ccn:
     suppress_namespaces:
-      - App\Tests
-      - App\Legacy
+      - subtree: App\Tests
+      - subtree: App\Legacy
 ```
 
 ```bash
-bin/qmx check src/ --rule-opt="complexity.ccn:suppress_namespaces=App\Tests"
+bin/qmx check src/ --rule-opt="complexity.ccn:suppress_namespaces=subtree:App\Tests"
 ```
 
 Это полезно для тестового кода, сгенерированного кода или legacy-модулей, которые вы хотите сохранить в метриках, но исключить из отчёта о нарушениях для конкретного правила.

@@ -26,7 +26,7 @@ All the channels report at **project level**, at severity `warning`.
 
 They are only judged on a run whose paths cover everything the project's `composer.json` declares as production code — `psr-4` and `psr-0` roots, `classmap` and `files` entries alike. On a narrower run a value binds nothing simply because the code it names lies outside the slice, which is the caller's choice and not the author's mistake; on a project whose manifest declares no production autoload at all — no `composer.json`, one that does not parse, or one with no production section — there is nothing to measure the run against, and the channels stay silent.
 
-Each value is then judged separately, against the place it names. `suppress_paths: [tests/Legacy]` points at `tests/`, which `qmx check src/` never analysed, so that entry is not judged on that run — while `suppress_paths: [src/Legacy]` on the same run is. A namespace value is placed through the PSR-4 map, `autoload-dev` included: `Acme\Tests\Legacy` is served from `tests/` and judged only by a run that analysed it. A value beginning with a glob (`*Legacy.php`) names no single place and is never judged.
+Each value is then judged separately, against the place it names. `subtree: tests/Legacy` points at `tests/`, which `qmx check src/` never analysed, so that entry is not judged on that run — while `subtree: src/Legacy` on the same run is. A namespace value is placed through the PSR-4 map, `autoload-dev` included. An arbitrary `regex` has no sound static location; it is therefore judged only when the run covers the complete relevant universe, never by guessing a literal prefix from regex syntax.
 
 They are not written into a generated baseline: `baseline:generate` measures findings on a different seam, and a warning about the author's own configuration should not become accepted debt in the file that author generates with one command.
 
@@ -50,7 +50,7 @@ The rule-ledger channel is separate because the mistake it catches has its own s
 ```yaml
 # qmx.yaml
 suppress_namespaces:
-  - App\Legacy\Importer   # the namespace was renamed to App\Import
+  - exact: App\Legacy\Importer   # the namespace was renamed to App\Import
 ```
 
 ```

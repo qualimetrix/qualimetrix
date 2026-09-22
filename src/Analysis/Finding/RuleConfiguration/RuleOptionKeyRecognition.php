@@ -72,16 +72,16 @@ final class RuleOptionKeyRecognition
     }
 
     /**
-     * The form of the framework key nothing else judges: path patterns are
-     * read as strings, one or many, and `null` means the key was written with
-     * nothing under it.
+     * The coarse container form of the framework key whose detailed selector
+     * decoding belongs to {@see RuleOptionsFactory}. `null` means the key was
+     * written with nothing under it; each list entry is an authored mapping
+     * that the Finding-owned ingress validates as one selector definition.
      */
     private static function frameworkKeyShapes(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
-            FrameworkOptionKeys::PATHS => RuleOptionShape::either(
-                RuleOptionShape::nonEmptyText(),
-                RuleOptionShape::listOf(RuleOptionShape::nonEmptyText()),
+            FrameworkOptionKeys::PATHS => RuleOptionShape::listOf(
+                RuleOptionShape::mapOf(RuleOptionShape::nonEmptyText()),
             )->orNull(),
         ]);
     }

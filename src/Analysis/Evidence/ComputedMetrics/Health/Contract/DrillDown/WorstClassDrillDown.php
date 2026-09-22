@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompos
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderBuilder;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -39,7 +40,7 @@ final readonly class WorstClassDrillDown
      */
     public function buildWorstClasses(
         MetricRepositoryInterface $metrics,
-        string $namespace,
+        NamespacePattern $namespace,
         array $findings,
         bool $includeNotableMetrics = false,
     ): array {

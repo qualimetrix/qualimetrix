@@ -54,7 +54,11 @@ final readonly class FindingFilterOrchestrator
         $cliExcludePaths = $input->getOption('suppress-path');
         /** @var list<string> $cliExcludeNamespaces */
         $cliExcludeNamespaces = $input->getOption('suppress-namespace');
-        $exclusions = $configuredExclusions->withAdditional($cliExcludePaths, $cliExcludeNamespaces);
+        $decoder = new CliSelectorDecoder();
+        $exclusions = $configuredExclusions->withAdditional(
+            array_map(fn(string $value) => $decoder->decodePath($value, '--suppress-path'), $cliExcludePaths),
+            array_map(fn(string $value) => $decoder->decodeNamespace($value, '--suppress-namespace'), $cliExcludeNamespaces),
+        );
 
         $gitScope = null;
         if ($scope->gitClient !== null && $scope->reportScope !== null) {

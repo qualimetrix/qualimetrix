@@ -29,7 +29,7 @@ final class DrillDownBindingTest extends TestCase
         // filter compares a `--namespace` value against both.
         self::assertSame(
             2,
-            (new DrillDownBinding())->namespaceBindings('Demo\\Alpha', $this->repository(), null),
+            (new DrillDownBinding())->namespaceBindings(\Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('Demo\\Alpha'), $this->repository(), null),
         );
     }
 
@@ -43,11 +43,11 @@ final class DrillDownBindingTest extends TestCase
      * a selection that was not empty.
      */
     #[Test]
-    public function itBindsAGlobThatOnlyTheCanonicalSymbolNameSatisfies(): void
+    public function itBindsARegexThatOnlyTheCanonicalSymbolNameSatisfies(): void
     {
         self::assertSame(
             1,
-            (new DrillDownBinding())->namespaceBindings('Demo\\Alpha\\*', $this->repository(), null),
+            (new DrillDownBinding())->namespaceBindings(\Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::regex('Demo\\\\Alpha\\\\[^\\\\]+'), $this->repository(), null),
         );
     }
 
@@ -56,7 +56,7 @@ final class DrillDownBindingTest extends TestCase
     {
         self::assertSame(
             0,
-            (new DrillDownBinding())->namespaceBindings('Zzz\\Nope', $this->repository(), null),
+            (new DrillDownBinding())->namespaceBindings(\Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('Zzz\\Nope'), $this->repository(), null),
         );
     }
 
@@ -68,7 +68,7 @@ final class DrillDownBindingTest extends TestCase
         // applies to a finding's namespace and to an offender's whole name.
         self::assertSame(
             6,
-            (new DrillDownBinding())->namespaceBindings('Demo', $this->repository(), null),
+            (new DrillDownBinding())->namespaceBindings(\Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('Demo'), $this->repository(), null),
         );
     }
 
@@ -77,28 +77,28 @@ final class DrillDownBindingTest extends TestCase
     {
         self::assertSame(
             0,
-            (new DrillDownBinding())->namespaceBindings('Demo\\Alp', $this->repository(), null),
+            (new DrillDownBinding())->namespaceBindings(\Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('Demo\\Alp'), $this->repository(), null),
         );
     }
 
     #[Test]
-    public function itBindsAGlobNamespacePattern(): void
+    public function itBindsARegexNamespacePattern(): void
     {
         self::assertSame(
             1,
-            (new DrillDownBinding())->namespaceBindings('Demo\\Al?ha', $this->repository(), null),
+            (new DrillDownBinding())->namespaceBindings(\Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::regex('Demo\\\\Al.ha'), $this->repository(), null),
         );
     }
 
     #[Test]
-    public function itBindsAnIntermediateNamespaceByGlobWithoutANamespaceTree(): void
+    public function itBindsAnIntermediateNamespaceByRegexWithoutANamespaceTree(): void
     {
         // `Demo\Beta` holds no symbols of its own — only `Demo\Beta\Deep` does.
         // A glob cannot reach it by prefix, so a run without a tree would refuse
         // an existing subtree unless the ancestors are synthesized.
         self::assertSame(
             1,
-            (new DrillDownBinding())->namespaceBindings('Demo\\Bet?', $this->repository(), null),
+            (new DrillDownBinding())->namespaceBindings(\Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::regex('Demo\\\\Bet.'), $this->repository(), null),
         );
     }
 
@@ -109,16 +109,7 @@ final class DrillDownBindingTest extends TestCase
 
         self::assertSame(
             1,
-            (new DrillDownBinding())->namespaceBindings('Demo\\Gamma', $this->repository(), $tree),
-        );
-    }
-
-    #[Test]
-    public function itTreatsATrailingBackslashAsCosmetic(): void
-    {
-        self::assertSame(
-            2,
-            (new DrillDownBinding())->namespaceBindings('Demo\\Alpha\\', $this->repository(), null),
+            (new DrillDownBinding())->namespaceBindings(\Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('Demo\\Gamma'), $this->repository(), $tree),
         );
     }
 
@@ -130,7 +121,7 @@ final class DrillDownBindingTest extends TestCase
 
         $binding = new DrillDownBinding();
 
-        self::assertSame(0, $binding->namespaceBindings('__PROJECT__', $repository, null));
+        self::assertSame(0, $binding->namespaceBindings(\Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('__PROJECT__'), $repository, null));
         self::assertSame(6, $binding->namespaceUniverseSize($repository, null));
     }
 
@@ -204,7 +195,7 @@ final class DrillDownBindingTest extends TestCase
 
         $binding = new DrillDownBinding();
 
-        self::assertSame(0, $binding->namespaceBindings('src/*', $repository, null));
+        self::assertSame(0, $binding->namespaceBindings(\Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::regex('src/.*'), $repository, null));
         self::assertSame(6, $binding->namespaceUniverseSize($repository, null));
     }
 
@@ -229,12 +220,12 @@ final class DrillDownBindingTest extends TestCase
 
         $binding = new DrillDownBinding();
 
-        self::assertSame(0, $binding->namespaceBindings('*::calculate', $repository, null));
+        self::assertSame(0, $binding->namespaceBindings(\Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::regex('.*::calculate'), $repository, null));
 
         // The opposite error the narrowing must not cause: the callable's
         // namespace is what `filterFindings()` compares its findings by, so it
         // stays in the universe and the enclosing namespace still binds.
-        self::assertSame(2, $binding->namespaceBindings('Demo\\Alpha', $repository, null));
+        self::assertSame(2, $binding->namespaceBindings(\Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('Demo\\Alpha'), $repository, null));
     }
 
     /**

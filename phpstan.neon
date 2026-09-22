@@ -23,6 +23,7 @@ parameters:
         - tests/Analysis/Policy/Baseline/Fixtures
         - tests/Analysis/Policy/Inline/Fixtures
         - governance/FormatOptionKeys/Fixtures
+        - governance/SelectorSyntax/Fixtures
         - tools/phpstan/tests/Fixtures
     tmpDir: .phpstan.cache
     reportUnmatchedIgnoredErrors: true

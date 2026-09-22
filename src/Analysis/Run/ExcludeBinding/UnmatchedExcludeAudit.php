@@ -10,6 +10,8 @@ use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
+use Qualimetrix\Analysis\Run\Discovery\DirectoryPruner;
+use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -34,11 +36,11 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * **Two gates keep this quiet where it cannot judge.** The project-wide one
  * is {@see RunConfiguration::$coversProjectScope}: "this pattern matched
  * nothing" is a fact about the pair (configuration, run scope), and
- * `--exclude=Legacy` binds nothing when the run was pointed at `src/Domain/`
+ * `--exclude=subtree:Legacy` binds nothing when the run was pointed at `src/Domain/`
  * — a path the author of the configuration did not choose. The second is
  * about the pattern itself: before a pattern is reported, the same probe is
  * asked whether it would have removed a directory anywhere in the project
- * tree. `exclude: [tests]` written for `qmx check .` binds nothing under
+ * tree. `exclude: [{exact: tests}]` written for `qmx check .` binds nothing under
  * `qmx check src/`, and accusing it there reports the caller's choice as the
  * author's mistake. Only a pattern that removes nothing *in the project* is
  * stale, and that is the one this channel names.
@@ -83,10 +85,11 @@ final readonly class UnmatchedExcludeAudit
             return [];
         }
 
+        $pruner = new DirectoryPruner($configuration->projectRoot, $configuration->pathExcludes);
         $unboundInRun = $this->probe->unboundPatterns(
             $configuration->paths,
             $configuration->authoredPathExcludes,
-            $configuration->pathExcludes,
+            $pruner,
         );
 
         if ($unboundInRun === []) {
@@ -99,12 +102,14 @@ final readonly class UnmatchedExcludeAudit
         return array_map(self::finding(...), $this->probe->unboundPatterns(
             [$configuration->projectRoot],
             $unboundInRun,
-            $configuration->pathExcludes,
+            $pruner,
         ));
     }
 
-    private static function finding(string $pattern): Finding
+    private static function finding(PathPattern $pattern): Finding
     {
+        $display = $pattern->definition->display();
+
         return new Finding(
             location: Location::none(),
             subject: MetricSubject::aggregate(SymbolPath::forProject()),
@@ -114,16 +119,16 @@ final readonly class UnmatchedExcludeAudit
             message: \sprintf(
                 'The exclude pattern "%s" matched no directory anywhere in the project, so nothing was left out'
                 . ' for it. Every file it was written to skip was measured, and this report covers them.',
-                $pattern,
+                $display,
             ),
             severity: Severity::Warning,
             recommendation: \sprintf(
-                'Check "%s" against the tree: a pattern without a slash matches a directory name at any depth,'
-                . ' and one with a slash matches a path segment sequence. Drop the entry if the directory is'
-                . ' gone.',
-                $pattern,
+                'Check "%s" against project-relative directory paths. Exact selectors name one directory,'
+                . ' subtree selectors include descendants, and regex selectors match the full path. Drop the'
+                . ' entry if its target is gone.',
+                $display,
             ),
-            occurrenceKey: OccurrenceKey::semantic(self::OCCURRENCE_KIND, ['pattern' => $pattern]),
+            occurrenceKey: OccurrenceKey::semantic(self::OCCURRENCE_KIND, ['pattern' => $display]),
         );
     }
 }

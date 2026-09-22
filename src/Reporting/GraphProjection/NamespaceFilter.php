@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\GraphProjection;
 
+use Qualimetrix\Core\Pattern\NamespaceMatcher;
+use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest;
 
@@ -16,21 +18,26 @@ use Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest;
  * renders it (or the reverse) is a divergence nothing would report, because
  * each copy is right by its own reading.
  *
- * Binding is decided **before** exclusion: `--namespace=App
- * --exclude-namespace=App` leaves an empty graph, but the include value did
- * point at real classes, and the emptiness is what the caller asked for
- * literally. Only a value matching no class at all is unbound.
+ * Binding is decided **before** exclusion: matching include and exclude
+ * selectors leave an empty graph, but the include selector still pointed at
+ * real classes. Only a selector matching no class at all is unbound.
  */
 final readonly class NamespaceFilter
 {
+    private ?NamespaceMatcher $includeMatcher;
+    private NamespaceMatcher $excludeMatcher;
+
     /**
-     * @param array<string>|null $includeNamespaces null means "every namespace"
-     * @param array<string> $excludeNamespaces
+     * @param list<NamespacePattern>|null $includeNamespaces null means "every namespace"
+     * @param list<NamespacePattern> $excludeNamespaces
      */
     public function __construct(
         private ?array $includeNamespaces = null,
-        private array $excludeNamespaces = [],
-    ) {}
+        array $excludeNamespaces = [],
+    ) {
+        $this->includeMatcher = $includeNamespaces === null ? null : new NamespaceMatcher($includeNamespaces);
+        $this->excludeMatcher = new NamespaceMatcher($excludeNamespaces);
+    }
 
     public static function fromRequest(GraphProjectionRequest $request): self
     {
@@ -41,20 +48,12 @@ final readonly class NamespaceFilter
     {
         $namespace = $classPath->namespace ?? '';
 
-        foreach ($this->excludeNamespaces as $excludeNs) {
-            if (self::matches($namespace, $excludeNs)) {
-                return false;
-            }
+        if ($this->excludeMatcher->matches($namespace) !== null) {
+            return false;
         }
 
-        if ($this->includeNamespaces !== null) {
-            foreach ($this->includeNamespaces as $includeNs) {
-                if (self::matches($namespace, $includeNs)) {
-                    return true;
-                }
-            }
-
-            return false;
+        if ($this->includeMatcher !== null) {
+            return $this->includeMatcher->matches($namespace) !== null;
         }
 
         return true;
@@ -102,27 +101,15 @@ final readonly class NamespaceFilter
         $unbound = [];
         foreach ($this->includeNamespaces as $includeNs) {
             foreach (array_keys($namespaces) as $namespace) {
-                if (self::matches($namespace, $includeNs)) {
+                if ($includeNs->matches($namespace)) {
                     continue 2;
                 }
             }
 
-            $unbound[] = $includeNs;
+            $unbound[] = $includeNs->definition->display();
         }
 
         return $unbound;
     }
 
-    /**
-     * Exact match, or prefix match on a namespace boundary — `App\Service`
-     * matches `App\Service\User` but not `App\ServiceLocator`.
-     */
-    private static function matches(string $classNamespace, string $filterNamespace): bool
-    {
-        if ($classNamespace === $filterNamespace) {
-            return true;
-        }
-
-        return str_starts_with($classNamespace, $filterNamespace . '\\');
-    }
 }

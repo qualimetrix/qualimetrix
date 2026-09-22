@@ -180,7 +180,7 @@ final class GraphExportCommandTest extends TestCase
         $commandTester = new CommandTester($command);
         $commandTester->execute([
             'paths' => [$this->tempDir],
-            '--namespace' => ['App\\Service'],
+            '--namespace' => ['subtree:App\\Service'],
         ]);
 
         // Assert success
@@ -457,7 +457,7 @@ final class GraphExportCommandTest extends TestCase
         $missExit = $miss->execute([
             'paths' => [$this->tempDir],
             '--format' => $format,
-            '--namespace' => ['Zzz\\Nope'],
+            '--namespace' => ['subtree:Zzz\\Nope'],
         ], ['capture_stderr_separately' => true]);
 
         self::assertSame(3, $missExit);
@@ -468,7 +468,7 @@ final class GraphExportCommandTest extends TestCase
         $hitExit = $hit->execute([
             'paths' => [$this->tempDir],
             '--format' => $format,
-            '--namespace' => ['Acme\\Deep'],
+            '--namespace' => ['subtree:Acme\\Deep'],
         ]);
 
         self::assertSame(0, $hitExit);
@@ -485,6 +485,23 @@ final class GraphExportCommandTest extends TestCase
     }
 
     #[Test]
+    public function itRefusesABareNamespaceBeforeProjection(): void
+    {
+        $this->writeTwoNamespaceFixture();
+
+        $analyzer = new CountingDependencyGraphAnalyzer($this->createAnalyzer());
+        $tester = $this->createCommandTesterWithAnalyzer($analyzer);
+        $exit = $tester->execute([
+            'paths' => [$this->tempDir],
+            '--namespace' => ['Acme\\Deep'],
+        ]);
+
+        self::assertSame(3, $exit);
+        self::assertStringContainsString('must use KIND:VALUE', $tester->getDisplay());
+        self::assertSame(0, $analyzer->calls);
+    }
+
+    #[Test]
     public function itNamesEveryUnboundIncludeNamespaceInAJsonEnvelope(): void
     {
         $this->writeTwoNamespaceFixture();
@@ -493,7 +510,7 @@ final class GraphExportCommandTest extends TestCase
         $exit = $tester->execute([
             'paths' => [$this->tempDir],
             '--format' => 'json',
-            '--namespace' => ['Acme\\Deep', 'Zzz\\Nope', 'Aaa\\None'],
+            '--namespace' => ['subtree:Acme\\Deep', 'subtree:Zzz\\Nope', 'subtree:Aaa\\None'],
         ]);
 
         self::assertSame(3, $exit);
@@ -516,7 +533,7 @@ final class GraphExportCommandTest extends TestCase
             'paths' => [$this->tempDir],
             '--format' => $format,
             '--output' => $destination,
-            '--namespace' => ['Zzz\\Nope'],
+            '--namespace' => ['subtree:Zzz\\Nope'],
         ], ['capture_stderr_separately' => true]);
 
         self::assertSame(3, $exit);
@@ -544,7 +561,7 @@ final class GraphExportCommandTest extends TestCase
         self::assertSame(0, $missedExclude->execute([
             'paths' => [$this->tempDir],
             '--format' => $format,
-            '--exclude-namespace' => ['Zzz\\Nope'],
+            '--exclude-namespace' => ['subtree:Zzz\\Nope'],
         ]));
 
         self::assertSame(
@@ -595,7 +612,7 @@ final class GraphExportCommandTest extends TestCase
     private function createAnalyzer(): DependencyGraphAnalyzer
     {
         return new DependencyGraphAnalyzer(
-            new FinderFileDiscovery([]),
+            new FinderFileDiscovery(),
             new PhpFileParser(),
             new DependencyVisitor(new DependencyResolver()),
             new DependencyGraphBuilder(),

@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Symfony\Component\Console\Input\InputInterface;
 
 /**
@@ -15,6 +16,7 @@ final readonly class CliOptionsParser
 {
     public function __construct(
         private RuleOptionsParser $ruleOptionsParser,
+        private CliSelectorDecoder $selectorDecoder = new CliSelectorDecoder(),
     ) {}
 
     /**
@@ -59,7 +61,7 @@ final readonly class CliOptionsParser
             $ruleOptions[$ruleName][$optionName] ??= $parsed['value'];
         }
 
-        return $ruleOptions;
+        return $this->decodeSelectorOptions($ruleOptions);
     }
 
     /**
@@ -139,5 +141,56 @@ final readonly class CliOptionsParser
         }
 
         return $value;
+    }
+
+    /**
+     * @param array<string, array<string, mixed>> $options
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function decodeSelectorOptions(array $options): array
+    {
+        foreach ($options as $ruleName => &$ruleOptions) {
+            $this->decodeSuppressionSelector($ruleOptions, 'suppressPaths', path: true);
+            $this->decodeSuppressionSelector($ruleOptions, 'suppressNamespaces', path: false);
+
+            $value = $ruleOptions['includeNamespaces'] ?? null;
+            if ($value === null) {
+                continue;
+            }
+
+            if (!\is_string($value)) {
+                throw ConfigurationRefusal::aboutCommandLineInput(
+                    '--rule-opt',
+                    \sprintf('Option "include-namespaces" of rule "%s" must be one KIND:VALUE namespace selector.', $ruleName),
+                );
+            }
+
+            $ruleOptions['includeNamespaces'] = $this->selectorDecoder->decodeNamespace($value, '--rule-opt');
+        }
+        unset($ruleOptions);
+
+        return $options;
+    }
+
+    /** @param array<string, mixed> $options */
+    private function decodeSuppressionSelector(array &$options, string $key, bool $path): void
+    {
+        $value = $options[$key] ?? null;
+        if ($value === null || !\is_string($value)) {
+            return;
+        }
+
+        $selector = $path
+            ? $this->selectorDecoder->decodePath($value, '--rule-opt')
+            : $this->selectorDecoder->decodeNamespace($value, '--rule-opt');
+
+        $options[$key] = [self::selectorMapping($selector->definition)];
+    }
+
+    /** @return array<string, string> */
+    private static function selectorMapping(SelectorDefinition $definition): array
+    {
+        return [$definition->kind->value => $definition->value];
     }
 }

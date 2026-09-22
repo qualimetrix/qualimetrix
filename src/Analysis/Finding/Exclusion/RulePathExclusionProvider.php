@@ -6,41 +6,43 @@ namespace Qualimetrix\Analysis\Finding\Exclusion;
 
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\PathMatcher;
+use Qualimetrix\Core\Pattern\PathPattern;
 
-/**
- * Stores per-rule path exclusions and provides path matching.
- *
- * Extracted from config during RuleOptionsFactory::create() and consumed
- * by RuleExecution to filter findings at framework level.
- */
+/** Stores per-rule path suppressions as already-bound path selectors. */
 final class RulePathExclusionProvider
 {
     /** @var array<string, PathMatcher> */
     private array $matchers = [];
 
-    /**
-     * @param list<string> $patterns Path patterns (prefixes or globs)
-     */
+    /** @var array<string, list<PathPattern>> */
+    private array $exclusions = [];
+
+    /** @param list<PathPattern> $patterns */
     public function setExclusions(string $ruleName, array $patterns): void
     {
         if ($patterns === []) {
             return;
         }
 
+        $this->exclusions[$ruleName] = $patterns;
         $this->matchers[$ruleName] = new PathMatcher($patterns);
+    }
+
+    /** @return list<PathPattern> */
+    public function getExclusions(string $ruleName): array
+    {
+        return $this->exclusions[$ruleName] ?? [];
     }
 
     public function isExcluded(string $ruleName, RelativePath $filePath): bool
     {
-        if (!isset($this->matchers[$ruleName])) {
-            return false;
-        }
-
-        return $this->matchers[$ruleName]->matches($filePath) !== null;
+        return isset($this->matchers[$ruleName]) && $this->matchers[$ruleName]->matches($filePath) !== null;
     }
 
     public function reset(): void
     {
         $this->matchers = [];
+        $this->exclusions = [];
     }
+
 }

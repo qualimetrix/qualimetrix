@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Coupling;
 
+use InvalidArgumentException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
@@ -12,6 +15,10 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Core\Pattern\NamespaceMatcher;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Throwable;
 
 /**
  * Options for DistanceRule.
@@ -35,7 +42,7 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
      * @param bool $enabled Enable distance rule
      * @param float $maxDistanceWarning Warning threshold for distance
      * @param float $maxDistanceError Error threshold for distance
-     * @param list<string>|null $includeNamespaces Override auto-detected project namespaces (null = auto-detect from composer.json)
+     * @param list<NamespacePattern>|null $includeNamespaces Override auto-detected project namespaces (null = auto-detect from composer.json)
      * @param int $minClassCount Minimum number of classes in namespace for analysis (0 = disabled)
      */
     public function __construct(
@@ -51,16 +58,10 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
      */
     public static function fromArray(array $config): self
     {
-        $includeNamespaces = null;
         $includeKey = $config['include_namespaces']
             ?? $config['includeNamespaces']
             ?? null;
-
-        if (\is_string($includeKey)) {
-            $includeNamespaces = [$includeKey];
-        } elseif (\is_array($includeKey)) {
-            $includeNamespaces = array_values($includeKey);
-        }
+        $includeNamespaces = self::includeNamespaces($includeKey);
 
         $thresholds = ThresholdParser::parse($config, 'max_distance_warning', 'max_distance_error', 0.3, 0.5, legacyKeys: ['warning' => ['maxDistanceWarning'], 'error' => ['maxDistanceError']]);
 
@@ -77,12 +78,11 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
     {
         return RuleOptionKeySet::of([
             'enabled' => RuleOptionShape::boolean()->orNull(),
-            'include-namespaces' => RuleOptionShape::either(RuleOptionShape::text(), RuleOptionShape::listOf(RuleOptionShape::text()))->orNull(),
             'max-distance-error' => RuleOptionShape::number()->orNull(),
             'max-distance-warning' => RuleOptionShape::number()->orNull(),
             'min-class-count' => RuleOptionShape::integer()->orNull(),
             'threshold' => RuleOptionShape::number()->orNull(),
-        ]);
+        ])->alsoAcceptedAndValidatedByTheClass('include-namespaces');
     }
 
     public function isEnabled(): bool
@@ -119,5 +119,58 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
     public function warningBoundary(): float
     {
         return $this->maxDistanceWarning;
+    }
+
+    /** @return list<NamespacePattern>|null */
+    private static function includeNamespaces(mixed $value): ?array
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if ($value instanceof NamespacePattern) {
+            return [$value];
+        }
+
+        if (!\is_array($value) || !array_is_list($value)) {
+            throw self::selectorRefusal('must be a list of explicit selector mappings in YAML or one KIND:VALUE selector on the command line');
+        }
+
+        $patterns = [];
+        foreach ($value as $index => $selector) {
+            if (!\is_array($selector) || \count($selector) !== 1) {
+                throw self::selectorRefusal(\sprintf('entry %d must be a one-entry mapping: {exact: value}, {subtree: value}, or {regex: value}; bare strings are not supported', $index));
+            }
+
+            $kind = array_key_first($selector);
+            $pattern = \is_string($kind) ? $selector[$kind] : null;
+            if (!\is_string($kind) || !\is_string($pattern) || $pattern === '') {
+                throw self::selectorRefusal(\sprintf('entry %d must name exact, subtree, or regex with a non-empty string value', $index));
+            }
+
+            try {
+                $patterns[] = new NamespacePattern(SelectorDefinition::fromKindAndValue($kind, $pattern));
+            } catch (InvalidArgumentException $e) {
+                throw self::selectorRefusal(\sprintf('entry %d is invalid: %s', $index, $e->getMessage()), $e);
+            }
+        }
+
+        try {
+            new NamespaceMatcher($patterns);
+        } catch (InvalidArgumentException $e) {
+            throw self::selectorRefusal($e->getMessage(), $e);
+        }
+
+        return $patterns;
+    }
+
+    private static function selectorRefusal(string $problem, ?Throwable $previous = null): ConfigurationRefusal
+    {
+        return ConfigurationRefusal::atResolvedKey(
+            RefusedPosition::open([DistanceRule::NAME], 'include_namespaces'),
+            \sprintf('Option "include_namespaces" for rule "%s" %s.', DistanceRule::NAME, $problem),
+            'include_namespaces',
+            $previous,
+        );
     }
 }

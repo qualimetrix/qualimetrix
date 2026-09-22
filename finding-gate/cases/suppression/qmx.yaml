@@ -4,12 +4,13 @@
 # configured with no suppression at all. `src` is deliberately absent from the
 # global lists — a value that binds is not this fixture's subject.
 suppress_paths:
-  - src/NoSuchDir
+  - subtree: src/NoSuchDir
 suppress_namespaces:
-  - Corpus\Suppression\Gone
+  - subtree: Corpus\Suppression\Gone
 rules:
   complexity.ccn:
-    suppress_paths: ['src/AlsoGone']
+    suppress_paths:
+      - subtree: src/AlsoGone
 only_rules:
   - suppression.configuration
 computed_metrics:

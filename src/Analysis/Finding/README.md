@@ -42,6 +42,11 @@ which no repaired code can cause. `UnboundSuppressionRule` gives the three
 builds the findings and passes them through `publishable()` itself, and is
 called by `FindingFilterOrchestrator` at the reporting seam, the one place the
 configured values and the run's universes are both in hand. The coverage
+Every value is an explicit `exact`, `subtree`, or `regex` selector mapping;
+the application and audit carry the same bound Core pattern, while reports use
+its authored `kind:value` identity rather than the rendered PCRE.
+
+The coverage
 precondition is asked at that call site, so a run narrowed below the project's
 production autoload roots — or one whose manifest declares no readable
 production autoload — produces nothing here. `ValueScopeJudgement` asks the

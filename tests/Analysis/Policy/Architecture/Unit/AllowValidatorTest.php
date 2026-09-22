@@ -773,7 +773,7 @@ final class AllowValidatorTest extends TestCase
         $warnings = [];
 
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage("only ':**' is supported");
+        $this->expectExceptionMessage("only ':*' is supported");
 
         $this->validator->validate(
             ['controller' => ['domain-{m:weird}']],
@@ -969,14 +969,14 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function itRejectsACaptureVariableWhoseTargetDeclaresMultiSegmentButSourceDoesNot(): void
+    public function itRejectsAMultiSegmentCaptureOnTheTarget(): void
     {
         // 'app-{m}': ['domain-{m:**}'] — runtime substitutes the single-segment
         // value, target's :** annotation would be silently ignored.
         $warnings = [];
 
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage("'m' (source: {var}, target: {var:**})");
+        $this->expectExceptionMessage("quantifier ':**' is not supported");
 
         $this->validator->validate(
             ['app-{m}' => ['domain-{m:**}']],
@@ -986,13 +986,13 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function itRejectsACaptureVariableWhoseSourceDeclaresMultiSegmentButTargetDoesNot(): void
+    public function itRejectsAMultiSegmentCaptureOnTheSource(): void
     {
         // Reverse direction: source binds multi-segment, target declares single.
         $warnings = [];
 
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage("'m' (source: {var:**}, target: {var})");
+        $this->expectExceptionMessage("quantifier ':**' is not supported");
 
         $this->validator->validate(
             ['app-{m:**}' => ['domain-{m}']],
@@ -1002,13 +1002,13 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function itAcceptsMatchingMultiSegmentShapes(): void
+    public function itAcceptsMatchingExplicitSingleSegmentShapes(): void
     {
-        // 'app-{m:**}': ['domain-{m:**}'] — shapes match on both sides.
+        // `:*` spells the only capture shape a concrete layer name can carry.
         $warnings = [];
 
         $entries = $this->validator->validate(
-            ['app-{m:**}' => ['domain-{m:**}']],
+            ['app-{m:*}' => ['domain-{m:*}']],
             ['app-Order', 'domain-Order'],
             $warnings,
         );

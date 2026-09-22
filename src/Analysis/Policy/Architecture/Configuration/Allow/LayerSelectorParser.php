@@ -50,8 +50,9 @@ final class LayerSelectorParser
         $bracketAt = self::firstUnescapedBracket($raw);
         if ($bracketAt !== null) {
             throw new InvalidSelectorException(\sprintf(
-                "unsupported '[' at offset %d in selector \"%s\" — character classes are not part of the selector grammar. " .
-                'Did you mean a capture variable? Use {var} for single-segment captures (e.g. \'domain-{m}\') or {var:**} for cross-segment captures.',
+                "unsupported '%s' at offset %d in selector \"%s\" — character classes are not part of the selector grammar. " .
+                'Did you mean a capture variable? Use {var} or {var:*} for a captured layer-name fragment (e.g. \'domain-{m}\').',
+                $raw[$bracketAt],
                 $bracketAt,
                 $raw,
             ));
@@ -237,14 +238,20 @@ final class LayerSelectorParser
         $name = $body;
         if (str_contains($body, ':')) {
             [$name, $quantifier] = explode(':', $body, 2);
-            if ($quantifier !== '**') {
+            if ($quantifier === '**') {
                 throw new InvalidSelectorException(\sprintf(
-                    "unknown capture quantifier ':%s' in selector \"%s\" (only ':**' is supported).",
+                    "capture quantifier ':**' is not supported in layer selectors \"%s\" — concrete layer names cannot contain namespace separators.",
+                    $raw,
+                ));
+            }
+            if ($quantifier !== '*') {
+                throw new InvalidSelectorException(\sprintf(
+                    "unknown capture quantifier ':%s' in selector \"%s\" (only ':*' is supported).",
                     $quantifier,
                     $raw,
                 ));
             }
-            $multiSegment = true;
+            $multiSegment = false;
         }
 
         if (preg_match('/^' . self::VARIABLE_NAME_REGEX . '$/', $name) !== 1) {
@@ -296,7 +303,7 @@ final class LayerSelectorParser
 
                 continue;
             }
-            if ($char === '[') {
+            if ($char === '[' || $char === ']') {
                 return $i;
             }
         }

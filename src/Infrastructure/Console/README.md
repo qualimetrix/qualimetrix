@@ -15,6 +15,7 @@ CLI application based on Symfony Console with support for:
 ```
 Console/
 ├── Application.php
+├── CliSelectorDecoder.php       # explicit kind:value scalar → Core path/namespace pattern
 ├── CliOptionsParser.php
 ├── MeasuredFindingSet.php         # The set a baseline measures (ADR 0017): the pipeline's findings before the baseline stage. Defined by config + source annotations; a CLI flag may narrow it, never widen it
 ├── FindingFilterOrchestrator.php  # Builds Reporting projection options and renders stage diagnostics; policy and ordering remain in Reporting
@@ -85,6 +86,13 @@ Reporting-owned `FindingProjector` is the single authority for suppression,
 configured exclusions, baseline judgment, annotation rejoin, and Git-last
 projection.
 
+`CliSelectorDecoder` owns the scalar form of the shared selector language:
+`exact:value`, `subtree:value`, or `regex:value`. It splits at the first colon
+only, refuses bare values through `ConfigurationRefusal::aboutCommandLineInput`,
+and delegates binding and PCRE validation to Core. `CliOptionsParser` retains
+the Finding-owned `RULE:OPTION=VALUE` grammar; selector-valued rule options are
+wired only once their Finding owners accept the bound values.
+
 `RuleInputValidator` validates selectors against one immutable rule-channel
 snapshot for the resolved run. The snapshot is assembled by Infrastructure Rule
 from `ResolvedComputedMetricDefinitions`; Console consumes only that resolved
@@ -153,7 +161,8 @@ internal DOT/JSON exporters.
 
 **Options:**
 - `--output` — output file path (default: stdout)
-- `--namespace` — filter by namespace prefix
+- `--namespace` — include an explicit `exact:`, `subtree:`, or `regex:` namespace selector (repeatable)
+- `--exclude-namespace` — exclude an explicit namespace selector (repeatable; exclusion wins)
 - `--format` — output format: `dot` (default) or `json`
 
 **Output formats:**

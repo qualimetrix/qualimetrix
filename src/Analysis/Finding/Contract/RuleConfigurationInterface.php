@@ -6,6 +6,8 @@ namespace Qualimetrix\Analysis\Finding\Contract;
 
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\PathPattern;
 
 /** Per-run rule options and exclusion state owned by Finding. */
 interface RuleConfigurationInterface
@@ -32,14 +34,23 @@ interface RuleConfigurationInterface
 
     public function capturesExcludedFindings(): bool;
 
-    /** @param list<string> $patterns */
+    /** @param list<NamespacePattern> $patterns */
     public function configureNamespaceExclusions(string $ruleName, array $patterns): void;
 
-    /** @param array<string, list<string>> $patterns */
+    /** @param array<string, list<NamespacePattern>> $patterns */
     public function configureNamespaceChannelExclusions(string $ruleName, array $patterns): void;
 
-    /** @param list<string> $patterns */
+    /** @param list<PathPattern> $patterns */
     public function configurePathExclusions(string $ruleName, array $patterns): void;
+
+    /** @return list<NamespacePattern> */
+    public function namespaceExclusions(string $ruleName): array;
+
+    /** @return array<string, list<NamespacePattern>> */
+    public function namespaceChannelExclusions(string $ruleName): array;
+
+    /** @return list<PathPattern> */
+    public function pathExclusions(string $ruleName): array;
 
     public function isNamespaceExcluded(string $ruleName, string $namespace): bool;
 

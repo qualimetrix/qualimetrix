@@ -20,6 +20,10 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -82,8 +86,8 @@ final class FindingProjectorTest extends TestCase
     public function itRunsTheBaselineStageImmediatelyBeforeGitScope(): void
     {
         $pipeline = $this->createPipeline(new FindingProjectionOptions(
-            suppressPaths: ['vendor'],
-            suppressNamespaces: ['App\\Generated'],
+            suppressPaths: $this->paths('vendor'),
+            suppressNamespaces: $this->namespaces('App\\Generated'),
         ));
 
         $options = new FindingProjectionOptions(
@@ -197,7 +201,7 @@ final class FindingProjectorTest extends TestCase
         $kept = $this->makeFinding('src/Service/UserService.php');
         $excluded = $this->makeFinding('generated/Proxy.php');
 
-        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressPaths: ['generated']));
+        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressPaths: $this->paths('generated')));
 
         $result = $this->project($pipeline, [$kept, $excluded], new FindingProjectionOptions());
 
@@ -226,7 +230,7 @@ final class FindingProjectorTest extends TestCase
         );
         $ordinary = $this->makeFinding('src/Foo/Other.php', 'App\\Foo', 'Other');
 
-        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressNamespaces: ['App\\Foo']));
+        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressNamespaces: $this->namespaces('App\\Foo')));
 
         $result = $this->project($pipeline, [$architecture, $ordinary], new FindingProjectionOptions());
 
@@ -647,7 +651,7 @@ final class FindingProjectorTest extends TestCase
         $byPath = $this->makeFinding('generated/Proxy.php', 'App\\Generated', 'Proxy', line: 21);
         $byNamespace = $this->makeFinding('src/Entity/User.php', 'App\\Entity', 'User', line: 21);
 
-        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressPaths: ['generated']));
+        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressPaths: $this->paths('generated')));
         $this->suppressions = [
             'src/Service/UserService.php' => [self::ignoreLine20()],
             'generated/Proxy.php' => [self::ignoreLine20()],
@@ -655,7 +659,7 @@ final class FindingProjectorTest extends TestCase
         ];
 
         $result = $this->project($pipeline, [$kept, $byPath, $byNamespace], new FindingProjectionOptions(
-            suppressNamespaces: ['App\\Entity'],
+            suppressNamespaces: $this->namespaces('App\\Entity'),
             annotationSuppressionDisabled: true,
         ));
 
@@ -696,7 +700,7 @@ final class FindingProjectorTest extends TestCase
         $kept = $this->makeFinding('src/Service/UserService.php');
         $excluded = $this->makeFinding('vendor/library/SomeClass.php');
 
-        $options = new FindingProjectionOptions(suppressPaths: ['vendor']);
+        $options = new FindingProjectionOptions(suppressPaths: $this->paths('vendor'));
 
         $result = $this->project($this->createPipeline(), [$kept, $excluded], $options);
 
@@ -710,7 +714,7 @@ final class FindingProjectorTest extends TestCase
         $kept = $this->makeFinding('src/Service/UserService.php');
         $excluded = $this->makeFinding('generated/Proxy.php');
 
-        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressPaths: ['generated']));
+        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressPaths: $this->paths('generated')));
 
         $result = $this->project($pipeline, [$kept, $excluded], new FindingProjectionOptions());
 
@@ -725,9 +729,9 @@ final class FindingProjectorTest extends TestCase
         $configured = $this->makeFinding('generated/Proxy.php');
         $flagged = $this->makeFinding('vendor/library/SomeClass.php');
 
-        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressPaths: ['generated']));
+        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressPaths: $this->paths('generated')));
 
-        $options = new FindingProjectionOptions(suppressPaths: ['vendor']);
+        $options = new FindingProjectionOptions(suppressPaths: $this->paths('vendor'));
 
         $result = $this->project($pipeline, [$kept, $configured, $flagged], $options);
 
@@ -754,7 +758,7 @@ final class FindingProjectorTest extends TestCase
         $kept = $this->makeFinding('src/Service/UserService.php', 'App\\Service', 'UserService');
         $excluded = $this->makeFinding('src/Generated/Proxy.php', 'App\\Generated', 'Proxy');
 
-        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressNamespaces: ['App\\Generated']));
+        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressNamespaces: $this->namespaces('App\\Generated')));
 
         $result = $this->project($pipeline, [$kept, $excluded], new FindingProjectionOptions());
 
@@ -768,7 +772,7 @@ final class FindingProjectorTest extends TestCase
         $kept = $this->makeFinding('src/Service/UserService.php', 'App\\Service', 'UserService');
         $excluded = $this->makeFinding('src/Generated/Sub/Proxy.php', 'App\\Generated\\Sub', 'Proxy');
 
-        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressNamespaces: ['App\\Generated']));
+        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressNamespaces: $this->namespaces('App\\Generated')));
 
         $result = $this->project($pipeline, [$kept, $excluded], new FindingProjectionOptions());
 
@@ -791,7 +795,7 @@ final class FindingProjectorTest extends TestCase
             severity: Severity::Error,
         );
 
-        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressNamespaces: ['App']));
+        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressNamespaces: $this->namespaces('App')));
 
         $result = $this->project($pipeline, [$fileLevel], new FindingProjectionOptions());
 
@@ -806,9 +810,9 @@ final class FindingProjectorTest extends TestCase
         $configured = $this->makeFinding('src/Generated/Proxy.php', 'App\\Generated', 'Proxy');
         $flagged = $this->makeFinding('src/Entity/User.php', 'App\\Entity', 'User');
 
-        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressNamespaces: ['App\\Generated']));
+        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressNamespaces: $this->namespaces('App\\Generated')));
 
-        $options = new FindingProjectionOptions(suppressNamespaces: ['App\\Entity']);
+        $options = new FindingProjectionOptions(suppressNamespaces: $this->namespaces('App\\Entity'));
 
         $result = $this->project($pipeline, [$kept, $configured, $flagged], $options);
 
@@ -842,7 +846,7 @@ final class FindingProjectorTest extends TestCase
         );
         $ordinary = $this->makeFinding('src/Foo/Other.php', 'App\\Foo', 'Other');
 
-        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressNamespaces: ['App\\Foo']));
+        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressNamespaces: $this->namespaces('App\\Foo')));
 
         $result = $this->project($pipeline, [$architecture, $ordinary], new FindingProjectionOptions());
 
@@ -963,13 +967,57 @@ final class FindingProjectorTest extends TestCase
     ): FindingProjectionResult {
         $options = new FindingProjectionOptions(
             baselinePath: $options->baselinePath ?? $this->configuredOptions->baselinePath,
-            suppressPaths: array_values(array_unique([...$this->configuredOptions->suppressPaths, ...$options->suppressPaths])),
-            suppressNamespaces: array_values(array_unique([...$this->configuredOptions->suppressNamespaces, ...$options->suppressNamespaces])),
+            suppressPaths: $this->uniquePaths([...$this->configuredOptions->suppressPaths, ...$options->suppressPaths]),
+            suppressNamespaces: $this->uniqueNamespaces([...$this->configuredOptions->suppressNamespaces, ...$options->suppressNamespaces]),
             annotationSuppressionDisabled: $options->annotationSuppressionDisabled,
             gitScope: $options->gitScope,
         );
 
         return $projector->project($findings, $this->suppressions, $options);
+    }
+
+    /** @return list<PathPattern> */
+    private function paths(string ...$values): array
+    {
+        return array_values(array_map(
+            static fn(string $value): PathPattern => new PathPattern(SelectorDefinition::fromKindAndValue(SelectorKind::Subtree->value, $value)),
+            $values,
+        ));
+    }
+
+    /** @return list<NamespacePattern> */
+    private function namespaces(string ...$values): array
+    {
+        return array_values(array_map(
+            static fn(string $value): NamespacePattern => new NamespacePattern(SelectorDefinition::fromKindAndValue(SelectorKind::Subtree->value, $value)),
+            $values,
+        ));
+    }
+
+    /** @param list<PathPattern> $patterns
+     * @return list<PathPattern>
+     */
+    private function uniquePaths(array $patterns): array
+    {
+        $unique = [];
+        foreach ($patterns as $pattern) {
+            $unique[$pattern->definition->display()] = $pattern;
+        }
+
+        return array_values($unique);
+    }
+
+    /** @param list<NamespacePattern> $patterns
+     * @return list<NamespacePattern>
+     */
+    private function uniqueNamespaces(array $patterns): array
+    {
+        $unique = [];
+        foreach ($patterns as $pattern) {
+            $unique[$pattern->definition->display()] = $pattern;
+        }
+
+        return array_values($unique);
     }
 
     /**

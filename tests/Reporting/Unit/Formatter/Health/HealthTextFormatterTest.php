@@ -207,10 +207,10 @@ final class HealthTextFormatterTest extends TestCase
             'overall' => new HealthScore('overall', 72.3, 'Good', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
 
-        $context = new FormatterContext(useColor: false, namespace: 'App\\Core', terminalWidth: 120);
+        $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Core'), terminalWidth: 120);
         $output = $this->formatter->format($report, $context);
 
-        self::assertStringContainsString('[namespace: App\\Core]', $output);
+        self::assertStringContainsString('[namespace: subtree:App\\Core]', $output);
     }
 
     #[Test]

@@ -204,13 +204,13 @@ Qualimetrix предоставляет две дополнительные ме�
 # qmx.yaml
 coupling:
   framework-namespaces:
-    - Symfony
-    - PhpParser
-    - Psr
-    - Amp
+    - subtree: Symfony
+    - subtree: PhpParser
+    - subtree: Psr
+    - subtree: Amp
 ```
 
-Сопоставление с учётом границ: `Psr` совпадает с `Psr\Log\LoggerInterface`, но НЕ с `PsrExtended\Custom`.
+Это явные namespace-селекторы. `subtree: Psr` совпадает с `Psr\Log\LoggerInterface`, но не с `PsrExtended\Custom`; также доступны `exact` и полнообъектный `regex`.
 
 **Использование с правилом CBO:**
 
@@ -237,13 +237,13 @@ rules:
 
 ### Что измеряет
 
-Префикс из `framework-namespaces`, под который не попало ни одно имя прогона.
+Селектор из `framework-namespaces`, с которым не совпало ни одно имя прогона.
 
-Префикс писали, чтобы вынести классы из `coupling.cbo-app` в
+Селектор писали, чтобы вынести классы из `coupling.cbo-app` в
 `coupling.ce-framework`. Промахнувшийся не выносит ничего, и любой вывод о
 прикладной связанности делается по более широкому множеству, чем вы просили.
 Больше об этом ничто в прогоне не говорит: промах даёт ровно тот же отчёт, что
-и прогон вообще без префикса.
+и прогон вообще без селектора.
 
 ```
 The framework namespace "Symfony\Bundle" matched no class the run analysed or
@@ -256,7 +256,7 @@ depends on. Nothing was moved out of the application scope for it, so
 слэш (`\Symfony` не совпадает никогда — пишите неймспейс так, как он выглядит
 в `use`); зависимость убрали при рефакторинге, а префикс остался в `qmx.yaml`.
 
-Одна находка на каждый непривязанный префикс, на уровне проекта. Префикс
+Одна находка на каждый непривязанный селектор, на уровне проекта. Селектор
 сверяется с обоими концами каждого ребра зависимостей — с целями, где живут
 внешние классы фреймворка, и с источниками, — потому что именно это множество
 классифицируют сами метрики.
@@ -265,7 +265,7 @@ depends on. Nothing was moved out of the application scope for it, so
 
 - **`framework-namespaces` не заданы.** Ничего не утверждали — нечему и
   промахиваться.
-- **Префикс совпал.** В том числе если он совпал только с вашими же
+- **Селектор совпал.** В том числе если он совпал только с вашими же
   анализируемыми классами: они всё равно выносятся из прикладной области, а это
   и есть действие опции.
 - **Граф зависимостей прогона пуст.** Проверьте один файл, который ни от чего
@@ -560,10 +560,10 @@ rules:
     max_distance_error: 0.6
     min_class_count: 5
     include_namespaces:
-      - App\Domain
-      - App\Infrastructure
+      - subtree: App\Domain
+      - subtree: App\Infrastructure
     suppress_namespaces:
-      - App\Tests
+      - subtree: App\Tests
 ```
 
 Сокращённая запись с `threshold`:
@@ -594,13 +594,11 @@ D = 1.00 и сбалансированное выглядят в отчёте о
 
 По умолчанию пространства имён проекта автоматически определяются из `composer.json` (`autoload.psr-4`).
 
-`include_namespaces` принимает и одну строку — она означает список из одного
-элемента: `include_namespaces: App\Domain` — это ровно
-`include_namespaces: [App\Domain]`. Строка из цифр — такой же префикс
-пространства имён, как любой другой. CLI-дверь несёт один скаляр и не
-разбивает текст после `=`, поэтому
-`--rule-opt="coupling.distance:include_namespaces=App\Domain"` называет одно
-пространство имён; несколько пишутся списком в `qmx.yaml`.
+`include_namespaces` — список явных namespace-селекторов `exact`, `subtree`
+или `regex`; bare scalar отвергается. Универсальная дверь `--rule-opt`
+использует ту же scalar-форму `kind:value`, поэтому
+`--rule-opt="coupling.distance:include_namespaces=subtree:App\Domain"` выбирает
+это поддерево; несколько селекторов пишутся списком в `qmx.yaml`.
 
 ---
 

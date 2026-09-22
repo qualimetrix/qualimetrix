@@ -36,10 +36,10 @@ bin/qmx check src/ --config=qmx.yaml
 
 ### `--exclude`
 
-Исключить директории из анализа. Можно указывать несколько раз:
+Исключить директории из анализа явным селектором пути. Можно указывать несколько раз:
 
 ```bash
-bin/qmx check src/ --exclude=src/Generated --exclude=src/Legacy
+bin/qmx check src/ --exclude=subtree:src/Generated --exclude=exact:src/Legacy
 ```
 
 Значение, не убравшее ни одного каталога, сообщается каналом
@@ -64,10 +64,10 @@ include_generated: true
 
 ### `--suppress-path`
 
-Подавить нарушения для файлов, соответствующих glob-паттерну. Файлы по-прежнему анализируются (их метрики учитываются при расчёте метрик пространства имён), но нарушения не выводятся. Можно указывать несколько раз:
+Подавить нарушения для файлов, выбранных через `exact:`, `subtree:` или `regex:`. Значение CLI делится по первому двоеточию; regex — фрагмент PCRE без разделителей, автоматически привязанный ко всему пути. Файлы по-прежнему анализируются, опцию можно повторять:
 
 ```bash
-bin/qmx check src/ --suppress-path="src/Entity/*" --suppress-path="src/DTO/*"
+bin/qmx check src/ --suppress-path='subtree:src/Entity' --suppress-path='regex:src/DTO/.*\.php'
 ```
 
 Объединяется с `suppress_paths` из `qmx.yaml` — оба источника суммируются.
@@ -79,10 +79,10 @@ bin/qmx check src/ --suppress-path="src/Entity/*" --suppress-path="src/DTO/*"
 
 ### `--suppress-namespace`
 
-Подавить нарушения для классов в пространствах имён, соответствующих префиксу или glob-паттерну. Классы по-прежнему анализируются (их метрики учитываются в агрегированных расчётах), но нарушения не выводятся. Можно указывать несколько раз:
+Подавить нарушения для классов, выбранных явным селектором неймспейса. `subtree:` следует границам неймспейса, а `regex:` задаёт полнообъектный фрагмент PCRE. Классы по-прежнему анализируются, опцию можно повторять:
 
 ```bash
-bin/qmx check src/ --suppress-namespace="App\Entity" --suppress-namespace="App\DTO\*"
+bin/qmx check src/ --suppress-namespace='subtree:App\Entity' --suppress-namespace='regex:App\\DTO(?:\\[^\\]+)*'
 ```
 
 Объединяется с `suppress_namespaces` из `qmx.yaml` — оба источника суммируются.
@@ -304,21 +304,16 @@ bin/qmx check src/ --all
 
 ### `--namespace`
 
-Фильтрация вывода по поддереву пространства имён. Значение — это *паттерн* пространства имён, а не буквальный префикс:
-
-- Без glob-символов сопоставление идёт по границам: `App\Service` совпадает с `App\Service` и всем, что под ним, но не с `App\ServiceBus`.
-- При наличии `*`, `?` или `[` значение трактуется как glob: `App\*\Order` выбирает `App\Billing\Order` и `App\Sales\Order`, а не пространство имён, буквально написанное со звёздочкой.
-- Завершающий `\` косметический: `App\Service\` и `App\Service` — один и тот же паттерн.
-- Пустое значение не совпадает ни с чем, включая глобальное пространство имён.
+Фильтрация вывода явным селектором неймспейса. `exact:` выбирает один неймспейс, `subtree:` — его и потомков по границам, `regex:` — фрагмент PCRE без разделителей. Bare- и пустые значения отвергаются; regex всегда сопоставляется со всем неймспейсом.
 
 ```bash
-bin/qmx check src/ --namespace=App\\Service
-bin/qmx check src/ --namespace='App\*\Order'
+bin/qmx check src/ --namespace='subtree:App\Service'
+bin/qmx check src/ --namespace='regex:App\\(?:Billing|Sales)\\Order'
 ```
 
 Фильтрует нарушения и худших нарушителей по выбранным пространствам имён. Показывает оценки здоровья поддерева. Автоматически включает `--detail`.
 
-Находки уровня проекта (`architecture.coverage-gap` и прочие диагностики, судящие о прогоне целиком) не выбираются паттерном пространства имён никогда, включая `*`: они не принадлежат ни одному пространству имён.
+Находки уровня проекта (`architecture.coverage-gap` и прочие диагностики, судящие о прогоне целиком) не выбираются селектором неймспейса: они не принадлежат ни одному пространству имён.
 
 То же правило сопоставления действует для drill-down по здоровью и списков худших нарушителей, которые включает эта опция, и для опции `include_namespaces` правила `coupling.distance`.
 
@@ -999,10 +994,10 @@ bin/qmx graph:export src/ -o graph.dot
 bin/qmx graph:export src/ --format=json -o graph.json
 
 # Фильтрация по пространству имён
-bin/qmx graph:export src/ --namespace=App\\Service --namespace=App\\Repository
+bin/qmx graph:export src/ --namespace='subtree:App\Service' --namespace='subtree:App\Repository'
 
 # Исключение пространств имён
-bin/qmx graph:export src/ --exclude-namespace=App\\Generated
+bin/qmx graph:export src/ --exclude-namespace='subtree:App\Generated'
 
 # Изменение направления графа
 bin/qmx graph:export src/ --direction=TB
@@ -1011,14 +1006,14 @@ bin/qmx graph:export src/ --direction=TB
 bin/qmx graph:export src/ --no-clusters
 ```
 
-| Опция                    | Описание                                                       |
-| ------------------------ | -------------------------------------------------------------- |
-| `-o`, `--output=FILE`    | Выходной файл (по умолчанию: stdout)                           |
-| `-f`, `--format=FORMAT`  | `dot` (по умолчанию) или `json`                                |
-| `-d`, `--direction=DIR`  | Направление графа: `LR`, `TB`, `RL`, `BT` (по умолчанию: `LR`) |
-| `--no-clusters`          | Не группировать узлы по пространствам имён                     |
-| `--namespace=NS`         | Включить только указанные пространства имён (можно повторять)  |
-| `--exclude-namespace=NS` | Исключить указанные пространства имён (можно повторять)        |
+| Опция                          | Описание                                                                      |
+| ------------------------------ | ----------------------------------------------------------------------------- |
+| `-o`, `--output=FILE`          | Выходной файл (по умолчанию: stdout)                                          |
+| `-f`, `--format=FORMAT`        | `dot` (по умолчанию) или `json`                                               |
+| `-d`, `--direction=DIR`        | Направление графа: `LR`, `TB`, `RL`, `BT` (по умолчанию: `LR`)                |
+| `--no-clusters`                | Не группировать узлы по пространствам имён                                    |
+| `--namespace=SELECTOR`         | Включить неймспейсы через `exact:`, `subtree:` или `regex:` (можно повторять) |
+| `--exclude-namespace=SELECTOR` | Исключить неймспейсы теми же явными формами (можно повторять)                 |
 
 Значение `--namespace`, не совпавшее ни с одной вершиной, отвергается с кодом 3,
 а не экспортирует пустой граф. `--exclude-namespace` намеренно сохраняет

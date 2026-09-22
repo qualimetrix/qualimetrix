@@ -144,6 +144,35 @@ final class FormatterContextFactoryTest extends TestCase
     }
 
     #[Test]
+    public function itBindsAnExplicitNamespaceSelectorOnceAtTheCliBoundary(): void
+    {
+        $context = $this->factory->create(
+            $this->createInput(['--namespace' => 'regex:App\\\\(?:Service|Controller)']),
+            $this->output,
+            $this->formatter,
+            $this->projectRoot(),
+        );
+
+        self::assertSame('regex:App\\\\(?:Service|Controller)', $context->namespaceDisplay());
+        self::assertTrue($context->namespace?->matches('App\\Service'));
+        self::assertSame(200, $context->detailLimit);
+    }
+
+    #[Test]
+    public function itRefusesABareNamespaceSelector(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('must use KIND:VALUE');
+
+        $this->factory->create(
+            $this->createInput(['--namespace' => 'App\\Service']),
+            $this->output,
+            $this->formatter,
+            $this->projectRoot(),
+        );
+    }
+
+    #[Test]
     public function itNamesEveryUnknownKeyAtOnce(): void
     {
         $input = $this->createInput(['--format-opt' => ['zzz=1', 'yyy=2']]);

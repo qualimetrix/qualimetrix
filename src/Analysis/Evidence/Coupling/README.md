@@ -69,20 +69,23 @@ The `coupling.cbo-app` and `coupling.ce-framework` metrics separate framework co
 # qmx.yaml
 coupling:
   framework-namespaces:
-    - Symfony
-    - PhpParser
-    - Psr
-    - Amp
+    - subtree: Symfony
+    - subtree: PhpParser
+    - subtree: Psr
+    - exact: Amp
 ```
 
-**Namespace matching:** Boundary-aware prefix matching — `Psr` matches `Psr\Log\LoggerInterface` but NOT `PsrExtended\Custom`.
+Each entry is an explicit namespace selector: `exact` matches one name,
+`subtree` matches the named namespace and separator-bound descendants, and
+`regex` accepts a delimiterless PCRE fragment. For example, `subtree: Psr`
+matches `Psr\Log\LoggerInterface` but not `PsrExtended\Custom`.
 
 **Partition property:** `Ce = Ce_app + Ce_framework` (outgoing dependencies partition cleanly).
 
 #### When a prefix classifies nothing
 
 `UnmatchedFrameworkNamespaceRule` reports `coupling.unmatched-framework-namespace`
-(warning, project level, one finding per prefix) for a configured prefix that no
+(warning, project level, one finding per selector) for a configured selector that no
 name in the run falls under. Nothing was moved out of the application scope for
 it, and before the channel existed the miss and a run with no prefix at all
 produced byte-identical reports — the classification is only observable through
@@ -195,6 +198,13 @@ concrete types still computes as `1 / 6` rather than losing the abstraction in a
 ```
 D = |A + I - 1|
 ```
+
+The optional `rules.coupling.distance.include-namespaces` override uses the
+same explicit namespace selectors. YAML takes a list of one-entry mappings;
+the CLI takes one typed scalar, for example
+`--rule-opt=coupling.distance:include-namespaces=subtree:App\\Domain`.
+Auto-detected Composer namespaces remain a separate exact inferred set when
+the override is absent.
 
 ### Main Sequence
 

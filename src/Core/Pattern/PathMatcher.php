@@ -4,95 +4,42 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Pattern;
 
+use InvalidArgumentException;
 use Qualimetrix\Core\Path\RelativePath;
 
 /**
- * Matches file paths against path patterns, naming the pattern that fired.
- *
- * Supports two matching modes, selected automatically per pattern:
- * - **Prefix mode** (no glob characters): the pattern is treated as a path prefix
- *   with `/` boundary awareness. `src/Entity` matches `src/Entity` itself and
- *   any path under it (`src/Entity/User.php`, `src/Entity/Sub/Deep.php`),
- *   but NOT `src/EntityManager/Foo.php`.
- * - **Glob mode** (contains `*`, `?`, or `[`): the pattern is matched using
- *   `fnmatch()` with `FNM_NOESCAPE`. Without `FNM_PATHNAME`, `*` matches
- *   across directory separators.
- *
- * Examples:
- *   - `src/Entity` matches `src/Entity`, `src/Entity/User.php`, `src/Entity/Sub/Deep.php`
- *   - `src/Entity` does NOT match `src/EntityManager/Foo.php`
- *   - `src/Metrics/*Visitor.php` matches `src/Metrics/CboVisitor.php`
- *   - `src/Rules/**\/*Options.php` matches `src/Rules/Complexity/CcnOptions.php`
+ * Matches paths against ordered separator-bound path patterns.
  */
 final readonly class PathMatcher
 {
     /**
-     * @var list<string> Normalized patterns (trailing slashes removed)
+     * @param list<PathPattern> $patterns
+     *
+     * @throws InvalidArgumentException when a selector list exceeds its fixed budget
      */
-    private array $normalizedPatterns;
-
-    /**
-     * @param list<string> $patterns Path patterns or prefixes to match against
-     */
-    public function __construct(array $patterns)
+    public function __construct(private array $patterns)
     {
-        $this->normalizedPatterns = array_map(
-            static fn(string $pattern): string => rtrim($pattern, '/'),
-            $patterns,
-        );
+        if (\count($patterns) > SelectorDefinition::MAX_SELECTOR_COUNT) {
+            throw new InvalidArgumentException(\sprintf(
+                'Selector lists must not contain more than %d definitions',
+                SelectorDefinition::MAX_SELECTOR_COUNT,
+            ));
+        }
     }
 
-    /**
-     * Returns the pattern that matched the file path, or `null` if none did.
-     *
-     * When several configured patterns match, the first one in configuration
-     * order is returned — the same order the internal scan already used to
-     * short-circuit on the first hit.
-     */
-    public function matches(RelativePath $filePath): ?PatternMatch
+    public function matches(RelativePath $path): ?PatternMatch
     {
-        if ($this->normalizedPatterns === []) {
-            return null;
-        }
-
-        $normalizedPath = rtrim($filePath->value(), '/');
-
-        foreach ($this->normalizedPatterns as $pattern) {
-            if ($pattern === '') {
-                continue;
-            }
-
-            if ($this->isGlobPattern($pattern)) {
-                if (fnmatch($pattern, $normalizedPath, \FNM_NOESCAPE)) {
-                    return new PatternMatch($pattern);
-                }
-            } else {
-                if ($normalizedPath === $pattern || str_starts_with($normalizedPath, $pattern . '/')) {
-                    return new PatternMatch($pattern);
-                }
+        foreach ($this->patterns as $pattern) {
+            if ($pattern->matches($path)) {
+                return new PatternMatch($pattern->definition);
             }
         }
 
         return null;
     }
 
-    /**
-     * Returns true if no patterns are configured.
-     */
     public function isEmpty(): bool
     {
-        return $this->normalizedPatterns === [];
-    }
-
-    /**
-     * Returns true if the pattern contains glob characters.
-     *
-     * The alphabet is {@see GlobSyntax}'s, shared with the code that judges a
-     * configured value: applier and judge disagreeing about what a glob is is
-     * how a literal pattern came to be treated as unanchored.
-     */
-    private function isGlobPattern(string $pattern): bool
-    {
-        return GlobSyntax::isGlob($pattern);
+        return $this->patterns === [];
     }
 }

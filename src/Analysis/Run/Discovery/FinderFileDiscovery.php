@@ -4,21 +4,26 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Discovery;
 
+use FilesystemIterator;
 use Generator;
-
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
+use RecursiveCallbackFilterIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use SplFileInfo;
-use Symfony\Component\Finder\Finder;
 
 final class FinderFileDiscovery implements FileDiscoveryInterface
 {
-    /**
-     * @param list<string> $excludedDirs directories to exclude
-     */
-    public function __construct(
-        private readonly array $excludedDirs = ['vendor', 'node_modules', '.git'],
-    ) {}
+    private readonly DirectoryPruner $directoryPruner;
+
+    public function __construct(?DirectoryPruner $directoryPruner = null)
+    {
+        $workingDirectory = getcwd();
+        $root = AbsolutePath::fromString($workingDirectory !== false ? $workingDirectory : '/');
+        $this->directoryPruner = $directoryPruner
+            ?? new DirectoryPruner($root, DirectoryPruner::builtInPatterns());
+    }
 
     public function discover(AbsolutePath|array $paths): iterable
     {
@@ -76,15 +81,35 @@ final class FinderFileDiscovery implements FileDiscoveryInterface
      */
     private function discoverInDirectories(array $directories, array &$seen): Generator
     {
-        $finder = new Finder();
-        $finder
-            ->files()
-            ->name('*.php')
-            ->in(array_map(static fn(AbsolutePath $p): string => $p->value(), $directories))
-            ->exclude($this->excludedDirs)
-            ->sortByName();
+        $files = [];
+        foreach ($directories as $directory) {
+            if ($this->directoryPruner->match($directory) !== null) {
+                continue;
+            }
 
-        foreach ($finder as $file) {
+            $filter = new RecursiveCallbackFilterIterator(
+                new RecursiveDirectoryIterator(
+                    $directory->value(),
+                    FilesystemIterator::SKIP_DOTS | FilesystemIterator::UNIX_PATHS | FilesystemIterator::CURRENT_AS_FILEINFO,
+                ),
+                function (SplFileInfo $entry): bool {
+                    if ($entry->isDir()) {
+                        return $this->directoryPruner->match(AbsolutePath::fromString($entry->getPathname())) === null;
+                    }
+
+                    return $entry->isFile() && $entry->getExtension() === 'php';
+                },
+            );
+
+            foreach (new RecursiveIteratorIterator($filter) as $file) {
+                if ($file instanceof SplFileInfo) {
+                    $files[$file->getPathname()] = $file;
+                }
+            }
+        }
+        ksort($files);
+
+        foreach ($files as $file) {
             $pathname = $file->getPathname();
             if (isset($seen[$pathname])) {
                 continue;

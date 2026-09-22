@@ -74,6 +74,7 @@ final readonly class TemplateLayerDefinition
         }
 
         $patternVariables = self::collectCaptureProducingPatternVariables($membership->patterns);
+        $multiSegmentPatternVariables = self::collectMultiSegmentPatternVariables($membership->patterns);
 
         $missingFromPatterns = array_values(array_diff($nameVariables, $patternVariables));
         if ($missingFromPatterns !== []) {
@@ -82,6 +83,15 @@ final readonly class TemplateLayerDefinition
                 implode('", "', $missingFromPatterns),
                 $nameTemplate,
                 $missingFromPatterns[0],
+            ));
+        }
+
+        $multiSegmentNameVariables = array_values(array_intersect($nameVariables, $multiSegmentPatternVariables));
+        if ($multiSegmentNameVariables !== []) {
+            throw new InvalidArgumentException(\sprintf(
+                'TemplateLayerDefinition: variable(s) "%s" use :** in a membership pattern but also appear in layer name "%s". Concrete layer names cannot contain namespace separators; use :* for name-bound variables.',
+                implode('", "', $multiSegmentNameVariables),
+                $nameTemplate,
             ));
         }
 
@@ -164,6 +174,23 @@ final readonly class TemplateLayerDefinition
             $vars = self::collectVariablesFromString($pattern, 'pattern');
             foreach ($vars as $var) {
                 $collected[$var] = true;
+            }
+        }
+
+        return array_keys($collected);
+    }
+
+    /**
+     * @param list<string> $patterns
+     *
+     * @return list<string>
+     */
+    private static function collectMultiSegmentPatternVariables(array $patterns): array
+    {
+        $collected = [];
+        foreach ($patterns as $pattern) {
+            foreach (CapturePattern::extractMultiSegmentVariables($pattern) as $variable) {
+                $collected[$variable] = true;
             }
         }
 

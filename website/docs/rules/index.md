@@ -200,18 +200,18 @@ bin/qmx check src/ --disable-rule=code-smell.*
 
 ## Excluding Namespaces
 
-Any rule supports `suppress_namespaces` to suppress violations from specific namespaces (prefix matching). The files are still analyzed and metrics are collected, but violations are not reported:
+Any rule supports explicit `exact`, `subtree`, and `regex` namespace selectors. The files are still analyzed and metrics are collected, but violations are not reported:
 
 ```yaml
 rules:
   complexity.ccn:
     suppress_namespaces:
-      - App\Tests
-      - App\Legacy
+      - subtree: App\Tests
+      - subtree: App\Legacy
 ```
 
 ```bash
-bin/qmx check src/ --rule-opt="complexity.ccn:suppress_namespaces=App\Tests"
+bin/qmx check src/ --rule-opt="complexity.ccn:suppress_namespaces=subtree:App\Tests"
 ```
 
 This is useful for test code, generated code, or legacy modules that you want to keep in metrics but exclude from violation reports for a specific rule.

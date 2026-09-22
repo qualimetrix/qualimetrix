@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Infrastructure\Git\GitScope;
 use Qualimetrix\Reporting\Contract\OutputFormat;
@@ -76,6 +77,7 @@ final class ResultPresenter
         ?GitScope $reportScope = null,
         ?FindingProjectionResult $filterResult = null,
         ?FindingProjectionOptions $projectionOptions = null,
+        ?NamespacePattern $namespacePattern = null,
     ): int {
         $profiler = $this->profiler;
         $profiler->start('reporting', 'pipeline');
@@ -97,6 +99,7 @@ final class ResultPresenter
             $formatter,
             $projectRoot,
             $reportScope !== null,
+            $namespacePattern,
         );
 
         $this->assertDrillDownBinds($context, $analysisResult);
@@ -143,6 +146,11 @@ final class ResultPresenter
         return $this->exitCodeResolver->resolve($findings, $coverage, $exitPolicy);
     }
 
+    public function prepareNamespaceDrillDown(InputInterface $input): ?NamespacePattern
+    {
+        return $this->formatterContextFactory->namespacePattern($input);
+    }
+
     /**
      * Refuses a `--namespace` or `--class` value that selects nothing.
      *
@@ -167,7 +175,7 @@ final class ResultPresenter
             throw ConfigurationRefusal::aboutCommandLineInput('--namespace', \sprintf(
                 'Namespace "%s" matched none of the %d analyzed namespaces and symbol names it is compared against. '
                 . 'The report would be empty because nothing was selected, not because nothing was found.',
-                $context->namespace,
+                $context->namespace->definition->display(),
                 $binding->namespaceUniverseSize($metrics, $analysisResult->namespaceTree),
             ));
         }

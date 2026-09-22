@@ -10,10 +10,10 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionAttribution;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
-use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Pattern\NamespaceMatcher;
-use Qualimetrix\Core\Pattern\PathMatcher;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
@@ -87,7 +87,7 @@ final class FindingExclusionLedger
             $this->record($finding, new RuleExclusionAttribution(
                 $producerRuleName,
                 isPathExclusion: true,
-                matchedPatterns: $this->matchingPathPatterns(ConfiguredSuppression::paths($this->rawOptions($producerRuleName)), $file),
+                matchedPatterns: $this->matchingPathPatterns($this->ruleOptionsRegistry->pathExclusions($producerRuleName), $file),
             ));
 
             return false;
@@ -136,7 +136,7 @@ final class FindingExclusionLedger
 
         if ($this->ruleOptionsRegistry->isNamespaceExcluded($producerRuleName, $namespace)) {
             $patterns = $this->matchingNamespacePatterns(
-                ConfiguredSuppression::namespaces($this->rawOptions($producerRuleName)),
+                $this->ruleOptionsRegistry->namespaceExclusions($producerRuleName),
                 $namespace,
             );
 
@@ -156,33 +156,16 @@ final class FindingExclusionLedger
     }
 
     /**
-     * One producer's raw options, for {@see ConfiguredSuppression} to read.
+     * @param list<NamespacePattern> $patterns
      *
-     * The option names and their two spellings live there and only there: the
-     * channel that reports a value binding to nothing reads the same options
-     * off the same reader, so "applied here" and "judged there" cannot become
-     * two different sets. Reading a key inline here is what let the two drift.
-     *
-     * @return array<mixed>
-     */
-    private function rawOptions(string $producerRuleName): array
-    {
-        $options = $this->ruleOptionsRegistry->all()[$producerRuleName] ?? null;
-
-        return \is_array($options) ? $options : [];
-    }
-
-    /**
-     * @param list<string> $patterns
-     *
-     * @return list<string>
+     * @return list<SelectorDefinition>
      */
     private function matchingNamespacePatterns(array $patterns, string $namespace): array
     {
         $hits = [];
         foreach ($patterns as $pattern) {
-            if ((new NamespaceMatcher([$pattern]))->matches($namespace) !== null) {
-                $hits[] = $pattern;
+            if ($pattern->matches($namespace)) {
+                $hits[] = $pattern->definition;
             }
         }
 
@@ -190,16 +173,16 @@ final class FindingExclusionLedger
     }
 
     /**
-     * @param list<string> $patterns
+     * @param list<PathPattern> $patterns
      *
-     * @return list<string>
+     * @return list<SelectorDefinition>
      */
     private function matchingPathPatterns(array $patterns, RelativePath $file): array
     {
         $hits = [];
         foreach ($patterns as $pattern) {
-            if ((new PathMatcher([$pattern]))->matches($file) !== null) {
-                $hits[] = $pattern;
+            if ($pattern->matches($file)) {
+                $hits[] = $pattern->definition;
             }
         }
 
@@ -212,18 +195,18 @@ final class FindingExclusionLedger
      * not only the first, for the same reason {@see matchingNamespacePatterns()}
      * enumerates rather than short-circuits.
      *
-     * @return list<array{selector: string, pattern: string}>
+     * @return list<array{selector: string, pattern: SelectorDefinition}>
      */
     private function matchingChannelPatterns(string $producerRuleName, FindingChannel $channel, string $namespace): array
     {
         $hits = [];
 
-        foreach (ConfiguredSuppression::rawNamespaceChannels($this->rawOptions($producerRuleName)) as $selector => $patterns) {
+        foreach ($this->ruleOptionsRegistry->namespaceChannelExclusions($producerRuleName) as $selector => $patterns) {
             if (ChannelLevelSelector::tryParse($selector)?->matches($channel->code, SymbolLevel::Namespace_) !== true) {
                 continue;
             }
 
-            foreach ($this->matchingNamespacePatterns(ConfiguredSuppression::patternsOf($patterns), $namespace) as $pattern) {
+            foreach ($this->matchingNamespacePatterns($patterns, $namespace) as $pattern) {
                 $hits[] = ['selector' => $selector, 'pattern' => $pattern];
             }
         }
