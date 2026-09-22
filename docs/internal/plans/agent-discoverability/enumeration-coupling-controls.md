@@ -21,6 +21,13 @@ What the method cannot see, and these are not hypothetical:
   two measurements). A grep for paths and names cannot find a count, and the
   count moves when the viewer gains or loses *any* file — including a new test
   file. Found here only by reading the docblock.
+- **Coupling expressed as a `file:line` anchor.** `SubprocessDrain/SubprocessReadsAreDrainedConcurrentlyTest`
+  keeps a registry of every `proc_open` and `popen` call site keyed by
+  `path:line`. Adding a single `use` import above such a call shifts the line and
+  reddens the control, in a file the change was otherwise only appending to. Found
+  the same way as the file count: by being hit, not by the sweep. Same family as
+  the count -- a number is not a path or a name, so neither spelling is visible to
+  a sweep for paths and names.
 - **A path built from a constant or a parent-class helper.** A control composing
   `self::DOCS_DIR . '/…'` does not match a literal `website/`.
 - **A generated artifact that is not `.tsv`.** JSON and Markdown artifacts under
