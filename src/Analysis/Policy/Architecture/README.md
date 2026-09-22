@@ -41,7 +41,7 @@ Architecture/
 ├── Contract/                  # exact external promises and debug values
 ├── Configuration/              # contributed `architecture:` document parser
 │   └── Allow/                  # allow selectors and binding values
-├── Layer/                      # membership and registry primitives
+├── Layer/                      # membership, capture-pattern compilation, and registry primitives
 │   └── Expansion/              # observed-template expansion
 ├── LayerViolation/             # shared evidence walk, two rules, declaration validator
 └── ArchitecturePolicy.php      # instance-owned configuration/preparation

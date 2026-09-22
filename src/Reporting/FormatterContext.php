@@ -12,7 +12,7 @@ use Qualimetrix\Core\Pattern\NamespacePattern;
  *
  * Created by CheckCommand from CLI flags and OutputInterface state.
  *
- * @qmx-threshold coupling.cbo warning=32 error=32 -- Formatter context is the immutable Reporting input boundary every formatter's `format(Report, FormatterContext)` signature depends on. `Infrastructure\Console\ResultPresenter` also names it directly to refuse a `--namespace` or `--class` value that selects nothing. Raw CBO 31 gets one-edge headroom from the inclusive threshold of 32.
+ * @qmx-threshold coupling.cbo warning=33 error=33 -- Formatter context is the immutable Reporting input boundary every formatter's `format(Report, FormatterContext)` signature depends on. `Infrastructure\Console\ResultPresenter` also names it directly to refuse a `--namespace` or `--class` value that selects nothing, and the bound namespace selector is now part of that stable boundary. Raw CBO 32 gets one-edge headroom from the inclusive threshold of 33.
  */
 final readonly class FormatterContext
 {

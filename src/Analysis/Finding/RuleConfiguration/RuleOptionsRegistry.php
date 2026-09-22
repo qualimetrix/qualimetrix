@@ -67,11 +67,6 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
      *
      * @return array<string, mixed>
      */
-    public function getConfigFileOptions(): array
-    {
-        return $this->configFileOptions;
-    }
-
     public function configFileOptions(): array
     {
         return $this->configFileOptions;
@@ -109,11 +104,6 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
      *
      * @return array<string, array<string, mixed>>
      */
-    public function getCliOptions(): array
-    {
-        return $this->cliOptions;
-    }
-
     public function cliOptions(): array
     {
         return $this->cliOptions;
@@ -162,19 +152,6 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
      * Clears all invocation state before the next configuration is resolved.
      */
     public function resetRuntimeState(): void
-    {
-        $this->configFileOptions = [];
-        $this->cliOptions = [];
-        $this->selection = new RuleSelection();
-        $this->capturesExcludedFindings = false;
-        $this->exclusionProvider->reset();
-        $this->pathExclusionProvider->reset();
-    }
-
-    /**
-     * Clears all options (useful for testing).
-     */
-    public function reset(): void
     {
         $this->configFileOptions = [];
         $this->cliOptions = [];

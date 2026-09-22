@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Symfony\Component\Yaml\Yaml;
 
 require dirname(__DIR__, 5) . '/vendor/autoload.php';
@@ -78,12 +79,59 @@ function collectSelectors(mixed $node, string $file, array $path, array &$lists)
  */
 function recordStringList(mixed $value, string $file, string $surface, array &$lists): void
 {
-    $values = is_string($value) ? [$value] : $value;
-    if (!is_array($values)) {
-        return;
+    if (!is_array($value)) {
+        throw new RuntimeException(sprintf('%s:%s must be a selector list.', $file, $surface));
     }
 
-    $strings = array_values(array_filter($values, 'is_string'));
+    if (count($value) > SelectorDefinition::MAX_SELECTOR_COUNT) {
+        throw new RuntimeException(sprintf(
+            '%s:%s contains %d selectors; the limit is %d.',
+            $file,
+            $surface,
+            count($value),
+            SelectorDefinition::MAX_SELECTOR_COUNT,
+        ));
+    }
+
+    $strings = [];
+    foreach ($value as $index => $selector) {
+        if (!is_array($selector) || count($selector) !== 1) {
+            throw new RuntimeException(sprintf(
+                '%s:%s[%s] must contain exactly one selector kind.',
+                $file,
+                $surface,
+                (string) $index,
+            ));
+        }
+
+        $kind = array_key_first($selector);
+        $authoredValue = $selector[$kind];
+        if (!is_string($kind)
+            || !in_array($kind, ['exact', 'subtree', 'regex'], true)
+            || !is_string($authoredValue)
+            || $authoredValue === '') {
+            throw new RuntimeException(sprintf(
+                '%s:%s[%s] must be a non-empty exact, subtree, or regex selector.',
+                $file,
+                $surface,
+                (string) $index,
+            ));
+        }
+
+        if (strlen($authoredValue) > SelectorDefinition::MAX_PATTERN_LENGTH) {
+            throw new RuntimeException(sprintf(
+                '%s:%s[%s] is %d bytes; the limit is %d.',
+                $file,
+                $surface,
+                (string) $index,
+                strlen($authoredValue),
+                SelectorDefinition::MAX_PATTERN_LENGTH,
+            ));
+        }
+
+        $strings[] = $authoredValue;
+    }
+
     $lists[$file . ':' . $surface] = [
         'values' => $strings,
         'surface' => $surface,
@@ -172,6 +220,10 @@ foreach ($lists as $list) {
     foreach ($list['values'] as $value) {
         $values[] = $value;
     }
+}
+
+if ($values === []) {
+    throw new RuntimeException('Selector census found no authored values; the configured surfaces were not decoded.');
 }
 
 $longest = '';

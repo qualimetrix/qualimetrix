@@ -7,21 +7,15 @@ namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
-use Qualimetrix\Core\Pattern\NamespacePattern;
-use Qualimetrix\Core\Pattern\PathPattern;
-use Qualimetrix\Core\Pattern\SelectorDefinition;
 use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionParameter;
-use Throwable;
 
 /**
  * Factory for creating RuleOptions instances with merged configuration.
@@ -37,6 +31,7 @@ final class RuleOptionsFactory
 {
     public function __construct(
         private readonly RuleOptionsRegistry $registry,
+        private readonly RuleSuppressionSelectorDecoder $suppressionSelectors = new RuleSuppressionSelectorDecoder(),
     ) {}
 
     /**
@@ -148,11 +143,11 @@ final class RuleOptionsFactory
         $namespaces = $this->takeFrameworkOption($merged, FrameworkOptionKeys::NAMESPACES);
         $this->registry->configureNamespaceExclusions(
             $ruleName,
-            $this->namespaceSelectors($ruleName, 'suppress_namespaces', $namespaces, allowEmpty: true),
+            $this->suppressionSelectors->optionalNamespaces($ruleName, 'suppress_namespaces', $namespaces),
         );
 
         $channels = $this->takeFrameworkOption($merged, FrameworkOptionKeys::NAMESPACE_CHANNELS);
-        $this->registry->configureNamespaceChannelExclusions($ruleName, $this->channelSelectors($ruleName, $channels));
+        $this->registry->configureNamespaceChannelExclusions($ruleName, $this->suppressionSelectors->channels($ruleName, $channels));
     }
 
     /**
@@ -167,96 +162,7 @@ final class RuleOptionsFactory
         $raw = $this->takeFrameworkOption($merged, FrameworkOptionKeys::PATHS);
         $this->registry->configurePathExclusions(
             $ruleName,
-            $this->pathSelectors($ruleName, 'suppress_paths', $raw, allowEmpty: true),
-        );
-    }
-
-    /** @return list<PathPattern> */
-    private function pathSelectors(string $ruleName, string $option, mixed $raw, bool $allowEmpty): array
-    {
-        return array_map(
-            static fn(SelectorDefinition $definition): PathPattern => new PathPattern($definition),
-            $this->definitions($ruleName, $option, $raw, $allowEmpty),
-        );
-    }
-
-    /** @return list<NamespacePattern> */
-    private function namespaceSelectors(string $ruleName, string $option, mixed $raw, bool $allowEmpty): array
-    {
-        return array_map(
-            static fn(SelectorDefinition $definition): NamespacePattern => new NamespacePattern($definition),
-            $this->definitions($ruleName, $option, $raw, $allowEmpty),
-        );
-    }
-
-    /** @return array<string, list<NamespacePattern>> */
-    private function channelSelectors(string $ruleName, mixed $raw): array
-    {
-        if ($raw === null) {
-            return [];
-        }
-
-        if (!\is_array($raw) || $raw === [] || array_is_list($raw)) {
-            throw $this->suppressionRefusal($ruleName, 'suppress_namespace_channels', 'must be a non-empty channel map');
-        }
-
-        $result = [];
-        foreach ($raw as $selector => $patterns) {
-            if (!\is_string($selector) || trim($selector) === '') {
-                throw $this->suppressionRefusal($ruleName, 'suppress_namespace_channels', 'contains an empty or non-string channel selector');
-            }
-
-            $result[$selector] = $this->namespaceSelectors(
-                $ruleName,
-                'suppress_namespace_channels.' . $selector,
-                $patterns,
-                allowEmpty: false,
-            );
-        }
-
-        return $result;
-    }
-
-    /** @return list<SelectorDefinition> */
-    private function definitions(string $ruleName, string $option, mixed $raw, bool $allowEmpty): array
-    {
-        if ($raw === null && $allowEmpty) {
-            return [];
-        }
-
-        if (!\is_array($raw) || !array_is_list($raw) || (!$allowEmpty && $raw === [])) {
-            throw $this->suppressionRefusal($ruleName, $option, 'must be ' . ($allowEmpty ? 'a list' : 'a non-empty list') . ' of explicit selector mappings');
-        }
-
-        $definitions = [];
-        foreach ($raw as $index => $entry) {
-            if (!\is_array($entry) || \count($entry) !== 1) {
-                throw $this->suppressionRefusal($ruleName, $option . '.' . $index, 'entries must be one-entry mappings: {exact: value}, {subtree: value}, or {regex: value}; bare strings are not supported');
-            }
-
-            $kind = array_key_first($entry);
-            $value = \is_string($kind) ? $entry[$kind] : null;
-            if (!\is_string($kind) || !\is_string($value) || $value === '') {
-                throw $this->suppressionRefusal($ruleName, $option . '.' . $index, 'entries must name exact, subtree, or regex with a non-empty string value');
-            }
-
-            try {
-                $definitions[] = SelectorDefinition::fromKindAndValue($kind, $value);
-            } catch (InvalidArgumentException $e) {
-                throw $this->suppressionRefusal($ruleName, $option . '.' . $index, $e->getMessage(), $e);
-            }
-        }
-
-        return $definitions;
-    }
-
-    private function suppressionRefusal(string $ruleName, string $option, string $summary, ?Throwable $previous = null): ConfigurationRefusal
-    {
-        return ConfigurationRefusal::atResolvedKey(
-            RefusedPosition::open([$ruleName, ...explode('.', $option)], $option),
-            \sprintf('Option "%s" for rule "%s" %s.', $option, $ruleName, $summary),
-            $option,
-            $previous,
+            $this->suppressionSelectors->optionalPaths($ruleName, 'suppress_paths', $raw),
         );
     }
 

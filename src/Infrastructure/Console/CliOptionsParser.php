@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
+use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
+use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Symfony\Component\Console\Input\InputInterface;
@@ -151,8 +154,8 @@ final readonly class CliOptionsParser
     private function decodeSelectorOptions(array $options): array
     {
         foreach ($options as $ruleName => &$ruleOptions) {
-            $this->decodeSuppressionSelector($ruleOptions, 'suppressPaths', path: true);
-            $this->decodeSuppressionSelector($ruleOptions, 'suppressNamespaces', path: false);
+            $this->decodePathSuppression($ruleOptions);
+            $this->decodeNamespaceSuppression($ruleOptions);
 
             $value = $ruleOptions['includeNamespaces'] ?? null;
             if ($value === null) {
@@ -174,18 +177,27 @@ final readonly class CliOptionsParser
     }
 
     /** @param array<string, mixed> $options */
-    private function decodeSuppressionSelector(array &$options, string $key, bool $path): void
+    private function decodePathSuppression(array &$options): void
     {
-        $value = $options[$key] ?? null;
+        $value = ConfiguredSuppression::rawPaths($options);
         if ($value === null || !\is_string($value)) {
             return;
         }
 
-        $selector = $path
-            ? $this->selectorDecoder->decodePath($value, '--rule-opt')
-            : $this->selectorDecoder->decodeNamespace($value, '--rule-opt');
+        $selector = $this->selectorDecoder->decodePath($value, '--rule-opt');
+        $options[ConfigKeySpelling::normalize(FrameworkOptionKeys::PATHS)] = [self::selectorMapping($selector->definition)];
+    }
 
-        $options[$key] = [self::selectorMapping($selector->definition)];
+    /** @param array<string, mixed> $options */
+    private function decodeNamespaceSuppression(array &$options): void
+    {
+        $value = ConfiguredSuppression::rawNamespaces($options);
+        if ($value === null || !\is_string($value)) {
+            return;
+        }
+
+        $selector = $this->selectorDecoder->decodeNamespace($value, '--rule-opt');
+        $options[ConfigKeySpelling::normalize(FrameworkOptionKeys::NAMESPACES)] = [self::selectorMapping($selector->definition)];
     }
 
     /** @return array<string, string> */

@@ -14,7 +14,7 @@ Finding/
 ├── Configuration/        # FindingConfigurationResolver — merges `rules:` across ordered configuration layers
 ├── Exclusion/            # Private namespace and path exclusion stores, plus the one reader of a producer's configured suppression options
 ├── Rule/                 # Internal producer and channel implementations
-├── RuleConfiguration/    # Option parsing, key recognition, normalization, and per-run state
+├── RuleConfiguration/    # Option parsing, selector decoding, key recognition, normalization, and per-run state
 ├── SuppressionBinding/   # Whether a configured suppression value named anything the run holds
 ├── RuleExecution.php     # Selects producers, executes them, and returns what happened as a value
 └── ChannelPresentationView.php # Joins a channel's producer to that rule's own description and docs page

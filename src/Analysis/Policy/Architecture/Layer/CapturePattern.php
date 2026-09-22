@@ -55,7 +55,7 @@ final readonly class CapturePattern
      * Regex defining a capture-variable identifier — same shape as
      * {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelectorParser::VARIABLE_NAME_REGEX}.
      */
-    public const string VARIABLE_NAME_REGEX = '[A-Za-z_][A-Za-z0-9_]*';
+    public const string VARIABLE_NAME_REGEX = CapturePatternCompiler::VARIABLE_NAME_REGEX;
 
     /**
      * @param string $rawPattern Source pattern (as written by the user).
@@ -97,129 +97,7 @@ final readonly class CapturePattern
             );
         }
 
-        $regex = '~\\A(?:';
-        $variables = [];
-        $multiSegmentVariables = [];
-        $seenVariables = [];
-
-        $cursor = 0;
-        $length = \strlen($rawPattern);
-
-        while ($cursor < $length) {
-            $char = $rawPattern[$cursor];
-
-            if ($char === '\\') {
-                // `\` is always the namespace separator in FQN patterns —
-                // no escape semantics for `{` / `}` (PHP FQNs cannot contain
-                // braces anyway, and treating `\{` as escaped would collide
-                // with the natural `App\{var}` shape).
-                if ($cursor + 3 === $length && substr($rawPattern, $cursor + 1) === '**') {
-                    $regex .= '\\\\.+';
-                    $cursor += 3;
-
-                    continue;
-                }
-
-                if (substr($rawPattern, $cursor, 4) === '\\**\\') {
-                    $regex .= '\\\\(?:[^\\\\]+\\\\)*';
-                    $cursor += 4;
-
-                    continue;
-                }
-
-                $regex .= preg_quote('\\', '~');
-                $cursor++;
-
-                continue;
-            }
-
-            if ($char === '}') {
-                throw new InvalidArgumentException(\sprintf(
-                    "CapturePattern: unbalanced '}' at offset %d in pattern \"%s\".",
-                    $cursor,
-                    $rawPattern,
-                ));
-            }
-
-            if ($char === '{') {
-                [$variableName, $multiSegment, $advance] = self::consumeCapture($rawPattern, $cursor);
-
-                if (isset($seenVariables[$variableName])) {
-                    throw new InvalidArgumentException(\sprintf(
-                        "CapturePattern: duplicate capture name '%s' in pattern \"%s\" — each variable may only appear once.",
-                        $variableName,
-                        $rawPattern,
-                    ));
-                }
-
-                // Adjacent captures without a separator (`{a}{b}`) produce
-                // ambiguous greedy/backtracking splits — almost certainly a
-                // typo for `{a}\{b}`. Reject explicitly so the user sees a
-                // clear config error instead of unstable expansion output.
-                if ($advance < $length && $rawPattern[$advance] === '{') {
-                    throw new InvalidArgumentException(\sprintf(
-                        "CapturePattern: adjacent captures '{%s}{...}' at offset %d in pattern \"%s\" — "
-                        . 'insert a namespace separator (\'\\\\\') between consecutive captures.',
-                        $variableName,
-                        $advance,
-                        $rawPattern,
-                    ));
-                }
-
-                $seenVariables[$variableName] = true;
-                $variables[] = $variableName;
-                if ($multiSegment) {
-                    $multiSegmentVariables[] = $variableName;
-                }
-
-                $regex .= $multiSegment
-                    ? '(?P<' . $variableName . '>[^\\\\]+(?:\\\\[^\\\\]+)*)'
-                    : '(?P<' . $variableName . '>[^\\\\]+)';
-                $cursor = $advance;
-
-                continue;
-            }
-
-            if ($char === '*') {
-                if ($cursor === 0 && str_starts_with($rawPattern, '**\\')) {
-                    $regex .= '(?:[^\\\\]+\\\\)*';
-                    $cursor += 3;
-
-                    continue;
-                }
-
-                if ($cursor + 1 < $length && $rawPattern[$cursor + 1] === '*') {
-                    $regex .= '.*';
-                    $cursor += 2;
-                } else {
-                    $regex .= '[^\\\\]*';
-                    $cursor++;
-                }
-
-                continue;
-            }
-
-            if ($char === '?') {
-                $regex .= '[^\\\\]';
-                $cursor++;
-
-                continue;
-            }
-
-            if (str_contains('()|+^$', $char)) {
-                throw new InvalidArgumentException(\sprintf(
-                    'CapturePattern: raw PCRE syntax is not supported; found "%s" at offset %d in pattern "%s".',
-                    $char,
-                    $cursor,
-                    $rawPattern,
-                ));
-            }
-
-            $regex .= preg_quote($char, '~');
-            $cursor++;
-        }
-
-        $regex .= ')\\z~';
+        [$regex, $variables, $multiSegmentVariables] = (new CapturePatternCompiler($rawPattern))->compile();
 
         return new self($rawPattern, $regex, $variables, $multiSegmentVariables);
     }
@@ -333,7 +211,7 @@ final readonly class CapturePattern
             $char = $template[$cursor];
 
             if ($char === '{') {
-                [$variableName, , $advance] = self::consumeCapture($template, $cursor);
+                [$variableName, , $advance] = CapturePatternCompiler::parseCapture($template, $cursor);
                 $result .= $bindings[$variableName] ?? '{' . $variableName . '}';
                 $cursor = $advance;
 
@@ -347,76 +225,13 @@ final readonly class CapturePattern
         return $result;
     }
 
-    /**
-     * Reads a `{name}` or `{name:**}` capture starting at {@code $cursor}
-     * (which must point at the opening `{`). Returns the parsed name, the
-     * multi-segment flag, and the cursor position after the closing `}`.
-     *
-     * @return array{0: string, 1: bool, 2: int}
-     */
-    private static function consumeCapture(string $template, int $openAt): array
+    private static function rejectUnsupportedSyntax(string $rawPattern): void
     {
-        $length = \strlen($template);
-        $closeAt = -1;
-        for ($i = $openAt + 1; $i < $length; $i++) {
-            $char = $template[$i];
-            if ($char === '{') {
-                throw new InvalidArgumentException(\sprintf(
-                    "CapturePattern: nested '{' at offset %d in pattern \"%s\" — captures cannot contain other captures.",
-                    $i,
-                    $template,
-                ));
-            }
-            if ($char === '}') {
-                $closeAt = $i;
-                break;
-            }
-        }
-
-        if ($closeAt === -1) {
-            throw new InvalidArgumentException(\sprintf(
-                "CapturePattern: unbalanced '{' at offset %d in pattern \"%s\".",
-                $openAt,
-                $template,
-            ));
-        }
-
-        $body = substr($template, $openAt + 1, $closeAt - $openAt - 1);
-        if ($body === '') {
-            throw new InvalidArgumentException(\sprintf(
-                "CapturePattern: empty capture '{}' at offset %d in pattern \"%s\".",
-                $openAt,
-                $template,
-            ));
-        }
-
-        $multiSegment = false;
-        $name = $body;
-        if (str_contains($body, ':')) {
-            [$name, $quantifier] = explode(':', $body, 2);
-            if ($quantifier !== '*' && $quantifier !== '**') {
-                throw new InvalidArgumentException(\sprintf(
-                    "CapturePattern: unknown capture quantifier ':%s' in pattern \"%s\" (only ':*' and ':**' are supported).",
-                    $quantifier,
-                    $template,
-                ));
-            }
-            $multiSegment = $quantifier === '**';
-        }
-
-        if (preg_match('/^' . self::VARIABLE_NAME_REGEX . '$/', $name) !== 1) {
-            throw new InvalidArgumentException(\sprintf(
-                "CapturePattern: invalid capture name '%s' in pattern \"%s\" (must match %s).",
-                $name,
-                $template,
-                self::VARIABLE_NAME_REGEX,
-            ));
-        }
-
-        return [$name, $multiSegment, $closeAt + 1];
+        self::rejectInvalidSegments($rawPattern);
+        self::rejectRawRegexSyntax($rawPattern);
     }
 
-    private static function rejectUnsupportedSyntax(string $rawPattern): void
+    private static function rejectInvalidSegments(string $rawPattern): void
     {
         if (str_starts_with($rawPattern, '\\')
             || str_ends_with($rawPattern, '\\')
@@ -427,6 +242,10 @@ final readonly class CapturePattern
             ));
         }
 
+    }
+
+    private static function rejectRawRegexSyntax(string $rawPattern): void
+    {
         $insideCapture = false;
         for ($offset = 0, $length = \strlen($rawPattern); $offset < $length; $offset++) {
             $char = $rawPattern[$offset];

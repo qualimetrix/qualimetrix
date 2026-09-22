@@ -548,6 +548,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry'
+        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleSuppressionSelectorDecoder'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleThresholdKeyGroupRegistry'
         - 'Qualimetrix\Analysis\Finding\RuleExecution'
         - 'Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry'
@@ -607,6 +608,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassSummary'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnmatchedExcludeDiagnostic'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePatternCompiler'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet'
@@ -785,6 +787,7 @@ architecture:
         - 'Qualimetrix\Core\Ast\FileParserInterface'
         - 'Qualimetrix\Core\Exception\ParseException'
         - 'Qualimetrix\Core\Observation\WorseDirection'
+        - 'Qualimetrix\Core\Pattern\CompiledSelector'
         - 'Qualimetrix\Core\Pattern\NamespaceMatcher'
         - 'Qualimetrix\Core\Pattern\NamespacePattern'
         - 'Qualimetrix\Core\Pattern\PathMatcher'
@@ -1457,6 +1460,17 @@ rules:
         # Inline contract dependencies. Exact channel scope keeps declaration
         # CBO, children, and every other coupling channel active.
         - exact: 'Qualimetrix\Analysis\Policy\Inline\Contract'
+        # Shared exact/subtree/regex primitives intentionally form one neutral
+        # vocabulary used by configuration, analysis, reporting, and console
+        # adapters. The namespace union is 21 after the bound selector contract
+        # landed; declaration-level CBO and every other coupling channel remain
+        # active, so only this namespace-granularity hub finding is excluded.
+        - exact: 'Qualimetrix\Core\Pattern'
+        # Summary renderers compose the stable report/context boundary with
+        # finding, debt, filtering, health, and ANSI vocabularies. The namespace
+        # union is 16 after FormatterContext gained the bound selector; class
+        # CBO and every other coupling channel remain active.
+        - exact: 'Qualimetrix\Reporting\Formatter\Summary'
         # The Reporting vocabulary root, 16 against an inclusive 16. This is
         # the same namespace-granularity artefact the
         # `Analysis\Configuration\Contract` entry in this list records, and

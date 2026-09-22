@@ -18,7 +18,7 @@ final class SelectorImplementationBoundaryTest extends TestCase
         'src/Analysis/Configuration/SelectorYamlDecoder.php' => 2,
         'src/Analysis/Evidence/Coupling/CouplingAnalysis.php' => 1,
         'src/Analysis/Evidence/Coupling/DistanceOptions.php' => 1,
-        'src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php' => 2,
+        'src/Analysis/Finding/RuleConfiguration/RuleSuppressionSelectorDecoder.php' => 3,
         'src/Analysis/Run/Discovery/DirectoryPruner.php' => 1,
         'src/Infrastructure/Console/CliSelectorDecoder.php' => 2,
     ];

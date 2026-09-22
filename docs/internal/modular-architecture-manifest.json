@@ -78,6 +78,10 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionThresholdShorthand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliOptionsParser"
         }
       ]
     },
@@ -389,7 +393,7 @@
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsFactory"
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleSuppressionSelectorDecoder"
         },
         {
           "owner": "Analysis.Finding",
@@ -653,7 +657,7 @@
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsFactory"
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleSuppressionSelectorDecoder"
         },
         {
           "owner": "Analysis.Policy.Architecture",
@@ -7575,6 +7579,10 @@
       "consumers": [
         {
           "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliOptionsParser"
+        },
+        {
+          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand"
         },
         {
@@ -9688,6 +9696,10 @@
       "consumers": [
         {
           "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliOptionsParser"
+        },
+        {
+          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleInputValidator"
         }
       ]
@@ -9788,6 +9800,13 @@
     },
     "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsRegistry": {
       "path": "src/Analysis/Finding/RuleConfiguration/RuleOptionsRegistry.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleSuppressionSelectorDecoder": {
+      "path": "src/Analysis/Finding/RuleConfiguration/RuleSuppressionSelectorDecoder.php",
       "kind": "class",
       "owner": "Analysis.Finding",
       "visibility": "internal",
@@ -10246,6 +10265,13 @@
     },
     "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\CapturePattern": {
       "path": "src/Analysis/Policy/Architecture/Layer/CapturePattern.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\CapturePatternCompiler": {
+      "path": "src/Analysis/Policy/Architecture/Layer/CapturePatternCompiler.php",
       "kind": "class",
       "owner": "Analysis.Policy.Architecture",
       "visibility": "internal",
@@ -12976,6 +13002,13 @@
         }
       ]
     },
+    "Qualimetrix\\Core\\Pattern\\CompiledSelector": {
+      "path": "src/Core/Pattern/CompiledSelector.php",
+      "kind": "class",
+      "owner": "Core.Neutral",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Core\\Pattern\\NamespacePattern": {
       "path": "src/Core/Pattern/NamespacePattern.php",
       "kind": "class",
@@ -12989,7 +13022,7 @@
         {"owner": "Analysis.Evidence.Coupling", "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingAnalysis"},
         {"owner": "Analysis.Evidence.Coupling", "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceOptions"},
         {"owner": "Analysis.Evidence.Coupling", "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkNamespaceRule"},
-        {"owner": "Analysis.Finding", "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsFactory"},
+        {"owner": "Analysis.Finding", "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleSuppressionSelectorDecoder"},
         {"owner": "Analysis.Finding", "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit"},
         {"owner": "Analysis.Finding", "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\ValueScopeJudgement"},
         {"owner": "Infrastructure.Console", "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliSelectorDecoder"},
@@ -13032,7 +13065,7 @@
       "visibility": "contract",
       "consumers": [
         {"owner": "Analysis.Configuration", "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\SelectorYamlDecoder"},
-        {"owner": "Analysis.Finding", "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsFactory"},
+        {"owner": "Analysis.Finding", "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleSuppressionSelectorDecoder"},
         {"owner": "Analysis.Finding", "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit"},
         {"owner": "Analysis.Finding", "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\ValueScopeJudgement"},
         {"owner": "Analysis.Run", "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\RunConfigurationResolver"},
@@ -13088,7 +13121,7 @@
         {"owner": "Analysis.Configuration", "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\SelectorYamlDecoder"},
         {"owner": "Analysis.Evidence.Coupling", "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingAnalysis"},
         {"owner": "Analysis.Evidence.Coupling", "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceOptions"},
-        {"owner": "Analysis.Finding", "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsFactory"},
+        {"owner": "Analysis.Finding", "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleSuppressionSelectorDecoder"},
         {"owner": "Analysis.Finding", "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit"},
         {"owner": "Analysis.Run", "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\RunConfigurationResolver"},
         {"owner": "Analysis.Run", "source_fqcn": "Qualimetrix\\Analysis\\Run\\Discovery\\DirectoryPruner"},

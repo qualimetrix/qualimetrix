@@ -14,6 +14,9 @@ use Qualimetrix\Core\Pattern\NamespaceMatcher;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
 
+/**
+ * @qmx-threshold coupling.instability 0.81 -- Coupling configuration owns selector decoding and the executable framework matcher. Raw instability 0.80 is accepted after explicit selectors; further outward growth is reported.
+ */
 final class CouplingAnalysis implements CouplingConfiguratorInterface
 {
     /** @var list<NamespacePattern> */

@@ -24,6 +24,7 @@ Core/
 │   ├── PathFactory.php                    # Boundary factory creating absolute/relative paths
 │   └── RelativePath.php                   # Relative file path value object
 ├── Pattern/
+│   ├── CompiledSelector.php                # Shared separator-bound PCRE execution
 │   ├── NamespaceMatcher.php               # Ordered matching for bound namespace selectors
 │   ├── NamespacePattern.php               # Namespace-bound exact/subtree/regex selector
 │   ├── PathMatcher.php                    # Ordered matching for bound path selectors

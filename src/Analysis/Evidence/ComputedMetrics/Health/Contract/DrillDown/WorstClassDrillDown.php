@@ -19,6 +19,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * Shared logic for namespace-level drill-down: health scores and worst classes.
  *
  * Used by SummaryFormatter and JsonFormatter when --namespace filter is active.
+ *
+ * @qmx-threshold coupling.instability 0.81 -- Namespace drill-down intentionally composes eight stable contracts while two reporting services depend on it. Raw instability 0.80 is accepted; further outward growth is reported.
  */
 final readonly class WorstClassDrillDown
 {

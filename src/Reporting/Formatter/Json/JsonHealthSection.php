@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Json;
 
+use LogicException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor;
@@ -39,22 +40,38 @@ final class JsonHealthSection
         if ($context->namespace !== null
             && $context->namespace->definition->kind === SelectorKind::Exact
             && $report->metrics !== null) {
-            $nsPath = SymbolPath::forNamespace($context->namespace->definition->value);
-            $flatOverall = $report->metrics->get($nsPath)->get(HealthDimension::Overall->value);
-            $result = $this->formatHealthScores($healthScores, $context);
-            if ($result !== null && $flatOverall !== null) {
-                $recursiveScore = isset($result['overall']['score']) ? (float) $result['overall']['score'] : null;
-                $flatScore = $this->sanitizer->sanitizeFloat((float) $flatOverall);
-                if ($recursiveScore !== null && $flatScore !== null && abs($recursiveScore - $flatScore) > 5.0) {
-                    $result['overall']['scope'] = 'recursive';
-                    $result['overall']['directScore'] = $flatScore;
-                }
-            }
-
-            return $result;
+            return $this->formatExactNamespaceHealth($report, $context, $healthScores);
         }
 
         return $this->formatHealthScores($healthScores, $context);
+    }
+
+    /**
+     * @param array<string, HealthScore> $healthScores
+     *
+     * @return array<string, array<string, mixed>>|null
+     */
+    private function formatExactNamespaceHealth(Report $report, FormatterContext $context, array $healthScores): ?array
+    {
+        $namespace = $context->namespace ?? throw new LogicException('Exact namespace health requires a namespace selector');
+        $metrics = $report->metrics ?? throw new LogicException('Exact namespace health requires metrics');
+        $flatOverall = $metrics
+            ->get(SymbolPath::forNamespace($namespace->definition->value))
+            ->get(HealthDimension::Overall->value);
+        $result = $this->formatHealthScores($healthScores, $context);
+
+        if ($result === null || $flatOverall === null) {
+            return $result;
+        }
+
+        $recursiveScore = isset($result['overall']['score']) ? (float) $result['overall']['score'] : null;
+        $flatScore = $this->sanitizer->sanitizeFloat((float) $flatOverall);
+        if ($recursiveScore !== null && $flatScore !== null && abs($recursiveScore - $flatScore) > 5.0) {
+            $result['overall']['scope'] = 'recursive';
+            $result['overall']['directScore'] = $flatScore;
+        }
+
+        return $result;
     }
 
     /**

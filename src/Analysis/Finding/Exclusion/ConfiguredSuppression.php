@@ -12,9 +12,8 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
  * Canonical spellings for the three per-rule suppression options.
  *
  * Runtime values are decoded once by `RuleOptionsFactory` and exposed through
- * typed `RuleConfigurationInterface` methods. The only remaining raw read is
- * the channel-map shape needed by Console validation before rule options are
- * constructed.
+ * typed `RuleConfigurationInterface` methods. Console decoding also reads the
+ * three raw values here before rule options are constructed.
  */
 final readonly class ConfiguredSuppression
 {
@@ -83,6 +82,26 @@ final readonly class ConfiguredSuppression
         }
 
         return $map;
+    }
+
+    /** @param array<mixed> $options */
+    public static function rawPaths(array $options): mixed
+    {
+        return self::rawValue($options, FrameworkOptionKeys::PATHS, self::PATHS);
+    }
+
+    /** @param array<mixed> $options */
+    public static function rawNamespaces(array $options): mixed
+    {
+        return self::rawValue($options, FrameworkOptionKeys::NAMESPACES, self::NAMESPACES);
+    }
+
+    /** @param array<mixed> $options */
+    private static function rawValue(array $options, string $canonicalKey, string $authoredKey): mixed
+    {
+        $camelKey = ConfigKeySpelling::normalize($canonicalKey);
+
+        return $options[$camelKey] ?? $options[$authoredKey] ?? null;
     }
 
 }

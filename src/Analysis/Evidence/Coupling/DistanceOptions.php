@@ -38,6 +38,8 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
 {
     use StandardOverrideValidatorTrait;
 
+    private const string RULE_NAME = 'coupling.distance';
+
     /**
      * @param bool $enabled Enable distance rule
      * @param float $maxDistanceWarning Warning threshold for distance
@@ -136,24 +138,11 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
             throw self::selectorRefusal('must be a list of explicit selector mappings in YAML or one KIND:VALUE selector on the command line');
         }
 
-        $patterns = [];
-        foreach ($value as $index => $selector) {
-            if (!\is_array($selector) || \count($selector) !== 1) {
-                throw self::selectorRefusal(\sprintf('entry %d must be a one-entry mapping: {exact: value}, {subtree: value}, or {regex: value}; bare strings are not supported', $index));
-            }
-
-            $kind = array_key_first($selector);
-            $pattern = \is_string($kind) ? $selector[$kind] : null;
-            if (!\is_string($kind) || !\is_string($pattern) || $pattern === '') {
-                throw self::selectorRefusal(\sprintf('entry %d must name exact, subtree, or regex with a non-empty string value', $index));
-            }
-
-            try {
-                $patterns[] = new NamespacePattern(SelectorDefinition::fromKindAndValue($kind, $pattern));
-            } catch (InvalidArgumentException $e) {
-                throw self::selectorRefusal(\sprintf('entry %d is invalid: %s', $index, $e->getMessage()), $e);
-            }
-        }
+        $patterns = array_map(
+            static fn(mixed $selector, int $index): NamespacePattern => self::namespacePattern($selector, $index),
+            $value,
+            array_keys($value),
+        );
 
         try {
             new NamespaceMatcher($patterns);
@@ -164,11 +153,30 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
         return $patterns;
     }
 
+    private static function namespacePattern(mixed $selector, int $index): NamespacePattern
+    {
+        if (!\is_array($selector) || \count($selector) !== 1) {
+            throw self::selectorRefusal(\sprintf('entry %d must be a one-entry mapping: {exact: value}, {subtree: value}, or {regex: value}; bare strings are not supported', $index));
+        }
+
+        $kind = array_key_first($selector);
+        $pattern = \is_string($kind) ? $selector[$kind] : null;
+        if (!\is_string($kind) || !\is_string($pattern) || $pattern === '') {
+            throw self::selectorRefusal(\sprintf('entry %d must name exact, subtree, or regex with a non-empty string value', $index));
+        }
+
+        try {
+            return new NamespacePattern(SelectorDefinition::fromKindAndValue($kind, $pattern));
+        } catch (InvalidArgumentException $e) {
+            throw self::selectorRefusal(\sprintf('entry %d is invalid: %s', $index, $e->getMessage()), $e);
+        }
+    }
+
     private static function selectorRefusal(string $problem, ?Throwable $previous = null): ConfigurationRefusal
     {
         return ConfigurationRefusal::atResolvedKey(
-            RefusedPosition::open([DistanceRule::NAME], 'include_namespaces'),
-            \sprintf('Option "include_namespaces" for rule "%s" %s.', DistanceRule::NAME, $problem),
+            RefusedPosition::open([self::RULE_NAME], 'include_namespaces'),
+            \sprintf('Option "include_namespaces" for rule "%s" %s.', self::RULE_NAME, $problem),
             'include_namespaces',
             $previous,
         );

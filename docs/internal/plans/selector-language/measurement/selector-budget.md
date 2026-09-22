@@ -39,13 +39,15 @@ excludes CLI invocations, Markdown examples, arbitrary workflow YAML, ignored
 consumer configuration, PHP-constructed test input, and future selector doors.
 The Stage 4 registry is the control that closes the future-door blind spot.
 
-On this base the probe found:
+The P0 base contained 135 authored values. The P8 post-migration rerun on the
+current tree finds 137; the two added dogfood suppressions remain well inside
+the accepted budgets:
 
 | Measure                         | Result                                                                                                                                    |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------: |
 | Tracked configuration documents | 39                                                                                                                                        |
 | Common-selector lists           | 46                                                                                                                                        |
-| Non-empty authored values       | 135                                                                                                                                       |
+| Non-empty authored values       | 137                                                                                                                                       |
 | Longest value                   | 75 bytes: `src/Analysis/Evidence/DependencyModel/Contract/DependencyGraphInterface.php` in `qmx.yaml` `rules.coupling.cbo.suppress_paths` |
 | Largest list                    | 16 values: `qmx.yaml` `rules.coupling.distance.suppress_namespaces`                                                                       |
 
@@ -80,7 +82,7 @@ php docs/internal/plans/selector-language/measurement/selector-budget.php
 Observed output on PHP 8.5.9, PCRE2 10.47, `pcre.jit=1`:
 
 ```text
-Census: 39 configuration files, 46 selector lists, 135 non-empty string values
+Census: 39 configuration files, 46 selector lists, 137 non-empty string values
 Longest value: 75 bytes at qmx.yaml:rules.coupling.cbo.suppress_paths: src/Analysis/Evidence/DependencyModel/Contract/DependencyGraphInterface.php
 Largest list: 16 values at qmx.yaml:rules.coupling.distance.suppress_namespaces
 exact: cold=4.668 us/op; warm=155.2 ns/op

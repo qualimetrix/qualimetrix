@@ -269,9 +269,10 @@ final readonly class UnboundSuppressionAudit
                 $pattern->definition->display(),
             ),
             \sprintf(
-                'Check "%s" against the tree: a pattern without a glob character is a path prefix with "/"'
-                . ' boundaries. Drop the entry if the code it names is gone, or correct its spelling.',
+                'Check "%s" against the tree. %s Drop the entry if the code it names is gone, or correct its'
+                . ' spelling.',
                 $pattern->definition->display(),
+                self::selectorMeaning($pattern->definition, '/', 'path'),
             ),
         );
     }
@@ -288,11 +289,26 @@ final readonly class UnboundSuppressionAudit
                 $pattern->definition->display(),
             ),
             \sprintf(
-                'Check "%s" against the code: a pattern without a glob character is a namespace prefix with "\\"'
-                . ' boundaries. Drop the entry if the namespace is gone, or correct its spelling.',
+                'Check "%s" against the code. %s Drop the entry if the namespace is gone, or correct its spelling.',
                 $pattern->definition->display(),
+                self::selectorMeaning($pattern->definition, '\\', 'namespace'),
             ),
         );
+    }
+
+    private static function selectorMeaning(
+        SelectorDefinition $definition,
+        string $separator,
+        string $subject,
+    ): string {
+        return match ($definition->kind->value) {
+            'exact' => \sprintf('The "exact" selector matches only the authored %s.', $subject),
+            'subtree' => \sprintf(
+                'The "subtree" selector also includes descendants across "%s" boundaries.',
+                $separator,
+            ),
+            'regex' => 'The "regex" selector is a full-subject PCRE fragment.',
+        };
     }
 
     private static function ledgerFinding(string $ruleName, string $option, SelectorDefinition $pattern): Finding

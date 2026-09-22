@@ -91,7 +91,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             ],
             [RelativePath::fromString('src/UserService.php')],
             ['Sample\\Deep'],
-            $this->scope([$this->tempDir]),
+            $this->scope([$this->tempDir . '/src', $this->tempDir . '/tests']),
         );
 
         self::assertSame([], $this->channelsOf($bound));
@@ -294,6 +294,33 @@ final class UnboundSuppressionAuditTest extends TestCase
         );
 
         self::assertSame([UnboundSuppressionOptions::UNMATCHED_NAMESPACE], $this->channelsOf($findings));
+    }
+
+    /** Recommendations describe the explicit authored kind, never the removed implicit-glob grammar. */
+    #[Test]
+    public function itExplainsTheExplicitSelectorKindInUnmatchedRecommendations(): void
+    {
+        $findings = $this->audit()->findings(
+            [
+                $this->path(SelectorKind::Exact, 'src/Gone.php'),
+                $this->path(SelectorKind::Subtree, 'src/Gone'),
+                $this->path(SelectorKind::Regex, 'src/.*Gone\\.php'),
+            ],
+            [],
+            [RelativePath::fromString('src/Service.php'), RelativePath::fromString('tests/ServiceTest.php')],
+            [],
+            $this->scope([$this->tempDir]),
+        );
+        $recommendations = array_map(
+            static fn(Finding $finding): string => $finding->recommendation ?? '',
+            $findings,
+        );
+
+        self::assertCount(3, $recommendations);
+        self::assertStringContainsString('"exact" selector matches only', $recommendations[0]);
+        self::assertStringContainsString('"subtree" selector also includes descendants', $recommendations[1]);
+        self::assertStringContainsString('"regex" selector is a full-subject PCRE fragment', $recommendations[2]);
+        self::assertStringNotContainsString('glob character', implode(' ', $recommendations));
     }
 
     /**

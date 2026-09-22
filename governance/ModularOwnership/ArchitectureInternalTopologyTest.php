@@ -70,6 +70,7 @@ final class ArchitectureInternalTopologyTest extends TestCase
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassSummary',
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnmatchedExcludeDiagnostic',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePatternCompiler',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet',

@@ -138,7 +138,7 @@ final class RuleOptionsFactoryTest extends TestCase
             'rule-b' => ['enabled' => true],
         ]);
 
-        $options = $this->registry->getConfigFileOptions();
+        $options = $this->registry->configFileOptions();
 
         self::assertSame(['rule-a' => ['enabled' => false], 'rule-b' => ['enabled' => true]], $options);
     }
@@ -149,7 +149,7 @@ final class RuleOptionsFactoryTest extends TestCase
         $this->registry->addCliOption('rule-a', 'opt1', 'value1');
         $this->registry->addCliOption('rule-b', 'opt2', 'value2');
 
-        $options = $this->registry->getCliOptions();
+        $options = $this->registry->cliOptions();
 
         self::assertSame([
             'rule-a' => ['opt1' => 'value1'],
@@ -220,7 +220,7 @@ final class RuleOptionsFactoryTest extends TestCase
         $this->registry->addCliOption('test-rule', 'method.error', 10);
         $this->registry->addCliOption('test-rule', 'class.enabled', false);
 
-        $cliOptions = $this->registry->getCliOptions();
+        $cliOptions = $this->registry->cliOptions();
 
         self::assertArrayHasKey('test-rule', $cliOptions);
         self::assertSame([
@@ -244,7 +244,7 @@ final class RuleOptionsFactoryTest extends TestCase
             ],
         ]);
 
-        $options = $this->registry->getConfigFileOptions();
+        $options = $this->registry->configFileOptions();
 
         self::assertArrayHasKey('test-rule', $options);
         self::assertIsArray($options['test-rule']['nested']);
@@ -336,7 +336,7 @@ final class RuleOptionsFactoryTest extends TestCase
         $this->registry->addCliOption('test-rule', 'level1.level2.other', 'value');
 
         // The factory stores raw dot notation, expansion happens during create()
-        $cliOptions = $this->registry->getCliOptions();
+        $cliOptions = $this->registry->cliOptions();
 
         self::assertArrayHasKey('test-rule', $cliOptions);
         self::assertSame('deep', $cliOptions['test-rule']['level1.level2.level3']);
@@ -455,7 +455,7 @@ final class RuleOptionsFactoryTest extends TestCase
         $this->registry->addCliOption('test-rule', 'option2', 'value2');
         $this->registry->addCliOption('test-rule', 'option3', 'value3');
 
-        $cliOptions = $this->registry->getCliOptions();
+        $cliOptions = $this->registry->cliOptions();
 
         self::assertArrayHasKey('test-rule', $cliOptions);
         self::assertCount(3, $cliOptions['test-rule']);
@@ -484,7 +484,7 @@ final class RuleOptionsFactoryTest extends TestCase
             'option2' => 'new',
         ]);
 
-        $cliOptions = $this->registry->getCliOptions();
+        $cliOptions = $this->registry->cliOptions();
 
         self::assertArrayNotHasKey('option1', $cliOptions['test-rule']);
         self::assertArrayHasKey('option2', $cliOptions['test-rule']);
@@ -501,7 +501,7 @@ final class RuleOptionsFactoryTest extends TestCase
             ],
         ]);
 
-        $options = $this->registry->getConfigFileOptions();
+        $options = $this->registry->configFileOptions();
 
         self::assertArrayHasKey('test-rule', $options);
         self::assertSame('empty-key-value', $options['test-rule']['']);
@@ -517,7 +517,7 @@ final class RuleOptionsFactoryTest extends TestCase
             ],
         ]);
 
-        $normalized = $this->registry->getConfigFileOptions();
+        $normalized = $this->registry->configFileOptions();
 
         // Key normalization should handle numeric prefixes
         self::assertArrayHasKey('test-rule', $normalized);
@@ -529,7 +529,7 @@ final class RuleOptionsFactoryTest extends TestCase
         $this->registry->addCliOption('test-rule', 'simpleKey', 'value');
         $this->registry->addCliOption('test-rule', 'nested.key', 'nested-value');
 
-        $cliOptions = $this->registry->getCliOptions();
+        $cliOptions = $this->registry->cliOptions();
 
         self::assertSame('value', $cliOptions['test-rule']['simpleKey']);
         self::assertSame('nested-value', $cliOptions['test-rule']['nested.key']);
@@ -634,13 +634,13 @@ final class RuleOptionsFactoryTest extends TestCase
         $this->registry->addCliOption('rule1', 'cliOpt', 'cliVal');
         $this->registry->addCliOption('rule3', 'cliOpt2', 'cliVal2');
 
-        self::assertNotEmpty($this->registry->getConfigFileOptions());
-        self::assertNotEmpty($this->registry->getCliOptions());
+        self::assertNotEmpty($this->registry->configFileOptions());
+        self::assertNotEmpty($this->registry->cliOptions());
 
-        $this->registry->reset();
+        $this->registry->resetRuntimeState();
 
-        self::assertEmpty($this->registry->getConfigFileOptions());
-        self::assertEmpty($this->registry->getCliOptions());
+        self::assertEmpty($this->registry->configFileOptions());
+        self::assertEmpty($this->registry->cliOptions());
     }
 
     #[Test]
@@ -761,7 +761,7 @@ final class RuleOptionsFactoryTest extends TestCase
         $this->registry->addCliOption('complexity', 'class.error', 20);
 
         // Before expansion, options are stored as-is
-        $cliOptions = $this->registry->getCliOptions();
+        $cliOptions = $this->registry->cliOptions();
         self::assertArrayHasKey('complexity', $cliOptions);
         self::assertArrayHasKey('method.warning', $cliOptions['complexity']);
         self::assertArrayHasKey('method.error', $cliOptions['complexity']);
@@ -776,7 +776,7 @@ final class RuleOptionsFactoryTest extends TestCase
         $this->registry->addCliOption('test-rule', 'nested.key1', 'value1');
         $this->registry->addCliOption('test-rule', 'nested.key2', 'value2');
 
-        $cliOptions = $this->registry->getCliOptions();
+        $cliOptions = $this->registry->cliOptions();
 
         self::assertArrayHasKey('test-rule', $cliOptions);
         self::assertSame('value1', $cliOptions['test-rule']['nested.key1']);
@@ -792,13 +792,13 @@ final class RuleOptionsFactoryTest extends TestCase
         $this->registry->addCliOption('test-rule', 'errorThreshold', 30);
         $this->registry->addCliOption('other-rule', 'enabled', false);
 
-        self::assertNotEmpty($this->registry->getCliOptions());
+        self::assertNotEmpty($this->registry->cliOptions());
 
         $this->registry->resetCliOptions();
 
-        self::assertEmpty($this->registry->getCliOptions());
+        self::assertEmpty($this->registry->cliOptions());
         // Config file options preserved
-        self::assertSame(['test-rule' => ['warning_threshold' => 15]], $this->registry->getConfigFileOptions());
+        self::assertSame(['test-rule' => ['warning_threshold' => 15]], $this->registry->configFileOptions());
     }
 
     #[Test]
@@ -875,7 +875,7 @@ final class RuleOptionsFactoryTest extends TestCase
         // Test very deep nesting: a.b.c.d.e
         $this->registry->addCliOption('test-rule', 'a.b.c.d.e', 'deep-value');
 
-        $cliOptions = $this->registry->getCliOptions();
+        $cliOptions = $this->registry->cliOptions();
 
         self::assertArrayHasKey('test-rule', $cliOptions);
         self::assertSame('deep-value', $cliOptions['test-rule']['a.b.c.d.e']);
@@ -1168,7 +1168,7 @@ final class RuleOptionsFactoryTest extends TestCase
             ),
         );
 
-        $registry->reset();
+        $registry->resetRuntimeState();
         self::assertSame([], $provider->getExclusions('test.rule'));
     }
 

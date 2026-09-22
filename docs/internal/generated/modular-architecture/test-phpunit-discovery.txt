@@ -5449,6 +5449,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itSeverityOrderingByExitCode
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itSeverityValues
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itDoesNotTreatAPrefixOfANameAsABinding
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itExplainsTheExplicitSelectorKindInUnmatchedRecommendations
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itHonoursTheRegexAndSubtreeModesTheSuppressionFiltersUse
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesAChannelSuppressionPatternTheLedgerApplies
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesAnUnmatchedNamespaceRegexOnAWholeProjectRun

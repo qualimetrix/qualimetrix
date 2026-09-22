@@ -105,9 +105,7 @@ final class FormatterContextFactory
 
         $detectedWidth = (new \Symfony\Component\Console\Terminal())->getWidth();
         $terminalWidth = $detectedWidth !== 0 ? $detectedWidth : 80;
-        $namespacePattern ??= $namespaceFilter !== null
-            ? $this->selectorDecoder->decodeNamespace($namespaceFilter, '--namespace')
-            : null;
+        $namespacePattern ??= $this->decodeNamespaceFilter($namespaceFilter);
         $detailLimit = $this->parseDetailOption($input, $namespaceFilter, $classFilter);
         $topIssuesLimit = $this->parseTopOption($input);
 
@@ -148,6 +146,11 @@ final class FormatterContextFactory
             );
         }
 
+        return $this->decodeNamespaceFilter($namespaceFilter);
+    }
+
+    private function decodeNamespaceFilter(?string $namespaceFilter): ?NamespacePattern
+    {
         return $namespaceFilter !== null
             ? $this->selectorDecoder->decodeNamespace($namespaceFilter, '--namespace')
             : null;
