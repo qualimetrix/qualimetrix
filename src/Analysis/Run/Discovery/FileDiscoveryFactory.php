@@ -6,11 +6,12 @@ namespace Qualimetrix\Analysis\Run\Discovery;
 
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 
 final readonly class FileDiscoveryFactory implements FileDiscoveryFactoryInterface
 {
-    public function create(array $excludedDirs = ['vendor', 'node_modules', '.git']): FileDiscoveryInterface
+    public function create(AbsolutePath $projectRoot, array $excludedDirectories): FileDiscoveryInterface
     {
-        return new FinderFileDiscovery($excludedDirs);
+        return new FinderFileDiscovery(new DirectoryPruner($projectRoot, $excludedDirectories));
     }
 }

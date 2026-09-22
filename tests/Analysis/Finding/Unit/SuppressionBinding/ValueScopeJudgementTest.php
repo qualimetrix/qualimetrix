@@ -8,6 +8,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 
 /**
  * Whether one configured value may be judged by this run, asked directly.
@@ -45,12 +49,12 @@ final class ValueScopeJudgementTest extends TestCase
      * every prefix, and a correct configuration got an unmatched warning.
      */
     #[Test]
-    public function itDoesNotJudgeAGlobHeadedNamespaceValueEvenOnAWholeProjectRun(): void
+    public function itJudgesRegexOnlyWhenTheWholeProjectIsAnalysed(): void
     {
         $judgement = $this->judgement(['src', 'tests']);
 
-        self::assertFalse($judgement->judgesNamespaceValue('*\Gone'));
-        self::assertFalse($judgement->judgesNamespaceValue('Acme*'));
+        self::assertFalse($judgement->judgesNamespaceValue($this->regexNamespace('Acme\\.*')));
+        self::assertTrue($this->judgement([''])->judgesNamespaceValue($this->regexNamespace('Acme\\.*')));
     }
 
     /**
@@ -63,8 +67,7 @@ final class ValueScopeJudgementTest extends TestCase
     {
         $judgement = $this->judgement(['src', 'tests']);
 
-        self::assertTrue($judgement->judgesNamespaceValue('Acme\Gone'));
-        self::assertTrue($judgement->judgesNamespaceValue('Acme\Gone\*'));
+        self::assertTrue($judgement->judgesNamespaceValue($this->subtreeNamespace('Acme\\Gone')));
     }
 
     /** And the run-shape answer the class exists for is unchanged. */
@@ -73,18 +76,18 @@ final class ValueScopeJudgementTest extends TestCase
     {
         $judgement = $this->judgement(['src']);
 
-        self::assertFalse($judgement->judgesNamespaceValue('Acme\Tests\Unit'));
-        self::assertTrue($judgement->judgesNamespaceValue('Acme\Gone'));
+        self::assertFalse($judgement->judgesNamespaceValue($this->subtreeNamespace('Acme\\Tests\\Unit')));
+        self::assertTrue($judgement->judgesNamespaceValue($this->subtreeNamespace('Acme\\Gone')));
     }
 
     /** The path branch, whose answer the namespace branch was made to match. */
     #[Test]
-    public function itAnswersTheSameForAGlobHeadedPathValue(): void
+    public function itAnswersTheSameForRegexPathValue(): void
     {
         $judgement = $this->judgement(['src', 'tests']);
 
-        self::assertFalse($judgement->judgesPathValue('*Gone.php'));
-        self::assertTrue($judgement->judgesPathValue('src/Gone'));
+        self::assertFalse($judgement->judgesPathValue($this->regexPath('.*Gone\\.php')));
+        self::assertTrue($judgement->judgesPathValue($this->subtreePath('src/Gone')));
     }
 
     /**
@@ -97,8 +100,8 @@ final class ValueScopeJudgementTest extends TestCase
     #[Test]
     public function itAnchorsAValueOnACharacterOnlyTheJudgeUsedToCallAGlob(): void
     {
-        self::assertTrue($this->judgement(['{legacy}'])->judgesPathValue('{legacy}/Gone'));
-        self::assertFalse($this->judgement(['src'])->judgesPathValue('{legacy}/Gone'));
+        self::assertTrue($this->judgement(['{legacy}'])->judgesPathValue($this->subtreePath('{legacy}/Gone')));
+        self::assertFalse($this->judgement(['src'])->judgesPathValue($this->subtreePath('{legacy}/Gone')));
     }
 
     /** @param list<string> $analyzedPaths relative to the fixture root */
@@ -107,7 +110,27 @@ final class ValueScopeJudgementTest extends TestCase
         return new ValueScopeJudgement(
             $this->root,
             ['Acme\\' => ['src'], 'Acme\Tests\\' => ['tests']],
-            array_map(fn(string $path): string => $this->root . '/' . $path, $analyzedPaths),
+            array_map(fn(string $path): string => rtrim($this->root . '/' . $path, '/'), $analyzedPaths),
         );
+    }
+
+    private function subtreePath(string $value): PathPattern
+    {
+        return new PathPattern(new SelectorDefinition(SelectorKind::Subtree, $value));
+    }
+
+    private function regexPath(string $value): PathPattern
+    {
+        return new PathPattern(new SelectorDefinition(SelectorKind::Regex, $value));
+    }
+
+    private function subtreeNamespace(string $value): NamespacePattern
+    {
+        return new NamespacePattern(new SelectorDefinition(SelectorKind::Subtree, $value));
+    }
+
+    private function regexNamespace(string $value): NamespacePattern
+    {
+        return new NamespacePattern(new SelectorDefinition(SelectorKind::Regex, $value));
     }
 }

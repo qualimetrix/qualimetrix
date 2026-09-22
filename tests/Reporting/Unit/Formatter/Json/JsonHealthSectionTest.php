@@ -50,7 +50,7 @@ final class JsonHealthSectionTest extends TestCase
     public function itReturnsNullWhenNoHealthScoresWithNamespaceFilter(): void
     {
         $report = $this->buildReport();
-        $context = new FormatterContext(namespace: 'App\\Service');
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
 
         self::assertNull($this->section->format($report, $context));
     }

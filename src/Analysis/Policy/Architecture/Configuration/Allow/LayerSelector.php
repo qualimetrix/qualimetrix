@@ -14,12 +14,12 @@ use RuntimeException;
  *
  * - {@see SelectorKind::Exact} — bare layer name, e.g. {@code 'service'}.
  *   Matches one layer name literally.
- * - {@see SelectorKind::Glob} — contains glob metachars ({@code *}, {@code ?},
- *   {@code [}), e.g. {@code 'domain-*'}. Matches any concrete layer name whose
+ * - {@see SelectorKind::Glob} — contains glob metachars ({@code *}, {@code ?}),
+ *   e.g. {@code 'domain-*'}. Matches any concrete layer name whose
  *   characters satisfy the glob.
  * - {@see SelectorKind::Captured} — contains {@code {var}} placeholders, e.g.
  *   {@code 'app-{m}'}. Each placeholder captures a single namespace segment by
- *   default; {@code {var:**}} captures across separators.
+ *   default. Multi-segment captures are not valid concrete layer names.
  *
  * The constructor is private; instances are produced by {@see exact()},
  * {@see glob()}, {@see captured()}, or — for raw user input — by
@@ -50,6 +50,8 @@ final readonly class LayerSelector
      */
     private ?array $segments;
 
+    private ?string $globRegex;
+
     /**
      * @param list<SelectorSegment>|null $segments
      */
@@ -59,6 +61,7 @@ final readonly class LayerSelector
         ?array $segments,
     ) {
         $this->segments = $segments;
+        $this->globRegex = $kind === SelectorKind::Glob ? self::compileGlob($originalString) : null;
     }
 
     /**
@@ -72,10 +75,9 @@ final readonly class LayerSelector
     }
 
     /**
-     * Builds a glob selector. The pattern is interpreted at match time using
-     * {@see fnmatch()} with no special flags (so {@code *} matches any run of
-     * characters, {@code ?} matches exactly one, character classes use the
-     * standard POSIX bracket form).
+     * Builds a glob selector. The pattern is compiled to an anchored PCRE:
+     * {@code *} matches any run of characters and {@code ?} exactly one.
+     * Character classes are not part of this DSL.
      */
     public static function glob(string $pattern): self
     {
@@ -107,7 +109,7 @@ final readonly class LayerSelector
             SelectorKind::Exact => $this->originalString === $layerName
                 ? CaptureBinding::empty()
                 : null,
-            SelectorKind::Glob => fnmatch($this->originalString, $layerName)
+            SelectorKind::Glob => $this->matchesGlob($layerName)
                 ? CaptureBinding::empty()
                 : null,
             SelectorKind::Captured => $this->matchCapturedSource($layerName),
@@ -134,7 +136,7 @@ final readonly class LayerSelector
     {
         return match ($this->kind) {
             SelectorKind::Exact => $this->originalString === $layerName,
-            SelectorKind::Glob => fnmatch($this->originalString, $layerName),
+            SelectorKind::Glob => $this->matchesGlob($layerName),
             SelectorKind::Captured => $this->matchCapturedTarget($layerName, $sourceBinding),
         };
     }
@@ -252,6 +254,31 @@ final readonly class LayerSelector
         }
 
         return new CaptureBinding($values);
+    }
+
+    private function matchesGlob(string $layerName): bool
+    {
+        \assert($this->globRegex !== null);
+        $result = preg_match($this->globRegex, $layerName);
+        if ($result === false) {
+            throw self::pcreFailure($this->globRegex);
+        }
+
+        return $result === 1;
+    }
+
+    private static function compileGlob(string $pattern): string
+    {
+        $body = '';
+        for ($offset = 0, $length = \strlen($pattern); $offset < $length; $offset++) {
+            $body .= match ($pattern[$offset]) {
+                '*' => '.*',
+                '?' => '.',
+                default => preg_quote($pattern[$offset], '~'),
+            };
+        }
+
+        return '~\\A(?:' . $body . ')\\z~';
     }
 
     private function matchCapturedTarget(string $layerName, CaptureBinding $sourceBinding): bool

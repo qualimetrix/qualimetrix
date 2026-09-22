@@ -41,7 +41,7 @@ Architecture/
 ├── Contract/                  # exact external promises and debug values
 ├── Configuration/              # contributed `architecture:` document parser
 │   └── Allow/                  # allow selectors and binding values
-├── Layer/                      # membership and registry primitives
+├── Layer/                      # membership, capture-pattern compilation, and registry primitives
 │   └── Expansion/              # observed-template expansion
 ├── LayerViolation/             # shared evidence walk, two rules, declaration validator
 └── ArchitecturePolicy.php      # instance-owned configuration/preparation
@@ -61,6 +61,25 @@ Architecture-specific branch or deferred-warning transport.
 
 Run prepares the policy after graph construction. Neither verdict traverses the
 AST or constructs lifecycle state.
+
+### Architecture pattern DSLs
+
+Architecture owns two closed pattern languages. Layer membership patterns are
+FQN-oriented: a bare value such as `App\\Domain` denotes that namespace and its
+descendants, `*` and `?` stay inside one namespace segment, `**` may cross
+segments, and `{module}` / `{path:**}` capture one / multiple segments for
+template expansion. A trailing `\\**` selects strict descendants. Character
+classes and raw PCRE syntax are rejected.
+
+Allow-list selectors address concrete layer names. They support exact names,
+anchored `*` / `?` wildcards, and `{name}` bindings shared between an allow
+entry's source and targets. Concrete layer names cannot contain namespace
+separators, so multi-segment captures are invalid there.
+
+These languages are deliberately separate from the public Core selector
+contract (`exact`, `subtree`, `regex`): they express Architecture-specific
+capture and binding semantics rather than selecting an open universe of paths
+or namespaces.
 
 `ClassContextFactory` skips a `Dependency` flagged
 `describesNestedAnonymousClass` when it builds `extendsMap`, `implementsMap`

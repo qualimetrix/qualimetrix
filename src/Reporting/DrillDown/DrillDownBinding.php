@@ -7,7 +7,7 @@ namespace Qualimetrix\Reporting\DrillDown;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\RankedOffenderLevels;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
-use Qualimetrix\Core\Pattern\NamespaceMatcher;
+use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -20,15 +20,15 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * bindings means the value pointed at nothing, not that nothing was wrong.
  *
  * The comparison must stay the one {@see FindingFilter} makes, or a value
- * could be accepted here and filter nothing there: namespaces go through
- * {@see NamespaceMatcher::matchesSingle()}, classes are compared as the exact
+ * could be accepted here and filter nothing there: namespaces use the same
+ * bound `NamespacePattern`, classes are compared as the exact
  * `Namespace\Class` string the filter builds from a finding's symbol path.
  *
  * **A `--namespace` value is offered to that matcher twice, against two
  * different strings, so the universe here holds both.** The filter compares a
  * finding by its namespace and a worst offender by its whole canonical name;
- * `Demo\Alpha\*` misses the namespace `Demo\Alpha` and hits the offender
- * `Demo\Alpha\Widget`. Counting only namespaces refused such a value while the
+ * `regex:Demo\\Alpha\\[^\\]+` misses the namespace `Demo\Alpha` and hits the
+ * offender `Demo\Alpha\Widget`. Counting only namespaces refused such a value while the
  * report it produced was not empty. The universe is therefore the union, which
  * is a superset of the offenders any one run happens to rank: the question this
  * class answers is whether the value names anything analysed, not whether the
@@ -69,14 +69,14 @@ final readonly class DrillDownBinding
      * Number of analyzed namespaces the pattern selects.
      */
     public function namespaceBindings(
-        string $pattern,
+        NamespacePattern $pattern,
         MetricRepositoryInterface $metrics,
         ?NamespaceTree $namespaceTree,
     ): int {
         $bindings = 0;
 
         foreach (array_keys($this->namespaceUniverse($metrics, $namespaceTree)) as $namespace) {
-            if (NamespaceMatcher::matchesSingle($pattern, (string) $namespace)) {
+            if ($pattern->matches((string) $namespace)) {
                 ++$bindings;
             }
         }
@@ -116,7 +116,7 @@ final readonly class DrillDownBinding
      * `FindingFilter::filterWorstOffenders()` asks `NamespaceMatcher` about
      * `symbolPath->toString()` — the whole canonical name, class and member
      * included — while `filterFindings()` asks about the namespace alone. A
-     * glob such as `Demo\Alpha\*` matches `Demo\Alpha\Widget` and not the
+     * regex such as `Demo\\Alpha\\[^\\]+` matches `Demo\Alpha\Widget` and not the
      * namespace `Demo\Alpha`, so a universe of namespaces alone refuses a
      * value that really does select offenders.
      *
@@ -173,7 +173,7 @@ final readonly class DrillDownBinding
         }
 
         // Intermediate namespaces that hold no symbols of their own are only
-        // ever spelled out by the tree. Without them a glob value would be
+        // ever spelled out by the tree. Without them a regex value would be
         // refused for a subtree that exists whenever the tree is absent, so
         // they are synthesized rather than left to depend on it.
         foreach (array_keys($universe) as $namespace) {

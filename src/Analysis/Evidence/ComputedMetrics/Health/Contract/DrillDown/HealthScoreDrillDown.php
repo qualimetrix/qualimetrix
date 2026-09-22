@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompos
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Score\ContributorRanker;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Core\Pattern\NamespaceMatcher;
+use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -35,13 +35,12 @@ final readonly class HealthScoreDrillDown
     }
 
     /**
-     * Builds subtree health scores by weighted-averaging health from every
-     * namespace the selector matches — a boundary-aware prefix, or a glob when
-     * the selector contains `*`, `?` or `[`.
+     * Builds scoped health scores by weighted-averaging health from every
+     * namespace matched by the explicit selector.
      *
      * @return array<string, HealthScore> Empty array if no matching namespaces found.
      */
-    public function buildSubtreeHealthScores(MetricRepositoryInterface $metrics, string $namespace): array
+    public function buildSubtreeHealthScores(MetricRepositoryInterface $metrics, NamespacePattern $namespace): array
     {
         $allDimensions = HealthDimension::all();
         [$weightedSums, $dimensionWeights] = $this->collectSubtreeWeights($metrics, $namespace, $allDimensions);
@@ -94,14 +93,14 @@ final readonly class HealthScoreDrillDown
      *
      * @return array{array<string, float>, array<string, int>}
      */
-    private function collectSubtreeWeights(MetricRepositoryInterface $metrics, string $namespace, array $dimensions): array
+    private function collectSubtreeWeights(MetricRepositoryInterface $metrics, NamespacePattern $namespace, array $dimensions): array
     {
         $weightedSums = [];
         $dimensionWeights = [];
 
         foreach ($metrics->all(SymbolLevel::Namespace_) as $namespaceInfo) {
             $name = $namespaceInfo->symbolPath->namespace ?? $namespaceInfo->symbolPath->toCanonical();
-            if (!NamespaceMatcher::matchesSingle($namespace, $name)) {
+            if (!$namespace->matches($name)) {
                 continue;
             }
 
@@ -191,12 +190,12 @@ final readonly class HealthScoreDrillDown
     /**
      * @return Generator<SymbolInfo>
      */
-    private function filterClassesByNamespace(MetricRepositoryInterface $metrics, string $namespace): Generator
+    private function filterClassesByNamespace(MetricRepositoryInterface $metrics, NamespacePattern $namespace): Generator
     {
         foreach ($metrics->all(SymbolLevel::Class_) as $symbolInfo) {
             $classNs = $symbolInfo->symbolPath->namespace ?? '';
 
-            if (NamespaceMatcher::matchesSingle($namespace, $classNs)) {
+            if ($namespace->matches($classNs)) {
                 yield $symbolInfo;
             }
         }

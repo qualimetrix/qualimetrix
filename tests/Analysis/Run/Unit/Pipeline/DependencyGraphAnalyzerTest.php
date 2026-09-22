@@ -170,7 +170,7 @@ PHP);
     private function createAnalyzer(FileParserInterface $parser): DependencyGraphAnalyzer
     {
         return new DependencyGraphAnalyzer(
-            new FinderFileDiscovery([]),
+            new FinderFileDiscovery(),
             $parser,
             new DependencyVisitor(new DependencyResolver()),
             AdjacencyGraphBuilder::builder(),

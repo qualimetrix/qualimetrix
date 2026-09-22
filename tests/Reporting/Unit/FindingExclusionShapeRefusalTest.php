@@ -44,9 +44,15 @@ final class FindingExclusionShapeRefusalTest extends TestCase
     #[Test]
     public function itStillAccumulatesLawfulLists(): void
     {
-        $exclusions = self::resolve('suppress_paths', ['src/Sub', 'src/Dup']);
+        $exclusions = self::resolve('suppress_paths', [
+            ['subtree' => 'src/Sub'],
+            ['exact' => 'src/Dup'],
+        ]);
 
-        self::assertSame(['src/Sub', 'src/Dup'], $exclusions->suppressPaths);
+        self::assertSame(
+            ['subtree:src/Sub', 'exact:src/Dup'],
+            array_map(static fn($pattern): string => $pattern->definition->display(), $exclusions->suppressPaths),
+        );
     }
 
     #[Test]

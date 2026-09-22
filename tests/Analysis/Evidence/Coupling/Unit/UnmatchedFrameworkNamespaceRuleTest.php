@@ -153,7 +153,10 @@ final class UnmatchedFrameworkNamespaceRuleTest extends TestCase
     {
         $coupling = new CouplingAnalysis();
         $coupling->replace($coupling->resolve(new ConfigurationDocument(
-            [['source' => 'test', 'values' => ['coupling' => ['frameworkNamespaces' => $prefixes]]]],
+            [[
+                'source' => 'test',
+                'values' => ['coupling' => ['frameworkNamespaces' => array_map(static fn(string $prefix): array => ['subtree' => $prefix], $prefixes)]],
+            ]],
             AbsolutePath::fromString('/project'),
         )));
 

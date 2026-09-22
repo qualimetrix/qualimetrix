@@ -3,7 +3,7 @@
 # author meant to skip, and before the channel existed the report was identical
 # to one configured with no exclusion at all.
 exclude:
-  - NoSuchDir
+  - subtree: NoSuchDir
 suppress_paths: []
 only_rules:
   - discovery.unmatched-exclude

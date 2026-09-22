@@ -51,7 +51,7 @@ final class WorstClassDrillDownTest extends TestCase
             ],
         );
 
-        $result = $this->drillDown->buildWorstClasses($metrics, 'App\\Service', []);
+        $result = $this->drillDown->buildWorstClasses($metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'), []);
 
         self::assertSame([], $result);
     }
@@ -80,7 +80,7 @@ final class WorstClassDrillDownTest extends TestCase
             ],
         );
 
-        $result = $this->drillDown->buildWorstClasses($metrics, 'App\\Service', []);
+        $result = $this->drillDown->buildWorstClasses($metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'), []);
 
         self::assertCount(2, $result);
         // Worst (lowest score) first
@@ -129,7 +129,7 @@ final class WorstClassDrillDownTest extends TestCase
             ),
         ];
 
-        $result = $this->drillDown->buildWorstClasses($metrics, 'App\\Service', $findings);
+        $result = $this->drillDown->buildWorstClasses($metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'), $findings);
 
         self::assertCount(1, $result);
         self::assertSame(2, $result[0]->violationCount);
@@ -166,7 +166,7 @@ final class WorstClassDrillDownTest extends TestCase
             ),
         ];
 
-        $result = $this->drillDown->buildWorstClasses($metrics, 'App\\Service', $findings);
+        $result = $this->drillDown->buildWorstClasses($metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'), $findings);
 
         self::assertCount(1, $result);
         self::assertSame(0, $result[0]->violationCount);
@@ -190,7 +190,7 @@ final class WorstClassDrillDownTest extends TestCase
             ],
         );
 
-        $result = $this->drillDown->buildWorstClasses($metrics, 'App\\Service', []);
+        $result = $this->drillDown->buildWorstClasses($metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'), []);
 
         self::assertSame([], $result);
     }
@@ -215,7 +215,7 @@ final class WorstClassDrillDownTest extends TestCase
             ],
         );
 
-        $result = $this->drillDown->buildWorstClasses($metrics, 'App\\Service', [], includeNotableMetrics: true);
+        $result = $this->drillDown->buildWorstClasses($metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'), [], includeNotableMetrics: true);
 
         self::assertCount(1, $result);
         self::assertArrayHasKey('size.method-count', $result[0]->metrics);
@@ -242,7 +242,7 @@ final class WorstClassDrillDownTest extends TestCase
             ],
         );
 
-        $result = $this->drillDown->buildWorstClasses($metrics, 'App\\Service', []);
+        $result = $this->drillDown->buildWorstClasses($metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'), []);
 
         self::assertCount(1, $result);
         self::assertSame([], $result[0]->metrics);

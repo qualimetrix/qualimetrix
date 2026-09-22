@@ -618,8 +618,9 @@ final class LayerAssignmentCommandTest extends TestCase
         $configPath = $this->tempDir . '/qmx-discovery.yaml';
         file_put_contents(
             $configPath,
-            "paths: ['{$sourceRoot}']\n"
-            . "exclude: ['Excluded']\n"
+            "paths: ['src']\n"
+            . "exclude:\n"
+            . "  - subtree: src/Excluded\n"
             . "architecture:\n"
             . "  layers:\n"
             . "    - name: 'mod-{module}'\n"
@@ -629,51 +630,59 @@ final class LayerAssignmentCommandTest extends TestCase
             . "  coverage-gap: ignore\n",
         );
 
-        // 1. Regular class — its module should have been discovered and the
-        //    template should have expanded a matching `mod-Service` layer.
-        $tester = $this->newTester();
-        $exit = $tester->execute([
-            'fqn' => 'App\\Service\\Foo',
-            '--config' => $configPath,
-        ]);
-        self::assertSame(Command::SUCCESS, $exit);
-        self::assertStringContainsString('Assigned to: mod-Service', $tester->getDisplay());
+        $workingDirectory = getcwd();
+        self::assertNotFalse($workingDirectory);
+        chdir($this->tempDir);
 
-        // 2. Class inside an excluded directory — file MUST NOT have entered
-        //    the class set. The file exists on disk, so the answer is about
-        //    the analysed set and not about the filesystem: a refusal, with
-        //    no `mod-Excluded` layer expanded anywhere in it.
-        $tester = $this->newTester();
-        $exit = $tester->execute([
-            'fqn' => 'App\\Excluded\\Bar',
-            '--config' => $configPath,
-        ], ['capture_stderr_separately' => true]);
-        self::assertSame(ConsoleExitCode::Refusal->value, $exit);
-        self::assertStringContainsString('is not among the', $tester->getErrorOutput());
-        self::assertStringNotContainsString('mod-Excluded', $tester->getErrorOutput());
+        try {
+            // 1. Regular class — its module should have been discovered and the
+            //    template should have expanded a matching `mod-Service` layer.
+            $tester = $this->newTester();
+            $exit = $tester->execute([
+                'fqn' => 'App\\Service\\Foo',
+                '--config' => $configPath,
+            ]);
+            self::assertSame(Command::SUCCESS, $exit);
+            self::assertStringContainsString('Assigned to: mod-Service', $tester->getDisplay());
 
-        // 3. Class in a file with `@generated` annotation — same: MUST NOT
-        //    have entered the class set, so the FQN names nothing analysed.
-        $tester = $this->newTester();
-        $exit = $tester->execute([
-            'fqn' => 'App\\Generated\\Gen',
-            '--config' => $configPath,
-        ], ['capture_stderr_separately' => true]);
-        self::assertSame(ConsoleExitCode::Refusal->value, $exit);
-        self::assertStringContainsString('is not among the', $tester->getErrorOutput());
-        self::assertStringNotContainsString('mod-Generated', $tester->getErrorOutput());
+            // 2. Class inside an excluded directory — file MUST NOT have entered
+            //    the class set. The file exists on disk, so the answer is about
+            //    the analysed set and not about the filesystem: a refusal, with
+            //    no `mod-Excluded` layer expanded anywhere in it.
+            $tester = $this->newTester();
+            $exit = $tester->execute([
+                'fqn' => 'App\\Excluded\\Bar',
+                '--config' => $configPath,
+            ], ['capture_stderr_separately' => true]);
+            self::assertSame(ConsoleExitCode::Refusal->value, $exit);
+            self::assertStringContainsString('is not among the', $tester->getErrorOutput());
+            self::assertStringNotContainsString('mod-Excluded', $tester->getErrorOutput());
 
-        file_put_contents(
-            $configPath,
-            file_get_contents($configPath) . "include_generated: true\n",
-        );
-        $tester = $this->newTester();
-        $exit = $tester->execute([
-            'fqn' => 'App\\Generated\\Gen',
-            '--config' => $configPath,
-        ]);
-        self::assertSame(Command::SUCCESS, $exit);
-        self::assertStringContainsString('Assigned to: mod-Generated', $tester->getDisplay());
+            // 3. Class in a file with `@generated` annotation — same: MUST NOT
+            //    have entered the class set, so the FQN names nothing analysed.
+            $tester = $this->newTester();
+            $exit = $tester->execute([
+                'fqn' => 'App\\Generated\\Gen',
+                '--config' => $configPath,
+            ], ['capture_stderr_separately' => true]);
+            self::assertSame(ConsoleExitCode::Refusal->value, $exit);
+            self::assertStringContainsString('is not among the', $tester->getErrorOutput());
+            self::assertStringNotContainsString('mod-Generated', $tester->getErrorOutput());
+
+            file_put_contents(
+                $configPath,
+                file_get_contents($configPath) . "include_generated: true\n",
+            );
+            $tester = $this->newTester();
+            $exit = $tester->execute([
+                'fqn' => 'App\\Generated\\Gen',
+                '--config' => $configPath,
+            ]);
+            self::assertSame(Command::SUCCESS, $exit);
+            self::assertStringContainsString('Assigned to: mod-Generated', $tester->getDisplay());
+        } finally {
+            chdir($workingDirectory);
+        }
     }
 
     /**

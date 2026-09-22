@@ -17,6 +17,7 @@ final class ConfigurationInputAdapter
 {
     public function __construct(
         private readonly ConfigurationPipelineInterface $configurationPipeline,
+        private readonly CliSelectorDecoder $selectorDecoder = new CliSelectorDecoder(),
     ) {}
 
     public function resolve(InputInterface $input): ConfigurationDocument
@@ -50,7 +51,14 @@ final class ConfigurationInputAdapter
         $values = [];
         $this->put($values, ConfigSchema::PATHS, $input->hasArgument('paths') ? $input->getArgument('paths') : null);
         foreach ($this->mappedOptions() as $option => $key) {
-            $this->put($values, $key, $this->option($input, $option));
+            $value = $this->option($input, $option);
+            if ($option === 'exclude' && \is_array($value)) {
+                $value = array_map(
+                    fn(string $selector) => $this->selectorDecoder->decodePath($selector, '--exclude'),
+                    array_values(array_filter($value, is_string(...))),
+                );
+            }
+            $this->put($values, $key, $value);
         }
 
         if ($this->option($input, 'no-cache') === true) {

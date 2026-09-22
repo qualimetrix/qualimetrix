@@ -29,8 +29,6 @@ final class PatternScopeTest extends TestCase
         yield 'inclusive prefix contains its own strict subtree' => ['App\\Http', 'App\\Http\\**', true];
         yield 'strict subtree does not contain its inclusive prefix' => ['App\\Http\\**', 'App\\Http', false];
         yield 'segment boundary is respected' => ['App\\Http', 'App\\HttpKernel\\**', false];
-        yield 'single star behaves like a strict subtree' => ['App\\*', 'App\\Http\\**', true];
-        yield 'trailing backslash is cosmetic' => ['App\\', 'App\\Http\\**', true];
         yield 'siblings are unrelated' => ['App\\Http\\**', 'App\\Cli\\**', false];
     }
 
@@ -55,6 +53,8 @@ final class PatternScopeTest extends TestCase
         yield 'partial segment wildcard' => [self::pattern('**\\*Service')];
         yield 'character class' => [self::pattern('App\\[AB]pi\\**')];
         yield 'single-character wildcard' => [self::pattern('App\\Ser?ice\\**')];
+        yield 'single-segment star' => [self::pattern('App\\*')];
+        yield 'trailing backslash' => [self::pattern('App\\')];
         yield 'unexpanded capture' => [self::pattern('App\\{module}\\**')];
         yield 'suffix criterion' => [new MatchedCriterion(MatchedCriterionKind::Suffix, 'Repository')];
         yield 'implements criterion' => [new MatchedCriterion(MatchedCriterionKind::Implements, 'App\\Marker')];

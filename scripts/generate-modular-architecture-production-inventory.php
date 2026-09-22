@@ -2402,6 +2402,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0074-dit-reads-the-ancestors-it-measures.md' => 'Analysis.Evidence.Design',
         'docs/adr/0076-a-floor-is-reported-and-said-to-be-one.md' => 'Analysis.Evidence.Design',
         'docs/adr/0075-the-builtin-class-list-is-compared-never-generated.md' => 'Core.Symbol',
+        'docs/adr/0077-open-universe-selectors-are-explicit.md' => 'Architecture.Governance',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/Evidence/CircularDependency/README.md' => 'Analysis.Evidence.CircularDependency',

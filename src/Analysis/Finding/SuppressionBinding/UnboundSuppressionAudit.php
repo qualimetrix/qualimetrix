@@ -13,8 +13,9 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Pattern\NamespaceMatcher;
-use Qualimetrix\Core\Pattern\PathMatcher;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -89,8 +90,8 @@ final readonly class UnboundSuppressionAudit
      * see these findings the way they see every other one, and the seam has no
      * business knowing that a produced finding still has to survive selection.
      *
-     * @param list<string> $suppressPaths global `suppress_paths`, `--suppress-path` included
-     * @param list<string> $suppressNamespaces global `suppress_namespaces`, `--suppress-namespace` included
+     * @param list<PathPattern> $suppressPaths global `suppress_paths`, `--suppress-path` included
+     * @param list<NamespacePattern> $suppressNamespaces global `suppress_namespaces`, `--suppress-namespace` included
      * @param list<RelativePath> $analyzedFiles the run's own file universe
      * @param ?list<string> $declaredNamespaces every namespace the run declared, or `null` if it built no tree
      * @param ValueScopeJudgement $scope the run's shape, asked of every value before it is judged
@@ -150,7 +151,7 @@ final readonly class UnboundSuppressionAudit
      * @param list<RelativePath> $analyzedFiles
      * @param ?list<string> $declaredNamespaces
      *
-     * @return list<array{string, string, string}> rule name, option key, pattern
+     * @return list<array{string, string, SelectorDefinition}> rule name, option key, pattern
      */
     private function unboundLedgerEntries(
         array $analyzedFiles,
@@ -164,20 +165,20 @@ final readonly class UnboundSuppressionAudit
                 continue;
             }
 
-            foreach ($this->unboundPaths(ConfiguredSuppression::paths($options), $analyzedFiles, $scope) as $pattern) {
-                $entries[] = [(string) $ruleName, ConfiguredSuppression::PATHS, $pattern];
+            foreach ($this->unboundPaths($this->ruleConfiguration->pathExclusions((string) $ruleName), $analyzedFiles, $scope) as $pattern) {
+                $entries[] = [(string) $ruleName, ConfiguredSuppression::PATHS, $pattern->definition];
             }
 
-            foreach ($this->unboundNamespaces(ConfiguredSuppression::namespaces($options), $declaredNamespaces, $scope) as $pattern) {
-                $entries[] = [(string) $ruleName, ConfiguredSuppression::NAMESPACES, $pattern];
+            foreach ($this->unboundNamespaces($this->ruleConfiguration->namespaceExclusions((string) $ruleName), $declaredNamespaces, $scope) as $pattern) {
+                $entries[] = [(string) $ruleName, ConfiguredSuppression::NAMESPACES, $pattern->definition];
             }
 
-            foreach (ConfiguredSuppression::namespaceChannelPatterns($options) as ['selector' => $selector, 'pattern' => $pattern]) {
-                foreach ($this->unboundNamespaces([$pattern], $declaredNamespaces, $scope) as $unbound) {
+            foreach ($this->ruleConfiguration->namespaceChannelExclusions((string) $ruleName) as $selector => $patterns) {
+                foreach ($this->unboundNamespaces($patterns, $declaredNamespaces, $scope) as $unbound) {
                     $entries[] = [
                         (string) $ruleName,
                         ConfiguredSuppression::NAMESPACE_CHANNELS . '.' . $selector,
-                        $unbound,
+                        $unbound->definition,
                     ];
                 }
             }
@@ -187,25 +188,24 @@ final readonly class UnboundSuppressionAudit
     }
 
     /**
-     * @param list<string> $patterns
+     * @param list<PathPattern> $patterns
      * @param list<RelativePath> $analyzedFiles
      *
-     * @return list<string>
+     * @return list<PathPattern>
      */
     private function unboundPaths(array $patterns, array $analyzedFiles, ValueScopeJudgement $scope): array
     {
         $unbound = [];
 
         foreach ($patterns as $pattern) {
-            if ($pattern === '' || !$scope->judgesPathValue($pattern)) {
+            if (!$scope->judgesPathValue($pattern)) {
                 continue;
             }
 
-            $matcher = new PathMatcher([$pattern]);
             $bound = false;
 
             foreach ($analyzedFiles as $file) {
-                if ($matcher->matches($file) !== null) {
+                if ($pattern->matches($file)) {
                     $bound = true;
 
                     break;
@@ -221,10 +221,10 @@ final readonly class UnboundSuppressionAudit
     }
 
     /**
-     * @param list<string> $patterns
+     * @param list<NamespacePattern> $patterns
      * @param ?list<string> $declaredNamespaces
      *
-     * @return list<string>
+     * @return list<NamespacePattern>
      */
     private function unboundNamespaces(array $patterns, ?array $declaredNamespaces, ValueScopeJudgement $scope): array
     {
@@ -235,15 +235,14 @@ final readonly class UnboundSuppressionAudit
         $unbound = [];
 
         foreach ($patterns as $pattern) {
-            if (trim($pattern, '\\') === '' || !$scope->judgesNamespaceValue($pattern)) {
+            if (!$scope->judgesNamespaceValue($pattern)) {
                 continue;
             }
 
-            $matcher = new NamespaceMatcher([$pattern]);
             $bound = false;
 
             foreach ($declaredNamespaces as $namespace) {
-                if ($matcher->matches($namespace) !== null) {
+                if ($pattern->matches($namespace)) {
                     $bound = true;
 
                     break;
@@ -258,59 +257,75 @@ final readonly class UnboundSuppressionAudit
         return $unbound;
     }
 
-    private static function pathFinding(string $pattern): Finding
+    private static function pathFinding(PathPattern $pattern): Finding
     {
         return self::finding(
             UnboundSuppressionOptions::UNMATCHED_PATH,
-            ['option' => ConfiguredSuppression::PATHS, 'pattern' => $pattern],
+            ['option' => ConfiguredSuppression::PATHS, 'pattern' => $pattern->definition->display()],
             \sprintf(
                 'The suppress_paths pattern "%s" matched no file analysed by this run, so it suppressed nothing'
                 . ' and could not have. If the code it was written for still exists under another spelling, its'
                 . ' findings are being reported.',
-                $pattern,
+                $pattern->definition->display(),
             ),
             \sprintf(
-                'Check "%s" against the tree: a pattern without a glob character is a path prefix with "/"'
-                . ' boundaries. Drop the entry if the code it names is gone, or correct its spelling.',
-                $pattern,
+                'Check "%s" against the tree. %s Drop the entry if the code it names is gone, or correct its'
+                . ' spelling.',
+                $pattern->definition->display(),
+                self::selectorMeaning($pattern->definition, '/', 'path'),
             ),
         );
     }
 
-    private static function namespaceFinding(string $pattern): Finding
+    private static function namespaceFinding(NamespacePattern $pattern): Finding
     {
         return self::finding(
             UnboundSuppressionOptions::UNMATCHED_NAMESPACE,
-            ['option' => ConfiguredSuppression::NAMESPACES, 'pattern' => $pattern],
+            ['option' => ConfiguredSuppression::NAMESPACES, 'pattern' => $pattern->definition->display()],
             \sprintf(
                 'The suppress_namespaces pattern "%s" matched no namespace declared in this run, so it suppressed'
                 . ' nothing and could not have. If the code it was written for still exists under another'
                 . ' spelling, its findings are being reported.',
-                $pattern,
+                $pattern->definition->display(),
             ),
             \sprintf(
-                'Check "%s" against the code: a pattern without a glob character is a namespace prefix with "\\"'
-                . ' boundaries. Drop the entry if the namespace is gone, or correct its spelling.',
-                $pattern,
+                'Check "%s" against the code. %s Drop the entry if the namespace is gone, or correct its spelling.',
+                $pattern->definition->display(),
+                self::selectorMeaning($pattern->definition, '\\', 'namespace'),
             ),
         );
     }
 
-    private static function ledgerFinding(string $ruleName, string $option, string $pattern): Finding
+    private static function selectorMeaning(
+        SelectorDefinition $definition,
+        string $separator,
+        string $subject,
+    ): string {
+        return match ($definition->kind->value) {
+            'exact' => \sprintf('The "exact" selector matches only the authored %s.', $subject),
+            'subtree' => \sprintf(
+                'The "subtree" selector also includes descendants across "%s" boundaries.',
+                $separator,
+            ),
+            'regex' => 'The "regex" selector is a full-subject PCRE fragment.',
+        };
+    }
+
+    private static function ledgerFinding(string $ruleName, string $option, SelectorDefinition $pattern): Finding
     {
         return self::finding(
             UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER,
-            ['rule' => $ruleName, 'option' => $option, 'pattern' => $pattern],
+            ['rule' => $ruleName, 'option' => $option, 'pattern' => $pattern->display()],
             \sprintf(
                 'The %s pattern "%s" configured under rule "%s" matched nothing this run analysed, so it suppressed'
                 . ' nothing and could not have.',
                 $option,
-                $pattern,
+                $pattern->display(),
                 $ruleName,
             ),
             \sprintf(
                 'Check "%s" under rules.%s.%s against the tree, and drop it if what it names is gone.',
-                $pattern,
+                $pattern->display(),
                 $ruleName,
                 $option,
             ),

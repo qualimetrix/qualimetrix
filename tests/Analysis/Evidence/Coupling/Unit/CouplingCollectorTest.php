@@ -898,7 +898,7 @@ final class CouplingCollectorTest extends TestCase
     {
         $analysis = new CouplingAnalysis();
         $analysis->replace($analysis->resolve($this->document([
-            ['coupling' => ['frameworkNamespaces' => $prefixes]],
+            ['coupling' => ['frameworkNamespaces' => array_map(static fn(string $prefix): array => ['subtree' => $prefix], $prefixes)]],
         ])));
 
         return $analysis;

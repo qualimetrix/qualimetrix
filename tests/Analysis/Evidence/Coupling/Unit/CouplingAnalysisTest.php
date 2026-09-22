@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Pattern\NamespacePattern;
 
 #[CoversClass(CouplingAnalysis::class)]
 final class CouplingAnalysisTest extends TestCase
@@ -75,6 +76,26 @@ final class CouplingAnalysisTest extends TestCase
     }
 
     #[Test]
+    public function itAppliesExactAndRegexFrameworkSelectorsWithoutReparsingThem(): void
+    {
+        $analysis = new CouplingAnalysis();
+        $analysis->replace($analysis->resolve($this->document([[
+            'coupling' => [
+                'frameworkNamespaces' => [
+                    ['exact' => 'Amp'],
+                    ['regex' => 'Vendor\\\\(?:Http|Queue)(?:\\\\[^\\\\]+)*'],
+                ],
+            ],
+        ]])));
+
+        self::assertTrue($analysis->isFramework('Amp'));
+        self::assertFalse($analysis->isFramework('Amp\\Future'));
+        self::assertTrue($analysis->isFramework('Vendor\\Http\\Client'));
+        self::assertTrue($analysis->isFramework('Vendor\\Queue'));
+        self::assertFalse($analysis->isFramework('Vendor\\Database'));
+    }
+
+    #[Test]
     public function itNeverMatchesWhenNoFrameworkPrefixesAreConfigured(): void
     {
         $fn = $this->configured([]);
@@ -99,8 +120,8 @@ final class CouplingAnalysisTest extends TestCase
     {
         $analysis = new CouplingAnalysis();
         $analysis->replace($analysis->resolve($this->document([
-            ['coupling' => ['frameworkNamespaces' => ['Symfony']]],
-            ['coupling' => ['frameworkNamespaces' => ['Psr']]],
+            ['coupling' => ['frameworkNamespaces' => [['subtree' => 'Symfony']]]],
+            ['coupling' => ['frameworkNamespaces' => [['subtree' => 'Psr']]]],
         ])));
 
         self::assertFalse($analysis->isFramework('Symfony\\Component\\Console'));
@@ -127,7 +148,7 @@ final class CouplingAnalysisTest extends TestCase
 
         try {
             $analysis->resolve($this->document([
-                ['coupling' => ['frameworkNamespaces' => ['Psr', 1]]],
+                ['coupling' => ['frameworkNamespaces' => [['subtree' => 'Psr'], 1]]],
             ]));
             self::fail('Invalid framework namespace configuration must fail.');
         } catch (ConfigurationRefusal) {
@@ -147,8 +168,8 @@ final class CouplingAnalysisTest extends TestCase
         $fn = $this->configured(['Symfony', 'Nope\\Missing', 'Doctrine\\ORM']);
 
         self::assertSame(
-            ['Nope\\Missing', 'Doctrine\\ORM'],
-            $fn->unboundPrefixes(['Symfony\\Component\\Console\\Command\\Command', 'App\\Service']),
+            ['subtree:Nope\\Missing', 'subtree:Doctrine\\ORM'],
+            self::displays($fn->unboundSelectors(['Symfony\\Component\\Console\\Command\\Command', 'App\\Service'])),
         );
     }
 
@@ -158,7 +179,7 @@ final class CouplingAnalysisTest extends TestCase
     {
         $fn = $this->configured(['Zeta\\Missing', 'Alpha\\Missing']);
 
-        self::assertSame(['Zeta\\Missing', 'Alpha\\Missing'], $fn->unboundPrefixes([]));
+        self::assertSame(['subtree:Zeta\\Missing', 'subtree:Alpha\\Missing'], self::displays($fn->unboundSelectors([])));
     }
 
     /**
@@ -169,11 +190,11 @@ final class CouplingAnalysisTest extends TestCase
     #[Test]
     public function itBindsOnTheSameBoundaryIsFrameworkMatchesOn(): void
     {
-        self::assertSame([], $this->configured(['Symfony'])->unboundPrefixes(['Symfony']));
-        self::assertSame([], $this->configured(['Symfony'])->unboundPrefixes(['Symfony\\Console']));
+        self::assertSame([], $this->configured(['Symfony'])->unboundSelectors(['Symfony']));
+        self::assertSame([], $this->configured(['Symfony'])->unboundSelectors(['Symfony\\Console']));
         self::assertSame(
-            ['Symfony'],
-            $this->configured(['Symfony'])->unboundPrefixes(['SymfonyBundle\\Thing']),
+            ['subtree:Symfony'],
+            self::displays($this->configured(['Symfony'])->unboundSelectors(['SymfonyBundle\\Thing'])),
             'A prefix that is only a string prefix binds nothing, exactly as it classifies nothing.',
         );
     }
@@ -183,8 +204,8 @@ final class CouplingAnalysisTest extends TestCase
     public function itReportsARepeatedPrefixOnce(): void
     {
         self::assertSame(
-            ['Nope\\Missing'],
-            $this->configured(['Nope\\Missing', 'Nope\\Missing'])->unboundPrefixes(['App\\Service']),
+            ['subtree:Nope\\Missing'],
+            self::displays($this->configured(['Nope\\Missing', 'Nope\\Missing'])->unboundSelectors(['App\\Service'])),
         );
     }
 
@@ -192,7 +213,7 @@ final class CouplingAnalysisTest extends TestCase
     #[Test]
     public function itNamesNoPrefixWhenNoneAreConfigured(): void
     {
-        self::assertSame([], $this->configured([])->unboundPrefixes(['App\\Service']));
+        self::assertSame([], $this->configured([])->unboundSelectors(['App\\Service']));
     }
 
     /** @param list<string> $prefixes */
@@ -200,7 +221,7 @@ final class CouplingAnalysisTest extends TestCase
     {
         $analysis = new CouplingAnalysis();
         $analysis->replace($analysis->resolve($this->document([
-            ['coupling' => ['frameworkNamespaces' => $prefixes]],
+            ['coupling' => ['frameworkNamespaces' => array_map(static fn(string $prefix): array => ['subtree' => $prefix], $prefixes)]],
         ])));
 
         return $analysis;
@@ -213,5 +234,15 @@ final class CouplingAnalysisTest extends TestCase
             static fn(array $values): array => ['source' => 'test', 'values' => $values],
             $contributions,
         ), AbsolutePath::fromString('/project'));
+    }
+
+    /**
+     * @param list<NamespacePattern> $patterns
+     *
+     * @return list<string>
+     */
+    private static function displays(array $patterns): array
+    {
+        return array_map(static fn(NamespacePattern $pattern): string => $pattern->definition->display(), $patterns);
     }
 }

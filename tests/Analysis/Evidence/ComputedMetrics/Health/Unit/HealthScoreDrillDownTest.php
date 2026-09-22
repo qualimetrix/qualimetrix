@@ -45,7 +45,7 @@ final class HealthScoreDrillDownTest extends TestCase
             ],
         );
 
-        $result = $this->drillDown->buildSubtreeHealthScores($metrics, 'App\\Service');
+        $result = $this->drillDown->buildSubtreeHealthScores($metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
 
         self::assertSame([], $result);
     }
@@ -75,7 +75,7 @@ final class HealthScoreDrillDownTest extends TestCase
             ],
         );
 
-        $result = $this->drillDown->buildSubtreeHealthScores($metrics, 'App\\Service');
+        $result = $this->drillDown->buildSubtreeHealthScores($metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
 
         self::assertArrayHasKey('complexity', $result);
         self::assertArrayHasKey('overall', $result);
@@ -89,7 +89,7 @@ final class HealthScoreDrillDownTest extends TestCase
     }
 
     #[Test]
-    public function itSubtreeHealthScoresIgnoreATrailingBackslashInTheSelector(): void
+    public function itBuildsHealthScoresForAnExactSelector(): void
     {
         $classPath = SymbolPath::forClass('App\Service', 'Worker');
         $metrics = $this->createMetricRepository(
@@ -109,7 +109,7 @@ final class HealthScoreDrillDownTest extends TestCase
             ],
         );
 
-        $result = $this->drillDown->buildSubtreeHealthScores($metrics, 'App\\Service\\');
+        $result = $this->drillDown->buildSubtreeHealthScores($metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('App\\Service'));
 
         self::assertArrayHasKey('complexity', $result);
         self::assertCount(1, $result['complexity']->worstContributors);
@@ -131,7 +131,7 @@ final class HealthScoreDrillDownTest extends TestCase
             ],
         );
 
-        $result = $this->drillDown->buildSubtreeHealthScores($metrics, 'App\\Service');
+        $result = $this->drillDown->buildSubtreeHealthScores($metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
 
         self::assertArrayHasKey('complexity', $result);
         self::assertEqualsWithDelta(90.0, $result['complexity']->score, 0.01);
@@ -154,7 +154,7 @@ final class HealthScoreDrillDownTest extends TestCase
             ],
         );
 
-        $result = $this->drillDown->buildSubtreeHealthScores($metrics, 'App\\Service');
+        $result = $this->drillDown->buildSubtreeHealthScores($metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
 
         self::assertSame([], $result);
     }
@@ -180,7 +180,7 @@ final class HealthScoreDrillDownTest extends TestCase
             ],
         );
 
-        $result = $this->drillDown->buildSubtreeHealthScores($metrics, 'App\\Service');
+        $result = $this->drillDown->buildSubtreeHealthScores($metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
 
         // Weighted avg: (100*1 + 50*3) / (1+3) = 250/4 = 62.5
         self::assertArrayHasKey('complexity', $result);
@@ -203,7 +203,7 @@ final class HealthScoreDrillDownTest extends TestCase
             ],
         );
 
-        $result = $this->drillDown->buildSubtreeHealthScores($metrics, 'App\\Service');
+        $result = $this->drillDown->buildSubtreeHealthScores($metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
 
         self::assertArrayHasKey('complexity', $result);
         self::assertEqualsWithDelta(80.0, $result['complexity']->score, 0.01);

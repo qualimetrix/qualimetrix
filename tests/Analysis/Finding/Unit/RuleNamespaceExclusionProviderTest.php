@@ -10,6 +10,9 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 
 #[CoversClass(RuleNamespaceExclusionProvider::class)]
 #[CoversClass(RuleOptionsRegistry::class)]
@@ -26,7 +29,7 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
     public function itConfiguresAndQueriesNamespaceExclusionsWithoutProviderAccess(): void
     {
         $configuration = new RuleOptionsRegistry();
-        $configuration->configureNamespaceExclusions('test.rule', ['App\\Generated']);
+        $configuration->configureNamespaceExclusions('test.rule', $this->namespaces(['App\\Generated']));
 
         self::assertTrue($configuration->isNamespaceExcluded('test.rule', 'App\\Generated\\Model'));
         self::assertFalse($configuration->isNamespaceExcluded('test.rule', 'App\\Domain'));
@@ -37,7 +40,7 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
     {
         $configuration = new RuleOptionsRegistry();
         $configuration->configureNamespaceChannelExclusions('computed.health', [
-            'health.cohesion' => ['App\\Generated'],
+            'health.cohesion' => $this->namespaces(['App\\Generated']),
         ]);
 
         self::assertTrue($configuration->isNamespaceChannelExcluded(
@@ -62,7 +65,7 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
     #[Test]
     public function itMatchesExactNamespace(): void
     {
-        $this->provider->setExclusions('rule1', ['App\\Core']);
+        $this->provider->setExclusions('rule1', $this->namespaces(['App\\Core']));
 
         self::assertTrue($this->provider->isExcluded('rule1', 'App\\Core'));
         self::assertFalse($this->provider->isExcluded('rule1', 'App\\Service'));
@@ -71,7 +74,7 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
     #[Test]
     public function itMatchesByNamespacePrefix(): void
     {
-        $this->provider->setExclusions('rule1', ['App\\Core']);
+        $this->provider->setExclusions('rule1', $this->namespaces(['App\\Core']));
 
         self::assertTrue($this->provider->isExcluded('rule1', 'App\\Core\\Exception'));
         self::assertTrue($this->provider->isExcluded('rule1', 'App\\Core\\Symbol\\Deep'));
@@ -80,7 +83,7 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
     #[Test]
     public function itDoesNotFalselyMatchPrefix(): void
     {
-        $this->provider->setExclusions('rule1', ['App\\Core']);
+        $this->provider->setExclusions('rule1', $this->namespaces(['App\\Core']));
 
         self::assertFalse($this->provider->isExcluded('rule1', 'App\\CoreExtra'));
     }
@@ -88,7 +91,7 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
     #[Test]
     public function itHandlesTrailingBackslash(): void
     {
-        $this->provider->setExclusions('rule1', ['App\\Core\\']);
+        $this->provider->setExclusions('rule1', $this->namespaces(['App\\Core']));
 
         self::assertTrue($this->provider->isExcluded('rule1', 'App\\Core'));
         self::assertTrue($this->provider->isExcluded('rule1', 'App\\Core\\Sub'));
@@ -97,8 +100,8 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
     #[Test]
     public function itKeepsDifferentRulesExclusionsIndependent(): void
     {
-        $this->provider->setExclusions('rule1', ['App\\Core']);
-        $this->provider->setExclusions('rule2', ['App\\Service']);
+        $this->provider->setExclusions('rule1', $this->namespaces(['App\\Core']));
+        $this->provider->setExclusions('rule2', $this->namespaces(['App\\Service']));
 
         self::assertTrue($this->provider->isExcluded('rule1', 'App\\Core'));
         self::assertFalse($this->provider->isExcluded('rule1', 'App\\Service'));
@@ -119,8 +122,8 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
     #[Test]
     public function itClearsAllExclusionsOnReset(): void
     {
-        $this->provider->setExclusions('rule1', ['App\\Core']);
-        $this->provider->setExclusions('rule2', ['App\\Service']);
+        $this->provider->setExclusions('rule1', $this->namespaces(['App\\Core']));
+        $this->provider->setExclusions('rule2', $this->namespaces(['App\\Service']));
 
         $this->provider->reset();
 
@@ -132,7 +135,7 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
     #[Test]
     public function itGetsExclusions(): void
     {
-        $prefixes = ['App\\Core', 'App\\Tests'];
+        $prefixes = $this->namespaces(['App\\Core', 'App\\Tests']);
         $this->provider->setExclusions('rule1', $prefixes);
 
         self::assertSame($prefixes, $this->provider->getExclusions('rule1'));
@@ -141,7 +144,7 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
     #[Test]
     public function itHandlesMultiplePrefixes(): void
     {
-        $this->provider->setExclusions('rule1', ['App\\Core', 'App\\Tests']);
+        $this->provider->setExclusions('rule1', $this->namespaces(['App\\Core', 'App\\Tests']));
 
         self::assertTrue($this->provider->isExcluded('rule1', 'App\\Core'));
         self::assertTrue($this->provider->isExcluded('rule1', 'App\\Tests'));
@@ -155,7 +158,7 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
         $this->provider->setChannelExclusions(
             'computed.health',
             'health.cohesion',
-            ['App\\Metrics'],
+            $this->namespaces(['App\\Metrics']),
         );
 
         self::assertTrue($this->provider->isChannelExcluded(
@@ -185,7 +188,7 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
         $this->provider->setChannelExclusions(
             'computed.health',
             'computed.health#health.cohesion',
-            ['App\\Metrics'],
+            $this->namespaces(['App\\Metrics']),
         );
 
         self::assertFalse($this->provider->isChannelExcluded(
@@ -206,12 +209,12 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
         $this->provider->setChannelExclusions(
             'architecture.layer-violation',
             'architecture.coverage-gap',
-            ['App\\Metrics'],
+            $this->namespaces(['App\\Metrics']),
         );
         $this->provider->setChannelExclusions(
             'architecture.unassigned-class',
             'architecture.layer-violation',
-            ['App\\Metrics'],
+            $this->namespaces(['App\\Metrics']),
         );
 
         self::assertTrue($this->provider->isChannelExcluded(
@@ -231,7 +234,7 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
     #[Test]
     public function itUsesGroupSelectorSemanticsForChannelExclusions(): void
     {
-        $this->provider->setChannelExclusions('computed.health', 'health.*', ['App\\Metrics']);
+        $this->provider->setChannelExclusions('computed.health', 'health.*', $this->namespaces(['App\\Metrics']));
 
         self::assertTrue($this->provider->isChannelExcluded(
             'computed.health',
@@ -249,7 +252,7 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
     public function itDoesNotTreatABareSelectorPrefixAsAGroup(): void
     {
         // The option's own docblock used to advertise `health` as a group.
-        $this->provider->setChannelExclusions('computed.health', 'health', ['App\\Metrics']);
+        $this->provider->setChannelExclusions('computed.health', 'health', $this->namespaces(['App\\Metrics']));
 
         self::assertFalse($this->provider->isChannelExcluded(
             'computed.health',
@@ -261,7 +264,7 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
     #[Test]
     public function itClearsChannelExclusionsOnReset(): void
     {
-        $this->provider->setChannelExclusions('computed.health', 'health.cohesion', ['App\\Metrics']);
+        $this->provider->setChannelExclusions('computed.health', 'health.cohesion', $this->namespaces(['App\\Metrics']));
 
         $this->provider->reset();
 
@@ -271,5 +274,18 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
             new FindingChannel('health.cohesion'),
             'App\\Metrics',
         ));
+    }
+
+    /**
+     * @param list<string> $namespaces
+     *
+     * @return list<NamespacePattern>
+     */
+    private function namespaces(array $namespaces): array
+    {
+        return array_map(
+            static fn(string $namespace): NamespacePattern => new NamespacePattern(new SelectorDefinition(SelectorKind::Subtree, $namespace)),
+            $namespaces,
+        );
     }
 }

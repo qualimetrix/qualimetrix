@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+**Path and PHP-name selectors no longer accept bare strings or implicit glob
+syntax.** YAML selector lists now use one-entry mappings: `- exact: value`,
+`- subtree: value`, or `- regex: fragment`. CLI options use `exact:value`,
+`subtree:value`, or `regex:fragment`. This applies to `suppress_paths`,
+`suppress_namespaces`, per-rule suppressions, `suppress_namespace_channels`
+values, `exclude`, `coupling.framework_namespaces`,
+`coupling.distance.include_namespaces`, `--suppress-path`,
+`--suppress-namespace`, `--exclude`, report `--namespace`, and both graph
+namespace filters. Regex fragments are delimiterless and automatically match
+the whole canonical path or PHP name. For example, migrate
+`suppress_paths: [src/Generated]` to
+`suppress_paths: [{subtree: src/Generated}]`, and
+`--namespace='App\Service'` to `--namespace='subtree:App\Service'`. Translate
+old globs according to intent rather than punctuation, then review suppression,
+discovery, and baseline results. Rule/channel `X.*` selectors and Architecture
+layer/binding patterns keep their separate closed grammars. See
+[ADR 0077](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0077-open-universe-selectors-are-explicit.md).
+
 **`design.dit` and `design.noc` change value when one class name is declared
 in more than one file.** A depth is now resolved and published per class
 declaration, so the two declarations a `class_exists()`-guarded polyfill

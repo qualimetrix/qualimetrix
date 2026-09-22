@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Pattern\NamespacePattern;
 
 /**
  * These refusals were bare `InvalidArgumentException`s: exit 3 without the
@@ -25,8 +26,9 @@ final class CouplingConfigurationRefusalTest extends TestCase
         yield 'the root as a list' => [['x']];
         yield 'the leaf as a boolean' => [['frameworkNamespaces' => true]];
         yield 'the leaf as an integer' => [['frameworkNamespaces' => 7331]];
-        yield 'the leaf as a map' => [['frameworkNamespaces' => ['a' => 'Zzz\\Nope']]];
+        yield 'the leaf as a map' => [['frameworkNamespaces' => ['a' => ['subtree' => 'Zzz\\Nope']]]];
         yield 'a non-string entry' => [['frameworkNamespaces' => [7331]]];
+        yield 'a bare string entry' => [['frameworkNamespaces' => ['Zzz\\Nope']]];
     }
 
     #[Test]
@@ -41,7 +43,10 @@ final class CouplingConfigurationRefusalTest extends TestCase
     #[Test]
     public function itStillAcceptsAListOfNamespacePrefixes(): void
     {
-        self::assertSame(['Zzz\\Nope'], self::resolve(['frameworkNamespaces' => ['Zzz\\Nope']]));
+        self::assertSame(
+            ['subtree:Zzz\\Nope'],
+            self::displays(self::resolve(['frameworkNamespaces' => [['subtree' => 'Zzz\\Nope']]])),
+        );
     }
 
     #[Test]
@@ -50,7 +55,7 @@ final class CouplingConfigurationRefusalTest extends TestCase
         self::assertSame([], self::resolve(['frameworkNamespaces' => []]));
     }
 
-    /** @return list<string> */
+    /** @return list<\Qualimetrix\Core\Pattern\NamespacePattern> */
     private static function resolve(mixed $value): array
     {
         $document = new ConfigurationDocument(
@@ -59,5 +64,15 @@ final class CouplingConfigurationRefusalTest extends TestCase
         );
 
         return (new CouplingAnalysis())->resolve($document);
+    }
+
+    /**
+     * @param list<NamespacePattern> $patterns
+     *
+     * @return list<string>
+     */
+    private static function displays(array $patterns): array
+    {
+        return array_map(static fn(NamespacePattern $pattern): string => $pattern->definition->display(), $patterns);
     }
 }

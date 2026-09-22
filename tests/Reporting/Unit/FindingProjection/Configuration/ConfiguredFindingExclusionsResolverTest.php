@@ -17,27 +17,26 @@ final class ConfiguredFindingExclusionsResolverTest extends TestCase
     public function itAccumulatesAndDeduplicatesConfiguredExclusions(): void
     {
         $resolved = (new ConfiguredFindingExclusionsResolver())->resolve(new ConfigurationDocument([
-            ['source' => 'preset', 'values' => ['suppress_paths' => ['vendor'], 'suppress_namespaces' => ['Legacy']]],
-            ['source' => 'config', 'values' => ['suppress_paths' => ['vendor', 'build'], 'suppress_namespaces' => ['Generated']]],
+            ['source' => 'preset', 'values' => ['suppress_paths' => [['subtree' => 'vendor']], 'suppress_namespaces' => [['subtree' => 'Legacy']]]],
+            ['source' => 'config', 'values' => ['suppress_paths' => [['subtree' => 'vendor'], ['subtree' => 'build']], 'suppress_namespaces' => [['subtree' => 'Generated']]]],
         ], AbsolutePath::fromString('/project')));
 
-        self::assertSame(['vendor', 'build'], $resolved->suppressPaths);
-        self::assertSame(['Legacy', 'Generated'], $resolved->suppressNamespaces);
+        self::assertSame(['subtree:vendor', 'subtree:build'], array_map(static fn($pattern) => $pattern->definition->display(), $resolved->suppressPaths));
+        self::assertSame(['subtree:Legacy', 'subtree:Generated'], array_map(static fn($pattern) => $pattern->definition->display(), $resolved->suppressNamespaces));
     }
 
     /**
      * A directory called `2024` is a lawful directory, and unquoted YAML hands
-     * it over as an int. Refusing it here while `--suppress-path=2024` passes
-     * would make the same name legal on one door and illegal on another.
+     * it over as an int. Refusing it here while `--suppress-path=exact:2024`
+     * passes keeps both doors explicit without losing the lawful name.
      */
     #[Test]
-    public function itReadsABareNumberAsTheDirectoryNameItIs(): void
+    public function itRefusesABareNumberWhereASelectorBelongs(): void
     {
-        $resolved = (new ConfiguredFindingExclusionsResolver())->resolve(new ConfigurationDocument([
-            ['source' => 'config', 'values' => ['suppress_paths' => [2024, 'src']]],
+        self::expectException(ConfigurationRefusal::class);
+        (new ConfiguredFindingExclusionsResolver())->resolve(new ConfigurationDocument([
+            ['source' => 'config', 'values' => ['suppress_paths' => [2024]]],
         ], AbsolutePath::fromString('/project')));
-
-        self::assertSame(['2024', 'src'], $resolved->suppressPaths);
     }
 
     /**
@@ -48,7 +47,7 @@ final class ConfiguredFindingExclusionsResolverTest extends TestCase
     public function itStillRefusesABareNumberWhereANamespaceBelongs(): void
     {
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Invalid entry in "suppress_namespaces": every entry must be a string, got int.');
+        self::expectExceptionMessage('Selector entries must be one-entry mappings');
 
         (new ConfiguredFindingExclusionsResolver())->resolve(new ConfigurationDocument([
             ['source' => 'config', 'values' => ['suppress_namespaces' => [2024]]],

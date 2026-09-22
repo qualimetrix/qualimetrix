@@ -8,7 +8,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
+use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Infrastructure\Console\CliOptionsParser;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -17,6 +19,64 @@ use Symfony\Component\Console\Input\InputOption;
 #[CoversClass(CliOptionsParser::class)]
 final class CliOptionsParserTest extends TestCase
 {
+    #[Test]
+    public function itDecodesTheDistanceNamespaceSelectorAfterRawRuleOptionParsing(): void
+    {
+        $parser = new CliOptionsParser(new RuleOptionsParser());
+        $definition = new InputDefinition([
+            new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
+        ]);
+
+        $result = $parser->parseRuleOptions(new ArrayInput([
+            '--rule-opt' => ['coupling.distance:include-namespaces=regex:App\\\\(?:Domain|Model)(?:\\\\[^\\\\]+)*'],
+        ], $definition));
+
+        $selector = $result['coupling.distance']['includeNamespaces'] ?? null;
+        self::assertInstanceOf(NamespacePattern::class, $selector);
+        self::assertSame('regex:App\\\\(?:Domain|Model)(?:\\\\[^\\\\]+)*', $selector->definition->display());
+
+        $yaml = DistanceOptions::fromArray([
+            'include_namespaces' => [['regex' => 'App\\\\(?:Domain|Model)(?:\\\\[^\\\\]+)*']],
+        ])->includeNamespaces;
+        self::assertNotNull($yaml);
+        self::assertSame($yaml[0]->rendered(), $selector->rendered());
+    }
+
+    #[Test]
+    public function itRefusesABareDistanceNamespaceCliValue(): void
+    {
+        $parser = new CliOptionsParser(new RuleOptionsParser());
+        $definition = new InputDefinition([
+            new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
+        ]);
+
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('must use KIND:VALUE');
+
+        $parser->parseRuleOptions(new ArrayInput([
+            '--rule-opt' => ['coupling.distance:include-namespaces=App\\Domain'],
+        ], $definition));
+    }
+
+    #[Test]
+    public function itDecodesPerRuleSuppressionSelectors(): void
+    {
+        $parser = new CliOptionsParser(new RuleOptionsParser());
+        $definition = new InputDefinition([
+            new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
+        ]);
+
+        $result = $parser->parseRuleOptions(new ArrayInput([
+            '--rule-opt' => [
+                'complexity.ccn:suppress-paths=regex:.*Generated\\.php',
+                'complexity.ccn:suppress-namespaces=subtree:App\\Generated',
+            ],
+        ], $definition));
+
+        self::assertSame([['regex' => '.*Generated\\.php']], $result['complexity.ccn']['suppressPaths']);
+        self::assertSame([['subtree' => 'App\\Generated']], $result['complexity.ccn']['suppressNamespaces']);
+    }
+
     #[Test]
     public function itProcessesEveryRegisteredAliasNotJustTheHardcodedOnes(): void
     {

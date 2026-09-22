@@ -31,7 +31,7 @@ final readonly class MeasuredFindingSet
     {
         $result = $this->analyzer->analyze(
             $configuration,
-            $fileDiscovery ?? $this->fileDiscoveryFactory->create($configuration->pathExcludes),
+            $fileDiscovery ?? $this->fileDiscoveryFactory->create($configuration->projectRoot, $configuration->pathExcludes),
         );
         $projection = $this->projector->project(
             $result->findings,

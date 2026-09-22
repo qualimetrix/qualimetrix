@@ -20,6 +20,10 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -142,7 +146,9 @@ final class ConfigurationErrorProjectionTest extends TestCase
 
         $result = $this->project(
             [$ordinary, $configurationError],
-            new FindingProjectionOptions(suppressPaths: ['src']),
+            new FindingProjectionOptions(suppressPaths: [
+                new PathPattern(SelectorDefinition::fromKindAndValue(SelectorKind::Subtree->value, 'src')),
+            ]),
         );
 
         self::assertSame([$configurationError], $result->findings);
@@ -157,7 +163,9 @@ final class ConfigurationErrorProjectionTest extends TestCase
 
         $result = $this->project(
             [$ordinary, $configurationError],
-            new FindingProjectionOptions(suppressNamespaces: [self::NAMESPACE]),
+            new FindingProjectionOptions(suppressNamespaces: [
+                new NamespacePattern(SelectorDefinition::fromKindAndValue(SelectorKind::Subtree->value, self::NAMESPACE)),
+            ]),
         );
 
         self::assertSame([$configurationError], $result->findings);

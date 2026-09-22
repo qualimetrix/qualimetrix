@@ -56,7 +56,7 @@ final class FindingFilterTest extends TestCase
             $this->createFinding('App\\Other', 'Bar'),
         ];
 
-        $context = new FormatterContext(namespace: 'App\\Service');
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('App\\Service'));
 
         $result = $this->filter->filterFindings($findings, $context);
 
@@ -72,7 +72,7 @@ final class FindingFilterTest extends TestCase
             $this->createFinding('App\\Other', 'Bar'),
         ];
 
-        $context = new FormatterContext(namespace: 'App\\Service');
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
 
         $result = $this->filter->filterFindings($findings, $context);
 
@@ -87,7 +87,7 @@ final class FindingFilterTest extends TestCase
             $this->createFinding('App\\ServiceManager', 'Handler'),
         ];
 
-        $context = new FormatterContext(namespace: 'App\\Service');
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
 
         $result = $this->filter->filterFindings($findings, $context);
 
@@ -99,7 +99,7 @@ final class FindingFilterTest extends TestCase
      * pattern here too rather than a prefix that happens to contain a star.
      */
     #[Test]
-    public function itFiltersFindingsByAGlobNamespaceSelector(): void
+    public function itFiltersFindingsByARegexNamespaceSelector(): void
     {
         $findings = [
             $this->createFinding('App\\Domain\\Order', 'Handler'),
@@ -107,25 +107,11 @@ final class FindingFilterTest extends TestCase
             $this->createFinding('Lib\\Domain\\Order', 'Handler'),
         ];
 
-        $context = new FormatterContext(namespace: 'App\\*\\Order');
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::regex('App\\\\[^\\\\]+\\\\Order'));
 
         $result = $this->filter->filterFindings($findings, $context);
 
         self::assertCount(2, $result);
-    }
-
-    /** An empty selector names no namespace, so it selects nothing rather than the global one. */
-    #[Test]
-    public function itSelectsNothingForAnEmptyNamespaceSelector(): void
-    {
-        $findings = [
-            $this->createFinding('', 'Handler'),
-            $this->createFinding('App', 'Handler'),
-        ];
-
-        $context = new FormatterContext(namespace: '');
-
-        self::assertSame([], $this->filter->filterFindings($findings, $context));
     }
 
     #[Test]
@@ -204,7 +190,7 @@ final class FindingFilterTest extends TestCase
             $this->createOffender('App\\Other', 'Bar'),
         ];
 
-        $context = new FormatterContext(namespace: 'App\\Service');
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
 
         $result = $this->filter->filterWorstOffenders($offenders, $context);
 
@@ -220,7 +206,7 @@ final class FindingFilterTest extends TestCase
             $this->createOffender('App\\Other', 'Bar'),
         ];
 
-        $context = new FormatterContext(namespace: 'App\\Service');
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
 
         $result = $this->filter->filterWorstOffenders($offenders, $context);
 
@@ -259,32 +245,6 @@ final class FindingFilterTest extends TestCase
     }
 
     #[Test]
-    public function itIgnoresATrailingBackslashInTheNamespaceSelector(): void
-    {
-        $findings = [
-            $this->createFinding('App\\Service', 'Foo'),
-            $this->createFinding('App\\Other', 'Bar'),
-        ];
-
-        $result = $this->filter->filterFindings($findings, new FormatterContext(namespace: 'App\\Service\\'));
-
-        self::assertCount(1, $result);
-    }
-
-    #[Test]
-    public function itIgnoresATrailingBackslashWhenFilteringWorstOffenders(): void
-    {
-        $offenders = [
-            $this->createOffender('App\\Service', 'UserService'),
-            $this->createOffender('App\\Other', 'OrderService'),
-        ];
-
-        $result = $this->filter->filterWorstOffenders($offenders, new FormatterContext(namespace: 'App\\Service\\'));
-
-        self::assertCount(1, $result);
-    }
-
-    #[Test]
     public function itNeverSelectsProjectWideFindingsByNamespace(): void
     {
         $findings = [
@@ -292,14 +252,18 @@ final class FindingFilterTest extends TestCase
             $this->createProjectFinding(),
         ];
 
-        foreach (['*', 'App\\*', 'App\\Service'] as $selector) {
+        foreach ([
+            \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::regex('.*'),
+            \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App'),
+            \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('App\\Service'),
+        ] as $selector) {
             $result = $this->filter->filterFindings($findings, new FormatterContext(namespace: $selector));
 
             foreach ($result as $finding) {
                 self::assertNotSame(
                     SymbolType::Project,
                     $finding->symbolPath->getType(),
-                    \sprintf('Selector "%s" must not reach the project sentinel.', $selector),
+                    \sprintf('Selector "%s" must not reach the project sentinel.', $selector->definition->display()),
                 );
             }
         }

@@ -23,7 +23,7 @@ bin/qmx check src/
 ### Шаг 2: Погружение в проблемные пространства имён
 
 ```bash
-bin/qmx check src/ --namespace=App\\Domain\\Order
+bin/qmx check src/ --namespace='subtree:App\Domain\Order'
 ```
 
 Вид пространства имён показывает оценки здоровья по нему, дочерние пространства и худшие классы внутри. Ищите пространства имён с оценкой ниже 50 (Poor или Critical).
@@ -66,7 +66,7 @@ Qualimetrix указывает номера строк для каждого н�
 3. **Погрузитесь в худшие пространства имён** и посмотрите на нестабильность (I), абстрактность (A) и расстояние от главной последовательности (D):
 
     ```bash
-    bin/qmx check src/ --namespace=App\\Infrastructure
+    bin/qmx check src/ --namespace='subtree:App\Infrastructure'
     ```
 
 4. **Фокусируйтесь на ошибках CBO** (порог 20), а не предупреждениях (порог 14). Ошибки CBO указывают на классы, которые, вероятно, нуждаются в декомпозиции.
@@ -112,7 +112,7 @@ dot -Tsvg graph.dot -o graph.svg
 bin/qmx graph:export src/ --format=json -o graph.json
 
 # Фокус на одной проблемной области
-bin/qmx graph:export src/ --namespace=App\\Domain --exclude-namespace=App\\Domain\\Generated
+bin/qmx graph:export src/ --namespace='subtree:App\Domain' --exclude-namespace='subtree:App\Domain\Generated'
 ```
 
 Используйте `--direction=TB` для расположения сверху вниз на широких графах и
@@ -306,7 +306,7 @@ TCC (Tight Class Cohesion) измеряет, какая доля пар мето
 bin/qmx check src/ --format=json --workers=1
 
 # Шаг 2: Глубокое погружение в конкретное пространство имён
-bin/qmx check src/ --namespace=App\\Domain --format=json --workers=1
+bin/qmx check src/ --namespace='subtree:App\Domain' --format=json --workers=1
 
 # Шаг 3: Сырые метрики для индивидуального анализа
 bin/qmx check src/ --format=metrics --workers=1

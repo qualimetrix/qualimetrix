@@ -8,7 +8,7 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow;
  * Three kinds of {@see LayerSelector}, decided per the D4 grammar.
  *
  * - {@see Exact} — bare literal layer name.
- * - {@see Glob} — fnmatch-style wildcard ({@code *}, {@code ?}, {@code [...]}).
+ * - {@see Glob} — anchored wildcard ({@code *}, {@code ?}).
  * - {@see Captured} — at least one {@code {var}} placeholder.
  */
 enum SelectorKind: string

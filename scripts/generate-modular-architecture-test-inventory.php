@@ -1071,7 +1071,7 @@ function classifyOwner(string $path): string
         return 'Core/' . $matches[1];
     }
     if (str_starts_with($path, 'tests/Core/')) {
-        return 'Core/Neutral';
+        return 'Core';
     }
     if (str_starts_with($path, 'tests/Analysis/Evidence/Measurement/')) {
         return 'Analysis/Evidence/Measurement';

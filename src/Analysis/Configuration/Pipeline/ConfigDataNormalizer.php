@@ -95,6 +95,13 @@ final class ConfigDataNormalizer
      */
     private static function omittingUnwrittenEntries(array $subtree): array
     {
+        // A selector is an authored one-entry mapping. Its value is validated
+        // by SelectorYamlDecoder, including a null that must be refused as a
+        // malformed selector rather than silently erased as an unwritten key.
+        if (self::isSelectorMapping($subtree)) {
+            return $subtree;
+        }
+
         $result = [];
 
         foreach ($subtree as $key => $value) {
@@ -106,6 +113,18 @@ final class ConfigDataNormalizer
         }
 
         return $result;
+    }
+
+    /** @param array<string|int, mixed> $value */
+    private static function isSelectorMapping(array $value): bool
+    {
+        if (\count($value) !== 1) {
+            return false;
+        }
+
+        $kind = array_key_first($value);
+
+        return \is_string($kind) && \in_array($kind, ['exact', 'subtree', 'regex'], true);
     }
 
     /**

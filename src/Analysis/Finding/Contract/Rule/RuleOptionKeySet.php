@@ -15,11 +15,14 @@ use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
  * value is how that authority is stated instead of guessed, in the same shape
  * ADR 0038 gave the warning boundary: the class says, the reader asks.
  *
- * A key is in exactly one of three states, and the three are disjoint and
+ * A key is in exactly one of four states, and the four are disjoint and
  * exhaustive:
  *
  * - **accepted** — written here, read here, printed in the "allowed here"
  *   sentence;
+ * - **accepted and validated by the class** — writable and printed like an
+ *   accepted key, but its ingress-specific carrier has no generic
+ *   {@see RuleOptionShape}; the options class validates it in its own words;
  * - **answered by the class** — recognised only so that `fromArray()` may
  *   refuse it in its own words, or accept a spelling that means "leave things
  *   as they are". A reader must neither warn nor refuse on these: the class
@@ -44,11 +47,13 @@ final readonly class RuleOptionKeySet
      *
      * @param array<string, string> $accepted normalized key => declared kebab spelling
      * @param array<string, RuleOptionShape> $shapes normalized key => the form its value may take
+     * @param array<string, string> $acceptedAndValidatedByTheClass normalized key => declared kebab spelling
      * @param array<string, string> $answeredByTheClass normalized key => declared kebab spelling
      */
     private function __construct(
         private array $accepted,
         private array $shapes,
+        private array $acceptedAndValidatedByTheClass,
         private array $answeredByTheClass,
     ) {}
 
@@ -64,7 +69,7 @@ final readonly class RuleOptionKeySet
             $shapes[ConfigKeySpelling::normalize((string) $key)] = $shape;
         }
 
-        return new self($indexed, $shapes, []);
+        return new self($indexed, $shapes, [], []);
     }
 
     /**
@@ -74,12 +79,30 @@ final readonly class RuleOptionKeySet
      */
     public function alsoAnsweredByTheClass(string ...$keys): self
     {
-        $taken = $this->accepted + $this->answeredByTheClass;
+        $taken = $this->accepted + $this->acceptedAndValidatedByTheClass + $this->answeredByTheClass;
 
         return new self(
             $this->accepted,
             $this->shapes,
+            $this->acceptedAndValidatedByTheClass,
             $this->answeredByTheClass + self::index(array_values($keys), $taken),
+        );
+    }
+
+    /**
+     * Adds writable keys whose authored/runtime carriers the options class
+     * validates itself because no generic {@see RuleOptionShape} describes
+     * them without importing an owner-specific type.
+     */
+    public function alsoAcceptedAndValidatedByTheClass(string ...$keys): self
+    {
+        $taken = $this->accepted + $this->acceptedAndValidatedByTheClass + $this->answeredByTheClass;
+
+        return new self(
+            $this->accepted,
+            $this->shapes,
+            $this->acceptedAndValidatedByTheClass + self::index(array_values($keys), $taken),
+            $this->answeredByTheClass,
         );
     }
 
@@ -101,34 +124,38 @@ final readonly class RuleOptionKeySet
     {
         $slots = array_map(strval(...), array_keys($levelOptionsClasses));
         $shapes = $this->shapes;
+        $taken = $this->accepted + $this->acceptedAndValidatedByTheClass + $this->answeredByTheClass;
 
         foreach ($slots as $slot) {
             $shapes[ConfigKeySpelling::normalize($slot)] = RuleOptionShape::block()->orNull();
         }
 
         return new self(
-            $this->accepted + self::index($slots, $this->accepted + $this->answeredByTheClass),
+            $this->accepted + self::index($slots, $taken),
             $shapes,
+            $this->acceptedAndValidatedByTheClass,
             $this->answeredByTheClass,
         );
     }
 
     /**
      * True when $key — already folded through `ConfigKeySpelling::normalize()` —
-     * is in either half, which is to say the class has something to say about it.
+     * is in any declared state, which is to say the class has something to say about it.
      */
     public function knows(string $key): bool
     {
-        return isset($this->accepted[$key]) || isset($this->answeredByTheClass[$key]);
+        return isset($this->accepted[$key])
+            || isset($this->acceptedAndValidatedByTheClass[$key])
+            || isset($this->answeredByTheClass[$key]);
     }
 
     /**
-     * True only for the half a reader may accept silently; a key the class
-     * answers about itself is known but not accepted.
+     * True for either writable state; a key the class recognises only to give
+     * a bespoke answer is known but not accepted.
      */
     public function accepts(string $key): bool
     {
-        return isset($this->accepted[$key]);
+        return isset($this->accepted[$key]) || isset($this->acceptedAndValidatedByTheClass[$key]);
     }
 
     /**
@@ -144,13 +171,13 @@ final readonly class RuleOptionKeySet
      */
     public function spellingOf(string $key): ?string
     {
-        return $this->accepted[$key] ?? null;
+        return $this->accepted[$key] ?? $this->acceptedAndValidatedByTheClass[$key] ?? null;
     }
 
     /**
-     * The declared form of an accepted key — already folded through
-     * `ConfigKeySpelling::normalize()` — or null when nothing here accepts it.
-     * A key the class answers about itself has no form here by construction.
+     * The declared form of a generically validated accepted key — already
+     * folded through `ConfigKeySpelling::normalize()` — or null when the class
+     * validates the carrier itself or the key is not accepted.
      */
     public function shapeOf(string $key): ?RuleOptionShape
     {
@@ -166,7 +193,7 @@ final readonly class RuleOptionKeySet
      */
     public function acceptedForDisplay(): array
     {
-        $spellings = array_values($this->accepted);
+        $spellings = array_values($this->accepted + $this->acceptedAndValidatedByTheClass);
         sort($spellings);
 
         return $spellings;
@@ -199,7 +226,7 @@ final readonly class RuleOptionKeySet
 
             if (isset($taken[$normalized]) || isset($indexed[$normalized])) {
                 throw new LogicException(\sprintf(
-                    'Rule option key "%s" is declared twice; the three key states must stay disjoint.',
+                    'Rule option key "%s" is declared twice; the four key states must stay disjoint.',
                     $key,
                 ));
             }

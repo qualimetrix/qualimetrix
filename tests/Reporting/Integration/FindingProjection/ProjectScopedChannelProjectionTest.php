@@ -19,6 +19,10 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -74,13 +78,17 @@ final class ProjectScopedChannelProjectionTest extends TestCase
     #[Test]
     public function itSurvivesPathExclusionCoveringTheFile(): void
     {
-        $this->assertEveryDeclaredChannelSurvives(new FindingProjectionOptions(suppressPaths: ['src/**']));
+        $this->assertEveryDeclaredChannelSurvives(new FindingProjectionOptions(suppressPaths: [
+            new PathPattern(SelectorDefinition::fromKindAndValue(SelectorKind::Subtree->value, 'src')),
+        ]));
     }
 
     #[Test]
     public function itSurvivesNamespaceExclusionCoveringTheNamespace(): void
     {
-        $this->assertEveryDeclaredChannelSurvives(new FindingProjectionOptions(suppressNamespaces: ['App\\**']));
+        $this->assertEveryDeclaredChannelSurvives(new FindingProjectionOptions(suppressNamespaces: [
+            new NamespacePattern(SelectorDefinition::fromKindAndValue(SelectorKind::Subtree->value, 'App')),
+        ]));
     }
 
     #[Test]

@@ -24,10 +24,15 @@ Core/
 │   ├── PathFactory.php                    # Boundary factory creating absolute/relative paths
 │   └── RelativePath.php                   # Relative file path value object
 ├── Pattern/
-│   ├── GlobSyntax.php                     # The one alphabet that makes a pattern a glob
-│   ├── NamespaceMatcher.php               # Glob pattern matching for namespaces
-│   ├── PathMatcher.php                    # Glob pattern matching for file paths
-│   └── PatternMatch.php                   # The pattern a matcher's matches() fired on
+│   ├── CompiledSelector.php                # Shared separator-bound PCRE execution
+│   ├── NamespaceMatcher.php               # Ordered matching for bound namespace selectors
+│   ├── NamespacePattern.php               # Namespace-bound exact/subtree/regex selector
+│   ├── PathMatcher.php                    # Ordered matching for bound path selectors
+│   ├── PathPattern.php                    # Path-bound exact/subtree/regex selector
+│   ├── PatternMatch.php                   # The authored selector definition that fired
+│   ├── SelectorDefinition.php             # Authored exact/subtree/regex selector and budgets
+│   ├── SelectorKind.php                   # Explicit open-universe selector grammar
+│   └── SelectorMatchFailure.php           # Controlled PCRE resource failure
 ├── Profiler/
 │   └── Contract/
 │       └── ProfilerInterface.php          # Neutral instrumentation vocabulary
@@ -710,26 +715,35 @@ contracts to Console; no holder or public no-op implementation exists.
 
 ## Pattern Matching
 
-### GlobSyntax
+### SelectorDefinition and SelectorKind
 
-The characters (`*`, `?`, `[`) that make a pattern a glob, in one place. `PathMatcher` and `NamespaceMatcher` read it to choose between `fnmatch()` and prefix matching; `ValueScopeJudgement` reads it to find a value's literal head. A brace is deliberately not among them — `fnmatch()` with `FNM_NOESCAPE` expands no braces, so a matcher applies `{legacy}` literally, and a judge calling it a glob would disagree with what the run did.
+An authored selector has one explicit kind: `exact`, `subtree`, or `regex`.
+There is no punctuation-based fallback. The definition preserves the authored
+value for diagnostics and attribution, enforces the shared length/count budget,
+and reserves raw `~` in regex fragments for the internal PCRE delimiter.
 
-**Constants:** `CHARACTERS: string` — the `strcspn()` mask, public because the position of the first glob character cannot be recovered from a boolean
+### PathPattern and NamespacePattern
 
-**Methods:**
-- `isGlob(string $pattern): bool`
+These immutable values bind a definition to `/` paths or `\` PHP names. Exact
+values are quoted, subtree values include the root and separator-bound
+descendants, and regex fragments are used unchanged inside fixed full-subject
+anchors and resource limits. A positive PCRE result counts only when its
+reported span covers the complete subject. Compile failures are rejected while
+binding; match-time resource failures raise `SelectorMatchFailure`.
 
 ### PatternMatch
 
-The pattern that fired, returned by `PathMatcher::matches()` and `NamespaceMatcher::matches()` alongside the yes/no answer so a caller never has to re-scan the pattern list to learn what matched.
+The authored selector definition that fired, returned by `PathMatcher::matches()`
+and `NamespaceMatcher::matches()` so a caller never has to re-scan the ordered
+pattern list or reconstruct provenance from rendered PCRE.
 
-**Fields:** `pattern: string`
+**Fields:** `definition: SelectorDefinition`
 
 ### PathMatcher
 
-Matches file paths against patterns. Supports two modes per pattern: prefix matching (no glob characters — `src/Entity` matches all files under it) and glob matching (with `*`, `?`, `[` — `src/Metrics/*Visitor.php`). Used for `suppress_paths` configuration.
+Matches project-relative paths against already-bound path patterns.
 
-**Constructor:** `__construct(list<string> $patterns)`
+**Constructor:** `__construct(list<PathPattern> $patterns)`
 
 **Methods:**
 - `matches(RelativePath $filePath): ?PatternMatch` — the pattern that matched, or `null`; when several patterns match, the first one in configuration order wins
@@ -737,14 +751,12 @@ Matches file paths against patterns. Supports two modes per pattern: prefix matc
 
 ### NamespaceMatcher
 
-Matches namespaces against patterns. Same dual-mode logic as `PathMatcher` but uses `\` as boundary separator, and a trailing `\` in a pattern is cosmetic (`App\Entity\` ≡ `App\Entity`) — normalization lives in `matchesSingle()`, so every caller gets it. Used for `suppress_namespaces`, the `--namespace` selector, health drill-down, worst-offender lists, `coupling.distance`'s `include_namespaces` and layer-policy `patterns:`.
+Matches PHP namespaces against already-bound namespace patterns.
 
-**Constructor:** `__construct(list<string> $patterns)`
+**Constructor:** `__construct(list<NamespacePattern> $patterns)`
 
 **Methods:**
-- `matches(string $namespace): ?PatternMatch` — the pattern that matched, or `null`; when several patterns match, the first one in configuration order wins (returned with its trailing `\` stripped)
-- `matchesSingle(string $pattern, string $namespace): bool` (static) — single-pattern primitive every other caller delegates to
-- `isGlob(string $pattern): bool` (static)
+- `matches(string $namespace): ?PatternMatch` — the definition that matched, or `null`; when several patterns match, the first one in configuration order wins
 - `isEmpty(): bool` — whether no patterns are configured
 
 ---

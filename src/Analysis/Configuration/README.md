@@ -31,6 +31,7 @@ Configuration/
 ├── Preset/             # built-in and custom preset resolution
 ├── ConfigKeySpelling.php   # the snake/kebab/camel fold of a key, and its inverse
 ├── ConfigurationMerger.php # document-layer merge mechanics
+├── SelectorYamlDecoder.php  # explicit selector mapping → Core path/namespace pattern
 └── RetiredSuppressionOptions.php # the retired `exclude*` spellings and the one refusal
 ```
 
@@ -66,6 +67,15 @@ instance-owned catalog only after full validation. Coupling likewise folds the
 canonical `coupling.framework_namespaces` contribution into its own run-scoped
 state. The document root remains normalized and schema-governed even though the
 mixed carrier copies that value.
+
+`SelectorYamlDecoder` is the configuration ingress for the shared selector
+language. A selector list entry is exactly one mapping — `{exact: value}`,
+`{subtree: value}`, or `{regex: value}` — never a bare string. It retains the
+document origin and list position when translating mapping or PCRE validation
+failures to `ConfigurationRefusal`, then builds the separator-bound Core value.
+`ConfigDataNormalizer` preserves those mappings, including malformed null
+values, until this decoder can reject them instead of silently treating them as
+unwritten configuration.
 
 ## Public contracts and adapters
 

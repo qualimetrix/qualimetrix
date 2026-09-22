@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing;
 
+use InvalidArgumentException;
 use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -108,8 +109,11 @@ final class TupleExtractorTest extends TestCase
     }
 
     #[Test]
-    public function itIgnoresATrailingBackslashInANonCaptureFilter(): void
+    public function itRejectsATrailingBackslashInANonCaptureFilter(): void
     {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('trailing');
+
         $template = new TemplateLayerDefinition(
             'domain-{module}',
             new MembershipSpec(patterns: [
@@ -123,7 +127,7 @@ final class TupleExtractorTest extends TestCase
             'App\\DomainBus\\Order\\Entity\\Ignored',
         ]);
 
-        self::assertSame([['module' => 'Order']], $this->extractor->collect($template, $classes));
+        $this->extractor->collect($template, $classes);
     }
 
     #[Test]
@@ -151,6 +155,23 @@ final class TupleExtractorTest extends TestCase
         self::assertSame('Order', $tuples[1]['module']);
         self::assertSame('WidgetsLtd', $tuples[2]['tenant']);
         self::assertSame('Reports', $tuples[2]['module']);
+    }
+
+    #[Test]
+    public function itExtractsAGenuinelyMultiSegmentAuxiliaryBinding(): void
+    {
+        $template = new TemplateLayerDefinition(
+            'domain-{module}',
+            new MembershipSpec(patterns: ['App\\{path:**}\\Module\\{module}\\Domain\\**']),
+        );
+
+        self::assertSame(
+            [['path' => 'Company\\Product', 'module' => 'Order']],
+            $this->extractor->collect(
+                $template,
+                self::classSet(['App\\Company\\Product\\Module\\Order\\Domain\\Entity']),
+            ),
+        );
     }
 
     #[Test]

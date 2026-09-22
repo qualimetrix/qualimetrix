@@ -106,7 +106,7 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
         );
 
         if ($context->namespace !== null) {
-            $header .= \sprintf(' [namespace: %s]', $context->namespace);
+            $header .= \sprintf(' [namespace: %s]', $context->namespaceDisplay());
         } elseif ($context->class !== null) {
             $header .= \sprintf(' [class: %s]', $context->class);
         }

@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting;
 
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Pattern\NamespacePattern;
 
 /**
  * Context passed to formatters with rendering options.
  *
  * Created by CheckCommand from CLI flags and OutputInterface state.
  *
- * @qmx-threshold coupling.cbo warning=32 error=32 -- Formatter context is the immutable Reporting input boundary every formatter's `format(Report, FormatterContext)` signature depends on. `Infrastructure\Console\ResultPresenter` also names it directly to refuse a `--namespace` or `--class` value that selects nothing. Raw CBO 31 gets one-edge headroom from the inclusive threshold of 32.
+ * @qmx-threshold coupling.cbo warning=33 error=33 -- Formatter context is the immutable Reporting input boundary every formatter's `format(Report, FormatterContext)` signature depends on. `Infrastructure\Console\ResultPresenter` also names it directly to refuse a `--namespace` or `--class` value that selects nothing, and the bound namespace selector is now part of that stable boundary. Raw CBO 32 gets one-edge headroom from the inclusive threshold of 33.
  */
 final readonly class FormatterContext
 {
@@ -23,7 +24,7 @@ final readonly class FormatterContext
      * @param array<string, string> $options Formatter-specific options from --format-opt
      * @param string $basePath Base directory for relativizing file paths in output (e.g., CWD)
      * @param bool $scopedReporting Whether reporting is scoped (e.g., --report=git:main..HEAD). Metrics and health are always complete; only findings are filtered to scope.
-     * @param string|null $namespace Namespace filter for drill-down, matched by NamespaceMatcher::matchesSingle(): boundary-aware prefix, or glob when the value contains * ? [
+     * @param NamespacePattern|null $namespace Executable namespace selector for drill-down
      * @param string|null $class Class filter for drill-down (exact FQCN match)
      * @param int $terminalWidth Terminal width for adaptive rendering (0 = use default 80)
      * @param int|null $detailLimit Finding limit for --detail mode (null = off, 0 = all, N = limit)
@@ -36,7 +37,7 @@ final readonly class FormatterContext
         public array $options = [],
         public string $basePath = '',
         public bool $scopedReporting = false,
-        public ?string $namespace = null,
+        public ?NamespacePattern $namespace = null,
         public ?string $class = null,
         public int $terminalWidth = 0,
         public ?int $detailLimit = null,
@@ -92,6 +93,11 @@ final readonly class FormatterContext
     public function getOption(string $key, string $default = ''): string
     {
         return $this->options[$key] ?? $default;
+    }
+
+    public function namespaceDisplay(): ?string
+    {
+        return $this->namespace?->definition->display();
     }
 
     /**

@@ -549,7 +549,9 @@ final class DirectivesCommandTest extends TestCase
 
         $excluded = self::decode($this->runCheck([
             'paths' => [$this->tempDir . '/src'],
-            '--config' => $this->writeConfig(self::WITHOUT_COUPLING . "suppress_paths: ['*Debt.php']\n"),
+            '--config' => $this->writeConfig(
+                self::WITHOUT_COUPLING . "suppress_paths: [{regex: '.*Debt\\.php'}]\n",
+            ),
             '--format' => 'json',
         ])->getDisplay());
 
@@ -1112,19 +1114,26 @@ final class DirectivesCommandTest extends TestCase
             $this->tempDir . '/src/generated/Skipped.php',
             self::sevenParameterMethod('@qmx-threshold complexity.ccn warning=50 error=80 — dead', 'Skipped'),
         );
-        $config = $this->writeConfig("exclude: ['generated']\n");
+        $config = $this->writeConfig("exclude:\n  - subtree: src/generated\n");
 
-        $audit = self::decode($this->audit([
-            'paths' => [$this->tempDir . '/src'],
-            '--config' => $config,
-            '--format' => 'json',
-        ])->getDisplay());
+        $workingDirectory = getcwd();
+        self::assertNotFalse($workingDirectory);
+        try {
+            chdir($this->tempDir);
+            $audit = self::decode($this->audit([
+                'paths' => ['src'],
+                '--config' => $config,
+                '--format' => 'json',
+            ])->getDisplay());
 
-        $check = self::decode($this->runCheck([
-            'paths' => [$this->tempDir . '/src'],
-            '--config' => $config,
-            '--format' => 'json',
-        ])->getDisplay());
+            $check = self::decode($this->runCheck([
+                'paths' => ['src'],
+                '--config' => $config,
+                '--format' => 'json',
+            ])->getDisplay());
+        } finally {
+            chdir($workingDirectory);
+        }
 
         self::assertSame($check['coverage']['analyzed'], $audit['scope']['analyzed_files']);
         self::assertSame(1, $audit['scope']['analyzed_files']);

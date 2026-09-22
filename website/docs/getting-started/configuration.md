@@ -52,12 +52,13 @@ Equivalent CLI: `--include-generated`
 
 ### Suppress Paths
 
-Path patterns for suppressing violations. Unlike `exclude`, these files **are still analyzed** (their metrics are collected), but violations are not reported. Supports both directory prefixes and glob patterns:
+Path selectors suppress violations while the files **are still analyzed**. Each YAML item is a one-entry mapping: `exact` selects one canonical project-relative path, `subtree` also selects `/`-separated descendants, and `regex` accepts a delimiterless PCRE fragment that Qualimetrix anchors to the whole path:
 
 ```yaml
 suppress_paths:
-  - src/Entity                # prefix: matches all files under src/Entity/
-  - src/Metrics/*Visitor.php  # glob: matches visitor files only
+  - subtree: src/Entity
+  - exact: src/DTO/Address.php
+  - regex: 'src/Metrics/.*Visitor\.php'
 ```
 
 Also available as a CLI option: `--suppress-path` (merged with YAML config).
@@ -88,12 +89,13 @@ Also available as a CLI option: `--suppress-path` (merged with YAML config).
 
 ### Suppress Namespaces
 
-Suppress violations for classes in specific namespaces (prefix matching). Like `suppress_paths`, files are still analyzed and metrics are collected, but violations are not reported. This applies to all rules globally:
+Suppress violations for classes in selected namespaces. Namespace selectors use the same three explicit forms; `subtree` follows `\` namespace boundaries and `regex` is automatically full-subject:
 
 ```yaml
 suppress_namespaces:
-  - App\Tests
-  - App\Generated
+  - subtree: App\Tests
+  - exact: App\Generated\BuildInfo
+  - regex: 'App\\Legacy(?:\\[^\\]+)*'
 ```
 
 This is useful when entire namespace subtrees should never produce violations. For per-rule exclusions, use `suppress_namespaces` inside a rule configuration instead (see below).
@@ -241,23 +243,23 @@ no off-switch of its own and the value looks like the rule's.
 
 **Suppress namespaces for a rule:**
 
-Any rule can exclude specific namespaces using prefix matching. Violations from matching namespaces are suppressed:
+Any rule can use the same explicit namespace selectors:
 
 ```yaml
 rules:
   complexity.ccn:
     suppress_namespaces:
-      - App\Tests
-      - App\Legacy
+      - subtree: App\Tests
+      - subtree: App\Legacy
     callable:
       warning: 15
       error: 25
 
   coupling.cbo:
     suppress_namespaces:
-      - App\Tests
+      - subtree: App\Tests
     suppress_paths:
-      - src/Infrastructure/DependencyInjection
+      - subtree: src/Infrastructure/DependencyInjection
 ```
 
 This is useful when certain namespaces (e.g., tests, generated code, legacy modules) should not trigger violations for a specific rule, while still being analyzed for metrics.
@@ -272,12 +274,12 @@ rules:
   health.cohesion:
     suppress_namespace_channels:
       health.cohesion:
-        - App\Metrics\Coupling
-        - App\Generated\*
+        - subtree: App\Metrics\Coupling
+        - regex: 'App\\Generated(?:\\[^\\]+)*'
 ```
 
-The option is a non-empty map from channel selector to a non-empty list of namespace
-prefixes or globs. The key reads the same grammar as everywhere else — an **exact channel
+The option is a non-empty map from channel selector to a non-empty list of explicit namespace
+selectors. The key uses the closed channel grammar — an **exact channel
 name**, or `X.*` for the strict descendants of `X`, either optionally narrowed to a level with
 `:namespace`; see [Rule and channel selectors](#rule-and-channel-selectors) below. A bare
 prefix such as `health` is an error, not a group: write `health.*`. Exact `health.cohesion`
@@ -304,7 +306,7 @@ rules:
     suppress_namespace_channels:
       # the namespace aggregate only; the class findings of the same channel stay reported
       coupling.cbo:namespace:
-        - App\Legacy
+        - subtree: App\Legacy
 ```
 
 Writing the level is optional: a level-free key already reaches only namespace aggregates, so
@@ -336,14 +338,14 @@ unchanged and stays producer-wide across class and namespace findings.
 
 **Suppress paths for a rule:**
 
-Any rule can exclude specific file paths using prefix or glob matching. Violations from matching files are suppressed:
+Any rule can use the same explicit path selectors. Violations from matching files are suppressed:
 
 ```yaml
 rules:
   coupling.cbo:
     suppress_paths:
-      - src/Metrics                # prefix: all files in src/Metrics/
-      - src/Metrics/*Visitor.php   # glob: only visitor files
+      - subtree: src/Metrics
+      - regex: 'src/Metrics/.*Visitor\.php'
 ```
 
 This works alongside `suppress_namespaces` -- both filters are applied. Unlike the global `suppress_paths`, per-rule `suppress_paths` only affects the specific rule, not all rules.
@@ -658,15 +660,15 @@ paths:
   - src/
 
 exclude:
-  - vendor/
-  - tests/Fixtures/
+  - subtree: vendor
+  - subtree: tests/Fixtures
 
 suppress_paths:
-  - src/Entity
-  - src/DTO
+  - subtree: src/Entity
+  - subtree: src/DTO
 
 suppress_namespaces:
-  - App\Tests
+  - subtree: App\Tests
 
 include_generated: false
 
@@ -682,8 +684,8 @@ parallel:
 
 coupling:
   framework-namespaces:
-    - Symfony
-    - Doctrine
+    - subtree: Symfony
+    - subtree: Doctrine
 
 exclude_health:
   - typing
@@ -695,9 +697,9 @@ disabled_rules:
 rules:
   complexity.ccn:
     suppress_namespaces:
-      - App\Tests
+      - subtree: App\Tests
     suppress_paths:
-      - src/Generated
+      - subtree: src/Generated
     callable:
       warning: 15
       error: 25
@@ -718,7 +720,7 @@ Command-line options always take precedence over values in the configuration fil
 vendor/bin/qmx check lib/
 
 # Add extra suppressed paths on top of config
-vendor/bin/qmx check src/ --suppress-path='src/Generated/*'
+vendor/bin/qmx check src/ --suppress-path='subtree:src/Generated'
 ```
 
 This makes it easy to experiment without editing the config file.
@@ -890,14 +892,10 @@ unnoticed:
   `only_rules: [complexity.ccn]` and `exclude_methods: [getName]`. The same in
   the other direction: `cache: [dir]` is refused, because `cache:` is a section
   of named keys.
-- **The root `suppress_paths:` is the exception to "a number is not a string".**
-  A directory can lawfully be called `2024`, and YAML hands such an unquoted
-  segment over as a number, so that root reads it as the name it is. Three
-  neighbours do not: `suppress_namespaces:` refuses it, because a namespace
-  segment cannot begin with a digit; the per-rule `rules.<name>.suppress_paths:`
-  refuses it too, being declared as strings; and `paths:` / `exclude:` drop such
-  an entry without a word. Quote it — `['2024']` — wherever you are not writing
-  the root key.
+- **Selector lists contain one-entry mappings, not scalar shortcuts.** Write
+  `- exact: '2024'` for a directory literally named `2024`; a bare scalar is
+  refused for `suppress_paths`, `suppress_namespaces`, `exclude`, framework
+  namespaces, and per-rule selector lists alike.
 - **The empty string is a shape of its own.** It is refused wherever a non-empty
   value is required, on the command line as well: `--fail-on=`, `--format=`,
   `--cache-dir=` and `--memory-limit=` each name what they expected instead of

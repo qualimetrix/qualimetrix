@@ -14,7 +14,7 @@ Every `--exclude` value and every `exclude:` entry in `qmx.yaml` is checked agai
 
 ### Why it matters
 
-Without this channel, a missed exclusion and no exclusion at all produce byte-identical output. There is nothing in a report to tell an author that `--exclude=vendor` never fired because the run was rooted below `vendor/` already, or that `exclude: [tests]` stopped matching when the directory was renamed to `test/`. The excluded files are analysed, they contribute findings, and the exclusion sits in the configuration looking like it works.
+Without this channel, a missed exclusion and no exclusion at all produce byte-identical output. There is nothing in a report to tell an author that `--exclude=subtree:vendor` never fired because the run was rooted below `vendor/` already, or that `exclude: [{subtree: tests}]` stopped matching when the directory was renamed to `test/`. The excluded files are analysed, they contribute findings, and the exclusion sits in the configuration looking like it works.
 
 ### Scope and severity
 
@@ -22,7 +22,7 @@ The channel reports at **project level**, at severity `warning`.
 
 It is only judged on a run whose paths cover everything the project's `composer.json` declares as production code — `psr-4` and `psr-0` roots, `classmap` and `files` entries alike. On a narrower run — a single subdirectory, a git-scoped run — a pattern binds nothing simply because the code it names lies outside the slice. That is the caller's choice, not the author's mistake, so the rule stays silent rather than reporting the caller's own narrowing back at them. A project whose manifest declares no production autoload at all — no `composer.json`, one that does not parse, or one with no production section — gives the check nothing to measure the run against, and the rule stays silent there too.
 
-A pattern is judged against the **whole project tree**, not against the analysed paths. `exclude: [tests]` written for `qmx check .` removes nothing under `qmx check src/`, but the directory it names is right there, so the rule says nothing. Only a pattern that would remove no directory anywhere in the project is reported.
+A selector is judged against the **whole project tree**, not against the analysed paths. `exclude: [{subtree: tests}]` written for `qmx check .` removes nothing under `qmx check src/`, but the directory it names is right there, so the rule says nothing. Only a selector that would remove no directory anywhere in the project is reported. Discovery uses the same full-subject `exact | subtree | regex` path language as suppression and prunes a matching directory before descending into it.
 
 | Rule              | ID                            | What it detects                              |
 | ----------------- | ----------------------------- | -------------------------------------------- |
@@ -31,7 +31,7 @@ A pattern is judged against the **whole project tree**, not against the analysed
 ### Example
 
 ```bash
-bin/qmx check src/ --exclude=Generated
+bin/qmx check src/ --exclude=subtree:Generated
 ```
 
 When no directory named `Generated` exists anywhere in the project:

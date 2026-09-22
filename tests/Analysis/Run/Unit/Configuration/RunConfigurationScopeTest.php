@@ -11,6 +11,9 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 
 /**
  * The narrowing transfer, which exists because the positional rebuild it
@@ -27,8 +30,14 @@ final class RunConfigurationScopeTest extends TestCase
             [$root->joinRelative(RelativePath::fromString('src/Domain'))],
         );
 
-        self::assertSame(['vendor', 'Legacy'], $narrowed->pathExcludes);
-        self::assertSame(['Legacy'], $narrowed->authoredPathExcludes);
+        self::assertSame(
+            ['subtree:vendor', 'subtree:Legacy'],
+            array_map(static fn(PathPattern $pattern): string => $pattern->definition->display(), $narrowed->pathExcludes),
+        );
+        self::assertSame(
+            ['subtree:Legacy'],
+            array_map(static fn(PathPattern $pattern): string => $pattern->definition->display(), $narrowed->authoredPathExcludes),
+        );
         self::assertSame($root->value(), $narrowed->projectRoot->value());
         self::assertSame(GeneratedFilePolicy::Include, $narrowed->generatedFilePolicy);
     }
@@ -55,11 +64,16 @@ final class RunConfigurationScopeTest extends TestCase
     {
         return new RunConfiguration(
             paths: [AbsolutePath::fromString('/project/src')],
-            pathExcludes: ['vendor', 'Legacy'],
+            pathExcludes: [self::pathPattern('vendor'), self::pathPattern('Legacy')],
             projectRoot: AbsolutePath::fromString('/project'),
             generatedFilePolicy: GeneratedFilePolicy::Include,
             coversProjectScope: true,
-            authoredPathExcludes: ['Legacy'],
+            authoredPathExcludes: [self::pathPattern('Legacy')],
         );
+    }
+
+    private static function pathPattern(string $value): PathPattern
+    {
+        return new PathPattern(new SelectorDefinition(SelectorKind::Subtree, $value));
     }
 }

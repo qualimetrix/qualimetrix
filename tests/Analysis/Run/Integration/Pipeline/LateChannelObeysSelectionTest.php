@@ -240,7 +240,7 @@ final class LateChannelObeysSelectionTest extends TestCase
     {
         self::assertSame(
             [self::LATE],
-            $this->channelsFrom(['--rule-opt' => [self::PRODUCER . ':suppress_paths=**']]),
+            $this->channelsFrom(['--rule-opt' => [self::PRODUCER . ':suppress_paths=regex:.*']]),
         );
     }
 

@@ -15,6 +15,10 @@ use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 
 /**
  * The cases the command cannot stage: a run with no namespace tree, and the
@@ -39,8 +43,8 @@ final class UnboundSuppressionAuditTest extends TestCase
     public function itJudgesNoNamespaceWhenTheRunBuiltNoNamespaceTree(): void
     {
         $channels = $this->channelsOf($this->audit()->findings(
-            ['src/Gone'],
-            ['Sample\\Gone'],
+            [$this->path(SelectorKind::Subtree, 'src/Gone')],
+            [$this->namespace(SelectorKind::Subtree, 'Sample\\Gone')],
             [RelativePath::fromString('src/Service.php')],
             null,
             $this->scope(),
@@ -58,7 +62,7 @@ final class UnboundSuppressionAuditTest extends TestCase
     {
         $channels = $this->channelsOf($this->audit()->findings(
             [],
-            ['Sample\\Gone'],
+            [$this->namespace(SelectorKind::Subtree, 'Sample\\Gone')],
             [],
             [],
             $this->scope(),
@@ -69,19 +73,25 @@ final class UnboundSuppressionAuditTest extends TestCase
 
     /**
      * Binding is decided by the same two matchers the suppression will use, so
-     * a glob that the filter would honour is a hit here too. Were the two to
+     * a regex and subtree selector that the filter would honour is a hit here too. Were the two to
      * part, the channel would accuse a value that goes on suppressing findings
      * every run.
      */
     #[Test]
-    public function itHonoursTheGlobAndPrefixModesTheSuppressionFiltersUse(): void
+    public function itHonoursTheRegexAndSubtreeModesTheSuppressionFiltersUse(): void
     {
         $bound = $this->audit()->findings(
-            ['src/*Service.php', 'src'],
-            ['Sample\\*', 'Sample'],
+            [
+                $this->path(SelectorKind::Regex, 'src/.*Service\\.php'),
+                $this->path(SelectorKind::Subtree, 'src'),
+            ],
+            [
+                $this->namespace(SelectorKind::Regex, 'Sample\\\\.*'),
+                $this->namespace(SelectorKind::Subtree, 'Sample'),
+            ],
             [RelativePath::fromString('src/UserService.php')],
             ['Sample\\Deep'],
-            $this->scope(),
+            $this->scope([$this->tempDir . '/src', $this->tempDir . '/tests']),
         );
 
         self::assertSame([], $this->channelsOf($bound));
@@ -92,7 +102,7 @@ final class UnboundSuppressionAuditTest extends TestCase
     public function itDoesNotTreatAPrefixOfANameAsABinding(): void
     {
         $findings = $this->audit()->findings(
-            ['src/Serv'],
+            [$this->path(SelectorKind::Subtree, 'src/Serv')],
             [],
             [RelativePath::fromString('src/Service/User.php')],
             [],
@@ -109,8 +119,8 @@ final class UnboundSuppressionAuditTest extends TestCase
         $audit = $this->audit(enabled: false);
 
         self::assertSame([], $audit->findings(
-            ['src/Gone'],
-            ['Sample\\Gone'],
+            [$this->path(SelectorKind::Subtree, 'src/Gone')],
+            [$this->namespace(SelectorKind::Subtree, 'Sample\\Gone')],
             [],
             [],
             $this->scope(),
@@ -126,11 +136,15 @@ final class UnboundSuppressionAuditTest extends TestCase
     #[Test]
     public function itReadsBothSpellingsOfThePerRuleLedgerOptions(): void
     {
-        $audit = $this->audit(ledger: [
-            'complexity.ccn' => ['suppress_paths' => ['src/Gone']],
-            'design.dit' => ['suppressNamespaces' => ['Sample\\Gone']],
-            'code-smell.goto' => ['suppressPaths' => 'src/Service.php'],
-        ]);
+        $audit = $this->audit(
+            pathLedger: [
+                'complexity.ccn' => [$this->path(SelectorKind::Subtree, 'src/Gone')],
+                'code-smell.goto' => [$this->path(SelectorKind::Exact, 'src/Service.php')],
+            ],
+            namespaceLedger: [
+                'design.dit' => [$this->namespace(SelectorKind::Subtree, 'Sample\\Gone')],
+            ],
+        );
 
         $findings = $audit->findings(
             [],
@@ -159,8 +173,8 @@ final class UnboundSuppressionAuditTest extends TestCase
     #[Test]
     public function itJudgesAChannelSuppressionPatternTheLedgerApplies(): void
     {
-        $audit = $this->audit(ledger: [
-            'coupling.cbo' => ['suppress_namespace_channels' => ['coupling.cbo:namespace' => ['Sample\\Gone']]],
+        $audit = $this->audit(channelLedger: [
+            'coupling.cbo' => ['coupling.cbo:namespace' => [$this->namespace(SelectorKind::Subtree, 'Sample\\Gone')]],
         ]);
 
         $findings = $audit->findings([], [], [], ['Sample'], $this->scope());
@@ -179,8 +193,8 @@ final class UnboundSuppressionAuditTest extends TestCase
     #[Test]
     public function itStaysSilentOnAChannelSuppressionPatternThatBinds(): void
     {
-        $audit = $this->audit(ledger: [
-            'coupling.cbo' => ['suppressNamespaceChannels' => ['coupling.cbo:namespace' => ['Sample']]],
+        $audit = $this->audit(channelLedger: [
+            'coupling.cbo' => ['coupling.cbo:namespace' => [$this->namespace(SelectorKind::Subtree, 'Sample')]],
         ]);
 
         self::assertSame([], $this->channelsOf($audit->findings([], [], [], ['Sample'], $this->scope())));
@@ -196,8 +210,8 @@ final class UnboundSuppressionAuditTest extends TestCase
     public function itJudgesNoValueWhoseSubjectTheRunDidNotAnalyse(): void
     {
         $findings = $this->audit()->findings(
-            ['tests/Gone'],
-            ['Sample\\Tests\\Gone'],
+            [$this->path(SelectorKind::Subtree, 'tests/Gone')],
+            [$this->namespace(SelectorKind::Subtree, 'Sample\\Tests\\Gone')],
             [RelativePath::fromString('src/Service.php')],
             ['Sample'],
             $this->scope(),
@@ -215,11 +229,11 @@ final class UnboundSuppressionAuditTest extends TestCase
     public function itJudgesTheSameValuesOnARunThatReachesTheirSubject(): void
     {
         $findings = $this->audit()->findings(
-            ['tests/Gone'],
-            ['Sample\\Tests\\Gone'],
+            [$this->path(SelectorKind::Subtree, 'tests/Gone')],
+            [$this->namespace(SelectorKind::Subtree, 'Sample\\Tests\\Gone')],
             [RelativePath::fromString('src/Service.php'), RelativePath::fromString('tests/ServiceTest.php')],
             ['Sample', 'Sample\\Tests'],
-            $this->scope([$this->tempDir . '/src', $this->tempDir . '/tests']),
+            $this->scope([$this->tempDir]),
         );
 
         self::assertSame(
@@ -229,14 +243,14 @@ final class UnboundSuppressionAuditTest extends TestCase
     }
 
     /**
-     * A value beginning with a glob names no place, so no run can be shown to
-     * reach it. The named cost of the safe direction: it is never reported.
+     * A regex is only judged when the run covers the complete project
+     * universe. On a partial run, an unmatched expression remains silent.
      */
     #[Test]
-    public function itJudgesNoValueThatBeginsWithAGlob(): void
+    public function itLeavesAnUnmatchedRegexSilentOnAPartialRun(): void
     {
         $findings = $this->audit()->findings(
-            ['*Gone.php'],
+            [$this->path(SelectorKind::Regex, '.*Gone\\.php')],
             [],
             [RelativePath::fromString('src/Service.php')],
             [],
@@ -247,27 +261,21 @@ final class UnboundSuppressionAuditTest extends TestCase
     }
 
     /**
-     * The namespace twin of the case above, on the widest run there is.
-     *
-     * The path half answered "no place, no judgement" on any run; the
-     * namespace half derived its answer from the PSR-4 map instead, where a
-     * value with no head is compatible with every prefix — so on a run that
-     * analysed every root it fell through to "judged" and published an
-     * unmatched warning against a correct configuration. Both halves now give
-     * the same answer for the same shape of value.
+     * The namespace twin is judged on a run that covers all autoload roots:
+     * an unmatched regex is then an actionable stale selector.
      */
     #[Test]
-    public function itJudgesNoNamespaceValueThatBeginsWithAGlobEvenOnAWholeProjectRun(): void
+    public function itJudgesAnUnmatchedNamespaceRegexOnAWholeProjectRun(): void
     {
         $findings = $this->audit()->findings(
             [],
-            ['*\\Gone'],
+            [$this->namespace(SelectorKind::Regex, '.*\\\\Gone')],
             [RelativePath::fromString('src/Service.php'), RelativePath::fromString('tests/ServiceTest.php')],
             ['Sample', 'Sample\\Tests'],
-            $this->scope([$this->tempDir . '/src', $this->tempDir . '/tests']),
+            $this->scope([$this->tempDir]),
         );
 
-        self::assertSame([], $this->channelsOf($findings));
+        self::assertSame([UnboundSuppressionOptions::UNMATCHED_NAMESPACE], $this->channelsOf($findings));
     }
 
     /**
@@ -279,13 +287,40 @@ final class UnboundSuppressionAuditTest extends TestCase
     {
         $findings = $this->audit()->findings(
             [],
-            ['Sample\\Gone'],
+            [$this->namespace(SelectorKind::Subtree, 'Sample\\Gone')],
             [RelativePath::fromString('src/Service.php'), RelativePath::fromString('tests/ServiceTest.php')],
             ['Sample', 'Sample\\Tests'],
             $this->scope([$this->tempDir . '/src', $this->tempDir . '/tests']),
         );
 
         self::assertSame([UnboundSuppressionOptions::UNMATCHED_NAMESPACE], $this->channelsOf($findings));
+    }
+
+    /** Recommendations describe the explicit authored kind, never the removed implicit-glob grammar. */
+    #[Test]
+    public function itExplainsTheExplicitSelectorKindInUnmatchedRecommendations(): void
+    {
+        $findings = $this->audit()->findings(
+            [
+                $this->path(SelectorKind::Exact, 'src/Gone.php'),
+                $this->path(SelectorKind::Subtree, 'src/Gone'),
+                $this->path(SelectorKind::Regex, 'src/.*Gone\\.php'),
+            ],
+            [],
+            [RelativePath::fromString('src/Service.php'), RelativePath::fromString('tests/ServiceTest.php')],
+            [],
+            $this->scope([$this->tempDir]),
+        );
+        $recommendations = array_map(
+            static fn(Finding $finding): string => $finding->recommendation ?? '',
+            $findings,
+        );
+
+        self::assertCount(3, $recommendations);
+        self::assertStringContainsString('"exact" selector matches only', $recommendations[0]);
+        self::assertStringContainsString('"subtree" selector also includes descendants', $recommendations[1]);
+        self::assertStringContainsString('"regex" selector is a full-subject PCRE fragment', $recommendations[2]);
+        self::assertStringNotContainsString('glob character', implode(' ', $recommendations));
     }
 
     /**
@@ -299,17 +334,37 @@ final class UnboundSuppressionAuditTest extends TestCase
     }
 
     /**
-     * @param array<string, mixed> $ledger
+     * @param array<string, list<PathPattern>> $pathLedger
+     * @param array<string, list<NamespacePattern>> $namespaceLedger
+     * @param array<string, array<string, list<NamespacePattern>>> $channelLedger
      */
-    private function audit(bool $enabled = true, array $ledger = []): UnboundSuppressionAudit
-    {
+    private function audit(
+        bool $enabled = true,
+        array $pathLedger = [],
+        array $namespaceLedger = [],
+        array $channelLedger = [],
+    ): UnboundSuppressionAudit {
         $execution = self::createStub(RuleExecutionInterface::class);
         // Selection is proved on a real run; here the audit's own arithmetic is
         // the subject, so `publishable()` passes everything through.
         $execution->method('publishable')->willReturnArgument(0);
 
         $configuration = self::createStub(RuleConfigurationInterface::class);
-        $configuration->method('all')->willReturn($ledger);
+        $rules = array_values(array_unique([
+            ...array_keys($pathLedger),
+            ...array_keys($namespaceLedger),
+            ...array_keys($channelLedger),
+        ]));
+        $configuration->method('all')->willReturn(array_fill_keys($rules, []));
+        $configuration->method('pathExclusions')->willReturnCallback(
+            static fn(string $ruleName): array => $pathLedger[$ruleName] ?? [],
+        );
+        $configuration->method('namespaceExclusions')->willReturnCallback(
+            static fn(string $ruleName): array => $namespaceLedger[$ruleName] ?? [],
+        );
+        $configuration->method('namespaceChannelExclusions')->willReturnCallback(
+            static fn(string $ruleName): array => $channelLedger[$ruleName] ?? [],
+        );
 
         return new UnboundSuppressionAudit(
             new UnboundSuppressionOptions($enabled),
@@ -353,5 +408,15 @@ final class UnboundSuppressionAuditTest extends TestCase
             (new ComposerReader())->extractPsr4Roots($this->tempDir . '/composer.json'),
             $analyzedPaths ?? [$this->tempDir . '/src'],
         );
+    }
+
+    private function path(SelectorKind $kind, string $value): PathPattern
+    {
+        return new PathPattern(SelectorDefinition::fromKindAndValue($kind->value, $value));
+    }
+
+    private function namespace(SelectorKind $kind, string $value): NamespacePattern
+    {
+        return new NamespacePattern(SelectorDefinition::fromKindAndValue($kind->value, $value));
     }
 }

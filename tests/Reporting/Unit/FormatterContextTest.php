@@ -25,9 +25,9 @@ final class FormatterContextTest extends TestCase
     #[Test]
     public function itStoresNamespaceFilter(): void
     {
-        $context = new FormatterContext(namespace: 'App\Service');
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'));
 
-        self::assertSame('App\Service', $context->namespace);
+        self::assertSame('subtree:App\Service', $context->namespaceDisplay());
         self::assertNull($context->class);
     }
 
@@ -124,7 +124,7 @@ final class FormatterContextTest extends TestCase
             groupBy: \Qualimetrix\Reporting\GroupBy::File,
             basePath: '/project',
             scopedReporting: true,
-            namespace: 'App\\Service',
+            namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'),
             class: 'App\\Service\\UserService',
             terminalWidth: 120,
             detailLimit: null,
@@ -138,7 +138,7 @@ final class FormatterContextTest extends TestCase
         self::assertSame(\Qualimetrix\Reporting\GroupBy::File, $result->groupBy);
         self::assertSame('/project', $result->basePath);
         self::assertTrue($result->scopedReporting);
-        self::assertSame('App\\Service', $result->namespace);
+        self::assertSame('subtree:App\\Service', $result->namespaceDisplay());
         self::assertSame('App\\Service\\UserService', $result->class);
         self::assertSame(120, $result->terminalWidth);
         self::assertTrue($result->isGroupByExplicit);

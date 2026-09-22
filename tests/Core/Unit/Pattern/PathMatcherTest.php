@@ -4,240 +4,153 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Core\Unit\Pattern;
 
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\PathMatcher;
+use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Pattern\PatternMatch;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
+use Qualimetrix\Core\Pattern\SelectorMatchFailure;
 
+#[CoversClass(PathPattern::class)]
 #[CoversClass(PathMatcher::class)]
 #[CoversClass(PatternMatch::class)]
+#[CoversClass(SelectorMatchFailure::class)]
 final class PathMatcherTest extends TestCase
 {
     #[Test]
-    public function itIsEmptyReturnsTrueForEmptyPatterns(): void
+    public function itRendersAnExactPathAsALiteralFullSubjectPredicate(): void
     {
-        $matcher = new PathMatcher([]);
+        $pattern = self::path(SelectorKind::Exact, 'src/[Generated]~(old).php');
 
-        self::assertTrue($matcher->isEmpty());
-    }
-
-    #[Test]
-    public function itIsEmptyReturnsFalseWhenPatternsExist(): void
-    {
-        $matcher = new PathMatcher(['src/Entity']);
-
-        self::assertFalse($matcher->isEmpty());
-    }
-
-    #[Test]
-    public function itMatchesReturnsNullForEmptyPatterns(): void
-    {
-        $matcher = new PathMatcher([]);
-
-        self::assertNull($matcher->matches(RelativePath::fromString('src/Entity/User.php')));
-    }
-
-    #[Test]
-    public function itMatchesReturnsNullForZeroMatches(): void
-    {
-        $matcher = new PathMatcher(['src/DTO']);
-
-        self::assertNull($matcher->matches(RelativePath::fromString('src/Entity/User.php')));
-    }
-
-    #[Test]
-    public function itMatchesReturnsTheMatchedPatternForOneConfiguredPattern(): void
-    {
-        $matcher = new PathMatcher(['src/Entity']);
-
-        $result = $matcher->matches(RelativePath::fromString('src/Entity/User.php'));
-
-        self::assertInstanceOf(PatternMatch::class, $result);
-        self::assertSame('src/Entity', $result->pattern);
-    }
-
-    #[Test]
-    public function itMatchesReturnsTheFirstMatchedPatternWhenSeveralPatternsMatch(): void
-    {
-        $matcher = new PathMatcher(['src/Entity/*.php', 'src/Entity']);
-
-        $result = $matcher->matches(RelativePath::fromString('src/Entity/User.php'));
-
-        self::assertInstanceOf(PatternMatch::class, $result);
         self::assertSame(
-            'src/Entity/*.php',
-            $result->pattern,
-            'The first pattern in configuration order must win when several patterns match.',
+            '~(*LIMIT_MATCH=100000)(*LIMIT_DEPTH=1000)\\A(?:src/\\[Generated\\]\\~\\(old\\)\\.php)\\z~',
+            $pattern->rendered(),
         );
+        self::assertTrue($pattern->matches(RelativePath::fromString('src/[Generated]~(old).php')));
+        self::assertFalse($pattern->matches(RelativePath::fromString('src/xGeneratedx~old.php')));
     }
 
-    /**
-     * @param list<string> $patterns
-     */
-    #[DataProvider('matchingPatternsProvider')]
     #[Test]
-    public function itMatchesReturnsTrue(string $description, array $patterns, string $filePath): void
+    public function itMatchesASubtreeRootAndDescendantsButNotAPrefixSibling(): void
     {
-        $matcher = new PathMatcher($patterns);
+        $pattern = self::path(SelectorKind::Subtree, 'src/Entity');
 
-        self::assertNotNull($matcher->matches(RelativePath::fromString($filePath)), $description);
+        self::assertTrue($pattern->matches(RelativePath::fromString('src/Entity')));
+        self::assertTrue($pattern->matches(RelativePath::fromString('src/Entity/Sub/User.php')));
+        self::assertFalse($pattern->matches(RelativePath::fromString('src/EntityManager/User.php')));
     }
 
-    /**
-     * @param list<string> $patterns
-     */
-    #[DataProvider('nonMatchingPatternsProvider')]
     #[Test]
-    public function itMatchesReturnsFalse(string $description, array $patterns, string $filePath): void
+    public function itUsesThePathSeparatorForASubtree(): void
     {
-        $matcher = new PathMatcher($patterns);
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('must use "/" separators');
 
-        self::assertNull($matcher->matches(RelativePath::fromString($filePath)), $description);
+        self::path(SelectorKind::Subtree, 'src\\Entity');
     }
 
-    /**
-     * @return iterable<string, array{string, list<string>, string}>
-     */
-    public static function matchingPatternsProvider(): iterable
+    #[Test]
+    public function itRefusesLeadingTrailingAndEmptyPathSegmentsInsteadOfNormalizingThem(): void
     {
-        // Prefix mode (no glob characters)
-        yield 'prefix: exact file match' => [
-            'Exact path should match',
-            ['src/Entity/User.php'],
-            'src/Entity/User.php',
-        ];
+        foreach (['/src/Entity', 'src/Entity/', 'src//Entity'] as $value) {
+            try {
+                self::path(SelectorKind::Exact, $value);
+                self::fail(\sprintf('Expected "%s" to be refused', $value));
+            } catch (InvalidArgumentException) {
+            }
+        }
 
-        yield 'prefix: directory matches file inside' => [
-            'Directory prefix should match files inside',
-            ['src/Entity'],
-            'src/Entity/User.php',
-        ];
-
-        yield 'prefix: directory matches nested file' => [
-            'Directory prefix should match deeply nested files',
-            ['src/Entity'],
-            'src/Entity/Sub/Deep.php',
-        ];
-
-        yield 'prefix: directory matches itself' => [
-            'Prefix should match the directory path itself',
-            ['src/Entity'],
-            'src/Entity',
-        ];
-
-        yield 'prefix: multiple patterns second matches' => [
-            'Should match when second pattern matches',
-            ['src/DTO', 'src/Entity'],
-            'src/Entity/User.php',
-        ];
-
-        yield 'prefix: trailing slash normalization on pattern' => [
-            'Trailing slash on pattern should be stripped',
-            ['src/Entity/'],
-            'src/Entity',
-        ];
-
-        yield 'prefix: trailing slash normalization on file path' => [
-            'Trailing slash on file path should be stripped',
-            ['src/Entity'],
-            'src/Entity/',
-        ];
-
-        // Glob mode (contains *, ?, or [)
-        yield 'glob: star matches file in directory' => [
-            'Glob * should match files in directory',
-            ['src/Entity/*'],
-            'src/Entity/User.php',
-        ];
-
-        yield 'glob: star matches nested file' => [
-            'Glob * should match across directory separators (no FNM_PATHNAME)',
-            ['src/Entity/*'],
-            'src/Entity/Sub/Deep.php',
-        ];
-
-        yield 'glob: filename pattern' => [
-            'Glob should match filename patterns',
-            ['src/Metrics/*Visitor.php'],
-            'src/Metrics/CboVisitor.php',
-        ];
-
-        yield 'glob: recursive pattern' => [
-            'Glob ** should match recursively',
-            ['src/Rules/**/*Options.php'],
-            'src/Rules/Complexity/CcnOptions.php',
-        ];
-
-        yield 'glob: wildcard in middle' => [
-            'Wildcard in middle segment should match',
-            ['*/Entity/*'],
-            'src/Entity/User.php',
-        ];
-
-        yield 'glob: question mark wildcard' => [
-            'Question mark should match single character',
-            ['src/Entity/User?.php'],
-            'src/Entity/UserX.php',
-        ];
-
-        // Mixed prefix and glob in same instance
-        yield 'mixed: prefix pattern matches' => [
-            'Prefix pattern should work alongside glob patterns',
-            ['src/Entity', 'src/Metrics/*Visitor.php'],
-            'src/Entity/User.php',
-        ];
-
-        yield 'mixed: glob pattern matches' => [
-            'Glob pattern should work alongside prefix patterns',
-            ['src/Entity', 'src/Metrics/*Visitor.php'],
-            'src/Metrics/CboVisitor.php',
-        ];
+        self::addToAssertionCount(1);
     }
 
-    /**
-     * @return iterable<string, array{string, list<string>, string}>
-     */
-    public static function nonMatchingPatternsProvider(): iterable
+    #[Test]
+    public function itMatchesAnExplicitRegexWithScopedOptions(): void
     {
-        // Prefix mode
-        yield 'prefix: different directory' => [
-            'Non-matching prefix should return false',
-            ['src/DTO'],
-            'src/Entity/User.php',
-        ];
+        $pattern = self::path(SelectorKind::Regex, '(?i:src/entity)/[^/]+\\.php');
 
-        yield 'prefix: boundary check' => [
-            'Prefix should not match partial directory name',
-            ['src/Entity'],
-            'src/EntityManager/Foo.php',
-        ];
+        self::assertTrue($pattern->matches(RelativePath::fromString('src/ENTITY/User.php')));
+        self::assertFalse($pattern->matches(RelativePath::fromString('src/ENTITY/Nested/User.php')));
+    }
 
-        yield 'prefix: sibling file' => [
-            'Exact file prefix should not match sibling',
-            ['src/Entity/User.php'],
-            'src/Entity/UserService.php',
-        ];
+    #[Test]
+    public function itRejectsAPcreSuccessWhoseSpanWasShortCircuitedByAccept(): void
+    {
+        $pattern = self::path(SelectorKind::Regex, '(*ACCEPT)');
 
-        yield 'prefix: empty pattern is skipped' => [
-            'Empty pattern should not match anything',
-            [''],
-            'src/Entity/User.php',
-        ];
+        self::assertFalse($pattern->matches(RelativePath::fromString('src/Entity/User.php')));
+    }
 
-        // Glob mode
-        yield 'glob: no match' => [
-            'Non-matching glob should return false',
-            ['src/DTO/*'],
-            'src/Entity/User.php',
-        ];
+    #[Test]
+    public function itRejectsAPcreSuccessWhoseSpanWasResetByK(): void
+    {
+        $pattern = self::path(SelectorKind::Regex, 'src/\\KEntity/User\\.php');
 
-        yield 'glob: filename pattern mismatch' => [
-            'Filename glob should not match different suffix',
-            ['src/Metrics/*Visitor.php'],
-            'src/Metrics/CboCollector.php',
-        ];
+        self::assertFalse($pattern->matches(RelativePath::fromString('src/Entity/User.php')));
+    }
+
+    #[Test]
+    public function itRefusesAnInvalidPcreFragmentAtBindingTime(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('is not valid PCRE');
+
+        self::path(SelectorKind::Regex, '(');
+    }
+
+    #[Test]
+    public function itRaisesATypedFailureWhenPcreExhaustsTheMatchBudget(): void
+    {
+        $definition = new SelectorDefinition(SelectorKind::Regex, '(a+)+');
+        $pattern = new PathPattern($definition);
+
+        try {
+            $pattern->matches(RelativePath::fromString(str_repeat('a', 4096) . '!'));
+            self::fail('Expected the nested quantifier to exhaust the selector match budget');
+        } catch (SelectorMatchFailure $failure) {
+            self::assertSame($definition, $failure->definition);
+            self::assertSame('Backtrack limit exhausted', $failure->pcreDiagnostic);
+            self::assertStringContainsString('regex:(a+)+', $failure->getMessage());
+        }
+    }
+
+    #[Test]
+    public function itPreservesTheFirstAuthoredDefinitionForOverlappingAndDuplicatePatterns(): void
+    {
+        $first = new SelectorDefinition(SelectorKind::Subtree, 'src');
+        $duplicate = new SelectorDefinition(SelectorKind::Subtree, 'src');
+        $matcher = new PathMatcher([new PathPattern($first), new PathPattern($duplicate)]);
+
+        $match = $matcher->matches(RelativePath::fromString('src/Entity/User.php'));
+
+        self::assertInstanceOf(PatternMatch::class, $match);
+        self::assertSame($first, $match->definition);
+    }
+
+    #[Test]
+    public function itRefusesASelectorListOverTheFixedBudget(): void
+    {
+        $pattern = self::path(SelectorKind::Exact, 'src/Entity/User.php');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('must not contain more than 256 definitions');
+
+        new PathMatcher(array_fill(0, SelectorDefinition::MAX_SELECTOR_COUNT + 1, $pattern));
+    }
+
+    #[Test]
+    public function itIsEmptyOnlyWhenNoBoundPatternsWereGiven(): void
+    {
+        self::assertTrue((new PathMatcher([]))->isEmpty());
+        self::assertFalse((new PathMatcher([self::path(SelectorKind::Exact, 'src/Entity/User.php')]))->isEmpty());
+    }
+
+    private static function path(SelectorKind $kind, string $value): PathPattern
+    {
+        return new PathPattern(new SelectorDefinition($kind, $value));
     }
 }

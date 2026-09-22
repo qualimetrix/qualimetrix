@@ -133,13 +133,15 @@ final class ScopeConditionedChannelGuardTest extends TestCase
         file_put_contents($this->fixture . '/qmx.yaml', <<<'YAML'
             cache:
               enabled: false
-            exclude: [gone-dir]
+            exclude:
+              - subtree: gone-dir
             suppress_paths:
-              - src/Gone
+              - subtree: src/Gone
             suppress_namespaces:
-              - 'Sample\Gone'
+              - subtree: 'Sample\Gone'
             coupling:
-              frameworkNamespaces: ['Nowhere\']
+              frameworkNamespaces:
+                - subtree: Nowhere
             architecture:
               coverage-gap: ignore
               layers:
@@ -149,7 +151,8 @@ final class ScopeConditionedChannelGuardTest extends TestCase
                     suffix: ['NothingLikeThis']
             rules:
               complexity.ccn:
-                suppress_paths: ['src/AlsoGone']
+                suppress_paths:
+                  - subtree: src/AlsoGone
             YAML);
     }
 
@@ -302,13 +305,14 @@ final class ScopeConditionedChannelGuardTest extends TestCase
         file_put_contents($this->fixture . '/qmx.yaml', <<<'YAML'
             cache:
               enabled: false
-            exclude: [tests]
+            exclude:
+              - subtree: tests
             suppress_paths:
-              - tests/Gone
-              - src/Gone
+              - subtree: tests/Gone
+              - subtree: src/Gone
             suppress_namespaces:
-              - 'Sample\Tests\Gone'
-              - 'Sample\Gone'
+              - subtree: 'Sample\Tests\Gone'
+              - subtree: 'Sample\Gone'
             YAML);
 
         $tester = $this->check([

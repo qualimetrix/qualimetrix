@@ -61,6 +61,25 @@ final class ConfigDataNormalizerTest extends TestCase
     }
 
     #[Test]
+    public function itPreservesAnAuthoredSelectorMappingForTheSelectorDecoder(): void
+    {
+        $result = ConfigDataNormalizer::normalize([
+            'suppressPaths' => [
+                ['subtree' => 'src/Generated'],
+                ['regex' => null],
+            ],
+        ]);
+
+        self::assertSame(
+            [
+                ['subtree' => 'src/Generated'],
+                ['regex' => null],
+            ],
+            $result['suppress_paths'],
+        );
+    }
+
+    #[Test]
     public function itRenamesDisabledRulesToSnakeCase(): void
     {
         $result = ConfigDataNormalizer::normalize(['disabledRules' => ['complexity']]);

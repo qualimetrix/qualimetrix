@@ -56,6 +56,11 @@ an aggregate over symbols — `health.overall`, `health.typing`, a class score, 
 namespace-filtered subtree — the coverage is an explicit "not applicable" with
 a reason, never a zero. Scores are never damped by coverage (ADR 0062).
 
+Namespace drill-down receives a bound `NamespacePattern`. `exact` aggregates
+only the named namespace; `subtree` and `regex` aggregate every matched
+namespace with the same class-count weighting used for report health and worst
+classes. Renderers retain the authored selector spelling for diagnostics.
+
 The threshold a decomposition line advertises is the knee its formula term
 applies, and nothing else. Both had drifted silently while the catalog
 transcribed the constants by hand, so

@@ -147,6 +147,7 @@ final class LayersValidator
         $criteria = $this->normalizeCriteria($index, $name, $entry);
         $mode = $this->normalizer->normalizeMatchMode($index, $name, $entry['match'] ?? null);
         $isTemplate = TemplateLayerDefinition::containsCaptureVariable($name);
+        self::rejectCapturesInStaticPatterns($index, $name, $criteria['patterns'], $isTemplate);
         $exclude = ExcludeBlockValidator::parse($index, $name, $entry['exclude'] ?? null, $isTemplate, $this->normalizer);
         $lifecycle = $this->normalizer->normalizeLifecycle($index, $name, $entry, $isTemplate);
 
@@ -258,6 +259,30 @@ final class LayersValidator
                 $name,
             ),
         );
+    }
+
+    /** @param list<string> $patterns */
+    private static function rejectCapturesInStaticPatterns(int $index, string $name, array $patterns, bool $isTemplate): void
+    {
+        if ($isTemplate) {
+            return;
+        }
+
+        foreach ($patterns as $patternIndex => $pattern) {
+            if (!TemplateLayerDefinition::containsCaptureVariable($pattern)) {
+                continue;
+            }
+
+            self::refuse(
+                \sprintf('architecture.layers[%d].patterns.%d', $index, $patternIndex),
+                \sprintf(
+                    'architecture.layers[%d] ("%s"): pattern "%s" contains a capture variable, but static layers have no binding target. Add the variable to the layer name or remove the capture.',
+                    $index,
+                    $name,
+                    $pattern,
+                ),
+            );
+        }
     }
 
     /**

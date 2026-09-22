@@ -73,21 +73,21 @@ final class CheckCommandDefinition
                 'exclude',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Directories to exclude (can be repeated). A value that removes no directory is reported as discovery.unmatched-exclude',
+                'Directories to exclude with exact:, subtree:, or regex: (repeatable). An unused selector is reported as discovery.unmatched-exclude',
                 [],
             )
             ->addOption(
                 'suppress-path',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Suppress violations for files matching path prefix or glob pattern (can be repeated, e.g., src/Entity, src/Metrics/*Visitor.php)',
+                'Suppress violations for files selected by exact:, subtree:, or regex: (repeatable, e.g., subtree:src/Entity)',
                 [],
             )
             ->addOption(
                 'suppress-namespace',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Suppress violations for classes in namespace matching prefix or glob pattern (can be repeated, e.g., App\Entity, App\*Repository)',
+                'Suppress violations for namespaces selected by exact:, subtree:, or regex: (repeatable, e.g., subtree:App\Entity)',
                 [],
             )
             ->addOption(
@@ -129,7 +129,7 @@ final class CheckCommandDefinition
                 'namespace',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Filter results by namespace pattern: boundary-aware prefix, or glob when it contains * ? [. Refused when it selects no namespace',
+                'Filter results by namespace selector (exact:, subtree:, or regex:). Refused when it selects no namespace',
             )
             ->addOption(
                 'class',

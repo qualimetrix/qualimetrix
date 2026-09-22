@@ -70,7 +70,7 @@ final class BaselineMeasuredSetSeamTest extends TestCase
             warning: 99
             error: 5
         exclude:
-          - Excluded
+          - exact: Excluded
         YAML;
 
     private const string CONFIG_WITHOUT_EXCLUSIONS = <<<'YAML'
@@ -88,7 +88,8 @@ final class BaselineMeasuredSetSeamTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = TempDirectory::create('qmx-baseline-seam-');
+        $created = TempDirectory::create('qmx-baseline-seam-');
+        $this->tempDir = (string) realpath($created);
         $this->configPath = $this->tempDir . '/qmx.yaml';
         $this->baselinePath = $this->tempDir . '/baseline.json';
 
@@ -316,13 +317,21 @@ final class BaselineMeasuredSetSeamTest extends TestCase
      */
     private function execute(string $commandClass, array $input): CommandTester
     {
-        /** @var Command $command */
-        $command = (new ContainerFactory())->create()->get($commandClass);
+        $workingDirectory = getcwd();
+        self::assertNotFalse($workingDirectory);
+        chdir($this->tempDir);
 
-        $tester = new CommandTester($command);
-        $tester->execute($input);
+        try {
+            /** @var Command $command */
+            $command = (new ContainerFactory())->create()->get($commandClass);
 
-        return $tester;
+            $tester = new CommandTester($command);
+            $tester->execute($input);
+
+            return $tester;
+        } finally {
+            chdir($workingDirectory);
+        }
     }
 
     /**

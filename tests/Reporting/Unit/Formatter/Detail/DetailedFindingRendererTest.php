@@ -52,7 +52,7 @@ final class DetailedFindingRendererTest extends TestCase
     #[Test]
     public function itShowsScopedMessageForEmptyFindingsWithNamespaceFilter(): void
     {
-        $context = new FormatterContext(useColor: false, namespace: 'App\\Service');
+        $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
         $output = $this->renderer->render([], $context);
 
         self::assertStringContainsString('No violations in this scope.', $output);

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
+use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 
@@ -44,7 +46,15 @@ final class LayerCriterionNormalizer
             $layerName,
             'patterns',
             $value,
-            static fn(string $_): ?string => null,
+            static function (string $entry): ?string {
+                try {
+                    CapturePattern::compile($entry);
+                } catch (InvalidArgumentException $e) {
+                    return 'has invalid Architecture pattern syntax: ' . $e->getMessage();
+                }
+
+                return null;
+            },
         );
     }
 

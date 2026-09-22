@@ -17,21 +17,22 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
  *
  * {@see fromCriterion()} returns `null` for every pattern whose covered set is
  * not a plain subtree ({@code App\**\Foo}, {@code **\*Service}, capture
- * templates, character classes) and for every non-pattern criterion kind
+ * templates) and for every non-pattern criterion kind
  * (suffix / attribute / implements / extends). `null` means "not comparable",
  * and the caller must then keep the diagnostic: a false alarm is cheap, a
  * missed shadow is not.
  *
- * Comparison mirrors {@see \Qualimetrix\Core\Pattern\NamespaceMatcher::matchesSingle()}:
- * a wildcard-free pattern matches the prefix itself and everything under it,
- * while a pattern ending in `\*` / `\**` matches only what lies under it.
+ * Comparison mirrors {@see CapturePattern}: a wildcard-free pattern matches
+ * the prefix itself and everything under it, while a pattern ending in
+ * `\**` matches only strict descendants. Other wildcard shapes are not
+ * reducible to a subtree and remain incomparable.
  */
 final readonly class PatternScope
 {
     /**
      * @param bool $universal True for the catch-all `**`, which covers every FQN.
      * @param string $prefix Literal namespace prefix; empty when universal.
-     * @param bool $strict True when the prefix itself is excluded (pattern ended in `\*`).
+     * @param bool $strict True when the prefix itself is excluded (pattern ended in `\**`).
      */
     private function __construct(
         private bool $universal,
@@ -49,23 +50,22 @@ final readonly class PatternScope
             return null;
         }
 
-        $pattern = rtrim($criterion->value, '\\');
-        if ($pattern === '') {
+        $pattern = $criterion->value;
+        if ($pattern === '' || str_ends_with($pattern, '\\')) {
             return null;
         }
 
-        // `?` and `[` are glob syntax; `{` / `}` are unexpanded capture
-        // placeholders. All three make the covered set something other than a
+        // `?` and `{` / `}` make the covered set something other than a
         // subtree.
         if (preg_match('/[?\[\]{}]/', $pattern) === 1) {
             return null;
         }
 
-        if (trim($pattern, '*') === '') {
+        if ($pattern === '**') {
             return new self(true, '', false);
         }
 
-        if (preg_match('/^(.+)\\\\\*+$/', $pattern, $matches) === 1) {
+        if (preg_match('/^(.+)\\\\\*\*$/', $pattern, $matches) === 1) {
             return str_contains($matches[1], '*')
                 ? null
                 : new self(false, $matches[1], true);

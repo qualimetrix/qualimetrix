@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\GraphProjection\Contract;
 
+use Qualimetrix\Core\Pattern\NamespacePattern;
+
 /**
  * Describes the graph representation requested by a delivery adapter.
  *
@@ -16,14 +18,14 @@ namespace Qualimetrix\Reporting\GraphProjection\Contract;
  * string here as well would be a compatibility shim CLAUDE.md's backward
  * compatibility policy rules out.
  *
- * @param array<string>|null $includeNamespaces
- * @param array<string> $excludeNamespaces
+ * @param list<NamespacePattern>|null $includeNamespaces
+ * @param list<NamespacePattern> $excludeNamespaces
  */
 final readonly class GraphProjectionRequest
 {
     /**
-     * @param array<string>|null $includeNamespaces
-     * @param array<string> $excludeNamespaces
+     * @param list<NamespacePattern>|null $includeNamespaces
+     * @param list<NamespacePattern> $excludeNamespaces
      */
     public function __construct(
         public GraphExportFormat $format = GraphExportFormat::Dot,

@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompos
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderBuilder;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -18,6 +19,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * Shared logic for namespace-level drill-down: health scores and worst classes.
  *
  * Used by SummaryFormatter and JsonFormatter when --namespace filter is active.
+ *
+ * @qmx-threshold coupling.instability 0.81 -- Namespace drill-down intentionally composes eight stable contracts while two reporting services depend on it. Raw instability 0.80 is accepted; further outward growth is reported.
  */
 final readonly class WorstClassDrillDown
 {
@@ -39,7 +42,7 @@ final readonly class WorstClassDrillDown
      */
     public function buildWorstClasses(
         MetricRepositoryInterface $metrics,
-        string $namespace,
+        NamespacePattern $namespace,
         array $findings,
         bool $includeNotableMetrics = false,
     ): array {

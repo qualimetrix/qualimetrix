@@ -94,7 +94,7 @@ final class UnboundSuppressionIntegrationTest extends TestCase
     #[Test]
     public function itReportsAConfiguredSuppressPathThatNamedNothing(): void
     {
-        $findings = $this->onChannel($this->check("suppress_paths:\n  - src/NoSuchDir\n"), UnboundSuppressionOptions::UNMATCHED_PATH);
+        $findings = $this->onChannel($this->check("suppress_paths:\n  - {subtree: src/NoSuchDir}\n"), UnboundSuppressionOptions::UNMATCHED_PATH);
 
         self::assertCount(1, $findings);
         self::assertSame('warning', $findings[0]['severity'] ?? null);
@@ -105,15 +105,15 @@ final class UnboundSuppressionIntegrationTest extends TestCase
     #[Test]
     public function itStaysSilentWhenTheConfiguredSuppressPathNamedSomething(): void
     {
-        self::assertSame([], $this->onChannel($this->check("suppress_paths:\n  - src/Deep\n"), UnboundSuppressionOptions::UNMATCHED_PATH));
+        self::assertSame([], $this->onChannel($this->check("suppress_paths:\n  - {subtree: src/Deep}\n"), UnboundSuppressionOptions::UNMATCHED_PATH));
     }
 
     /** The same pair for `suppress_namespaces`, whose universe is the declared namespaces rather than the files. */
     #[Test]
     public function itReportsAConfiguredSuppressNamespaceThatNamedNothingAndNotOneThatDid(): void
     {
-        $miss = $this->onChannel($this->check("suppress_namespaces:\n  - Sample\\Gone\n"), UnboundSuppressionOptions::UNMATCHED_NAMESPACE);
-        $hit = $this->onChannel($this->check("suppress_namespaces:\n  - Sample\\Deep\n"), UnboundSuppressionOptions::UNMATCHED_NAMESPACE);
+        $miss = $this->onChannel($this->check("suppress_namespaces:\n  - {subtree: Sample\\Gone}\n"), UnboundSuppressionOptions::UNMATCHED_NAMESPACE);
+        $hit = $this->onChannel($this->check("suppress_namespaces:\n  - {subtree: Sample\\Deep}\n"), UnboundSuppressionOptions::UNMATCHED_NAMESPACE);
 
         self::assertCount(1, $miss);
         self::assertStringContainsString('Sample\\Gone', (string) ($miss[0]['message'] ?? ''));
@@ -130,12 +130,12 @@ final class UnboundSuppressionIntegrationTest extends TestCase
     public function itReportsTheCommandLineSuppressionFlagsThatNamedNothingAndNotOnesThatDid(): void
     {
         $miss = $this->check(options: [
-            '--suppress-path' => ['src/NoSuchDir'],
-            '--suppress-namespace' => ['Sample\\Gone'],
+            '--suppress-path' => ['subtree:src/NoSuchDir'],
+            '--suppress-namespace' => ['subtree:Sample\\Gone'],
         ]);
         $hit = $this->check(options: [
-            '--suppress-path' => ['src/Deep'],
-            '--suppress-namespace' => ['Sample\\Deep'],
+            '--suppress-path' => ['subtree:src/Deep'],
+            '--suppress-namespace' => ['subtree:Sample\\Deep'],
         ]);
 
         self::assertCount(1, $this->onChannel($miss, UnboundSuppressionOptions::UNMATCHED_PATH));
@@ -149,11 +149,11 @@ final class UnboundSuppressionIntegrationTest extends TestCase
     public function itReportsAPerRuleLedgerPatternThatNamedNothingAndNotOneThatDid(): void
     {
         $miss = $this->onChannel(
-            $this->check("rules:\n  complexity.ccn:\n    suppress_paths: ['src/Gone']\n    suppress_namespaces: ['Sample\\Gone']\n"),
+            $this->check("rules:\n  complexity.ccn:\n    suppress_paths: [{subtree: src/Gone}]\n    suppress_namespaces: [{subtree: Sample\\Gone}]\n"),
             UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER,
         );
         $hit = $this->onChannel(
-            $this->check("rules:\n  complexity.ccn:\n    suppress_paths: ['src/Deep']\n    suppress_namespaces: ['Sample\\Deep']\n"),
+            $this->check("rules:\n  complexity.ccn:\n    suppress_paths: [{subtree: src/Deep}]\n    suppress_namespaces: [{subtree: Sample\\Deep}]\n"),
             UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER,
         );
 
@@ -181,7 +181,7 @@ final class UnboundSuppressionIntegrationTest extends TestCase
     #[Test]
     public function itSeparatesASuppressorThatBoundNothingFromOneThatMerelyRemovedNothing(): void
     {
-        $yaml = "suppress_paths:\n  - src/Deep\n  - src/NoSuchDir\nonly_rules:\n  - " . UnboundSuppressionRule::NAME . "\n  - code-smell.goto\n";
+        $yaml = "suppress_paths:\n  - {subtree: src/Deep}\n  - {subtree: src/NoSuchDir}\nonly_rules:\n  - " . UnboundSuppressionRule::NAME . "\n  - code-smell.goto\n";
 
         $findings = $this->onChannel($this->check($yaml), UnboundSuppressionOptions::UNMATCHED_PATH);
 
@@ -190,8 +190,8 @@ final class UnboundSuppressionIntegrationTest extends TestCase
 
         $neverMatched = $this->neverMatchedSuppressors($this->check($yaml, format: 'suppressed'));
 
-        self::assertContains('src/Deep', $neverMatched, 'The effect-zero suppressor must still be in neverMatched.');
-        self::assertContains('src/NoSuchDir', $neverMatched);
+        self::assertContains('subtree:src/Deep', $neverMatched, 'The effect-zero suppressor must still be in neverMatched.');
+        self::assertContains('subtree:src/NoSuchDir', $neverMatched);
     }
 
     /**
@@ -204,7 +204,7 @@ final class UnboundSuppressionIntegrationTest extends TestCase
     #[Test]
     public function itSeparatesTheTwoZeroesForNamespacesToo(): void
     {
-        $yaml = "suppress_namespaces:\n  - Sample\\Deep\n  - Sample\\Gone\nonly_rules:\n  - "
+        $yaml = "suppress_namespaces:\n  - {subtree: Sample\\Deep}\n  - {subtree: Sample\\Gone}\nonly_rules:\n  - "
             . UnboundSuppressionRule::NAME . "\n  - code-smell.goto\n";
 
         $findings = $this->onChannel($this->check($yaml), UnboundSuppressionOptions::UNMATCHED_NAMESPACE);
@@ -214,8 +214,8 @@ final class UnboundSuppressionIntegrationTest extends TestCase
 
         $neverMatched = $this->neverMatchedSuppressors($this->check($yaml, format: 'suppressed'));
 
-        self::assertContains('Sample\\Deep', $neverMatched, 'The effect-zero suppressor must still be in neverMatched.');
-        self::assertContains('Sample\\Gone', $neverMatched);
+        self::assertContains('subtree:Sample\\Deep', $neverMatched, 'The effect-zero suppressor must still be in neverMatched.');
+        self::assertContains('subtree:Sample\\Gone', $neverMatched);
     }
 
     /**
@@ -234,7 +234,7 @@ final class UnboundSuppressionIntegrationTest extends TestCase
         self::assertSame(
             [],
             $this->onChannel(
-                $this->check("suppress_paths:\n  - src/NoSuchDir\n", paths: ['src/Deep']),
+                $this->check("suppress_paths:\n  - {subtree: src/NoSuchDir}\n", paths: ['src/Deep']),
                 UnboundSuppressionOptions::UNMATCHED_PATH,
             ),
         );
@@ -261,7 +261,7 @@ final class UnboundSuppressionIntegrationTest extends TestCase
     public function itDoesNotSuppressItsOwnFindingWithTheSuppressionItReportsOn(): void
     {
         $findings = $this->onChannel(
-            $this->check("suppress_paths:\n  - src\n  - src/NoSuchDir\nsuppress_namespaces:\n  - Sample\n"),
+            $this->check("suppress_paths:\n  - {subtree: src}\n  - {subtree: src/NoSuchDir}\nsuppress_namespaces:\n  - {subtree: Sample}\n"),
             UnboundSuppressionOptions::UNMATCHED_PATH,
         );
 
@@ -315,7 +315,7 @@ final class UnboundSuppressionIntegrationTest extends TestCase
     #[Test]
     public function itIsSilencedByDisablingTheProducerAndByDisablingOneChannel(): void
     {
-        $yaml = "suppress_paths:\n  - src/NoSuchDir\nsuppress_namespaces:\n  - Sample\\Gone\n";
+        $yaml = "suppress_paths:\n  - {subtree: src/NoSuchDir}\nsuppress_namespaces:\n  - {subtree: Sample\\Gone}\n";
 
         $producerOff = $this->check($yaml, options: ['--disable-rule' => [UnboundSuppressionRule::NAME]]);
         self::assertSame([], $this->onChannel($producerOff, UnboundSuppressionOptions::UNMATCHED_PATH));
@@ -335,7 +335,7 @@ final class UnboundSuppressionIntegrationTest extends TestCase
     #[Test]
     public function itIsSilencedByDisablingTheRuleThroughItsOptions(): void
     {
-        $yaml = "suppress_paths:\n  - src/NoSuchDir\nrules:\n  " . UnboundSuppressionRule::NAME . ":\n    enabled: false\n";
+        $yaml = "suppress_paths:\n  - {subtree: src/NoSuchDir}\nrules:\n  " . UnboundSuppressionRule::NAME . ":\n    enabled: false\n";
 
         self::assertSame([], $this->onChannel($this->check($yaml), UnboundSuppressionOptions::UNMATCHED_PATH));
     }
@@ -351,7 +351,7 @@ final class UnboundSuppressionIntegrationTest extends TestCase
     #[Test]
     public function itIsNotWrittenIntoAGeneratedBaseline(): void
     {
-        file_put_contents($this->fixture . '/qmx.yaml', "suppress_paths:\n  - src/NoSuchDir\n");
+        file_put_contents($this->fixture . '/qmx.yaml', "suppress_paths:\n  - {subtree: src/NoSuchDir}\n");
 
         $command = (new ContainerFactory())->create()->get(BaselineGenerateCommand::class);
         self::assertInstanceOf(BaselineGenerateCommand::class, $command);
@@ -382,7 +382,7 @@ final class UnboundSuppressionIntegrationTest extends TestCase
     private function onlyThisChannel(): array
     {
         return [
-            "suppress_paths:\n  - src/NoSuchDir\n",
+            "suppress_paths:\n  - {subtree: src/NoSuchDir}\n",
             ['src'],
             ['--only-rule' => [UnboundSuppressionRule::NAME]],
         ];

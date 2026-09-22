@@ -7,7 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDimensionCatalog;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Core\Pattern\NamespaceMatcher;
+use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 
 final class WorstOffenderBuilder
@@ -52,7 +52,7 @@ final class WorstOffenderBuilder
      */
     public function buildWorstClasses(
         iterable $snapshots,
-        string $namespace,
+        NamespacePattern $namespace,
         array $findings,
         float $warningThreshold,
         float $errorThreshold,
@@ -68,7 +68,7 @@ final class WorstOffenderBuilder
      */
     private function buildClassList(
         iterable $snapshots,
-        string $namespace,
+        NamespacePattern $namespace,
         array $findings,
         float $warningThreshold,
         float $errorThreshold,
@@ -78,7 +78,7 @@ final class WorstOffenderBuilder
 
         foreach ($snapshots as $snapshot) {
             $symbol = $snapshot['symbol'];
-            if (!NamespaceMatcher::matchesSingle($namespace, $symbol->symbolPath->namespace ?? '')) {
+            if (!$namespace->matches($symbol->symbolPath->namespace ?? '')) {
                 continue;
             }
 

@@ -156,20 +156,25 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function itMatchesACharacterClassWildcard(): void
+    public function itRejectsACharacterClassWildcard(): void
     {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('character classes are not supported');
+
         $definition = self::patternLayer('c', ['App\\[ABC]oo']);
 
-        self::assertTrue($definition->matches(self::context('App\\Aoo'))->matched);
+        $definition->matches(self::context('App\\Aoo'));
     }
 
     #[Test]
-    public function itNormalizesATrailingBackslashInThePattern(): void
+    public function itRejectsATrailingNamespaceSeparator(): void
     {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('trailing');
+
         $definition = self::patternLayer('svc', ['App\\Service\\']);
 
-        self::assertTrue($definition->matches(self::context('App\\Service\\Foo'))->matched);
-        self::assertTrue($definition->matches(self::context('App\\Service'))->matched);
+        $definition->matches(self::context('App\\Service\\Foo'));
     }
 
     #[Test]
@@ -188,25 +193,20 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function itEchoesTheOriginalPatternStringIncludingATrailingBackslash(): void
+    public function itRejectsMalformedPatternsBeforeTheyCanProduceAReportedCriterion(): void
     {
+        $this->expectException(InvalidArgumentException::class);
+
         $definition = self::patternLayer('svc', ['App\\Service\\']);
-
-        // The membership spec preserves the trailing backslash in the
-        // original list for diagnostics. matchedCriteria echoes the source verbatim.
-        $result = $definition->matches(self::context('App\\Service\\Foo'));
-
-        self::assertCount(1, $result->matchedCriteria);
-        self::assertSame('App\\Service\\', $result->matchedCriteria[0]->value);
+        $definition->matches(self::context('App\\Service\\Foo'));
     }
 
     /**
-     * Pins delegation to {@see \Qualimetrix\Core\Pattern\NamespaceMatcher::matchesSingle()}:
-     * if the underlying primitive's semantics ever drift from what
-     * {@see LayerDefinition} expects, this test surfaces the mismatch.
+     * Pins the Architecture-owned pattern language across bare subtrees and
+     * full-subject wildcards.
      */
     #[Test]
-    public function itAgreesWithNamespaceMatcherAcrossGlobAndPrefixCases(): void
+    public function itUsesTheArchitectureDslAcrossGlobAndSubtreeCases(): void
     {
         $cases = [
             // [patterns, fqn, expected]
@@ -218,10 +218,8 @@ final class LayerDefinitionTest extends TestCase
             [['App\\**\\Repository'], 'App\\Domain\\Service', false],
             [['App\\?oo'], 'App\\Foo', true],
             [['App\\?oo'], 'App\\Bar', false],
-            [['App\\[ABC]oo'], 'App\\Aoo', true],
-            [['App\\[ABC]oo'], 'App\\Doo', false],
-            [['App\\Service\\'], 'App\\Service\\Foo', true],
-            [['App\\Service\\'], 'App\\Service', true],
+            [['App\\*'], 'App\\One', true],
+            [['App\\*'], 'App\\One\\Two', false],
         ];
 
         foreach ($cases as [$patterns, $fqn, $expected]) {

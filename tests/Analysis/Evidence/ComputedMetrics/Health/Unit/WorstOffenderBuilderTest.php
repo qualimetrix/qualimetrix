@@ -20,7 +20,7 @@ final class WorstOffenderBuilderTest extends TestCase
     {
         $offenders = (new WorstOffenderBuilder())->buildWorstClasses(
             $this->snapshots(),
-            'App\\Service',
+            \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'),
             [],
             60.0,
             40.0,
@@ -30,11 +30,11 @@ final class WorstOffenderBuilderTest extends TestCase
     }
 
     #[Test]
-    public function itIgnoresATrailingBackslashInTheSelector(): void
+    public function itSupportsAnExactSelector(): void
     {
         $offenders = (new WorstOffenderBuilder())->buildWorstClasses(
             $this->snapshots(),
-            'App\\Service\\',
+            \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('App\\Service'),
             [],
             60.0,
             40.0,
@@ -44,11 +44,11 @@ final class WorstOffenderBuilderTest extends TestCase
     }
 
     #[Test]
-    public function itMatchesGlobSelectors(): void
+    public function itMatchesRegexSelectors(): void
     {
         $offenders = (new WorstOffenderBuilder())->buildWorstClasses(
             $this->snapshots(),
-            'App\\*',
+            \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::regex('App\\\\[^\\\\]+'),
             [],
             60.0,
             40.0,

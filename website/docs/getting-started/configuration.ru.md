@@ -52,12 +52,13 @@ include_generated: true
 
 ### Подавление путей в отчёте (suppress_paths)
 
-Паттерны путей для подавления нарушений. В отличие от `exclude`, эти файлы **всё равно анализируются** (их метрики собираются), но нарушения не выводятся в отчёт. Поддерживаются префиксы директорий и glob-паттерны:
+Селекторы путей подавляют нарушения, но файлы **всё равно анализируются**. Каждый элемент YAML — отображение из одной пары: `exact` выбирает один project-relative путь, `subtree` также выбирает потомков через `/`, а `regex` принимает фрагмент PCRE без разделителей, который Qualimetrix привязывает ко всему пути:
 
 ```yaml
 suppress_paths:
-  - src/Entity                # префикс: все файлы в src/Entity/
-  - src/Metrics/*Visitor.php  # glob: только файлы визиторов
+  - subtree: src/Entity
+  - exact: src/DTO/Address.php
+  - regex: 'src/Metrics/.*Visitor\.php'
 ```
 
 Также доступна как CLI-опция: `--suppress-path` (объединяется с YAML-конфигурацией).
@@ -88,12 +89,13 @@ suppress_paths:
 
 ### Подавление неймспейсов (suppress_namespaces)
 
-Подавление нарушений для классов из определённых неймспейсов (сопоставление по префиксу). Как и `suppress_paths`, файлы всё равно анализируются и метрики собираются, но нарушения не выводятся. Применяется ко всем правилам глобально:
+Подавление нарушений для выбранных неймспейсов. Используются те же три явные формы; `subtree` следует границам `\`, а `regex` всегда сопоставляется со всем именем:
 
 ```yaml
 suppress_namespaces:
-  - App\Tests
-  - App\Generated
+  - subtree: App\Tests
+  - exact: App\Generated\BuildInfo
+  - regex: 'App\\Legacy(?:\\[^\\]+)*'
 ```
 
 Это полезно, когда целые поддеревья неймспейсов не должны генерировать нарушения. Для исключений на уровне отдельного правила используйте `suppress_namespaces` внутри конфигурации правила (см. ниже).
@@ -247,23 +249,23 @@ rules:
 
 **Подавление неймспейсов для правила:**
 
-Любое правило может исключить конкретные неймспейсы по префиксу. Нарушения из совпадающих неймспейсов подавляются:
+Любое правило может использовать те же явные селекторы неймспейсов:
 
 ```yaml
 rules:
   complexity.ccn:
     suppress_namespaces:
-      - App\Tests
-      - App\Legacy
+      - subtree: App\Tests
+      - subtree: App\Legacy
     callable:
       warning: 15
       error: 25
 
   coupling.cbo:
     suppress_namespaces:
-      - App\Tests
+      - subtree: App\Tests
     suppress_paths:
-      - src/Infrastructure/DependencyInjection
+      - subtree: src/Infrastructure/DependencyInjection
 ```
 
 Это полезно, когда определённые неймспейсы (например, тесты, сгенерированный код, legacy-модули) не должны вызывать нарушения для конкретного правила, но при этом всё равно анализируются для сбора метрик.
@@ -278,12 +280,12 @@ rules:
   health.cohesion:
     suppress_namespace_channels:
       health.cohesion:
-        - App\Metrics\Coupling
-        - App\Generated\*
+        - subtree: App\Metrics\Coupling
+        - regex: 'App\\Generated(?:\\[^\\]+)*'
 ```
 
-Опция представляет собой непустое отображение: селектор канала → непустой список префиксов
-или glob-паттернов неймспейсов. Ключ читается по той же грамматике, что и везде: **точное имя
+Опция представляет собой непустое отображение: селектор канала → непустой список явных
+селекторов неймспейсов. Ключ использует закрытую грамматику каналов: **точное имя
 канала** либо `X.*` для строгих потомков `X`, каждое из них можно сузить до уровня, дописав
 `:namespace`; см. [«Селекторы правил и каналов»](#селекторы-правил-и-каналов) ниже. Голый
 префикс вроде `health` — ошибка, а не группа: пишите `health.*`. Точный `health.cohesion` не
@@ -310,7 +312,7 @@ rules:
     suppress_namespace_channels:
       # только агрегат по неймспейсу; нарушения уровня класса того же канала остаются
       coupling.cbo:namespace:
-        - App\Legacy
+        - subtree: App\Legacy
 ```
 
 Писать уровень необязательно: ключ без уровня и так достаёт только агрегаты по неймспейсам,
@@ -343,14 +345,14 @@ Namespace. Нарушения уровня класса `health.cohesion` в т�
 
 **Подавление путей для правила:**
 
-Любое правило может исключить конкретные файлы по префиксу пути или glob-паттерну. Нарушения из совпадающих файлов подавляются:
+Любое правило может использовать те же явные селекторы путей:
 
 ```yaml
 rules:
   coupling.cbo:
     suppress_paths:
-      - src/Metrics                # префикс: все файлы в src/Metrics/
-      - src/Metrics/*Visitor.php   # glob: только файлы визиторов
+      - subtree: src/Metrics
+      - regex: 'src/Metrics/.*Visitor\.php'
 ```
 
 Работает совместно с `suppress_namespaces` -- оба фильтра применяются. В отличие от глобального `suppress_paths`, эта опция на уровне правила влияет только на конкретное правило, а не на все.
@@ -668,15 +670,15 @@ paths:
   - src/
 
 exclude:
-  - vendor/
-  - tests/Fixtures/
+  - subtree: vendor
+  - subtree: tests/Fixtures
 
 suppress_paths:
-  - src/Entity
-  - src/DTO
+  - subtree: src/Entity
+  - subtree: src/DTO
 
 suppress_namespaces:
-  - App\Tests
+  - subtree: App\Tests
 
 include_generated: false
 
@@ -692,8 +694,8 @@ parallel:
 
 coupling:
   framework-namespaces:
-    - Symfony
-    - Doctrine
+    - subtree: Symfony
+    - subtree: Doctrine
 
 exclude_health:
   - typing
@@ -705,9 +707,9 @@ disabled_rules:
 rules:
   complexity.ccn:
     suppress_namespaces:
-      - App\Tests
+      - subtree: App\Tests
     suppress_paths:
-      - src/Generated
+      - subtree: src/Generated
     callable:
       warning: 15
       error: 25
@@ -728,7 +730,7 @@ rules:
 vendor/bin/qmx check lib/
 
 # Добавить дополнительное подавление поверх конфига
-vendor/bin/qmx check src/ --suppress-path='src/Generated/*'
+vendor/bin/qmx check src/ --suppress-path='subtree:src/Generated'
 ```
 
 Это позволяет экспериментировать без редактирования файла конфигурации.
@@ -899,14 +901,10 @@ Configuration error: Invalid value for "cache": expected a section of named keys
   `only_rules: [complexity.ccn]` и `exclude_methods: [getName]`. То же в другую
   сторону: `cache: [dir]` отклоняется, потому что `cache:` — секция именованных
   ключей.
-- **Корневой `suppress_paths:` — исключение из правила «число не строка».**
-  Каталог может законно называться `2024`, и YAML отдаёт такой сегмент без
-  кавычек числом, поэтому этот корень читает его как имя, которым он и является.
-  Три соседа — нет: `suppress_namespaces:` отклоняет, потому что сегмент
-  неймспейса не может начинаться с цифры; пер-правило
-  `rules.<name>.suppress_paths:` тоже отклоняет, будучи объявлен строками;
-  а `paths:` и `exclude:` отбрасывают такой элемент без единого слова. Везде,
-  кроме корневого ключа, пишите его в кавычках — `['2024']`.
+- **Списки селекторов состоят из отображений с одной парой, без scalar-сокращений.**
+  Для каталога с буквальным именем `2024` пишите `- exact: '2024'`; bare scalar
+  одинаково отвергается в `suppress_paths`, `suppress_namespaces`, `exclude`,
+  framework namespaces и per-rule списках.
 - **Пустая строка — самостоятельная форма.** Она отклоняется везде, где
   требуется непустое значение, в том числе в командной строке: `--fail-on=`,
   `--format=`, `--cache-dir=` и `--memory-limit=` называют, что они ожидали

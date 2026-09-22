@@ -21,6 +21,7 @@ use Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest;
 use Qualimetrix\Reporting\GraphProjection\DependencyGraphProjector;
 use Qualimetrix\Reporting\GraphProjection\NamespaceFilter;
+use Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub;
 
 #[CoversClass(NamespaceFilter::class)]
 final class NamespaceFilterTest extends TestCase
@@ -68,20 +69,22 @@ final class NamespaceFilterTest extends TestCase
     public function itSelectsTheSameClassesInEveryExporter(?array $include, array $exclude, array $expected): void
     {
         $graph = self::graph();
-        $request = new GraphProjectionRequest(includeNamespaces: $include, excludeNamespaces: $exclude);
+        $includePatterns = self::patterns($include);
+        $excludePatterns = self::patterns($exclude) ?? [];
+        $request = new GraphProjectionRequest(includeNamespaces: $includePatterns, excludeNamespaces: $excludePatterns);
         $projector = new DependencyGraphProjector();
 
         $admitted = array_map(
             static fn(SymbolPath $path): string => $path->toString(),
-            (new NamespaceFilter($include, $exclude))->apply($graph->getAllClasses()),
+            (new NamespaceFilter($includePatterns, $excludePatterns))->apply($graph->getAllClasses()),
         );
         sort($admitted);
         self::assertSame($expected, $admitted);
 
         $json = $projector->project($graph, new GraphProjectionRequest(
             format: GraphExportFormat::Json,
-            includeNamespaces: $include,
-            excludeNamespaces: $exclude,
+            includeNamespaces: $includePatterns,
+            excludeNamespaces: $excludePatterns,
         ));
         /** @var array{nodes: list<array{fqn: string}>} $decoded */
         $decoded = json_decode($json, true, 512, \JSON_THROW_ON_ERROR);
@@ -91,8 +94,8 @@ final class NamespaceFilterTest extends TestCase
 
         $dot = $projector->project($graph, new GraphProjectionRequest(
             format: GraphExportFormat::Dot,
-            includeNamespaces: $include,
-            excludeNamespaces: $exclude,
+            includeNamespaces: $includePatterns,
+            excludeNamespaces: $excludePatterns,
         ));
         self::assertSame($expected, self::dotNodes($dot), 'the DOT exporter selects a different set');
 
@@ -127,10 +130,10 @@ final class NamespaceFilterTest extends TestCase
     {
         $unbound = (new DependencyGraphProjector())->unboundIncludeNamespaces(
             self::graph(),
-            new GraphProjectionRequest(includeNamespaces: $include, excludeNamespaces: $exclude),
+            new GraphProjectionRequest(includeNamespaces: self::patterns($include), excludeNamespaces: self::patterns($exclude) ?? []),
         );
 
-        self::assertSame($expected, $unbound);
+        self::assertSame(array_map(static fn(string $value): string => 'subtree:' . $value, $expected), $unbound);
     }
 
     /**
@@ -146,12 +149,43 @@ final class NamespaceFilterTest extends TestCase
 
         self::assertSame([], $projector->unboundIncludeNamespaces(
             $graph,
-            new GraphProjectionRequest(excludeNamespaces: ['Zzz\\Nope']),
+            new GraphProjectionRequest(excludeNamespaces: self::patterns(['Zzz\\Nope']) ?? []),
         ));
         self::assertSame(
             $projector->project($graph, new GraphProjectionRequest()),
-            $projector->project($graph, new GraphProjectionRequest(excludeNamespaces: ['Zzz\\Nope'])),
+            $projector->project($graph, new GraphProjectionRequest(excludeNamespaces: self::patterns(['Zzz\\Nope']) ?? [])),
         );
+    }
+
+    #[Test]
+    public function itCombinesIncludesWithOrAndLetsARegexExclusionWin(): void
+    {
+        $filter = new NamespaceFilter(
+            [
+                NamespacePatternStub::exact('App\\Service'),
+                NamespacePatternStub::regex('Other'),
+            ],
+            [NamespacePatternStub::regex('App\\\\Service')],
+        );
+
+        $admitted = array_map(
+            static fn(SymbolPath $path): string => $path->toString(),
+            $filter->apply(self::graph()->getAllClasses()),
+        );
+
+        self::assertSame(['Other\\Outsider'], $admitted);
+    }
+
+    /**
+     * @param list<string>|null $values
+     *
+     * @return list<\Qualimetrix\Core\Pattern\NamespacePattern>|null
+     */
+    private static function patterns(?array $values): ?array
+    {
+        return $values === null
+            ? null
+            : array_map(NamespacePatternStub::subtree(...), $values);
     }
 
     /** @return list<string> */

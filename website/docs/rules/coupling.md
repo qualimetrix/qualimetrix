@@ -206,13 +206,13 @@ Qualimetrix provides two supplementary metrics to distinguish them:
 # qmx.yaml
 coupling:
   framework-namespaces:
-    - Symfony
-    - PhpParser
-    - Psr
-    - Amp
+    - subtree: Symfony
+    - subtree: PhpParser
+    - subtree: Psr
+    - subtree: Amp
 ```
 
-Namespace matching is boundary-aware: `Psr` matches `Psr\Log\LoggerInterface` but NOT `PsrExtended\Custom`.
+These are explicit namespace selectors. `subtree: Psr` matches `Psr\Log\LoggerInterface` but not `PsrExtended\Custom`; `exact` and full-subject `regex` are also available.
 
 **Using with the CBO rule:**
 
@@ -239,13 +239,13 @@ When no `framework-namespaces` are configured, `coupling.cbo-app` equals `coupli
 
 ### What it measures
 
-A `framework-namespaces` prefix that no name in the run falls under.
+A `framework-namespaces` selector that no name in the run matches.
 
-The prefix was written to move classes out of `coupling.cbo-app` and into
+The selector was written to move classes out of `coupling.cbo-app` and into
 `coupling.ce-framework`. One that matches nothing moves neither, so every
 application-scope coupling verdict is drawn from a wider set than you asked
 for. Nothing else in the run says so: a missed prefix produces exactly the
-report a run with no prefix at all produces.
+report a run with no selector at all produces.
 
 ```
 The framework namespace "Symfony\Bundle" matched no class the run analysed or
@@ -258,7 +258,7 @@ The usual causes are a renamed vendor namespace, a leading backslash
 (`\Symfony` never matches — write the namespace as it appears in an import),
 and a dependency dropped in a refactor while its prefix stayed in `qmx.yaml`.
 
-One finding per unbound prefix, reported on the project. A prefix is checked
+One finding per unbound selector, reported on the project. A selector is checked
 against both ends of every dependency edge — the targets, where external
 framework classes live, and the sources — because that is the set the metrics
 themselves classify.
@@ -267,7 +267,7 @@ themselves classify.
 
 - **No `framework-namespaces` configured.** Nothing was claimed, so nothing
   failed.
-- **The prefix matched.** Including a prefix that only matches your own
+- **The selector matched.** Including a selector that only matches your own
   analysed classes: that still moves them out of the application scope, which
   is what the option does.
 - **The run's dependency graph is empty.** Check one file that depends on
@@ -562,10 +562,10 @@ rules:
     max_distance_error: 0.6
     min_class_count: 5
     include_namespaces:
-      - App\Domain
-      - App\Infrastructure
+      - subtree: App\Domain
+      - subtree: App\Infrastructure
     suppress_namespaces:
-      - App\Tests
+      - subtree: App\Tests
 ```
 
 For a simple pass/fail threshold:
@@ -595,12 +595,11 @@ not the second.
 
 By default, project namespaces are auto-detected from `composer.json` (`autoload.psr-4`).
 
-`include_namespaces` also takes a single string, which stands for a one-element
-list: `include_namespaces: App\Domain` means exactly
-`include_namespaces: [App\Domain]`. A digit string is a namespace prefix like
-any other. A CLI door carries one scalar and never splits the text after `=`,
-so `--rule-opt="coupling.distance:include_namespaces=App\Domain"` names that
-one namespace; several are written as a list in `qmx.yaml`.
+`include_namespaces` is a list of explicit `exact`, `subtree`, or `regex`
+namespace selectors. A bare scalar is refused. The generic `--rule-opt` door
+uses the same `kind:value` scalar form, so
+`--rule-opt="coupling.distance:include_namespaces=subtree:App\Domain"` selects
+that subtree; several selectors are written as a list in `qmx.yaml`.
 
 ---
 

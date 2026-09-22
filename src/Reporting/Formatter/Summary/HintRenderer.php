@@ -95,7 +95,7 @@ final class HintRenderer
             return null;
         }
 
-        $nsName = $this->escapeForShell($worstNs->symbolPath->toString());
+        $nsName = $this->escapeForShell('subtree:' . $worstNs->symbolPath->toString());
 
         return \sprintf('--namespace=%s to drill down', $nsName);
     }

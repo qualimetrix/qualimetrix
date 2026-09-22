@@ -556,7 +556,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $context = new FormatterContext(namespace: 'App\Payment');
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Payment'));
         $output = $this->formatter->format($report, $context);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
@@ -586,7 +586,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $context = new FormatterContext(namespace: 'App\Payment');
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Payment'));
         $output = $this->formatter->format($report, $context);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
@@ -943,7 +943,7 @@ final class JsonFormatterTest extends TestCase
             ],
         );
 
-        $context = new FormatterContext(namespace: 'App\Payment');
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Payment'));
         $output = $this->formatter->format($report, $context);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
@@ -1083,7 +1083,7 @@ final class JsonFormatterTest extends TestCase
             ],
         );
 
-        $context = new FormatterContext(namespace: 'App\Service');
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'));
         $output = $this->formatter->format($report, $context);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
@@ -1145,7 +1145,7 @@ final class JsonFormatterTest extends TestCase
             worstClasses: [],
         );
 
-        $context = new FormatterContext(namespace: 'App\Service');
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'));
         $output = $this->formatter->format($report, $context);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
@@ -1178,7 +1178,7 @@ final class JsonFormatterTest extends TestCase
             ],
         );
 
-        $context = new FormatterContext(namespace: 'App\NonExistent');
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\NonExistent'));
         $output = $this->formatter->format($report, $context);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 

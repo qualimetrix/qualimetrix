@@ -14,7 +14,7 @@ use InvalidArgumentException;
  *
  * | Field        | Semantics                                                                                |
  * | ------------ | ---------------------------------------------------------------------------------------- |
- * | `patterns`   | FQN glob patterns; matched via {@see \Qualimetrix\Core\Pattern\NamespaceMatcher::matchesSingle()} |
+ * | `patterns`   | Architecture FQN patterns; matched via {@see CapturePattern} |
  * | `suffix`     | Short-name suffixes ({@code 'Repository'}); matched via {@code str_ends_with()}          |
  * | `attributes` | Attribute FQNs; class has {@code #[Attr]}                                                 |
  * | `implements` | Interface FQNs; class implements the interface directly or transitively                 |

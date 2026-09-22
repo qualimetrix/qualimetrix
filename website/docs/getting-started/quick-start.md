@@ -44,7 +44,7 @@ Worst namespaces
 
 45 violations (12 errors, 33 warnings) | Tech debt: 2d 4h (8.5 min/kLOC)
 
-Hints: --detail to see violations (top 200) | --namespace='App\Service' to drill down | --format=html -o report.html for full report
+Hints: --detail to see violations (top 200) | --namespace='subtree:App\Service' to drill down | --format=html -o report.html for full report
 ```
 
 Each category gets a label: **Excellent** (top quality), **Good** (solid), **Fair** (room for improvement), **Poor** (needs attention), or **Critical** (action required). The "Worst namespaces" section highlights where to focus first.
@@ -56,7 +56,7 @@ Each category gets a label: **Excellent** (top quality), **Good** (solid), **Fai
 Investigate a specific namespace to see its classes and violations:
 
 ```bash
-vendor/bin/qmx check src/ --namespace='App\Service'
+vendor/bin/qmx check src/ --namespace='subtree:App\Service'
 ```
 
 ### See detailed violations
@@ -259,7 +259,7 @@ docker-compose run --rm qmx
 
 ## Excluding Paths
 
-Suppress violations for files matching glob patterns. Useful for generated code, DTOs, or entity classes.
+Suppress violations with explicit path selectors. Useful for generated code, DTOs, or entity classes.
 
 !!! note
     Excluded files are still analyzed (metrics are collected) — only violations are suppressed.
@@ -269,17 +269,17 @@ Suppress violations for files matching glob patterns. Useful for generated code,
     ```yaml
     # qmx.yaml
     suppress_paths:
-      - src/Entity/*
-      - src/DTO/*
+      - subtree: src/Entity
+      - subtree: src/DTO
     ```
 
 === "CLI"
 
     ```bash
-    vendor/bin/qmx check src/ --suppress-path='src/Entity/*' --suppress-path='*/DTO/*'
+    vendor/bin/qmx check src/ --suppress-path='subtree:src/Entity' --suppress-path='regex:.*/DTO/.*'
     ```
 
-CLI patterns are merged with those defined in the config file.
+CLI selectors are merged with those defined in the config file.
 
 ---
 

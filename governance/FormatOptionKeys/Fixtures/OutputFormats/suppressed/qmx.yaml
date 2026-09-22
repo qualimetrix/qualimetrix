@@ -4,4 +4,4 @@ paths:
 # `neverMatched` list, which exists so a stale suppressor is distinguishable
 # from one that was never written.
 suppress_paths:
-  - 'src/NoSuchDirectory/**'
+  - subtree: src/NoSuchDirectory

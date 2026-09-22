@@ -190,7 +190,7 @@ final readonly class FormatterContext
         public array $options = [],        // from --format-opt key=value
         public string $basePath = '',      // retained for SARIF %SRCROOT% URI builder
         public bool $scopedReporting = false, // scoped reporting (e.g., --report=git:staged)
-        public ?string $namespace = null,  // --namespace filter (prefix or glob pattern)
+        public ?NamespacePattern $namespace = null, // bound exact/subtree/regex selector
         public ?string $class = null,      // --class filter (exact FQCN match)
         public int $terminalWidth = 0,     // adaptive rendering width (0 = default 80)
         public ?int $detailLimit = null,   // --detail mode: null=off, 0=all, N=limit
@@ -356,7 +356,8 @@ Human-readable verbose output with:
 
 ```bash
 # Drill-down (mutually exclusive, works with summary/text/json)
-bin/qmx check src/ --namespace=App\\Service   # filter by namespace pattern (prefix or glob)
+bin/qmx check src/ --namespace='subtree:App\Service' # namespace plus descendants
+bin/qmx check src/ --namespace='regex:App\\(?:Service|Controller)(?:\\[^\\]+)*'
 bin/qmx check src/ --class=App\\Service\\UserService  # filter by exact FQCN
 
 # Grouping (overrides formatter default)
@@ -393,7 +394,7 @@ Worst namespaces
 
 1251 findings (384 errors, 867 warnings) | Tech debt: 63d 5h 35min
 
-Hints: --format=text to see all findings | --namespace="App\Metrics\Halstead" to drill down | --format=html -o report.html for full report
+Hints: --format=text to see all findings | --namespace='subtree:App\Metrics\Halstead' to drill down | --format=html -o report.html for full report
 ```
 
 ### TextFormatter (`--format=text`)
@@ -634,6 +635,10 @@ by more than one mechanism appears once per mechanism, so `byMechanism`
 counts do not sum to a distinct-finding total. A separate `neverMatched` list
 publishes configured suppressors (a path/namespace pattern, a per-rule
 exclusion) that matched nothing this run.
+
+Path and namespace suppressors reach this projection as bound `PathPattern` and
+`NamespacePattern` values. Their output is the stable authored `kind:value`
+definition, never the implementation's rendered PCRE string.
 
 ### Capture
 

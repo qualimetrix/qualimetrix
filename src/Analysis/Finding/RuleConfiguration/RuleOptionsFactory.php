@@ -31,6 +31,7 @@ final class RuleOptionsFactory
 {
     public function __construct(
         private readonly RuleOptionsRegistry $registry,
+        private readonly RuleSuppressionSelectorDecoder $suppressionSelectors = new RuleSuppressionSelectorDecoder(),
     ) {}
 
     /**
@@ -140,10 +141,13 @@ final class RuleOptionsFactory
     private function extractSuppressNamespaces(string $ruleName, array &$merged): void
     {
         $namespaces = $this->takeFrameworkOption($merged, FrameworkOptionKeys::NAMESPACES);
-        $this->registry->configureNamespaceExclusions($ruleName, $namespaces);
+        $this->registry->configureNamespaceExclusions(
+            $ruleName,
+            $this->suppressionSelectors->optionalNamespaces($ruleName, 'suppress_namespaces', $namespaces),
+        );
 
         $channels = $this->takeFrameworkOption($merged, FrameworkOptionKeys::NAMESPACE_CHANNELS);
-        $this->registry->configureNamespaceChannelExclusions($ruleName, $channels);
+        $this->registry->configureNamespaceChannelExclusions($ruleName, $this->suppressionSelectors->channels($ruleName, $channels));
     }
 
     /**
@@ -156,18 +160,10 @@ final class RuleOptionsFactory
     private function extractSuppressPaths(string $ruleName, array &$merged): void
     {
         $raw = $this->takeFrameworkOption($merged, FrameworkOptionKeys::PATHS);
-
-        if (\is_string($raw)) {
-            $patterns = [$raw];
-        } elseif (\is_array($raw)) {
-            $patterns = array_values(array_filter($raw, 'is_string'));
-        } else {
-            return;
-        }
-
-        if ($patterns !== []) {
-            $this->registry->configurePathExclusions($ruleName, $patterns);
-        }
+        $this->registry->configurePathExclusions(
+            $ruleName,
+            $this->suppressionSelectors->optionalPaths($ruleName, 'suppress_paths', $raw),
+        );
     }
 
     /**

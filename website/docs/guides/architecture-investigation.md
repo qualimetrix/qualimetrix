@@ -23,7 +23,7 @@ The summary view shows overall health scores across five dimensions (complexity,
 ### Step 2: Drill Into Problem Namespaces
 
 ```bash
-bin/qmx check src/ --namespace=App\\Domain\\Order
+bin/qmx check src/ --namespace='subtree:App\Domain\Order'
 ```
 
 The namespace view shows per-namespace health, child namespaces, and the worst classes within that scope. Look for namespaces with health below 50 (Poor or Critical).
@@ -66,7 +66,7 @@ Coupling analysis reveals how tightly your classes and namespaces are interconne
 3. **Drill into the worst namespaces** and look at instability (I), abstractness (A), and distance from the main sequence (D):
 
     ```bash
-    bin/qmx check src/ --namespace=App\\Infrastructure
+    bin/qmx check src/ --namespace='subtree:App\Infrastructure'
     ```
 
 4. **Focus on CBO errors** (threshold 20) over warnings (threshold 14). CBO errors indicate classes that likely need decomposition.
@@ -112,7 +112,7 @@ dot -Tsvg graph.dot -o graph.svg
 bin/qmx graph:export src/ --format=json -o graph.json
 
 # Focus on one problem area
-bin/qmx graph:export src/ --namespace=App\\Domain --exclude-namespace=App\\Domain\\Generated
+bin/qmx graph:export src/ --namespace='subtree:App\Domain' --exclude-namespace='subtree:App\Domain\Generated'
 ```
 
 Use `--direction=TB` for a top-to-bottom layout on wide graphs, and
@@ -305,7 +305,7 @@ For CI pipelines or AI-assisted architecture reviews, the JSON output provides s
 bin/qmx check src/ --format=json --workers=1
 
 # Step 2: Deep dive into a specific namespace
-bin/qmx check src/ --namespace=App\\Domain --format=json --workers=1
+bin/qmx check src/ --namespace='subtree:App\Domain' --format=json --workers=1
 
 # Step 3: Raw metrics for custom analysis
 bin/qmx check src/ --format=metrics --workers=1

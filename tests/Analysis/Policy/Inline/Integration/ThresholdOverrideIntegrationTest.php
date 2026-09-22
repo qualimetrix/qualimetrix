@@ -39,6 +39,9 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -306,12 +309,12 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             enabled: false,
             maxDistanceWarning: 0.4,
             maxDistanceError: 0.6,
-            includeNamespaces: ['App\\Domain'],
+            includeNamespaces: [new NamespacePattern(new SelectorDefinition(SelectorKind::Subtree, 'App\\Domain'))],
             minClassCount: 5,
         );
         $distOverridden = $dist->withOverride(0.5, 0.7);
         self::assertFalse($distOverridden->enabled, 'Distance: enabled must be preserved');
-        self::assertSame(['App\\Domain'], $distOverridden->includeNamespaces, 'Distance: includeNamespaces must be preserved');
+        self::assertSame($dist->includeNamespaces, $distOverridden->includeNamespaces, 'Distance: includeNamespaces must be preserved');
         self::assertSame(5, $distOverridden->minClassCount, 'Distance: minClassCount must be preserved');
 
         // NamespaceInstabilityOptions — has minClassCount

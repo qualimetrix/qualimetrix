@@ -148,13 +148,20 @@ class ComplexClass {
 
         // Create command from DI container
         $commandTester = $this->createCommandTester();
-        $commandTester->execute([
-            'paths' => [$this->tempDir],
-            '--exclude' => ['vendor'],
-            '--format' => 'text',
-            '--no-progress' => true,
-            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
-        ]);
+        $workingDirectory = getcwd();
+        self::assertNotFalse($workingDirectory);
+        try {
+            chdir($this->tempDir);
+            $commandTester->execute([
+                'paths' => ['.'],
+                '--exclude' => ['exact:vendor'],
+                '--format' => 'text',
+                '--no-progress' => true,
+                '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
+            ]);
+        } finally {
+            chdir($workingDirectory);
+        }
 
         // Assert success
         self::assertSame(0, $commandTester->getStatusCode());

@@ -19,8 +19,8 @@ use SplFileInfo;
  * classification, and the one statement a run can make about its own file
  * selection: which of the author's exclude patterns removed nothing.
  *
- * That last question belongs here and nowhere later. `Finder::exclude()` drops
- * the matching directories before this method returns anything, so from the
+ * That last question belongs here and nowhere later. Directory pruning drops
+ * matching subtrees before this method returns anything, so from the
  * result alone a pattern that worked and a pattern that matched nothing are
  * the same picture. {@see UnmatchedExcludeAudit} is asked while the answer
  * still exists, and its findings ride out with the files.

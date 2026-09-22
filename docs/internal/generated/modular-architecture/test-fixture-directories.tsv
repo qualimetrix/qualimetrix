@@ -14,6 +14,7 @@ governance/FormatOptionKeys/Fixtures/OutputFormats/full/src/Repository	Architect
 governance/FormatOptionKeys/Fixtures/OutputFormats/full/src/Service	Architecture.Governance	"Retain at the materialized subject-owned path."
 governance/FormatOptionKeys/Fixtures/OutputFormats/suppressed	Architecture.Governance	"Retain at the materialized subject-owned path."
 governance/FormatOptionKeys/Fixtures/OutputFormats/suppressed/src	Architecture.Governance	"Retain at the materialized subject-owned path."
+governance/SelectorSyntax/Fixtures	Architecture.Governance	"Retain at the materialized subject-owned path."
 scripts/directive-audit/tests/Fixtures	Tooling/DirectiveAudit	"Retain at the materialized subject-owned path."
 scripts/phpunit-aggregate/tests/Fixtures	Tooling/PhpunitAggregate	"Retain at the materialized subject-owned path."
 tests/Analysis/Configuration/Fixtures	Analysis/Configuration	"Retain at the materialized subject-owned path."

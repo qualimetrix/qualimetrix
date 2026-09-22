@@ -76,7 +76,7 @@ final class MaxExpandedLayersFromYamlTest extends TestCase
               layers:
                 - name: app
                   patterns:
-                    - 'App\\App'
+                    - 'App\App'
               max_expanded_layers: 17
             YAML);
 
@@ -98,7 +98,7 @@ final class MaxExpandedLayersFromYamlTest extends TestCase
               layers:
                 - name: app
                   patterns:
-                    - 'App\\App'
+                    - 'App\App'
             YAML);
 
         $architecture = $this->resolveArchitecture();

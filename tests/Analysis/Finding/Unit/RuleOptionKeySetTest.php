@@ -37,6 +37,19 @@ final class RuleOptionKeySetTest extends TestCase
     }
 
     #[Test]
+    public function itDisplaysAndLocatesAWritableKeyWhoseCarrierTheClassValidates(): void
+    {
+        $set = RuleOptionKeySet::of(['mode' => RuleOptionShape::text()])
+            ->alsoAcceptedAndValidatedByTheClass('include-namespaces');
+
+        self::assertTrue($set->knows('includeNamespaces'));
+        self::assertTrue($set->accepts('includeNamespaces'));
+        self::assertSame('include-namespaces', $set->spellingOf('includeNamespaces'));
+        self::assertNull($set->shapeOf('includeNamespaces'));
+        self::assertSame(['include-namespaces', 'mode'], $set->acceptedForDisplay());
+    }
+
+    #[Test]
     public function itPlacesAnUndeclaredKeyInNeitherState(): void
     {
         $set = RuleOptionKeySet::of(['mode' => RuleOptionShape::text()->orNull()])->alsoAnsweredByTheClass('enabled');
@@ -114,6 +127,16 @@ final class RuleOptionKeySetTest extends TestCase
         RuleOptionKeySet::of(['max-warning' => RuleOptionShape::integer()])
             ->alsoAnsweredByTheClass('vo-threshold')
             ->alsoAnsweredByTheClass('vo-threshold');
+    }
+
+    #[Test]
+    public function itRefusesAClassValidatedKeyThatWasAlreadyDeclaredElsewhere(): void
+    {
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('declared twice');
+
+        RuleOptionKeySet::of(['include-namespaces' => RuleOptionShape::text()])
+            ->alsoAcceptedAndValidatedByTheClass('include-namespaces');
     }
 
     #[Test]

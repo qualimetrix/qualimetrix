@@ -4,15 +4,30 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Coupling;
 
+use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
+use Qualimetrix\Core\Pattern\NamespaceMatcher;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
 
+/**
+ * @qmx-threshold coupling.instability 0.81 -- Coupling configuration owns selector decoding and the executable framework matcher. Raw instability 0.80 is accepted after explicit selectors; further outward growth is reported.
+ */
 final class CouplingAnalysis implements CouplingConfiguratorInterface
 {
-    /** @var list<string> */
+    /** @var list<NamespacePattern> */
     private array $frameworkNamespaces = [];
+
+    private NamespaceMatcher $frameworkMatcher;
+
+    public function __construct()
+    {
+        $this->frameworkMatcher = new NamespaceMatcher([]);
+    }
 
     public function resolve(ConfigurationDocument $document): array
     {
@@ -22,32 +37,33 @@ final class CouplingAnalysis implements CouplingConfiguratorInterface
     public function replace(array $frameworkNamespaces): void
     {
         $this->frameworkNamespaces = $frameworkNamespaces;
+        $this->frameworkMatcher = new NamespaceMatcher($frameworkNamespaces);
     }
 
-    /** @return list<string> */
+    /** @return list<NamespacePattern> */
     private function frameworkNamespacesFrom(ConfigurationDocument $document): array
     {
         $frameworkNamespaces = [];
 
         foreach ($document->contributions('coupling') as $contribution) {
-            $frameworkNamespaces = $this->replacementPrefixes($contribution, $frameworkNamespaces);
+            $frameworkNamespaces = $this->replacementSelectors($contribution, $frameworkNamespaces);
         }
 
         return $frameworkNamespaces;
     }
 
     /**
-     * @param list<string> $currentPrefixes
+     * @param list<NamespacePattern> $currentSelectors
      *
-     * @return list<string>
+     * @return list<NamespacePattern>
      */
-    private function replacementPrefixes(mixed $contribution, array $currentPrefixes): array
+    private function replacementSelectors(mixed $contribution, array $currentSelectors): array
     {
         $coupling = $this->couplingContribution($contribution);
 
         return \array_key_exists('frameworkNamespaces', $coupling)
-            ? $this->validatedPrefixes($coupling['frameworkNamespaces'])
-            : $currentPrefixes;
+            ? $this->validatedSelectors($coupling['frameworkNamespaces'])
+            : $currentSelectors;
     }
 
     /** @return array<string, mixed> */
@@ -63,79 +79,72 @@ final class CouplingAnalysis implements CouplingConfiguratorInterface
         return $contribution;
     }
 
-    /** @return list<string> */
-    private function validatedPrefixes(mixed $prefixes): array
+    /** @return list<NamespacePattern> */
+    private function validatedSelectors(mixed $selectors): array
     {
-        if (!\is_array($prefixes) || !array_is_list($prefixes)) {
+        if (!\is_array($selectors) || !array_is_list($selectors)) {
             throw ConfigurationRefusal::aboutResolvedInput(
-                'Invalid value for "' . ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES . '": expected a list of namespace prefixes.',
+                'Invalid value for "' . ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES . '": expected a list of explicit namespace selector mappings.',
                 ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES,
             );
         }
 
-        foreach ($prefixes as $prefix) {
-            if (!\is_string($prefix)) {
-                throw ConfigurationRefusal::aboutResolvedInput(
-                    'Invalid entry in "' . ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES . '": every entry must be a namespace prefix string.',
-                    ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES,
-                );
-            }
+        $patterns = [];
+        foreach ($selectors as $index => $selector) {
+            $patterns[] = $this->namespacePattern($selector, $index);
         }
 
-        return $prefixes;
+        try {
+            new NamespaceMatcher($patterns);
+        } catch (InvalidArgumentException $e) {
+            throw ConfigurationRefusal::aboutResolvedInput(
+                $e->getMessage(),
+                ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES,
+                $e,
+            );
+        }
+
+        return $patterns;
     }
 
     public function isFramework(string $fqcn): bool
     {
-        foreach ($this->frameworkNamespaces as $prefix) {
-            if (self::covers($prefix, $fqcn)) {
-                return true;
-            }
-        }
-
-        return false;
+        return $this->frameworkMatcher->matches($fqcn) !== null;
     }
 
     /**
-     * The declared prefixes that no name in $fqcns falls under.
+     * The declared selectors that match no name in $fqcns.
      *
-     * A prefix that binds nothing changes no metric: every class stays in
+     * A selector that binds nothing changes no metric: every class stays in
      * `coupling.cbo-app` and `coupling.ce-framework` stays zero, which is
-     * exactly the state the author wrote the prefix to leave. Answering here
+     * exactly the state the author wrote the selector to leave. Answering here
      * rather than in the caller keeps one home for the matching rule — the
-     * caller would otherwise re-spell {@see isFramework()}'s comparison and
-     * the two could disagree about, say, a leading backslash.
-     *
-     * Prefixes are compared verbatim, without normalisation: `\Symfony` never
-     * matches anything {@see isFramework()} is asked about either, so it is a
-     * genuinely unbound prefix rather than a spelling this method should
-     * repair.
+     * caller would otherwise reconstruct the executable selector and the two
+     * could disagree about its exact, subtree, or regex semantics.
      *
      * @param iterable<string> $fqcns The names the run actually classified
      *
-     * @return list<string> In declaration order; empty when every prefix bound
+     * @return list<NamespacePattern> In declaration order; empty when every selector bound
      */
-    public function unboundPrefixes(iterable $fqcns): array
+    public function unboundSelectors(iterable $fqcns): array
     {
-        $unbound = array_values(array_unique($this->frameworkNamespaces));
+        $unbound = [];
+        foreach ($this->frameworkNamespaces as $pattern) {
+            $unbound[$pattern->definition->display()] = $pattern;
+        }
 
         foreach ($fqcns as $fqcn) {
-            $unbound = array_values(array_filter(
+            $unbound = array_filter(
                 $unbound,
-                static fn(string $prefix): bool => !self::covers($prefix, $fqcn),
-            ));
+                static fn(NamespacePattern $pattern): bool => !$pattern->matches($fqcn),
+            );
 
             if ($unbound === []) {
                 return [];
             }
         }
 
-        return $unbound;
-    }
-
-    private static function covers(string $prefix, string $fqcn): bool
-    {
-        return str_starts_with($fqcn, $prefix . '\\') || $fqcn === $prefix;
+        return array_values($unbound);
     }
 
     public function isFrameworkNamespace(?string $namespace): bool
@@ -146,5 +155,37 @@ final class CouplingAnalysis implements CouplingConfiguratorInterface
     public function isEmpty(): bool
     {
         return $this->frameworkNamespaces === [];
+    }
+
+    private function namespacePattern(mixed $selector, int $index): NamespacePattern
+    {
+        $position = RefusedPosition::open(
+            [ConfigSchema::COUPLING, 'frameworkNamespaces', (string) $index],
+            (string) $index,
+        );
+
+        if (!\is_array($selector) || \count($selector) !== 1) {
+            throw ConfigurationRefusal::atResolvedKey(
+                $position,
+                'Framework namespace selectors must be one-entry mappings: {exact: value}, {subtree: value}, or {regex: value}; bare strings are not supported.',
+                ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES,
+            );
+        }
+
+        $kind = array_key_first($selector);
+        $value = \is_string($kind) ? $selector[$kind] : null;
+        if (!\is_string($kind) || !\is_string($value) || $value === '') {
+            throw ConfigurationRefusal::atResolvedKey(
+                $position,
+                'Framework namespace selectors must name exact, subtree, or regex with a non-empty string value.',
+                ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES,
+            );
+        }
+
+        try {
+            return new NamespacePattern(SelectorDefinition::fromKindAndValue($kind, $value));
+        } catch (InvalidArgumentException $e) {
+            throw ConfigurationRefusal::atResolvedKey($position, $e->getMessage(), ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES, $e);
+        }
     }
 }

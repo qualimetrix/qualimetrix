@@ -12,7 +12,6 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerCriteriaMatcher;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
-use Qualimetrix\Core\Pattern\NamespaceMatcher;
 
 /**
  * Walks a {@see ClassSet} once and collects the distinct observed binding
@@ -132,17 +131,9 @@ final class TupleExtractor
 
     /**
      * Splits patterns into capture-producing (compiled to {@see CapturePattern})
-     * and non-capture (raw strings routed through {@see NamespaceMatcher} so
-     * non-glob filters keep Phase-1 prefix semantics).
-     *
-     * **Why two engines?** {@see CapturePattern}'s regex anchors with `^...$`
-     * and uses exact-character matching for any non-glob, non-capture residue
-     * — perfect for substituted concrete patterns, wrong for filter patterns
-     * like {@code App\Domain} which a Phase-1 user reasonably expects to match
-     * {@code App\Domain\Foo} too. {@see NamespaceMatcher::matchesSingle()}
-     * implements the documented Phase-1 prefix semantics. Routing non-capture
-     * filters through it preserves the D7 carve-out's "filter behaves like a
-     * Phase-1 pattern" intuition.
+     * and non-capture raw strings. Both variants use the same Architecture DSL;
+     * a bare FQN is a boundary-aware subtree in static and template-expanded
+     * membership alike.
      *
      * @param list<string> $patterns
      *
@@ -167,16 +158,12 @@ final class TupleExtractor
      * Returns true if the class FQN matches every non-capture pattern
      * (D7 AND-filter). Empty non-capture pattern list trivially passes.
      *
-     * Delegates to {@see NamespaceMatcher::matchesSingle()} so non-glob filter
-     * patterns ({@code App\Domain}) keep Phase-1 prefix semantics — they
-     * match the namespace itself AND any class beneath it.
-     *
      * @param list<string> $patterns
      */
     private static function passesNonCapturePatterns(array $patterns, ClassContext $context): bool
     {
         foreach ($patterns as $pattern) {
-            if (!NamespaceMatcher::matchesSingle($pattern, $context->fqn)) {
+            if (!CapturePattern::matches($pattern, $context->fqn)) {
                 return false;
             }
         }

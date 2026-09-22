@@ -71,7 +71,7 @@ final class FindingSummaryRendererTest extends TestCase
             warningCount: 0,
         );
 
-        $context = new FormatterContext(namespace: 'App\\Service');
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
         $lines = [];
 
         $this->renderer->render($report, $context, $this->color, $lines);
@@ -313,7 +313,7 @@ final class FindingSummaryRendererTest extends TestCase
         );
 
         // Scoped context — uses calculateScopedDebt instead of report.techDebtMinutes
-        $context = new FormatterContext(namespace: 'App\\Service');
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
         $lines = [];
 
         $this->renderer->render($report, $context, $this->color, $lines);

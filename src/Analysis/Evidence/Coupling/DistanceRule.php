@@ -63,12 +63,20 @@ final class DistanceRule extends AbstractRule
     public const int REMEDIATION_MINUTES = 30;
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
+
+    private readonly ?NamespaceMatcher $includeMatcher;
+
     public function __construct(
         RuleOptionsInterface $options,
         private readonly ?ProjectNamespaceResolverInterface $namespaceResolver = null,
         private readonly ?LoggerInterface $logger = null,
     ) {
         parent::__construct($options);
+        $this->includeMatcher = $options instanceof DistanceOptions
+            && $options->includeNamespaces !== null
+            && $options->includeNamespaces !== []
+                ? new NamespaceMatcher($options->includeNamespaces)
+                : null;
     }
 
     public function getName(): string
@@ -107,7 +115,7 @@ final class DistanceRule extends AbstractRule
         if ($analyzedNamespaces === 0 && $totalNamespaces > 0) {
             $this->logger?->warning(
                 'Distance rule: no project namespaces detected among {total} namespaces. '
-                . "Use --rule-opt='coupling.distance:include_namespaces=...' to specify namespaces for vendor code analysis.",
+                . "Use --rule-opt='coupling.distance:include-namespaces=subtree:App' to specify a namespace selector for vendor code analysis.",
                 ['total' => $totalNamespaces],
             );
         }
@@ -197,13 +205,8 @@ final class DistanceRule extends AbstractRule
         \assert($this->options instanceof DistanceOptions);
 
         // If explicit includes are set, check against them
-        if ($this->options->includeNamespaces !== null && $this->options->includeNamespaces !== []) {
-            foreach ($this->options->includeNamespaces as $includePrefix) {
-                if (NamespaceMatcher::matchesSingle($includePrefix, $namespace)) {
-                    return true;
-                }
-            }
-            return false;
+        if ($this->includeMatcher !== null) {
+            return $this->includeMatcher->matches($namespace) !== null;
         }
 
         // Use resolver if available

@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\FormatterContext;
@@ -28,6 +29,7 @@ final class FormatterContextFactory
      */
     public function __construct(
         private readonly FormatterRegistryInterface $formatterRegistry,
+        private readonly CliSelectorDecoder $selectorDecoder = new CliSelectorDecoder(),
     ) {}
 
     public function create(
@@ -36,6 +38,7 @@ final class FormatterContextFactory
         FormatterInterface $formatter,
         AbsolutePath $projectRoot,
         bool $scopedReporting = false,
+        ?NamespacePattern $namespacePattern = null,
     ): FormatterContext {
         // Resolve group-by: explicit CLI option or formatter default
         /** @var string|null $groupByValue */
@@ -102,6 +105,7 @@ final class FormatterContextFactory
 
         $detectedWidth = (new \Symfony\Component\Console\Terminal())->getWidth();
         $terminalWidth = $detectedWidth !== 0 ? $detectedWidth : 80;
+        $namespacePattern ??= $this->decodeNamespaceFilter($namespaceFilter);
         $detailLimit = $this->parseDetailOption($input, $namespaceFilter, $classFilter);
         $topIssuesLimit = $this->parseTopOption($input);
 
@@ -116,13 +120,40 @@ final class FormatterContextFactory
             options: $options,
             basePath: $projectRoot->value(),
             scopedReporting: $scopedReporting,
-            namespace: $namespaceFilter,
+            namespace: $namespacePattern,
             class: $classFilter,
             terminalWidth: $terminalWidth,
             detailLimit: $detailLimit,
             isGroupByExplicit: $isGroupByExplicit,
             topIssuesLimit: $topIssuesLimit,
         );
+    }
+
+    /**
+     * Binds the report selector before an analysis starts.
+     */
+    public function namespacePattern(InputInterface $input): ?NamespacePattern
+    {
+        /** @var string|null $namespaceFilter */
+        $namespaceFilter = $input->getOption('namespace');
+        /** @var string|null $classFilter */
+        $classFilter = $input->getOption('class');
+
+        if ($namespaceFilter !== null && $classFilter !== null) {
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--namespace/--class',
+                'Options --namespace and --class are mutually exclusive',
+            );
+        }
+
+        return $this->decodeNamespaceFilter($namespaceFilter);
+    }
+
+    private function decodeNamespaceFilter(?string $namespaceFilter): ?NamespacePattern
+    {
+        return $namespaceFilter !== null
+            ? $this->selectorDecoder->decodeNamespace($namespaceFilter, '--namespace')
+            : null;
     }
 
     /**

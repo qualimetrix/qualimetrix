@@ -558,7 +558,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
     public function itAcceptsAFrameworkKeyAtTheTopLevelOfARule(): void
     {
         $registry = new RuleOptionsRegistry();
-        $this->configure($registry, "  complexity.ccn:\n    suppress_paths: ['src/Generated/*']\n");
+        $this->configure($registry, "  complexity.ccn:\n    suppress_paths: [{regex: 'src/Generated/.*'}]\n");
         (new RuleOptionsFactory($registry))->create('complexity.ccn', ComplexityOptions::class);
 
         self::assertTrue($registry->isPathExcluded('complexity.ccn', RelativePath::fromString('src/Generated/Table.php')));
@@ -687,7 +687,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
     public function itLeavesACorrectlyWrittenConfigurationUntouchedAtBothDepths(): void
     {
         $options = $this->optionsFrom(
-            "  complexity.ccn:\n    enabled: true\n    suppress_paths: ['src/Generated/*']\n"
+            "  complexity.ccn:\n    enabled: true\n    suppress_paths: [{regex: 'src/Generated/.*'}]\n"
             . "    callable:\n      warning: 4\n      error: 9\n"
             . "    class:\n      max_warning: 11\n      max_error: 22\n",
             'complexity.ccn',

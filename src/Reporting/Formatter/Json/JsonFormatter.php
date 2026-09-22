@@ -167,7 +167,7 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
             $type = $sp->type;
 
             if ($context->namespace !== null) {
-                return $ns === $context->namespace || str_starts_with($ns, $context->namespace . '\\');
+                return $context->namespace->matches($ns);
             }
 
             if ($context->class !== null && $type !== null) {

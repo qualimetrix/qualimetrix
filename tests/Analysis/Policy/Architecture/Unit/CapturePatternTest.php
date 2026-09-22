@@ -63,6 +63,25 @@ final class CapturePatternTest extends TestCase
     }
 
     #[Test]
+    public function itAcceptsTheExplicitSingleSegmentCaptureSpelling(): void
+    {
+        $pattern = CapturePattern::compile('App\\Module\\{module:*}\\Domain');
+
+        self::assertSame(['module' => 'Order'], $pattern->match('App\\Module\\Order\\Domain'));
+        self::assertNull($pattern->match('App\\Module\\Sales\\Order\\Domain'));
+    }
+
+    #[Test]
+    public function itTreatsABareFqnAsAnInclusiveBoundaryAwareSubtree(): void
+    {
+        $pattern = CapturePattern::compile('App\\Service');
+
+        self::assertSame([], $pattern->match('App\\Service'));
+        self::assertSame([], $pattern->match('App\\Service\\Order'));
+        self::assertNull($pattern->match('App\\ServiceBus'));
+    }
+
+    #[Test]
     public function itRefusesASingleSegmentCaptureThatWouldCrossASeparator(): void
     {
         $pattern = CapturePattern::compile('App\\Module\\{module}\\Domain');
@@ -98,6 +117,15 @@ final class CapturePatternTest extends TestCase
     }
 
     #[Test]
+    public function itLetsAMiddleDoubleStarSpanZeroOrMoreNamespaceSegments(): void
+    {
+        $pattern = CapturePattern::compile('App\\**\\Repository');
+
+        self::assertSame([], $pattern->match('App\\Repository'));
+        self::assertSame([], $pattern->match('App\\Sales\\Order\\Repository'));
+    }
+
+    #[Test]
     public function itRefusesASingleStarGlobThatWouldCrossASeparator(): void
     {
         $pattern = CapturePattern::compile('App\\Service\\*');
@@ -123,6 +151,7 @@ final class CapturePatternTest extends TestCase
 
         self::assertSame([], $pattern->match('App\\Service\\User'));
         self::assertNull($pattern->match('App\\Other\\User'));
+        self::assertNull($pattern->match('App\\Service'), 'A trailing \\** denotes strict descendants.');
     }
 
     #[Test]
@@ -180,7 +209,7 @@ final class CapturePatternTest extends TestCase
         yield 'empty capture' => ['App\\{}', "empty capture '{}'"];
         yield 'invalid name digit start' => ['App\\{1var}', "invalid capture name '1var'"];
         yield 'invalid name with hyphen' => ['App\\{a-b}', "invalid capture name 'a-b'"];
-        yield 'unknown quantifier' => ['App\\{var:*}', "unknown capture quantifier ':*'"];
+        yield 'unknown quantifier' => ['App\\{var:+}', "unknown capture quantifier ':+'"];
         yield 'nested capture' => ['App\\{outer{inner}}', "nested '{'"];
         yield 'duplicate capture name' => ['App\\{m}\\Module\\{m}', "duplicate capture name 'm'"];
         yield 'adjacent captures no separator' => ['App\\{a}{b}', "adjacent captures '{a}{...}'"];

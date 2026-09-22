@@ -6,19 +6,25 @@ namespace Qualimetrix\Analysis\Run\Configuration;
 
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\SelectorYamlDecoder;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
+use Qualimetrix\Analysis\Run\Discovery\DirectoryPruner;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
 
 final class RunConfigurationResolver implements RunConfigurationResolverInterface
 {
-    /** The directories the product excludes whether or not the author says so. */
-    private const array BUILT_IN_EXCLUDES = ['vendor', 'node_modules', '.git'];
-
-    public function __construct(private readonly ProjectScopeCoverage $projectScopeCoverage) {}
+    public function __construct(
+        private readonly ProjectScopeCoverage $projectScopeCoverage,
+        private readonly SelectorYamlDecoder $selectorDecoder = new SelectorYamlDecoder(),
+    ) {}
 
     public function resolve(ConfigurationDocument $document): RunConfiguration
     {
@@ -33,15 +39,16 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
         );
 
         $excludeContributions = $document->contributions(ConfigSchema::EXCLUDES);
+        $authoredExcludes = $this->accumulatedPathPatterns($excludeContributions);
 
         return new RunConfiguration(
             coversProjectScope: $this->projectScopeCoverage->pathsCoverProjectScope($root, $pathList),
             paths: $pathList,
-            pathExcludes: self::accumulatedStrings($excludeContributions, self::BUILT_IN_EXCLUDES),
+            pathExcludes: [...DirectoryPruner::builtInPatterns(), ...$authoredExcludes],
             // The same contributions without the built-in floor: what the
             // author actually asked to exclude, which is the only part of the
             // merged list a miss can be reported about.
-            authoredPathExcludes: self::accumulatedStrings($excludeContributions, []),
+            authoredPathExcludes: $authoredExcludes,
             projectRoot: $root,
             generatedFilePolicy: self::generatedFilePolicy(
                 $document->contributions(ConfigSchema::INCLUDE_GENERATED),
@@ -87,22 +94,40 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
         return $value;
     }
 
-    /**
-     * @param list<mixed> $contributions
-     * @param list<string> $default
-     *
-     * @return list<string>
+    /** @param list<mixed> $contributions
+     * @return list<PathPattern>
      */
-    private static function accumulatedStrings(array $contributions, array $default): array
+    private function accumulatedPathPatterns(array $contributions): array
     {
-        $values = $default;
+        $patterns = [];
         foreach ($contributions as $candidate) {
-            if (\is_array($candidate) && array_is_list($candidate)) {
-                array_push($values, ...array_filter($candidate, is_string(...)));
+            if (!\is_array($candidate) || !array_is_list($candidate)) {
+                throw ConfigurationRefusal::aboutResolvedInput(
+                    \sprintf('Invalid value for "%s": expected a list of explicit selector mappings.', ConfigSchema::EXCLUDES),
+                    ConfigSchema::EXCLUDES,
+                );
+            }
+
+            foreach ($candidate as $index => $entry) {
+                $pattern = $entry instanceof PathPattern
+                    ? $entry
+                    : $this->selectorDecoder->decodePath(
+                        $entry,
+                        ConfigurationOrigin::of(ConfigurationSource::Resolved, ConfigSchema::EXCLUDES),
+                        [ConfigSchema::EXCLUDES, (string) $index],
+                    );
+                $patterns[$pattern->definition->display()] = $pattern;
             }
         }
 
-        return array_values(array_unique($values));
+        if (\count($patterns) > SelectorDefinition::MAX_SELECTOR_COUNT) {
+            throw ConfigurationRefusal::aboutResolvedInput(
+                \sprintf('Option "%s" must not contain more than %d selectors.', ConfigSchema::EXCLUDES, SelectorDefinition::MAX_SELECTOR_COUNT),
+                ConfigSchema::EXCLUDES,
+            );
+        }
+
+        return array_values($patterns);
     }
 
     /** @param list<mixed> $contributions */

@@ -30,6 +30,10 @@ use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -126,7 +130,7 @@ final class RuleExecutionTest extends TestCase
         $rule = $this->createRule('rule1', [$excludedFinding, $includedFinding]);
 
         $exclusionProvider = new RuleNamespaceExclusionProvider();
-        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
+        $exclusionProvider->setExclusions('rule1', [$this->namespaceSubtree('App\\Tests')]);
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
@@ -154,7 +158,7 @@ final class RuleExecutionTest extends TestCase
         $rule = $this->createRule('rule1', [$excludedFinding, $includedFinding]);
 
         $pathExclusionProvider = new RulePathExclusionProvider();
-        $pathExclusionProvider->setExclusions('rule1', ['src/Generated']);
+        $pathExclusionProvider->setExclusions('rule1', [$this->pathSubtree('src/Generated')]);
 
         $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
         $provider = $this->createConfiguredProvider();
@@ -181,8 +185,8 @@ final class RuleExecutionTest extends TestCase
         $rule2 = $this->createRule('rule2', [$v2]);
 
         $exclusionProvider = new RuleNamespaceExclusionProvider();
-        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
-        $exclusionProvider->setExclusions('rule2', ['App\\Tests']);
+        $exclusionProvider->setExclusions('rule1', [$this->namespaceSubtree('App\\Tests')]);
+        $exclusionProvider->setExclusions('rule2', [$this->namespaceSubtree('App\\Tests')]);
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
@@ -201,7 +205,7 @@ final class RuleExecutionTest extends TestCase
         $rule = $this->createRule('rule1', [$excludedFinding]);
 
         $exclusionProvider = new RuleNamespaceExclusionProvider();
-        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
+        $exclusionProvider->setExclusions('rule1', [$this->namespaceSubtree('App\\Tests')]);
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
@@ -784,7 +788,7 @@ final class RuleExecutionTest extends TestCase
         $rule = $this->createRule('rule1', [$excludedFinding, $includedFinding]);
 
         $exclusionProvider = new RuleNamespaceExclusionProvider();
-        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
+        $exclusionProvider->setExclusions('rule1', [$this->namespaceSubtree('App\\Tests')]);
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
@@ -815,7 +819,7 @@ final class RuleExecutionTest extends TestCase
         $rule = $this->createRule('rule1', [$excludedFinding, $includedFinding]);
 
         $exclusionProvider = new RuleNamespaceExclusionProvider();
-        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
+        $exclusionProvider->setExclusions('rule1', [$this->namespaceSubtree('App\\Tests')]);
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $executor = $this->createExecution([$rule], $registry);
@@ -835,7 +839,7 @@ final class RuleExecutionTest extends TestCase
         $rule = $this->createRule('rule1', [$excludedFinding, $includedFinding]);
 
         $exclusionProvider = new RuleNamespaceExclusionProvider();
-        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
+        $exclusionProvider->setExclusions('rule1', [$this->namespaceSubtree('App\\Tests')]);
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
@@ -854,7 +858,7 @@ final class RuleExecutionTest extends TestCase
         $rule = $this->createRule('rule1', [$fileFinding]);
 
         $exclusionProvider = new RuleNamespaceExclusionProvider();
-        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
+        $exclusionProvider->setExclusions('rule1', [$this->namespaceSubtree('App\\Tests')]);
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
@@ -872,7 +876,7 @@ final class RuleExecutionTest extends TestCase
         $rule = $this->createRule('rule1', [$globalFinding]);
 
         $exclusionProvider = new RuleNamespaceExclusionProvider();
-        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
+        $exclusionProvider->setExclusions('rule1', [$this->namespaceSubtree('App\\Tests')]);
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
@@ -893,7 +897,7 @@ final class RuleExecutionTest extends TestCase
         $rule2 = $this->createRule('rule2', [$v2]);
 
         $exclusionProvider = new RuleNamespaceExclusionProvider();
-        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
+        $exclusionProvider->setExclusions('rule1', [$this->namespaceSubtree('App\\Tests')]);
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
@@ -924,7 +928,7 @@ final class RuleExecutionTest extends TestCase
         $exclusionProvider->setChannelExclusions(
             'computed.health',
             'health.cohesion',
-            ['App\\Metrics'],
+            [$this->namespaceSubtree('App\\Metrics')],
         );
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
@@ -966,7 +970,7 @@ final class RuleExecutionTest extends TestCase
         $exclusionProvider->setChannelExclusions(
             'computed.health',
             'health.cohesion',
-            ['App\\Metrics'],
+            [$this->namespaceSubtree('App\\Metrics')],
         );
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
@@ -999,7 +1003,11 @@ final class RuleExecutionTest extends TestCase
         $rule = $this->createRule('computed.health', [$namespaceCohesion, $projectCohesion]);
 
         $exclusionProvider = new RuleNamespaceExclusionProvider();
-        $exclusionProvider->setChannelExclusions('computed.health', 'health.*', ['*']);
+        $exclusionProvider->setChannelExclusions(
+            'computed.health',
+            'health.*',
+            [new NamespacePattern(new SelectorDefinition(SelectorKind::Regex, '.*'))],
+        );
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $executor = $this->createExecution(
@@ -1031,8 +1039,10 @@ final class RuleExecutionTest extends TestCase
         $rule = $this->createRule('computed.health', [$excludedFinding]);
 
         $registry = new RuleOptionsRegistry();
-        $registry->setConfigFileOptions([$channel => ['suppress_namespaces' => ['App\\Metrics']]]);
-        $registry->configureNamespaceExclusions($channel, ['App\\Metrics']);
+        $registry->setConfigFileOptions([$channel => [
+            'suppress_namespaces' => [['subtree' => 'App\\Metrics']],
+        ]]);
+        $registry->configureNamespaceExclusions($channel, [$this->namespaceSubtree('App\\Metrics')]);
 
         $channelIdentity = self::createStub(ChannelIdentityInterface::class);
         $channelIdentity->method('producerOf')->willReturn($channel);
@@ -1044,7 +1054,10 @@ final class RuleExecutionTest extends TestCase
         self::assertCount(1, $stats->attributions);
         self::assertSame($channel, $stats->attributions[0]->producerRuleName);
         self::assertNotSame($excludedFinding->ruleName, $stats->attributions[0]->producerRuleName);
-        self::assertSame(['App\\Metrics'], $stats->attributions[0]->matchedPatterns);
+        self::assertSame(
+            ['subtree:App\\Metrics'],
+            array_map(static fn(SelectorDefinition $pattern): string => $pattern->display(), $stats->attributions[0]->matchedPatterns),
+        );
     }
 
     #[Test]
@@ -1055,11 +1068,15 @@ final class RuleExecutionTest extends TestCase
         $rule = $this->createRule('computed.health', [$cohesion]);
 
         $exclusionProvider = new RuleNamespaceExclusionProvider();
-        $exclusionProvider->setChannelExclusions('computed.health', $channel, ['App\\Metrics']);
+        $exclusionProvider->setChannelExclusions(
+            'computed.health',
+            $channel,
+            [$this->namespaceSubtree('App\\Metrics')],
+        );
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $registry->setConfigFileOptions(['computed.health' => [
-            'suppress_namespace_channels' => [$channel => ['App\\Metrics']],
+            'suppress_namespace_channels' => [$channel => [['subtree' => 'App\\Metrics']]],
         ]]);
 
         $executor = $this->createExecution([$rule], $registry, $this->computedRuleSelector());
@@ -1068,9 +1085,13 @@ final class RuleExecutionTest extends TestCase
 
         self::assertCount(1, $stats->attributions);
         self::assertSame([], $stats->attributions[0]->matchedPatterns);
+        self::assertSame([$channel], array_column($stats->attributions[0]->matchedChannelPatterns, 'selector'));
         self::assertSame(
-            [['selector' => $channel, 'pattern' => 'App\\Metrics']],
-            $stats->attributions[0]->matchedChannelPatterns,
+            ['subtree:App\\Metrics'],
+            array_map(
+                static fn(array $match): string => $match['pattern']->display(),
+                $stats->attributions[0]->matchedChannelPatterns,
+            ),
         );
     }
 
@@ -1088,17 +1109,26 @@ final class RuleExecutionTest extends TestCase
         $rule = $this->createRule('rule1', [$excludedFinding]);
 
         $pathExclusionProvider = new RulePathExclusionProvider();
-        $pathExclusionProvider->setExclusions('rule1', ['src/Excluded', 'src/Excluded/Deep']);
+        $pathExclusionProvider->setExclusions('rule1', [
+            $this->pathSubtree('src/Excluded'),
+            $this->pathSubtree('src/Excluded/Deep'),
+        ]);
 
         $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
-        $registry->setConfigFileOptions(['rule1' => ['suppress_paths' => ['src/Excluded', 'src/Excluded/Deep']]]);
+        $registry->setConfigFileOptions(['rule1' => ['suppress_paths' => [
+            ['subtree' => 'src/Excluded'],
+            ['subtree' => 'src/Excluded/Deep'],
+        ]]]);
 
         $executor = $this->createExecution([$rule], $registry);
 
         $stats = $executor->execute($this->createMinimalContext())->exclusions;
 
         self::assertCount(1, $stats->attributions);
-        self::assertSame(['src/Excluded', 'src/Excluded/Deep'], $stats->attributions[0]->matchedPatterns);
+        self::assertSame(
+            ['subtree:src/Excluded', 'subtree:src/Excluded/Deep'],
+            array_map(static fn(SelectorDefinition $pattern): string => $pattern->display(), $stats->attributions[0]->matchedPatterns),
+        );
     }
 
     // --- Finding-owned excluded-finding capture policy tests ---
@@ -1112,7 +1142,7 @@ final class RuleExecutionTest extends TestCase
         $rule = $this->createRule('rule1', [$excludedFinding]);
 
         $exclusionProvider = new RuleNamespaceExclusionProvider();
-        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
+        $exclusionProvider->setExclusions('rule1', [$this->namespaceSubtree('App\\Tests')]);
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
@@ -1136,7 +1166,7 @@ final class RuleExecutionTest extends TestCase
         $rule = $this->createRule('rule1', [$excludedFinding]);
 
         $pathExclusionProvider = new RulePathExclusionProvider();
-        $pathExclusionProvider->setExclusions('rule1', ['src/Generated']);
+        $pathExclusionProvider->setExclusions('rule1', [$this->pathSubtree('src/Generated')]);
 
         $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
         $provider = $this->createConfiguredProvider();
@@ -1158,7 +1188,7 @@ final class RuleExecutionTest extends TestCase
         $rule = $this->createRule('rule1', [$excludedFinding]);
 
         $exclusionProvider = new RuleNamespaceExclusionProvider();
-        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
+        $exclusionProvider->setExclusions('rule1', [$this->namespaceSubtree('App\\Tests')]);
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
@@ -1338,7 +1368,7 @@ final class RuleExecutionTest extends TestCase
         $rule = $this->createRule('rule1', [$excludedFinding, $includedFinding]);
 
         $pathExclusionProvider = new RulePathExclusionProvider();
-        $pathExclusionProvider->setExclusions('rule1', ['src/Generated']);
+        $pathExclusionProvider->setExclusions('rule1', [$this->pathSubtree('src/Generated')]);
 
         $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
         $provider = $this->createConfiguredProvider();
@@ -1360,7 +1390,7 @@ final class RuleExecutionTest extends TestCase
         $rule2 = $this->createRule('rule2', [$v2]);
 
         $pathExclusionProvider = new RulePathExclusionProvider();
-        $pathExclusionProvider->setExclusions('rule1', ['src/Generated']);
+        $pathExclusionProvider->setExclusions('rule1', [$this->pathSubtree('src/Generated')]);
 
         $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
         $provider = $this->createConfiguredProvider();
@@ -1380,7 +1410,7 @@ final class RuleExecutionTest extends TestCase
         $rule = $this->createRule('rule1', [$finding]);
 
         $pathExclusionProvider = new RulePathExclusionProvider();
-        $pathExclusionProvider->setExclusions('rule1', ['src/Generated']);
+        $pathExclusionProvider->setExclusions('rule1', [$this->pathSubtree('src/Generated')]);
 
         $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
         $provider = $this->createConfiguredProvider();
@@ -1408,6 +1438,16 @@ final class RuleExecutionTest extends TestCase
             message: "Violation from $ruleName in $file",
             severity: Severity::Warning,
         );
+    }
+
+    private function namespaceSubtree(string $namespace): NamespacePattern
+    {
+        return new NamespacePattern(new SelectorDefinition(SelectorKind::Subtree, $namespace));
+    }
+
+    private function pathSubtree(string $path): PathPattern
+    {
+        return new PathPattern(new SelectorDefinition(SelectorKind::Subtree, $path));
     }
 
     private function computedRuleSelector(): RuleSelector

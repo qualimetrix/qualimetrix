@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface;
+use Qualimetrix\Core\Pattern\NamespacePattern;
 use Symfony\Component\Console\Input\InputInterface;
 
 /** Configures the analysis engine's per-run rule, collector, and feature state. */
@@ -41,7 +42,7 @@ final readonly class AnalysisRuntimeConfigurator
         return $this->computedMetricConfigurator->resolve($document);
     }
 
-    /** @return list<string> */
+    /** @return list<NamespacePattern> */
     public function resolveCoupling(ConfigurationDocument $document): array
     {
         return $this->couplingConfigurator->resolve($document);
@@ -61,7 +62,7 @@ final readonly class AnalysisRuntimeConfigurator
     }
 
     /**
-     * @param list<string> $frameworkNamespaces
+     * @param list<NamespacePattern> $frameworkNamespaces
      */
     public function replace(
         FindingConfiguration $findingConfiguration,

@@ -85,7 +85,7 @@ final class CheckCommandConfigurationErrorGateTest extends TestCase
 
         $tester = $this->runCheck([
             '--fail-on' => 'none',
-            '--suppress-path' => ['**/Subject.php'],
+            '--suppress-path' => ['regex:(?:.*/)?Subject\\.php'],
         ]);
 
         self::assertSame(self::EXIT_ERROR, $tester->getStatusCode());

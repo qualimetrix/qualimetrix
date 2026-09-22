@@ -28,14 +28,14 @@
 #   - src/
 #   - lib/
 
-# Exclude paths from violation reporting.
-# Patterns without glob characters (*, ?, [) use prefix matching.
-# Patterns with glob characters use fnmatch().
+# Exclude paths from violation reporting. Every selector is explicit:
+# exact matches one path, subtree includes separator-bound descendants, and
+# regex is a delimiterless, automatically full-anchored PCRE fragment.
 # Files are still analyzed for metrics — only violations are suppressed.
 # suppress_paths:
-#   - src/Entity              # prefix: matches all files under src/Entity/
-#   - src/DTO                 # prefix: matches all files under src/DTO/
-#   - src/Analysis/Evidence/Complexity/*Visitor.php # glob: matches visitor files only
+#   - subtree: src/Entity
+#   - exact: src/DTO/Address.php
+#   - regex: 'src/Analysis/Evidence/Complexity/.*Visitor\.php'
 
 
 # -----------------------------------------------------------------------------
@@ -70,15 +70,14 @@
 # -----------------------------------------------------------------------------
 # Docs: https://qualimetrix.github.io/qualimetrix/metrics/coupling/
 
-# Framework namespace prefixes — dependencies on these are tracked separately
-# as CBO_FRAMEWORK (not counted toward CBO_APP). Boundary-aware: "Psr" matches
-# "Psr\Log" but NOT "PsrExtended\Custom".
+# Framework namespace selectors — dependencies on these are tracked separately
+# as CBO_FRAMEWORK (not counted toward CBO_APP).
 # coupling:
 #   framework-namespaces:
-#     - Symfony
-#     - Doctrine
-#     - Psr
-#     - Illuminate
+#     - subtree: Symfony
+#     - subtree: Doctrine
+#     - subtree: Psr
+#     - subtree: Illuminate
 
 
 # -----------------------------------------------------------------------------
@@ -93,8 +92,8 @@
 #   https://qualimetrix.github.io/qualimetrix/reference/rules/
 #
 # Every rule supports these universal options:
-#   suppress_namespaces — suppress violations in specific namespaces (prefix or glob matching)
-#   suppress_paths — suppress violations in specific files (prefix or glob matching)
+#   suppress_namespaces — explicit exact/subtree/regex namespace selectors
+#   suppress_paths — explicit exact/subtree/regex path selectors
 #
 # An option key the rule does not have is a configuration error: the run stops
 # with exit 3 and the message lists the options allowed at that exact position.
@@ -105,10 +104,10 @@
 # Example:
 #   coupling.cbo:
 #     suppress_namespaces:
-#       - App\Core\ValueObject
+#       - subtree: App\Core\ValueObject
 #     suppress_paths:
-#       - src/Analysis/Evidence/Complexity
-#       - src/Infrastructure/DependencyInjection
+#       - subtree: src/Analysis/Evidence/Complexity
+#       - subtree: src/Infrastructure/DependencyInjection
 #
 # rules:
 

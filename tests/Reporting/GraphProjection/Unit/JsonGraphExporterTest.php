@@ -16,6 +16,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\GraphProjection\JsonGraphExporter;
+use Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub;
 
 final class JsonGraphExporterTest extends TestCase
 {
@@ -214,7 +215,7 @@ final class JsonGraphExporterTest extends TestCase
         ];
 
         $graph = $this->createGraph($dependencies);
-        $exporter = new JsonGraphExporter(includeNamespaces: ['App\\Service']);
+        $exporter = new JsonGraphExporter(includeNamespaces: [NamespacePatternStub::subtree('App\\Service')]);
         $data = $this->decode($exporter->export($graph));
 
         self::assertSame(2, $data['statistics']['nodeCount']);
@@ -246,7 +247,7 @@ final class JsonGraphExporterTest extends TestCase
         ];
 
         $graph = $this->createGraph($dependencies);
-        $exporter = new JsonGraphExporter(excludeNamespaces: ['App\\Tests']);
+        $exporter = new JsonGraphExporter(excludeNamespaces: [NamespacePatternStub::subtree('App\\Tests')]);
         $data = $this->decode($exporter->export($graph));
 
         $fqns = array_column($data['nodes'], 'fqn');
@@ -267,7 +268,7 @@ final class JsonGraphExporterTest extends TestCase
         ];
 
         $graph = $this->createGraph($dependencies);
-        $exporter = new JsonGraphExporter(excludeNamespaces: ['App\\Tests']);
+        $exporter = new JsonGraphExporter(excludeNamespaces: [NamespacePatternStub::subtree('App\\Tests')]);
         $data = $this->decode($exporter->export($graph));
 
         // Edge should not appear because target node is filtered out

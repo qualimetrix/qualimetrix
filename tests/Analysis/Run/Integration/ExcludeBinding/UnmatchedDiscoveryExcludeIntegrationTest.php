@@ -94,7 +94,7 @@ final class UnmatchedDiscoveryExcludeIntegrationTest extends TestCase
     #[Test]
     public function itReportsACommandLineExcludeThatMatchedNothing(): void
     {
-        $findings = $this->findingsOnChannel($this->check(options: ['--exclude' => ['NoSuchDir']]));
+        $findings = $this->findingsOnChannel($this->check(options: ['--exclude' => ['exact:NoSuchDir']]));
 
         self::assertCount(1, $findings);
         self::assertSame('warning', $findings[0]['severity'] ?? null);
@@ -112,8 +112,8 @@ final class UnmatchedDiscoveryExcludeIntegrationTest extends TestCase
     #[Test]
     public function itStaysSilentWhenTheCommandLineExcludeMatched(): void
     {
-        $miss = $this->check(options: ['--exclude' => ['NoSuchDir']]);
-        $hit = $this->check(options: ['--exclude' => ['Legacy']]);
+        $miss = $this->check(options: ['--exclude' => ['exact:NoSuchDir']]);
+        $hit = $this->check(options: ['--exclude' => ['subtree:src/Legacy']]);
 
         self::assertSame([], $this->findingsOnChannel($hit));
         self::assertSame(2, $this->analysedFileCount($miss));
@@ -124,8 +124,8 @@ final class UnmatchedDiscoveryExcludeIntegrationTest extends TestCase
     #[Test]
     public function itReportsAConfiguredExcludeThatMatchedNothingAndNotOneThatMatched(): void
     {
-        $miss = $this->findingsOnChannel($this->check("exclude:\n  - NoSuchDir\n"));
-        $hit = $this->findingsOnChannel($this->check("exclude:\n  - Legacy\n"));
+        $miss = $this->findingsOnChannel($this->check("exclude:\n  - exact: NoSuchDir\n"));
+        $hit = $this->findingsOnChannel($this->check("exclude:\n  - subtree: src/Legacy\n"));
 
         self::assertCount(1, $miss);
         self::assertStringContainsString('NoSuchDir', (string) ($miss[0]['message'] ?? ''));
@@ -146,7 +146,7 @@ final class UnmatchedDiscoveryExcludeIntegrationTest extends TestCase
     {
         mkdir($this->fixture . '/tests', 0o755, true);
 
-        $findings = $this->findingsOnChannel($this->check("exclude:\n  - tests\n  - NoSuchDir\n"));
+        $findings = $this->findingsOnChannel($this->check("exclude:\n  - exact: tests\n  - exact: NoSuchDir\n"));
         $messages = implode(' | ', array_map(static fn(array $f): string => (string) ($f['message'] ?? ''), $findings));
 
         self::assertCount(1, $findings, $messages);
@@ -171,7 +171,7 @@ final class UnmatchedDiscoveryExcludeIntegrationTest extends TestCase
     {
         self::assertSame(
             [],
-            $this->findingsOnChannel($this->check(paths: ['src/Kept'], options: ['--exclude' => ['NoSuchDir']])),
+            $this->findingsOnChannel($this->check(paths: ['src/Kept'], options: ['--exclude' => ['exact:NoSuchDir']])),
         );
     }
 
@@ -189,18 +189,15 @@ final class UnmatchedDiscoveryExcludeIntegrationTest extends TestCase
     }
 
     /**
-     * The two forms of {@see \Symfony\Component\Finder\Finder::exclude()},
-     * which are different predicates: a bare name matches a directory at any
-     * depth, a slashed pattern matches a path-segment sequence **relative to
-     * the analysed path**, not to the project root. Both bind here, and a
-     * probe modelling either one as the other would report a real hit as a
-     * miss — measured: `src/Kept` binds nothing on `check src`, because
-     * Finder's search root is already `src`.
+     * Both explicit selector forms are project-relative even though the run
+     * itself starts at `src`: `exact` names one directory and `subtree` also
+     * removes its descendants. Neither inherits Finder's former basename or
+     * per-input-root interpretation.
      */
     #[Test]
-    public function itHonoursBothFormsOfTheFinderExcludePattern(): void
+    public function itHonoursExactAndSubtreeDirectorySelectors(): void
     {
-        $bound = $this->check(options: ['--exclude' => ['Kept', 'Legacy/Deep']]);
+        $bound = $this->check(options: ['--exclude' => ['exact:src/Kept', 'subtree:src/Legacy']]);
 
         self::assertSame([], $this->findingsOnChannel($bound));
         self::assertSame(0, $this->analysedFileCount($bound), 'Both forms must really have removed their directory.');
@@ -211,7 +208,7 @@ final class UnmatchedDiscoveryExcludeIntegrationTest extends TestCase
     public function itDoesNotDoubleReportAcrossOverlappingRoots(): void
     {
         $findings = $this->findingsOnChannel(
-            $this->check(paths: ['src', 'src/Kept', 'src'], options: ['--exclude' => ['NoSuchDir']]),
+            $this->check(paths: ['src', 'src/Kept', 'src'], options: ['--exclude' => ['exact:NoSuchDir']]),
         );
 
         self::assertCount(1, $findings);
@@ -241,7 +238,7 @@ final class UnmatchedDiscoveryExcludeIntegrationTest extends TestCase
 
         self::assertSame(
             [],
-            $this->findingsOnChannel($this->check(paths: ['src/Only.php'], options: ['--exclude' => ['NoSuchDir']])),
+            $this->findingsOnChannel($this->check(paths: ['src/Only.php'], options: ['--exclude' => ['exact:NoSuchDir']])),
         );
     }
 
@@ -288,7 +285,7 @@ final class UnmatchedDiscoveryExcludeIntegrationTest extends TestCase
      */
     private function onlyThisChannel(): array
     {
-        return ['--exclude' => ['NoSuchDir'], '--only-rule' => [UnmatchedExcludeRule::NAME]];
+        return ['--exclude' => ['exact:NoSuchDir'], '--only-rule' => [UnmatchedExcludeRule::NAME]];
     }
 
     /**
@@ -301,7 +298,7 @@ final class UnmatchedDiscoveryExcludeIntegrationTest extends TestCase
     public function itIsSilencedByDisablingTheProducingRule(): void
     {
         $tester = $this->check(options: [
-            '--exclude' => ['NoSuchDir'],
+            '--exclude' => ['exact:NoSuchDir'],
             '--disable-rule' => [UnmatchedExcludeRule::NAME],
         ]);
 
@@ -320,7 +317,7 @@ final class UnmatchedDiscoveryExcludeIntegrationTest extends TestCase
     {
         $yaml = "rules:\n  " . UnmatchedExcludeRule::NAME . ":\n    enabled: false\n";
 
-        self::assertSame([], $this->findingsOnChannel($this->check($yaml, options: ['--exclude' => ['NoSuchDir']])));
+        self::assertSame([], $this->findingsOnChannel($this->check($yaml, options: ['--exclude' => ['exact:NoSuchDir']])));
     }
 
     /** Each missed pattern is its own mistake, and each gets its own finding. */
@@ -328,7 +325,7 @@ final class UnmatchedDiscoveryExcludeIntegrationTest extends TestCase
     public function itReportsEveryUnboundPatternSeparately(): void
     {
         $findings = $this->findingsOnChannel(
-            $this->check(options: ['--exclude' => ['NoSuchDir', 'Legacy', 'AlsoMissing']]),
+            $this->check(options: ['--exclude' => ['exact:NoSuchDir', 'subtree:src/Legacy', 'exact:AlsoMissing']]),
         );
 
         $messages = array_map(static fn(array $finding): string => (string) ($finding['message'] ?? ''), $findings);

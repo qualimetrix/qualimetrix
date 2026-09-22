@@ -153,7 +153,7 @@ final class HintRendererTest extends TestCase
         $this->renderer->render($report, $context, $this->color, $lines);
 
         $output = implode("\n", $lines);
-        self::assertStringContainsString("--namespace='App\\Service'", $output);
+        self::assertStringContainsString("--namespace='subtree:App\\Service'", $output);
         self::assertStringContainsString('to drill down', $output);
     }
 
@@ -186,7 +186,7 @@ final class HintRendererTest extends TestCase
         );
 
         // Namespace-level context — drill-down hint should suggest --class, not --namespace
-        $context = new FormatterContext(namespace: 'App\\Service');
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
         $lines = [];
 
         $this->renderer->render($report, $context, $this->color, $lines);
@@ -244,8 +244,8 @@ final class HintRendererTest extends TestCase
         $this->renderer->render($report, $context, $this->color, $lines);
 
         $output = implode("\n", $lines);
-        // Namespace with backslashes should be single-quoted for shell safety
-        self::assertStringContainsString("'App\\Service\\Payment'", $output);
+        // The complete explicit selector is single-quoted for shell safety.
+        self::assertStringContainsString("'subtree:App\\Service\\Payment'", $output);
     }
 
     #[Test]

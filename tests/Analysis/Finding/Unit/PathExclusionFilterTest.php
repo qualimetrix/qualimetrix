@@ -20,6 +20,9 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationVali
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\PathMatcher;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -31,7 +34,7 @@ final class PathExclusionFilterTest extends TestCase
     #[Test]
     public function itFiltersSuppressedPath(): void
     {
-        $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']), self::declaredFileScope());
+        $filter = new PathExclusionFilter(new PathMatcher([self::path(SelectorKind::Subtree, 'src/Entity')]), self::declaredFileScope());
 
         $finding = $this->createFinding('src/Entity/User.php');
 
@@ -41,7 +44,7 @@ final class PathExclusionFilterTest extends TestCase
     #[Test]
     public function itKeepsLayerViolationRuleInExcludedPath(): void
     {
-        $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']), self::declaredFileScope());
+        $filter = new PathExclusionFilter(new PathMatcher([self::path(SelectorKind::Subtree, 'src/Entity')]), self::declaredFileScope());
 
         $finding = $this->createFinding('src/Entity/User.php', LayerViolationRule::NAME);
 
@@ -51,7 +54,7 @@ final class PathExclusionFilterTest extends TestCase
     #[Test]
     public function itKeepsCircularDependencyRuleInExcludedPath(): void
     {
-        $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']), self::declaredFileScope());
+        $filter = new PathExclusionFilter(new PathMatcher([self::path(SelectorKind::Subtree, 'src/Entity')]), self::declaredFileScope());
 
         $finding = $this->createFinding('src/Entity/User.php', CircularDependencyRule::NAME);
 
@@ -65,7 +68,7 @@ final class PathExclusionFilterTest extends TestCase
         // are project-level diagnostics with no file (Location::none()) — already passed
         // through by the `$file === null` branch. Verify the new architecture-exemption
         // check does not change that behavior.
-        $filter = new PathExclusionFilter(new PathMatcher(['src']), self::declaredFileScope());
+        $filter = new PathExclusionFilter(new PathMatcher([self::path(SelectorKind::Subtree, 'src')]), self::declaredFileScope());
 
         foreach (
             [
@@ -95,7 +98,7 @@ final class PathExclusionFilterTest extends TestCase
     #[Test]
     public function itPassesNonMatchingPath(): void
     {
-        $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']), self::declaredFileScope());
+        $filter = new PathExclusionFilter(new PathMatcher([self::path(SelectorKind::Subtree, 'src/Entity')]), self::declaredFileScope());
 
         $finding = $this->createFinding('src/Service/UserService.php');
 
@@ -105,7 +108,7 @@ final class PathExclusionFilterTest extends TestCase
     #[Test]
     public function itPassesEmptyFilePath(): void
     {
-        $filter = new PathExclusionFilter(new PathMatcher(['src']), self::declaredFileScope());
+        $filter = new PathExclusionFilter(new PathMatcher([self::path(SelectorKind::Subtree, 'src')]), self::declaredFileScope());
 
         $finding = new Finding(
             location: Location::none(),
@@ -121,13 +124,13 @@ final class PathExclusionFilterTest extends TestCase
     }
 
     #[Test]
-    public function itFiltersGlobPattern(): void
+    public function itFiltersRegexPattern(): void
     {
-        $filter = new PathExclusionFilter(new PathMatcher(['src/Metrics/*Visitor.php']), self::declaredFileScope());
+        $filter = new PathExclusionFilter(new PathMatcher([self::path(SelectorKind::Regex, 'src/Metrics/.*Visitor\\.php')]), self::declaredFileScope());
 
         $finding = $this->createFinding('src/Metrics/CboVisitor.php');
 
-        self::assertFalse($filter->shouldInclude($finding), 'Violation matching glob pattern should be suppressed');
+        self::assertFalse($filter->shouldInclude($finding), 'Violation matching regex selector should be suppressed');
     }
 
     #[Test]
@@ -166,7 +169,7 @@ final class PathExclusionFilterTest extends TestCase
     #[Test]
     public function itKeepsEveryDeclaredProjectScopedChannelInAnExcludedPath(): void
     {
-        $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']), self::declaredFileScope());
+        $filter = new PathExclusionFilter(new PathMatcher([self::path(SelectorKind::Subtree, 'src/Entity')]), self::declaredFileScope());
 
         foreach (self::declaredProjectScopedChannelKeys() as $key) {
             $channel = new FindingChannel($key);
@@ -181,7 +184,7 @@ final class PathExclusionFilterTest extends TestCase
     #[Test]
     public function itFiltersAChannelNoCapabilityDeclaredProjectScoped(): void
     {
-        $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']), self::declaredFileScope());
+        $filter = new PathExclusionFilter(new PathMatcher([self::path(SelectorKind::Subtree, 'src/Entity')]), self::declaredFileScope());
         $undeclared = new FindingChannel('architecture.layer-violation.invented');
 
         self::assertFalse(
@@ -222,5 +225,10 @@ final class PathExclusionFilterTest extends TestCase
             ...LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS,
             ...CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS,
         ];
+    }
+
+    private static function path(SelectorKind $kind, string $value): PathPattern
+    {
+        return new PathPattern(SelectorDefinition::fromKindAndValue($kind->value, $value));
     }
 }

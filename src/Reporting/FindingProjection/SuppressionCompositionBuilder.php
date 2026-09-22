@@ -115,13 +115,13 @@ final readonly class SuppressionCompositionBuilder
             return '(no file)';
         }
 
-        return (new PathMatcher($options->suppressPaths))->matches($finding->location->file)->pattern ?? '(unresolved pattern)';
+        return (new PathMatcher($options->suppressPaths))->matches($finding->location->file)?->definition->display() ?? '(unresolved pattern)';
     }
 
     private function namespaceExclusionSuppressor(Finding $finding, FindingProjectionOptions $options): string
     {
         return (new NamespaceMatcher($options->suppressNamespaces))
-            ->matches($this->namespaceOf($finding))->pattern ?? '(unresolved pattern)';
+            ->matches($this->namespaceOf($finding))?->definition->display() ?? '(unresolved pattern)';
     }
 
     /**
@@ -169,16 +169,16 @@ final readonly class SuppressionCompositionBuilder
      */
     private function globalInertPatterns(FindingProjectionResult $filterResult, FindingProjectionOptions $options): array
     {
-        $pathHits = $this->patternsThatFired(
+        $pathHits = $this->pathPatternsThatFired(
             $filterResult->removedBy(FindingFilterStage::PathExclusion),
             $options->suppressPaths,
-            static fn(Finding $f, string $pattern): bool => $f->location->file !== null
-                && (new PathMatcher([$pattern]))->matches($f->location->file) !== null,
+            static fn(Finding $f, \Qualimetrix\Core\Pattern\PathPattern $pattern): bool => $f->location->file !== null
+                && $pattern->matches($f->location->file),
         );
-        $namespaceHits = $this->patternsThatFired(
+        $namespaceHits = $this->namespacePatternsThatFired(
             $filterResult->removedBy(FindingFilterStage::NamespaceExclusion),
             $options->suppressNamespaces,
-            fn(Finding $f, string $pattern): bool => (new NamespaceMatcher([$pattern]))->matches($this->namespaceOf($f)) !== null,
+            fn(Finding $f, \Qualimetrix\Core\Pattern\NamespacePattern $pattern): bool => $pattern->matches($this->namespaceOf($f)),
         );
 
         return [
@@ -188,7 +188,7 @@ final readonly class SuppressionCompositionBuilder
     }
 
     /**
-     * @param list<string> $patterns
+     * @param list<\Qualimetrix\Core\Pattern\PathPattern|\Qualimetrix\Core\Pattern\NamespacePattern> $patterns
      * @param array<string, true> $hits
      *
      * @return list<InertSuppressor>
@@ -198,8 +198,8 @@ final readonly class SuppressionCompositionBuilder
         $inert = [];
 
         foreach ($patterns as $pattern) {
-            if (!isset($hits[$pattern])) {
-                $inert[] = new InertSuppressor($mechanism, $pattern);
+            if (!isset($hits[$pattern->definition->display()])) {
+                $inert[] = new InertSuppressor($mechanism, $pattern->definition->display());
             }
         }
 
@@ -208,18 +208,39 @@ final readonly class SuppressionCompositionBuilder
 
     /**
      * @param list<Finding> $removed
-     * @param list<string> $patterns
-     * @param callable(Finding, string): bool $matches Whether one configured pattern, tested alone, matches the finding
+     * @param list<\Qualimetrix\Core\Pattern\PathPattern> $patterns
+     * @param callable(Finding, \Qualimetrix\Core\Pattern\PathPattern): bool $matches
      *
      * @return array<string, true>
      */
-    private function patternsThatFired(array $removed, array $patterns, callable $matches): array
+    private function pathPatternsThatFired(array $removed, array $patterns, callable $matches): array
     {
         $hits = [];
         foreach ($removed as $finding) {
             foreach ($patterns as $pattern) {
                 if ($matches($finding, $pattern)) {
-                    $hits[$pattern] = true;
+                    $hits[$pattern->definition->display()] = true;
+                }
+            }
+        }
+
+        return $hits;
+    }
+
+    /**
+     * @param list<Finding> $removed
+     * @param list<\Qualimetrix\Core\Pattern\NamespacePattern> $patterns
+     * @param callable(Finding, \Qualimetrix\Core\Pattern\NamespacePattern): bool $matches
+     *
+     * @return array<string, true>
+     */
+    private function namespacePatternsThatFired(array $removed, array $patterns, callable $matches): array
+    {
+        $hits = [];
+        foreach ($removed as $finding) {
+            foreach ($patterns as $pattern) {
+                if ($matches($finding, $pattern)) {
+                    $hits[$pattern->definition->display()] = true;
                 }
             }
         }

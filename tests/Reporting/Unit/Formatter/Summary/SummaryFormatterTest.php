@@ -427,7 +427,7 @@ final class SummaryFormatterTest extends TestCase
         $output = $this->formatter->format($report, $this->plainContext);
 
         // Uses single quotes for shell escaping
-        self::assertStringContainsString("--namespace='App\\Service'", $output);
+        self::assertStringContainsString("--namespace='subtree:App\\Service'", $output);
     }
 
     #[Test]
@@ -467,7 +467,7 @@ final class SummaryFormatterTest extends TestCase
             worstNamespaces: [$offenderMatch, $offenderNoMatch],
         );
 
-        $context = new FormatterContext(useColor: false, namespace: 'App\Payment', terminalWidth: 120);
+        $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Payment'), terminalWidth: 120);
         $output = $this->formatter->format($report, $context);
 
         self::assertStringContainsString('App\Payment\Gateway', $output);
@@ -500,7 +500,7 @@ final class SummaryFormatterTest extends TestCase
             duration: 0.5,
         );
 
-        $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120);
+        $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'), terminalWidth: 120);
         $output = $this->formatter->format($report, $context);
 
         // Only 1 finding in scope
@@ -561,7 +561,7 @@ final class SummaryFormatterTest extends TestCase
             duration: 0.5,
         );
 
-        $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120);
+        $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'), terminalWidth: 120);
         $output = $this->formatter->format($report, $context);
 
         self::assertStringContainsString('No violations in this scope.', $output);
@@ -737,10 +737,10 @@ final class SummaryFormatterTest extends TestCase
     {
         $report = $this->createReport(findings: [], filesAnalyzed: 10, duration: 0.5);
 
-        $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120);
+        $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'), terminalWidth: 120);
         $output = $this->formatter->format($report, $context);
 
-        self::assertStringContainsString('[namespace: App\Service]', $output);
+        self::assertStringContainsString('[namespace: subtree:App\Service]', $output);
     }
 
     #[Test]
@@ -861,7 +861,7 @@ final class SummaryFormatterTest extends TestCase
             techDebtMinutes: 120,
         );
 
-        $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120);
+        $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'), terminalWidth: 120);
         $output = $this->formatter->format($report, $context);
 
         // Scoped tech debt computed from filtered findings (30min + 45min = 1h 15min)
@@ -921,7 +921,7 @@ final class SummaryFormatterTest extends TestCase
             techDebtMinutes: 120,
         );
 
-        $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120);
+        $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'), terminalWidth: 120);
         $output = $this->formatter->format($report, $context);
 
         // No findings in scope, so no tech debt line
@@ -997,7 +997,7 @@ final class SummaryFormatterTest extends TestCase
             duration: 0.5,
         );
 
-        $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120, detailLimit: 0);
+        $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'), terminalWidth: 120, detailLimit: 0);
         $output = $this->formatter->format($report, $context);
 
         self::assertStringContainsString('In scope', $output);
@@ -1072,7 +1072,7 @@ final class SummaryFormatterTest extends TestCase
             ],
         );
 
-        $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120);
+        $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'), terminalWidth: 120);
         $output = $this->formatter->format($report, $context);
 
         // Should show namespace-level score (45%) not project-level (72%)
@@ -1130,7 +1130,7 @@ final class SummaryFormatterTest extends TestCase
             worstClasses: [],
         );
 
-        $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120);
+        $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'), terminalWidth: 120);
         $output = $this->formatter->format($report, $context);
 
         // Should show UserService as worst class even though it's not in global top
@@ -1159,7 +1159,7 @@ final class SummaryFormatterTest extends TestCase
             ],
         );
 
-        $context = new FormatterContext(useColor: false, namespace: 'App\NonExistent', terminalWidth: 120);
+        $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\NonExistent'), terminalWidth: 120);
         $output = $this->formatter->format($report, $context);
 
         // No health data for non-existent namespace — shows "insufficient data"

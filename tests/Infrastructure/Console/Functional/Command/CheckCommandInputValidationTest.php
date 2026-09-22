@@ -75,6 +75,22 @@ final class CheckCommandInputValidationTest extends TestCase
     }
 
     #[Test]
+    public function itRejectsABareNamespaceDrillDownSelector(): void
+    {
+        $tester = $this->tester();
+        $tester->execute(
+            [
+                'paths' => ['tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php'],
+                '--namespace' => 'App\\Service',
+            ],
+            ['capture_stderr_separately' => true],
+        );
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertStringContainsString('must use KIND:VALUE', $tester->getErrorOutput());
+    }
+
+    #[Test]
     public function itFailsClosedForUnknownRuleSelectorWithoutPollutingStdout(): void
     {
         $tester = $this->tester();
@@ -305,7 +321,7 @@ final class CheckCommandInputValidationTest extends TestCase
             [
                 'paths' => ['tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php'],
                 '--format' => 'json',
-                '--suppress-path' => ['--exclude-path'],
+                '--suppress-path' => ['exact:--exclude-path'],
             ],
             ['capture_stderr_separately' => true],
         );

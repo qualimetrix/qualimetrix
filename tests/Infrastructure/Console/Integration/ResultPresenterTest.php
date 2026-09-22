@@ -474,7 +474,7 @@ final class ResultPresenterTest extends TestCase
         return $this->presenter($registry)->presentResults(
             [],
             $this->analysisResult(metrics: $this->analyzedRepository(), namespaceTree: $namespaceTree),
-            $this->input([$option => $value]),
+            $this->input([$option => $option === '--namespace' ? 'subtree:' . $value : $value]),
             new BufferedOutput(),
             AbsolutePath::fromString('/project'),
             new OutputFormat(),

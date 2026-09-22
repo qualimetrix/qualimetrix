@@ -5,15 +5,16 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Run\Contract\Configuration;
 
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Pattern\PathPattern;
 
 /** Immutable execution input owned by Run. */
 final readonly class RunConfiguration
 {
     /**
      * @param list<AbsolutePath> $paths
-     * @param list<string> $pathExcludes
+     * @param list<PathPattern> $pathExcludes built-in and authored directory selectors
      * @param bool $coversProjectScope Whether `$paths` cover the project's production autoload roots
-     * @param list<string> $authoredPathExcludes The subset of `$pathExcludes` the user wrote
+     * @param list<PathPattern> $authoredPathExcludes The subset of `$pathExcludes` the user wrote
      *
      * `$coversProjectScope` is the answer
      * {@see \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage}

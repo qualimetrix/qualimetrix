@@ -144,11 +144,6 @@
     "declaration:callable:Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\WildcardSelfAllowDetector::detect@src/Analysis/Policy/Architecture/Configuration/WildcardSelfAllowDetector.php": [
       {"channel":"complexity.cognitive","magnitudes":[16]}
     ],
-    "declaration:callable:Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\CapturePattern::compile@src/Analysis/Policy/Architecture/Layer/CapturePattern.php": [
-      {"channel":"complexity.ccn","magnitudes":[14]},
-      {"channel":"complexity.cognitive","magnitudes":[25]},
-      {"channel":"complexity.npath","magnitudes":[834]}
-    ],
     "declaration:callable:Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\Expansion\\TupleExtractor::collectObservedTuples@src/Analysis/Policy/Architecture/Layer/Expansion/TupleExtractor.php": [
       {"channel":"complexity.ccn","magnitudes":[10]}
     ],
@@ -267,9 +262,6 @@
       {"channel":"complexity.ccn","magnitudes":[15]},
       {"channel":"complexity.cognitive","magnitudes":[19]}
     ],
-    "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Json\\JsonHealthSection::format@src/Reporting/Formatter/Json/JsonHealthSection.php": [
-      {"channel":"complexity.ccn","magnitudes":[11]}
-    ],
     "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Json\\JsonOffenderSection::formatWorstOffenders@src/Reporting/Formatter/Json/JsonOffenderSection.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"79aecf1e084dd904","count":1}
     ],
@@ -345,9 +337,6 @@
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Size\\LocCollector@src/Analysis/Evidence/Size/LocCollector.php": [
       {"channel":"design.god-class","magnitudes":[3]}
-    ],
-    "declaration:class:Qualimetrix\\Analysis\\Finding\\Exclusion\\RulePathExclusionProvider@src/Analysis/Finding/Exclusion/RulePathExclusionProvider.php": [
-      {"channel":"design.data-class","magnitudes":[33]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\Allow\\ParseCapturedState@src/Analysis/Policy/Architecture/Configuration/Allow/ParseCapturedState.php": [
       {"channel":"design.data-class","magnitudes":[0]}
@@ -519,7 +508,6 @@
       {"channel":"duplication.clone","occurrence":"34b279d1e8cbb107","magnitudes":[21]},
       {"channel":"duplication.clone","occurrence":"67c3f109dc2d3e97","magnitudes":[28]},
       {"channel":"duplication.clone","occurrence":"9964fabbf3e849d9","magnitudes":[46]},
-      {"channel":"duplication.clone","occurrence":"b3f1aa710dda6738","magnitudes":[29]},
       {"channel":"duplication.clone","occurrence":"cf1eed47dd349df2","magnitudes":[45]},
       {"channel":"duplication.clone","occurrence":"d3feecf066ef9d58","magnitudes":[30]},
       {"channel":"duplication.clone","occurrence":"d4a10c7cb6a1893d","magnitudes":[32]},
