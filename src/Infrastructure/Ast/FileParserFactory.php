@@ -12,8 +12,12 @@ use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface;
 /**
  * Factory for creating file parsers based on runtime configuration.
  *
- * Uses CacheFactory (not CacheInterface) to ensure cache directory
- * reflects runtime configuration (e.g., --cache-dir CLI option).
+ * The factory hands over the store rather than reading it. Everything the
+ * container builds is built before a run is configured, so a decision taken
+ * here is a decision taken against the defaults: `--no-cache` and
+ * `cache.enabled: false` arrive later and would never be seen. The parser
+ * asks the same store the cache directory is read from, at the moment it
+ * parses.
  */
 final class FileParserFactory
 {
@@ -25,18 +29,15 @@ final class FileParserFactory
     ) {}
 
     /**
-     * Create the appropriate file parser based on configuration.
+     * Create the file parser. Whether it caches is decided per parse.
      */
     public function create(): FileParserInterface
     {
-        if ($this->configurationStore->current()->enabled) {
-            return new CachedFileParser(
-                $this->parser,
-                $this->cacheFactory,
-                $this->keyGenerator,
-            );
-        }
-
-        return $this->parser;
+        return new CachedFileParser(
+            $this->parser,
+            $this->cacheFactory,
+            $this->keyGenerator,
+            $this->configurationStore,
+        );
     }
 }

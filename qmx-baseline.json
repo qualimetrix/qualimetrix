@@ -1,6 +1,6 @@
 {
   "version": 13,
-  "generated": "2026-09-21T09:01:02+00:00",
+  "generated": "2026-09-22T14:44:50+00:00",
   "scope": ["src"],
   "entries": {
     "declaration:callable:Qualimetrix\\Analysis\\Configuration\\Contract\\Discovery\\ComposerAutoloadPathReaderInterface::extractAutoloadPaths@src/Analysis/Configuration/Contract/Discovery/ComposerAutoloadPathReaderInterface.php": [
@@ -172,10 +172,6 @@
       {"channel":"complexity.cognitive","magnitudes":[24]},
       {"channel":"complexity.npath","magnitudes":[200]}
     ],
-    "declaration:callable:Qualimetrix\\Analysis\\Run\\Discovery\\FinderFileDiscovery::discover@src/Analysis/Run/Discovery/FinderFileDiscovery.php": [
-      {"channel":"complexity.ccn","magnitudes":[11]},
-      {"channel":"complexity.npath","magnitudes":[216]}
-    ],
     "declaration:callable:Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline::__construct@src/Analysis/Run/Pipeline/AnalysisPipeline.php": [
       {"channel":"code-smell.constructor-overinjection","magnitudes":[10]}
     ],
@@ -198,10 +194,6 @@
     ],
     "declaration:callable:Qualimetrix\\Core\\Symbol\\SymbolPath::toString@src/Core/Symbol/SymbolPath.php": [
       {"channel":"complexity.ccn","magnitudes":[11]}
-    ],
-    "declaration:callable:Qualimetrix\\Infrastructure\\Composer\\GeneratedClassmap::read@src/Infrastructure/Composer/GeneratedClassmap.php": [
-      {"channel":"complexity.ccn","magnitudes":[11]},
-      {"channel":"complexity.npath","magnitudes":[252]}
     ],
     "declaration:callable:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCommand::assertScopeCovers@src/Infrastructure/Console/Command/BaselineCommand.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"02e3476d01dac100","count":1}
@@ -235,9 +227,6 @@
     ],
     "declaration:callable:Qualimetrix\\Infrastructure\\Parallel\\Strategy\\AmphpParallelStrategy::absolutePath@src/Infrastructure/Parallel/Strategy/AmphpParallelStrategy.php": [
       {"channel":"code-smell.error-suppression","occurrence":"4e6e45ba70fb46d4","count":1}
-    ],
-    "declaration:callable:Qualimetrix\\Infrastructure\\Parallel\\Strategy\\WorkerCountDetector::detect@src/Infrastructure/Parallel/Strategy/WorkerCountDetector.php": [
-      {"channel":"complexity.ccn","magnitudes":[11]}
     ],
     "declaration:callable:Qualimetrix\\Reporting\\DrillDown\\DrillDownBinding::namespaceUniverse@src/Reporting/DrillDown/DrillDownBinding.php": [
       {"channel":"complexity.ccn","magnitudes":[10]}

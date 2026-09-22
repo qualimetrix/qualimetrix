@@ -14,8 +14,11 @@ use Qualimetrix\Core\Exception\ParseException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Ast\CachedFileParser;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
+use Qualimetrix\Infrastructure\Cache\CacheConfigurationStore;
 use Qualimetrix\Infrastructure\Cache\CacheInterface;
 use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface;
 use Qualimetrix\Infrastructure\Cache\FileCache;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -57,7 +60,7 @@ final class CachedFileParserTest extends TestCase
         $cache = self::createStub(CacheInterface::class);
         $cache->method('get')->willReturn($cachedAst);
 
-        $parser = new CachedFileParser($inner, $cache, $keyGenerator);
+        $parser = new CachedFileParser($inner, $cache, $keyGenerator, self::enabledStore());
 
         $result = $parser->parse($file);
 
@@ -79,7 +82,7 @@ final class CachedFileParserTest extends TestCase
         $cache->method('get')->willReturn(null);
         $cache->expects(self::once())->method('set')->with($key, $freshAst);
 
-        $parser = new CachedFileParser($inner, $cache, $keyGenerator);
+        $parser = new CachedFileParser($inner, $cache, $keyGenerator, self::enabledStore());
 
         $result = $parser->parse($file);
 
@@ -101,7 +104,7 @@ final class CachedFileParserTest extends TestCase
         $cache->expects(self::never())->method('get');
         $cache->expects(self::never())->method('set');
 
-        $parser = new CachedFileParser($inner, $cache, $keyGenerator);
+        $parser = new CachedFileParser($inner, $cache, $keyGenerator, self::enabledStore());
 
         $result = $parser->parse($file);
 
@@ -123,7 +126,7 @@ final class CachedFileParserTest extends TestCase
         $cache->method('get')->willReturn('not an array');
         $cache->expects(self::once())->method('set');
 
-        $parser = new CachedFileParser($inner, $cache, $keyGenerator);
+        $parser = new CachedFileParser($inner, $cache, $keyGenerator, self::enabledStore());
 
         $result = $parser->parse($file);
 
@@ -142,7 +145,7 @@ final class CachedFileParserTest extends TestCase
         // First call: parse and cache
         $inner->expects(self::once())->method('parseContent')->willReturn($freshAst);
 
-        $parser = new CachedFileParser($inner, $cache, $keyGenerator);
+        $parser = new CachedFileParser($inner, $cache, $keyGenerator, self::enabledStore());
 
         // First parse - should call inner
         $result1 = $parser->parse($file);
@@ -192,6 +195,7 @@ final class CachedFileParserTest extends TestCase
             $inner,
             new FileCache(AbsolutePath::fromString($this->cacheDir)),
             new CacheKeyGenerator(),
+            self::enabledStore(),
         );
 
         $first = $parser->parse(new SplFileInfo($this->tempFile));
@@ -215,6 +219,7 @@ final class CachedFileParserTest extends TestCase
             new PhpFileParser(),
             new FileCache(AbsolutePath::fromString($this->cacheDir)),
             new CacheKeyGenerator(),
+            self::enabledStore(),
         );
 
         try {
@@ -234,6 +239,14 @@ final class CachedFileParserTest extends TestCase
         self::assertSame($directError->filePath->value(), $cachedError->filePath->value());
         self::assertStringContainsString($directError->filePath->value(), $cachedError->getMessage());
         self::assertStringNotContainsString('qmx-ast-', $cachedError->getMessage());
+    }
+
+    private static function enabledStore(): CacheConfigurationStoreInterface
+    {
+        $store = new CacheConfigurationStore();
+        $store->replace(new CacheConfiguration(AbsolutePath::fromString(sys_get_temp_dir()), true));
+
+        return $store;
     }
 
     private function removeDirectory(string $dir): void

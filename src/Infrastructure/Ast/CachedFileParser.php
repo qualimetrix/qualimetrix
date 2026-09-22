@@ -10,14 +10,20 @@ use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\CacheInterface;
 use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
 use Qualimetrix\Infrastructure\Cache\CacheWriteException;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface;
 use SplFileInfo;
 
 /**
  * Decorator that caches parsed AST to avoid re-parsing unchanged files.
  *
  * Accepts either a CacheInterface directly or a CacheFactory for lazy resolution.
- * Lazy resolution ensures the cache directory reflects runtime configuration
- * (e.g., --cache-dir CLI option) rather than container build-time defaults.
+ *
+ * Both halves of the cache decision are taken at parse time, not at
+ * construction time: the directory (through {@see CacheFactory}) and whether to
+ * cache at all (through the configuration store). A run is configured after the
+ * container has already built this service, so a decorator that answered
+ * "caching enabled?" in its constructor answered it from the defaults and
+ * `--no-cache` never reached the parse. Asking per file costs one array read.
  *
  * @qmx-ignore code-smell.empty-catch Cache write failures are intentionally ignored (best-effort caching)
  */
@@ -29,6 +35,7 @@ final class CachedFileParser implements FileParserInterface
         private readonly FileParserInterface $inner,
         private readonly CacheFactory|CacheInterface $cache,
         private readonly CacheKeyGenerator $keyGenerator,
+        private readonly CacheConfigurationStoreInterface $configurationStore,
     ) {}
 
     /**
@@ -36,6 +43,15 @@ final class CachedFileParser implements FileParserInterface
      */
     public function parse(SplFileInfo $file): array
     {
+        // A non-regular entry (directory, FIFO, dangling symlink) must never
+        // become a successfully parsed empty AST: `file_get_contents()` on a
+        // directory returns an empty string rather than `false`, so reading
+        // first and asking questions later reports a phantom analyzed file.
+        // The inner parser owns the typed refusal for that case.
+        if (!$this->cachingEnabled() || !$file->isFile() || !$file->isReadable()) {
+            return $this->inner->parse($file);
+        }
+
         $content = @file_get_contents($file->getPathname());
 
         if ($content === false) {
@@ -50,6 +66,10 @@ final class CachedFileParser implements FileParserInterface
      */
     public function parseContent(SplFileInfo $file, string $content): array
     {
+        if (!$this->cachingEnabled()) {
+            return $this->inner->parseContent($file, $content);
+        }
+
         $key = $this->keyGenerator->generateForContent($content);
 
         if ($key === '') {
@@ -75,6 +95,11 @@ final class CachedFileParser implements FileParserInterface
         }
 
         return $ast;
+    }
+
+    private function cachingEnabled(): bool
+    {
+        return $this->configurationStore->current()->enabled;
     }
 
     private function getCache(): CacheInterface

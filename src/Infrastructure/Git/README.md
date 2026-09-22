@@ -26,6 +26,61 @@ client to infer it again.
 - `main...HEAD` — three-dot syntax (changes since merge-base)
 - `HEAD~3` — last N commits
 
+**Status letters.** `ChangeStatus` names `A`, `M`, `D`, `R`, `C` and `T`. `T`
+is a change of the entry's type — a regular file replaced by a symlink or the
+reverse — and it is an ordinary change here: the path exists, its bytes
+changed, and the run reads it. What the entry became is discovery's question,
+not the boundary's, and the boundary answering it by dropping the row is how a
+PHP file that had replaced a symlink became invisible to `--report=git:*`.
+
+`U` is refused: an unmerged index entry holds several versions of the file at
+once and names no single change. It reaches the tool through `git:staged`
+only — measured, the same conflicted repository reports `M` under `git:HEAD`.
+`X` and any letter a later git adds are refused by the same branch, quoted
+back by letter. Every refusal is a warning naming the path; there is no silent
+way out of `parseNameStatus()`.
+
+### NameStatusRecord
+
+One row of `git diff --name-status -z`, holding the bytes git wrote.
+
+The NUL-separated form is asked for rather than the textual one because the
+textual one is not a format. `core.quotePath` defaults to on, so git wraps any
+path holding a byte above 0x7F, a `"`, a `\` or a control character in C quotes
+and escapes the bytes octally. A reader taking the row literally gets a name no
+file has — and since the escaped form still looks like a path under the project
+root, nothing refuses it: `--report=git:staged` used to report nothing and exit
+0 for a project with a Cyrillic filename. `-z` removes the transformation
+instead of inverting it; inverting it would mean carrying a second
+implementation of git's quoting rules and keeping it in step with git's.
+
+The price is that the stream is flat: a record's width is decided by its status
+letter (`R` and `C` own two path fields, everything else one), so a miscount
+shifts every later record. A field that is not where the format puts it stops
+the walk with a `RuntimeException` rather than resynchronising — git's machine
+format is a contract with the tool, so a stream this cannot walk is a broken
+environment, not bad user input.
+
+**One name this build still cannot carry.** POSIX allows every byte but `/` and
+NUL in a name, and `-z` hands them all over; `Core\Path\RelativePath` does not
+carry `\`, which it rewrites as a directory separator, so the one file
+`back\slash.php` is stored as the two segments `back/slash.php`.
+
+Discovery rewrites it the same way, so the two sides agree and the findings are
+published — measured, with the guard removed: two violations, filed under
+`back/slash.php`. That is the reason to refuse, not a reason not to. The stored
+value is a key that baselines, suppression maps and every reader of the report
+index by, and `back/slash.php` is a name that file does not have and that a
+real `back/slash.php` already owns, so the two would silently share one
+identity. `ChangedFile::isRepresentableGitPath()` therefore refuses such a row,
+and the row leaves a warning naming both the name and the reason.
+
+This is containment, not a repair, and it is deliberately asymmetric: a plain
+`bin/qmx check` still publishes such a file under the rewritten name, and only
+the git boundary declines to take part. The repair belongs in the path model —
+`RelativePath::normalize()` applies a Windows-separator rewrite to values whose
+own docblocks declare a POSIX model.
+
 ### GitRepositoryLocator
 
 Locates the `.git` directory for the current repository. Used by hook commands
@@ -112,10 +167,18 @@ fi
 
 `GitClient` uses Symfony Process; `GitRepositoryLocator` uses `proc_open`. The
 split is deliberate, and one support carries it: `GitClient` reports git's own
-error text. When a command fails, `exec()` wraps `ProcessFailedException`,
-whose message carries git's stderr, so a broken scope names the reason git
-gave. `askGit()` asks one short question, discards stderr and reads a single
-pipe safely; it has no such message to build.
+error text. A command carrying a user-supplied scope runs through `diff()`,
+which relays git's stderr in a `GitScopeRefusedException` — an
+`InvalidArgumentException`, so the CLI's ladder reads it as exit 3. `askGit()`
+asks one short question, discards stderr and reads a single pipe safely; it has
+no such message to build.
+
+`exec()` is the other half of that split and keeps its `RuntimeException`: it
+runs only commands with no user input in them (`rev-parse --show-toplevel`), so
+a failure there really is the tool's problem and really is an internal error.
+Routing a `git diff` through it was how `--report=git:HEAD` in a repository
+with no commits reached the user as a Symfony Process dump titled "Internal
+error" with exit 1.
 
 One support this section used to claim does not hold: `assertInsideWorkTree()`
 reads `isSuccessful()` and stdout, and needs no stderr at all.
@@ -143,6 +206,46 @@ it is all this does. The only refusal without a quote is the empty revision,
 caught before git is asked — and the one branch that then has to suppress the
 `git:` tail is what keeps the colon from dangling, so it carries its own test
 rather than waiting for an input that never arrives.
+
+## What `validateScope()` has to cover
+
+The set of scope shapes validated before analysis has to equal the set that
+reaches git, or the difference surfaces as a failed command instead of a
+refusal — and a failed command is classified as a bug in this tool. Two shapes
+used to fall in that gap: `HEAD`, which returned from validation unchecked and
+then failed in a repository before its first commit, and a range of three or
+more endpoints (`t1..t2..HEAD`), whose parts each resolve while the range as a
+whole does not. `staged` is the one scope with nothing to resolve — `git diff
+--cached` compares against the empty tree when there is no HEAD, which is a
+correct answer rather than a failure.
+
+Together with the `diff()` refusal above, this is fail-closed in both
+directions: validation is meant to leave nothing for the backstop to catch, and
+the backstop still refuses as input rather than as a bug when something reaches
+it — a repository damaged between the two commands is the only measured way in.
+
+## Diagnostics need a logger the container supplies
+
+Rows dropped at the git boundary are the only record that the analysed set is
+smaller than the changed set, so they are PSR-3 `warning`s: one per reason, each
+naming the measured fact rather than a diagnosis of it. A row whose path does
+not resolve inside the project root, a row whose name this build cannot carry,
+an unmerged entry and a status letter this build does not know are four
+different facts and say so separately.
+
+One warning is not about a drop. A rename whose **source** name holds a
+backslash is still carried — its new name is the key, and that one is
+carriable — so the row is reported as kept, with the source name that was
+lost. Nothing downstream reads `oldPath`, which is the reason this costs the
+run nothing rather than a reason to say nothing: the same check on the new
+name drops the row, and saying nothing here would make the two outcomes of one
+check look like one.
+
+The constructor default is a `NullLogger`, which is the right default for a
+class instantiated directly in a test and the wrong one for a service: a
+service registered without that argument is silently mute. `GitScopeResolver`
+is wired with `DelegatingLogger`; `ReportingGitScopeQuery`, which is where
+`getChangedFiles()` actually runs, must be too.
 
 The timeout is the second support that does hold, and it cuts both ways.
 Process applies 60 s to every call by default, so a git that hangs is bounded.

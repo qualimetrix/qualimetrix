@@ -241,6 +241,123 @@ final class FileCacheTest extends TestCase
         self::assertFileExists($markerPath);
     }
 
+    /**
+     * Same discipline as an entry: written elsewhere, then renamed into place.
+     * What a reader can see of that from here is the absence of residue — a
+     * write that landed by rename leaves no partial file behind. The race the
+     * discipline exists for (several worker processes, each clearing the whole
+     * directory on a marker it read as a mismatch) needs more than one process
+     * and is not asserted here.
+     */
+    #[Test]
+    public function itLeavesNoTemporaryResidueWhenWritingTheSerializerMarker(): void
+    {
+        $this->cache->set('key', 'value');
+
+        $entries = scandir($this->cacheDir);
+        $residue = array_values(array_filter(
+            $entries === false ? [] : $entries,
+            static fn(string $entry): bool => str_contains($entry, '.tmp.'),
+        ));
+
+        self::assertFileExists($this->cacheDir . '/.serializer');
+        self::assertSame([], $residue);
+    }
+
+    #[Test]
+    public function itSurvivesAnUnreadableSubdirectoryWhenClearing(): void
+    {
+        if (\function_exists('posix_geteuid') && posix_geteuid() === 0) {
+            self::markTestSkipped('Permission bits do not refuse root');
+        }
+
+        $this->cache->set('key', 'value');
+        mkdir($this->cacheDir . '/sealed', 0755, true);
+        file_put_contents($this->cacheDir . '/sealed/entry', 'x');
+        chmod($this->cacheDir . '/sealed', 0000);
+
+        try {
+            // clear() runs from get() and set(), so an exception escaping the
+            // walk would turn a cache problem into a failed file.
+            $this->cache->clear();
+            self::assertNull($this->cache->get('key'));
+        } finally {
+            chmod($this->cacheDir . '/sealed', 0755);
+        }
+    }
+
+    /**
+     * The marker is a claim about what the directory holds, so a clear that
+     * could not empty it must not be followed by one. The old name staying in
+     * place is what keeps the next process clearing instead of trusting.
+     */
+    #[Test]
+    public function itKeepsTheOldSerializerMarkerWhenTheClearCouldNotFinish(): void
+    {
+        $this->skipWhenPermissionBitsDoNotRefuse();
+
+        $first = new FileCache(AbsolutePath::fromString($this->cacheDir), $this->createFakeSerializer('first'));
+        $first->set('key', 'value');
+
+        mkdir($this->cacheDir . '/sealed', 0755, true);
+        file_put_contents($this->cacheDir . '/sealed/entry', 'x');
+        chmod($this->cacheDir . '/sealed', 0000);
+
+        try {
+            $second = new FileCache(AbsolutePath::fromString($this->cacheDir), $this->createFakeSerializer('second'));
+            $second->get('key');
+
+            self::assertSame(
+                'first',
+                trim((string) file_get_contents($this->cacheDir . '/.serializer')),
+                'the marker claimed a format the directory does not hold',
+            );
+        } finally {
+            chmod($this->cacheDir . '/sealed', 0755);
+        }
+    }
+
+    /**
+     * The second door onto the same lie. Had the failed clear removed the
+     * marker, the next process would read "nothing says", skip the clear
+     * branch on that ground alone and write its own name over the surviving
+     * entries — the same false claim, one process later.
+     */
+    #[Test]
+    public function itKeepsRefusingToClaimTheFormatOnEveryLaterProcess(): void
+    {
+        $this->skipWhenPermissionBitsDoNotRefuse();
+
+        $first = new FileCache(AbsolutePath::fromString($this->cacheDir), $this->createFakeSerializer('first'));
+        $first->set('key', 'value');
+
+        mkdir($this->cacheDir . '/sealed', 0755, true);
+        file_put_contents($this->cacheDir . '/sealed/entry', 'x');
+        chmod($this->cacheDir . '/sealed', 0000);
+
+        try {
+            foreach (['second', 'third'] as $name) {
+                $cache = new FileCache(AbsolutePath::fromString($this->cacheDir), $this->createFakeSerializer($name));
+                $cache->get('key');
+            }
+
+            self::assertSame(
+                'first',
+                trim((string) file_get_contents($this->cacheDir . '/.serializer')),
+                'a later process claimed the format the clear never reached',
+            );
+        } finally {
+            chmod($this->cacheDir . '/sealed', 0755);
+        }
+    }
+
+    private function skipWhenPermissionBitsDoNotRefuse(): void
+    {
+        if (\function_exists('posix_geteuid') && posix_geteuid() === 0) {
+            self::markTestSkipped('Permission bits do not refuse root');
+        }
+    }
+
     private function createFakeSerializer(string $name): SerializerInterface
     {
         $php = new PhpSerializer();

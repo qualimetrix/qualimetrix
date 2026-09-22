@@ -344,6 +344,8 @@ Available tests:
  - Qualimetrix\Governance\ConsoleComposition\CommandRegistrationTest::itLoadsEveryDeclaredCommandFromTheContainerUnderTheNameTheBinaryUses"hook:status"
  - Qualimetrix\Governance\ConsoleComposition\CommandRegistrationTest::itLoadsEveryDeclaredCommandFromTheContainerUnderTheNameTheBinaryUses"hook:uninstall"
  - Qualimetrix\Governance\ConsoleComposition\CommandRegistrationTest::itLoadsEveryDeclaredCommandFromTheContainerUnderTheNameTheBinaryUses"rules"
+ - Qualimetrix\Governance\ConsoleComposition\DiagnosticLoggerWiringTest::itBindsTheRunsLoggerWhereverTheContainerBuildsAHolder
+ - Qualimetrix\Governance\ConsoleComposition\DiagnosticLoggerWiringTest::itLeavesNoProductionConstructionSiteOnTheSignatureDefault
  - Qualimetrix\Governance\ConsoleComposition\ErrorStreamContainerIdentityTest::itGivesEveryConsumerTheOneOwnerTheContainerHolds
  - Qualimetrix\Governance\ConsoleComposition\ErrorStreamContainerIdentityTest::itLeavesNoConsumerAbleToInventItsOwnOwner
  - Qualimetrix\Governance\ConsoleComposition\ErrorStreamSoleOwnerTest::itFindsNoSecondWriterIntoTheErrorStream
@@ -7138,6 +7140,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\MultiNamespaceAnalysisTest::itAnalyzesEveryNamespaceBlockWithoutLosingMetrics#2
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\MultiNamespaceAnalysisTest::itMergesCompleteMetricFamiliesForAStatementOnlyGlobalNamespace
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\MultiNamespaceAnalysisTest::itPreservesNamespaceContributionsAcrossTheWorkerWire
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\SkippedEntryReachesCoverageTest::itGivesASkippedEntryATerminalStateAndMarksTheRunIncomplete
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\SkippedEntryReachesCoverageTest::itLeavesACleanTreeComplete
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\TraversalPathAgreementTest::itGivesEdgeSourcesTheSameDeclarationPathOnBothPaths
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\CollectionOrchestratorTest::itCollectsDependenciesFromResults
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\CollectionOrchestratorTest::itCollectsMetricsFromFiles
@@ -7187,8 +7191,21 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\FileProcessorTest::itProcessesFileSuccessfully
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\FileProcessorTest::itReturnsFailureOnParseException
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\FileProcessorTest::itThrowsLogicExceptionWhenProcessCalledBeforeSetProjectRoot
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itAcceptsAnEmptyContributionThatALaterSourceOverrides
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itRefusesAMalformedContributionThatALaterSourceOverrides
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itRefusesAPathsValueThatIsNotAList#0
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itRefusesAPathsValueThatIsNotAList#1
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itRefusesAPathsValueThatIsNotAList#2
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itRefusesAnEmptyListOfPaths
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itRefusesAnEmptyPathAmongLawfulOnes
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itRefusesAnEmptyPathWithTheProductFraming
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itRefusesAnEntryThatIsNotAPath#0
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itRefusesAnEntryThatIsNotAPath#1
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itRefusesAnEntryThatIsNotAPath#2
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itRefusesAnEntryThatIsNotAPath#3
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itRefusesAnEntryThatIsNotAPath#4
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itRefusesAnEntryThatIsNotAPath#5
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itRefusesAnEntryThatIsNotAPath#6
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itStillAcceptsLawfulPaths
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itStillDefaultsToTheWorkingDirectory
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itCannotJudgeAProjectThatDeclaresNoReadableProductionAutoload"a composer.json that does not parse"
@@ -7219,6 +7236,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Collection\CollectionPhaseOutputTest::itHoldsAnalyzedAndSkippedCounts
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Collection\CollectionPhaseOutputTest::itRejectsAPathClaimedByMultipleTerminalStates
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Collection\CollectionPhaseOutputTest::itRejectsSuccessfulResultsInTheFailureState
+ - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Discovery\SkippedEntryTest::itKeepsTheLinksOwnNameWhenTheTreeIsInsideTheProjectRoot
+ - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Discovery\SkippedEntryTest::itKeepsTheLinksOwnNameWhenTheTreeIsOutsideTheProjectRoot
+ - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Discovery\SkippedEntryTest::itNamesAnEntryDirectlyUnderTheFilesystemRootByItsOwnName
+ - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Discovery\SkippedEntryTest::itStillPreservesTheDirectoryStructureOfAnOutOfRootEntry
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\AnalysisFileDiscoverySkipTest::itCarriesTheWalksOwnSkipsForward
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\AnalysisFileDiscoverySkipTest::itPassesAnAbsentPathThroughForTheParserToRefuse
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\AnalysisFileDiscoverySkipTest::itRecordsOneTerminalStatePerPathWhenBothGatesSeeTheSameEntry
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\AnalysisFileDiscoverySkipTest::itRefusesADirectoryHandedOverAsAFile
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\AnalysisFileDiscoveryTest::itDeduplicatesOverlappingRootsByProjectRelativePath
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\AnalysisFileDiscoveryTest::itIncludesGeneratedFilesWithoutAllocatingExcludedStates
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\AnalysisFileDiscoveryTest::itKeepsGeneratedFilesAsExplicitExcludedTerminalStates
@@ -7227,6 +7252,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\DirectoryPrunerTest::itKeepsSiblingPrefixesSeparate
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\DirectoryPrunerTest::itMatchesProjectRelativeDirectoriesAndReturnsTheFirstAttribution
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\DirectoryPrunerTest::itProvidesBuiltInsThatMatchReservedDirectoriesAtAnyDepth
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\DirectoryWalkTest::itHandsBackTheBranchItCouldNotEnter
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\DirectoryWalkTest::itKeepsWalkingTheSiblingsOfTheBranchItCouldNotEnter
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\DirectoryWalkTest::itStaysSilentWhenEveryBranchOpens
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryAbsolutePathTest::itDeduplicatesOverlappingDirectoryInputs
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryAbsolutePathTest::itDeduplicatesSingleFileOverlappingWithDirectory
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryAbsolutePathTest::itHandlesSymlinkedFile
@@ -7234,6 +7262,19 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryAbsolutePathTest::itSkipsNonExistentEntryInList
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryAbsolutePathTest::itYieldsAbsolutePathAsKey
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryAbsolutePathTest::itYieldsAbsolutePathAsKeyForSingleFile
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoverySkipTest::itFollowsASymlinkToAFileAsAnOrdinaryUnitOfAnalysis
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoverySkipTest::itForgetsTheSkipsOfThePreviousDiscoverCall
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoverySkipTest::itRecordsADanglingPhpSymlink
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoverySkipTest::itRecordsADirectorySymlinkInsteadOfCountingItAsAFile
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoverySkipTest::itRecordsANamedPipeNamedLikeSource
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoverySkipTest::itRecordsASymlinkPointingAtItsOwnAncestor
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoverySkipTest::itRecordsAnEntryOnceWhenOverlappingRootsBothReachIt
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoverySkipTest::itRecordsAnExplicitPathArgumentThatIsNotARegularFile
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoverySkipTest::itRecordsAnUnreadableRootInsteadOfFailingTheRun
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoverySkipTest::itRecordsAnUnreadableSubdirectoryAndStillReturnsItsSiblings
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoverySkipTest::itSaysNothingAboutASelfReferencingSymlinkThatIsNoCandidate
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoverySkipTest::itSaysNothingAboutAnExcludedDirectoryEvenWhenItIsALink
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoverySkipTest::itYieldsAnUnreadableRegularFileRatherThanRecordingIt
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryTest::itAcceptsMixedFilesAndDirectories
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryTest::itAcceptsMultiplePaths
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryTest::itDiscoversFilesInDirectory
@@ -7263,26 +7304,47 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\GeneratedFileFilterTest::itHandlesEmptyFileList
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\GeneratedFileFilterTest::itKeepsAllFilesWhenNoneAreGenerated
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\GeneratedFileFilterTest::itOnlyChecksFirst2KbOfFile
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\GeneratedFileFilterTest::itRaisesNoDiagnosticForADirectory
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\GeneratedFileFilterTest::itRaisesNoDiagnosticForANamedPipe
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\GeneratedFileFilterTest::itReturnsReindexedArray
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itAnswersWhenTheScannedRootItselfIsUnlistable
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsASelectorToTheDirectoryThatPrunesIt
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itDoesNotDuplicateAnAnswerAcrossOverlappingRoots
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itDoesNotRestoreFindersImplicitBasenameAtAnyDepthRule
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itKeepsALiteralSelectorBelowAPrunedParentUnjudgeable
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itKeepsARegexUnjudgeableWhenAPrunedSubtreeCouldContainAMatch
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itKeepsASelectorBelowAnUnlistableSubtreeUnjudgeable
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itReportsEachDistinctUnmatchedAuthoredSelectorOnce
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itStaysSilentWhenNoRootIsADirectory
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itStillReportsAnUnmatchedLiteralOutsideThePrunedParent
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itStillReportsAnUnmatchedSelectorOutsideTheUnlistableSubtree
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itUsesProjectRelativeSelectorSemantics
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\UnjudgedExcludeTest::itGivesTheUnjudgedVerdictAnIdentityOfItsOwn
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\UnjudgedExcludeTest::itNamesTheSelectorItCouldNotJudgeAndTheDirectoryThatStoppedIt
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\UnjudgedExcludeTest::itReportsTheUnjudgedSelectorAsItsOwnFinding
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\UnjudgedExcludeTest::itSaysNothingAboutASelectorHiddenByAnotherExclude
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\UnjudgedExcludeTest::itSaysNothingAboutASelectorThatBound
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itAcceptsAnEmptyParticipantSet
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itClearsPriorCapabilityStateOnAnEnabledThenDisabledRun
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itExecutesEnabledParticipantsInCompilerOrder
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itReplacesPriorCapabilityStateOnAnEnabledThenNoMatchRun
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itResetsAllParticipantsBeforeTheFirstSelectionCheck
+ - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itRunsAParticipantNoWrittenFalseAddresses#0
+ - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itRunsAParticipantNoWrittenFalseAddresses#1
+ - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itRunsAParticipantNoWrittenFalseAddresses#2
+ - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itRunsAParticipantNoWrittenFalseAddresses#3
+ - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itRunsAParticipantNoWrittenFalseAddresses#4
+ - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itSkipsAParticipantItsOwnOptionsSwitchedOff#0
+ - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itSkipsAParticipantItsOwnOptionsSwitchedOff#1
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itSkipsDisabledParticipantsWithoutInspectingFiles
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itStopsTheProfilerSpanWhenAParticipantThrows
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itUsesTheGenericParticipantSpanWithoutALogger
+ - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\RuleSelectorProducerGateStateTest::itAnswersDifferentlyAfterTheSelectorBehindItIsMutated
+ - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\RuleSelectorProducerGateStateTest::itAnswersDifferentlyForTwoSelectorsCarryingDifferentChannels
+ - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisCoverageTest::itGivesASkippedEntryATerminalStateThatMakesTheRunIncomplete
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisCoverageTest::itMergesCoverageDeterministically
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisCoverageTest::itModelsEveryDiscoveredFileInExactlyOneTerminalState
+ - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisCoverageTest::itRefusesASkipForAPathThatAlreadyHasATerminalState
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisCoverageTest::itRejectsMoreThanOneTerminalStateForTheSamePath
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisCoverageTest::itTreatsGeneratedExclusionsAsCompleteCoverage
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisPipelineTest::itRunsWithAnExplicitOwnerConfigurationAndReturnsMeasuredCoverage
@@ -7318,7 +7380,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itPreparesTheArchitectureProducerWhenOnlyADiagnosticChannelIsSelected
  - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itResetsArchitecturePreparationWithoutDoingWorkWhenEveryLayerPolicyProducerIsDisabled
  - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itResetsCircularDependencyPreparationWithoutDoingWorkWhenRuleIsDisabled
+ - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itSkipsArchitecturePreparationWhenBothProducersAreSwitchedOffByTheirOptions#0
+ - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itSkipsArchitecturePreparationWhenBothProducersAreSwitchedOffByTheirOptions#1
  - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itSkipsCircularDependencyDetectionWhenRuleDisabled
+ - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itSkipsCircularDependencyPreparationWhenItsOwnOptionsSwitchTheRuleOff#0
+ - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itSkipsCircularDependencyPreparationWhenItsOwnOptionsSwitchTheRuleOff#1
+ - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itSkipsFileSetInspectionWhenTheParticipantsOwnOptionsSwitchTheProducerOff
+ - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itStillPreparesArchitecturePolicyWhenOnlyTheLayerViolationRuleIsSwitchedOff
  - Qualimetrix\Tests\Core\Symbol\Unit\SymbolLevelProjectionTest::itProjectsEveryDeclarationKindOntoItsAggregationLevel"a class"
  - Qualimetrix\Tests\Core\Symbol\Unit\SymbolLevelProjectionTest::itProjectsEveryDeclarationKindOntoItsAggregationLevel"a file"
  - Qualimetrix\Tests\Core\Symbol\Unit\SymbolLevelProjectionTest::itProjectsEveryDeclarationKindOntoItsAggregationLevel"a function is the same callable level"
@@ -7381,8 +7449,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Ast\Unit\CachedFileParserTest::itReturnsCachedAstOnHit
  - Qualimetrix\Tests\Infrastructure\Ast\Unit\CachedFileParserTest::itSkipsInvalidCachedValue
  - Qualimetrix\Tests\Infrastructure\Ast\Unit\CachedFileParserTest::itWorksWithRealCache
- - Qualimetrix\Tests\Infrastructure\Ast\Unit\FileParserFactoryTest::itCreatesCachedParserWhenCacheEnabled
- - Qualimetrix\Tests\Infrastructure\Ast\Unit\FileParserFactoryTest::itCreatesDirectParserWhenCacheDisabled
+ - Qualimetrix\Tests\Infrastructure\Ast\Unit\FileParserFactoryTest::itCachesWhenTheRunEnablesCachingAfterTheParserWasBuilt
+ - Qualimetrix\Tests\Infrastructure\Ast\Unit\FileParserFactoryTest::itStillParsesWhenCachingIsOff
+ - Qualimetrix\Tests\Infrastructure\Ast\Unit\FileParserFactoryTest::itStopsCachingTheMomentTheRunTurnsCachingOff
+ - Qualimetrix\Tests\Infrastructure\Ast\Unit\FileParserFactoryTest::itWritesNothingWhenTheRunDisablesCachingAfterTheParserWasBuilt
  - Qualimetrix\Tests\Infrastructure\Ast\Unit\PhpFileParserTest::itAllowsCustomParserInjection
  - Qualimetrix\Tests\Infrastructure\Ast\Unit\PhpFileParserTest::itIncludesFilePathInParseException
  - Qualimetrix\Tests\Infrastructure\Ast\Unit\PhpFileParserTest::itParsesAndReturnsCorrectAstStructure
@@ -7413,12 +7483,17 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::itReturnsAFileCacheConfiguredFromTheProvider
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::itTakesTheCacheDirAsItWasAtTheFirstCall
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::itUsesTheCacheDirFromTheConfigurationAtFirstCall
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheKeyGeneratorInstallRecordTest::itFallsBackToTheBranchNameWhenTheInstallHasNoReference
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheKeyGeneratorInstallRecordTest::itKeysABranchInstallOnItsCommitAndNotItsBranchName
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheKeyGeneratorInstallRecordTest::itKeysATaggedInstallOnItsVersionAlone
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheKeyGeneratorInstallRecordTest::itSaysWhenItCannotNameTheParserAndStopsCaching
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheKeyGeneratorTest::itGeneratesConsistentKey
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheKeyGeneratorTest::itGeneratesDifferentKeyForSameSizeContentWithRestoredMtime
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheKeyGeneratorTest::itGeneratesDifferentKeyWhenContentChanges
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheKeyGeneratorTest::itGeneratesKeyOfExpectedLength
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheKeyGeneratorTest::itGeneratesSameKeyWhenOnlyMtimeChanges
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheKeyGeneratorTest::itGeneratesTheSameKeyForAlreadyReadContent
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheKeyGeneratorTest::itKeysOnTheExactInstalledParserVersion
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheKeyGeneratorTest::itReturnsCacheVersion
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheKeyGeneratorTest::itReturnsEmptyKeyForNonExistentFile
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheKeyGeneratorTest::itReturnsEmptyKeyForNonFileTarget
@@ -7434,12 +7509,16 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itDeletesNonExistentKeyGracefully
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itHandlesCorruptedCacheEntry
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itHandlesObjectSerialization
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itKeepsRefusingToClaimTheFormatOnEveryLaterProcess
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itKeepsTheOldSerializerMarkerWhenTheClearCouldNotFinish
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itLeavesNoTemporaryResidueWhenWritingTheSerializerMarker
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itPreservesCacheWhenSerializerIsSame
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itReturnsDirectory
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itReturnsNullForMissingKey
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itRewritesMarkerAfterManualClear
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itStoresAndRetrievesValues
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itStoresComplexDataTypes
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itSurvivesAnUnreadableSubdirectoryWhenClearing
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itUsesShardingForStorage
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itWritesSerializerMarkerOnFirstAccess
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itDeclinesAClassmapTooLargeToParse
@@ -7455,6 +7534,14 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itResolvesComposerClassmapVariablesFromTheProjectAndVendorRoots"nested directory named vendor"
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itResolvesComposerClassmapVariablesFromTheProjectAndVendorRoots"project root"
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itSaysSoWhenTheRunHasNoInstallToRead
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerInstallDiagnosticsTest::itNamesAGeneratedClassmapItCouldNotParse
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerInstallDiagnosticsTest::itNamesAGeneratedClassmapTooLargeToRead
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerInstallDiagnosticsTest::itNamesAManifestItCouldNotOpen
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerInstallDiagnosticsTest::itNamesAManifestWhoseTopLevelValueIsNotAnObject
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerInstallDiagnosticsTest::itNamesTheInstalledPackagesFileItCouldNotParse
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerInstallDiagnosticsTest::itNamesTheManifestItCouldNotParse
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerInstallDiagnosticsTest::itSaysNothingAboutAManifestItCouldRead
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerInstallDiagnosticsTest::itStaysSilentAboutAnInstallThatIsSimplyNotThere
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itCallsAClassWithNoParentARoot
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itDoesNotSuppressUnexpectedParserFailures
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itExecutesNothingWhileReading
@@ -7603,7 +7690,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnalysesTheSameFilesAsCheckUnderTheSameExcludes
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnswersAnImpossiblePairAboutTheLevelRatherThanTheBan"a group that covers it"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnswersAnImpossiblePairAboutTheLevelRatherThanTheBan"the exact name"
- - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnswersExitOneForAnUnrecognisedExceptionFromAnUnreadablePath
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnswersExitFourWhenAScannedDirectoryCannotBeRead
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnswersExitOneForAnUnrecognisedExceptionFromTheAudit
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itCallsASuppressionEffectiveWhenItSilencedAFinding
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDefaultsToTheNarrowSweep
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDoesNotCallAProducerDisabledAtALevelItNeverReportsAt
@@ -8185,6 +8273,20 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itReturnsTrueWhenGitIsAFile
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itSkipsUnknownGitStatusesLikeTypeChange
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itThrowsExceptionWhenGitCommandFails
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitDiagnosticWiringTest::itTellsTheUserWhichChangedFilesItDropped
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitDiagnosticWiringTest::itTellsTheUserWhichComposerManifestItCouldNotRead
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitPathEncodingTest::itAnswersTheSameWithQuotePathOff
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitPathEncodingTest::itCarriesAStagedNameThroughUnchanged"double quote"
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitPathEncodingTest::itCarriesAStagedNameThroughUnchanged"leading dash"
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitPathEncodingTest::itCarriesAStagedNameThroughUnchanged"newline"
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitPathEncodingTest::itCarriesAStagedNameThroughUnchanged"non-ascii"
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitPathEncodingTest::itCarriesAStagedNameThroughUnchanged"plain ascii"
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitPathEncodingTest::itCarriesAStagedNameThroughUnchanged"space"
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitPathEncodingTest::itCarriesAStagedNameThroughUnchanged"trailing space before the extension"
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitPathEncodingTest::itCarriesBothNamesOfARenameThroughUnchanged
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitPathEncodingTest::itRefusesANameItWouldHaveToRewriteAndSaysSo"backslash"
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitPathEncodingTest::itRefusesANameItWouldHaveToRewriteAndSaysSo"text spelling an octal escape for the separator"
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitPathEncodingTest::itReportsAFindingForAStagedNonAsciiNameThroughTheCli
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitRepositoryLocatorTest::itAcceptsAnExplicitWorkingDirectory
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitRepositoryLocatorTest::itAnswersForTheHooksDirWhenGitFloodsItsErrorStream
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitRepositoryLocatorTest::itAnswersWhenGitFloodsItsErrorStream
@@ -8195,6 +8297,19 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitRepositoryLocatorTest::itReturnsAnAbsolutePath
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitRepositoryLocatorTest::itReturnsNullForANonExistentDirectory
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitRepositoryLocatorTest::itReturnsNullForANonGitDirectory
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitScopeRefusalTest::itExitsWithTheInputErrorCodeForARefusedScope"HEAD before the first commit"
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitScopeRefusalTest::itExitsWithTheInputErrorCodeForARefusedScope"a range with three endpoints"
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitScopeRefusalTest::itOmitsTheQuoteWhenGitOfferedNoReason
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitScopeRefusalTest::itRefusesARangeWithMoreThanTwoEndpoints
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitScopeRefusalTest::itRefusesAValidatedScopeWhoseDiffCommandStillFails
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitScopeRefusalTest::itRefusesHeadInARepositoryWithNoCommits
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitScopeRefusalTest::itStillListsStagedFilesInARepositoryWithNoCommits
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitStatusCoverageTest::itCarriesAFileReplacedBySymlink
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitStatusCoverageTest::itCarriesASymlinkReplacedByAFile
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitStatusCoverageTest::itQuotesBackAStatusLetterItDoesNotKnow
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitStatusCoverageTest::itRefusesAnUnmergedEntryAndNamesIt
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitStatusCoverageTest::itReportsAFindingInATypeChangedFileThroughTheCli
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitStatusCoverageTest::itSaysWhenARenameSourceNameCannotBeCarried
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitSubdirScopeTest::itDistinguishesGitToplevelFromProjectRootInFromGitOutput
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitSubdirScopeTest::itHandlesAddedModifiedAndDeletedDiffRowShapes
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitSubdirScopeTest::itHandlesRenamedDiffRowShape
@@ -8254,6 +8369,24 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Git\Unit\GitScopeResolverTest::itDoesNotCreateGitClientWithoutGitOptions
  - Qualimetrix\Tests\Infrastructure\Git\Unit\GitScopeResolverTest::itReturnsFindDiscoveryForFullAnalysis
  - Qualimetrix\Tests\Infrastructure\Git\Unit\GitScopeResolverTest::itUsesProjectRootForGitClient
+ - Qualimetrix\Tests\Infrastructure\Git\Unit\NameStatusRecordTest::itCarriesEveryNameByteVerbatim"backslash"
+ - Qualimetrix\Tests\Infrastructure\Git\Unit\NameStatusRecordTest::itCarriesEveryNameByteVerbatim"double quote"
+ - Qualimetrix\Tests\Infrastructure\Git\Unit\NameStatusRecordTest::itCarriesEveryNameByteVerbatim"leading dash"
+ - Qualimetrix\Tests\Infrastructure\Git\Unit\NameStatusRecordTest::itCarriesEveryNameByteVerbatim"newline"
+ - Qualimetrix\Tests\Infrastructure\Git\Unit\NameStatusRecordTest::itCarriesEveryNameByteVerbatim"non-ascii"
+ - Qualimetrix\Tests\Infrastructure\Git\Unit\NameStatusRecordTest::itCarriesEveryNameByteVerbatim"space"
+ - Qualimetrix\Tests\Infrastructure\Git\Unit\NameStatusRecordTest::itCarriesEveryNameByteVerbatim"tab"
+ - Qualimetrix\Tests\Infrastructure\Git\Unit\NameStatusRecordTest::itCarriesEveryNameByteVerbatim"text that looks like an octal escape"
+ - Qualimetrix\Tests\Infrastructure\Git\Unit\NameStatusRecordTest::itCarriesEveryNameByteVerbatim"trailing space"
+ - Qualimetrix\Tests\Infrastructure\Git\Unit\NameStatusRecordTest::itKeepsFieldWidthsStraightAcrossMixedStatuses
+ - Qualimetrix\Tests\Infrastructure\Git\Unit\NameStatusRecordTest::itReadsNothingFromAnEmptyStream
+ - Qualimetrix\Tests\Infrastructure\Git\Unit\NameStatusRecordTest::itReadsOnePathForASingleFileStatus
+ - Qualimetrix\Tests\Infrastructure\Git\Unit\NameStatusRecordTest::itReadsTwoPathsForARenameAndKeepsTheirOrder
+ - Qualimetrix\Tests\Infrastructure\Git\Unit\NameStatusRecordTest::itRefusesAStreamItCannotWalk"a path where a status belongs"
+ - Qualimetrix\Tests\Infrastructure\Git\Unit\NameStatusRecordTest::itRefusesAStreamItCannotWalk"a rename with only one path"
+ - Qualimetrix\Tests\Infrastructure\Git\Unit\NameStatusRecordTest::itRefusesAStreamItCannotWalk"a status with no path"
+ - Qualimetrix\Tests\Infrastructure\Git\Unit\NameStatusRecordTest::itRefusesAStreamItCannotWalk"an empty field before the end"
+ - Qualimetrix\Tests\Infrastructure\Git\Unit\NameStatusRecordTest::itRefusesAStreamItCannotWalk"the old tab-separated format"
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\ConsoleLoggerTest::itFormatsContext
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\ConsoleLoggerTest::itHandlesEmptyContext
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\ConsoleLoggerTest::itIncludesTimestampInOutput
@@ -9458,6 +9591,14 @@ Available tests:
  - Qualimetrix\Tests\Unit\Infrastructure\Console\Progress\ConsoleProgressBarTest::itDrawsInTheSectionItWasGiven
  - Qualimetrix\Tests\Unit\Infrastructure\Console\Progress\ConsoleProgressBarTest::itHandlesAdvanceBeforeStart
  - Qualimetrix\Tests\Unit\Infrastructure\Console\Progress\ConsoleProgressBarTest::itSkipsProgressBarForFewFiles
+ - Qualimetrix\Tests\Unit\Infrastructure\Parallel\Strategy\WorkerCountDetectorTest::itCapsTheWorkerCountByTheControlGroupQuota"cgroup v1 three CPUs"
+ - Qualimetrix\Tests\Unit\Infrastructure\Parallel\Strategy\WorkerCountDetectorTest::itCapsTheWorkerCountByTheControlGroupQuota"cgroup v1 unlimited"
+ - Qualimetrix\Tests\Unit\Infrastructure\Parallel\Strategy\WorkerCountDetectorTest::itCapsTheWorkerCountByTheControlGroupQuota"cgroup v2 half a CPU still runs one worker"
+ - Qualimetrix\Tests\Unit\Infrastructure\Parallel\Strategy\WorkerCountDetectorTest::itCapsTheWorkerCountByTheControlGroupQuota"cgroup v2 quota above the host count does not raise it"
+ - Qualimetrix\Tests\Unit\Infrastructure\Parallel\Strategy\WorkerCountDetectorTest::itCapsTheWorkerCountByTheControlGroupQuota"cgroup v2 two CPUs"
+ - Qualimetrix\Tests\Unit\Infrastructure\Parallel\Strategy\WorkerCountDetectorTest::itCapsTheWorkerCountByTheControlGroupQuota"cgroup v2 unlimited"
+ - Qualimetrix\Tests\Unit\Infrastructure\Parallel\Strategy\WorkerCountDetectorTest::itCapsTheWorkerCountByTheControlGroupQuota"no control group at all"
  - Qualimetrix\Tests\Unit\Infrastructure\Parallel\Strategy\WorkerCountDetectorTest::itDetectsWorkerCountGreaterThanZero
  - Qualimetrix\Tests\Unit\Infrastructure\Parallel\Strategy\WorkerCountDetectorTest::itReadsTheProcessorCountFromTheWindowsEnvironmentVariable
+ - Qualimetrix\Tests\Unit\Infrastructure\Parallel\Strategy\WorkerCountDetectorTest::itReadsTheProcessorCountWithoutAControlGroup
  - Qualimetrix\Tests\Unit\Infrastructure\Parallel\Strategy\WorkerCountDetectorTest::itReturnsConsistentResults

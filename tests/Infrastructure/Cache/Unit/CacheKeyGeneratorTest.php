@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Cache\Unit;
 
+use Composer\InstalledVersions;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -134,6 +135,27 @@ final class CacheKeyGeneratorTest extends TestCase
 
         self::assertStringContainsString('php', $version);
         self::assertStringContainsString('parser', $version);
+    }
+
+    /**
+     * The exact installed version, not the major.
+     *
+     * The version used to be read from a `vendor/composer/installed.php` path
+     * computed from `__DIR__`, which exists only while Qualimetrix is the root
+     * package. Installed the documented way the file is absent and the
+     * fallback answered `5.x` for every release in the major, so upgrading
+     * php-parser left every key — and every warmed AST — in place.
+     */
+    #[Test]
+    public function itKeysOnTheExactInstalledParserVersion(): void
+    {
+        $installed = InstalledVersions::getVersion('nikic/php-parser');
+
+        self::assertNotNull($installed);
+        self::assertSame(
+            \sprintf('php%d.%d-parser%s', \PHP_MAJOR_VERSION, \PHP_MINOR_VERSION, $installed),
+            $this->generator->getCacheVersion(),
+        );
     }
 
     #[Test]

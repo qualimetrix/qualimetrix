@@ -261,6 +261,36 @@ a shorthand below and a graduated key above — the reverse direction, and the
 `~`-above-a-written-value rule, are closed by tests
 rather than here.
 
+### Named gap: no case runs an incomplete analysis
+
+Every case here analyses a tree the product can read in full, so exit 4 and the
+three `kind` values that name an entry the run never read
+(`directory-symlink`, `not-regular-file`, `unreadable-directory`) are outside
+every compared surface. A GREEN run is therefore evidence about complete runs
+only, and says nothing about how an incomplete one is published.
+
+The gap is structural, not an oversight, and closing it needs the gate itself to
+change in three places:
+
+- **`baseline:generate` refuses an incomplete run** (ADR 0018) and writes no
+  file — measured: exit 4, no file. `Gate::checkBaselineSurface` holds every
+  case to exit 0 *and* to a non-empty baseline, deliberately, so that an absent
+  surface cannot read as one that agrees. A case that is incomplete by design
+  is `run-failed` on both sides.
+- **`channels` may not be empty**, so such a case has to claim a pair some
+  fixture of its own fires, and the pairs are all owned — it would be
+  `coverage: auxiliary`.
+- **Only one of the three entries is storable in git.** A symbolic link is
+  (this repository already tracks two, mode `120000`); a FIFO and a directory's
+  permissions are not, so those two need the entry created before the run and
+  removed after it.
+
+The shape that would close it: a `case.json` key declaring the case incomplete —
+added to `CaseDefinition::KNOWN_KEYS` — that switches `checkBaselineSurface`
+from "exit 0 and a file" to "exit 4 and no file", keeping both facts compared on
+each side rather than skipped, plus a preparation step owned by the gate for the
+two entries git cannot carry.
+
 Every run uses the case directory as its working directory, so no path in any
 artifact depends on where the tree is checked out. The `check` runs add
 `--workers=0 --no-cache --no-ansi --fail-on=error`. `baseline:generate` and

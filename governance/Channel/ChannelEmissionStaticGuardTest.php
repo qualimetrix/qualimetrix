@@ -430,6 +430,9 @@ final class ChannelEmissionStaticGuardTest extends TestCase
                 'UnmatchedExcludeRule names the channel but cannot emit it: what an exclude pattern bound to is'
                 . ' known during file discovery, before rules run, so the finding is assembled here and no rule'
                 . ' class chain leads to this construction.',
+            'src/Analysis/Run/ExcludeBinding/UnjudgedExcludeFinding.php' =>
+                'The second shape of the same channel, for the pattern the walk could not judge; the audit above'
+                . ' delegates to it, and it is off the rule chain for the same reason the audit is.',
             'src/Analysis/Finding/SuppressionBinding/UnboundSuppressionAudit.php' =>
                 'UnboundSuppressionRule names the three channels but cannot emit them: whether a suppression'
                 . ' value bound to anything is known only after the run, at the reporting seam, so the findings'

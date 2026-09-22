@@ -239,6 +239,67 @@ final class GeneratedFileFilterTest extends TestCase
         return $path;
     }
 
+    /**
+     * `fopen()` succeeds on a directory and `fread()` then raises a notice.
+     * The CLI writes interpreter diagnostics to **stdout**, so that notice
+     * lands in front of whatever machine-readable document the caller is
+     * parsing. The oracle is the diagnostic, not the printed bytes: a test
+     * runner installs its own error handler, so asserting on the output
+     * stream here passes with the defect in place (measured).
+     */
+    #[Test]
+    public function itRaisesNoDiagnosticForADirectory(): void
+    {
+        mkdir($this->tempDir . '/subdir', 0755, true);
+
+        [$verdict, $diagnostics] = $this->withoutReadingDiagnostics(
+            fn(): bool => (new GeneratedFileFilter())->isGenerated(new SplFileInfo($this->tempDir . '/subdir')),
+        );
+
+        self::assertFalse($verdict);
+        self::assertSame([], $diagnostics);
+    }
+
+    #[Test]
+    public function itRaisesNoDiagnosticForANamedPipe(): void
+    {
+        if (!\function_exists('posix_mkfifo')) {
+            self::markTestSkipped('ext-posix is required to create a FIFO');
+        }
+
+        posix_mkfifo($this->tempDir . '/Pipe.php', 0644);
+
+        [$verdict, $diagnostics] = $this->withoutReadingDiagnostics(
+            fn(): bool => (new GeneratedFileFilter())->isGenerated(new SplFileInfo($this->tempDir . '/Pipe.php')),
+        );
+
+        self::assertFalse($verdict);
+        self::assertSame([], $diagnostics);
+    }
+
+    /**
+     * @param callable(): bool $probe
+     *
+     * @return array{bool, list<string>}
+     */
+    private function withoutReadingDiagnostics(callable $probe): array
+    {
+        $diagnostics = [];
+        set_error_handler(static function (int $severity, string $message) use (&$diagnostics): bool {
+            $diagnostics[] = $message;
+
+            return true;
+        });
+
+        try {
+            $verdict = $probe();
+        } finally {
+            restore_error_handler();
+        }
+
+        return [$verdict, $diagnostics];
+    }
+
     private function removeDirectory(string $dir): void
     {
         if (!is_dir($dir)) {

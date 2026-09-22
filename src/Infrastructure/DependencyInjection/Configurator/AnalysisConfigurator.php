@@ -256,7 +256,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(InlineDirectivePolicyInterface::class),
                 new Reference(ThresholdDirectiveAuditInterface::class),
                 new Reference(self::FILE_SET_INSPECTION_COMPOSITE),
-                new Reference(RuleSelector::class),
+                new Reference(self::RULE_SELECTOR_PRODUCER_GATE),
                 new Reference(RuleConfigurationInterface::class),
             ]);
     }

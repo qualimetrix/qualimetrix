@@ -242,7 +242,11 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->setAlias(AnnotationSuppressionInterface::class, $suppressionFilter)
             ->setPublic(true);
 
-        $container->register($gitScopeQuery);
+        // Named, not autowired: this is where `GitClient::getChangedFiles()`
+        // actually runs, and its warnings about changed files it had to drop
+        // reach a reader only through this argument.
+        $container->register($gitScopeQuery)
+            ->setArgument('$logger', new Reference(DelegatingLogger::class));
         $container->setAlias(GitScopeQueryInterface::class, $gitScopeQuery)
             ->setPublic(true);
 

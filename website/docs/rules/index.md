@@ -170,9 +170,9 @@ This rule validates the `@qmx-ignore` / `@qmx-threshold` annotations written in 
 
 This rule reports on the run's own file selection rather than on the code: an `--exclude` value or an `exclude:` entry that matched no directory. The report then covers files the author meant to leave out, and without this channel a missed exclusion and no exclusion at all produce byte-identical output.
 
-| Rule                              | ID                            | What it detects                              |
-| --------------------------------- | ----------------------------- | -------------------------------------------- |
-| [Unmatched exclude](discovery.md) | `discovery.unmatched-exclude` | An exclude pattern that removed no directory |
+| Rule                              | ID                            | What it detects                                                              |
+| --------------------------------- | ----------------------------- | ---------------------------------------------------------------------------- |
+| [Unmatched exclude](discovery.md) | `discovery.unmatched-exclude` | An exclude pattern that removed no directory, or one the run could not check |
 
 [Read more about Discovery rules --&gt;](discovery.md)
 

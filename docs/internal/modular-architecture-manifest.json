@@ -6375,6 +6375,10 @@
         },
         {
           "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnjudgedExcludeFinding"
+        },
+        {
+          "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit"
         },
         {
@@ -6799,6 +6803,10 @@
         },
         {
           "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnjudgedExcludeFinding"
+        },
+        {
+          "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit"
         },
         {
@@ -6852,6 +6860,10 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\UnmatchedExcludeDiagnostic"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnjudgedExcludeFinding"
         },
         {
           "owner": "Analysis.Run",
@@ -8903,10 +8915,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\FileSetInspection\\RuleSelectorProducerGate"
         },
         {
-          "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\RuleProducerPreparation"
-        },
-        {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleInputValidator"
         },
@@ -9581,6 +9589,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\AnalysisResult"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnjudgedExcludeFinding"
         },
         {
           "owner": "Analysis.Run",
@@ -11806,6 +11818,20 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Run\\Contract\\Discovery\\SkipReportingDiscoveryInterface": {
+      "path": "src/Analysis/Run/Contract/Discovery/SkipReportingDiscoveryInterface.php",
+      "kind": "interface",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Run\\Contract\\Discovery\\SkippedEntry": {
+      "path": "src/Analysis/Run/Contract/Discovery/SkippedEntry.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Run\\Contract\\FileSetInspectionParticipantInterface": {
       "path": "src/Analysis/Run/Contract/FileSetInspectionParticipantInterface.php",
       "kind": "interface",
@@ -12050,6 +12076,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Run\\Discovery\\DirectoryWalk": {
+      "path": "src/Analysis/Run/Discovery/DirectoryWalk.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Run\\Discovery\\FinderFileDiscovery": {
       "path": "src/Analysis/Run/Discovery/FinderFileDiscovery.php",
       "kind": "class",
@@ -12066,6 +12099,20 @@
     },
     "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\ExcludeBindingProbe": {
       "path": "src/Analysis/Run/ExcludeBinding/ExcludeBindingProbe.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\ExcludeBindingVerdict": {
+      "path": "src/Analysis/Run/ExcludeBinding/ExcludeBindingVerdict.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnjudgedExcludeFinding": {
+      "path": "src/Analysis/Run/ExcludeBinding/UnjudgedExcludeFinding.php",
       "kind": "class",
       "owner": "Analysis.Run",
       "visibility": "internal",
@@ -12159,6 +12206,10 @@
         {
           "owner": "Infrastructure.Ast",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Ast\\PhpFileParser"
+        },
+        {
+          "owner": "Infrastructure.Ast",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Ast\\WorkerParserFactory"
         },
         {
           "owner": "Infrastructure.DependencyInjection",
@@ -12390,11 +12441,19 @@
         },
         {
           "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Discovery\\SkippedEntry"
+        },
+        {
+          "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\FileSetInspectionParticipantInterface"
         },
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\DependencyGraphAnalyzerInterface"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Discovery\\AnalysisFileDiscovery"
         },
         {
           "owner": "Analysis.Run",
@@ -12411,6 +12470,14 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\ExcludeBindingProbe"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnjudgedExcludeFinding"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit"
         },
         {
           "owner": "Analysis.Run",
@@ -12435,6 +12502,10 @@
         {
           "owner": "Infrastructure.Ast",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Ast\\PhpFileParser"
+        },
+        {
+          "owner": "Infrastructure.Ast",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Ast\\WorkerParserFactory"
         },
         {
           "owner": "Infrastructure.Cache",
@@ -12570,6 +12641,10 @@
         },
         {
           "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Discovery\\SkippedEntry"
+        },
+        {
+          "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Discovery\\AnalysisFileDiscovery"
         },
         {
@@ -12616,6 +12691,10 @@
       "owner": "Core.Path",
       "visibility": "contract",
       "consumers": [
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Discovery\\SkippedEntry"
+        },
         {
           "owner": "Core.Neutral",
           "source_fqcn": "Qualimetrix\\Core\\Pattern\\PathPattern"
@@ -13651,6 +13730,10 @@
         },
         {
           "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnjudgedExcludeFinding"
+        },
+        {
+          "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit"
         },
         {
@@ -14575,6 +14658,10 @@
         },
         {
           "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnjudgedExcludeFinding"
+        },
+        {
+          "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit"
         },
         {
@@ -14849,10 +14936,6 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ParserConfigurator"
-        },
-        {
-          "owner": "Infrastructure.Parallel",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\WorkerBootstrap"
         }
       ]
     },
@@ -14873,6 +14956,18 @@
         }
       ]
     },
+    "Qualimetrix\\Infrastructure\\Ast\\WorkerParserFactory": {
+      "path": "src/Infrastructure/Ast/WorkerParserFactory.php",
+      "kind": "class",
+      "owner": "Infrastructure.Ast",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Parallel",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\WorkerBootstrap"
+        }
+      ]
+    },
     "Qualimetrix\\Infrastructure\\Ast\\PhpFileParser": {
       "path": "src/Infrastructure/Ast/PhpFileParser.php",
       "kind": "class",
@@ -14882,10 +14977,6 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ParserConfigurator"
-        },
-        {
-          "owner": "Infrastructure.Parallel",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\WorkerBootstrap"
         }
       ]
     },
@@ -14910,16 +15001,15 @@
       "path": "src/Infrastructure/Cache/CacheConfigurationStore.php",
       "kind": "class",
       "owner": "Infrastructure.Cache",
-      "visibility": "internal",
+      "visibility": "contract",
       "consumers": [
         {
+          "owner": "Infrastructure.Ast",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Ast\\WorkerParserFactory"
+        },
+        {
           "owner": "Infrastructure.DependencyInjection",
-          "relation": "composition_binding",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ParserConfigurator",
-          "operations": [
-            "service_alias",
-            "service_registration"
-          ]
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ParserConfigurator"
         }
       ]
     },
@@ -14982,12 +15072,12 @@
           "source_fqcn": "Qualimetrix\\Infrastructure\\Ast\\FileParserFactory"
         },
         {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ParserConfigurator"
+          "owner": "Infrastructure.Ast",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Ast\\WorkerParserFactory"
         },
         {
-          "owner": "Infrastructure.Parallel",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\WorkerBootstrap"
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ParserConfigurator"
         }
       ]
     },
@@ -15009,6 +15099,10 @@
       "owner": "Infrastructure.Cache",
       "visibility": "contract",
       "consumers": [
+        {
+          "owner": "Infrastructure.Ast",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Ast\\WorkerParserFactory"
+        },
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator"
@@ -15055,6 +15149,10 @@
       "consumers": [
         {
           "owner": "Infrastructure.Ast",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Ast\\CachedFileParser"
+        },
+        {
+          "owner": "Infrastructure.Ast",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Ast\\FileParserFactory"
         },
         {
@@ -15078,8 +15176,8 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Infrastructure.Parallel",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\WorkerBootstrap"
+          "owner": "Infrastructure.Ast",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Ast\\WorkerParserFactory"
         }
       ]
     },
@@ -16259,20 +16357,6 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Infrastructure\\Git\\Exception\\NotAGitRepositoryException": {
-      "path": "src/Infrastructure/Git/Exception/NotAGitRepositoryException.php",
-      "kind": "class",
-      "owner": "Infrastructure.Git",
-      "visibility": "internal",
-      "consumers": []
-    },
-    "Qualimetrix\\Infrastructure\\Git\\Exception\\UnresolvedGitReferenceException": {
-      "path": "src/Infrastructure/Git/Exception/UnresolvedGitReferenceException.php",
-      "kind": "class",
-      "owner": "Infrastructure.Git",
-      "visibility": "internal",
-      "consumers": []
-    },
     "Qualimetrix\\Infrastructure\\Git\\GitClient": {
       "path": "src/Infrastructure/Git/GitClient.php",
       "kind": "class",
@@ -16333,6 +16417,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Infrastructure\\Git\\GitScopeRefusedException": {
+      "path": "src/Infrastructure/Git/GitScopeRefusedException.php",
+      "kind": "class",
+      "owner": "Infrastructure.Git",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Infrastructure\\Git\\GitScopeResolution": {
       "path": "src/Infrastructure/Git/GitScopeResolution.php",
       "kind": "class",
@@ -16361,8 +16452,29 @@
         }
       ]
     },
+    "Qualimetrix\\Infrastructure\\Git\\NameStatusRecord": {
+      "path": "src/Infrastructure/Git/NameStatusRecord.php",
+      "kind": "class",
+      "owner": "Infrastructure.Git",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Git\\NotAGitRepositoryException": {
+      "path": "src/Infrastructure/Git/NotAGitRepositoryException.php",
+      "kind": "class",
+      "owner": "Infrastructure.Git",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Infrastructure\\Git\\ReportingGitScopeQuery": {
       "path": "src/Infrastructure/Git/ReportingGitScopeQuery.php",
+      "kind": "class",
+      "owner": "Infrastructure.Git",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Git\\UnresolvedGitReferenceException": {
+      "path": "src/Infrastructure/Git/UnresolvedGitReferenceException.php",
       "kind": "class",
       "owner": "Infrastructure.Git",
       "visibility": "internal",

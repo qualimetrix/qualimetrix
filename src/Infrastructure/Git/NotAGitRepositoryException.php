@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Infrastructure\Git\Exception;
+namespace Qualimetrix\Infrastructure\Git;
 
 use InvalidArgumentException;
 

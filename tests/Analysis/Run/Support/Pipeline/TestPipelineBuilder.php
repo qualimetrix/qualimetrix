@@ -35,6 +35,7 @@ use Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeBindingProbe;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeOptions;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
+use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
@@ -80,6 +81,8 @@ final class TestPipelineBuilder
     private ?CircularDependencyPreparationInterface $circularDependencyPreparation = null;
 
     private ?FileSetInspectionComposite $fileSetInspection = null;
+
+    private ?RuleSelectorProducerGate $producerGate = null;
 
     private ?LayerPolicyPreparationInterface $layerPolicyPreparation = null;
 
@@ -162,9 +165,19 @@ final class TestPipelineBuilder
         return $this;
     }
 
-    public function withFileSetInspection(FileSetInspectionComposite $inspection): self
-    {
+    /**
+     * The composite arrives already assembled, so the gate it was built on
+     * arrives with it or not at all. Pass it whenever the selector behind the
+     * composite is one this builder was not given: the two halves of the
+     * pipeline then read one selector, which is the condition production
+     * satisfies by wiring a single gate service to both.
+     */
+    public function withFileSetInspection(
+        FileSetInspectionComposite $inspection,
+        ?RuleSelectorProducerGate $producerGate = null,
+    ): self {
         $this->fileSetInspection = $inspection;
+        $this->producerGate = $producerGate;
 
         return $this;
     }
@@ -228,6 +241,16 @@ final class TestPipelineBuilder
         return $this;
     }
 
+    /**
+     * One selector for this builder, memoized: two `new RuleSelector(...)`
+     * defaults would put a different mutable object behind each half of the
+     * pipeline, which is the divergence the comment in `build()` is about.
+     */
+    private function ruleSelector(): RuleSelector
+    {
+        return $this->ruleSelector ??= new RuleSelector(new InMemoryRuleChannelRegistry());
+    }
+
     public function withInlineDirectivePolicy(InlineDirectivePolicyInterface $policy): self
     {
         $this->inlineDirectivePolicy = $policy;
@@ -247,7 +270,7 @@ final class TestPipelineBuilder
 
         return $this->inlineDirectivePolicy ?? new InlineDirectivePolicy(new DirectiveUsage(
             $universe,
-            $this->ruleSelector ?? new RuleSelector(new InMemoryRuleChannelRegistry()),
+            $this->ruleSelector(),
             $this->ruleConfiguration ?? new RuleOptionsRegistry(),
             $universe,
         ));
@@ -280,7 +303,17 @@ final class TestPipelineBuilder
                 $this->fileSetInspection ?? throw new LogicException(
                     'TestPipelineBuilder: fileSetInspection is required (call withFileSetInspection())',
                 ),
-                $this->ruleSelector ?? new RuleSelector(new InMemoryRuleChannelRegistry()),
+                // The gate carries no state, but its answer is the selector's,
+                // and `RuleSelector` is mutable — `replaceChannels()`,
+                // `useDeclaredLevels()`. So what makes these two agree is one
+                // selector instance behind both, not the gate being stateless.
+                // Production satisfies that by wiring one gate service to the
+                // composite and to the preparation; here the composite is
+                // supplied assembled, so a caller whose composite reads a
+                // different selector hands that gate to
+                // `withFileSetInspection()` and this falls back only for the
+                // callers whose composite reads no selector of their own.
+                $this->producerGate ?? new RuleSelectorProducerGate($this->ruleSelector()),
                 $this->ruleConfiguration ?? new RuleOptionsRegistry(),
             ),
             measurementAggregation: $this->measurementAggregation ?? throw new LogicException(

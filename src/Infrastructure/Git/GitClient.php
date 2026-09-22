@@ -7,8 +7,6 @@ namespace Qualimetrix\Infrastructure\Git;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\Git\Exception\NotAGitRepositoryException;
-use Qualimetrix\Infrastructure\Git\Exception\UnresolvedGitReferenceException;
 use RuntimeException;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
@@ -26,6 +24,41 @@ use Symfony\Component\Process\Process;
  */
 final class GitClient
 {
+    /**
+     * The measured fact, not a diagnosis of it. A project root inside a git
+     * subdirectory is the common cause and not the only one, so the causes are
+     * listed rather than asserted.
+     */
+    private const string SKIPPED_OUTSIDE_ROOT =
+        'whose path did not resolve inside the project root — the project root may be a subdirectory of the git tree, '
+        . 'or the path may point outside it through a link';
+
+    private const string SKIPPED_UNREPRESENTABLE =
+        'whose name holds a backslash, which this build\'s relative-path model rewrites as a directory separator '
+        . '(the file is real; the name cannot be carried through unchanged)';
+
+    /**
+     * `U` is the one refused status with a cause the user can act on: finish
+     * the merge. An unmerged entry is not a version of a file — the index
+     * holds two or three of them at once — so there is nothing here to hand
+     * downstream as "the changed file".
+     */
+    private const string SKIPPED_UNMERGED =
+        'left unmerged in the index by a conflict git has not been told is resolved — '
+        . 'such an entry names no single version to analyse';
+
+    /**
+     * The catch-all, and deliberately a format string: the letter is the whole
+     * of what is known, so it is quoted back rather than interpreted. `X` and
+     * any letter a later git adds arrive here.
+     */
+    private const string SKIPPED_UNSUPPORTED_STATUS =
+        'reported by git under status "%s", which this build does not know how to carry';
+
+    private const string SOURCE_UNREPRESENTABLE =
+        'whose source name holds a backslash and cannot be carried through this build\'s relative-path model. '
+        . 'The file itself is analysed; only the name it was moved from is lost';
+
     private ?AbsolutePath $gitToplevelCache = null;
 
     public function __construct(
@@ -52,7 +85,9 @@ final class GitClient
      */
     public function getRoot(): AbsolutePath
     {
-        return AbsolutePath::fromString(trim($this->exec(['git', 'rev-parse', '--show-toplevel'])));
+        // Only the terminator is stripped: `trim()` would also eat a trailing
+        // space, and a directory is allowed to end in one.
+        return AbsolutePath::fromString(rtrim($this->exec(['git', 'rev-parse', '--show-toplevel']), "\r\n"));
     }
 
     /**
@@ -73,18 +108,36 @@ final class GitClient
         };
     }
 
+    /**
+     * Refuses, before any analysis runs, every scope git would refuse later.
+     *
+     * The set validated here has to equal the set that reaches git, or the
+     * difference surfaces as a failed command rather than as a refusal. Two
+     * shapes used to fall in that gap: `HEAD`, which returned early and then
+     * failed in a repository with no commits, and a range of three or more
+     * endpoints, whose parts each resolve while the range as a whole does not.
+     *
+     * `staged` is the one scope with nothing to resolve: `git diff --cached`
+     * compares against the empty tree when there is no HEAD, which is a
+     * correct answer rather than a failure.
+     */
     public function validateScope(string $scope): void
     {
         $this->assertInsideWorkTree();
 
-        if ($scope === 'staged' || $scope === 'HEAD') {
+        if ($scope === 'staged') {
             return;
         }
 
         $separator = str_contains($scope, '...') ? '...' : (str_contains($scope, '..') ? '..' : null);
         $references = $separator === null ? [$scope] : explode($separator, $scope);
+
         if ($separator === null) {
-            $references[] = 'HEAD';
+            // `<ref>` is shorthand for `<ref>..HEAD`, and `HEAD` is asked for
+            // on its own; either way HEAD is part of what reaches git.
+            $references = array_values(array_unique([...$references, 'HEAD']));
+        } elseif (\count($references) !== 2) {
+            throw GitScopeRefusedException::notATwoEndpointRange($scope, \count($references));
         }
 
         foreach ($references as $reference) {
@@ -149,9 +202,7 @@ final class GitClient
      */
     private function getStagedFiles(): array
     {
-        $output = $this->exec(['git', 'diff', '--cached', '--name-status']);
-
-        return $this->parseNameStatus($output);
+        return $this->parseNameStatus($this->diff(['--cached', '--name-status', '-z'], 'staged'));
     }
 
     /**
@@ -161,9 +212,7 @@ final class GitClient
      */
     private function getUncommittedFiles(): array
     {
-        $output = $this->exec(['git', 'diff', '--name-status', 'HEAD']);
-
-        return $this->parseNameStatus($output);
+        return $this->parseNameStatus($this->diff(['--name-status', '-z', 'HEAD'], 'HEAD'));
     }
 
     /**
@@ -173,9 +222,7 @@ final class GitClient
      */
     private function getTwoDotDiff(string $range): array
     {
-        $output = $this->exec(['git', 'diff', '--name-status', $range]);
-
-        return $this->parseNameStatus($output);
+        return $this->parseNameStatus($this->diff(['--name-status', '-z', $range], $range));
     }
 
     /**
@@ -185,9 +232,7 @@ final class GitClient
      */
     private function getThreeDotDiff(string $range): array
     {
-        $output = $this->exec(['git', 'diff', '--name-status', $range]);
-
-        return $this->parseNameStatus($output);
+        return $this->parseNameStatus($this->diff(['--name-status', '-z', $range], $range));
     }
 
     /**
@@ -197,9 +242,9 @@ final class GitClient
      */
     private function getDiffFrom(string $ref): array
     {
-        $output = $this->exec(['git', 'diff', '--name-status', \sprintf('%s..HEAD', $ref)]);
-
-        return $this->parseNameStatus($output);
+        return $this->parseNameStatus(
+            $this->diff(['--name-status', '-z', \sprintf('%s..HEAD', $ref)], $ref),
+        );
     }
 
     /**
@@ -211,19 +256,18 @@ final class GitClient
     }
 
     /**
-     * Parses git diff --name-status output.
+     * Turns the NUL-separated `git diff --name-status -z` stream into files.
      *
-     * Format:
-     * A    file.php           (added)
-     * M    file.php           (modified)
-     * D    file.php           (deleted)
-     * R100 old.php new.php    (renamed)
-     * C100 old.php new.php    (copied)
+     * The stream is walked by {@see NameStatusRecord::parseStream()}; what
+     * happens here is the project's own judgement on each record. Paths
+     * returned by git are git-toplevel-relative and are translated to
+     * project-relative form via {@see ChangedFile::fromGitOutput()}.
      *
-     * Paths returned by git are git-toplevel-relative. They are translated to
-     * project-relative form via {@see ChangedFile::fromGitOutput()}; rows whose
-     * paths fall outside the project root are skipped and reported as a single
-     * PSR-3 `warning` at the end of parsing.
+     * A record this run cannot carry does not disappear: it is collected under
+     * the reason it was dropped for, and each reason becomes one PSR-3
+     * `warning` at the end of parsing. There is no silent path out of this
+     * loop — a status letter the enum does not name is quoted back in its own
+     * reason, so a later git letter is reported rather than lost.
      *
      * @return list<ChangedFile>
      */
@@ -231,79 +275,114 @@ final class GitClient
     {
         $gitToplevel = null;
         $files = [];
-        $skippedPaths = [];
-        $lines = array_filter(explode("\n", trim($output)), static fn(string $line): bool => $line !== '');
 
-        foreach ($lines as $line) {
-            // Standard: single-letter status\tpath (A/M/D/C and others like T/U/X)
-            if (preg_match('/^([A-Z])\t(.+)$/', $line, $matches) === 1) {
-                $status = ChangeStatus::tryFrom($matches[1]);
-                // Skip unknown statuses (T=type change, U=unmerged, X=unknown, etc.)
-                if ($status === null) {
-                    continue;
-                }
+        /** @var array<string, list<string>> $skipped */
+        $skipped = [];
 
-                $gitToplevel ??= $this->gitToplevel();
-                $this->collectRow($matches[2], $status, null, $gitToplevel, $files, $skippedPaths);
+        /** @var list<string> $lostSources */
+        $lostSources = [];
+
+        foreach (NameStatusRecord::parseStream($output) as $record) {
+            $status = ChangeStatus::tryFrom($record->status);
+
+            if ($status === null) {
+                $skipped[self::refusedStatusReason($record->status)][] = $record->rawPath;
 
                 continue;
             }
 
-            // Rename: R<similarity>\told\tnew
-            if (preg_match('/^R\d*\t(.+)\t(.+)$/', $line, $matches) === 1) {
-                $gitToplevel ??= $this->gitToplevel();
-                $this->collectRow($matches[2], ChangeStatus::Renamed, $matches[1], $gitToplevel, $files, $skippedPaths);
+            if (!ChangedFile::isRepresentableGitPath($record->rawPath)) {
+                $skipped[self::SKIPPED_UNREPRESENTABLE][] = $record->rawPath;
 
                 continue;
             }
 
-            // Copy: C<similarity>\told\tnew
-            if (preg_match('/^C\d*\t(.+)\t(.+)$/', $line, $matches) === 1) {
-                $gitToplevel ??= $this->gitToplevel();
-                $this->collectRow($matches[2], ChangeStatus::Copied, $matches[1], $gitToplevel, $files, $skippedPaths);
-
-                continue;
+            if ($record->rawOldPath !== null && !ChangedFile::isRepresentableGitPath($record->rawOldPath)) {
+                $lostSources[] = $record->rawOldPath;
             }
-        }
 
-        if ($skippedPaths !== []) {
-            $this->logger->warning(
-                \sprintf(
-                    'Skipped %d changed file(s) outside project root (raw git paths shown — the project root sits in a git subdirectory): %s',
-                    \count($skippedPaths),
-                    implode(', ', $skippedPaths),
-                ),
+            $gitToplevel ??= $this->gitToplevel();
+            $changed = ChangedFile::fromGitOutput(
+                $record->rawPath,
+                $status,
+                $record->rawOldPath,
+                $gitToplevel,
+                $this->projectRoot,
             );
+
+            if ($changed === null) {
+                $skipped[self::SKIPPED_OUTSIDE_ROOT][] = $record->rawPath;
+
+                continue;
+            }
+
+            $files[] = $changed;
         }
+
+        $this->reportSkipped($skipped);
+        $this->reportLostSources($lostSources);
 
         return array_values(array_unique($files, \SORT_REGULAR));
     }
 
     /**
-     * Translates one diff row via {@see ChangedFile::fromGitOutput()} and appends the
-     * result to `$files`, or the raw new path to `$skippedPaths` when the row falls
-     * outside the project root.
+     * Why a status letter the enum does not name was refused.
      *
-     * @param list<ChangedFile> $files
-     * @param list<string> $skippedPaths
+     * `U` gets its own sentence because its cause is actionable and its shape
+     * is understood; everything else is named by its letter alone, which is
+     * all this build knows about it.
      */
-    private function collectRow(
-        string $rawGitPath,
-        ChangeStatus $status,
-        ?string $rawOldGitPath,
-        AbsolutePath $gitToplevel,
-        array &$files,
-        array &$skippedPaths,
-    ): void {
-        $changed = ChangedFile::fromGitOutput($rawGitPath, $status, $rawOldGitPath, $gitToplevel, $this->projectRoot);
+    private static function refusedStatusReason(string $status): string
+    {
+        return $status === 'U'
+            ? self::SKIPPED_UNMERGED
+            : \sprintf(self::SKIPPED_UNSUPPORTED_STATUS, $status);
+    }
 
-        if ($changed === null) {
-            $skippedPaths[] = $rawGitPath;
+    /**
+     * One warning per reason, naming the measured fact first.
+     *
+     * The old single message named a subdirectory project root as *the* cause
+     * of a path that would not relativize. It is one cause of several, and a
+     * message that states a diagnosis the code did not measure sends the
+     * reader looking in the wrong place.
+     *
+     * @param array<string, list<string>> $skipped
+     */
+    private function reportSkipped(array $skipped): void
+    {
+        foreach ($skipped as $reason => $paths) {
+            $this->logger->warning(\sprintf(
+                'Skipped %d changed file(s) %s. Raw git paths: %s',
+                \count($paths),
+                $reason,
+                implode(', ', $paths),
+            ));
+        }
+    }
 
+    /**
+     * The rename whose source name was lost, reported apart from the drops.
+     *
+     * Nothing downstream reads `oldPath` today, so this costs the run nothing
+     * — which is the reason to say it rather than not to. The same condition
+     * on the *new* name drops the record and is reported as a drop; saying
+     * nothing here would make the two outcomes of one check look like one.
+     *
+     * @param list<string> $paths
+     */
+    private function reportLostSources(array $paths): void
+    {
+        if ($paths === []) {
             return;
         }
 
-        $files[] = $changed;
+        $this->logger->warning(\sprintf(
+            'Kept %d changed file(s) %s. Raw git paths: %s',
+            \count($paths),
+            self::SOURCE_UNREPRESENTABLE,
+            implode(', ', $paths),
+        ));
     }
 
     /**
@@ -313,6 +392,10 @@ final class GitClient
      * literal argument. A ref or range is user input arriving from
      * `--report=git:...`, and git accepts refnames containing `;`, `|`, `&`,
      * `$(` and `>` — none of which this class has to quote.
+     *
+     * Reserved for commands that carry no user-supplied scope: a failure here
+     * is the tool's problem, and stays an internal error. Everything driven by
+     * `--report=git:...` goes through {@see diff()} instead.
      *
      * @param list<string> $command
      *
@@ -335,6 +418,33 @@ final class GitClient
                 0,
                 $e,
             );
+        }
+    }
+
+    /**
+     * Runs one `git diff` for a user-supplied scope.
+     *
+     * The backstop under {@see validateScope()}: whatever that check missed,
+     * the user still gets an input refusal quoting git rather than a Symfony
+     * Process dump titled "Internal error". Validation is meant to leave
+     * nothing for this branch to catch — a repository damaged between the two
+     * commands is the only measured way in — so it is written as a condition
+     * on the failure, not on which caller arrived.
+     *
+     * @param list<string> $arguments everything after `git diff`
+     *
+     * @throws GitScopeRefusedException if git refuses the command
+     */
+    private function diff(array $arguments, string $scope): string
+    {
+        $process = new Process(['git', 'diff', ...$arguments], $this->projectRoot->value());
+
+        try {
+            $process->mustRun();
+
+            return $process->getOutput();
+        } catch (ProcessFailedException) {
+            throw GitScopeRefusedException::commandFailed($scope, trim($process->getErrorOutput()));
         }
     }
 }

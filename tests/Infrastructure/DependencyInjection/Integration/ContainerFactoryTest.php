@@ -387,6 +387,7 @@ PHP;
             AbsolutePath::fromString($this->tempDir),
             $selection->only,
             $selection->disabled,
+            $ruleConfiguration->all(),
         );
         $resultProvider = $providerProperty->getValue($inspection);
         self::assertNotEmpty($resultProvider->all());
@@ -398,6 +399,7 @@ PHP;
             AbsolutePath::fromString($this->tempDir),
             $selection->only,
             $selection->disabled,
+            $ruleConfiguration->all(),
         );
 
         self::assertSame([], $resultProvider->all());
@@ -409,6 +411,7 @@ PHP;
             AbsolutePath::fromString($this->tempDir),
             $selection->only,
             $selection->disabled,
+            $ruleConfiguration->all(),
         );
 
         self::assertNotEmpty($resultProvider->all());
@@ -418,6 +421,7 @@ PHP;
             AbsolutePath::fromString($this->tempDir),
             $selection->only,
             $selection->disabled,
+            $ruleConfiguration->all(),
         );
 
         self::assertSame([], $resultProvider->all());

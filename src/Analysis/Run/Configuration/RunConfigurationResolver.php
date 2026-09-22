@@ -29,7 +29,7 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
     public function resolve(ConfigurationDocument $document): RunConfiguration
     {
         $root = $document->workingDirectory();
-        $paths = self::lastStringList($document->contributions(ConfigSchema::PATHS), ['.']);
+        $paths = self::analysedPaths($document->contributions(ConfigSchema::PATHS));
         $pathList = array_map(
             static fn(string $path): AbsolutePath => PathFactory::fromCliArgument(
                 self::acceptedPath($path),
@@ -77,21 +77,93 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
     }
 
     /**
+     * The paths this run will analyse: the last contribution that named any,
+     * or the working directory when no source named one.
+     *
+     * Two questions, and they are answered at different points on purpose.
+     * **Form** — is this a list, and is every entry a path — is asked of every
+     * contribution, because a malformed list is malformed whatever a later
+     * source says about it. **Emptiness** is asked once, of the effective list
+     * only: a document writing `paths: []` and a CLI invocation naming a
+     * directory is a lawful override, and the run analyses the directory.
+     *
+     * Until this door closed, both answers were the same silent one. Entries
+     * that were not strings — the dangling `-` that YAML reads as `null`, the
+     * unquoted directory name `2024` that it reads as an integer — were
+     * filtered out of the list and never mentioned; a list they emptied left
+     * discovery with nothing to find, and the run reported success over zero
+     * files. That is less analysis than the author asked for, reported as
+     * more.
+     *
      * @param list<mixed> $contributions
-     * @param list<string> $default
      *
      * @return list<string>
      */
-    private static function lastStringList(array $contributions, array $default): array
+    private static function analysedPaths(array $contributions): array
     {
-        $value = $default;
+        $paths = ['.'];
         foreach ($contributions as $candidate) {
-            if (\is_array($candidate) && array_is_list($candidate)) {
-                $value = array_values(array_filter($candidate, is_string(...)));
-            }
+            $paths = self::acceptedPathList($candidate);
         }
 
-        return $value;
+        if ($paths === []) {
+            throw ConfigurationRefusal::aboutResolvedInput(
+                \sprintf(
+                    'Invalid value for "%s": the list is empty, so this run would analyse nothing. Name at least one'
+                    . ' path, or omit the key to analyse the working directory.',
+                    ConfigSchema::PATHS,
+                ),
+                ConfigSchema::PATHS,
+            );
+        }
+
+        return $paths;
+    }
+
+    /**
+     * One contribution's worth of paths, refused by form rather than filtered.
+     *
+     * @return list<string>
+     */
+    private static function acceptedPathList(mixed $candidate): array
+    {
+        if (!\is_array($candidate) || !array_is_list($candidate)) {
+            throw ConfigurationRefusal::aboutResolvedInput(
+                \sprintf(
+                    'Invalid value for "%s": expected a list of paths, got %s.',
+                    ConfigSchema::PATHS,
+                    \is_array($candidate) ? 'a map' : ConfigSchema::scalarTypeName($candidate),
+                ),
+                ConfigSchema::PATHS,
+            );
+        }
+
+        $paths = [];
+        foreach ($candidate as $index => $entry) {
+            if (!\is_string($entry)) {
+                // The dangling dash is the likeliest way to arrive here and
+                // the hardest to see, so it is named rather than left to the
+                // generic advice about quoting.
+                $hint = $entry === null
+                    ? 'A list item with nothing after its dash reads as this value.'
+                    : 'Quote a name that reads as a number or a keyword ("2024", "true").';
+
+                throw ConfigurationRefusal::aboutResolvedInput(
+                    \sprintf(
+                        'Invalid entry %d in "%s": a path must be a string, got %s. %s Name a path or remove the entry.',
+                        $index,
+                        ConfigSchema::PATHS,
+                        ConfigSchema::scalarTypeName($entry),
+                        $hint,
+                    ),
+                    ConfigSchema::PATHS,
+                );
+            }
+
+            $paths[] = $entry;
+        }
+
+        return $paths;
     }
 
     /** @param list<mixed> $contributions

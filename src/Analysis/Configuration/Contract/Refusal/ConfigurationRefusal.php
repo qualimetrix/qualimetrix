@@ -25,15 +25,13 @@ use Throwable;
  * type dependencies where one would do. The three general forms stay public
  * for the sites that compute their source or forward an origin they were given.
  *
- * @qmx-threshold coupling.class-rank warning=0.024 error=0.024 -- ClassRank
- * measures how much of the graph flows into a type, and for the one carried
- * kind of exit code 3 that number is a count of places the product refuses
- * bad input rather than accepting it. CLI doors must use this carrier instead
- * of folding empty values into defaults. Splitting the kind to lower the rank
- * would buy a number with a
- * second way to spell a refusal, which is what the single-kind design exists
- * to prevent. The headroom is deliberate and finite -- it covers the doors
- * remaining bad-input doors that still need to adopt the carrier.
+ * ClassRank measures how much of the graph flows into a type, and for the one
+ * carried kind of exit code 3 that number counts the places the product refuses
+ * bad input instead of accepting it. Splitting the kind to lower it would buy a
+ * number and a second way to spell a refusal, which is what the single-kind
+ * design exists to prevent. A `@qmx-threshold` raising the bound used to stand
+ * here; `bin/qmx directives` now measures it as inert, so it is gone rather
+ * than kept as a claim nothing checks.
  */
 final class ConfigurationRefusal extends RuntimeException
 {

@@ -54,9 +54,11 @@ final class CoreServicesConfigurator implements ContainerConfiguratorInterface
      */
     private function configureDefaults(ContainerBuilder $container): void
     {
-        // After DelegatingLogger is registered, alias LoggerInterface to it
-        // This allows autowiring of LoggerInterface to resolve to DelegatingLogger
-        $container->registerAliasForArgument(DelegatingLogger::class, LoggerInterface::class);
+        // The third argument is the whole of it: this method keys the alias by
+        // parameter name, and left to default that name is `delegatingLogger`,
+        // which no constructor in this tree declares. Autowiring then matched
+        // nothing and holders silently kept their `NullLogger` default.
+        $container->registerAliasForArgument(DelegatingLogger::class, LoggerInterface::class, 'logger');
 
         $container->registerAliasForArgument(
             SwitchableProgressReporter::class,

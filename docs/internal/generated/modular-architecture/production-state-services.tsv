@@ -81,6 +81,7 @@ src/Analysis/Policy/Baseline/CanonicalBaselineReader.php	Qualimetrix\Analysis\Po
 src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php	Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy	Analysis.Policy.Inline	"request scratch or mutable internal value"	-	suppressions,thresholdDiagnostics,thresholdOverrides,usageReportingSeverity	prepare
 src/Analysis/Policy/Inline/Suppression/SuppressionFilter.php	Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter	Analysis.Policy.Inline	"request scratch or mutable internal value"	-	suppressions,symbolSuppressionsBySubject	clearSuppressions,setSuppressions
 src/Analysis/Run/Collection/FileProcessor.php	Qualimetrix\Analysis\Run\Collection\FileProcessor	Analysis.Run	"request scratch or mutable internal value"	-	projectRoot	collectMeasurements,setProjectRoot
+src/Analysis/Run/Discovery/FinderFileDiscovery.php	Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery	Analysis.Run	"request scratch or mutable internal value"	-	skippedEntries	-
 src/Core/Symbol/FileDeclarationIndex.php	Qualimetrix\Core\Symbol\FileDeclarationIndex	Core.Symbol	"request scratch or mutable internal value"	-	positions	register
 src/Infrastructure/Ast/CachedFileParser.php	Qualimetrix\Infrastructure\Ast\CachedFileParser	Infrastructure.Ast	"adapter session or cache"	-	resolvedCache	-
 src/Infrastructure/Cache/CacheConfigurationStore.php	Qualimetrix\Infrastructure\Cache\CacheConfigurationStore	Infrastructure.Cache	"adapter session or cache"	-	configuration	reset
@@ -94,7 +95,7 @@ src/Infrastructure/Console/ErrorStream.php	Qualimetrix\Infrastructure\Console\Er
 src/Infrastructure/Console/FilteredInputDefinition.php	Qualimetrix\Infrastructure\Console\FilteredInputDefinition	Infrastructure.Console	"adapter session or cache"	-	hiddenOptionNames	setHiddenOptionNames
 src/Infrastructure/Console/Progress/ConsoleProgressBar.php	Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar	Infrastructure.Console	"adapter session or cache"	-	progressBar	setMessage
 src/Infrastructure/Console/Progress/SwitchableProgressReporter.php	Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter	Infrastructure.Console	"adapter session or cache"	-	delegate	reset,setMessage
-src/Infrastructure/Git/GitClient.php	Qualimetrix\Infrastructure\Git\GitClient	Infrastructure.Git	"adapter session or cache"	-	gitToplevelCache	collectRow
+src/Infrastructure/Git/GitClient.php	Qualimetrix\Infrastructure\Git\GitClient	Infrastructure.Git	"adapter session or cache"	-	gitToplevelCache	-
 src/Infrastructure/Logging/FileLogger.php	Qualimetrix\Infrastructure\Logging\FileLogger	Infrastructure.Logging	"adapter session or cache"	-	handle	-
 src/Infrastructure/Logging/LoggerHolder.php	Qualimetrix\Infrastructure\Logging\LoggerHolder	Infrastructure.Logging	"runtime holder"	-	logger	setLogger
 src/Infrastructure/Parallel/Runtime/ParallelConfigurationStore.php	Qualimetrix\Infrastructure\Parallel\Runtime\ParallelConfigurationStore	Infrastructure.Parallel	"adapter session or cache"	-	configuration	reset

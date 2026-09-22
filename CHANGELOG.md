@@ -110,6 +110,47 @@ remove a link it cannot identify rather than deleting someone else's hook.
   saying so, and a baseline entry keyed on one of the eight classes stops
   matching and is reported as an entry that did not appear.
 
+- `Qualimetrix\Infrastructure\Git\Exception` is gone; it named a role rather
+  than a subject. `NotAGitRepositoryException` and
+  `UnresolvedGitReferenceException` moved up to
+  `Qualimetrix\Infrastructure\Git`, beside the client that throws them. Class
+  names, messages and behaviour are unchanged, and no channel name, rule name,
+  metric key, configuration key, CLI flag, output field or exit code is
+  affected. A `qmx.yaml` `suppress_namespaces` or `suppress_paths` entry naming
+  the old namespace or the `Git/Exception/` path goes inert without saying so,
+  and a baseline entry keyed on either class stops matching.
+
+**A run that skipped an entry is now incomplete, and answers exit 4 where it
+used to answer 0 or 2.** A symbolic link to a directory, a `*.php` entry that is
+not a regular file, and a directory the process may not list were dropped from
+the file set without a word; each is now reported as a part of the tree that was
+not read, and a run holding one is not entitled to call the tree clean. The
+`kind` vocabulary published with each incomplete run grows from two values to
+five accordingly: `directory-symlink`, `not-regular-file` and
+`unreadable-directory` join `parse` and `processing` in `coverage.failures[]`
+of `json` and `metrics`, in `qmx.analysis.<kind>` of `checkstyle` and in
+`check_name: analysis.<kind>` of `gitlab`. A tree of ordinary files and
+directories is unaffected.
+
+To migrate: a CI job that read only 0/1/2/3 now sees 4 on a tree it used to
+pass, and the report it collected names no new violation — exit 4 says part of
+the tree was not read, never that a rule fired, and it takes precedence over
+the policy codes. A reader that switches on `kind` exhaustively has to learn
+the three new values, and is better off treating an unknown one as an entry the
+run did not read than refusing the document. If exit 4 is unwanted for an entry
+you already know about, `exclude:` prunes a directory before the walk records
+anything about it, so `exclude: [{subtree: path/to/links}]` covers a directory
+symlink and an unlistable directory; `exclude:` prunes directories only, so a
+non-regular `*.php` entry has to be removed, renamed, or left outside the
+scanned paths. A path named on the command line is still followed, including a
+symbolic link to a directory: naming it is a request to analyze what is behind
+it. See
+[ADR 0078](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0078-an-entry-the-run-did-not-read-makes-it-incomplete.md).
+
+**`--report=git:HEAD` in a repository with no commits, and a malformed range
+such as `a..b..c`, are refused with exit 3 instead of exit 1.** They are bad
+input like any other, not an internal failure of the tool.
+
 ### Changed
 
 - `design.dit` says when it did not follow an inheritance chain to a root. A
@@ -118,6 +159,29 @@ remove a link it cannot identify rather than deleting someone else's hook.
   longer indistinguishable from a class that genuinely has no parent. It goes
   to the error stream, leaving `--format=json` and the other machine formats
   parseable, and `-q` silences it.
+- A Composer manifest or generated classmap the run cannot read, cannot parse,
+  or is too large to read is reported by name, saying that the classes it would
+  have placed are treated as unplaced. Previously such a file left external
+  ancestry silently thinner, which reads as a shallower `design.dit` rather than
+  as a file that was not read.
+- `discovery.unmatched-exclude` now also reports an exclude selector this run
+  could not check, naming the directory that stopped the walk. A directory the
+  process may not list hides whatever it holds, so a selector that might have
+  matched inside it is not called stale — and until now it was not reported
+  either, which made "your exclusion is fine" and "nobody could check your
+  exclusion" the same output. It is a `warning` like the stale-selector finding,
+  so `--fail-on=warning` turns it into a non-zero exit on a tree holding a
+  directory the run cannot read; that is the intent, because such a run measured
+  less than it was pointed at. The two shapes carry different baseline
+  identities, so a project that accepted the stale-selector finding still hears
+  about this one.
+- A run says so when the Composer runtime cannot name the installed
+  `nikic/php-parser` and AST caching switches itself off. Giving caching up is
+  correct — a key that does not carry the parser version would serve an AST
+  built by different node classes — but what the user saw was only a run several
+  times slower and a cache directory that stayed empty. A parallel worker stays
+  silent about it on purpose: every process of one install reaches the same
+  verdict, so the parent's single warning already carries it.
 - Qualimetrix ships as a standalone `qmx.phar`, attached to every release and
   buildable with `composer phar`. Keep the `.phar` suffix: run from a file
   named otherwise, parallel analysis copies the whole archive into the
@@ -128,6 +192,17 @@ remove a link it cannot identify rather than deleting someone else's hook.
 - Running on PHP older than 8.4 says so, instead of failing on a parse error
   inside `src/`. The check is in `bin/qmx`, so it covers every way the tool is
   installed.
+- The automatic worker count is capped by the CPU quota of the control group
+  the process runs in, so a run in a CI container no longer starts a worker per
+  host processor. Where the host count was the higher number, `--workers`
+  defaults lower than before and the run uses less memory; a host with no quota
+  is unaffected. Pass `--workers=N` to override.
+- A parallel run refuses a registered collector that does not implement
+  `ParallelSafeCollectorInterface`, naming the class, instead of skipping it.
+  Skipping made `--workers=N` measure less than `--workers=0` with nothing said
+  where a caller looks: the metrics were absent, the rules reading them reported
+  nothing, coverage stayed complete and the exit code stayed normal. Implement
+  the interface, or run with `--workers=0`.
 - `-vv` now reports when parallel analysis actually starts. The line saying a
   parallel strategy was selected is written before the worker-count and
   file-count fallbacks, so a run that went sequential looked parallel in the
@@ -136,9 +211,51 @@ remove a link it cannot identify rather than deleting someone else's hook.
   `src/Reporting/Template/` to `html-report/`: `report.html`, `report.css`,
   `dist/report.min.js` and `dist/d3.min.js`. `--format=html` is unaffected;
   update any path that resolves these files directly.
+- A file whose name contains a backslash is skipped with a warning at the git
+  boundary instead of being reported under a different name. The rewritten name
+  belongs to another file and is the key a baseline and a suppression are
+  written against, so naming the wrong file was worse than naming none.
+- Diagnostics that were composed and then heard by nobody now reach the error
+  stream. The container's logger was published under an argument name no
+  constructor declares, so every service that asked for one silently kept its
+  own do-nothing default. Three of them had something to say: `--report=git:*`
+  now names every row it drops — one whose path does not resolve inside the
+  project root, one left unmerged in the index by an unfinished conflict, one
+  carrying a status this build does not know; `design.dit` names a Composer
+  manifest it could not read; and the AST cache says when it turns itself off.
 
 ### Fixed
 
+- `--no-cache` and `cache.enabled: false` now switch the AST cache off. Both
+  were read, and the cache was consulted and written anyway, so a run asked to
+  ignore the cache could still be answered from it.
+- Upgrading `nikic/php-parser` now invalidates the AST cache. Installed the
+  documented way — as a dependency rather than as the root package — the key
+  fell back to the major version alone, so every 5.x release shared one key and
+  a warm cache built by the previous parser was served to the new one. The key
+  now carries the exact installed version, and the commit as well when the
+  install names a branch. Expect one cold rebuild on the first run after this
+  release, and one after each parser upgrade from now on.
+- An entry the run skipped is reported under its own name rather than under the
+  name it resolves to. Canonicalization reached the last segment when the
+  analysed tree lay outside the project root, so a skipped symbolic link was
+  published as its target — a directory the same run had walked and analysed —
+  in `coverage.failures[].path` and in every format derived from it. That value
+  is the key a baseline and a suppression are written against, so naming the
+  wrong entry was worse than naming none.
+- `rules.<name>.enabled: false` in a configuration file now cancels the
+  preparation the rule needs, instead of only hiding its findings. The
+  memory-hungry phases are the ones this cost, and switching the rule off is
+  what the documentation offers as the cure for running out of memory.
+- File names from git that contain non-ASCII characters no longer fall out of
+  the report. `--report=git:*` reads git's own machine-readable output, so a
+  name is taken as git stored it rather than as a quoted rendering of it.
+- A file git reports with status `T` — a regular file replaced by a symbolic
+  link, or the reverse — is analysed by `--report=git:*` instead of being
+  dropped. It names a path that exists and whose content changed, which is
+  exactly what a git-scoped run is asked to measure.
+- A non-string entry in `paths:` is refused with exit 3, naming the entry,
+  instead of being dropped without a word.
 - Generated pre-commit hooks now fail closed when staged-file enumeration fails
   and preserve the actual `qmx` exit status.
 - `design.dit` now resolves `$baseDir` entries in Composer classmaps when the

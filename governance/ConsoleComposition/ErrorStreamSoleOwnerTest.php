@@ -49,8 +49,6 @@ final class ErrorStreamSoleOwnerTest extends TestCase
             => 'the owner itself',
         'src/Infrastructure/Git/GitClient.php'
             => 'Symfony\\Component\\Process::getErrorOutput() returns a captured string, not a stream',
-        'src/Infrastructure/Parallel/WorkerBootstrap.php'
-            => 'a worker subprocess writing to its own STDERR, which amphp reads through a pipe',
         'bin/qmx'
             => 'the missing-autoloader message: it is written before any class of this project can be loaded',
     ];

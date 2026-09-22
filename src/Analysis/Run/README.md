@@ -9,9 +9,10 @@ navigation leaf, not a home for evidence, policy, or reporting state.
 The only generic phase extension point is
 `Contract\\FileSetInspectionParticipantInterface`. It is intentionally narrow:
 Run supplies the eligible `list<SplFileInfo>`, resets the participant before a
-run, and invokes it only when its producer rule is selected. It neither reads
-nor stores a capability result. `FileSetInspectionComposite` orders registered
-participants deterministically and emits the generic
+run, and invokes it only when its producer rule is selected and its own options
+have not switched it off. It neither reads nor stores a capability result.
+`FileSetInspectionComposite` orders registered participants deterministically
+and emits the generic
 `file-set-inspection.<participant-id>` profiling span.
 
 ## Structure
@@ -71,8 +72,43 @@ when there is no composer manifest to be a denominator.
 deduplicates overlapping roots by project-relative path, and applies
 `GeneratedFilePolicy::Include` or `GeneratedFilePolicy::Exclude` without a
 boolean policy argument. Its `DiscoveredAnalysisFiles` result keeps eligible
-files, project-relative paths excluded as generated, and the post-deduplication,
-pre-filter discovery count together.
+files, project-relative paths excluded as generated, the post-deduplication,
+pre-filter discovery count, and what discovery refused, together.
+
+A directory is never a unit of analysis, and what discovery refuses is named.
+`FinderFileDiscovery` keeps two decisions apart that used to be one callback:
+what may be analyzed, and where the walk may descend. A symbolic link to a
+directory *met inside a walked tree* is not descended into — following it would
+change which files a run measures, could leave the project root, and would not
+terminate on a cycle — and a non-regular `*.php` entry (FIFO, socket, dangling
+link) is not a candidate. A link named on the command line as a path to scan is
+the exception and is followed: naming it is asking for it, so it is classified
+as the directory it points at rather than refused, and there is no skip to
+record. A directory the process cannot list costs that branch, not the run, and
+it costs it the same way whether it refuses the check made before the descent
+or the descent itself: `DirectoryWalk` is what makes the second one a record
+instead of a branch quietly missing from the result. Each of
+these is recorded as a `SkippedEntry` and reaches the report through
+`AnalysisCoverage::withSkipped()`, which gives it a terminal state among the
+failures: the run is then incomplete, which is what every existing reader —
+exit code, machine formats, text report — already knows how to say. A subtree
+that is not read is otherwise indistinguishable from a subtree with no code in
+it.
+
+`SkipReportingDiscoveryInterface` carries that list beside `discover()` rather
+than inside it, so a discovery that only ever returns a list is not forced to
+answer a question it cannot answer. `AnalysisFileDiscovery` asserts the same
+regular-file invariant over whatever it is given, which is what makes it hold
+for discoveries that never walked a filesystem.
+
+A `SkippedEntry` names itself relative to the project root without resolving
+its own last segment: canonicalizing a symbolic link reports its target, a path
+that may be outside the project and that nothing in the tree is called. Only
+the containing directory is resolved, on both conversion branches — the
+out-of-root fallback canonicalizes whatever it is handed, so it is handed the
+parent and the entry's own name is appended afterwards. A tree analysed from
+outside the project root is where that mattered: there the fallback is the
+branch that runs, and the name it published belonged to the link's target.
 
 `DirectoryPruner` owns directory exclusion during discovery. It evaluates
 typed `PathPattern` values against one canonical subject: the directory path
@@ -139,7 +175,13 @@ Three pieces, in the order the run reaches them:
   that matched nothing are indistinguishable from the output. A selector whose
   possible match lies below an already-pruned parent is unjudgeable and is not
   reported as stale; exact and subtree selectors are located precisely, while
-  arbitrary regex selectors are treated conservatively.
+  arbitrary regex selectors are treated conservatively. Its `judge()` keeps
+  that verdict apart from "nothing matched": a selector left unjudged because a
+  directory would not *list* — as opposed to one the configuration deliberately
+  pruned — is named in `ExcludeBindingVerdict::$unlistable` together with the
+  directory that stopped the walk. Without that split the run had one answer
+  for "checked, it bound" and "could not check", and the second walk covers
+  tree discovery never visits, so nothing else would have said so.
 - `UnmatchedExcludeAudit` turns that answer into findings, and
   `AnalysisFileDiscovery` asks it, so they ride out of discovery with the
   files (`DiscoveredAnalysisFiles::$unmatchedExcludeFindings`) and are
@@ -151,6 +193,12 @@ Three pieces, in the order the run reaches them:
   `--disable-rule`, severity, baseline. It emits nothing; the channel's name
   lives on `UnmatchedExcludeOptions`, which is what keeps the rule and the
   audit from naming each other and forming a cycle.
+
+A selector the second walk could not settle is reported too, on the same
+channel and under its own occurrence identity: the message names the directory
+that would not list, and says the run makes no claim about the selector. A
+project that accepted "nothing matched this" has not thereby accepted "nobody
+looked".
 
 The channel is silent on a run narrowed below the project's production
 autoload roots (`RunConfiguration::$coversProjectScope`): there a pattern binds
@@ -195,6 +243,16 @@ participant ordering is deterministic, and two sequential runs reset state.
   analysis facts.
 - A failed file produces an incomplete `AnalysisResult`, while generated-file
   exclusion remains intentional and complete.
+- An entry discovery refused — a directory symlink met inside a walked tree, a
+  non-regular file, a directory that would not list before or during the
+  descent — carries a terminal state of its own and makes the run incomplete;
+  none of them is silently absent from the file set. A symbolic link named as a
+  path to scan is followed rather than refused, and so has no terminal state to
+  carry.
+- A skipped entry names itself by the name the reader was pointed at, whether
+  or not the tree lies under the project root.
+- An `exclude:` selector the walk could not settle, because a directory would
+  not list, is reported as unjudged rather than dropped from the answer.
 - Run imports capability promises only through declared contracts and stores no
   capability payload.
 

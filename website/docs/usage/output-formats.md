@@ -863,8 +863,10 @@ bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
 
 ## Analysis coverage in every format
 
-Every discovered PHP file is classified as analyzed, intentionally excluded as
-generated, or failed during parsing/processing. Generated exclusions are a
+Every discovered entry is classified as analyzed, intentionally excluded as
+generated, or failed. An entry is a PHP file the run measured, a PHP file it
+could not read, or a filesystem entry it never opened at all — a directory it
+may not list, a link it does not descend into. Generated exclusions are a
 complete run; any failure makes the analysis incomplete and the policy result
 non-authoritative. Zero discovered files still pass through the selected
 formatter instead of being replaced with command prose.
@@ -884,9 +886,25 @@ formatter instead of being replaced with command prose.
 | `html`         | Embedded `coverage` data; incomplete runs also show a visible warning banner                                   |
 | `suppressed`   | Not represented — this format publishes a suppression composition, not a `coverage` object                     |
 
-For `json` and `metrics`, each `failures[]` item has `path`, `kind` (`parse` or
-`processing`), and `message`. Human formats distinguish no discovered files,
-generated-only input, complete analysis, and incomplete analysis.
+For `json` and `metrics`, each `failures[]` item has `path`, `kind`, and
+`message`. Human formats distinguish no discovered files, generated-only input,
+complete analysis, and incomplete analysis.
+
+`kind` is one of five values:
+
+| `kind`                 | The entry                                                                                            |
+| ---------------------- | ---------------------------------------------------------------------------------------------------- |
+| `parse`                | a PHP file that could not be parsed                                                                  |
+| `processing`           | a PHP file that failed while being measured                                                          |
+| `directory-symlink`    | a symbolic link to a directory, found inside a scanned tree and not followed                         |
+| `not-regular-file`     | a `*.php` entry that is not a regular file — a FIFO, a socket, a device, a link whose target is gone |
+| `unreadable-directory` | a directory the process may not list                                                                 |
+
+The last three name an entry that never became a unit of analysis, so they carry
+the path of that entry rather than of a PHP file. Treat a value you do not
+recognize as an entry the run did not read: the list can grow, and refusing the
+whole document to learn that is a worse trade than reporting the run as
+incomplete.
 
 ## Comparison table
 
@@ -918,6 +936,10 @@ All formats use the same exit codes:
 | 4         | Analysis incomplete; policy result is not authoritative               |
 
 By default (`--fail-on=error`), warnings no longer cause exit code 1 — only errors trigger a non-zero exit. Use `--fail-on=warning` for the stricter behavior where warnings also fail. Exit 4 takes precedence over warning/error policy codes.
+
+A run is incomplete when it could not read part of the tree it was pointed at: a file it failed to parse, a directory it may not list, a symbolic link to a directory found inside the tree, or a `*.php` entry that is not a regular file. Such an entry used to be dropped silently, so these runs used to answer 0 or 2.
+
+A symbolic link **named as a scanned path** is the one exception: `qmx check src/linked` analyzes what the link points at and the run is complete, while the same link met while walking `src/` is reported as an entry that was not read. Naming a path is a request to analyze what is behind it; a link met inside a tree was never asked for, and following it would change which files the run measures, could leave the project root, and would not terminate on a cycle.
 
 !!! note
     All `check` diagnostics outside the selected report payload (configuration notices and errors, deprecation messages, logging, and output-file notices) are written to **stderr**, not stdout. This means you can safely pipe the analysis output to a file or another tool without interference: `bin/qmx check src/ --format=json > results.json`.

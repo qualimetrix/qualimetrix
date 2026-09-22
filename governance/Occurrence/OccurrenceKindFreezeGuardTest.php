@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Evidence\Security\SensitiveParameterRule;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFinding;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnmatchedExcludeDiagnostic;
+use Qualimetrix\Analysis\Run\ExcludeBinding\UnjudgedExcludeFinding;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -52,7 +53,7 @@ use RuntimeException;
  */
 final class OccurrenceKindFreezeGuardTest extends TestCase
 {
-    private const int EXPECTED_FROZEN_COUNT = 10;
+    private const int EXPECTED_FROZEN_COUNT = 11;
 
     /**
      * The frozen spelling itself, pinned by literal rather than derived from
@@ -85,6 +86,7 @@ final class OccurrenceKindFreezeGuardTest extends TestCase
         // could name it. The pin is a literal either way, which is the whole
         // requirement: it must not follow a rename of the channel.
         UnmatchedExcludeAudit::class => 'unmatched-exclude-pattern',
+        UnjudgedExcludeFinding::class => 'unjudged-exclude-pattern',
         UnboundSuppressionAudit::class => 'unbound-suppression-value',
         UnmatchedFrameworkNamespaceRule::class => 'unmatched-framework-prefix',
         UnmatchedExcludeDiagnostic::class => 'inert-layer-exclude-clause',

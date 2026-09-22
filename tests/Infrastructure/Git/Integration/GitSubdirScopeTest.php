@@ -87,7 +87,8 @@ final class GitSubdirScopeTest extends TestCase
         // without this assertion the silent-drop behavior could regress unnoticed.
         $warnings = $logger->warnings();
         self::assertCount(1, $warnings, 'expected a single warning for the dropped row');
-        self::assertStringContainsString('Skipped 1 changed file(s) outside project root', $warnings[0]);
+        self::assertStringContainsString('Skipped 1 changed file(s)', $warnings[0]);
+        self::assertStringContainsString('did not resolve inside the project root', $warnings[0]);
         self::assertStringContainsString('Outsider.php', $warnings[0]);
     }
 

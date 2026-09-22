@@ -16,7 +16,7 @@ Infrastructure contains external adapters and entry points:
 
 ## Internal Dependency Layers
 
-Infrastructure sub-packages are declared as `infra-*` sub-layers in the project's
+Infrastructure sub-packages are declared as `infrastructure-*` sub-layers in the project's
 own `qmx.yaml` to prevent circular dependencies (see
 [ADR 0014](../../docs/adr/0014-deptrac-retirement.md)):
 
@@ -52,11 +52,15 @@ Infrastructure/
 │   ├── GitScope.php
 │   ├── ChangedFile.php
 │   ├── ChangeStatus.php
+│   ├── NameStatusRecord.php          # One `git diff --name-status -z` row, held as the bytes git wrote
+│   ├── GitRepositoryLocator.php      # Locates the git dir and the directory git runs hooks out of
+│   ├── GitRepositoryLocatorInterface.php
 │   ├── ReportingGitScopeQuery.php   # Git adapter for Reporting finding projection
 │   ├── GitScopeResolver.php          # Resolves git scope from CLI options
 │   ├── GitScopeResolution.php        # Resolution result VO
-│   ├── Exception/UnresolvedGitReferenceException.php # Invalid git revision input
-│   └── Exception/NotAGitRepositoryException.php # --report=git:* outside a repository
+│   ├── GitScopeRefusedException.php  # A scope git will not answer for
+│   ├── NotAGitRepositoryException.php # --report=git:* outside a repository
+│   └── UnresolvedGitReferenceException.php # Invalid git revision input
 ├── Logging/                          # -> See Logging/README.md
 │   ├── LoggerFactory.php
 │   ├── LoggerHolder.php

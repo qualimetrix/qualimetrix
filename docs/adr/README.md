@@ -56,7 +56,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0015 — Typed Paths](0015-relative-path-vo.md) — typed absolute and relative path boundaries.
 - [0016 — Subject Cohesion](0016-subject-cohesion.md) — directories and module boundaries follow subjects.
 - [0017 — Baseline Ceiling](0017-baseline-ceiling.md) — baselines cap the reported magnitude they accepted.
-- [0018 — Coverage, Verdict, and Projection](0018-analysis-coverage-verdict-and-output-projection.md) — analysis completeness is separate from verdict and presentation.
+- [0018 — Coverage, Verdict, and Projection](0018-analysis-coverage-verdict-and-output-projection.md) — analysis completeness is separate from verdict and presentation; its discovered population is widened by 0078.
 - [0019 — Namespace Metric Ownership](0019-namespace-metric-ownership-and-attribution.md) — explicit namespace contribution and attribution.
 - [0020 — Method Size and NPath](0020-method-size-and-npath-semantics.md) — method-size and recursive NPath semantics.
 - [0021 — Declaration-Scoped Identity](0021-declaration-scoped-callable-identity-and-dependency-projections.md) — callable identity and dependency projections, partially superseded by 0026.
@@ -107,6 +107,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0075 — The Builtin-Class List Is Compared, Never Generated](0075-the-builtin-class-list-is-compared-never-generated.md) — the hand-written registry of PHP's own classes stays hand-written so metrics do not become a function of the analysing machine; a governance control compares it against the loaded extensions in both directions, and the extension and version metadata that comparison needs lives in the control rather than in the product.
 - [0076 — A Floor Is Reported, and Said to Be One](0076-a-floor-is-reported-and-said-to-be-one.md) — `design.dit` keeps publishing the depth it could reach and the run logs one warning naming the chains it did not follow to a root; withholding the value was rejected, and the diagnostic is deliberately not a published key.
 - [0077 — Open-Universe Selectors Are Explicit](0077-open-universe-selectors-are-explicit.md) — path and PHP-name selectors use explicit `exact`, `subtree`, or full-subject `regex` forms; closed identities and Architecture's binding DSL remain named exceptions.
+- [0078 — An Entry the Run Did Not Read Makes It Incomplete](0078-an-entry-the-run-did-not-read-makes-it-incomplete.md) — a directory symlink, a non-regular `*.php` entry and an unlistable directory are terminal failures rather than silent drops, so the run is incomplete and answers exit 4; the published `kind` vocabulary grows to five, and a path named on the command line is still followed.
 
 ## Superseded history
 

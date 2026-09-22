@@ -74,7 +74,6 @@ src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	25	coupling.c
 src/Analysis/Policy/Inline/Directive/Audit/ThresholdDirectiveAudit.php	80	coupling.cbo	21 -- Raw CBO 20: an audit that answers what a directive did must
 src/Reporting/FormatterContext.php	15	coupling.cbo	warning=33 error=33 -- Formatter context is the immutable Reporting input boundary every formatter's                                    signature depends on.                                          also names it directly to refuse a               or           value that selects nothing, and the bound namespace selector is now part of that stable boundary. Raw CBO 32 gets one-edge headroom from the inclusive threshold of 33.
 src/Reporting/Report.php	19	coupling.cbo	warning=31 error=31 -- Report is the transport VO every formatter's
-src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php	28	coupling.class-rank	warning=0.024 error=0.024 -- ClassRank
 src/Analysis/Evidence/Measurement/Contract/MetricBag.php	15	coupling.class-rank	warning=0.035 error=0.035 -- Intentional Measurement
 src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php	21	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/Complexity/ClassComplexityOptions.php	21	coupling.instability	warning=0.81 -- The eighth efferent edge is
