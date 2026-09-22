@@ -1849,6 +1849,7 @@ Qualimetrix\Infrastructure\Console\CliSelectorDecoder	Infrastructure.Console	Qua
 Qualimetrix\Infrastructure\Console\CliSelectorDecoder	Infrastructure.Console	Qualimetrix\Core\Pattern\NamespacePattern	Core.Neutral	contract
 Qualimetrix\Infrastructure\Console\CliSelectorDecoder	Infrastructure.Console	Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	contract
 Qualimetrix\Infrastructure\Console\CliSelectorDecoder	Infrastructure.Console	Qualimetrix\Core\Pattern\SelectorDefinition	Core.Neutral	contract
+Qualimetrix\Infrastructure\Console\Command\AbstractHookCommand	Infrastructure.Console	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Infrastructure\Console\Command\AbstractHookCommand	Infrastructure.Console	Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface	Infrastructure.Git	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCaptureReporter	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineCapture	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
@@ -1863,6 +1864,7 @@ Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Consol
 Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\RunScope	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException	Analysis.Run	contract
+Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader	Analysis.Finding	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface	Analysis.Finding	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface	Analysis.Finding	contract
@@ -1919,15 +1921,18 @@ Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	Q
 Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
+Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
 Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch	Analysis.Policy.Architecture	contract
 Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy	Analysis.Run	contract
+Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand	Infrastructure.Console	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand	Infrastructure.Console	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
 Qualimetrix\Infrastructure\Console\Command\DirectivesCommand	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
 Qualimetrix\Infrastructure\Console\Command\DirectivesCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect	Analysis.Policy.Inline	contract
 Qualimetrix\Infrastructure\Console\Command\DirectivesCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope	Analysis.Policy.Inline	contract
 Qualimetrix\Infrastructure\Console\Command\DirectivesCommand	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\Command\DirectivesCommand	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport	Analysis.Run	contract
+Qualimetrix\Infrastructure\Console\Command\DirectivesCommand	Infrastructure.Console	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Infrastructure\Console\Command\GraphExportCommand	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
 Qualimetrix\Infrastructure\Console\Command\GraphExportCommand	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\Command\GraphExportCommand	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface	Analysis.Run	contract
@@ -1935,6 +1940,7 @@ Qualimetrix\Infrastructure\Console\Command\GraphExportCommand	Infrastructure.Con
 Qualimetrix\Infrastructure\Console\Command\GraphExportCommand	Infrastructure.Console	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Infrastructure\Console\Command\GraphExportCommand	Infrastructure.Console	Qualimetrix\Core\Path\PathFactory	Core.Path	contract
 Qualimetrix\Infrastructure\Console\Command\GraphExportCommand	Infrastructure.Console	Qualimetrix\Core\Pattern\NamespacePattern	Core.Neutral	contract
+Qualimetrix\Infrastructure\Console\Command\GraphExportCommand	Infrastructure.Console	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Infrastructure\Console\Command\GraphExportCommand	Infrastructure.Console	Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface	Reporting.GraphProjection	contract
 Qualimetrix\Infrastructure\Console\Command\GraphExportCommand	Infrastructure.Console	Qualimetrix\Reporting\GraphProjection\Contract\GraphDirection	Reporting.GraphProjection	contract
 Qualimetrix\Infrastructure\Console\Command\GraphExportCommand	Infrastructure.Console	Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat	Reporting.GraphProjection	contract
@@ -1945,6 +1951,7 @@ Qualimetrix\Infrastructure\Console\Command\RulesCommand	Infrastructure.Console	Q
 Qualimetrix\Infrastructure\Console\Command\RulesCommand	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys	Analysis.Finding	contract
 Qualimetrix\Infrastructure\Console\Command\RulesCommand	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface	Analysis.Finding	contract
 Qualimetrix\Infrastructure\Console\Command\RulesCommand	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface	Analysis.Finding	contract
+Qualimetrix\Infrastructure\Console\Command\RulesCommand	Infrastructure.Console	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter	Infrastructure.Console	Qualimetrix\Analysis\Configuration\ConfigSchema	Analysis.Configuration	contract
 Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	contract
 Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface	Analysis.Configuration	contract
@@ -2058,6 +2065,7 @@ Qualimetrix\Infrastructure\Console\RuleInputValidator	Infrastructure.Console	Qua
 Qualimetrix\Infrastructure\Console\RuleInputValidator	Infrastructure.Console	Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface	Infrastructure.Rule	contract
 Qualimetrix\Infrastructure\Console\RuleInputValidator	Infrastructure.Console	Qualimetrix\Infrastructure\Rule\RuleRegistryInterface	Infrastructure.Rule	contract
 Qualimetrix\Infrastructure\Console\RuleListingPresenter	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys	Analysis.Finding	contract
+Qualimetrix\Infrastructure\Console\RuleListingPresenter	Infrastructure.Console	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Infrastructure\Console\RuntimeConfigurator	Infrastructure.Console	Qualimetrix\Analysis\Configuration\ConfigSchema	Analysis.Configuration	contract
 Qualimetrix\Infrastructure\Console\RuntimeConfigurator	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	contract
 Qualimetrix\Infrastructure\Console\RuntimeConfigurator	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration	Analysis.Finding	contract

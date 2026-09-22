@@ -15,7 +15,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 final class HookStatusCommand extends AbstractHookCommand
 {
-    protected function execute(InputInterface $input, OutputInterface $output): int
+    protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $hookPath = $this->hookPath($output);
         if ($hookPath === null) {

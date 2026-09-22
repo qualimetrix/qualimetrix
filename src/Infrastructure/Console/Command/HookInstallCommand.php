@@ -18,6 +18,8 @@ final class HookInstallCommand extends AbstractHookCommand
 {
     protected function configure(): void
     {
+        parent::configure();
+
         $this->addOption(
             'force',
             'f',
@@ -26,7 +28,7 @@ final class HookInstallCommand extends AbstractHookCommand
         );
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output): int
+    protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $hookPath = $this->hookPath($output);
         if ($hookPath === null) {

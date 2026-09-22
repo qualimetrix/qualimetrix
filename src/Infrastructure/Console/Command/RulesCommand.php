@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\RuleListingPresenter;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -42,12 +43,14 @@ final class RulesCommand extends Command
 
     protected function configure(): void
     {
-        $this->addOption(
-            'group',
-            'g',
-            InputOption::VALUE_REQUIRED,
-            'Filter by rule group (e.g., complexity, coupling, code-smell)',
-        );
+        $this
+            ->addOption(
+                'group',
+                'g',
+                InputOption::VALUE_REQUIRED,
+                'Filter by rule group (e.g., complexity, coupling, code-smell)',
+            )
+            ->setHelp(\sprintf('Docs: %s', ProductIdentity::llmsTxtUrl()));
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

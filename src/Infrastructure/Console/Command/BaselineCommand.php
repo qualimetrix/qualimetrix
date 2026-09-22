@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
@@ -50,7 +51,17 @@ abstract class BaselineCommand extends Command
         $format = $this->refusalFormat($input);
 
         try {
-            return $this->doExecute($input, $output);
+            $exitCode = $this->doExecute($input, $output);
+
+            // Only `baseline:rename-channels` ever answers `json` here (the other
+            // four declare no `--format` and this stays `null` for them), which
+            // is exactly the guard that keeps its machine-readable branch a
+            // document a script can still parse.
+            if ($format !== 'json') {
+                $output->writeln(\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
+            }
+
+            return $exitCode;
         } catch (ConfigurationRefusal $refusal) {
             // First clause: the carrier is a RuntimeException, and the split
             // pair below would otherwise catch it and answer with code 1
@@ -94,6 +105,16 @@ abstract class BaselineCommand extends Command
     }
 
     abstract protected function doExecute(InputInterface $input, OutputInterface $output): int;
+
+    /**
+     * Appends the documentation address to a command's own `--help` text, so
+     * each of the five commands states only its own explanation and this line
+     * is written once.
+     */
+    protected static function withDocsPointer(string $help): string
+    {
+        return $help . "\n\n" . \sprintf('Docs: %s', ProductIdentity::llmsTxtUrl());
+    }
 
     /**
      * Reports a failure, with the trace when the user asked for verbosity.

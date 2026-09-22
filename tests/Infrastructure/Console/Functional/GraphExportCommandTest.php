@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery;
 use Qualimetrix\Analysis\Run\Pipeline\DependencyGraphAnalyzer;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
 use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
@@ -262,6 +263,37 @@ final class GraphExportCommandTest extends TestCase
 
         // When no clusters, there should be no "subgraph cluster_" in output
         self::assertStringNotContainsString('subgraph cluster_', $output);
+    }
+
+    /**
+     * stdout here is the artifact a downstream tool (Graphviz, a JSON
+     * consumer) reads, not a report — a trailing pointer line would corrupt
+     * the DOT document, so this command carries none. `Help:` is where an
+     * agent finds the address instead.
+     */
+    #[Test]
+    public function itAdvertisesTheDocsAddressOnlyInHelpNeverInStdout(): void
+    {
+        file_put_contents($this->tempDir . '/ClassA.php', '<?php namespace Test; class ClassA {}');
+
+        $command = new GraphExportCommand(
+            $this->createAnalyzer(),
+            new DependencyGraphProjector(),
+            new ErrorStream(),
+            new RefusalPresenter(new ErrorStream()),
+            new NullLogger(),
+        );
+
+        self::assertStringContainsString('Docs: ' . ProductIdentity::llmsTxtUrl(), $command->getHelp());
+
+        $tester = new CommandTester($command);
+        $tester->execute(['paths' => [$this->tempDir]]);
+        self::assertStringNotContainsString('Docs:', $tester->getDisplay());
+
+        $jsonTester = new CommandTester($command);
+        $jsonTester->execute(['paths' => [$this->tempDir], '--format' => 'json']);
+        self::assertStringNotContainsString('Docs:', $jsonTester->getDisplay());
+        json_decode($jsonTester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
     }
 
     #[Test]

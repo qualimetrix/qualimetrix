@@ -243,7 +243,7 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'construction instead: `git rev-parse` gets no stdin pipe and its stderr goes to a file, so stdout is '
             . 'the only blocking stream.',
 
-        'tests/Infrastructure/Console/Functional/Command/HookInstallCommandTest.php:285' => 'Arranging a git '
+        'tests/Infrastructure/Console/Functional/Command/HookInstallCommandTest.php:286' => 'Arranging a git '
             . 'repository for the case under test: both streams go to `/dev/null` and no pipe is opened, so only '
             . 'the exit status is read.',
 

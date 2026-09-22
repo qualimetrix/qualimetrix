@@ -1978,7 +1978,15 @@ Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Run\Disc
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Reporting\Formatter\Json\JsonHealthSection	Reporting	src/Reporting/Formatter/Json/JsonHealthSection.php	ast-name
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Reporting\Formatter\Summary\HealthBarRenderer	Reporting	src/Reporting/Formatter/Summary/HealthBarRenderer.php	ast-name
 Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Infrastructure\Console\Application	Infrastructure.Console	src/Infrastructure/Console/Application.php	ast-name
+Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Infrastructure\Console\Command\AbstractHookCommand	Infrastructure.Console	src/Infrastructure/Console/Command/AbstractHookCommand.php	ast-name
+Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	src/Infrastructure/Console/Command/BaselineCommand.php	ast-name
+Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	src/Infrastructure/Console/Command/CheckCommand.php	ast-name
+Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand	Infrastructure.Console	src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php	ast-name
+Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Infrastructure\Console\Command\DirectivesCommand	Infrastructure.Console	src/Infrastructure/Console/Command/DirectivesCommand.php	ast-name
+Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Infrastructure\Console\Command\GraphExportCommand	Infrastructure.Console	src/Infrastructure/Console/Command/GraphExportCommand.php	ast-name
+Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Infrastructure\Console\Command\RulesCommand	Infrastructure.Console	src/Infrastructure/Console/Command/RulesCommand.php	ast-name
 Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter	Infrastructure.Console	src/Infrastructure/Console/Refusal/RefusalPresenter.php	ast-name
+Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Infrastructure\Console\RuleListingPresenter	Infrastructure.Console	src/Infrastructure/Console/RuleListingPresenter.php	ast-name
 Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter	Reporting	src/Reporting/Formatter/Health/HealthTextFormatter.php	ast-name
 Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Reporting\Formatter\Summary\HintRenderer	Reporting	src/Reporting/Formatter/Summary/HintRenderer.php	ast-name
 Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Reporting\Formatter\TextFormatter	Reporting	src/Reporting/Formatter/TextFormatter.php	ast-name

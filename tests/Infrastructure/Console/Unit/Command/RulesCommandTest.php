@@ -28,6 +28,7 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOption
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
 use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\Console\RuleListingPresenter;
@@ -137,6 +138,27 @@ final class RulesCommandTest extends TestCase
         self::assertStringContainsString('Cyclomatic complexity', $display);
         self::assertStringContainsString('Size', $display);
         self::assertStringContainsString('size.class-count', $display);
+    }
+
+    #[Test]
+    public function itPrintsTheDocsPointerInsideTheUsageBlock(): void
+    {
+        $rule = $this->createRuleMock('complexity.ccn', 'Cyclomatic complexity');
+
+        $tester = new CommandTester($this->createCommand([$rule]));
+        $tester->execute([]);
+
+        $display = $tester->getDisplay();
+        self::assertStringContainsString('Usage:', $display);
+        self::assertStringContainsString('Docs: ' . ProductIdentity::docsUrl(), $display);
+    }
+
+    #[Test]
+    public function itAdvertisesTheDocsAddressInItsHelp(): void
+    {
+        $command = $this->createCommand([]);
+
+        self::assertStringContainsString('Docs: ' . ProductIdentity::llmsTxtUrl(), $command->getHelp());
     }
 
     #[Test]

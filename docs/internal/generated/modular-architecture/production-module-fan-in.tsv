@@ -240,7 +240,7 @@ Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	10	5
 Qualimetrix\Core\Pattern\PatternMatch	Core.Neutral	1	1
 Qualimetrix\Core\Pattern\SelectorDefinition	Core.Neutral	9	5
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	4	3
-Qualimetrix\Core\ProductIdentity	Core.Neutral	5	2
+Qualimetrix\Core\ProductIdentity	Core.Neutral	13	2
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	22	8
 Qualimetrix\Core\Symbol\CallableKind	Core.Symbol	9	2
 Qualimetrix\Core\Symbol\DeclarationKey	Core.Symbol	3	2

@@ -71,7 +71,7 @@ final class BaselineCleanupCommand extends BaselineCommand
                 InputOption::VALUE_NONE,
                 'Write even when this run does not cover the scope the baseline records',
             )
-            ->setHelp(
+            ->setHelp(self::withDocsPointer(
                 'Without --remove the command only reports: no entry is removed and the'
                 . "\n" . 'file is not touched.' . "\n\n"
                 . 'An entry is listed when the run reported nothing for its identity, or'
@@ -79,7 +79,7 @@ final class BaselineCleanupCommand extends BaselineCommand
                 . "\n" . 'not be read at all. None of those proves the debt is gone — a'
                 . "\n" . 'loosened threshold silences a finding just as effectively as a fix —'
                 . "\n" . 'so removal is always yours to assert, one selector at a time.',
-            );
+            ));
     }
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int

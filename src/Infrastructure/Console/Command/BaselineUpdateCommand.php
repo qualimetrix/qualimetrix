@@ -62,14 +62,14 @@ final class BaselineUpdateCommand extends BaselineCommand
                 InputOption::VALUE_NONE,
                 'Write even when this run does not cover the scope the baseline records',
             )
-            ->setHelp(
+            ->setHelp(self::withDocsPointer(
                 'Replaces each entry with what its group reports now, but only where that'
                 . "\n" . 'is no more permissive than what the entry already accepted. A group'
                 . "\n" . 'that worsened is refused and its entry is written back unchanged.' . "\n\n"
                 . 'An identity that no longer reports anything is left alone: a vanished'
                 . "\n" . 'group is `baseline:cleanup`\'s business, and rewriting the entry to'
                 . "\n" . 'nothing would delete an acceptance by inference.',
-            );
+            ));
     }
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int

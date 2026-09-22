@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
@@ -71,6 +72,21 @@ final class BaselineGenerateCommandTest extends TestCase
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertSame([1], self::countsOf(self::entriesOf($this->baselinePath)));
+    }
+
+    /**
+     * Every one of the five `baseline:*` commands prints this through the
+     * shared `BaselineCommand` ladder rather than from its own body, so this
+     * pins the seam for the family rather than just this one command's own
+     * code.
+     */
+    #[Test]
+    public function itPrintsTheDocsPointerAfterWritingTheBaseline(): void
+    {
+        $tester = $this->execute(['--force' => true]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Docs: ' . ProductIdentity::docsUrl(), $tester->getDisplay());
     }
 
     /**
