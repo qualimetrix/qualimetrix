@@ -7,6 +7,7 @@ This index lists only work that is executable on the current tree.
 | [Anonymous class inheritance](anonymous-class-inheritance/00-overview.md)                | Two plan-review rounds and a code review; all packages landed, findings closed                               |
 | [Builtin class census](builtin-class-census/01-census.md)                                | Planned; one stage; not started                                                                              |
 | [Control tooling](control-tooling/00-overview.md)                                        | Planned; three review rounds; stage 01 not started                                                           |
+| [Agent discoverability](agent-discoverability/00-overview.md)                            | Planned; one plan-review round in progress                                                                   |
 | [DIT external ancestry](dit-external-ancestry/00-overview.md)                            | Stages 01 (#119), 02 (#135, ADR 0074) and 03 (ADR 0076) landed; campaign complete                            |
 | [Drill-down ownership](drill-down-ownership/01-ownership.md)                             | Reviewed; landed: the drill-down counter moved to the filter it must agree with                              |
 | [Duplicate declaration depth](duplicate-declaration-depth/01-declaration-exact-depth.md) | Two plan-review rounds and a code review; landed with a declared gate delta                                  |

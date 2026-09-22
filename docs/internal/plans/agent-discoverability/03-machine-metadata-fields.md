@@ -1,0 +1,93 @@
+# Stage 03 — Every JSON the tool emits publishes its identity
+
+Carries `website/docs/usage/output-formats.*` in **both** languages, because
+`governance/FormatOptionKeys/OutputFormatSchemaConsistencyTest` compares each
+structured format's observed schema against those pages in both directions, and
+that control runs inside `composer check:code`. A format change without its
+documentation page is red. This was the strongest finding against the first
+version of this plan.
+
+## One package for the seven channels
+
+All seven publish the same four facts. Split across executors they acquire seven
+key spellings — `llmsTxt`, `llms_txt`, `llms`, `docsUrl` — and the divergence is
+invisible until a consumer hits it. One executor, one spelling, every value read
+from `ProductIdentity::identity()`.
+
+Key names: `docs` and `llmsTxt`, camelCase, matching the surrounding JSON house
+style (`worstNamespaces`, `toolVersion`).
+
+| Channel                                                            | Where                | Note                                      |
+| ------------------------------------------------------------------ | -------------------- | ----------------------------------------- |
+| `json`, `suppressed`                                               | existing `meta`      | extends `version`, `package`, `timestamp` |
+| `metrics`                                                          | existing root fields | same role; no nesting introduced          |
+| `sarif`                                                            | `tool.driver`        | see below                                 |
+| `directives`, `baseline:rename-channels`, `debug:layer-assignment` | **new** `meta`       | no metadata today                         |
+
+The three new blocks carry the canonical identity plus their own `timestamp`,
+matching `json`'s shape, so an agent parsing any JSON this tool emits finds the
+same block in the same place.
+
+`graph:export --format=json` is **not** in this list and is not an oversight: its
+stdout is the graph document a consumer feeds to another tool, so it has no
+envelope to extend. The overview records it as excluded for that reason.
+
+## SARIF: the constant has two roles
+
+`SarifRuleCollector::INFORMATION_URI` is used twice — as `tool.driver.informationUri`
+in `SarifFormatter`, and as the fallback `helpUri` for a channel with no
+presentation (`SarifRuleCollector.php:147`). Repointing the constant would
+therefore also move rule-level help links, which is a change nobody asked for.
+
+So the constant is **split**:
+
+- the tool-level `informationUri` comes from `ProductIdentity::docsUrl()`;
+- the fallback `helpUri` keeps its current value under its own name, with a
+  docblock saying it is a fallback and not the tool's information URI;
+- `llmsTxt` goes in the standard `properties` bag. A bare new key on `driver`
+  risks refusal by strict validators; `properties` is the spec's extension point.
+
+`DOCS_BASE_URI` — the only pre-existing `qualimetrix.dev` literal in `src/` — is
+folded into `ProductIdentity` here, which is what lets stage 02's "no literals"
+assertion become unconditional.
+
+Adjacent control to watch: `governance/Channel/SarifRuleDescriptorCoverageTest`
+requires every real channel to resolve to a page carrying that producer's
+`Rule ID:` anchor. The split must not move any *real* channel's `helpUri`; only
+the no-presentation fallback and the tool-level field change.
+
+## DoD
+
+- All seven channels carry the fields, spelled identically, every value from
+  `ProductIdentity::identity()`.
+- The SARIF document validates against the `$schema` it declares.
+- No real channel's `helpUri` changed; `SarifRuleDescriptorCoverageTest` green.
+- `metrics` gains no field colliding with its existing `version` (the export
+  format version) or `toolVersion`.
+- EN and RU `output-formats` pages updated; `OutputFormatSchemaConsistencyTest`
+  green in both directions. That control sweeps the structured formats it names
+  — `json`, `metrics`, `sarif`, `gitlab`, `suppressed` — so it covers four of the
+  seven channels here and **not** the three command JSON shapes. Their pages are
+  updated because the documentation should be right, not because a control
+  forces it; nothing will go red if they are missed, which is exactly why they
+  are named in this DoD.
+- `CHANGELOG.md`: `Changed` for the identity block, `Breaking` for the SARIF
+  `informationUri` value, naming the old and the new surface.
+- `composer check` green; `composer gate` green against the commit this stage
+  started from, with whatever surfaces the gate itself reports declared. This
+  stage does not forecast that list — see the overview's second principle.
+
+## Edge cases
+
+- **Refusals.** The JSON refusal envelope stays `{error, exit_code}`. A refusal is
+  not a report.
+- **`suppressed` and the gate map.** `finding-gate/report-values.tsv` is declared
+  against `format:suppressed`. Re-check it after the `meta` change: a shifted map
+  is a silent failure, not a red test.
+- **`metrics` consumers.** Additive only; nothing existing moves.
+
+## Test plan
+
+Per-channel field presence and spelling; SARIF schema validation; the three new
+`meta` blocks matching `json`'s shape key-for-key apart from run-specific values;
+both documentation directions.
