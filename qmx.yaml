@@ -885,6 +885,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\Command\HookInstallCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\HookStatusCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand'
+        - 'Qualimetrix\Infrastructure\Console\Command\LoadedBaselineRun'
         - 'Qualimetrix\Infrastructure\Console\Command\RulesCommand'
         - 'Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter'
         - 'Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter'

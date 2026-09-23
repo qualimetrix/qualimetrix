@@ -77,7 +77,8 @@ final class BaselineUpdateCommand extends BaselineCommand
             return self::FAILURE;
         }
 
-        [$context, $baseline] = $measured;
+        $context = $measured->context;
+        $baseline = $measured->baseline;
 
         $result = $this->updater->update($baseline, $context->findings(), $context->scope);
 

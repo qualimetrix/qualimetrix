@@ -199,8 +199,6 @@ abstract class BaselineCommand extends Command
      *
      * Returns `null` when the caller must answer with `self::FAILURE`; the
      * scope guard has already written its own message to `$output`.
-     *
-     * @return array{0: BaselineRunContext, 1: \Qualimetrix\Analysis\Policy\Baseline\Baseline}|null
      */
     protected function measureAgainstBaseline(
         BaselineRunInterface $baselineRun,
@@ -208,7 +206,7 @@ abstract class BaselineCommand extends Command
         InputInterface $input,
         OutputInterface $output,
         string $baselinePath,
-    ): ?array {
+    ): ?LoadedBaselineRun {
         $force = $input->getOption('force') === true;
 
         $context = $baselineRun->measure($input, $output);
@@ -218,6 +216,6 @@ abstract class BaselineCommand extends Command
             return null;
         }
 
-        return [$context, $baseline];
+        return new LoadedBaselineRun($context, $baseline);
     }
 }

@@ -156,6 +156,7 @@ Infrastructure/
         ├── BaselineRunInterface.php         # The one way a baseline command obtains the set it measures
         ├── BaselineRun.php                  # Implements BaselineRunInterface: resolves configuration, configures the runtime and runs the analysis exactly as `check` does
         ├── BaselineRunContext.php           # VO: one run's measured findings, its RunScope and project root
+        ├── LoadedBaselineRun.php            # VO: a BaselineRunContext paired with the Baseline it was measured against, returned by BaselineCommand::measureAgainstBaseline()
         ├── BaselineCaptureReporter.php      # Reports non-baselineable findings omitted by baseline:generate
         ├── BaselineConfiguredThresholds.php # Asks each channel's options for its warning boundary, for baseline:explain (ADR 0038)
         ├── BaselineGenerateCommand.php # `baseline:generate` — captures the current findings as a new baseline file

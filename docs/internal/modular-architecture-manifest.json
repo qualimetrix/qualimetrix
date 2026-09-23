@@ -10462,6 +10462,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineUpdateCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\LoadedBaselineRun"
         }
       ]
     },
@@ -15627,6 +15631,13 @@
           ]
         }
       ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\Command\\LoadedBaselineRun": {
+      "path": "src/Infrastructure/Console/Command/LoadedBaselineRun.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": []
     },
     "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand": {
       "path": "src/Infrastructure/Console/Command/RulesCommand.php",
