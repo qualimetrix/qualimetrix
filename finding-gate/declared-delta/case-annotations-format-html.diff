@@ -1,0 +1,117 @@
+--- candidate
++++ reference (mapped)
+@@ -3,1 +3,1 @@
+-        "name": "finding-gate-corpus/annotations",
++        "name": "qualimetrix/qualimetrix",
+@@ -214,1 +214,1 @@
+-        "violationCountTotal": 7,
++        "violationCountTotal": 0,
+@@ -432,2 +432,2 @@
+-                "violationCountTotal": 7,
+-                "debtMinutes": 105,
++                "violationCountTotal": 0,
++                "debtMinutes": 0,
+@@ -669,2 +669,2 @@
+-                        "violationCountTotal": 7,
+-                        "debtMinutes": 105,
++                        "violationCountTotal": 0,
++                        "debtMinutes": 0,
+@@ -759,95 +759,3 @@
+-                                "violations": [
+-                                    {
+-                                        "subject": "file:src/Directives.php",
+-                                        "ruleName": "annotation.unused-directive",
+-                                        "violationCode": "annotation.unused-directive",
+-                                        "message": "Suppression \"code-smell.eval\" matched nothing in this run — the finding it silences is gone.",
+-                                        "recommendation": "Remove the annotation, or keep it and note why the finding is expected to return.",
+-                                        "severity": "info",
+-                                        "metricValue": null,
+-                                        "symbolPath": "src/Directives.php",
+-                                        "occurrence": null,
+-                                        "file": "src/Directives.php",
+-                                        "line": 28
+-                                    },
+-                                    {
+-                                        "subject": "file:src/Directives.php",
+-                                        "ruleName": "annotation.unresolved-directive",
+-                                        "violationCode": "annotation.unresolved-directive",
+-                                        "message": "Suppression \"no.such.rule\" addresses no channel. No declared name is close to it. Prose belongs after \"--\".",
+-                                        "recommendation": null,
+-                                        "severity": "error",
+-                                        "metricValue": null,
+-                                        "symbolPath": "src/Directives.php",
+-                                        "occurrence": null,
+-                                        "file": "src/Directives.php",
+-                                        "line": 7
+-                                    },
+-                                    {
+-                                        "subject": "file:src/Directives.php",
+-                                        "ruleName": "annotation.unresolved-directive",
+-                                        "violationCode": "annotation.unresolved-directive",
+-                                        "message": "Suppression \"annotation.unressed-directive\" addresses no channel. Addressable names closest to it: annotation.unresolved-directive. Prose belongs after \"--\".",
+-                                        "recommendation": null,
+-                                        "severity": "error",
+-                                        "metricValue": null,
+-                                        "symbolPath": "src/Directives.php",
+-                                        "occurrence": null,
+-                                        "file": "src/Directives.php",
+-                                        "line": 35
+-                                    },
+-                                    {
+-                                        "subject": "file:src/Directives.php",
+-                                        "ruleName": "annotation.unresolved-directive",
+-                                        "violationCode": "annotation.unresolved-directive",
+-                                        "message": "Suppression \"design.type-coverage.propurn\" addresses no channel. Addressable names closest to it: design.type-coverage.return, design.type-coverage.property. Prose belongs after \"--\".",
+-                                        "recommendation": null,
+-                                        "severity": "error",
+-                                        "metricValue": null,
+-                                        "symbolPath": "src/Directives.php",
+-                                        "occurrence": null,
+-                                        "file": "src/Directives.php",
+-                                        "line": 48
+-                                    },
+-                                    {
+-                                        "subject": "file:src/Directives.php",
+-                                        "ruleName": "annotation.unresolved-directive",
+-                                        "violationCode": "annotation.unresolved-directive",
+-                                        "message": "Suppression \"duplication.clone:class\" addresses \"duplication.clone\", and it does not report at level \"class\" — the levels available are \"project\". The pair can never match anything. A reason goes after \"--\".",
+-                                        "recommendation": null,
+-                                        "severity": "error",
+-                                        "metricValue": null,
+-                                        "symbolPath": "src/Directives.php",
+-                                        "occurrence": null,
+-                                        "file": "src/Directives.php",
+-                                        "line": 62
+-                                    },
+-                                    {
+-                                        "subject": "file:src/Directives.php",
+-                                        "ruleName": "annotation.unsupported-threshold",
+-                                        "violationCode": "annotation.unsupported-threshold",
+-                                        "message": "Rule \"annotation.directive\" declares no @qmx-threshold support, so this annotation can never do anything. Remove it, or configure the rule under its \"rules:\" key.",
+-                                        "recommendation": null,
+-                                        "severity": "error",
+-                                        "metricValue": null,
+-                                        "symbolPath": "src/Directives.php",
+-                                        "occurrence": null,
+-                                        "file": "src/Directives.php",
+-                                        "line": 15
+-                                    },
+-                                    {
+-                                        "subject": "file:src/Directives.php",
+-                                        "ruleName": "annotation.invalid-threshold",
+-                                        "violationCode": "annotation.invalid-threshold",
+-                                        "message": "@qmx-threshold complexity.ccn: invalid syntax \"warning=notanumber — unparseable threshold value\" — expected a number or warning=N error=N",
+-                                        "recommendation": null,
+-                                        "severity": "error",
+-                                        "metricValue": null,
+-                                        "symbolPath": "src/Directives.php",
+-                                        "occurrence": null,
+-                                        "file": "src/Directives.php",
+-                                        "line": 22
+-                                    }
+-                                ],
+-                                "violationCountTotal": 7,
+-                                "debtMinutes": 105
++                                "violations": [],
++                                "violationCountTotal": 0,
++                                "debtMinutes": 0

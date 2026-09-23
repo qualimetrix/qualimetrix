@@ -1,0 +1,18 @@
+--- candidate
++++ reference (mapped)
+@@ -40,1 +40,0 @@
+-            "recommendation": null,
+@@ -53,1 +52,0 @@
+-            "recommendation": null,
+@@ -66,1 +64,0 @@
+-            "recommendation": null,
+@@ -79,1 +76,0 @@
+-            "recommendation": null,
+@@ -92,1 +88,0 @@
+-            "recommendation": null,
+@@ -105,1 +100,0 @@
+-            "recommendation": null,
+@@ -117,2 +111,1 @@
+-            "message": "Suppression \"code-smell.eval\" matched nothing in this run — the finding it silences is gone.",
+-            "recommendation": "Remove the annotation, or keep it and note why the finding is expected to return.",
++            "message": "Remove the annotation, or keep it and note why the finding is expected to return.",

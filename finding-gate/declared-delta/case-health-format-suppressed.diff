@@ -1,0 +1,11 @@
+--- candidate
++++ reference (mapped)
+@@ -10,8 +10,0 @@
+-    "coverage": {
+-        "complete": true,
+-        "discovered": 7,
+-        "analyzed": 7,
+-        "generatedExcluded": 0,
+-        "failed": 0,
+-        "failures": []
+-    },

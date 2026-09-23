@@ -1,0 +1,6 @@
+--- candidate
++++ reference (mapped)
+@@ -39,2 +39,1 @@
+-            "message": "The exclude pattern \"subtree:NoSuchDir\" matched no directory anywhere in the project, so nothing was left out for it. Every file it was written to skip was measured, and this report covers them.",
+-            "recommendation": "Check \"subtree:NoSuchDir\" against project-relative directory paths. Exact selectors name one directory, subtree selectors include descendants, and regex selectors match the full path. Drop the entry if its target is gone.",
++            "message": "Check \"subtree:NoSuchDir\" against project-relative directory paths. Exact selectors name one directory, subtree selectors include descendants, and regex selectors match the full path. Drop the entry if its target is gone.",

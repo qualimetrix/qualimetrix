@@ -1,0 +1,42 @@
+--- candidate
++++ reference (mapped)
+@@ -39,2 +39,1 @@
+-            "message": "NOC (Number of Children) is 3, exceeds threshold of 1. Consider using interfaces instead of inheritance",
+-            "recommendation": "NOC: 3 (threshold: 1) — too many direct subclasses",
++            "message": "NOC: 3 (threshold: 1) — too many direct subclasses",
+@@ -52,2 +51,1 @@
+-            "message": "DIT (Depth of Inheritance) is 2, exceeds threshold of 1. Prefer composition over deep inheritance",
+-            "recommendation": "DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy",
++            "message": "DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy",
+@@ -65,2 +63,1 @@
+-            "message": "DIT (Depth of Inheritance) is 1, exceeds threshold of 1. Prefer composition over deep inheritance",
+-            "recommendation": "DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy",
++            "message": "DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy",
+@@ -78,2 +75,1 @@
+-            "message": "DIT (Depth of Inheritance) is 1, exceeds threshold of 1. Prefer composition over deep inheritance",
+-            "recommendation": "DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy",
++            "message": "DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy",
+@@ -91,2 +87,1 @@
+-            "message": "NOC (Number of Children) is 1, exceeds threshold of 1. Consider using interfaces instead of inheritance",
+-            "recommendation": "NOC: 1 (threshold: 1) — too many direct subclasses",
++            "message": "NOC: 1 (threshold: 1) — too many direct subclasses",
+@@ -104,2 +99,1 @@
+-            "message": "NOC (Number of Children) is 1, exceeds threshold of 1. Consider using interfaces instead of inheritance",
+-            "recommendation": "NOC: 1 (threshold: 1) — too many direct subclasses",
++            "message": "NOC: 1 (threshold: 1) — too many direct subclasses",
+@@ -117,2 +111,1 @@
+-            "message": "NOC (Number of Children) is 1, exceeds threshold of 1. Consider using interfaces instead of inheritance",
+-            "recommendation": "NOC: 1 (threshold: 1) — too many direct subclasses",
++            "message": "NOC: 1 (threshold: 1) — too many direct subclasses",
+@@ -130,2 +123,1 @@
+-            "message": "DIT (Depth of Inheritance) is 3, exceeds threshold of 1. Prefer composition over deep inheritance",
+-            "recommendation": "DIT: 3 (threshold: 1) — deep inheritance, fragile hierarchy",
++            "message": "DIT: 3 (threshold: 1) — deep inheritance, fragile hierarchy",
+@@ -143,2 +135,1 @@
+-            "message": "DIT (Depth of Inheritance) is 1, exceeds threshold of 1. Prefer composition over deep inheritance",
+-            "recommendation": "DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy",
++            "message": "DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy",
+@@ -156,2 +147,1 @@
+-            "message": "DIT (Depth of Inheritance) is 1, exceeds threshold of 1. Prefer composition over deep inheritance",
+-            "recommendation": "DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy",
++            "message": "DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy",

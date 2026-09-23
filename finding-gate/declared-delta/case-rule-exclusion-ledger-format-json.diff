@@ -1,0 +1,6 @@
+--- candidate
++++ reference (mapped)
+@@ -39,2 +39,1 @@
+-            "message": "Method has 5 parameters, exceeds threshold of 4. Consider introducing a parameter object",
+-            "recommendation": "Parameters: 5 (threshold: 4) — consider introducing a parameter object",
++            "message": "Parameters: 5 (threshold: 4) — consider introducing a parameter object",

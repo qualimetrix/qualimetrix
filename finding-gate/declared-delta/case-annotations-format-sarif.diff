@@ -1,0 +1,38 @@
+--- candidate
++++ reference (mapped)
+@@ -19,4 +19,4 @@
+-                                "text": "Reports a valid inline directive that suppressed or overrode nothing in this run."
+-                            },
+-                            "fullDescription": {
+-                                "text": "Reports a valid inline directive that suppressed or overrode nothing in this run."
++                                "text": "Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything."
++                            },
++                            "fullDescription": {
++                                "text": "Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything."
+@@ -33,4 +33,4 @@
+-                                "text": "Reports an inline directive that addresses nothing it may address, or that is malformed before any channel is read."
+-                            },
+-                            "fullDescription": {
+-                                "text": "Reports an inline directive that addresses nothing it may address, or that is malformed before any channel is read."
++                                "text": "Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything."
++                            },
++                            "fullDescription": {
++                                "text": "Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything."
+@@ -47,4 +47,4 @@
+-                                "text": "Reports a threshold directive that targets a rule with no threshold-override support."
+-                            },
+-                            "fullDescription": {
+-                                "text": "Reports a threshold directive that targets a rule with no threshold-override support."
++                                "text": "Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything."
++                            },
++                            "fullDescription": {
++                                "text": "Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything."
+@@ -61,4 +61,4 @@
+-                                "text": "Reports a threshold directive whose payload does not fit the targeted rule's options."
+-                            },
+-                            "fullDescription": {
+-                                "text": "Reports a threshold directive whose payload does not fit the targeted rule's options."
++                                "text": "Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything."
++                            },
++                            "fullDescription": {
++                                "text": "Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything."

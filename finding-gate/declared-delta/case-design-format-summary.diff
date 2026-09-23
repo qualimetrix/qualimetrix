@@ -1,0 +1,5 @@
+--- candidate
++++ reference (mapped)
+@@ -31,1 +31,1 @@
+-Hints: --detail to list violations (up to 200; --detail=all for every one) | --format=html -o report.html for full report
++Hints: --detail to see violations (top 200) | --format=html -o report.html for full report

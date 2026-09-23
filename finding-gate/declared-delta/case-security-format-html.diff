@@ -1,0 +1,201 @@
+--- candidate
++++ reference (mapped)
+@@ -3,1 +3,1 @@
+-        "name": "finding-gate-corpus/security",
++        "name": "qualimetrix/qualimetrix",
+@@ -214,1 +214,1 @@
+-        "violationCountTotal": 11,
++        "violationCountTotal": 0,
+@@ -432,2 +432,2 @@
+-                "violationCountTotal": 11,
+-                "debtMinutes": 335,
++                "violationCountTotal": 0,
++                "debtMinutes": 0,
+@@ -669,2 +669,2 @@
+-                        "violationCountTotal": 11,
+-                        "debtMinutes": 335,
++                        "violationCountTotal": 0,
++                        "debtMinutes": 0,
+@@ -760,17 +760,3 @@
+-                                "violations": [
+-                                    {
+-                                        "subject": "declaration:class:Corpus\\Security\\Credentials@src/Credentials.php",
+-                                        "ruleName": "security.hardcoded-credentials",
+-                                        "violationCode": "security.hardcoded-credentials",
+-                                        "message": "Hardcoded credential in property default — use environment variables or a secrets manager",
+-                                        "recommendation": "Move secrets to environment variables or a secrets manager.",
+-                                        "severity": "error",
+-                                        "metricValue": 1,
+-                                        "symbolPath": "src/Credentials.php",
+-                                        "occurrence": "0873d959de5f19b8",
+-                                        "file": "src/Credentials.php",
+-                                        "line": 7
+-                                    }
+-                                ],
+-                                "violationCountTotal": 1,
+-                                "debtMinutes": 30
++                                "violations": [],
++                                "violationCountTotal": 0,
++                                "debtMinutes": 0
+@@ -866,30 +852,3 @@
+-                                "violations": [
+-                                    {
+-                                        "subject": "declaration:callable:Corpus\\Security\\Login::authenticate@src/Login.php",
+-                                        "ruleName": "security.sensitive-parameter",
+-                                        "violationCode": "security.sensitive-parameter",
+-                                        "message": "Sensitive parameter missing #[\\SensitiveParameter] attribute — add it to prevent credential leakage in stack traces",
+-                                        "recommendation": "Add #[\\SensitiveParameter] attribute to prevent credential leakage in stack traces.",
+-                                        "severity": "warning",
+-                                        "metricValue": 1,
+-                                        "symbolPath": "src/Login.php",
+-                                        "occurrence": "d8c7c1c77a1276d8",
+-                                        "file": "src/Login.php",
+-                                        "line": 7
+-                                    },
+-                                    {
+-                                        "subject": "declaration:callable:Corpus\\Security\\Login::authenticate@src/Login.php",
+-                                        "ruleName": "security.sensitive-parameter",
+-                                        "violationCode": "security.sensitive-parameter",
+-                                        "message": "Sensitive parameter missing #[\\SensitiveParameter] attribute — add it to prevent credential leakage in stack traces",
+-                                        "recommendation": "Add #[\\SensitiveParameter] attribute to prevent credential leakage in stack traces.",
+-                                        "severity": "warning",
+-                                        "metricValue": 1,
+-                                        "symbolPath": "src/Login.php",
+-                                        "occurrence": "9477b3c7e0459483",
+-                                        "file": "src/Login.php",
+-                                        "line": 7
+-                                    }
+-                                ],
+-                                "violationCountTotal": 2,
+-                                "debtMinutes": 20
++                                "violations": [],
++                                "violationCountTotal": 0,
++                                "debtMinutes": 0
+@@ -984,30 +943,3 @@
+-                                "violations": [
+-                                    {
+-                                        "subject": "declaration:callable:Corpus\\Security\\Output::greet@src/Output.php",
+-                                        "ruleName": "code-smell.superglobals",
+-                                        "violationCode": "code-smell.superglobals",
+-                                        "message": "Direct superglobal access detected - use dependency injection",
+-                                        "recommendation": "Use dependency injection or a request object instead of direct superglobal access.",
+-                                        "severity": "warning",
+-                                        "metricValue": 1,
+-                                        "symbolPath": "src/Output.php",
+-                                        "occurrence": "c07a29ee639052d1",
+-                                        "file": "src/Output.php",
+-                                        "line": 9
+-                                    },
+-                                    {
+-                                        "subject": "declaration:callable:Corpus\\Security\\Output::greet@src/Output.php",
+-                                        "ruleName": "security.xss",
+-                                        "violationCode": "security.xss",
+-                                        "message": "Potential XSS — use htmlspecialchars() or equivalent before outputting user input ($_GET)",
+-                                        "recommendation": "Escape output with htmlspecialchars() or use a template engine with auto-escaping.",
+-                                        "severity": "error",
+-                                        "metricValue": 1,
+-                                        "symbolPath": "src/Output.php",
+-                                        "occurrence": "a23bfca96dcca636",
+-                                        "file": "src/Output.php",
+-                                        "line": 9
+-                                    }
+-                                ],
+-                                "violationCountTotal": 2,
+-                                "debtMinutes": 60
++                                "violations": [],
++                                "violationCountTotal": 0,
++                                "debtMinutes": 0
+@@ -1103,56 +1035,3 @@
+-                                "violations": [
+-                                    {
+-                                        "subject": "declaration:callable:Corpus\\Security\\Queries::byId@src/Queries.php",
+-                                        "ruleName": "code-smell.superglobals",
+-                                        "violationCode": "code-smell.superglobals",
+-                                        "message": "Direct superglobal access detected - use dependency injection",
+-                                        "recommendation": "Use dependency injection or a request object instead of direct superglobal access.",
+-                                        "severity": "warning",
+-                                        "metricValue": 1,
+-                                        "symbolPath": "src/Queries.php",
+-                                        "occurrence": "c07a29ee639052d1",
+-                                        "file": "src/Queries.php",
+-                                        "line": 9
+-                                    },
+-                                    {
+-                                        "subject": "declaration:callable:Corpus\\Security\\Queries::byName@src/Queries.php",
+-                                        "ruleName": "code-smell.superglobals",
+-                                        "violationCode": "code-smell.superglobals",
+-                                        "message": "Direct superglobal access detected - use dependency injection",
+-                                        "recommendation": "Use dependency injection or a request object instead of direct superglobal access.",
+-                                        "severity": "warning",
+-                                        "metricValue": 1,
+-                                        "symbolPath": "src/Queries.php",
+-                                        "occurrence": "027fd2fa8b3f15bd",
+-                                        "file": "src/Queries.php",
+-                                        "line": 14
+-                                    },
+-                                    {
+-                                        "subject": "declaration:callable:Corpus\\Security\\Queries::byId@src/Queries.php",
+-                                        "ruleName": "security.sql-injection",
+-                                        "violationCode": "security.sql-injection",
+-                                        "message": "Potential SQL injection — use parameterized queries instead of direct superglobal interpolation ($_GET)",
+-                                        "recommendation": "Use parameterized queries or prepared statements.",
+-                                        "severity": "error",
+-                                        "metricValue": 1,
+-                                        "symbolPath": "src/Queries.php",
+-                                        "occurrence": "a6b791649689b23a",
+-                                        "file": "src/Queries.php",
+-                                        "line": 9
+-                                    },
+-                                    {
+-                                        "subject": "declaration:callable:Corpus\\Security\\Queries::byName@src/Queries.php",
+-                                        "ruleName": "security.sql-injection",
+-                                        "violationCode": "security.sql-injection",
+-                                        "message": "Potential SQL injection — use parameterized queries instead of direct superglobal interpolation ($_POST)",
+-                                        "recommendation": "Use parameterized queries or prepared statements.",
+-                                        "severity": "error",
+-                                        "metricValue": 1,
+-                                        "symbolPath": "src/Queries.php",
+-                                        "occurrence": "4fe88e81e65b3378",
+-                                        "file": "src/Queries.php",
+-                                        "line": 14
+-                                    }
+-                                ],
+-                                "violationCountTotal": 4,
+-                                "debtMinutes": 150
++                                "violations": [],
++                                "violationCountTotal": 0,
++                                "debtMinutes": 0
+@@ -1247,30 +1126,3 @@
+-                                "violations": [
+-                                    {
+-                                        "subject": "declaration:callable:Corpus\\Security\\Shell::listDir@src/Shell.php",
+-                                        "ruleName": "code-smell.superglobals",
+-                                        "violationCode": "code-smell.superglobals",
+-                                        "message": "Direct superglobal access detected - use dependency injection",
+-                                        "recommendation": "Use dependency injection or a request object instead of direct superglobal access.",
+-                                        "severity": "warning",
+-                                        "metricValue": 1,
+-                                        "symbolPath": "src/Shell.php",
+-                                        "occurrence": "c07a29ee639052d1",
+-                                        "file": "src/Shell.php",
+-                                        "line": 9
+-                                    },
+-                                    {
+-                                        "subject": "declaration:callable:Corpus\\Security\\Shell::listDir@src/Shell.php",
+-                                        "ruleName": "security.command-injection",
+-                                        "violationCode": "security.command-injection",
+-                                        "message": "Potential command injection — use escapeshellarg() before passing user input to shell commands ($_GET)",
+-                                        "recommendation": "Use escapeshellarg() for arguments or avoid shell commands entirely.",
+-                                        "severity": "error",
+-                                        "metricValue": 1,
+-                                        "symbolPath": "src/Shell.php",
+-                                        "occurrence": "ae5ed341b4756606",
+-                                        "file": "src/Shell.php",
+-                                        "line": 9
+-                                    }
+-                                ],
+-                                "violationCountTotal": 2,
+-                                "debtMinutes": 75
++                                "violations": [],
++                                "violationCountTotal": 0,
++                                "debtMinutes": 0

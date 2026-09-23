@@ -1,0 +1,39 @@
+--- candidate
++++ reference (mapped)
+@@ -3,1 +3,1 @@
+-        "name": "finding-gate-corpus/only-rules",
++        "name": "qualimetrix/qualimetrix",
+@@ -214,1 +214,1 @@
+-        "violationCountTotal": 1,
++        "violationCountTotal": 0,
+@@ -432,2 +432,2 @@
+-                "violationCountTotal": 1,
+-                "debtMinutes": 15,
++                "violationCountTotal": 0,
++                "debtMinutes": 0,
+@@ -669,2 +669,2 @@
+-                        "violationCountTotal": 1,
+-                        "debtMinutes": 15,
++                        "violationCountTotal": 0,
++                        "debtMinutes": 0,
+@@ -760,17 +760,3 @@
+-                                "violations": [
+-                                    {
+-                                        "subject": "declaration:callable:Corpus\\OnlyRules\\Statements::run@src/Statements.php",
+-                                        "ruleName": "code-smell.eval",
+-                                        "violationCode": "code-smell.eval",
+-                                        "message": "eval() usage detected - security risk",
+-                                        "recommendation": "Replace eval() with a safer alternative (closures, reflection, or template engine).",
+-                                        "severity": "error",
+-                                        "metricValue": 1,
+-                                        "symbolPath": "src/Statements.php",
+-                                        "occurrence": "cb4db382fbd60b86",
+-                                        "file": "src/Statements.php",
+-                                        "line": 9
+-                                    }
+-                                ],
+-                                "violationCountTotal": 1,
+-                                "debtMinutes": 15
++                                "violations": [],
++                                "violationCountTotal": 0,
++                                "debtMinutes": 0

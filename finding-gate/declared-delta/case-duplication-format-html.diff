@@ -1,0 +1,24 @@
+--- candidate
++++ reference (mapped)
+@@ -3,1 +3,1 @@
+-        "name": "finding-gate-corpus/duplication",
++        "name": "qualimetrix/qualimetrix",
+@@ -213,16 +213,2 @@
+-        "violations": [
+-            {
+-                "subject": "project:",
+-                "ruleName": "duplication.clone",
+-                "violationCode": "duplication.clone",
+-                "message": "Duplicated code block (30 lines, 2 occurrences): \"class ReportBuilder public function summarise(array $rows, string $mode, int...\" — also at src/SummaryBuilder.php:5-34",
+-                "recommendation": "Extract duplicated code into a shared method or class.",
+-                "severity": "warning",
+-                "metricValue": 30,
+-                "symbolPath": "(project)",
+-                "occurrence": "083f104aa5999442",
+-                "file": "src/ReportBuilder.php",
+-                "line": 5
+-            }
+-        ],
+-        "violationCountTotal": 1,
++        "violations": [],
++        "violationCountTotal": 0,

@@ -1,0 +1,19 @@
+--- candidate
++++ reference (mapped)
+@@ -10,8 +10,0 @@
+-    "coverage": {
+-        "complete": true,
+-        "discovered": 5,
+-        "analyzed": 5,
+-        "generatedExcluded": 0,
+-        "failed": 0,
+-        "failures": []
+-    },
+@@ -42,3 +34,0 @@
+-            "subject": "declaration:callable:Corpus\\Smells\\Suppression::evaluate@src/Suppression.php",
+-            "occurrence": "cb4db382fbd60b86",
+-            "edge": null,
+@@ -49,2 +38,1 @@
+-            "message": "eval() usage detected - security risk",
+-            "recommendation": "Replace eval() with a safer alternative (closures, reflection, or template engine)."
++            "message": "Replace eval() with a safer alternative (closures, reflection, or template engine)."

@@ -1,0 +1,6 @@
+--- candidate
++++ reference (mapped)
+@@ -39,2 +39,1 @@
+-            "message": "eval() usage detected - security risk",
+-            "recommendation": "Replace eval() with a safer alternative (closures, reflection, or template engine).",
++            "message": "Replace eval() with a safer alternative (closures, reflection, or template engine).",

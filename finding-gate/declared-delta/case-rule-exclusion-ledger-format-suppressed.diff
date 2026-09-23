@@ -1,0 +1,43 @@
+--- candidate
++++ reference (mapped)
+@@ -10,8 +10,0 @@
+-    "coverage": {
+-        "complete": true,
+-        "discovered": 5,
+-        "analyzed": 5,
+-        "generatedExcluded": 0,
+-        "failed": 0,
+-        "failures": []
+-    },
+@@ -42,3 +34,0 @@
+-            "subject": "declaration:callable:Corpus\\RuleExclusionLedger\\GloballyExcluded\\SilencedByGlobalNamespace::run@src/GloballyExcluded/SilencedByGlobalNamespace.php",
+-            "occurrence": null,
+-            "edge": null,
+@@ -49,2 +38,1 @@
+-            "message": "Method has 5 parameters, exceeds threshold of 4. Consider introducing a parameter object",
+-            "recommendation": "Parameters: 5 (threshold: 4) — consider introducing a parameter object"
++            "message": "Parameters: 5 (threshold: 4) — consider introducing a parameter object"
+@@ -57,3 +45,0 @@
+-            "subject": "declaration:callable:Corpus\\RuleExclusionLedger\\Excluded\\SilencedByNamespace::run@src/Excluded/SilencedByNamespace.php",
+-            "occurrence": null,
+-            "edge": null,
+@@ -64,2 +49,1 @@
+-            "message": "Method has 5 parameters, exceeds threshold of 4. Consider introducing a parameter object",
+-            "recommendation": "Parameters: 5 (threshold: 4) — consider introducing a parameter object"
++            "message": "Parameters: 5 (threshold: 4) — consider introducing a parameter object"
+@@ -72,3 +56,0 @@
+-            "subject": "declaration:callable:Corpus\\RuleExclusionLedger\\Excluded\\SuppressedInsideExcluded::run@src/Excluded/SuppressedInsideExcluded.php",
+-            "occurrence": null,
+-            "edge": null,
+@@ -79,2 +60,1 @@
+-            "message": "Method has 5 parameters, exceeds threshold of 4. Consider introducing a parameter object",
+-            "recommendation": "Parameters: 5 (threshold: 4) — consider introducing a parameter object"
++            "message": "Parameters: 5 (threshold: 4) — consider introducing a parameter object"
+@@ -87,3 +67,0 @@
+-            "subject": "declaration:callable:Corpus\\RuleExclusionLedger\\SilencedByPath::run@src/SilencedByPath.php",
+-            "occurrence": null,
+-            "edge": null,
+@@ -94,2 +71,1 @@
+-            "message": "Method has 5 parameters, exceeds threshold of 4. Consider introducing a parameter object",
+-            "recommendation": "Parameters: 5 (threshold: 4) — consider introducing a parameter object"
++            "message": "Parameters: 5 (threshold: 4) — consider introducing a parameter object"

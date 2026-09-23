@@ -1,0 +1,39 @@
+--- candidate
++++ reference (mapped)
+@@ -3,1 +3,1 @@
+-        "name": "finding-gate-corpus/disabled-rule-duplication",
++        "name": "qualimetrix/qualimetrix",
+@@ -214,1 +214,1 @@
+-        "violationCountTotal": 1,
++        "violationCountTotal": 0,
+@@ -432,2 +432,2 @@
+-                "violationCountTotal": 1,
+-                "debtMinutes": 15,
++                "violationCountTotal": 0,
++                "debtMinutes": 0,
+@@ -669,2 +669,2 @@
+-                        "violationCountTotal": 1,
+-                        "debtMinutes": 15,
++                        "violationCountTotal": 0,
++                        "debtMinutes": 0,
+@@ -851,17 +851,3 @@
+-                                "violations": [
+-                                    {
+-                                        "subject": "declaration:callable:Corpus\\DisabledRuleDuplication\\Statements::run@src/Statements.php",
+-                                        "ruleName": "code-smell.goto",
+-                                        "violationCode": "code-smell.goto",
+-                                        "message": "goto statement detected - avoid using goto",
+-                                        "recommendation": "Replace goto with structured control flow (loops, early returns).",
+-                                        "severity": "error",
+-                                        "metricValue": 1,
+-                                        "symbolPath": "src/Statements.php",
+-                                        "occurrence": "d5cdb2ffde93239f",
+-                                        "file": "src/Statements.php",
+-                                        "line": 9
+-                                    }
+-                                ],
+-                                "violationCountTotal": 1,
+-                                "debtMinutes": 15
++                                "violations": [],
++                                "violationCountTotal": 0,
++                                "debtMinutes": 0

@@ -1,0 +1,42 @@
+--- candidate
++++ reference (mapped)
+@@ -39,2 +39,1 @@
+-            "message": "Method has 9 parameters, exceeds threshold of 6. Consider introducing a parameter object",
+-            "recommendation": "Parameters: 9 (threshold: 6) — consider introducing a parameter object",
++            "message": "Parameters: 9 (threshold: 6) — consider introducing a parameter object",
+@@ -52,2 +51,1 @@
+-            "message": "Constructor of Injection has 9 parameters (threshold 8). Consider using a parameter object or splitting responsibilities",
+-            "recommendation": "Constructor parameters: 9 (threshold: 8) — consider splitting responsibilities",
++            "message": "Constructor parameters: 9 (threshold: 8) — consider splitting responsibilities",
+@@ -65,2 +63,1 @@
+-            "message": "eval() usage detected - security risk",
+-            "recommendation": "Replace eval() with a safer alternative (closures, reflection, or template engine).",
++            "message": "Replace eval() with a safer alternative (closures, reflection, or template engine).",
+@@ -78,2 +75,1 @@
+-            "message": "goto statement detected - avoid using goto",
+-            "recommendation": "Replace goto with structured control flow (loops, early returns).",
++            "message": "Replace goto with structured control flow (loops, early returns).",
+@@ -91,2 +87,1 @@
+-            "message": "Empty catch block detected - exceptions should not be silently ignored",
+-            "recommendation": "Log the exception or add a comment explaining why it is safe to ignore.",
++            "message": "Log the exception or add a comment explaining why it is safe to ignore.",
+@@ -104,2 +99,1 @@
+-            "message": "Method has 5 parameters, exceeds threshold of 4. Consider introducing a parameter object",
+-            "recommendation": "Parameters: 5 (threshold: 4) — consider introducing a parameter object",
++            "message": "Parameters: 5 (threshold: 4) — consider introducing a parameter object",
+@@ -117,2 +111,1 @@
+-            "message": "Debug function call detected - remove before production",
+-            "recommendation": "Remove debug statements before merging to production.",
++            "message": "Remove debug statements before merging to production.",
+@@ -130,2 +123,1 @@
+-            "message": "Unused private property `neverRead`",
+-            "recommendation": "Remove the unused symbol to reduce dead code.",
++            "message": "Remove the unused symbol to reduce dead code.",
+@@ -143,2 +135,1 @@
+-            "message": "Unused private constant `NEVER_USED`",
+-            "recommendation": "Remove the unused symbol to reduce dead code.",
++            "message": "Remove the unused symbol to reduce dead code.",
+@@ -156,2 +147,1 @@
+-            "message": "Unused private method `neverCalled`",
+-            "recommendation": "Remove the unused symbol to reduce dead code.",
++            "message": "Remove the unused symbol to reduce dead code.",
