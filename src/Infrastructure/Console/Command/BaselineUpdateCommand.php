@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateDisposition;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
@@ -78,13 +77,12 @@ final class BaselineUpdateCommand extends BaselineCommand
         }
 
         $context = $measured->context;
-        $baseline = $measured->baseline;
 
-        $result = $this->updater->update($baseline, $context->findings(), $context->scope);
+        $result = $this->updater->update($measured->baseline, $context->findings(), $context->scope);
 
         self::report($result, $output);
 
-        if (!self::changed($baseline, $result->baseline)) {
+        if (!$result->changed) {
             $output->writeln('<info>No entry moved; the baseline is unchanged.</info>');
 
             return self::SUCCESS;
@@ -95,35 +93,6 @@ final class BaselineUpdateCommand extends BaselineCommand
         $output->writeln(\sprintf('<info>Baseline updated: %s</info>', $baselinePath));
 
         return self::SUCCESS;
-    }
-
-    /**
-     * Whether the update produced entries that differ from the loaded ones.
-     *
-     * Compared as the payloads that would be written rather than by counting
-     * `Updated` outcomes: an entry whose group reports exactly what it
-     * already recorded is legitimately "updated" and changes nothing, and
-     * rewriting the file for it would move `generated` on every run.
-     * {@see BaselineUpdater} preserves the loaded order, so a positional
-     * comparison is a comparison of the same entries.
-     */
-    private static function changed(Baseline $loaded, Baseline $updated): bool
-    {
-        return self::payloads($loaded) !== self::payloads($updated);
-    }
-
-    /**
-     * @return list<array<string, mixed>>
-     */
-    private static function payloads(Baseline $baseline): array
-    {
-        $payloads = [];
-
-        foreach ($baseline->entries as $entry) {
-            $payloads[] = $entry->toArray();
-        }
-
-        return $payloads;
     }
 
     private static function report(BaselineUpdateResult $result, OutputInterface $output): void

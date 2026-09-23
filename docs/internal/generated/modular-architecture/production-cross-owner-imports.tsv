@@ -1908,7 +1908,6 @@ Qualimetrix\Infrastructure\Console\Command\BaselineRun	Infrastructure.Console	Qu
 Qualimetrix\Infrastructure\Console\Command\BaselineRunContext	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\RunScope	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineRunContext	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineRunContext	Infrastructure.Console	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
-Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\Baseline	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineLoader	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateDisposition	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateResult	Analysis.Policy.Baseline	contract

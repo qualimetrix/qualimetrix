@@ -1940,12 +1940,14 @@ rules:
     suppress_paths:
       # A console command shares no fields by construction: `configure()` touches
       # none of them and the helpers are static, so shared-field cohesion
-      # mis-models the design rather than reporting debt. These six classes sit
-      # at exactly 40 and are the whole of that debt on this root today.
-      # (`DirectivesCommand` stood here through X14; X15 removed its own
-      # `reportError()` helper, which raised its cohesion to 75.36 — above
-      # this rule's warning boundary — so the entry suppressed nothing and
-      # was dropped rather than carried forward inert.)
+      # mis-models the design rather than reporting debt. The four classes
+      # listed next sit at exactly 40 and are the whole of that debt on this
+      # root today. (`DirectivesCommand` stood here through X14; X15 removed
+      # its own `reportError()` helper, which raised its cohesion to 75.36 —
+      # above this rule's warning boundary — so the entry suppressed nothing
+      # and was dropped rather than carried forward inert. `BaselineUpdateCommand`
+      # left the same way once the baseline capability began answering whether
+      # an update changed anything.)
       #
       # Named one by one rather than by the namespace they share, and the
       # difference is measured, not stylistic. The namespace form took the
@@ -1965,7 +1967,6 @@ rules:
       - exact: src/Infrastructure/Console/Command/BaselineCleanupCommand.php
       - exact: src/Infrastructure/Console/Command/BaselineExplainCommand.php
       - exact: src/Infrastructure/Console/Command/BaselineGenerateCommand.php
-      - exact: src/Infrastructure/Console/Command/BaselineUpdateCommand.php
       - exact: src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php
       # X15 adds two more of the same shape. `GraphExportCommand` measured
       # 40.0 before the round touched it and measures the same after, so it

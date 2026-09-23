@@ -66,6 +66,48 @@ final class BaselineUpdaterTest extends TestCase
         self::assertSame(BaselineUpdateDisposition::Updated, $result->outcomes[0]->disposition);
         self::assertSame([100.0], $result->baseline->entries[0]->magnitudes);
         self::assertSame(1, $result->baseline->entries[0]->count);
+        self::assertTrue($result->changed, 'the written entry differs from what was loaded');
+    }
+
+    /**
+     * **`$changed` reads the payload, not the disposition (ADR 0017).** A
+     * measured group that reports exactly what is already stored still gets
+     * `Updated` — {@see BaselineUpdater::reconcileMagnitude()} does not
+     * special-case an unchanged group — but nothing was actually written
+     * differently, so the caller deciding whether to touch the file must see
+     * `false` here.
+     */
+    #[Test]
+    public function itReportsNoChangeWhenAnUpdatedEntryWritesBackTheSamePayload(): void
+    {
+        $symbol = SymbolPath::forFile(RelativePath::fromString('src/Legacy/dup.php'));
+        $stored = new BaselineEntry(
+            new BaselineIdentity($symbol->toCanonical(), self::duplicationChannel()),
+            [40, 100],
+            2,
+        );
+
+        $current = [
+            FindingFactory::magnitude($symbol, 40, 'duplication.clone', 'duplication.clone'),
+            FindingFactory::magnitude($symbol, 100, 'duplication.clone', 'duplication.clone'),
+        ];
+
+        $result = $this->updater()->update(self::baselineOf($stored), $current, RunScope::fromRecorded(['src']));
+
+        self::assertSame(BaselineUpdateDisposition::Updated, $result->outcomes[0]->disposition);
+        self::assertFalse($result->changed, 'the measured group reports exactly what was already stored');
+    }
+
+    #[Test]
+    public function itReportsNoChangeWhenEveryEntryIsSkipped(): void
+    {
+        $symbol = SymbolPath::forMethod('App', 'Foo', 'bar');
+        $stored = new BaselineEntry(BaselineIdentity::forFinding(FindingFactory::magnitude($symbol, 25)), [25], 1);
+
+        $result = $this->updater()->update(self::baselineOf($stored), [], RunScope::fromRecorded(['src']));
+
+        self::assertSame(BaselineUpdateDisposition::Skipped, $result->outcomes[0]->disposition);
+        self::assertFalse($result->changed);
     }
 
     /**

@@ -76,6 +76,7 @@ final readonly class BaselineUpdater
 
         $entries = [];
         $outcomes = [];
+        $changed = false;
 
         foreach ($baseline->entries as $entry) {
             $group = $groups[$entry->identity->key()] ?? null;
@@ -90,6 +91,14 @@ final readonly class BaselineUpdater
             [$written, $outcome] = $this->reconcile($entry, $group);
             $entries[] = $written;
             $outcomes[] = $outcome;
+
+            // An `Updated` disposition still writes back the same payload
+            // when the measured group reports exactly what the entry already
+            // recorded — comparing the serialized form, not the disposition,
+            // is what keeps that case from moving `generated` on every run.
+            if ($written->toArray() !== $entry->toArray()) {
+                $changed = true;
+            }
         }
 
         $updated = new Baseline(
@@ -100,7 +109,7 @@ final readonly class BaselineUpdater
             sourceContentHash: $baseline->sourceContentHash,
         );
 
-        return new BaselineUpdateResult($updated, $outcomes);
+        return new BaselineUpdateResult($updated, $outcomes, $changed);
     }
 
     /**

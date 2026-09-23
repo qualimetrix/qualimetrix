@@ -151,7 +151,7 @@ Infrastructure/
     │   └── SwitchableProgressReporter.php
     └── Command/
         ├── CheckCommand.php           # Thin orchestrator (delegates to extracted classes)
-        ├── BaselineCommand.php              # Base class for the four lifecycle commands: shared error-to-exit-code mapping and scope validation
+        ├── BaselineCommand.php              # Base class for the five lifecycle commands: shared error-to-exit-code mapping, and — for cleanup/update — the measured-run preamble and scope validation
         ├── BaselineCommandDefinition.php    # Shared input definition: paths + the configuration options that decide what is measured (--config, --preset, --rule-opt, --only-rule, --disable-rule), deliberately without check's exclusion/suppression flags (ADR 0017)
         ├── BaselineRunInterface.php         # The one way a baseline command obtains the set it measures
         ├── BaselineRun.php                  # Implements BaselineRunInterface: resolves configuration, configures the runtime and runs the analysis exactly as `check` does

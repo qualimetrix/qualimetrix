@@ -21,8 +21,6 @@ use InvalidArgumentException;
  * Valid and inert entries are kept apart (see {@see InertBaselineEntry}).
  * Everything that suppresses reads {@see $entries}; everything that reports
  * problems reads {@see $inertEntries}; nothing has to remember to filter.
- *
- * @qmx-threshold coupling.cbo 21 -- This capability's own aggregate gets one-edge headroom above raw CBO 20: read by its own services and by the Infrastructure console commands that report against a loaded baseline. {@see \Qualimetrix\Infrastructure\Console\Command\LoadedBaselineRun} is the new reader. The threshold is inclusive, so 21 keeps today's 20 silent and reports the next dependent.
  */
 final readonly class Baseline
 {
