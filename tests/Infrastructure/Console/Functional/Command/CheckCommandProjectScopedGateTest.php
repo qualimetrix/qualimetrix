@@ -104,6 +104,26 @@ final class CheckCommandProjectScopedGateTest extends TestCase
     }
 
     /**
+     * The gate answers to its own switch, not its neighbour's. The shared
+     * layer walk reads both producers' gates, and under `coverage-gap: ignore`
+     * only this one decides whether the classes outside every layer are
+     * collected at all. Both gates reach the walk as the generic options
+     * contract, so wiring each into the other's slot type-checks and silences
+     * this channel exactly here.
+     */
+    #[Test]
+    public function itFailsAndReportsWithTheLayerViolationRuleSwitchedOff(): void
+    {
+        $tester = $this->runCheck(['--rule-opt' => [
+            'architecture.unassigned-class:mode=error',
+            'architecture.layer-violation:enabled=false',
+        ]]);
+
+        self::assertSame(self::EXIT_ERROR, $tester->getStatusCode());
+        self::assertStringContainsString('Unassigned declarations: Demo\\B', $tester->getDisplay());
+    }
+
+    /**
      * The counterweight: the same run must still narrow what narrowing is
      * for. Without it the test above would pass just as well against a git
      * scope that filtered nothing at all.

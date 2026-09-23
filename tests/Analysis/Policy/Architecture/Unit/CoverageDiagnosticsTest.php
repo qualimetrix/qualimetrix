@@ -23,9 +23,10 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerEvidenceCollector;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\ClassWalkEvidence;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -336,24 +337,21 @@ final class CoverageDiagnosticsTest extends TestCase
         );
 
         $collectClassEvidence = new ReflectionMethod($collector, 'collectClassEvidence');
-        [$assignedHits, $matchedSymbols, , $shadowEvidence, $uncoveredClasses] = $collectClassEvidence->invoke(
-            $collector,
-            $arch,
-            $context,
-        );
+        $classWalk = $collectClassEvidence->invoke($collector, $arch, $context);
+        self::assertInstanceOf(ClassWalkEvidence::class, $classWalk);
 
-        self::assertSame(['broad' => 1, 'narrow' => 0], $assignedHits);
+        self::assertSame(['broad' => 1, 'narrow' => 0], $classWalk->assignedHits);
         self::assertSame(
             [
                 'broad' => ['class:App\\Controller\\OwnedClass' => true],
                 'narrow' => ['class:App\\Controller\\OwnedClass' => true],
             ],
-            $matchedSymbols,
+            $classWalk->matchedSymbols,
             'The shadowed layer matched the class it lost — the two tallies must not collapse into one.',
         );
-        self::assertArrayHasKey('broad', $shadowEvidence);
-        self::assertArrayHasKey('narrow', $shadowEvidence['broad']);
-        self::assertSame([], $uncoveredClasses);
+        self::assertArrayHasKey('broad', $classWalk->shadowEvidence);
+        self::assertArrayHasKey('narrow', $classWalk->shadowEvidence['broad']);
+        self::assertSame([], $classWalk->uncoveredClasses);
     }
 
     /**

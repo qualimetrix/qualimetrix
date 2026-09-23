@@ -2,25 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
+namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation;
 
-use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 
 /**
  * Everything one run's walk over the classes and the dependency graph
  * observed about the declared layers.
  *
- * It exists because two verdicts read the same walk: {@see LayerViolationRule}
- * judges the edges, {@see LayerDeclarationValidator} judges the declaration
- * itself. Before the split both lived in one `analyze()` and shared local
+ * It exists because two verdicts read the same walk:
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule}
+ * judges the edges,
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator}
+ * judges the declaration itself. Before the split both lived in one `analyze()` and shared local
  * variables; a shared collector plus this value object is what replaces those
  * locals without walking the graph twice and without making either verdict
  * depend on the other running first.
- *
- * @phpstan-type ShadowEntry array{fqn: string, assignedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion}
- * @phpstan-type ForbiddenEdge array{dependency: Dependency, fromMatch: LayerMatch, toMatch: LayerMatch}
  */
 final readonly class LayerEvidence
 {
@@ -42,11 +39,11 @@ final readonly class LayerEvidence
      *                                                                                                                     observation — filled by the same tally helper, merged by the same merge, and disjoint by
      *                                                                                                                     construction, since an excluded symbol is not a member. Read through {@see matchedCounts()}
      *                                                                                                                     and {@see excludedCounts()}.
-     * @param array<string, array<string, list<ShadowEntry>>> $shadowEvidence (assigned, shadowed) => evidence.
+     * @param array<string, array<string, list<ShadowedClass>>> $shadowEvidence (assigned, shadowed) => evidence.
      * @param array{classes: array<string, string>, analysed: int} $unassigned What the analysed set left
      *                                                                         outside every declared layer, and how many class-like declarations the walk saw — the
      *                                                                         numerator and denominator `architecture.unassigned-class` reports. `classes` is empty
-     *                                                                         when {@see LayerViolationOptions::collectsOutsideLayerEvidence()} found no consumer for
+     *                                                                         when {@see LayerEvidenceCollector::materializesUncovered()} found no consumer for
      *                                                                         it. One field rather than two because neither half answers anything alone.
      * @param array{sourceEdges: int, targetEdges: int, classes: array<string, string>} $coverageState
      */

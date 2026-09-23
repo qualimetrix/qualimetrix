@@ -43,14 +43,15 @@ Architecture/
 │   └── Allow/                  # allow selectors and binding values
 ├── Layer/                      # membership, capture-pattern compilation, and registry primitives
 │   └── Expansion/              # observed-template expansion
-├── LayerViolation/             # shared evidence walk, two rules, declaration validator
+├── LayerViolation/             # two rules, declaration validator
+│   └── Observation/            # the shared walk and the evidence it records
 └── ArchitecturePolicy.php      # instance-owned configuration/preparation
 ```
 
-`Configuration/`, `Layer/`, `Layer/Expansion/`, `LayerViolation/`, and the
-policy coordinator are internal zones of one leaf. The manifest-backed
-Architecture topology test enforces their exact DAG; sibling internals are not
-a public API. The generated qmx projection enforces the leaf owner boundary.
+`Configuration/`, `Layer/`, `Layer/Expansion/`, `LayerViolation/` (with its
+`Observation/`), and the policy coordinator are internal zones of one leaf. The
+manifest-backed Architecture topology test enforces their exact DAG; sibling
+internals are not a public API. The generated qmx projection enforces the leaf owner boundary.
 
 ## Configuration and lifecycle
 
@@ -91,8 +92,9 @@ nested anonymous class instead (ADR 0071). The dependency the edge still
 represents is unaffected; only its reading as a declaration fact about its
 recorded source is narrowed.
 
-`LayerViolation/` is four subjects, not one. `LayerEvidenceCollector` walks the
-analysed classes and the dependency graph **once per run** — memoised weakly by
+`LayerViolation/` is four subjects, not one. The first is `Observation/`:
+`LayerEvidenceCollector` walks the analysed classes and the dependency graph
+**once per run** — memoised weakly by
 the run's `AnalysisContext`, so nothing survives into the next run — and returns
 one `LayerEvidence`: the edges the allow-list rejects, per-layer tallies of what
 each layer was ASSIGNED, what it MATCHED at all and what its `exclude:` clause
@@ -108,7 +110,15 @@ when the producer is disabled or no layers are declared, so "report nothing" has
 one answer rather than two. It answers to both consumer gates — the rule's
 `enabled` and `UnassignedClassOptions::$mode` — and materialises the
 outside-every-layer set when either of them, or the coverage mode, has a use
-for it.
+for it. The class walk and the edge walk each hand their half to the merge as a
+typed value (`ClassWalkEvidence`, `EdgeWalkEvidence`), and a rejected edge and a
+shadowed class travel as `ForbiddenEdge` and `ShadowedClass` rather than array
+shapes, so the `Dependency` and `MatchedCriterion` they carry count as coupling
+of those value objects; the lists that hold them are still typed in PHPDoc
+only. `Observation/` reads its two consumers' gates through the generic
+`RuleOptionsInterface` and its code references nothing in `LayerViolation/`,
+which the topology test enforces as a zone of its own; the two rules, the validator and
+the diagnostics built from the evidence read it.
 
 Two rules report on the **code** over that one walk. `LayerViolationRule` emits
 `architecture.layer-violation` per forbidden edge and

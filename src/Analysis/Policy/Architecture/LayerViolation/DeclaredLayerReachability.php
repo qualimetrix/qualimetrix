@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\ShadowedClass;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -161,7 +162,7 @@ final class DeclaredLayerReachability
      * **The number reported is how many distinct symbols the layer's criteria
      * matched** — a class counted once however many dependency edges it sits
      * at an end of. The caller counts a set for exactly that reason
-     * ({@see LayerEvidenceCollector::tallyMatchedEnd()}): tallying every match
+     * ({@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector::tallyMatchedEnd()}): tallying every match
      * event instead reported edge multiplicity, so two classes joined by four
      * edges read as eight and the number answered no question anyone asks.
      *
@@ -258,7 +259,7 @@ final class DeclaredLayerReachability
      * on each side (recorded during the rule's class walk), so no second walk
      * over the layer list is necessary at emission time.
      *
-     * @param array<string, array<string, list<array{fqn: string, assignedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion}>>> $shadowEvidence
+     * @param array<string, array<string, list<ShadowedClass>>> $shadowEvidence
      *
      * @return list<Finding>
      */
@@ -274,7 +275,7 @@ final class DeclaredLayerReachability
             $sample = \array_slice($entries, 0, self::SHADOW_SAMPLE_LIMIT);
             $remaining = \count($entries) - \count($sample);
 
-            $sampleList = implode(', ', array_map(static fn(array $entry): string => $entry['fqn'], $sample));
+            $sampleList = implode(', ', array_map(static fn(ShadowedClass $entry): string => $entry->fqn, $sample));
             if ($remaining > 0) {
                 $sampleList .= \sprintf(' ...and %d more', $remaining);
             }
@@ -284,9 +285,9 @@ final class DeclaredLayerReachability
                 \sprintf(
                     'Layer "%s" (%s) shadows layer "%s" (%s) for %d class(es) including %s. Run "qmx debug:layer-assignment <class>" to inspect specific cases.',
                     $assignedLayer,
-                    $sample[0]['assignedCriterion']->describe(),
+                    $sample[0]->assignedCriterion->describe(),
                     $shadowedLayer,
-                    $sample[0]['shadowedCriterion']->describe(),
+                    $sample[0]->shadowedCriterion->describe(),
                     \count($entries),
                     $sampleList,
                 ),
@@ -305,9 +306,9 @@ final class DeclaredLayerReachability
      * Flattens the evidence map into pairs ordered by (assigned, shadowed),
      * each with its own sample ordered by FQN.
      *
-     * @param array<string, array<string, list<array{fqn: string, assignedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion}>>> $shadowEvidence
+     * @param array<string, array<string, list<ShadowedClass>>> $shadowEvidence
      *
-     * @return list<array{assigned: string, shadowed: string, entries: non-empty-list<array{fqn: string, assignedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion}>}>
+     * @return list<array{assigned: string, shadowed: string, entries: non-empty-list<ShadowedClass>}>
      */
     private static function sortedShadowPairs(array $shadowEvidence): array
     {
@@ -317,7 +318,7 @@ final class DeclaredLayerReachability
                 // A pair exists only once a reportable shadow was recorded
                 // for it, so the entry list is non-empty by construction.
                 \assert($entries !== []);
-                usort($entries, static fn(array $a, array $b): int => strcmp($a['fqn'], $b['fqn']));
+                usort($entries, static fn(ShadowedClass $a, ShadowedClass $b): int => strcmp($a->fqn, $b->fqn));
                 $pairs[] = [
                     'assigned' => (string) $assigned,
                     'shadowed' => (string) $shadowed,

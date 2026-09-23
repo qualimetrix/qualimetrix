@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
@@ -24,8 +25,9 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * have drifted apart. Which is why the two are different types rather than one
  * class with a flag on some of its channels.
  *
- * Both read one {@see LayerEvidence}, produced once per run by the shared
- * {@see LayerEvidenceCollector}: `coverage` needs the coverage state,
+ * Both read one
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidence},
+ * produced once per run by the shared {@see LayerEvidenceCollector}: `coverage` needs the coverage state,
  * `unreachable-layer` the merged assignment hits, `pending-layer-matched` the
  * merged match sets, `potential-shadow` the class-walk shadow evidence, and
  * `empty-template` only the configuration.

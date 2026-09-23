@@ -2335,6 +2335,10 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerRoutingGuidance"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\ForbiddenEdge"
         }
       ]
     },
@@ -7328,7 +7332,7 @@
         },
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerEvidenceCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\LayerEvidenceCollector"
         },
         {
           "owner": "Analysis.Policy.Architecture",
@@ -8829,6 +8833,10 @@
         },
         {
           "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\LayerEvidenceCollector"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\UnassignedClassOptions"
         },
         {
@@ -10179,20 +10187,6 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerEvidence": {
-      "path": "src/Analysis/Policy/Architecture/LayerViolation/LayerEvidence.php",
-      "kind": "class",
-      "owner": "Analysis.Policy.Architecture",
-      "visibility": "internal",
-      "consumers": []
-    },
-    "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerEvidenceCollector": {
-      "path": "src/Analysis/Policy/Architecture/LayerViolation/LayerEvidenceCollector.php",
-      "kind": "class",
-      "owner": "Analysis.Policy.Architecture",
-      "visibility": "internal",
-      "consumers": []
-    },
     "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerRoutingGuidance": {
       "path": "src/Analysis/Policy/Architecture/LayerViolation/LayerRoutingGuidance.php",
       "kind": "class",
@@ -10216,6 +10210,48 @@
     },
     "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule": {
       "path": "src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\ClassWalkEvidence": {
+      "path": "src/Analysis/Policy/Architecture/LayerViolation/Observation/ClassWalkEvidence.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\EdgeWalkEvidence": {
+      "path": "src/Analysis/Policy/Architecture/LayerViolation/Observation/EdgeWalkEvidence.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\ForbiddenEdge": {
+      "path": "src/Analysis/Policy/Architecture/LayerViolation/Observation/ForbiddenEdge.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\LayerEvidence": {
+      "path": "src/Analysis/Policy/Architecture/LayerViolation/Observation/LayerEvidence.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\LayerEvidenceCollector": {
+      "path": "src/Analysis/Policy/Architecture/LayerViolation/Observation/LayerEvidenceCollector.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\ShadowedClass": {
+      "path": "src/Analysis/Policy/Architecture/LayerViolation/Observation/ShadowedClass.php",
       "kind": "class",
       "owner": "Analysis.Policy.Architecture",
       "visibility": "internal",
@@ -14239,7 +14275,7 @@
         },
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerEvidenceCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\LayerEvidenceCollector"
         },
         {
           "owner": "Analysis.Policy.Architecture",
