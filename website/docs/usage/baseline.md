@@ -245,16 +245,18 @@ A channel can also be a computed metric, e.g. `@qmx-ignore health.cohesion` — 
 
 A directive that names something invalid, or that no longer fires, is not silently ignored — it becomes a finding of its own under the built-in `annotation.directive` rule, reported on the file that carries the directive. See [Annotation rules](../rules/annotation.md) for the full reference. Three of its four channels are configuration errors that end the run regardless of `--fail-on` and can never be baselined or suppressed:
 
-| Channel                            | Fires when                                                                                                                                               |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `annotation.unresolved-directive`  | the directive names a channel that does not exist (typo, a rule name where a channel was meant, an `X.*` matching nothing, or a removed computed metric) |
-| `annotation.unsupported-threshold` | `@qmx-threshold` targets a rule that declares no threshold override support                                                                              |
-| `annotation.invalid-threshold`     | the `@qmx-threshold` payload itself is malformed                                                                                                         |
-| `annotation.unused-directive`      | the directive is valid but nothing it addressed fired this run — ordinary cleanup debt                                                                   |
+| Channel                            | Fires when                                                                                                                                                                                                                                                                                             |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `annotation.unresolved-directive`  | the directive names a channel that does not exist (typo, a rule name where a channel was meant, an `X.*` matching nothing, or a removed computed metric), **or** it never became a directive at all — a `@qmx-` tag this tool does not read, or the declaration form written where nothing is measured |
+| `annotation.unsupported-threshold` | `@qmx-threshold` targets a rule that declares no threshold override support                                                                                                                                                                                                                            |
+| `annotation.invalid-threshold`     | the `@qmx-threshold` payload itself is malformed                                                                                                                                                                                                                                                       |
+| `annotation.unused-directive`      | the directive is valid but nothing it addressed fired this run — ordinary cleanup debt                                                                                                                                                                                                                 |
 
 Only `annotation.unused-directive` behaves like an ordinary finding: it defaults to `Info`, its severity is configurable via the `unused_directive_severity` rule option, and it can be baselined, dropped by the top-level `suppress_paths` or narrowed by a git scope like any other channel. `suppress_namespaces` does not reach it — the finding's subject is the file the annotation sits in, which carries no namespace — and neither do the rule's own exclusions, which run before this channel is assembled. It is the one channel no `@qmx-ignore` can silence — a directive addressing it is refused as an `annotation.unresolved-directive` — so a baseline entry is the way to accept it in place. `@qmx-threshold` never counts toward it.
 
 An inline same-line comment is not supported.
+
+A tag that is misspelled, and a `@qmx-ignore` written above a statement or on a property, used to do nothing quietly; both are now `annotation.unresolved-directive` errors. See [Forms that never become a directive](../rules/annotation.md#forms-that-never-become-a-directive).
 
 ### View what annotations hide
 

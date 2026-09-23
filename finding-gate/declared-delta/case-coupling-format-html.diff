@@ -1,0 +1,127 @@
+--- candidate
++++ reference (mapped)
+@@ -176,1 +176,0 @@
+-            "size.symbol-declaring-namespace-count": 4,
+@@ -208,2 +207,2 @@
+-            "coupling.distance-own.avg": 0.3125,
+-            "coupling.distance-own.count": 4
++            "coupling.distance.avg": 0.3125,
++            "coupling.distance.count": 4
+@@ -390,3 +389,0 @@
+-                    "coupling.ca-own": 0,
+-                    "coupling.ce-own": 0,
+-                    "coupling.instability-own": 0,
+@@ -608,3 +604,0 @@
+-                            "coupling.ca-own": 0,
+-                            "coupling.ce-own": 0,
+-                            "coupling.instability-own": 0,
+@@ -840,1 +833,0 @@
+-                                    "coupling.abstractness-own": 1,
+@@ -845,5 +837,1 @@
+-                                    "coupling.ca-own": 3,
+-                                    "coupling.ce-own": 0,
+-                                    "coupling.instability-own": 0,
+-                                    "coupling.distance": 0,
+-                                    "coupling.distance-own": 0,
++                                    "coupling.distance": 0,
+@@ -1411,1 +1399,0 @@
+-                                    "coupling.abstractness-own": 0,
+@@ -1416,5 +1403,1 @@
+-                                    "coupling.ca-own": 5,
+-                                    "coupling.ce-own": 0,
+-                                    "coupling.instability-own": 0,
+-                                    "coupling.distance": 1,
+-                                    "coupling.distance-own": 1,
++                                    "coupling.distance": 1,
+@@ -2031,1 +2014,0 @@
+-                                    "coupling.abstractness-own": 0,
+@@ -2036,5 +2018,1 @@
+-                                    "coupling.ca-own": 2,
+-                                    "coupling.ce-own": 6,
+-                                    "coupling.instability-own": 0.75,
+-                                    "coupling.distance": 0.25,
+-                                    "coupling.distance-own": 0.25,
++                                    "coupling.distance": 0.25,
+@@ -2709,1 +2687,0 @@
+-                                    "coupling.abstractness-own": 0,
+@@ -2714,5 +2691,1 @@
+-                                    "coupling.ca-own": 0,
+-                                    "coupling.ce-own": 5,
+-                                    "coupling.instability-own": 1,
+-                                    "coupling.distance": 0,
+-                                    "coupling.distance-own": 0,
++                                    "coupling.distance": 0,
+@@ -3132,2 +3105,1 @@
+-        "healthScores": {},
+-        "healthCoverage": {}
++        "healthScores": {}
+@@ -3568,66 +3540,0 @@
+-            "coupling.instability-own": {
+-                "label": "Instability (own)",
+-                "ranges": [
+-                    {
+-                        "max": 0.09,
+-                        "text": "Maximally stable"
+-                    },
+-                    {
+-                        "max": 0.29,
+-                        "text": "Stable"
+-                    },
+-                    {
+-                        "max": 0.7,
+-                        "text": "Balanced"
+-                    },
+-                    {
+-                        "max": 0.9,
+-                        "text": "Unstable"
+-                    },
+-                    {
+-                        "above": true,
+-                        "text": "Maximally unstable"
+-                    }
+-                ],
+-                "formatTemplate": null
+-            },
+-            "coupling.abstractness-own": {
+-                "label": "Abstractness (own)",
+-                "ranges": [
+-                    {
+-                        "max": 0.09,
+-                        "text": "All concrete"
+-                    },
+-                    {
+-                        "max": 0.5,
+-                        "text": "Mostly concrete"
+-                    },
+-                    {
+-                        "max": 0.9,
+-                        "text": "Mostly abstract"
+-                    },
+-                    {
+-                        "above": true,
+-                        "text": "All abstract"
+-                    }
+-                ],
+-                "formatTemplate": null
+-            },
+-            "coupling.distance-own": {
+-                "label": "Distance (own)",
+-                "ranges": [
+-                    {
+-                        "max": 0.1,
+-                        "text": "On main sequence"
+-                    },
+-                    {
+-                        "max": 0.3,
+-                        "text": "Acceptable balance"
+-                    },
+-                    {
+-                        "above": true,
+-                        "text": "Off balance"
+-                    }
+-                ],
+-                "formatTemplate": null
+-            },
+@@ -4051,1 +3957,1 @@
+-                            "key": "coupling.distance-own.avg",
++                            "key": "coupling.distance.avg",

@@ -25,8 +25,6 @@ final class DependencyGraph implements DependencyGraphInterface
      * @param array<string, array<Dependency>> $byTarget Dependencies indexed by target canonical key
      * @param array<SymbolPath> $classes All unique class SymbolPaths
      * @param array<SymbolPath> $namespaces All unique namespace SymbolPaths
-     * @param array<string, StringSet> $namespaceCe External classes each namespace depends on
-     * @param array<string, StringSet> $namespaceCa External classes that depend on each namespace
      * @param array<string, int> $classCe Precomputed efferent coupling per class (canonical key -> count)
      * @param array<string, int> $classCa Precomputed afferent coupling per class (canonical key -> count)
      */
@@ -36,8 +34,7 @@ final class DependencyGraph implements DependencyGraphInterface
         private readonly array $byTarget,
         private readonly array $classes,
         private readonly array $namespaces,
-        private readonly array $namespaceCe,
-        private readonly array $namespaceCa,
+        private readonly NamespaceCouplings $namespaceCouplings,
         private readonly array $classCe,
         private readonly array $classCa,
     ) {}
@@ -64,12 +61,22 @@ final class DependencyGraph implements DependencyGraphInterface
 
     public function getNamespaceCe(SymbolPath $namespace): int
     {
-        return ($this->namespaceCe[$namespace->toCanonical()] ?? new StringSet())->count();
+        return $this->namespaceCouplings->subtreeCe($namespace);
     }
 
     public function getNamespaceCa(SymbolPath $namespace): int
     {
-        return ($this->namespaceCa[$namespace->toCanonical()] ?? new StringSet())->count();
+        return $this->namespaceCouplings->subtreeCa($namespace);
+    }
+
+    public function getNamespaceOwnCe(SymbolPath $namespace): int
+    {
+        return $this->namespaceCouplings->ownCe($namespace);
+    }
+
+    public function getNamespaceOwnCa(SymbolPath $namespace): int
+    {
+        return $this->namespaceCouplings->ownCa($namespace);
     }
 
     public function getAllClasses(): array

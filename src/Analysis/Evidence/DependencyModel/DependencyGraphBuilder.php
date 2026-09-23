@@ -36,16 +36,10 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
         $dependencies = $this->retainGraphDependencies($dependencies);
         $indexes = $this->indexGraphInputs($dependencies, $logicalClassUniverse);
         [$canonicalNamespaceMap, $parentNamespaces] = $this->expandNamespaceUniverse($indexes['leafNamespaces']);
-        $namespaceCouplings = $this->computeNamespaceCouplings($dependencies, $canonicalNamespaceMap);
-
-        if ($parentNamespaces !== []) {
-            $this->computeParentNamespaceCouplings(
-                $dependencies,
-                $parentNamespaces,
-                $namespaceCouplings['coupling.ce'],
-                $namespaceCouplings['coupling.ca'],
-            );
-        }
+        $ownCouplings = $this->computeNamespaceCouplings($dependencies, $canonicalNamespaceMap);
+        $rollupCouplings = $parentNamespaces === []
+            ? $ownCouplings
+            : $this->withParentNamespaceCouplings($dependencies, $parentNamespaces, $ownCouplings);
 
         return new DependencyGraph(
             $dependencies,
@@ -53,8 +47,12 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
             $indexes['byTarget'],
             array_values($indexes['classes']),
             array_values($canonicalNamespaceMap),
-            $namespaceCouplings['coupling.ce'],
-            $namespaceCouplings['coupling.ca'],
+            NamespaceCouplings::fromScopes(
+                $rollupCouplings['coupling.ce'],
+                $rollupCouplings['coupling.ca'],
+                $ownCouplings['coupling.ce'],
+                $ownCouplings['coupling.ca'],
+            ),
             $this->computeClassCe($indexes['bySource']),
             $this->computeClassCa($indexes['byTarget']),
         );
@@ -209,23 +207,31 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
     }
 
     /**
-     * Computes Ce/Ca for parent namespaces using prefix-based boundary semantics.
+     * Returns the namespace couplings with every parent namespace recomputed
+     * over prefix-based boundary semantics.
      *
      * For a parent namespace P, a dependency is external if one side is inside P
      * (namespace equals P or starts with P\) and the other side is outside P.
      * Dependencies between child namespaces of the same parent are internal.
      *
+     * The argument is returned changed rather than modified in place because a
+     * parent namespace carries both scopes at once: this subtree rollup, and
+     * the own-scope value it replaces, which the graph also publishes.
+     *
      * @param array<Dependency> $dependencies
      * @param array<string, SymbolPath> $parentNamespaces raw namespace string => SymbolPath
-     * @param array<string, StringSet> $namespaceCe modified in place
-     * @param array<string, StringSet> $namespaceCa modified in place
+     * @param array{'coupling.ce': array<string, StringSet>, 'coupling.ca': array<string, StringSet>} $ownCouplings
+     *
+     * @return array{'coupling.ce': array<string, StringSet>, 'coupling.ca': array<string, StringSet>}
      */
-    private function computeParentNamespaceCouplings(
+    private function withParentNamespaceCouplings(
         array $dependencies,
         array $parentNamespaces,
-        array &$namespaceCe,
-        array &$namespaceCa,
-    ): void {
+        array $ownCouplings,
+    ): array {
+        $namespaceCe = $ownCouplings['coupling.ce'];
+        $namespaceCa = $ownCouplings['coupling.ca'];
+
         // Build prefix list: "App\Service" => "App\Service\"
         $parentPrefixes = [];
         $parentCanonicals = [];
@@ -273,6 +279,8 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
                 }
             }
         }
+
+        return ['coupling.ce' => $namespaceCe, 'coupling.ca' => $namespaceCa];
     }
 
     /**

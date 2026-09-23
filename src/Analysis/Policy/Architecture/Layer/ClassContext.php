@@ -34,6 +34,13 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
  * dependency graph. Both carry three empty lists, but the first is an answer
  * and the second is the absence of one, and only the flag can tell an
  * evaluator which it is holding.
+ *
+ * {@see $declarationAnalysed} and {@see $unresolvedDeclarations} separate a
+ * third case that a bound graph does NOT rule out: the three lists are built
+ * from the run's own declaration edges, so they say nothing about a symbol the
+ * run never analysed, and the transitive walks stop wherever the next link was
+ * not analysed. Both states used to read as a complete answer. See
+ * {@see CriterionOutcome}.
  */
 final readonly class ClassContext
 {
@@ -64,6 +71,18 @@ final readonly class ClassContext
     public array $parentClassSet;
 
     /**
+     * Whether the run read this symbol's OWN declaration.
+     *
+     * Derived rather than passed, because the two facts are one: the subject's
+     * own FQN appears in {@see $unresolvedDeclarations} exactly when the run
+     * did not read it. False means {@see $attributeFqns} is silence rather than
+     * an empty answer — attributes sit on the class itself and reach no
+     * further, so this, and not the whole list, is what decides the
+     * {@code attributes} criterion.
+     */
+    public bool $declarationAnalysed;
+
+    /**
      * @param string $fqn Fully-qualified class name without a leading
      *                    backslash (e.g. {@code App\Service\UserService}).
      *                    Empty string is permitted; {@see LayerDefinition::matches()}
@@ -85,6 +104,22 @@ final readonly class ClassContext
      *                          has no attributes, interfaces or parents.
      *                          Evaluating a graph-backed criterion against such
      *                          a context is a lifecycle error, not a non-match.
+     * @param list<string> $unresolvedDeclarations FQNs the transitive walks
+     *                                             reached and had to stop at,
+     *                                             because the run did not
+     *                                             analyse their declarations.
+     *                                             Non-empty means
+     *                                             {@see $interfaces} and
+     *                                             {@see $parentClasses} are a
+     *                                             truncated chain, so a missing
+     *                                             entry proves nothing; a
+     *                                             present one still does. The
+     *                                             subject's own FQN appears here
+     *                                             when {@see $declarationAnalysed}
+     *                                             is false — that is where the
+     *                                             chain is cut, which is what
+     *                                             {@see $declarationAnalysed}
+     *                                             reads.
      */
     public function __construct(
         public string $fqn,
@@ -93,7 +128,10 @@ final readonly class ClassContext
         public array $interfaces = [],
         public array $parentClasses = [],
         public bool $graphBacked = true,
+        public array $unresolvedDeclarations = [],
     ) {
+        $this->declarationAnalysed = !\in_array($fqn, $unresolvedDeclarations, true);
+
         $this->attributeFqnSet = $attributeFqns === [] ? [] : array_fill_keys($attributeFqns, true);
         $this->interfaceSet = $interfaces === [] ? [] : array_fill_keys($interfaces, true);
         $this->parentClassSet = $parentClasses === [] ? [] : array_fill_keys($parentClasses, true);

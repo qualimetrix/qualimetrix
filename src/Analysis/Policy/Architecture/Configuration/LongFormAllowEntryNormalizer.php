@@ -32,9 +32,9 @@ final class LongFormAllowEntryNormalizer
      * instead of the user's intended subset).
      *
      * Both spellings of {@code allow_cross_instance} (canonical snake_case and
-     * the camelCase variant) are whitelisted. Phase 3.5 made the architecture
-     * config tree preserve subtree keys verbatim, so users can land either
-     * style from upstream YAML; the normalizer resolves them identically (see
+     * the camelCase variant) are whitelisted, because the architecture config
+     * tree preserves subtree keys verbatim and users can land either style from
+     * upstream YAML; the normalizer resolves them identically (see
      * {@see ALLOW_CROSS_INSTANCE_KEYS}).
      */
     private const array ALLOWED_KEYS = ['target', 'relations', 'allow_cross_instance', 'allowCrossInstance'];
@@ -84,8 +84,19 @@ final class LongFormAllowEntryNormalizer
 
     /**
      * Thin delegate to {@see AllowAliasExpander::parseList()}. The expander
-     * owns the {@code relations:} shape contract (absent / non-list / empty)
-     * AND the token-expansion vocabulary.
+     * owns the {@code relations:} shape contract (non-list / empty) AND the
+     * token-expansion vocabulary; presence is decided here, because this is
+     * where the raw entry map is.
+     *
+     * **A key with no value is a written filter, not an absent one.** In YAML
+     * {@code relations:} with an empty list, commented-out items or a lost
+     * indent all parse to {@code null}, and handing that to the expander used
+     * to mean "no filter declared — every relation kind allowed". Its
+     * neighbour, {@code relations: []}, is refused for exactly that reason:
+     * widening a policy silently is not something a typo may do. Two spellings
+     * of one slip must not have opposite effects, and the quiet one must not be
+     * the widening one — so an explicit {@code null} takes the same refusal,
+     * which also names the bare-target form that keeps "any relation allowed".
      *
      * @param array<array-key, mixed> $entry
      *
@@ -98,7 +109,7 @@ final class LongFormAllowEntryNormalizer
         }
 
         return AllowAliasExpander::parseList(
-            $entry['relations'],
+            $entry['relations'] ?? [],
             \sprintf('architecture.allow.%s[%d]', $source, $index),
         );
     }
@@ -111,7 +122,7 @@ final class LongFormAllowEntryNormalizer
      * they thought they had silenced.
      *
      * Accepts the canonical snake_case spelling and the camelCase variant as
-     * synonyms — Phase 3.5 made the architecture subtree preserve user-supplied
+     * synonyms — the architecture subtree preserves user-supplied
      * key spellings, so both shapes survive normalization and need to resolve
      * to the same flag. Specifying **both** spellings on the same entry is a
      * user-side ambiguity (different values would silently lose one to key

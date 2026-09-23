@@ -88,6 +88,9 @@ final class ViolationDensityTest extends TestCase
         $nsMetrics = MetricBag::fromArray([
             'health.overall' => 40.0,
             'health.complexity' => 35.0,
+            // Own count beside the subtree sum: the worst-offender guard asks
+            // whether this namespace declares classes itself.
+            'size.class-count' => 3,
             'size.class-count.sum' => 3,
             'size.loc.sum' => 1000,
         ]);

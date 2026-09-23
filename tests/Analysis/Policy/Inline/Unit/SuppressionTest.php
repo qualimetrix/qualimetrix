@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Core\Path\RelativePath;
@@ -26,8 +27,7 @@ final class SuppressionTest extends TestCase
             reason: 'Legacy code',
             line: 10,
             type: SuppressionType::Symbol,
-            subject: $this->subject(),
-            controlScope: ControlScope::Callable,
+            binding: new DeclarationBinding($this->subject(), ControlScope::Callable),
         );
 
         self::assertTrue($suppression->matches('complexity.ccn', SymbolLevel::Class_));
@@ -42,8 +42,7 @@ final class SuppressionTest extends TestCase
             reason: 'Legacy code',
             line: 10,
             type: SuppressionType::Symbol,
-            subject: $this->subject(),
-            controlScope: ControlScope::Callable,
+            binding: new DeclarationBinding($this->subject(), ControlScope::Callable),
         );
 
         // `complexity` addresses the channel called `complexity` — there is
@@ -62,8 +61,7 @@ final class SuppressionTest extends TestCase
             reason: 'Legacy code',
             line: 10,
             type: SuppressionType::Symbol,
-            subject: $this->subject(),
-            controlScope: ControlScope::Callable,
+            binding: new DeclarationBinding($this->subject(), ControlScope::Callable),
         );
 
         self::assertTrue($suppression->matches('complexity.cyclomatic.callable', SymbolLevel::Class_));
@@ -85,8 +83,7 @@ final class SuppressionTest extends TestCase
             reason: null,
             line: 10,
             type: SuppressionType::Symbol,
-            subject: $this->subject(),
-            controlScope: ControlScope::Callable,
+            binding: new DeclarationBinding($this->subject(), ControlScope::Callable),
         );
 
         self::assertTrue($suppression->matches('architecture.coverage-gap', SymbolLevel::Class_));
@@ -132,8 +129,7 @@ final class SuppressionTest extends TestCase
             reason: null,
             line: 42,
             type: SuppressionType::Symbol,
-            subject: $this->subject(),
-            controlScope: ControlScope::Callable,
+            binding: new DeclarationBinding($this->subject(), ControlScope::Callable),
         );
 
         self::assertNull($suppression->reason);
@@ -147,8 +143,7 @@ final class SuppressionTest extends TestCase
             reason: null,
             line: 10,
             type: SuppressionType::Symbol,
-            subject: $this->subject(),
-            controlScope: ControlScope::Callable,
+            binding: new DeclarationBinding($this->subject(), ControlScope::Callable),
         );
 
         // More specific pattern does NOT match less specific subject

@@ -66,16 +66,27 @@ final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterfac
 
         $configuration = $this->configured;
 
+        // Materialised once, before the binding: the universe is read twice
+        // from here — once as the set of declarations this run analysed, once
+        // as the classes template observation walks — and a generator handed in
+        // by a caller would be empty by the second read.
+        $analysedClasses = \is_array($classUniverse)
+            ? array_values($classUniverse)
+            : iterator_to_array($classUniverse, false);
+
         // The run's single binding point: every reader of a class context,
-        // template observation included, runs after this line.
-        $configuration->registry()->bindGraph($graph);
+        // template observation included, runs after this line. The universe
+        // goes in with the graph, because a context that knows the graph but
+        // not the universe cannot tell an inheritance chain that ended from one
+        // that was cut at the edge of the analysed set.
+        $configuration->registry()->bindGraph($graph, $analysedClasses);
 
         if ($configuration->hasTemplates()) {
             // One factory for the whole run. Observation and membership
             // matching must read the same contexts, or a layer is derived
             // from facts it is then matched against different ones.
             $classes = new ClassSet(
-                \is_array($classUniverse) ? array_values($classUniverse) : iterator_to_array($classUniverse, false),
+                $analysedClasses,
                 $configuration->registry()->contextFactory(),
             );
             $expansion = $this->expansionStage->expand($configuration->entries(), $classes, $configuration->maxExpandedLayers());
@@ -108,6 +119,7 @@ final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterfac
                 $matches,
             ),
             !$configuration->isEmpty(),
+            $configuration->registry()->undecidedLayers($subject),
         );
     }
 

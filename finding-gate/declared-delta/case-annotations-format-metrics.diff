@@ -1,0 +1,22 @@
+--- candidate
++++ reference (mapped)
+@@ -194,1 +194,0 @@
+-                "size.symbol-declaring-namespace-count": 1,
+@@ -226,2 +225,2 @@
+-                "coupling.distance-own.avg": 1,
+-                "coupling.distance-own.count": 1
++                "coupling.distance.avg": 1,
++                "coupling.distance.count": 1
+@@ -419,1 +418,0 @@
+-                "coupling.abstractness-own": 0,
+@@ -424,5 +422,1 @@
+-                "coupling.ca-own": 0,
+-                "coupling.ce-own": 0,
+-                "coupling.instability-own": 0,
+-                "coupling.distance": 1,
+-                "coupling.distance-own": 1,
++                "coupling.distance": 1,
+@@ -641,3 +635,0 @@
+-                "coupling.ca-own": 0,
+-                "coupling.ce-own": 0,
+-                "coupling.instability-own": 0,

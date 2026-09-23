@@ -62,7 +62,7 @@ final readonly class LayerPolicy
      *   and callers that only care about layer-pair reachability without
      *   per-edge granularity.
      * - `$type !== null` — only allow targets whose `relations` field is null
-     *   (any relation) OR contains `$type` accept the edge. The Step G
+     *   (any relation) OR contains `$type` accept the edge. The
      *   `relations:` long-form key populates `relations`; bare-string targets
      *   leave it null and continue to accept any relation kind.
      *

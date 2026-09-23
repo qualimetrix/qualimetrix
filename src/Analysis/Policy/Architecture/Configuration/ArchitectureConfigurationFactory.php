@@ -136,6 +136,7 @@ final class ArchitectureConfigurationFactory
         $this->exactAllowCycleValidator->validate($allowEntries);
 
         $coverage = $this->coverageValidator->validate($raw['coverage-gap'] ?? null);
+        $this->coverageValidator->rejectModeWithNothingToJudge($coverage, $entries);
         $maxExpandedLayers = self::validateMaxExpandedLayers(
             $raw['max_expanded_layers'] ?? ArchitectureConfiguration::DEFAULT_MAX_EXPANDED_LAYERS,
         );
@@ -217,7 +218,7 @@ final class ArchitectureConfigurationFactory
      * Returns the union of static layer names and template name templates.
      * Phase-2 allow lists can reference either a static layer name or a name
      * template (the latter resolves to a glob/captured selector once Step E
-     * wires real binding flow). For Step D, exact-string allow-list entries
+     * wires real binding flow). Exact-string allow-list entries
      * referencing a template name template skip cross-validation since the
      * template's concrete instances are not known at config-load time —
      * matching is handled at expansion-time by the policy resolver. Here we

@@ -13,7 +13,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 /**
  * Builds {@see ClassContext} instances from collection-phase data for the
  * {@code attributes}, {@code implements} and {@code extends} membership
- * criteria (Phase 2 direction 1).
+ * criteria.
  *
  * The factory owns the per-run binding to the analysis dependency graph, under
  * one invariant: **every reader of a context runs after {@see bindGraph()}**.
@@ -41,12 +41,18 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * interfaces inherited from parent classes, and interfaces transitively
  * reached via interface-extends-interface edges (interfaces use
  * {@see DependencyType::Extends} for inheritance — same edge kind as classes,
- * disambiguated by walk start point). Vendor classes outside the analysed
- * project are NOT followed via reflection in Step B; their extends/implements
- * chains end at the project boundary. This matches the data the graph already
- * exposes and is sufficient for the documented test cases — reflection
- * fallback is a follow-up if vendor base-class matching turns out to be
- * required in practice.
+ * disambiguated by walk start point).
+ *
+ * **Where a chain ends, and what that is allowed to mean.** A class outside
+ * the analysed set is not followed: nothing reads it by reflection, and the
+ * graph carries no edges out of it. Its own declaration edges were recorded
+ * from the analysed child, so a criterion naming a DIRECT vendor parent still
+ * matches; a criterion naming anything beyond that link cannot be answered.
+ * The factory therefore reports where it stopped —
+ * {@see ClassContext::$unresolvedDeclarations} names every FQN the walk
+ * reached without facts of its own — instead of handing back a truncated chain
+ * that reads like a complete one. Answering that difference is
+ * {@see CriterionOutcome}'s job; producing it is this class's.
  *
  * **No-graph mode.** Before {@see bindGraph()} is called (config load, and any
  * caller that builds its own registry without a run behind it), {@see build()}
@@ -106,17 +112,45 @@ final class ClassContextFactory
     private array $contextCache = [];
 
     /**
+     * The declarations this run read, as far as the binding caller said.
+     *
+     * Only {@see \Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy::prepare()} knows the
+     * set, and it is the one binding point a run goes through, so a run never
+     * sees {@see AnalysedDeclarations::unknown()} — a registry assembled by
+     * hand for a unit test does.
+     */
+    private AnalysedDeclarations $analysed;
+
+    public function __construct()
+    {
+        $this->analysed = AnalysedDeclarations::unknown();
+    }
+
+    /**
      * Binds the factory to the analysis-run dependency graph. Resets all
      * internal caches so the next {@see build()} call rebuilds the lookup
      * maps. Passing {@code null} switches the factory back to no-graph mode.
+     *
+     * @param iterable<SymbolPath>|null $analysedClasses The declarations this
+     *                                                   run analysed. Supplying
+     *                                                   them is what lets a
+     *                                                   context tell a chain
+     *                                                   that ended from one
+     *                                                   that was cut; omitting
+     *                                                   them makes every answer
+     *                                                   read as complete, as it
+     *                                                   always did.
      */
-    public function bindGraph(?DependencyGraphInterface $graph): void
+    public function bindGraph(?DependencyGraphInterface $graph, ?iterable $analysedClasses = null): void
     {
         $this->graph = $graph;
         $this->extendsMap = null;
         $this->implementsMap = null;
         $this->attributesMap = null;
         $this->contextCache = [];
+        $this->analysed = $analysedClasses === null
+            ? AnalysedDeclarations::unknown()
+            : AnalysedDeclarations::of($analysedClasses);
     }
 
     /**
@@ -124,7 +158,7 @@ final class ClassContextFactory
      *
      * For pure-namespace paths (no {@code type} segment) or empty FQNs returns
      * a minimal context whose only meaningful field is the FQN itself —
-     * matches Phase-1 behaviour for namespace-level layer queries.
+     * which is what a namespace-level layer query can be answered from.
      */
     public function build(SymbolPath $class): ClassContext
     {
@@ -153,9 +187,15 @@ final class ClassContextFactory
 
         $this->ensureMapsBuilt();
 
+        // The subject itself when the run never analysed it: the chain is cut
+        // at the class, not above it, and its attribute list is silence too —
+        // which is why ClassContext derives `declarationAnalysed` from this
+        // list rather than carrying a separate flag.
+        $unresolved = $this->analysed->contains($fqn) ? [] : [$fqn => true];
+
         $attributes = $this->attributesMap[$fqn] ?? [];
-        $parents = $this->collectTransitiveParents($fqn);
-        $interfaces = $this->collectTransitiveInterfaces($fqn, $parents);
+        $parents = $this->collectTransitiveParents($fqn, $unresolved);
+        $interfaces = $this->collectTransitiveInterfaces($fqn, $parents, $unresolved);
 
         return $this->contextCache[$cacheKey] = new ClassContext(
             $fqn,
@@ -163,6 +203,7 @@ final class ClassContextFactory
             $attributes,
             $interfaces,
             $parents,
+            unresolvedDeclarations: array_keys($unresolved),
         );
     }
 
@@ -215,13 +256,17 @@ final class ClassContextFactory
     }
 
     /**
+     * @param array<string, true> $unresolved Collects every FQN the walk
+     *                                        reached whose own declaration the
+     *                                        run did not analyse.
+     *
      * @return list<string>
      */
-    private function collectTransitiveParents(string $fqn): array
+    private function collectTransitiveParents(string $fqn, array &$unresolved): array
     {
         \assert($this->extendsMap !== null);
 
-        return self::bfsClosure($this->extendsMap[$fqn] ?? [], $this->extendsMap);
+        return $this->bfsClosure($this->extendsMap[$fqn] ?? [], $this->extendsMap, $unresolved);
     }
 
     /**
@@ -231,10 +276,11 @@ final class ClassContextFactory
      *
      * @param list<string> $parentClasses Already-collected transitive
      *                                    parent-class FQNs.
+     * @param array<string, true> $unresolved See {@see collectTransitiveParents()}.
      *
      * @return list<string>
      */
-    private function collectTransitiveInterfaces(string $fqn, array $parentClasses): array
+    private function collectTransitiveInterfaces(string $fqn, array $parentClasses, array &$unresolved): array
     {
         \assert($this->implementsMap !== null);
         \assert($this->extendsMap !== null);
@@ -248,7 +294,7 @@ final class ClassContextFactory
         // Interfaces extending other interfaces produce DependencyType::Extends
         // edges (see ClassLikeHandler::handleInterface). The shared extendsMap
         // is therefore the canonical source for interface inheritance too.
-        return self::bfsClosure($seedQueue, $this->extendsMap);
+        return $this->bfsClosure($seedQueue, $this->extendsMap, $unresolved);
     }
 
     /**
@@ -277,12 +323,19 @@ final class ClassContextFactory
      * {@code $adjacency}, returning the discovery order with duplicates
      * removed.
      *
+     * A node with no adjacency entry ends the walk along that branch, and the
+     * walk cannot tell from the map alone whether it ended because the node
+     * declares nothing above it or because the node was never analysed. The
+     * universe answers that, and the second case is recorded in
+     * {@code $unresolved} rather than passed off as the first.
+     *
      * @param list<string> $seedQueue
      * @param array<string, list<string>> $adjacency
+     * @param array<string, true> $unresolved
      *
      * @return list<string>
      */
-    private static function bfsClosure(array $seedQueue, array $adjacency): array
+    private function bfsClosure(array $seedQueue, array $adjacency, array &$unresolved): array
     {
         $result = [];
         $seen = [];
@@ -300,6 +353,10 @@ final class ClassContextFactory
             }
             $seen[$next] = true;
             $result[] = $next;
+
+            if (!$this->analysed->contains($next)) {
+                $unresolved[$next] = true;
+            }
 
             foreach ($adjacency[$next] ?? [] as $neighbour) {
                 if (!isset($seen[$neighbour])) {

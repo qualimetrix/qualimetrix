@@ -1,0 +1,44 @@
+--- candidate
++++ reference (mapped)
+@@ -506,1 +506,0 @@
+-                "size.symbol-declaring-namespace-count": 3,
+@@ -538,2 +537,2 @@
+-                "coupling.distance-own.avg": 0.6666666666666666,
+-                "coupling.distance-own.count": 3
++                "coupling.distance.avg": 0.6666666666666666,
++                "coupling.distance.count": 3
+@@ -731,1 +730,0 @@
+-                "coupling.abstractness-own": 0,
+@@ -736,5 +734,1 @@
+-                "coupling.ca-own": 0,
+-                "coupling.ce-own": 1,
+-                "coupling.instability-own": 1,
+-                "coupling.distance": 0,
+-                "coupling.distance-own": 0,
++                "coupling.distance": 0,
+@@ -966,1 +960,0 @@
+-                "coupling.abstractness-own": 0,
+@@ -971,5 +964,1 @@
+-                "coupling.ca-own": 0,
+-                "coupling.ce-own": 0,
+-                "coupling.instability-own": 0,
+-                "coupling.distance": 1,
+-                "coupling.distance-own": 1,
++                "coupling.distance": 1,
+@@ -1207,1 +1196,0 @@
+-                "coupling.abstractness-own": 0,
+@@ -1212,5 +1200,1 @@
+-                "coupling.ca-own": 0,
+-                "coupling.ce-own": 0,
+-                "coupling.instability-own": 0,
+-                "coupling.distance": 1,
+-                "coupling.distance-own": 1,
++                "coupling.distance": 1,
+@@ -1435,3 +1419,0 @@
+-                "coupling.ca-own": 0,
+-                "coupling.ce-own": 0,
+-                "coupling.instability-own": 0,
+@@ -1657,3 +1638,0 @@
+-                "coupling.ca-own": 0,
+-                "coupling.ce-own": 0,
+-                "coupling.instability-own": 0,

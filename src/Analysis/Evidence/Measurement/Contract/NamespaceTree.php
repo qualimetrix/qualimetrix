@@ -223,6 +223,17 @@ final readonly class NamespaceTree
     /**
      * Returns all leaf namespaces.
      *
+     * Not the population of a project fold, and no production code reads it for
+     * one any more: a namespace-collected metric is carried by parents as well
+     * as leaves, and folding the leaves alone left every parent's own classes
+     * out of the average — 39 of 166 namespaces on this repository, and
+     * unmeasurable because the coverage denominator was this same set. A fold
+     * admits every namespace carrying the key; see
+     * {@see \Qualimetrix\Analysis\Evidence\Measurement\Aggregation\NamespaceToProjectAggregator}.
+     * Kept because "which namespaces have nothing below them" is a question
+     * about the tree, asked by the invariant checks that compare a parent's
+     * aggregate against its children.
+     *
      * @return list<string>
      */
     public function getLeaves(): array

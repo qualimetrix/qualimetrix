@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
  * Computes abstractness metric for namespaces.
@@ -56,7 +57,7 @@ final class AbstractnessCollector implements GlobalContextCollectorInterface
 
     public function provides(): array
     {
-        return [MetricName::COUPLING_ABSTRACTNESS];
+        return [MetricName::COUPLING_ABSTRACTNESS, MetricName::COUPLING_ABSTRACTNESS_OWN];
     }
 
     public function getMetricDefinitions(): array
@@ -64,6 +65,11 @@ final class AbstractnessCollector implements GlobalContextCollectorInterface
         return [
             new MetricDefinition(
                 name: MetricName::COUPLING_ABSTRACTNESS,
+                collectedAt: SymbolLevel::Namespace_,
+                aggregations: [],
+            ),
+            new MetricDefinition(
+                name: MetricName::COUPLING_ABSTRACTNESS_OWN,
                 collectedAt: SymbolLevel::Namespace_,
                 aggregations: [],
             ),
@@ -91,7 +97,42 @@ final class AbstractnessCollector implements GlobalContextCollectorInterface
             $abstractness = $this->computeAbstractness($totalTypes, $totalAbstractions);
 
             $repository->addScalar($nsPath, MetricName::COUPLING_ABSTRACTNESS, $abstractness);
+
+            $this->addOwnAbstractness($repository, $nsPath);
         }
+    }
+
+    /**
+     * Publishes abstractness over the types declared in exactly this namespace,
+     * leaving the ones its sub-namespaces hold to those namespaces.
+     *
+     * The unsuffixed counts are the namespace's own; the `.sum` variants the
+     * published value uses are their subtree rollups. A namespace that declares
+     * no type of its own carries no unsuffixed count at all, and gets no key:
+     * how far a package sits from the main sequence is undefined where there is
+     * no package, and silence says that where 0.0 would not.
+     */
+    private function addOwnAbstractness(MetricRepositoryInterface $repository, SymbolPath $nsPath): void
+    {
+        $metrics = $repository->get($nsPath);
+
+        $ownTypes = (int) ($metrics->get(MetricName::SIZE_CLASS_COUNT) ?? 0)
+            + (int) ($metrics->get(MetricName::SIZE_TRAIT_COUNT) ?? 0)
+            + (int) ($metrics->get(MetricName::SIZE_INTERFACE_COUNT) ?? 0)
+            + (int) ($metrics->get(MetricName::SIZE_IMPLEMENTING_ENUM_COUNT) ?? 0);
+
+        if ($ownTypes === 0) {
+            return;
+        }
+
+        $ownAbstractions = (int) ($metrics->get(MetricName::SIZE_ABSTRACT_CLASS_COUNT) ?? 0)
+            + (int) ($metrics->get(MetricName::SIZE_INTERFACE_COUNT) ?? 0);
+
+        $repository->addScalar(
+            $nsPath,
+            MetricName::COUPLING_ABSTRACTNESS_OWN,
+            $this->computeAbstractness($ownTypes, $ownAbstractions),
+        );
     }
 
     /**

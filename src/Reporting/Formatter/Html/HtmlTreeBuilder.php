@@ -7,6 +7,7 @@ namespace Qualimetrix\Reporting\Formatter\Html;
 use Composer\InstalledVersions;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
@@ -15,6 +16,7 @@ use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Version;
+use Qualimetrix\Reporting\Formatter\Health\HealthCoverageNarrator;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Report;
 
@@ -324,6 +326,20 @@ final class HtmlTreeBuilder
             'totalViolations' => $report->getTotalFindings(),
             'totalDebtMinutes' => $root->debtMinutes,
             'healthScores' => (object) $healthScores,
+            // ADR 0062 publishes coverage alongside the score, and this
+            // surface used to carry the bare values alone: a score over a tenth
+            // of the classes arrived indistinguishable from one over all of
+            // them. Keyed by the same `health.*` name as the score beside it.
+            'healthCoverage' => (object) array_combine(
+                array_map(
+                    static fn(HealthScore $score): string => 'health.' . $score->name,
+                    array_values($report->healthScores),
+                ),
+                array_map(
+                    static fn(HealthScore $score): array => HealthCoverageNarrator::record($score->coverage),
+                    array_values($report->healthScores),
+                ),
+            ),
         ];
     }
 

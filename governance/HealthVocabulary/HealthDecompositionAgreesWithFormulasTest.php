@@ -39,7 +39,7 @@ final class HealthDecompositionAgreesWithFormulasTest extends TestCase
         'cohesion.tcc',
         'cohesion.tcc.avg',
         'coupling.distance',
-        'coupling.distance.avg',
+        'coupling.distance-own.avg',
         'design.type-coverage.all',
     ];
 

@@ -295,6 +295,16 @@ final class ClassContextFactoryTest extends TestCase
                 return 0;
             }
 
+            public function getNamespaceOwnCe(SymbolPath $namespace): int
+            {
+                return 0;
+            }
+
+            public function getNamespaceOwnCa(SymbolPath $namespace): int
+            {
+                return 0;
+            }
+
             public function getAllClasses(): array
             {
                 return [];

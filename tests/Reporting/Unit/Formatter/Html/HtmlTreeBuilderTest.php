@@ -9,6 +9,9 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\CoverageUnit;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
@@ -22,6 +25,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder;
 use Qualimetrix\Reporting\Formatter\Html\HtmlTreeNode;
 use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\Report;
 use Qualimetrix\Reporting\ReportBuilder;
 use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
@@ -511,6 +515,41 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertSame(90.0, $healthScores['health.complexity']);
         self::assertArrayNotHasKey('size.loc.sum', $healthScores);
         self::assertArrayNotHasKey('classes.count', $healthScores);
+    }
+
+    /**
+     * The viewer's payload used to carry the bare `health.*` values, so a score
+     * arrived with nothing saying what share of the subject it was computed
+     * over — the same publication ADR 0062 requires of the other formats.
+     */
+    #[Test]
+    public function itIncludesHealthCoverageInSummary(): void
+    {
+        $metrics = new InMemoryMetricRepository();
+        $metrics->add(SymbolPath::forProject(), MetricBag::fromArray(['health.cohesion' => 82.9]), null, null);
+
+        $report = new Report(
+            findings: [],
+            filesAnalyzed: 10,
+            filesSkipped: 0,
+            duration: 0.5,
+            errorCount: 0,
+            warningCount: 0,
+            metrics: $metrics,
+            healthScores: [
+                'cohesion' => new HealthScore('cohesion', 82.9, 'Excellent', 60.0, 30.0, HealthCoverage::over(3, 12, CoverageUnit::Classes, 'cohesion.tcc.count')),
+                'overall' => new HealthScore('overall', 75.3, 'Acceptable', 50.0, 30.0, HealthCoverage::notApplicable('composes the other dimensions')),
+            ],
+        );
+
+        $coverage = (array) $this->builder->build($report, new FormatterContext())['summary']['healthCoverage'];
+
+        self::assertSame(
+            ['state' => 'measured', 'measured' => 3, 'eligible' => 12, 'ratio' => 0.25, 'unit' => 'classes', 'basis' => 'cohesion.tcc.count', 'reason' => null],
+            $coverage['health.cohesion'],
+        );
+        self::assertSame('not-applicable', $coverage['health.overall']['state']);
+        self::assertSame('composes the other dimensions', $coverage['health.overall']['reason']);
     }
 
     #[Test]

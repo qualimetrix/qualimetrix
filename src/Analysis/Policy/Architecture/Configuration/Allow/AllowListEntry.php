@@ -12,7 +12,7 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow;
  * walks it linearly and short-circuits on the first matching source-target
  * pair. Order is significant when glob / captured selectors overlap (e.g. an
  * exact entry and a broader glob entry for the same source name), but Step C's
- * boolean policy is order-insensitive — order matters in Step G where
+ * boolean policy is order-insensitive — order matters where
  * {@code relations:} filters can carve out exceptions.
  */
 final readonly class AllowListEntry

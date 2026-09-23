@@ -27,7 +27,7 @@ use Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator;
  *
  * **Observed-tuple expansion (NOT cartesian).** For each template, the stage
  * walks the project's class set, applies all of the template's criteria
- * (capture-producing AND non-capturing per D7), and collects the distinct
+ * (capture-producing and non-capturing alike), and collects the distinct
  * observed binding tuples. One concrete {@see LayerDefinition} is produced
  * per tuple, named by substituting the binding values into
  * {@see TemplateLayerDefinition::$nameTemplate}. A two-variable template

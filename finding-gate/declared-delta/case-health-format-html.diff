@@ -1,0 +1,180 @@
+--- candidate
++++ reference (mapped)
+@@ -182,1 +182,0 @@
+-            "size.symbol-declaring-namespace-count": 4,
+@@ -214,2 +213,2 @@
+-            "coupling.distance-own.avg": 0.75,
+-            "coupling.distance-own.count": 4,
++            "coupling.distance.avg": 0.75,
++            "coupling.distance.count": 4,
+@@ -409,3 +408,0 @@
+-                    "coupling.ca-own": 0,
+-                    "coupling.ce-own": 0,
+-                    "coupling.instability-own": 0,
+@@ -719,3 +715,0 @@
+-                            "coupling.ca-own": 0,
+-                            "coupling.ce-own": 0,
+-                            "coupling.instability-own": 0,
+@@ -1042,1 +1035,0 @@
+-                                    "coupling.abstractness-own": 0,
+@@ -1047,5 +1039,1 @@
+-                                    "coupling.ca-own": 0,
+-                                    "coupling.ce-own": 5,
+-                                    "coupling.instability-own": 1,
+-                                    "coupling.distance": 0,
+-                                    "coupling.distance-own": 0,
++                                    "coupling.distance": 0,
+@@ -1763,1 +1751,0 @@
+-                                    "coupling.abstractness-own": 0,
+@@ -1768,5 +1755,1 @@
+-                                    "coupling.ca-own": 2,
+-                                    "coupling.ce-own": 0,
+-                                    "coupling.instability-own": 0,
+-                                    "coupling.distance": 1,
+-                                    "coupling.distance-own": 1,
++                                    "coupling.distance": 1,
+@@ -2605,1 +2588,0 @@
+-                    "coupling.abstractness-own": 0,
+@@ -2610,5 +2592,1 @@
+-                    "coupling.ca-own": 2,
+-                    "coupling.ce-own": 0,
+-                    "coupling.instability-own": 0,
+-                    "coupling.distance": 1,
+-                    "coupling.distance-own": 1,
++                    "coupling.distance": 1,
+@@ -3105,1 +3083,0 @@
+-                    "coupling.abstractness-own": 0,
+@@ -3110,5 +3087,1 @@
+-                    "coupling.ca-own": 2,
+-                    "coupling.ce-own": 0,
+-                    "coupling.instability-own": 0,
+-                    "coupling.distance": 1,
+-                    "coupling.distance-own": 1,
++                    "coupling.distance": 1,
+@@ -3399,56 +3372,0 @@
+-        },
+-        "healthCoverage": {
+-            "health.complexity": {
+-                "state": "measured",
+-                "measured": 18,
+-                "eligible": 18,
+-                "ratio": 1,
+-                "unit": "callables",
+-                "basis": "complexity.ccn.count",
+-                "reason": null
+-            },
+-            "health.cohesion": {
+-                "state": "measured",
+-                "measured": 7,
+-                "eligible": 7,
+-                "ratio": 1,
+-                "unit": "classes",
+-                "basis": "cohesion.tcc.count",
+-                "reason": null
+-            },
+-            "health.coupling": {
+-                "state": "measured",
+-                "measured": 4,
+-                "eligible": 4,
+-                "ratio": 1,
+-                "unit": "namespaces declaring a type",
+-                "basis": "coupling.distance-own.count",
+-                "reason": null
+-            },
+-            "health.typing": {
+-                "state": "not-applicable",
+-                "measured": null,
+-                "eligible": null,
+-                "ratio": null,
+-                "unit": null,
+-                "basis": null,
+-                "reason": "the typing formula reads typed and total sums over declaration positions, and no .count is published for them"
+-            },
+-            "health.maintainability": {
+-                "state": "measured",
+-                "measured": 18,
+-                "eligible": 18,
+-                "ratio": 1,
+-                "unit": "callables",
+-                "basis": "maintainability.mi.count",
+-                "reason": null
+-            },
+-            "health.overall": {
+-                "state": "not-applicable",
+-                "measured": null,
+-                "eligible": null,
+-                "ratio": null,
+-                "unit": null,
+-                "basis": null,
+-                "reason": "health.overall composes the other dimensions; each of them publishes its own coverage"
+-            }
+@@ -3939,66 +3856,0 @@
+-            "coupling.instability-own": {
+-                "label": "Instability (own)",
+-                "ranges": [
+-                    {
+-                        "max": 0.09,
+-                        "text": "Maximally stable"
+-                    },
+-                    {
+-                        "max": 0.29,
+-                        "text": "Stable"
+-                    },
+-                    {
+-                        "max": 0.7,
+-                        "text": "Balanced"
+-                    },
+-                    {
+-                        "max": 0.9,
+-                        "text": "Unstable"
+-                    },
+-                    {
+-                        "above": true,
+-                        "text": "Maximally unstable"
+-                    }
+-                ],
+-                "formatTemplate": null
+-            },
+-            "coupling.abstractness-own": {
+-                "label": "Abstractness (own)",
+-                "ranges": [
+-                    {
+-                        "max": 0.09,
+-                        "text": "All concrete"
+-                    },
+-                    {
+-                        "max": 0.5,
+-                        "text": "Mostly concrete"
+-                    },
+-                    {
+-                        "max": 0.9,
+-                        "text": "Mostly abstract"
+-                    },
+-                    {
+-                        "above": true,
+-                        "text": "All abstract"
+-                    }
+-                ],
+-                "formatTemplate": null
+-            },
+-            "coupling.distance-own": {
+-                "label": "Distance (own)",
+-                "ranges": [
+-                    {
+-                        "max": 0.1,
+-                        "text": "On main sequence"
+-                    },
+-                    {
+-                        "max": 0.3,
+-                        "text": "Acceptable balance"
+-                    },
+-                    {
+-                        "above": true,
+-                        "text": "Off balance"
+-                    }
+-                ],
+-                "formatTemplate": null
+-            },
+@@ -4422,1 +4273,1 @@
+-                            "key": "coupling.distance-own.avg",
++                            "key": "coupling.distance.avg",

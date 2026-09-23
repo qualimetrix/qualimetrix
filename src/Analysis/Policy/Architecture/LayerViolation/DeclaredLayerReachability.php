@@ -64,7 +64,17 @@ final class DeclaredLayerReachability
      * back to a stale default (fixed: `warn` used to report `Severity::Info`,
      * so `fail_on: warning` never caught it).
      *
-     * @param array{sourceEdges: int, targetEdges: int, classes: array<string, string>} $state
+     * **Why the message can carry a second number.** A class outside every
+     * layer used to mean one thing: no declared criterion caught it, and
+     * writing a layer closes the gap. It now means two, and the difference
+     * matters to the reader who acts on it — a class whose `extends` or
+     * `implements` chain leaves the analysed set, or one seen only as the far
+     * end of a dependency edge, is outside every layer because the run could
+     * not answer, and no `layers:` entry the author writes will change that.
+     * The clause appears only when such a class exists, so a project with none
+     * reads exactly the sentence it always did.
+     *
+     * @param array{sourceEdges: int, targetEdges: int, classes: array<string, string>, undecidable: array<string, string>} $state
      *
      * @return list<Finding>
      */
@@ -85,6 +95,7 @@ final class DeclaredLayerReachability
         };
 
         $sampleList = DiagnosticSampleList::format($unmatched);
+        $undecidable = array_values($state['undecidable']);
 
         return [new Finding(
             location: Location::none(),
@@ -93,16 +104,40 @@ final class DeclaredLayerReachability
             ruleName: LayerPolicyPreparationInterface::COVERAGE_DIAGNOSTIC_NAME,
             code: LayerPolicyPreparationInterface::COVERAGE_DIAGNOSTIC_NAME,
             message: \sprintf(
-                'Architecture coverage-gap: %d edge(s) with unmatched source layer, %d edge(s) with unmatched target layer, %d class(es) outside all declared layers.',
+                'Architecture coverage-gap: %d edge(s) with unmatched source layer, %d edge(s) with unmatched target layer, %d class(es) outside all declared layers.%s',
                 $state['sourceEdges'],
                 $state['targetEdges'],
                 \count($unmatched),
+                self::undecidableClause($undecidable),
             ),
             severity: $severity,
             recommendation: $sampleList === null
                 ? 'Declare layers covering the remaining classes or accept the gap by leaving coverage-gap on "ignore".'
                 : 'Examples of unclassified classes: ' . $sampleList . '. Declare layers covering these classes or accept the gap by leaving coverage-gap on "ignore".',
         )];
+    }
+
+    /**
+     * The sentence appended when some of the gap was never decided, and the
+     * empty string when all of it was.
+     *
+     * @param list<string> $undecidable
+     */
+    private static function undecidableClause(array $undecidable): string
+    {
+        if ($undecidable === []) {
+            return '';
+        }
+
+        $sampleList = DiagnosticSampleList::format($undecidable);
+
+        return \sprintf(
+            ' %d of them could not be decided: a declared "extends"/"implements"/"attributes" criterion'
+            . ' reads facts this run did not collect, because the symbol or a link in its inheritance chain'
+            . ' is outside the analysed paths. Declaring a layer will not cover these%s.',
+            \count($undecidable),
+            $sampleList === null ? '' : ' — for example ' . $sampleList,
+        );
     }
 
     /**
@@ -204,7 +239,7 @@ final class DeclaredLayerReachability
 
     /**
      * Emits one diagnostic per template name that produced zero concrete
-     * layers during expansion (Phase 2 direction 2).
+     * layers during expansion.
      *
      * The list is populated by
      * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage} and

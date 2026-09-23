@@ -815,6 +815,7 @@ final class LayerAssignmentCommandTest extends TestCase
                     'criteria' => ['pattern "App\\Service\\**"'],
                 ],
             ],
+            'undecided' => [],
             'hasLayers' => true,
         ], $decoded);
     }
@@ -883,6 +884,7 @@ final class LayerAssignmentCommandTest extends TestCase
             'fqn' => 'Other\\Place\\Thing',
             'assigned' => null,
             'shadowed' => [],
+            'undecided' => [],
             'hasLayers' => true,
         ], $decoded);
     }
@@ -974,6 +976,161 @@ final class LayerAssignmentCommandTest extends TestCase
         self::assertStringContainsString('Configuration error', $decoded['error']);
         self::assertStringContainsString($missing, $decoded['error']);
         self::assertSame(ConsoleExitCode::Refusal->value, $decoded['exit_code']);
+    }
+
+    #[Test]
+    public function itSeparatesAnUndecidedMembershipFromAnAnsweredNonMatch(): void
+    {
+        // `App\Web\OrderController extends Vendor\Lib\Middle extends
+        // Vendor\Lib\Base`, with only the child inside `paths`. The walk stops
+        // at Middle, so the `extends: [Vendor\Lib\Base]` criterion is not
+        // answered. `architecture.coverage-gap` says so; this reader used to
+        // print the same `(no layer)` it prints for a class every criterion
+        // answered "no" about.
+        $configPath = $this->writeUndecidableConfig();
+        $this->declareClassExtending('App\\Web\\OrderController', 'Vendor\\Lib\\Middle');
+        $this->declareClasses(['App\\Web\\Plain']);
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'App\\Web\\OrderController',
+            '--config' => $configPath,
+        ]);
+
+        self::assertSame(Command::SUCCESS, $exit);
+        $output = $tester->getDisplay();
+        self::assertStringNotContainsString('(no layer)', $output);
+        self::assertStringContainsString('Assigned to: (undecided)', $output);
+        self::assertStringContainsString('Could not be decided: web', $output);
+        self::assertStringContainsString('outside the analysed paths', $output);
+        // A catch-all layer answers an unclassified class and does nothing at
+        // all for an unanswered one, so suggesting it here sends the reader to
+        // a change that cannot help.
+        self::assertStringNotContainsString("catch-all layer with pattern '**'", $output);
+    }
+
+    #[Test]
+    public function itKeepsReportingAnAnsweredNonMatchAsUnclassified(): void
+    {
+        // The control for the case above, on the same configuration: a class
+        // with no parent at all is a decided non-match, and must keep the
+        // `(no layer)` answer and the catch-all suggestion.
+        $configPath = $this->writeUndecidableConfig();
+        $this->declareClassExtending('App\\Web\\OrderController', 'Vendor\\Lib\\Middle');
+        $this->declareClasses(['App\\Web\\Plain']);
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'App\\Web\\Plain',
+            '--config' => $configPath,
+        ]);
+
+        self::assertSame(Command::SUCCESS, $exit);
+        $output = $tester->getDisplay();
+        self::assertStringContainsString('Assigned to: (no layer)', $output);
+        self::assertStringContainsString("catch-all layer with pattern '**'", $output);
+        self::assertStringNotContainsString('Could not be decided', $output);
+    }
+
+    #[Test]
+    public function itPublishesAnUndecidedLayerBesideAnAssignmentThatStands(): void
+    {
+        // The third state: a layer the run could not answer, plus a later one
+        // that matched outright. The assignment is not withdrawn
+        // (`LayerRegistry::undecidedLayers()` says why), so the report shows
+        // both — an assignment printed alone would hide that an
+        // earlier-declared layer might have owned the class.
+        $configPath = $this->writeUndecidableConfig(withWebPattern: true);
+        $this->declareClassExtending('App\\Web\\OrderController', 'Vendor\\Lib\\Middle');
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'App\\Web\\OrderController',
+            '--config' => $configPath,
+        ]);
+
+        self::assertSame(Command::SUCCESS, $exit);
+        $output = $tester->getDisplay();
+        self::assertStringContainsString('Assigned to: catch-all', $output);
+        self::assertStringContainsString('Could not be decided: web', $output);
+    }
+
+    #[Test]
+    public function itNamesUndecidedLayersInJsonToo(): void
+    {
+        // Both projections read one resolution; a JSON consumer that branched
+        // on `assigned === null` alone would read "no layer claims this class"
+        // from a run that never answered.
+        $configPath = $this->writeUndecidableConfig();
+        $this->declareClassExtending('App\\Web\\OrderController', 'Vendor\\Lib\\Middle');
+        $this->declareClasses(['App\\Web\\Plain']);
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'App\\Web\\OrderController',
+            '--config' => $configPath,
+            '--format' => 'json',
+        ]);
+
+        self::assertSame(Command::SUCCESS, $exit);
+        $decoded = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertNull($decoded['assigned']);
+        self::assertSame(['web'], $decoded['undecided']);
+
+        $control = $this->newTester();
+        $control->execute([
+            'fqn' => 'App\\Web\\Plain',
+            '--config' => $configPath,
+            '--format' => 'json',
+        ]);
+        $decodedControl = json_decode($control->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertNull($decodedControl['assigned']);
+        self::assertSame([], $decodedControl['undecided']);
+    }
+
+    /**
+     * A configuration whose first layer is decided by an inheritance chain,
+     * so a class whose chain leaves the analysed set cannot be answered.
+     *
+     * Written out rather than built by {@see writeConfig()} because that helper
+     * only emits `patterns`, and `patterns` is decidable by construction.
+     */
+    private function writeUndecidableConfig(bool $withWebPattern = false): string
+    {
+        $sourcePath = $this->sourcePath();
+        $catchAll = $withWebPattern
+            ? "    - name: catch-all\n      patterns: ['App\\Web\\**']\n"
+            : "    - name: elsewhere\n      patterns: ['App\\Other\\**']\n";
+        $allow = $withWebPattern ? "    catch-all: []\n" : "    elsewhere: []\n";
+
+        $yaml = "paths: ['{$sourcePath}']\narchitecture:\n  layers:\n"
+            . "    - name: web\n      extends: ['Vendor\\Lib\\Base']\n"
+            . $catchAll
+            . "  allow:\n    web: []\n" . $allow
+            . "  coverage-gap: ignore\n";
+
+        $path = $this->tempDir . '/qmx-' . bin2hex(random_bytes(6)) . '.yaml';
+        file_put_contents($path, $yaml);
+
+        return $path;
+    }
+
+    /**
+     * Materialises a class whose parent is never declared in the source tree,
+     * so the recorded chain stops one link short of what a criterion names.
+     */
+    private function declareClassExtending(string $fqn, string $parentFqn): void
+    {
+        $position = strrpos($fqn, '\\');
+        $namespace = $position === false ? null : substr($fqn, 0, $position);
+        $shortName = $position === false ? $fqn : substr($fqn, $position + 1);
+        $body = "<?php\n"
+            . ($namespace === null ? '' : "\nnamespace {$namespace};\n")
+            . "\nfinal class {$shortName} extends \\{$parentFqn} {}\n";
+        file_put_contents(
+            $this->sourcePath() . '/' . str_replace('\\', '_', $fqn) . '.php',
+            $body,
+        );
     }
 
     private function newTester(): CommandTester

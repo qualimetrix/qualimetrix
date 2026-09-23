@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthSc
 use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
+use Qualimetrix\Reporting\Formatter\Health\HealthCoverageNarrator;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
 use Qualimetrix\Reporting\Report;
@@ -56,12 +57,22 @@ final class HealthBarRenderer
         );
 
         $overallLine = $this->renderOverallLine($report, $context, $overall, $terminalWidth, $ascii, $color);
-        if ($overallLine !== null) {
+
+        // One statement per score, unless they all make the same one and there
+        // is an overall line to carry it once — a namespace drill-down gives
+        // every dimension the identical reason. Said once it is still said;
+        // silenced by a terminal width it would not be, which is the defect
+        // this line exists to close, so with no line above it every dimension
+        // says its own.
+        $shared = $overallLine === null ? null : HealthCoverageNarrator::sharedNote($healthScores);
+
+        if ($overallLine !== null && $overall !== null) {
             $lines[] = $overallLine;
+            $lines[] = '  ' . $color->dim($shared ?? HealthCoverageNarrator::summarize($overall->coverage));
             $lines[] = '';
         }
 
-        $this->renderDimensionLines($dimensions, $terminalWidth, $ascii, $color, $lines);
+        $this->renderDimensionLines($dimensions, $terminalWidth, $ascii, $color, $lines, $shared);
 
         // H8: Explain that dimensions have independent scales when labels might seem contradictory
         $scaleNote = $this->buildScaleNote($dimensions, $color);
@@ -152,15 +163,25 @@ final class HealthBarRenderer
     /**
      * @param array<string, HealthScore> $dimensions
      * @param list<string> $lines
+     * @param ?string $shared the statement already said once above, when every score makes the same one
      */
-    private function renderDimensionLines(array $dimensions, int $terminalWidth, bool $ascii, AnsiColor $color, array &$lines): void
+    private function renderDimensionLines(array $dimensions, int $terminalWidth, bool $ascii, AnsiColor $color, array &$lines, ?string $shared): void
     {
         // Dynamic padding based on longest dimension name
         $padWidth = $this->calculatePadWidth($dimensions);
         $decompositionIndent = str_repeat(' ', $padWidth + 4); // 2 indent + padWidth + 2 space
 
         foreach ($dimensions as $hs) {
-            $this->renderDimensionLine($hs, $padWidth, $terminalWidth, $ascii, $color, $decompositionIndent, $lines);
+            $lines[] = $this->renderScoreLine($hs, $padWidth, $terminalWidth, $ascii, $color);
+
+            if ($shared === null) {
+                $lines[] = $decompositionIndent . $color->dim(HealthCoverageNarrator::summarize($hs->coverage));
+            }
+
+            // Decomposition for dimensions needing attention
+            foreach ($hs->decomposition as $item) {
+                $lines[] = $this->renderDecompositionItem($item, $color, $decompositionIndent);
+            }
         }
     }
 
@@ -177,41 +198,31 @@ final class HealthBarRenderer
         return max($padWidth, 10); // minimum padding
     }
 
-    /**
-     * @param list<string> $lines
-     */
-    private function renderDimensionLine(
+    /** The bar, the number and the label for one dimension. */
+    private function renderScoreLine(
         HealthScore $hs,
         int $padWidth,
         int $terminalWidth,
         bool $ascii,
         AnsiColor $color,
-        string $decompositionIndent,
-        array &$lines,
-    ): void {
+    ): string {
         $label = str_pad(ucfirst($hs->name), $padWidth);
 
         if ($hs->score === null) {
             // N/A dimension (e.g., typing with no classes)
-            $lines[] = \sprintf('  %s %s %s', $label, $color->dim('N/A'), $color->dim($hs->label));
-
-            return;
+            return \sprintf('  %s %s %s', $label, $color->dim('N/A'), $color->dim($hs->label));
         }
 
         $scoreStr = $this->formatScore($hs->score, $color, $hs->warningThreshold, $hs->errorThreshold);
 
         if ($terminalWidth < self::DEFAULT_TERMINAL_WIDTH) {
             // Narrow terminal: no bars
-            $lines[] = \sprintf('  %s %s %s', $label, $scoreStr, $color->dim($hs->label));
-        } else {
-            $bar = $this->renderHealthBar($hs->score, $hs->warningThreshold, $hs->errorThreshold, $terminalWidth, $ascii, $color);
-            $lines[] = \sprintf('  %s %s %s %s', $label, $bar, $scoreStr, $color->dim($hs->label));
+            return \sprintf('  %s %s %s', $label, $scoreStr, $color->dim($hs->label));
         }
 
-        // Decomposition for dimensions needing attention
-        foreach ($hs->decomposition as $item) {
-            $lines[] = $this->renderDecompositionItem($item, $color, $decompositionIndent);
-        }
+        $bar = $this->renderHealthBar($hs->score, $hs->warningThreshold, $hs->errorThreshold, $terminalWidth, $ascii, $color);
+
+        return \sprintf('  %s %s %s %s', $label, $bar, $scoreStr, $color->dim($hs->label));
     }
 
     /**
@@ -244,7 +255,7 @@ final class HealthBarRenderer
         AnsiColor $color,
     ): string {
         $barWidth = max(self::MIN_BAR_WIDTH, min(30, $terminalWidth - 50));
-        $normalizedScore = (is_nan($score) || is_infinite($score)) ? 0.0 : $score;
+        $normalizedScore = is_finite($score) ? $score : 0.0;
         $filled = (int) round($normalizedScore / 100 * $barWidth);
         $filled = max(0, min($barWidth, $filled));
         $empty = $barWidth - $filled;
@@ -298,7 +309,7 @@ final class HealthBarRenderer
 
     private function formatValue(float $value): string
     {
-        if (is_nan($value) || is_infinite($value)) {
+        if (!is_finite($value)) {
             return '—';
         }
 

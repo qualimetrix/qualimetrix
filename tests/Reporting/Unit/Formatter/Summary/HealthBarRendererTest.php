@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\CoverageUnit;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
@@ -520,6 +521,49 @@ final class HealthBarRendererTest extends TestCase
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('App\\Service'));
 
         return [$report, $context];
+    }
+
+    /**
+     * ADR 0062: coverage is published alongside the score. The default format
+     * showed the bar, the number and the label, and nothing about the share —
+     * a score over a tenth of the classes was indistinguishable from one over
+     * all of them on the surface most readers see.
+     */
+    #[Test]
+    public function itPrintsWhatShareOfTheSubjectEachScoreWasComputedOver(): void
+    {
+        $report = $this->createReport(healthScores: [
+            'overall' => new HealthScore('overall', 75.3, 'Acceptable', 60.0, 30.0, HealthCoverage::notApplicable('composes the other dimensions')),
+            'cohesion' => new HealthScore('cohesion', 82.9, 'Excellent', 60.0, 30.0, HealthCoverage::over(0, 10, CoverageUnit::Classes, 'cohesion.tcc.count')),
+        ]);
+        $lines = [];
+
+        $this->renderer->render($report, new FormatterContext(), $this->color, 80, false, $lines);
+
+        $output = implode("\n", $lines);
+        self::assertStringContainsString('computed over 0 of 10 classes (0%)', $output);
+        self::assertStringContainsString('coverage: not applicable — composes the other dimensions', $output);
+    }
+
+    /**
+     * A namespace drill-down gives every dimension the same reason, and six
+     * copies of one sentence is how a published statement stops being read.
+     * Said once it is still said — unlike the terminal-width test this replaces.
+     */
+    #[Test]
+    public function itSaysOneSharedCoverageStatementOnce(): void
+    {
+        $reason = 'a subtree score is a class-weighted mean of namespace scores';
+        $report = $this->createReport(healthScores: [
+            'overall' => new HealthScore('overall', 75.3, 'Acceptable', 60.0, 30.0, HealthCoverage::notApplicable($reason)),
+            'complexity' => new HealthScore('complexity', 82.0, 'Good', 60.0, 30.0, HealthCoverage::notApplicable($reason)),
+            'cohesion' => new HealthScore('cohesion', 45.5, 'Needs work', 60.0, 30.0, HealthCoverage::notApplicable($reason)),
+        ]);
+        $lines = [];
+
+        $this->renderer->render($report, new FormatterContext(), $this->color, 80, false, $lines);
+
+        self::assertSame(1, substr_count(implode("\n", $lines), $reason));
     }
 
     /**

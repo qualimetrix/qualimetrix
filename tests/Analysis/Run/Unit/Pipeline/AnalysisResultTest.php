@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
@@ -237,8 +238,7 @@ final class AnalysisResultTest extends TestCase
             null,
             10,
             SuppressionType::Symbol,
-            subject: $sharedSubject,
-            controlScope: ControlScope::Callable,
+            binding: new DeclarationBinding($sharedSubject, ControlScope::Callable),
         );
         $suppression2 = new Suppression('size', null, 20, SuppressionType::NextLine);
         $suppression3 = new Suppression(
@@ -246,8 +246,7 @@ final class AnalysisResultTest extends TestCase
             null,
             30,
             SuppressionType::Symbol,
-            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'measure'), RelativePath::fromString('shared.php'), DeclarationOrdinal::fromRank(0))),
-            controlScope: ControlScope::Callable,
+            binding: new DeclarationBinding(MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'measure'), RelativePath::fromString('shared.php'), DeclarationOrdinal::fromRank(0))), ControlScope::Callable),
         );
 
         $result1 = new AnalysisResult(

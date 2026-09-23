@@ -168,6 +168,10 @@ final class HealthContributorTest extends TestCase
                 'health.complexity' => 50.0,
                 'health.overall' => 60.0,
                 'complexity.ccn.avg' => 10.0,
+                // The coverage denominators every run publishes; see above.
+                'size.symbol-class-count' => 2,
+                'size.symbol-method-count' => 2,
+                'size.symbol-declaring-namespace-count' => 1,
             ]),
             classes: $classes,
             classMetrics: $classMetrics,
@@ -249,8 +253,15 @@ final class HealthContributorTest extends TestCase
     {
         $classes = [];
         $classMetrics = [];
+        // Every run's project bag carries these, written from the symbol list
+        // itself, and every health coverage divides by one of them. A bag
+        // without them is a shape no analysis produces, and the reader refuses
+        // it rather than calling the missing denominator a measured zero.
         $dimensionMetrics = [
             'health.overall' => 60.0,
+            'size.symbol-class-count' => \count($classSpecs),
+            'size.symbol-method-count' => \count($classSpecs),
+            'size.symbol-declaring-namespace-count' => 1,
         ];
 
         foreach ($classSpecs as $spec) {

@@ -18,7 +18,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
  *   via {@see DependencyType::tryFrom()}. This is the mechanism that closes the
  *   drift risk between the user-facing surface (`relations:` YAML) and the
  *   collector enum: a new {@see DependencyType} case automatically becomes
- *   accepted by `relations:` with no Phase 2 code change required.
+ *   accepted by `relations:` with no code change required.
  * - **Aliases.** Validated against the Phase-2-controlled hardcoded
  *   {@see self::ALIASES} map. Expand to their constituent direct values at
  *   config-load time. The four aliases (`inheritance`, `static_access`,

@@ -66,7 +66,7 @@
     "declaration:callable:Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyGraph::__construct@src/Analysis/Evidence/DependencyModel/DependencyGraph.php": [
       {"channel":"code-smell.constructor-overinjection","magnitudes":[9]}
     ],
-    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyGraphBuilder::computeParentNamespaceCouplings@src/Analysis/Evidence/DependencyModel/DependencyGraphBuilder.php": [
+    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyGraphBuilder::withParentNamespaceCouplings@src/Analysis/Evidence/DependencyModel/DependencyGraphBuilder.php": [
       {"channel":"complexity.ccn","magnitudes":[11]},
       {"channel":"complexity.cognitive","magnitudes":[18]}
     ],
@@ -260,9 +260,6 @@
     "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer::render@src/Reporting/Formatter/Summary/HealthBarRenderer.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"08ea7896b69c4721","count":1}
     ],
-    "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer::renderDimensionLine@src/Reporting/Formatter/Summary/HealthBarRenderer.php": [
-      {"channel":"code-smell.boolean-argument","occurrence":"08ea7896b69c4721","count":1}
-    ],
     "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer::renderDimensionLines@src/Reporting/Formatter/Summary/HealthBarRenderer.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"08ea7896b69c4721","count":1}
     ],
@@ -270,6 +267,9 @@
       {"channel":"code-smell.boolean-argument","occurrence":"08ea7896b69c4721","count":1}
     ],
     "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer::renderOverallLine@src/Reporting/Formatter/Summary/HealthBarRenderer.php": [
+      {"channel":"code-smell.boolean-argument","occurrence":"08ea7896b69c4721","count":1}
+    ],
+    "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer::renderScoreLine@src/Reporting/Formatter/Summary/HealthBarRenderer.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"08ea7896b69c4721","count":1}
     ],
     "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Summary\\OffenderListRenderer::renderOffenderList@src/Reporting/Formatter/Summary/OffenderListRenderer.php": [

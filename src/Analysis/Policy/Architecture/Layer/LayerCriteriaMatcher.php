@@ -9,13 +9,16 @@ use LogicException;
 /**
  * Stateless evaluator that walks the five criterion kinds (patterns,
  * suffix, attributes, implements, extends) against a {@see ClassContext}
- * and returns the matched-criterion descriptor list.
+ * and returns a {@see CriteriaEvaluation}.
  *
  * Shared between positive ({@see MembershipSpec}) and exclude
- * ({@see ExcludeSpec}) evaluation in {@see LayerDefinition::matches()}.
- * The underlying matching semantics are identical for both specs; only
- * the mode-combining rules (when {@see MatchMode::All} requires every
- * declared kind to fire) differ at the call site.
+ * ({@see ExcludeSpec}) evaluation, and between runtime membership
+ * ({@see LayerDefinition::matches()}) and template observation
+ * ({@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\TupleExtractor}).
+ * The mode-combining rules do not differ per call site either: they live once,
+ * in {@see CriteriaEvaluation::outcome()}. A second copy of this predicate is
+ * how observation and matching came to disagree about non-pattern criteria
+ * while each looked right on its own.
  *
  * Lives next to {@see LayerDefinition} because it implements the
  * criterion-walking primitive that {@see LayerDefinition::matches()}
@@ -23,47 +26,69 @@ use LogicException;
  * therefore compile through {@see CapturePattern}, not the Core selector
  * language.
  *
- * @internal Consumed by {@see LayerDefinition} and, for the refusal alone,
- * by {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\TupleExtractor}.
+ * @internal Consumed by {@see LayerDefinition} and
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\TupleExtractor}.
  */
 final class LayerCriteriaMatcher
 {
     /**
      * Walks the five criterion kinds against the class context and returns
-     * the matched-criterion descriptor list (in declaration order: patterns,
-     * suffix, attributes, implements, extends). Empty/missing criterion
-     * kinds produce no descriptor.
+     * both halves of the answer: the matched-criterion descriptors (in
+     * declaration order: patterns, suffix, attributes, implements, extends)
+     * and the declared kinds this run has no facts to decide. Empty/missing
+     * criterion kinds appear in neither list.
+     *
+     * **Which kinds can be undecidable, and why exactly those.** `patterns`
+     * and `suffix` are derived from the FQN the caller already holds, so they
+     * are always decided. `attributes` is decided iff the run analysed this
+     * symbol's own declaration — attributes sit on the class itself and reach
+     * no further. `implements` and `extends` read a transitive closure, so
+     * they are decided only when that closure was not cut: a truncated chain
+     * can still PROVE a hit (the evidence found stands), but it cannot prove
+     * the absence of one.
      *
      * @param list<string> $patterns Patterns exactly as the user wrote them.
      * @param list<string> $suffix
      * @param list<string> $attributes
      * @param list<string> $implements
      * @param list<string> $extends
-     *
-     * @return list<MatchedCriterion>
      */
-    public static function collectMatches(
+    public static function evaluate(
         ClassContext $context,
         array $patterns,
         array $suffix,
         array $attributes,
         array $implements,
         array $extends,
-    ): array {
+    ): CriteriaEvaluation {
         self::refuseUnbackedCriteria($context, $attributes, $implements, $extends);
 
-        $matches = [
-            self::matchPatterns($context, $patterns),
-            self::matchSuffix($context, $suffix),
-            self::matchAttributes($context, $attributes),
-            self::matchImplements($context, $implements),
-            self::matchExtends($context, $extends),
+        $ancestryComplete = $context->unresolvedDeclarations === [];
+
+        /** @var list<array{0: ?MatchedCriterion, 1: list<string>, 2: bool, 3: MatchedCriterionKind}> $kinds */
+        $kinds = [
+            [self::matchPatterns($context, $patterns), $patterns, true, MatchedCriterionKind::Pattern],
+            [self::matchSuffix($context, $suffix), $suffix, true, MatchedCriterionKind::Suffix],
+            [self::matchAttributes($context, $attributes), $attributes, $context->declarationAnalysed, MatchedCriterionKind::Attribute],
+            [self::matchImplements($context, $implements), $implements, $ancestryComplete, MatchedCriterionKind::Implements],
+            [self::matchExtends($context, $extends), $extends, $ancestryComplete, MatchedCriterionKind::Extends],
         ];
 
-        return array_values(array_filter(
-            $matches,
-            static fn(?MatchedCriterion $criterion): bool => $criterion !== null,
-        ));
+        $matched = [];
+        $undecidable = [];
+        foreach ($kinds as [$criterion, $declared, $decidable, $kind]) {
+            if ($criterion !== null) {
+                $matched[] = $criterion;
+
+                continue;
+            }
+
+            if ($declared !== [] && !$decidable) {
+                $undecidable[] = $kind;
+            }
+        }
+
+        return new CriteriaEvaluation($matched, $undecidable);
     }
 
     /**

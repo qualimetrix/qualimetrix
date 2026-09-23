@@ -98,7 +98,7 @@ Reporting/
     │   └── SarifRuleCollector.php         # Collects rule metadata for SARIF tool component, joined from ChannelPresentationInterface
     ├── Health/
     │   ├── HealthTextFormatter.php         # Text-based health report with scores and decomposition
-    │   └── HealthCoverageNarrator.php      # What share of its subject a health score was computed over
+    │   └── HealthCoverageNarrator.php      # What share of its subject a health score was computed over: the decomposition line, the one-line form beside a score, and the bare share for a table cell
     ├── Html/
     │   ├── HtmlFormatter.php              # Interactive HTML report with D3 treemap
     │   ├── HtmlTreeBuilder.php            # Builds namespace tree from MetricRepository
@@ -695,6 +695,13 @@ $report->debtPer1kLoc     // ?float — debt density (minutes per 1K LOC)
 $report->topIssues        // list<RankedIssue> — top findings by impact score
 $report->coverage         // ?ReportCoverage — discovered/analyzed/generated/failed verdict
 ```
+
+ADR 0062 publishes a health score's coverage alongside the score, and every
+surface that shows a score shows it: `json` and the HTML payload
+(`summary.healthCoverage`) carry the full record, `--format=health` a `Coverage`
+column on every row including `overall` and at every terminal width, and the
+default `summary` one dimmed line per dimension. The HTML viewer's own
+rendering of that payload lives in `html-report/`.
 
 `ReportCoverage` is the Reporting-layer projection of the pipeline's canonical
 coverage state. Every formatter must preserve a useful payload for zero files and

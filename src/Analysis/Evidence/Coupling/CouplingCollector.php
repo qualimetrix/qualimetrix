@@ -53,6 +53,9 @@ final class CouplingCollector implements GlobalContextCollectorInterface
             MetricName::COUPLING_CE_PACKAGES,
             MetricName::COUPLING_CBO_APP,
             MetricName::COUPLING_CE_FRAMEWORK,
+            MetricName::COUPLING_CA_OWN,
+            MetricName::COUPLING_CE_OWN,
+            MetricName::COUPLING_INSTABILITY_OWN,
         ];
     }
 
@@ -159,6 +162,21 @@ final class CouplingCollector implements GlobalContextCollectorInterface
                     ],
                 ],
             ),
+            new MetricDefinition(
+                name: MetricName::COUPLING_CA_OWN,
+                collectedAt: SymbolLevel::Namespace_,
+                aggregations: [],
+            ),
+            new MetricDefinition(
+                name: MetricName::COUPLING_CE_OWN,
+                collectedAt: SymbolLevel::Namespace_,
+                aggregations: [],
+            ),
+            new MetricDefinition(
+                name: MetricName::COUPLING_INSTABILITY_OWN,
+                collectedAt: SymbolLevel::Namespace_,
+                aggregations: [],
+            ),
         ];
     }
 
@@ -259,7 +277,10 @@ final class CouplingCollector implements GlobalContextCollectorInterface
     }
 
     /**
-     * Computes Ca, Ce, CBO, Instability for each namespace in the graph.
+     * Computes Ca, Ce, CBO, Instability for each namespace in the graph, in
+     * both of the scopes the graph distinguishes: the subtree rollup a parent
+     * namespace publishes, and the own scope of the declarations it holds
+     * itself. For a namespace without sub-namespaces the two coincide.
      *
      * CBO at namespace level counts uniquely coupled external namespaces (union of
      * incoming and outgoing namespace dependencies). If namespace A depends on B
@@ -283,12 +304,17 @@ final class CouplingCollector implements GlobalContextCollectorInterface
             $nsKey = $symbolPath->namespace ?? '';
             $cbo = \count($coupledNamespaces[$nsKey] ?? []);
             $instability = $this->computeInstability($ca, $ce);
+            $ownCa = $graph->getNamespaceOwnCa($symbolPath);
+            $ownCe = $graph->getNamespaceOwnCe($symbolPath);
 
             $metrics = (new MetricBag())
                 ->with(MetricName::COUPLING_CA, $ca)
                 ->with(MetricName::COUPLING_CE, $ce)
                 ->with(MetricName::COUPLING_CBO, $cbo)
-                ->with(MetricName::COUPLING_INSTABILITY, $instability);
+                ->with(MetricName::COUPLING_INSTABILITY, $instability)
+                ->with(MetricName::COUPLING_CA_OWN, $ownCa)
+                ->with(MetricName::COUPLING_CE_OWN, $ownCe)
+                ->with(MetricName::COUPLING_INSTABILITY_OWN, $this->computeInstability($ownCa, $ownCe));
 
             $repository->add($symbolPath, $metrics, null, null);
         }

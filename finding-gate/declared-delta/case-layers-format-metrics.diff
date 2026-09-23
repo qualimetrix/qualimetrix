@@ -1,0 +1,71 @@
+--- candidate
++++ reference (mapped)
+@@ -380,1 +380,0 @@
+-                "size.symbol-declaring-namespace-count": 6,
+@@ -412,2 +411,2 @@
+-                "coupling.distance-own.avg": 0.4444444444444445,
+-                "coupling.distance-own.count": 6
++                "coupling.distance.avg": 0.4444444444444445,
++                "coupling.distance.count": 6
+@@ -611,1 +610,0 @@
+-                "coupling.abstractness-own": 0,
+@@ -616,5 +614,1 @@
+-                "coupling.ca-own": 0,
+-                "coupling.ce-own": 4,
+-                "coupling.instability-own": 1,
+-                "coupling.distance": 0,
+-                "coupling.distance-own": 0,
++                "coupling.distance": 0,
+@@ -846,1 +840,0 @@
+-                "coupling.abstractness-own": 0,
+@@ -851,5 +844,1 @@
+-                "coupling.ca-own": 0,
+-                "coupling.ce-own": 1,
+-                "coupling.instability-own": 1,
+-                "coupling.distance": 0,
+-                "coupling.distance-own": 0,
++                "coupling.distance": 0,
+@@ -1081,1 +1070,0 @@
+-                "coupling.abstractness-own": 0,
+@@ -1086,5 +1074,1 @@
+-                "coupling.ca-own": 1,
+-                "coupling.ce-own": 0,
+-                "coupling.instability-own": 0,
+-                "coupling.distance": 1,
+-                "coupling.distance-own": 1,
++                "coupling.distance": 1,
+@@ -1273,1 +1257,0 @@
+-                "coupling.abstractness-own": 0.3333333333333333,
+@@ -1278,5 +1261,1 @@
+-                "coupling.ca-own": 4,
+-                "coupling.ce-own": 0,
+-                "coupling.instability-own": 0,
+-                "coupling.distance": 0.6666666666666667,
+-                "coupling.distance-own": 0.6666666666666667,
++                "coupling.distance": 0.6666666666666667,
+@@ -1508,1 +1487,0 @@
+-                "coupling.abstractness-own": 0,
+@@ -1513,5 +1491,1 @@
+-                "coupling.ca-own": 0,
+-                "coupling.ce-own": 1,
+-                "coupling.instability-own": 1,
+-                "coupling.distance": 0,
+-                "coupling.distance-own": 0,
++                "coupling.distance": 0,
+@@ -1743,1 +1717,0 @@
+-                "coupling.abstractness-own": 0,
+@@ -1748,5 +1721,1 @@
+-                "coupling.ca-own": 2,
+-                "coupling.ce-own": 0,
+-                "coupling.instability-own": 0,
+-                "coupling.distance": 1,
+-                "coupling.distance-own": 1,
++                "coupling.distance": 1,
+@@ -1971,3 +1940,0 @@
+-                "coupling.ca-own": 0,
+-                "coupling.ce-own": 0,
+-                "coupling.instability-own": 0,
+@@ -2193,3 +2159,0 @@
+-                "coupling.ca-own": 0,
+-                "coupling.ce-own": 0,
+-                "coupling.instability-own": 0,

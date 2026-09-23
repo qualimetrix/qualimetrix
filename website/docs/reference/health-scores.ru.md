@@ -82,7 +82,7 @@ Qualimetrix вычисляет 6 оценок здоровья для каждо
 
 - **На уровне класса** смешиваются `coupling.ce-packages` (количество внешних пакетов) и сглаженный raw `coupling.ce` (efferent coupling).
 - **На уровне пространства имён** используются **только efferent-сигналы**: средняя `coupling.ce.avg` и `coupling.ce-packages.avg` по классам, выброс отдельного класса (`coupling.ce.max`), а также общая исходящая ширина пространства имён (`coupling.ce`), плюс Distance from Main Sequence. Двунаправленный CBO здесь намеренно не используется — он смешивает Ca с Ce и несправедливо штрафует «контрактные» пространства имён со стабильно высоким Ca и низким Ce.
-- **На уровне проекта** оставлены агрегаты двунаправленного CBO (`coupling.cbo.avg`, `coupling.cbo.p95`, `coupling.cbo.max`): на уровне проекта Σ Ca = Σ Ce, потому что каждое внутреннее ребро вносит вклад в обе стороны, поэтому CBO симметричен и пропорционален Ce.
+- **На уровне проекта** оставлены агрегаты двунаправленного CBO (`coupling.cbo.avg`, `coupling.cbo.p95`, `coupling.cbo.max`): на уровне проекта Σ Ca = Σ Ce, потому что каждое внутреннее ребро вносит вклад в обе стороны, поэтому CBO симметричен и пропорционален Ce. Слагаемое Distance здесь читает `coupling.distance-own.avg`, а не `coupling.distance.avg`, — почему проектная свёртка берётся по собственным областям, написано в разделе [Distance from Main Sequence](../rules/coupling.ru.md#distance-from-main-sequence).
 
 ### health.typing
 
@@ -140,7 +140,7 @@ bin/qmx check src/ --format=html -o report.html
 
 Подробнее о форматах вывода — в разделе [Форматы вывода](../usage/output-formats.md).
 
-### Что именно покрывает оценка
+### Что именно покрывает оценка { #what-a-score-covers }
 
 Оценка — утверждение лишь о той части кода, на которой её входы вообще удалось
 измерить. Связность (cohesion) не определена для класса менее чем с двумя
@@ -159,9 +159,22 @@ bin/qmx check src/ --format=html -o report.html
 публикуется, а оценка уровня класса или отфильтрованного пространства имён
 вообще не является агрегатом по символам.
 
-Покрытие выводится в `--format=json` (объект `coverage` у каждого измерения) и в
-`--format=health` (строка на измерение). В компактных форматах — `summary` и
-HTML — его нет из-за нехватки места.
+Покрытие выводится в `--format=json` (объект `coverage` у каждого измерения), в
+`--format=health` (колонка `Coverage` плюс строка на измерение в декомпозиции), в
+`--format=summary` (строка под каждой оценкой) и в `--format=html` (объект
+`summary.healthCoverage` рядом с `summary.healthScores`, отрисованный под барами
+здоровья).
+
+Покрытие меньше 100% — не обязательно дефект прогона. Часть разрывов постоянна по
+построению: связность не определена для класса менее чем с двумя методами, а у
+пространства имён, объявляющего одни только голые enum, нет собственной
+абстрактности — голый enum намеренно вне этого знаменателя (см.
+[Distance from Main Sequence](../rules/coupling.ru.md#distance-from-main-sequence)),
+— поэтому собственная distance для него не публикуется, хотя популяция его
+считает: тип он объявляет. Знаменатель намеренно **не** сужен до тех пространств
+имён, до которых агрегат дошёл: знаменатель, равный собственному обходу агрегата,
+печатает 100% по построению и не способен показать, куда обход не добрался, — а
+ради этого строка и существует.
 
 
 ---
@@ -281,8 +294,15 @@ computed_metrics:
 | `coupling.ce.max`                         | namespace, project        |
 | `coupling.ce-packages`                    | class                     |
 | `coupling.ce-packages.avg`                | namespace, project        |
+| `coupling.abstractness`                   | namespace                 |
 | `coupling.distance`                       | namespace                 |
-| `coupling.distance.avg`                   | project                   |
+| `coupling.ca-own`                         | namespace                 |
+| `coupling.ce-own`                         | namespace                 |
+| `coupling.instability-own`                | namespace                 |
+| `coupling.abstractness-own`               | namespace                 |
+| `coupling.distance-own`                   | namespace                 |
+| `coupling.distance-own.avg`               | project                   |
+| `size.symbol-declaring-namespace-count`   | project                   |
 | `maintainability.mi.avg`                  | class, namespace, project |
 | `maintainability.mi.min`                  | class, namespace, project |
 | `maintainability.mi.p5`                   | namespace, project        |

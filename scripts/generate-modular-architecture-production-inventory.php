@@ -2404,6 +2404,8 @@ function documentationDisposition(string $path): array
         'docs/adr/0075-the-builtin-class-list-is-compared-never-generated.md' => 'Core.Symbol',
         'docs/adr/0077-open-universe-selectors-are-explicit.md' => 'Architecture.Governance',
         'docs/adr/0078-an-entry-the-run-did-not-read-makes-it-incomplete.md' => 'Analysis.Run',
+        'docs/adr/0079-a-criterion-the-run-cannot-answer-is-undecidable.md' => 'Analysis.Policy.Architecture',
+        'docs/adr/0080-a-project-fold-reads-a-partition-not-the-leaves.md' => 'Analysis.Evidence.Measurement',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/Evidence/CircularDependency/README.md' => 'Analysis.Evidence.CircularDependency',

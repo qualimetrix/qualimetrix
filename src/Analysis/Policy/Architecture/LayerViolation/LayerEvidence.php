@@ -46,9 +46,14 @@ final readonly class LayerEvidence
      * @param array{classes: array<string, string>, analysed: int} $unassigned What the analysed set left
      *                                                                         outside every declared layer, and how many class-like declarations the walk saw — the
      *                                                                         numerator and denominator `architecture.unassigned-class` reports. `classes` is empty
-     *                                                                         when {@see LayerViolationOptions::collectsOutsideLayerEvidence()} found no consumer for
+     *                                                                         when {@see LayerEvidenceCollector::materializesUncovered()} found no consumer for
      *                                                                         it. One field rather than two because neither half answers anything alone.
-     * @param array{sourceEdges: int, targetEdges: int, classes: array<string, string>} $coverageState
+     * @param array{sourceEdges: int, targetEdges: int, classes: array<string, string>, undecidable: array<string, string>} $coverageState
+     *                                                                                                                                     `undecidable` is the subset of `classes` that no layer claims because some layer's
+     *                                                                                                                                     criteria could not be answered about it at all — a chain that left the analysed set, or
+     *                                                                                                                                     a symbol seen only as the far end of an edge. It travels beside the count rather than
+     *                                                                                                                                     inside it, because subtracting it would hide the gap and folding it in would tell the
+     *                                                                                                                                     author to declare a layer that cannot help.
      */
     public function __construct(
         public ArchitectureConfiguration $architecture,

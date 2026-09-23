@@ -1,7 +1,7 @@
 # 0062. Health Scores Measure What They Cover
 
 **Date:** 2026-09-14
-**Status:** Accepted
+**Status:** Accepted. [ADR 0080](0080-a-project-fold-reads-a-partition-not-the-leaves.md) supersedes the leaf-only aggregation rule; every other decision here remains in force.
 
 ## Context
 
@@ -40,8 +40,11 @@ score describes between 27% and 58% of a project's classes without saying so.
 ## Decision
 
 **The global namespace participates in aggregation.** It is a leaf by
-definition: no parent, no children. The leaf-only rule stays, because the
-double-counting it prevents is real.
+definition: no parent, no children. The leaf-only rule that stood here is
+replaced by [ADR 0080](0080-a-project-fold-reads-a-partition-not-the-leaves.md):
+the double counting it guarded against is real, and a partition over each
+namespace's own declarations prevents it without dropping the 45% of classes
+that parents declare.
 
 **Two legacy anchors join the tracked corpus** — CodeIgniter 3 and WordPress
 core, both public packages, both parsing cleanly under PHP 8.4. A floor that

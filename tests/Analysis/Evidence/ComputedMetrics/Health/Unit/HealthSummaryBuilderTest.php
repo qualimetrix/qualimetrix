@@ -37,6 +37,11 @@ final class HealthSummaryBuilderTest extends TestCase
                 'complexity.cognitive.avg' => 6.1,
                 'cohesion.tcc.avg' => 0.15,
                 'cohesion.lcom.avg' => 4.0,
+                // Written from the symbol list by every run; each health
+                // coverage divides by one of them.
+                'size.symbol-class-count' => 1,
+                'size.symbol-method-count' => 2,
+                'size.symbol-declaring-namespace-count' => 1,
             ]),
             classes: [new SymbolInfo($classPath, RelativePath::fromString('src/Service.php'), null)],
             classMetrics: [
@@ -77,5 +82,43 @@ final class HealthSummaryBuilderTest extends TestCase
         self::assertSame(0.15, $cohesion->decomposition[0]->value);
         self::assertSame('cohesion.lcom.avg', $cohesion->decomposition[1]->metricKey);
         self::assertSame('Fair', $result->healthScores['maintainability']->label);
+    }
+
+    /**
+     * A container namespace holding no declarations of its own is not a worst
+     * offender: the score it publishes is its subtree's, and ranking it beside
+     * its own children double-counts them. The guard asked
+     * `size.class-count.sum`, which is the subtree count and therefore positive
+     * for exactly the containers it meant to exclude.
+     */
+    #[Test]
+    public function itRanksANamespaceOnlyWhenItDeclaresClassesOfItsOwn(): void
+    {
+        $container = SymbolPath::forNamespace('Cont');
+        $child = SymbolPath::forNamespace('Cont\\A');
+        $metrics = $this->createMetricRepository(
+            projectMetrics: MetricBag::fromArray(['health.overall' => 72.0]),
+            namespaces: [
+                new SymbolInfo($container, RelativePath::fromString('src/Cont'), null),
+                new SymbolInfo($child, RelativePath::fromString('src/Cont/A'), null),
+            ],
+            namespaceMetrics: [
+                // No own declarations: the subtree sum is all it has.
+                'ns:Cont' => MetricBag::fromArray(['health.overall' => 40.0, 'size.class-count.sum' => 2]),
+                'ns:Cont\\A' => MetricBag::fromArray(['health.overall' => 40.0, 'size.class-count' => 2, 'size.class-count.sum' => 2]),
+            ],
+        );
+
+        $builder = new HealthSummaryBuilder(
+            new HealthMetricCatalog(),
+            self::createStub(ComputedMetricDefinitionCatalogInterface::class),
+        );
+
+        $ranked = array_map(
+            static fn(object $offender): string => $offender->symbolPath->toCanonical(),
+            $builder->build($metrics, new NamespaceTree(['Cont', 'Cont\\A']), [])->worstNamespaces,
+        );
+
+        self::assertSame(['ns:Cont\\A'], $ranked);
     }
 }

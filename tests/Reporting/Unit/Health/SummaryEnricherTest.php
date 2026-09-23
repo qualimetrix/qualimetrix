@@ -116,6 +116,9 @@ final class SummaryEnricherTest extends TestCase
             'health.coupling' => 52.0,
             'health.typing' => 35.0,
             'health.maintainability' => 22.0,
+            // Own count beside the subtree sum: the worst-offender guard asks
+            // whether this namespace declares classes itself.
+            'size.class-count' => 4,
             'size.class-count.sum' => 4,
         ]);
 
@@ -325,6 +328,9 @@ final class SummaryEnricherTest extends TestCase
                 'health.overall' => 50.0,
                 'complexity.ccn.avg' => 12.0,
                 'complexity.cognitive.avg' => 10.0,
+                // The population every run writes from its symbol list, and
+                // what the complexity coverage divides by.
+                'size.symbol-method-count' => 40,
             ]),
         );
 
@@ -462,6 +468,9 @@ final class SummaryEnricherTest extends TestCase
             projectMetrics: MetricBag::fromArray([
                 'health.complexity' => 65.0,
                 'health.overall' => 72.0,
+                // The population every run writes from its symbol list, and
+                // what the complexity coverage divides by.
+                'size.symbol-method-count' => 8,
             ]),
         );
 

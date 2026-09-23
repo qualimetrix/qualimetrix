@@ -45,9 +45,88 @@ final class AbstractnessCollectorTest extends TestCase
     }
 
     #[Test]
-    public function itProvidesAbstractness(): void
+    public function itProvidesAbstractnessInBothScopes(): void
     {
-        self::assertSame(['coupling.abstractness'], $this->collector->provides());
+        self::assertSame(['coupling.abstractness', 'coupling.abstractness-own'], $this->collector->provides());
+    }
+
+    /**
+     * The own scope reads the unsuffixed counts, which are the namespace's own,
+     * while the published value reads their `.sum` subtree rollups. A namespace
+     * that also holds sub-namespaces therefore gets two different answers, and
+     * the own one is what the project average is taken over.
+     */
+    #[Test]
+    public function itComputesTheOwnScopeFromTheUnsuffixedCountsRatherThanTheSubtreeSums(): void
+    {
+        $repository = $this->repositoryWithNamespaceCounts('App', [
+            'size.class-count.sum' => 10,
+            'size.implementing-enum-count.sum' => 0,
+            'size.trait-count.sum' => 0,
+            'size.abstract-class-count.sum' => 0,
+            'size.interface-count.sum' => 10,
+            'size.class-count' => 2,
+            'size.implementing-enum-count' => 0,
+            'size.trait-count' => 0,
+            'size.abstract-class-count' => 0,
+            'size.interface-count' => 0,
+        ]);
+
+        $this->collector->calculate($this->createEmptyGraph(), $repository);
+        $bag = $repository->get(SymbolPath::forNamespace('App'));
+
+        self::assertEqualsWithDelta(0.5, $bag->get('coupling.abstractness'), 0.0001);
+        self::assertEqualsWithDelta(0.0, $bag->get('coupling.abstractness-own'), 0.0001);
+    }
+
+    /**
+     * A namespace that only holds sub-namespaces carries no unsuffixed count at
+     * all. It gets no own key, which is what keeps a pure container out of the
+     * project average rather than entering it at some fabricated value.
+     */
+    #[Test]
+    public function itPublishesNoOwnAbstractnessForANamespaceWithoutOwnDeclarations(): void
+    {
+        $repository = $this->repositoryWithNamespaceCounts('App', [
+            'size.class-count.sum' => 10,
+            'size.implementing-enum-count.sum' => 0,
+            'size.trait-count.sum' => 0,
+            'size.abstract-class-count.sum' => 2,
+            'size.interface-count.sum' => 0,
+        ]);
+
+        $this->collector->calculate($this->createEmptyGraph(), $repository);
+
+        self::assertNotNull($repository->get(SymbolPath::forNamespace('App'))->get('coupling.abstractness'));
+        self::assertNull($repository->get(SymbolPath::forNamespace('App'))->get('coupling.abstractness-own'));
+    }
+
+    /**
+     * A bare enumeration is neutral in Martin's model and stays out of the
+     * denominator, so a namespace holding nothing else declares no type for
+     * this purpose and gets no own key -- rather than A = 0 "by absence",
+     * which reads as maximally concrete and lands at D = 1.0.
+     */
+    #[Test]
+    public function itPublishesNoOwnAbstractnessForABareEnumOnlyNamespace(): void
+    {
+        $repository = $this->repositoryWithNamespaceCounts('App\\Status', [
+            'size.class-count.sum' => 0,
+            'size.implementing-enum-count.sum' => 0,
+            'size.trait-count.sum' => 0,
+            'size.abstract-class-count.sum' => 0,
+            'size.interface-count.sum' => 0,
+            'size.class-count' => 0,
+            'size.enum-count' => 3,
+            'size.implementing-enum-count' => 0,
+            'size.trait-count' => 0,
+            'size.abstract-class-count' => 0,
+            'size.interface-count' => 0,
+        ]);
+
+        $this->collector->calculate($this->createEmptyGraph(), $repository);
+
+        self::assertNull($repository->get(SymbolPath::forNamespace('App\\Status'))->get('coupling.abstractness-own'));
     }
 
     #[Test]

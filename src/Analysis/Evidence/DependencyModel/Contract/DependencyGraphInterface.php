@@ -67,6 +67,26 @@ interface DependencyGraphInterface
     public function getNamespaceCa(SymbolPath $namespace): int;
 
     /**
+     * Returns Efferent Coupling (Ce) for the declarations of exactly this
+     * namespace, ignoring the ones its sub-namespaces hold.
+     *
+     * For a namespace with no sub-namespaces this equals {@see getNamespaceCe()}.
+     * For one that also contains sub-namespaces the two differ: the subtree
+     * rollup treats a dependency on a sub-namespace as internal, the own scope
+     * counts it as a crossing.
+     */
+    public function getNamespaceOwnCe(SymbolPath $namespace): int;
+
+    /**
+     * Returns Afferent Coupling (Ca) for the declarations of exactly this
+     * namespace, ignoring the ones its sub-namespaces hold.
+     *
+     * The own-scope counterpart of {@see getNamespaceCa()}; see
+     * {@see getNamespaceOwnCe()} for how the two scopes differ.
+     */
+    public function getNamespaceOwnCa(SymbolPath $namespace): int;
+
+    /**
      * Returns all unique classes in the graph.
      *
      * @return array<SymbolPath> Class-level SymbolPaths

@@ -7,6 +7,8 @@ namespace Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\AbstractLogger;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
@@ -19,7 +21,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use RuntimeException;
+use Stringable;
 
 #[CoversClass(ComputedMetricEvaluator::class)]
 final class ComputedMetricEvaluatorTest extends TestCase
@@ -100,8 +102,10 @@ final class ComputedMetricEvaluatorTest extends TestCase
             levels: [SymbolLevel::Class_],
         );
 
-        self::expectException(RuntimeException::class);
-        self::expectExceptionMessage('references unknown metrics: missing_var');
+        // A ConfigurationRefusal, not a plain RuntimeException: this is a
+        // mistake in `qmx.yaml`, and only that kind carries exit code 3.
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('reads "missing_var" at level "class", where no symbol carries it');
 
         $this->evaluate($repo, [$definition]);
     }
@@ -120,8 +124,8 @@ final class ComputedMetricEvaluatorTest extends TestCase
             levels: [SymbolLevel::Class_],
         );
 
-        self::expectException(RuntimeException::class);
-        self::expectExceptionMessage('references unknown metrics: foo, bar');
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('reads "foo", "bar" at level "class", where no symbol carries them');
 
         $this->evaluate($repo, [$definition]);
     }
@@ -148,6 +152,52 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         self::assertSame(50.0, $repo->get($classA)->get('health.test'));
         self::assertSame(0.0, $repo->get($classB)->get('health.test'));
+    }
+
+    /**
+     * An unguarded read of a key this symbol does not carry used to reach the
+     * arithmetic as `null`, which PHP coerces to 0. The zero was published as a
+     * measurement and scored the symbol; with `inverted: true` it raised a
+     * finding of severity error. A formula that asked without `??` gets no
+     * value, and the run says which symbol and which key.
+     */
+    #[Test]
+    public function itPublishesNoValueForASymbolMissingAnUnguardedMetric(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $rich = SymbolPath::forClass('App', 'Rich');
+        $bare = SymbolPath::forClass('App', 'Bare');
+        $repo->add($rich, MetricBag::fromArray(['cohesion.tcc' => 1.0]), RelativePath::fromString('src/Rich.php'), 1);
+        $repo->add($bare, MetricBag::fromArray([]), RelativePath::fromString('src/Bare.php'), 1);
+
+        $definition = new ComputedMetricDefinition(
+            name: 'computed.probe',
+            formulas: ['class' => 'm["cohesion.tcc"] * 100'],
+            description: 'Test metric',
+            levels: [SymbolLevel::Class_],
+        );
+
+        $logger = new class extends AbstractLogger {
+            /** @var list<array<string, mixed>> */
+            public array $contexts = [];
+
+            /** @param array<mixed> $context */
+            public function log($level, string|Stringable $message, array $context = []): void
+            {
+                $this->contexts[] = $context;
+            }
+        };
+
+        $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $catalog->method('all')->willReturn([$definition]);
+        (new ComputedMetricEvaluator($catalog, self::createStub(ProfilerInterface::class), $logger))
+            ->evaluate($repo, 1);
+
+        self::assertSame(100.0, $repo->get($rich)->get('computed.probe'));
+        self::assertNull($repo->get($bare)->get('computed.probe'));
+        self::assertCount(1, $logger->contexts);
+        self::assertSame('App\\Bare', $logger->contexts[0]['symbol']);
+        self::assertSame('cohesion.tcc', $logger->contexts[0]['missing']);
     }
 
     #[Test]

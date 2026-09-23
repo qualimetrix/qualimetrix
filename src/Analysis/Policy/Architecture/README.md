@@ -81,6 +81,55 @@ contract (`exact`, `subtree`, `regex`): they express Architecture-specific
 capture and binding semantics rather than selecting an open universe of paths
 or namespaces.
 
+### What the analysed set can and cannot answer
+
+`extends`, `implements` and `attributes` are answered from the declaration
+edges this run recorded, so the answer is bounded by what the run analysed.
+`ClassContextFactory` is bound to the run's **class universe** alongside its
+graph (`ArchitecturePolicy::prepare()` is the single binding point) and reports
+where the facts ran out: `ClassContext::$declarationAnalysed` says whether the
+subject's own declaration was read, and `ClassContext::$unresolvedDeclarations`
+names every FQN a transitive walk reached without facts of its own.
+
+`LayerCriteriaMatcher` turns that into a third answer beside match and
+non-match. `CriterionOutcome::Undecidable` is what a declared criterion returns
+when the run holds no facts to decide it, and `CriteriaEvaluation::outcome()` —
+the single point where a `MatchMode` is applied, for positive criteria, for
+`exclude:`, and for template observation alike — combines the kinds
+three-valued: under `any` one hit decides and only a fully decided walk may
+report a non-match; under `all` one definite miss decides and only a fully
+decided walk may report a match. A hit found on a truncated chain still counts,
+because truncation can hide evidence but never invent it.
+
+Which kinds this reaches, and why exactly those: `patterns` and `suffix` are
+derived from the FQN and are always decided; `attributes` is decided whenever
+the subject's own declaration was analysed; `implements` and `extends` read a
+transitive closure and are decided only when that closure was not cut. The
+shape that breaks is narrow — a criterion naming the class's own **direct**
+parent still matches even when that parent is vendor code, because the edge was
+recorded from the analysed child. It is a link further up the chain, or a
+subject the run never analysed at all (a dependency-edge end outside `paths:`),
+that cannot be answered.
+
+`MembershipResult::undecided()` carries it out of the layer,
+`LayerRegistry::undecidedLayers()` is the third exit of the one cached walk, and
+`architecture.coverage-gap` names the count and a sample in its message — only
+when such a class exists, so an all-decided project reads the sentence it always
+read. Assignment is deliberately unchanged: an undecidable layer declared before
+one that matched does not withdraw the match, because withdrawing it would leave
+the class in no layer, no allow-list would judge its edges, and real violations
+would stop being reported.
+
+Two declarations that used to be accepted and then do nothing are now refused at
+config load, because there is no correct silent reading of either. A template
+layer may not declare `suffix`, `attributes`, `implements` or `extends` under
+`match: any`: only `patterns` carries capture variables, so the criterion would
+be copied into every expanded instance as one project-wide net and the instance
+that wins a class would be decided by binding-value order. And a non-`ignore`
+`coverage-gap:` requires at least one `layers:` entry, because with no layers
+every class is outside every layer while the walk short-circuits and the run
+exits 0 — the strictest setting producing the quietest outcome.
+
 `ClassContextFactory` skips a `Dependency` flagged
 `describesNestedAnonymousClass` when it builds `extendsMap`, `implementsMap`
 and `attributesMap`: that edge is a declaration fact about an anonymous class
@@ -100,7 +149,8 @@ REMOVED, the shadow evidence, the classes outside every layer, and the coverage
 state. The exclusion tally exists because membership collapses "the clause
 removed it" and "no criterion caught it" into the same absence:
 `MembershipResult::excluded()` keeps the two apart and `LayerRegistry::excludedLayers()`
-is the second exit of the one cached walk `resolveAll()` already performs.
+is the second exit of the one cached walk `resolveAll()` already performs;
+`undecidedLayers()` is the third, for the gap the run could not decide.
 Assignment is untouched by that — `resolveAll()` still returns no layer for an
 excluded class, so `debug:layer-assignment` and the shadow evidence read
 exactly what they read before. It short-circuits to `null`

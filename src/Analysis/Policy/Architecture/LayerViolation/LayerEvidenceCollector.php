@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowing;
 use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use WeakMap;
 
 /**
@@ -118,13 +119,14 @@ final class LayerEvidenceCollector
         // Graph binding already happened inside ArchitecturePolicy::prepare()
         // per ADR 0008 §2. The registry's ClassContextFactory therefore sees
         // the current run's graph; no rebind needed here.
-        [$assignedHits, $matchedSymbols, $excludedSymbols, $shadowEvidence, $uncoveredClasses, $analysedDeclarations] = $this->collectClassEvidence(
+        [$assignedHits, $matchedSymbols, $excludedSymbols, $shadowEvidence, $uncoveredClasses, $analysedDeclarations, $undecidableClasses] = $this->collectClassEvidence(
             $architecture,
             $context,
         );
 
         [$forbiddenEdges, $coverageState, $edgeAssignedHits, $edgeMatchedSymbols, $edgeExcludedSymbols] = $this->collectEdgeEvidence($architecture, $context);
         $coverageState['classes'] += $uncoveredClasses;
+        $coverageState['undecidable'] += $undecidableClasses;
 
         // A layer matched only as one end of a dependency edge (e.g. a vendor
         // namespace outside `paths:`, never a class in the analysed set) is
@@ -203,6 +205,13 @@ final class LayerEvidenceCollector
      * 4. `analysedDeclarations` — how many class-like declarations the walk
      *    saw, the denominator `architecture.unassigned-class` reports its
      *    percentage against.
+     * 5. `undecidableClasses` — the subset of `uncoveredClasses` that is
+     *    outside every layer only because the run could not answer some
+     *    layer's criteria about it: a chain that left the analysed set, or a
+     *    symbol whose own declaration the run never read. Kept apart because
+     *    the two gaps ask different things of the reader — one is closed by
+     *    declaring a layer, the other is not closed by anything the author
+     *    writes in `layers:`.
      *
      * `metrics->all(SymbolLevel::Class_)` enumerates what the collectors
      * recorded, and class scope opens on every `ClassLike` — interfaces,
@@ -210,7 +219,7 @@ final class LayerEvidenceCollector
      * collector recorded any class-level metric for: it is absent here and
      * counts as assigned.
      *
-     * @return array{0: array<string, int>, 1: array<string, array<string, true>>, 2: array<string, array<string, true>>, 3: array<string, array<string, list<array{fqn: string, assignedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion}>>>, 4: array<string, string>, 5: int}
+     * @return array{0: array<string, int>, 1: array<string, array<string, true>>, 2: array<string, array<string, true>>, 3: array<string, array<string, list<array{fqn: string, assignedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion}>>>, 4: array<string, string>, 5: int, 6: array<string, string>}
      */
     private function collectClassEvidence(
         ArchitectureConfiguration $architecture,
@@ -231,6 +240,7 @@ final class LayerEvidenceCollector
         /** @var array<string, array<string, list<array{fqn: string, assignedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion}>>> $shadowEvidence */
         $shadowEvidence = [];
         $uncoveredClasses = [];
+        $undecidableClasses = [];
         $analysedDeclarations = 0;
 
         foreach ($context->metrics->all(SymbolLevel::Class_) as $classSymbol) {
@@ -251,6 +261,11 @@ final class LayerEvidenceCollector
             if ($matches === []) {
                 if ($materializeUncovered) {
                     $uncoveredClasses[$classSymbol->symbolPath->toCanonical()] = $classSymbol->symbolPath->toString();
+                    $undecidableClasses = self::tallyUndecidableEnd(
+                        $undecidableClasses,
+                        $registry->undecidedLayers($classSymbol->symbolPath),
+                        $classSymbol->symbolPath,
+                    );
                 }
 
                 continue;
@@ -276,7 +291,29 @@ final class LayerEvidenceCollector
             }
         }
 
-        return [$assignedHits, $matchedSymbols, $excludedSymbols, $shadowEvidence, $uncoveredClasses, $analysedDeclarations];
+        return [$assignedHits, $matchedSymbols, $excludedSymbols, $shadowEvidence, $uncoveredClasses, $analysedDeclarations, $undecidableClasses];
+    }
+
+    /**
+     * Records a symbol nothing claimed as one nothing COULD claim, when some
+     * layer's criteria about it went unanswered.
+     *
+     * Empty {@code $undecidedLayers} leaves the map untouched: a class every
+     * layer decided against is an ordinary coverage gap, and saying so is the
+     * whole value of the separate map.
+     *
+     * @param array<string, string> $undecidable canonical key => display FQN
+     * @param list<string> $undecidedLayers
+     *
+     * @return array<string, string>
+     */
+    private static function tallyUndecidableEnd(array $undecidable, array $undecidedLayers, SymbolPath $symbol): array
+    {
+        if ($undecidedLayers !== []) {
+            $undecidable[$symbol->toCanonical()] = $symbol->toString();
+        }
+
+        return $undecidable;
     }
 
     /**
@@ -297,7 +334,7 @@ final class LayerEvidenceCollector
      * fixes that without weakening unreachable-layer's typo-detection case:
      * a layer matching neither a class nor an edge end still gets zero hits.
      *
-     * @return array{0: list<array{dependency: \Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency, fromMatch: LayerMatch, toMatch: LayerMatch}>, 1: array{sourceEdges: int, targetEdges: int, classes: array<string, string>}, 2: array<string, int>, 3: array<string, array<string, true>>, 4: array<string, array<string, true>>}
+     * @return array{0: list<array{dependency: \Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency, fromMatch: LayerMatch, toMatch: LayerMatch}>, 1: array{sourceEdges: int, targetEdges: int, classes: array<string, string>, undecidable: array<string, string>}, 2: array<string, int>, 3: array<string, array<string, true>>, 4: array<string, array<string, true>>}
      */
     private function collectEdgeEvidence(ArchitectureConfiguration $architecture, AnalysisContext $context): array
     {
@@ -305,13 +342,14 @@ final class LayerEvidenceCollector
         $sourceEdges = 0;
         $targetEdges = 0;
         $classes = [];
+        $undecidable = [];
         $assignedHits = [];
         $matchedSymbols = [];
         $excludedSymbols = [];
 
         $graph = $context->dependencyGraph;
         if ($graph === null) {
-            return [$forbidden, ['sourceEdges' => 0, 'targetEdges' => 0, 'classes' => []], $assignedHits, $matchedSymbols, $excludedSymbols];
+            return [$forbidden, ['sourceEdges' => 0, 'targetEdges' => 0, 'classes' => [], 'undecidable' => []], $assignedHits, $matchedSymbols, $excludedSymbols];
         }
 
         $registry = $architecture->registry();
@@ -330,6 +368,13 @@ final class LayerEvidenceCollector
             $fromMatch = self::tallyEnd($fromMatches, $dependency->sourceLogical()->toCanonical(), $dependency->sourceLogical()->toString(), $assignedHits, $classes, $sourceEdges);
             $toMatch = self::tallyEnd($toMatches, $dependency->targetLogical()->toCanonical(), $dependency->targetLogical()->toString(), $assignedHits, $classes, $targetEdges);
 
+            if ($fromMatch === null) {
+                $undecidable = self::tallyUndecidableEnd($undecidable, $registry->undecidedLayers($dependency->sourceLogical()), $dependency->sourceLogical());
+            }
+            if ($toMatch === null) {
+                $undecidable = self::tallyUndecidableEnd($undecidable, $registry->undecidedLayers($dependency->targetLogical()), $dependency->targetLogical());
+            }
+
             if ($fromMatch === null || $toMatch === null) {
                 continue;
             }
@@ -343,7 +388,7 @@ final class LayerEvidenceCollector
 
         return [
             $forbidden,
-            ['sourceEdges' => $sourceEdges, 'targetEdges' => $targetEdges, 'classes' => $classes],
+            ['sourceEdges' => $sourceEdges, 'targetEdges' => $targetEdges, 'classes' => $classes, 'undecidable' => $undecidable],
             $assignedHits,
             $matchedSymbols,
             $excludedSymbols,

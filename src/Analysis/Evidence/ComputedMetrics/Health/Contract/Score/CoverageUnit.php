@@ -20,22 +20,39 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score;
  * `size.symbol-method-count` on all seventeen. `cohesion.lcom.count` runs one
  * to two short of the class population on four of them — interfaces carry no
  * LCOM — which is a gap to publish, not a denominator to tune away.
+ *
+ * `DeclaringNamespaces` carries a gap of the same kind, and it is permanent by
+ * construction. A namespace declaring nothing but bare enums has an abstractness
+ * of its own that is undefined — a bare enum is deliberately outside that
+ * denominator (ADR 0062) — so no distance is published for it, while the
+ * population counts it because it declares a type. Measured on this repository,
+ * 2026-09-23: 166 of 168, printed as 99%, the two being
+ * `Qualimetrix\Analysis\Finding\Contract\Control` and
+ * `Qualimetrix\Core\Observation`, one bare enum each.
+ *
+ * Narrowing the population to the namespaces the aggregate reached would print
+ * 100% and would be the same defect the leaf-only denominator was: a
+ * denominator that is the aggregate's own walk cannot show what that walk did
+ * not reach. Two namespaces nothing can measure are exactly what this line is
+ * for, so the gap is documented here and the denominator left alone.
  */
 enum CoverageUnit: string
 {
     case Classes = 'classes';
     case Callables = 'callables';
-    case LeafNamespaces = 'leaf namespaces';
+    case DeclaringNamespaces = 'namespaces declaring a type';
 
     /**
-     * The project-bag metric holding the whole population, where one exists.
+     * The project-bag metric holding the whole population.
      *
-     * `LeafNamespaces` has none: the population a namespace-collected aggregate
-     * is offered is `NamespaceTree::getLeaves()`, read from the tree by the
-     * caller — see
-     * {@see \Qualimetrix\Analysis\Evidence\Measurement\Aggregation\NamespaceToProjectAggregator}.
+     * `DeclaringNamespaces` used to have none, and its denominator came from
+     * `NamespaceTree::getLeaves()` — the very set the namespace-collected
+     * aggregate walks. A namespace the walk drops was then missing from both
+     * sides of the ratio, so a run that lost 39 of 166 namespaces still printed
+     * 100%. Counting the population from the symbols instead makes that loss
+     * the number this line exists to show.
      */
-    public function populationMetric(): ?string
+    public function populationMetric(): string
     {
         return match ($this) {
             // Written out rather than imported from MetricName: the enum is a
@@ -43,7 +60,7 @@ enum CoverageUnit: string
             // catalog a dependency of every consumer that touches a score.
             self::Classes => 'size.symbol-class-count',
             self::Callables => 'size.symbol-method-count',
-            self::LeafNamespaces => null,
+            self::DeclaringNamespaces => 'size.symbol-declaring-namespace-count',
         };
     }
 }

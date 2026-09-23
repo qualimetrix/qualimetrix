@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
@@ -288,8 +289,7 @@ final class InlineDirectivePolicyTest extends TestCase
             'reason',
             10,
             SuppressionType::Symbol,
-            subject: self::declarationSubject(),
-            controlScope: ControlScope::Class_,
+            binding: new DeclarationBinding(self::declarationSubject(), ControlScope::Class_),
         );
     }
 

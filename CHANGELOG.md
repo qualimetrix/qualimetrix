@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+**The project distance aggregate is renamed and now covers every namespace that
+declares a type.** `coupling.distance.avg` and `coupling.distance.count` at
+project level become `coupling.distance-own.avg` and
+`coupling.distance-own.count`, and they fold each namespace's own-scope
+distance — a new `coupling.distance-own`, published beside the unchanged
+subtree `coupling.distance` — instead of the distance of leaf namespaces only.
+Namespaces that both declare types and have sub-namespaces were in no member of
+the old average; on this repository the population goes from 127 to 166, so
+`health.coupling` and `health.overall` move. Namespace-level `coupling.distance`
+is unchanged, and so is every finding on it. Update any baseline, dashboard or
+`--format=metrics` consumer that reads the project keys by name.
+`coupling.ce-own`, `coupling.ca-own`, `coupling.instability-own` and
+`coupling.abstractness-own` are published on namespaces alongside them, and
+`size.symbol-declaring-namespace-count` is published on the project as the
+denominator coupling's coverage now reports against. See
+[ADR 0080](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0080-a-project-fold-reads-a-partition-not-the-leaves.md).
+
 **Path and PHP-name selectors no longer accept bare strings or implicit glob
 syntax.** YAML selector lists now use one-entry mappings: `- exact: value`,
 `- subtree: value`, or `- regex: fragment`. CLI options use `exact:value`,
@@ -52,8 +69,6 @@ predates this change and is unchanged by it. See
   the depth the analysed project's own sources declare. A chain the run cannot
   follow still reports the depth it did reach; it no longer reports the tool's
   answer to a different question. See ADR 0074.
-
-### Breaking
 
 **`hook:install` writes a file where it used to write a symlink.** Every hook
 installed by an earlier release points at `scripts/pre-commit-hook.sh`, which
@@ -151,8 +166,75 @@ it. See
 such as `a..b..c`, are refused with exit 3 instead of exit 1.** They are bad
 input like any other, not an internal failure of the tool.
 
+**A layer criterion the run could not answer no longer reads as a non-match.**
+`attributes:`, `implements:` and `extends:` are answered from the declarations
+the run analysed, so a chain whose middle link lies outside `paths:` — or a
+subject with no analysed declaration of its own — used to come back as a
+confident "this class does not match". Membership is three-valued now: such a
+layer neither matches nor reports a non-match, and `architecture.coverage-gap`
+says the gap is one no edit to the configuration can close. Two things move on
+an unchanged tree: an `exclude:` clause the run cannot decide now removes
+membership instead of leaving the class in the layer, and a class that used to
+be assigned to a layer on a criterion the run could not really answer is now
+unassigned — widen `paths:` to decide it. A criterion naming a class's own
+direct parent is unaffected, vendor or not. See
+[ADR 0079](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0079-a-criterion-the-run-cannot-answer-is-undecidable.md).
+
+**A layer template that declares `suffix:`, `attributes:`, `implements:` or
+`extends:` under `match: any` is refused.** Only `patterns:` carries capture
+variables, so the other kinds are copied into every expanded layer verbatim and
+OR-ed with that layer's pattern: every instance ends up claiming every class the
+loose criterion matches, and the first instance in expansion order — which is
+binding-value alphabetical — wins it. Write `match: all` for the narrowing this
+almost certainly meant, or a static layer for the global net.
+
+**`relations:` written with no value is refused.** `relations:` followed by
+nothing — an empty list, commented-out items, a lost indent — parsed as "no
+filter declared", so a policy meant to be narrowed was silently widened to every
+relation kind. `relations: []` was already refused for exactly that reason; both
+spellings of the same slip now refuse alike. Drop the key entirely to keep "any
+relation allowed".
+
+**`architecture.coverage-gap: warning` or `error` with no `architecture.layers`
+is refused.** With no layers every class is outside every layer, and the run
+reported none of them — so the strictest setting of the option was also the
+silent one. The state is reachable without a typo, because `layers:` is replaced
+rather than merged across configuration contributions. Declare the layers the
+mode is meant to enforce, or leave `coverage-gap: ignore`.
+
+**A computed-metric formula naming a metric no symbol at its level carries is
+refused with exit 3.** It used to surface as `Internal error` with exit 1 — the
+code that means "warnings were found" — so a misspelled or mis-levelled key in
+`computed_metrics:` reached CI as an ordinary result. It is the same class of
+mistake as a key missing from the catalog and is now refused the same way, with
+the definition, the level, the keys and the formula named.
+
+**Three inline-directive forms that used to be silent now fail the run.** A
+declaration-form `@qmx-ignore` or `@qmx-threshold` written where nothing is
+measured (above a statement, on a property), a `@qmx-` tag name this tool does
+not read, and `@qmx-ignore` written without the channel it requires are now
+reported on `annotation.unresolved-directive` with `error` severity, so the run
+exits 1 under the default `--fail-on`. The
+first was worse than silent: it threw out of extraction, so the whole file was
+dropped from the analysis — its metrics and findings simply absent — while the
+run still called itself complete. No new channel and no new option: correct the
+directive or remove it. `@qmx-threshold` naming a declaration that is not
+measured, and `@qmx-threshold` with no argument, are still dropped silently;
+they have a different carrier and this change does not close them.
+
 ### Changed
 
+- Health coverage is shown where the scores are. `--format=health` gains a
+  `Coverage` column, the summary block prints each dimension's share beside
+  its bar, and the HTML report carries it as `summary.healthCoverage`. The
+  numbers themselves were already published in `--format=json`; only the
+  human-facing surfaces were missing them. Coupling's unit now reads
+  `namespaces declaring a type` instead of `leaf namespaces`, and reports a
+  share below 100% where it always read 100%.
+- The `architecture.coverage-gap` message says when a class is outside every
+  layer because the run could not decide one, rather than because no layer
+  claims it. The two gaps read identically before, and only one of them is
+  something the author can close by writing a layer.
 - `design.dit` says when it did not follow an inheritance chain to a root. A
   run writes one warning naming how many chains leaving the analysed path
   stopped early and where the walk stopped, so a depth that stopped short is no
@@ -226,6 +308,34 @@ input like any other, not an internal failure of the tool.
 
 ### Fixed
 
+- **`@qmx-ignore` and `@qmx-ignore-next-line` written with no channel no longer
+  silence everything.** In a block comment and in a docblock, the comment's own
+  closing delimiter was read as the channel argument `*` — the spelling that
+  means "no rule filter at all" — so `/** @qmx-ignore */` suppressed every
+  finding on the declaration below it while reporting nothing, neither a
+  configuration error nor `annotation.unused-directive`. All three comment
+  carriers now refuse the channelless form as
+  `annotation.unresolved-directive`, which only the line comment did before, so
+  **a file carrying such a tag goes from analysing clean to failing as a
+  configuration error, and the findings it hid reappear.** Name the channel, or
+  write `@qmx-ignore *`: the authored star still means "every channel here",
+  and a selector written hard against the delimiter is still that selector.
+- The health worst-offender list no longer ranks a namespace that declares no
+  classes of its own. The guard meant to skip such containers read
+  `size.class-count.sum` — the subtree total, which is positive for exactly the
+  containers it was written for — so it never fired, and a container was ranked
+  beside its own children while carrying their weight. It now reads the
+  namespace's own class count. Expect pure container namespaces to drop out of
+  the list in `--format=summary`, `--format=json` and the HTML report, and the
+  entries below them to move up.
+- A computed metric is no longer scored for a symbol that carries none of the
+  metrics its formula requires. An absent metric reached the arithmetic as
+  `null`, which PHP coerces to `0`, so the symbol got a fabricated measurement
+  that could raise a finding of its own. Such a symbol is now skipped with a
+  warning naming the metric, the symbol and the missing keys. Expect a computed
+  metric — including a health dimension — to be absent where it used to carry a
+  value derived from nothing, and the findings that value produced to be gone
+  with it. Write `??` in the formula where a default is genuinely intended.
 - `--no-cache` and `cache.enabled: false` now switch the AST cache off. Both
   were read, and the cache was consulted and written anyway, so a run asked to
   ignore the cache could still be answered from it.

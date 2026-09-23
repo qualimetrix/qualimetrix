@@ -26,8 +26,11 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  *   matched and whose `exclude:` clause then removed the class. It is a
  *   second exit of the very same walk, not a second walk, and it changes
  *   nothing about assignment.
+ * - {@see undecidedLayers()} returns the layers the run could not answer for
+ *   the class. Third exit of the same walk, and it changes nothing about
+ *   assignment either — see its own note for why that is deliberate.
  *
- * All three lookups share a single cache keyed by
+ * All four lookups share a single cache keyed by
  * {@see SymbolPath::toCanonical()}: both outputs of the walk are computed once
  * and stored together, and {@see resolveLayer()} reads the first entry off the
  * match list. A class queried by every method therefore walks the criteria at
@@ -69,14 +72,15 @@ final class LayerRegistry
      *
      * Each value carries BOTH outputs of the one walk over the layer list:
      * `matches`, the complete list of {@see LayerMatch} entries in declaration
-     * order (empty means the class matches no layer), and `excluded`, the
+     * order (empty means the class matches no layer), `excluded`, the
      * names of the layers whose positive criteria matched but whose
-     * `exclude:` clause then removed the class. One entry rather than two
-     * parallel arrays because two caches drift apart at every early return and
-     * at {@see clearCache()}: a lookup that found one populated and the other
-     * not would report an exclusion that never happened.
+     * `exclude:` clause then removed the class, and `undecided`, the names of
+     * the layers the run could not answer either way. One entry rather than
+     * parallel arrays because separate caches drift apart at every early return
+     * and at {@see clearCache()}: a lookup that found one populated and the
+     * others not would report an exclusion that never happened.
      *
-     * @var array<string, array{matches: list<LayerMatch>, excluded: list<string>}>
+     * @var array<string, array{matches: list<LayerMatch>, excluded: list<string>, undecided: list<string>}>
      */
     private array $matchCache = [];
 
@@ -123,10 +127,17 @@ final class LayerRegistry
      * Convenience: forwards to {@see ClassContextFactory::bindGraph()} and
      * invalidates the match cache so subsequent lookups pick up the new
      * graph's data.
+     *
+     * @param iterable<SymbolPath>|null $analysedClasses The run's analysed
+     *                                                   declarations, forwarded
+     *                                                   verbatim — see
+     *                                                   {@see ClassContextFactory::bindGraph()}
+     *                                                   for what omitting them
+     *                                                   costs.
      */
-    public function bindGraph(?DependencyGraphInterface $graph): void
+    public function bindGraph(?DependencyGraphInterface $graph, ?iterable $analysedClasses = null): void
     {
-        $this->contextFactory->bindGraph($graph);
+        $this->contextFactory->bindGraph($graph, $analysedClasses);
         $this->matchCache = [];
     }
 
@@ -192,7 +203,33 @@ final class LayerRegistry
     }
 
     /**
-     * @return array{matches: list<LayerMatch>, excluded: list<string>}
+     * Returns the names of every layer whose membership the run could not
+     * decide for this symbol, in declaration order.
+     *
+     * The third exit of the same cached walk, for the same reason
+     * {@see excludedLayers()} is the second. `architecture.coverage-gap` is
+     * the consumer: a symbol in nobody's layer because the run answered every
+     * criterion is a hole the author closes by writing a layer, and a symbol in
+     * nobody's layer because its inheritance chain left the analysed set is
+     * not.
+     *
+     * **Assignment is unaffected on purpose.** An undecidable layer declared
+     * before one that matched does NOT withdraw the match, even though a
+     * strictly three-valued reading of declaration order would make the
+     * assignment unknown. Withdrawing it would leave the class in no layer, so
+     * no allow-list would judge its edges and real violations would stop being
+     * reported — trading a wrong answer for a missing one. The match stands and
+     * the doubt is published beside it.
+     *
+     * @return list<string> layer names
+     */
+    public function undecidedLayers(SymbolPath $class): array
+    {
+        return $this->walk($class)['undecided'];
+    }
+
+    /**
+     * @return array{matches: list<LayerMatch>, excluded: list<string>, undecided: list<string>}
      */
     private function walk(SymbolPath $class): array
     {
@@ -203,15 +240,21 @@ final class LayerRegistry
 
         $context = $this->contextFactory->build($class);
         if ($context->fqn === '') {
-            return $this->matchCache[$cacheKey] = ['matches' => [], 'excluded' => []];
+            return $this->matchCache[$cacheKey] = ['matches' => [], 'excluded' => [], 'undecided' => []];
         }
 
         $matches = [];
         $excluded = [];
+        $undecided = [];
         foreach ($this->layers as $layer) {
             $result = $layer->matches($context);
             if ($result->isExcluded()) {
                 $excluded[] = $layer->name();
+
+                continue;
+            }
+            if ($result->undecided) {
+                $undecided[] = $layer->name();
 
                 continue;
             }
@@ -221,7 +264,11 @@ final class LayerRegistry
             $matches[] = new LayerMatch($layer->name(), $result->matchedCriteria);
         }
 
-        return $this->matchCache[$cacheKey] = ['matches' => $matches, 'excluded' => $excluded];
+        return $this->matchCache[$cacheKey] = [
+            'matches' => $matches,
+            'excluded' => $excluded,
+            'undecided' => $undecided,
+        ];
     }
 
     /**

@@ -4,7 +4,8 @@
 
 - **Subject:** dependency evidence between logical PHP classes and namespaces.
 - **Promise:** preserve collected dependency occurrences and expose a graph with
-  deterministic class, namespace, afferent, and efferent coupling views.
+  deterministic class, namespace, afferent, and efferent coupling views — for a
+  namespace, in both of the two scopes it can have.
 - **Semantic owner:** `Analysis.Evidence.DependencyModel`.
 - **Owned paths:** `src/Analysis/Evidence/DependencyModel/` and
   `tests/Analysis/Evidence/DependencyModel/`.
@@ -29,6 +30,7 @@ DependencyModel/
 ├── DependencyGraph.php
 ├── DependencyGraphBuilder.php
 ├── EmptyDependencyGraph.php
+├── NamespaceCouplings.php        # both coupling scopes of every namespace
 └── StringSet.php                 # unique-dependency counting for coupling
 ```
 
@@ -37,8 +39,8 @@ DependencyModel/
 The model's graph/value contracts and
 `DependencyTraversalParticipantInterface` are the declared public surface.
 `DependencyGraph`, `DependencyGraphBuilder`, `EmptyDependencyGraph`,
-`StringSet`, and every type under `Extraction/` are internal implementation
-details.
+`NamespaceCouplings`, `StringSet`, and every type under `Extraction/` are
+internal implementation details.
 `DependencyLocationInterface` exposes a structured relative file and line so
 Finding consumers can project DependencyModel-owned extraction locations
 without parsing their wire representation. `Analysis\Finding\Contract\Location` also
@@ -49,6 +51,34 @@ findings preserve the same object identity.
 the logical class universe. The universe retains degree-zero declarations, while
 the builder derives all ancestor namespaces locally and preserves dependency
 encounter order and coupling semantics.
+
+### The two namespace coupling scopes
+
+A namespace that both declares classes and contains sub-namespaces is two things
+at once, and the graph answers for both:
+
+- `getNamespaceCe()` / `getNamespaceCa()` — the **subtree rollup**, over
+  prefix-based boundary semantics: a dependency is a crossing when one side is
+  inside the namespace or below it and the other is outside. An edge between two
+  of its sub-namespaces is internal.
+- `getNamespaceOwnCe()` / `getNamespaceOwnCa()` — the **own scope**, over exact
+  namespace equality: only the classes declared in that namespace itself, with a
+  sub-namespace outside like anything else.
+
+Both scopes travel in one `NamespaceCouplings`, as one row of four counts per
+namespace rather than as four separate maps: nothing reads a Ce without meaning
+a scope, and a caller holding the four apart can pair a subtree Ce with an own
+Ca — a ratio of two different regions, and one nothing would report. The rollup
+pass names parent namespaces the own-scope pass never saw, so a namespace
+present in one scope only answers zero in the other instead of falling out of
+the index.
+
+For a namespace without sub-namespaces the two coincide. The builder computes
+the own scope for every namespace first and then derives the rollup from it, so
+the rollup pass returns a changed copy rather than overwriting what it read:
+the parent's own value has to survive the pass that replaces its published one.
+Only the own scope partitions the declarations, which is what a project-level
+fold of a namespace-collected metric is taken over.
 
 `Dependency::$describesNestedAnonymousClass` marks an edge whose type is a
 declaration fact (`extends`, `implements`, an attribute, or `trait_use`) of an

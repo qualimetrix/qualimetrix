@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules;
 
 use LogicException;
-
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -35,6 +34,7 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOption
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\OwnedLayerTargets;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
@@ -510,8 +510,7 @@ final class LayerViolationRuleTest extends TestCase
             reason: 'Only the first exact source declaration is accepted.',
             line: 1,
             type: SuppressionType::Symbol,
-            subject: $firstSubject,
-            controlScope: ControlScope::Class_,
+            binding: new DeclarationBinding($firstSubject, ControlScope::Class_),
         )]]);
         self::assertSame([false, true], array_map(
             static fn($finding): bool => \in_array($finding, $result->retained, true),
@@ -719,8 +718,7 @@ final class LayerViolationRuleTest extends TestCase
             reason: 'Source declaration is independently controlled.',
             line: 1,
             type: SuppressionType::Symbol,
-            subject: $sourceSubject,
-            controlScope: ControlScope::Class_,
+            binding: new DeclarationBinding($sourceSubject, ControlScope::Class_),
         )]];
         $result = $filter->apply($findings, $suppressions);
         self::assertSame([true, true], array_map(static fn($v): bool => \in_array($v, $result->retained, true), $findings));
@@ -730,8 +728,7 @@ final class LayerViolationRuleTest extends TestCase
             reason: 'Target declaration control is independent.',
             line: 1,
             type: SuppressionType::Symbol,
-            subject: $firstTargetSubject,
-            controlScope: ControlScope::Class_,
+            binding: new DeclarationBinding($firstTargetSubject, ControlScope::Class_),
         )];
         $result = $filter->apply($findings, $suppressions);
         self::assertSame([false, true], array_map(static fn($v): bool => \in_array($v, $result->retained, true), $findings));

@@ -511,10 +511,10 @@ final class FileProcessorTest extends TestCase
         self::assertCount(4, $controls);
         self::assertSame(
             [$classDeclaration->toCanonical(), $constructorDeclaration->toCanonical(), $constructorDeclaration->toCanonical(), $constructorDeclaration->toCanonical()],
-            array_map(static fn($control) => $control->subject?->toCanonical(), $controls),
+            array_map(static fn($control) => $control->binding?->subject->toCanonical(), $controls),
         );
         self::assertSame([ControlScope::Class_, ControlScope::Class_, ControlScope::Callable, ControlScope::Callable], array_map(
-            static fn($control) => $control->controlScope,
+            static fn($control) => $control->binding?->controlScope,
             $controls,
         ));
     }
@@ -565,11 +565,11 @@ final class FileProcessorTest extends TestCase
         self::assertCount(6, $controls);
         self::assertSame(
             [$classDeclaration->toCanonical(), $methodDeclaration->toCanonical(), $closureDeclaration->toCanonical(), $arrowDeclaration->toCanonical(), $closureDeclaration->toCanonical(), $arrowDeclaration->toCanonical()],
-            array_map(static fn($control) => $control->subject?->toCanonical(), $controls),
+            array_map(static fn($control) => $control->binding?->subject->toCanonical(), $controls),
         );
         self::assertSame(
             [ControlScope::Class_, ControlScope::Class_, ControlScope::Class_, ControlScope::Class_, ControlScope::Callable, ControlScope::Callable],
-            array_map(static fn($control) => $control->controlScope, $controls),
+            array_map(static fn($control) => $control->binding?->controlScope, $controls),
         );
     }
 
@@ -660,7 +660,7 @@ final class FileProcessorTest extends TestCase
         self::assertCount(1, $result->thresholdDiagnostics());
         self::assertSame($innerDeclaration->toCanonical(), $result->thresholdDiagnostics()[0]->subject->toCanonical());
         self::assertCount(1, $result->suppressions());
-        self::assertSame($innerDeclaration->toCanonical(), $result->suppressions()[0]->subject?->toCanonical());
+        self::assertSame($innerDeclaration->toCanonical(), $result->suppressions()[0]->binding?->subject->toCanonical());
     }
 
     /** @return list<Node> */

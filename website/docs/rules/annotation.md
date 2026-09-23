@@ -23,18 +23,75 @@ An annotation is a claim about the code: "this finding is expected and accepted.
 
 ### The four channels
 
-| Channel                            | Meaning                                                                                                                                                                                                                                          | Kind                | Severity                                                        |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------- | --------------------------------------------------------------- |
-| `annotation.unresolved-directive`  | The directive names something it is not allowed to address — a typo, a rule name written where a channel was expected, an `X.*` wildcard that matches nothing, or a dangling reference to a computed metric that was removed from configuration. | Configuration error | `Error`, not configurable                                       |
-| `annotation.unsupported-threshold` | `@qmx-threshold` targets a rule that declares no threshold-override support.                                                                                                                                                                     | Configuration error | `Error`, not configurable                                       |
-| `annotation.invalid-threshold`     | The `@qmx-threshold` payload itself is malformed — the wrong shape or an unparsable value for that rule's options.                                                                                                                               | Configuration error | `Error`, not configurable                                       |
-| `annotation.unused-directive`      | The directive is valid and addresses something real, but nothing it addressed fired this run.                                                                                                                                                    | Ordinary debt       | `Info` by default, configurable via `unused_directive_severity` |
+| Channel                            | Meaning                                                                                                                                                                                                                                                                                                                                                                                                                                  | Kind                | Severity                                                        |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | --------------------------------------------------------------- |
+| `annotation.unresolved-directive`  | The directive names something it is not allowed to address — a typo, a rule name written where a channel was expected, an `X.*` wildcard that matches nothing, or a dangling reference to a computed metric that was removed from configuration. It also carries the two ways a directive fails before its channel is ever consulted: a `@qmx-` tag this tool does not read, and the declaration form written where nothing is measured. | Configuration error | `Error`, not configurable                                       |
+| `annotation.unsupported-threshold` | `@qmx-threshold` targets a rule that declares no threshold-override support.                                                                                                                                                                                                                                                                                                                                                             | Configuration error | `Error`, not configurable                                       |
+| `annotation.invalid-threshold`     | The `@qmx-threshold` payload itself is malformed — the wrong shape or an unparsable value for that rule's options.                                                                                                                                                                                                                                                                                                                       | Configuration error | `Error`, not configurable                                       |
+| `annotation.unused-directive`      | The directive is valid and addresses something real, but nothing it addressed fired this run.                                                                                                                                                                                                                                                                                                                                            | Ordinary debt       | `Info` by default, configurable via `unused_directive_severity` |
 
 The first three are **configuration errors**: they report a mistake in what was written, not debt in the analysed code. Like the architecture configuration diagnostics (see [Architecture Rules](architecture.md#coverage-modes)), they fail the run unconditionally whenever they fire — `fail_on` is not consulted, not even `fail_on: none` — and none of them can be accepted into a baseline or silenced with another `@qmx-ignore`. A severity option on any of them would look like a behaviour switch while changing nothing, so none of the three exposes one.
 
 `annotation.unused-directive` is different: the directive was well-formed and once mattered, it just did not suppress or override anything this particular run. That is ordinary cleanup debt, not a mistake — it has a configurable severity, and it can be accepted into a baseline, dropped by the top-level `suppress_paths`, and narrowed by a git scope like any other finding. Two exclusions other channels answer to do not reach it, and did not before the ban either: the top-level `suppress_namespaces` never matches it, because the finding's subject is the **file** the annotation is written in and carries no namespace to match; and the rule's own `suppress_paths` / `suppress_namespaces` never see it, because a run assembles this channel after rule execution, once the per-rule exclusion ledger has closed. Switching the whole `annotation.directive` rule off does remove it — together with the three configuration-error diagnostics above.
 
 The one thing it cannot be is **suppressed by a directive**. `@qmx-ignore`, `@qmx-ignore-next-line` and `@qmx-ignore-file` are all refused when their target reaches `annotation.unused-directive` — by its exact name, through `annotation.*`, or with `:file` after either — and the refusal is reported as `annotation.unresolved-directive` on the line the directive was written on. A directive that hid this channel would hide the answer to the question the channel exists to ask. A bare `@qmx-ignore-file` with no channel at all is not refused, since it names nothing to refuse, but it no longer silences the channel either.
+
+### Forms that never become a directive
+
+A directive can be wrong in ways that have nothing to do with the channel it names: the tag can be one this tool does not read — misspelled, or written without the channel it requires — and it can be written where nothing is measured. Each of these used to be discarded during extraction, which made them invisible to every check downstream — the annotation simply did nothing, and nothing said so. They now report `annotation.unresolved-directive` on the line they were written on.
+
+**A `@qmx-` tag this tool does not read.** The tags are `@qmx-ignore`, `@qmx-ignore-next-line`, `@qmx-ignore-file` and `@qmx-threshold`. Anything else under the `@qmx-` prefix — a misspelling, or an invented tag — is refused by name:
+
+```php
+/**
+ * @qmx-ignore-lines complexity.ccn reason="no such tag"
+ */
+```
+
+```
+Directive "@qmx-ignore-lines complexity.ccn" is not a tag this tool reads. The tags are @qmx-ignore, @qmx-ignore-next-line, @qmx-ignore-file and @qmx-threshold; the first two name a channel before the reason.
+```
+
+**A tag that requires a channel, written without one.** `@qmx-ignore` and `@qmx-ignore-next-line` are refused the same way — no grammar read them — and that now holds in every comment carrier: `// @qmx-ignore`, `/* @qmx-ignore */`, and `@qmx-ignore` standing alone on a docblock line. A comment's own closing delimiter is punctuation, not an argument, and the block and docblock carriers used to read its `*` as the channel. `*` is the spelling that means *no rule filter*, so those two forms silenced every channel on the declaration they stood over and said nothing about it. The authored star is unaffected — `@qmx-ignore *` still means "everything here" — and so is a selector written hard against the delimiter, such as `complexity.*` with no space before the `*/`.
+
+**A declaration-form directive with no declaration to bind to.** `@qmx-ignore` names the symbol it is written on, so it needs a symbol that is measured: a class, interface, trait, enum, method, function or closure. Written above a statement, or on a property, it binds to nothing:
+
+```php
+public function run(int $n): int
+{
+    // @qmx-ignore complexity.ccn reason="above a statement"
+    if ($n > 0) {
+        return $n;
+    }
+
+    return 0;
+}
+```
+
+```
+Suppression "@qmx-ignore complexity.ccn" is written where no declaration is measured, so it binds to nothing. Write @qmx-ignore-next-line to silence the line below it, or move the tag onto the class, method or function it is about.
+```
+
+The physical forms — `@qmx-ignore-next-line` and `@qmx-ignore-file` — are bound to a line and to a file rather than to a declaration, so where they are written is not restricted this way.
+
+!!! warning "This is a breaking change"
+    Code carrying any of these forms used to analyse cleanly. It now fails the run as a configuration error, which is the point: the form was doing nothing, and a reviewer reading it assumed otherwise. The declaration form on a docblock over a property used to be worse than silent — it aborted the whole file, so every metric and every finding in that file disappeared and the run reported one file as failed. The channelless form in a block comment or a docblock was worse still: it silenced every channel on the declaration it stood over, so a run that used to pass may now report findings that annotation was hiding.
+
+### Quoting a directive without addressing it
+
+A docblock that documents this syntax has to be able to name the tags without addressing them. Wrap the quoted directive in backticks, or put it in a fenced block:
+
+```php
+/**
+ * Write `@qmx-ignore complexity.ccn` to silence one channel.
+ *
+ * ```
+ * @qmx-ignore-file -- generated
+ * ```
+ */
+```
+
+An inline quoted region opens and closes **within one line**: a backtick with no partner on its own line is an ordinary character and quotes nothing. That is what keeps a stray tick in prose from shifting where every region below it begins and ends — which would silently turn a correctly quoted example into a live directive and make the live directive under it disappear. A fenced block is recognised as itself, not as inline regions that happen to pair up, so a multi-line example needs no per-line ticks.
 
 <!-- llms:skip-begin -->
 ### Example
@@ -127,7 +184,7 @@ three tags reading the same way.
 <!-- llms:skip-begin -->
 ### How to fix
 
-- **`annotation.unresolved-directive`** — fix the name. Use the exact channel name for `@qmx-ignore` (or `X.*` for every descendant of `X`), and the exact rule name for `@qmx-threshold`. If a computed metric annotation started failing, either restore the metric in `computed_metrics:` or remove the now-dangling annotation. If the message points at the first word of your reason, you wrote `@qmx-ignore-file` followed directly by prose with no channel — add `--` before the reason (see the example above).
+- **`annotation.unresolved-directive`** — fix the name. Use the exact channel name for `@qmx-ignore` (or `X.*` for every descendant of `X`), and the exact rule name for `@qmx-threshold`. If a computed metric annotation started failing, either restore the metric in `computed_metrics:` or remove the now-dangling annotation. If the message points at the first word of your reason, you wrote `@qmx-ignore-file` followed directly by prose with no channel — add `--` before the reason (see the example above). If the message says the tag is *not one this tool reads*, fix the spelling against the four tags it lists. If it says the tag *binds to nothing*, the declaration form is sitting where nothing is measured — switch to `@qmx-ignore-next-line`, or move it onto the class, method or function it is about (see [Forms that never become a directive](#forms-that-never-become-a-directive)).
 - **`annotation.unsupported-threshold`** — remove the `@qmx-threshold`; the targeted rule has no options a threshold can override. Check the rule's `Options` section on its own page for what it does accept.
 - **`annotation.invalid-threshold`** — fix the payload to match the rule's option shape (see that rule's `Configuration` section for the expected keys and value types).
 - **`annotation.unused-directive`** — delete the annotation. It is not doing anything, and leaving it in place misleads the next reader into thinking a finding is still being suppressed. If deleting it is not an option yet, accept the finding into a baseline or exclude the path; another `@qmx-ignore` is not one of the choices, and is refused.

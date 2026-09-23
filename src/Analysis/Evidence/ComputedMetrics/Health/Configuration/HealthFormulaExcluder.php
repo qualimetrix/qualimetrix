@@ -230,19 +230,50 @@ final readonly class HealthFormulaExcluder implements HealthFormulaExclusionInte
             return null;
         }
 
-        $totalWeight = array_sum(array_column($remaining, 'weight'));
+        $weights = self::normalizedWeights(array_column($remaining, 'weight'));
         $rebuilt = [];
 
-        foreach ($remaining as $dimension => $term) {
+        foreach (array_keys($remaining) as $index => $dimension) {
             $rebuilt[] = \sprintf(
                 '(m["%s"] ?? %s) * %s',
                 $dimension,
-                self::number($term['fallback']),
-                self::number(round($term['weight'] / $totalWeight, 4)),
+                self::number($remaining[$dimension]['fallback']),
+                self::number($weights[$index]),
             );
         }
 
         return \sprintf('clamp(%s, 0, 100)', implode(' + ', $rebuilt));
+    }
+
+    /**
+     * Shares that sum to exactly one at the precision they are printed with.
+     *
+     * Rounding each share on its own leaves the scale short: dropping typing
+     * from the namespace formula gives 0.3333 + 0.2222 * 3 = 0.9999, and a
+     * subject scoring 100 on every remaining dimension then publishes 99.99.
+     * The rounding remainder goes to the widest share, where it is the smallest
+     * relative distortion, instead of being dropped.
+     *
+     * @param list<float> $weights
+     *
+     * @return list<float>
+     */
+    private static function normalizedWeights(array $weights): array
+    {
+        $total = array_sum($weights);
+        $shares = array_map(static fn(float $weight): float => round($weight / $total, 4), $weights);
+
+        $widest = 0;
+
+        foreach ($shares as $index => $share) {
+            if ($share > $shares[$widest]) {
+                $widest = $index;
+            }
+        }
+
+        $shares[$widest] = round($shares[$widest] + (1.0 - array_sum($shares)), 4);
+
+        return array_values($shares);
     }
 
     /** A float printed the way a formula reads it, without a trailing `.0`. */

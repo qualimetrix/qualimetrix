@@ -18,6 +18,21 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
  * capability, so named here rather than `@see`-linked) using only
  * `Suppression`'s public fields; see {@see SuppressionCompositionBuilder}'s
  * class docblock for why this is a recomputation rather than a read.
+ *
+ * **Two of that filter's three conditions are reproduced here, and the third
+ * cannot be.** The channel ban — the two channels no directive may silence —
+ * is asked there about the finding alone, and naming it here would make
+ * Reporting depend on an internal of the capability whose values it holds as
+ * `mixed`. Nothing is lost while the input stays what it is: this resolver is
+ * asked only about findings that filter removed, and a finding on a banned
+ * channel is precisely one it did not remove. Should another path ever put a
+ * suppressed finding in front of this class, that is the assumption to
+ * re-check first.
+ *
+ * The selector half is not reproduced at all: `matches()` is the directive's
+ * own answer, so a directive the extractor refused — one whose tag no grammar
+ * reads, or one written where nothing binds — is silently unable to be named
+ * here as a suppressor, which is what it is.
  */
 final readonly class DirectiveSuppressorResolver
 {
@@ -50,8 +65,7 @@ final readonly class DirectiveSuppressorResolver
     private function isMatchingSymbolDirective(mixed $suppression, Finding $finding): bool
     {
         return $suppression->type->value === 'symbol'
-            && $suppression->subject !== null
-            && $suppression->subject->toCanonical() === $finding->subject->toCanonical()
+            && $suppression->binding?->subject->toCanonical() === $finding->subject->toCanonical()
             && $suppression->matches($finding->code, $finding->level());
     }
 

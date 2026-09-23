@@ -25,24 +25,6 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 final readonly class SourceControlExtractor implements SourceControlExtractorInterface
 {
     /** @var array<string, true> */
-    private const array SUPPRESSION_NODE_TYPES = [
-        'Stmt_Class' => true,
-        'Stmt_Interface' => true,
-        'Stmt_Trait' => true,
-        'Stmt_Enum' => true,
-        'Stmt_ClassMethod' => true,
-        'Stmt_Function' => true,
-        'Stmt_Property' => true,
-        'PropertyHook' => true,
-        'Expr_Closure' => true,
-        'Expr_ArrowFunction' => true,
-        'Param' => true,
-        'Stmt_EnumCase' => true,
-        'Stmt_ClassConst' => true,
-        'Stmt_Expression' => true,
-    ];
-
-    /** @var array<string, true> */
     private const array THRESHOLD_NODE_TYPES = [
         'Stmt_Class' => true,
         'Stmt_Interface' => true,
@@ -108,14 +90,24 @@ final readonly class SourceControlExtractor implements SourceControlExtractorInt
         return self::deduplicate($suppressions);
     }
 
+    /**
+     * A node is read when an author wrote a `@qmx-` tag on it.
+     *
+     * There is no list of node types here on purpose, and the list that used
+     * to stand beside this condition is gone rather than extended. The
+     * physical forms are bound to a line and to a file, not to a declaration,
+     * so the grammar of PHP has no say in where they may be written — and a
+     * list that answers as if it did is a copy of that grammar which falls
+     * behind it in silence: `if`, `foreach`, `return`, `namespace` and `use`
+     * were all missing from the one that stood here, and on each of them a
+     * docblock directive did nothing while the same directive in a line
+     * comment worked. A node carrying no tag yields nothing either way, so the
+     * list bought nothing beyond the illusion of governing placement.
+     */
     private static function canCarrySuppression(Node $node): bool
     {
-        if (isset(self::SUPPRESSION_NODE_TYPES[$node->getType()])) {
-            return true;
-        }
-
         foreach ($node->getComments() as $comment) {
-            if (!$comment instanceof \PhpParser\Comment\Doc && str_contains($comment->getText(), '@qmx-ignore')) {
+            if (str_contains($comment->getText(), SuppressionExtractor::TAG_PREFIX)) {
                 return true;
             }
         }
@@ -168,9 +160,9 @@ final readonly class SourceControlExtractor implements SourceControlExtractorInt
                 $suppression->rule,
                 $suppression->reason ?? '',
                 (string) $suppression->line,
-                (string) ($suppression->endLine ?? -1),
-                $suppression->subject?->toCanonical() ?? '',
-                self::scopeKey($suppression->controlScope),
+                (string) ($suppression->binding->endLine ?? -1),
+                $suppression->binding?->subject->toCanonical() ?? '',
+                self::scopeKey($suppression->binding?->controlScope),
             ])] = $suppression;
         }
 

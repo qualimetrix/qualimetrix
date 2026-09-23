@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
@@ -116,8 +117,7 @@ final class FileProcessingResultWireFormatTest extends TestCase
             'fixture',
             12,
             SuppressionType::Symbol,
-            subject: $subject,
-            controlScope: ControlScope::Class_,
+            binding: new DeclarationBinding($subject, ControlScope::Class_),
         );
         $override = new ThresholdOverride('complexity.ccn', 10, 20, 13, $subject, ControlScope::Class_);
         $diagnostic = new ThresholdDiagnostic(14, $subject, 'invalid threshold');

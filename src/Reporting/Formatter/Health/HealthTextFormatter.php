@@ -144,16 +144,19 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
             return;
         }
 
-        // Header
+        // Header. Coverage is a column rather than a line below the table
+        // because ADR 0062 publishes it beside the score, and a row is where
+        // this format puts what belongs to a score.
         $header = \sprintf(
-            '  %-' . $nameWidth . 's  %7s   %-12s  %s',
+            '  %-' . $nameWidth . 's  %7s   %-12s  %8s  %s',
             'Dimension',
             'Score',
             'Status',
+            'Coverage',
             'Thresholds',
         );
         $lines[] = $color->bold($header);
-        $lines[] = '  ' . str_repeat("\u{2500}", $nameWidth + 40);
+        $lines[] = '  ' . str_repeat("\u{2500}", $nameWidth + 50);
 
         // Dimension rows
         foreach ($dimensions as $hs) {
@@ -162,7 +165,7 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
 
         // Overall row (separated)
         if ($overall !== null) {
-            $lines[] = '  ' . str_repeat("\u{2500}", $nameWidth + 40);
+            $lines[] = '  ' . str_repeat("\u{2500}", $nameWidth + 50);
             $lines[] = $this->renderRow($overall, $color, $nameWidth);
         }
     }
@@ -181,38 +184,42 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
         array &$lines,
     ): void {
         foreach ($dimensions as $hs) {
-            $name = str_pad(ucfirst($hs->name), $nameWidth);
-
-            if ($hs->score === null) {
-                $lines[] = \sprintf('  %s  %s', $name, $color->dim($hs->label));
-            } else {
-                $scoreStr = $this->colorizeScore(\sprintf('%5.1f%%', $hs->score), $hs, $color);
-                $lines[] = \sprintf('  %s  %s  %s', $name, $scoreStr, $color->dim($hs->label));
-            }
+            $lines[] = $this->renderNarrowRow($hs, $color, $nameWidth, $color->dim($hs->label));
         }
 
         if ($overall !== null) {
-            $name = str_pad(ucfirst($overall->name), $nameWidth);
-
-            if ($overall->score === null) {
-                $lines[] = \sprintf('  %s  %s', $name, $color->dim($overall->label));
-            } else {
-                $scoreStr = $this->colorizeScore(\sprintf('%5.1f%%', $overall->score), $overall, $color);
-                $lines[] = \sprintf('  %s  %s  %s', $name, $scoreStr, $color->bold($overall->label));
-            }
+            $lines[] = $this->renderNarrowRow($overall, $color, $nameWidth, $color->bold($overall->label));
         }
+    }
+
+    /** The overall row differs from a dimension's only in how its label is emphasised. */
+    private function renderNarrowRow(HealthScore $hs, AnsiColor $color, int $nameWidth, string $label): string
+    {
+        $name = str_pad(ucfirst($hs->name), $nameWidth);
+        $coverage = $color->dim(\sprintf('(%s)', HealthCoverageNarrator::share($hs->coverage)));
+
+        if ($hs->score === null) {
+            return \sprintf('  %s  %s %s', $name, $color->dim($hs->label), $coverage);
+        }
+
+        $scoreStr = $this->colorizeScore(\sprintf('%5.1f%%', $hs->score), $hs, $color);
+
+        return \sprintf('  %s  %s  %s %s', $name, $scoreStr, $label, $coverage);
     }
 
     private function renderRow(HealthScore $hs, AnsiColor $color, int $nameWidth): string
     {
         $name = str_pad(ucfirst($hs->name), $nameWidth);
 
+        $coverage = \sprintf('%8s', HealthCoverageNarrator::share($hs->coverage));
+
         if ($hs->score === null) {
             return \sprintf(
-                '  %s  %s   %s',
+                '  %s  %s   %s  %s',
                 $name,
                 $this->ansiRightPad($color->dim('N/A'), 7),
                 $this->ansiPad($color->dim($hs->label), 12),
+                $color->dim($coverage),
             );
         }
 
@@ -230,10 +237,11 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
         ));
 
         return \sprintf(
-            '  %s  %s   %s  %s',
+            '  %s  %s   %s  %s  %s',
             $name,
             $scoreStr,
             $paddedStatus,
+            $color->dim($coverage),
             $thresholds,
         );
     }

@@ -683,6 +683,7 @@ Text table of health scores for terminal output. Shows each dimension with its s
 - Status labels with color coding (green/yellow/red)
 - Threshold visibility (warning and error levels)
 - Decomposition breakdown for each dimension
+- A `Coverage` column, and one `Computed over N of M ...` line per dimension in the decomposition — the share of the subject that score speaks for (see [What a Score Covers](../reference/health-scores.md#what-a-score-covers))
 - Supports `--namespace` and `--class` drill-down
 
 **Worst contributors per dimension:**
@@ -714,6 +715,7 @@ Interactive treemap report with D3.js visualization. Generates a self-contained 
 - Color-coded health scores per node
 - Click to drill down into namespaces
 - Detail panel with metrics, violations, and decomposition
+- Health coverage beside each project health bar (`n/a` when coverage is undefined), from the `summary.healthCoverage` object the payload carries next to `summary.healthScores`
 - Self-contained single HTML file (no external dependencies)
 
 **Usage:**

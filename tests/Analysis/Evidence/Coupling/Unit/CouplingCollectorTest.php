@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
@@ -54,15 +55,15 @@ final class CouplingCollectorTest extends TestCase
     #[Test]
     public function itProvidesTheCouplingMetricNames(): void
     {
-        self::assertSame(['coupling.ca', 'coupling.ce', 'coupling.cbo', 'coupling.instability', 'coupling.ce-packages', 'coupling.cbo-app', 'coupling.ce-framework'], $this->collector->provides());
+        self::assertSame(['coupling.ca', 'coupling.ce', 'coupling.cbo', 'coupling.instability', 'coupling.ce-packages', 'coupling.cbo-app', 'coupling.ce-framework', 'coupling.ca-own', 'coupling.ce-own', 'coupling.instability-own'], $this->collector->provides());
     }
 
     #[Test]
-    public function itDeclaresSevenMetricDefinitionsWithTheirAggregationStrategies(): void
+    public function itDeclaresTenMetricDefinitionsWithTheirAggregationStrategies(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 
-        self::assertCount(7, $definitions);
+        self::assertCount(10, $definitions);
 
         // ca metric
         $ca = $definitions[0];
@@ -145,6 +146,17 @@ final class CouplingCollectorTest extends TestCase
             [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max, AggregationStrategy::Percentile95],
             $cboApp->getStrategiesForLevel(SymbolLevel::Project),
         );
+
+        // the own-scope namespace metrics, which no level aggregates: the pair
+        // exists so a parent namespace can answer for its own declarations as
+        // well as for its subtree, and only distance folds up from there.
+        foreach ([7 => 'coupling.ca-own', 8 => 'coupling.ce-own', 9 => 'coupling.instability-own'] as $index => $name) {
+            $own = $definitions[$index];
+            self::assertSame($name, $own->name);
+            self::assertSame(SymbolLevel::Namespace_, $own->collectedAt);
+            self::assertSame([], $own->getStrategiesForLevel(SymbolLevel::Namespace_));
+            self::assertSame([], $own->getStrategiesForLevel(SymbolLevel::Project));
+        }
 
         // ce_framework metric
         $ceFramework = $definitions[6];
@@ -551,6 +563,69 @@ final class CouplingCollectorTest extends TestCase
         self::assertSame(1, $bNsMetrics->get('coupling.cbo'));
     }
 
+    /**
+     * A namespace that both declares classes and contains a sub-namespace gets
+     * two answers, and they have to be told apart: the subtree rollup counts
+     * the sub-namespace's crossings as its own, the own scope counts only what
+     * the namespace itself declares. Instability is published for both, so a
+     * fixture where the two ratios differ is what keeps them apart.
+     */
+    #[Test]
+    public function itPublishesTheOwnScopeOfANamespaceBesideItsSubtreeRollup(): void
+    {
+        $deps = [
+            $this->dep('A\\B\\X', 'Ext\\Y'),
+            $this->dep('A\\Z', 'Ext\\W'),
+            $this->dep('Ext\\P', 'A\\Z'),
+        ];
+
+        $graph = $this->realGraph($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'A\\Z');
+        $this->registerClass($repository, 'A\\B\\X');
+        $this->registerNamespace($repository, 'A');
+        $this->registerNamespace($repository, 'A\\B');
+
+        $this->collector->calculate($graph, $repository);
+        $metrics = $repository->get(SymbolPath::forNamespace('A'));
+
+        self::assertSame(2, $metrics->get('coupling.ce'));
+        self::assertSame(1, $metrics->get('coupling.ca'));
+        self::assertEqualsWithDelta(2 / 3, $metrics->get('coupling.instability'), 0.0001);
+
+        self::assertSame(1, $metrics->get('coupling.ce-own'));
+        self::assertSame(1, $metrics->get('coupling.ca-own'));
+        self::assertEqualsWithDelta(0.5, $metrics->get('coupling.instability-own'), 0.0001);
+    }
+
+    /**
+     * A namespace without sub-namespaces has one scope, and both spellings must
+     * report it -- otherwise the own key would be a second, quieter metric
+     * rather than the same measurement taken over exactly this namespace.
+     */
+    #[Test]
+    public function itReportsTheSameCouplingInBothScopesForANamespaceWithoutChildren(): void
+    {
+        $deps = [
+            $this->dep('A\\Foo', 'B\\Bar'),
+            $this->dep('B\\Baz', 'A\\Qux'),
+        ];
+
+        $graph = $this->realGraph($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'A\\Foo');
+        $this->registerClass($repository, 'A\\Qux');
+        $this->registerNamespace($repository, 'A');
+
+        $this->collector->calculate($graph, $repository);
+        $metrics = $repository->get(SymbolPath::forNamespace('A'));
+
+        self::assertSame($metrics->get('coupling.ce'), $metrics->get('coupling.ce-own'));
+        self::assertSame($metrics->get('coupling.ca'), $metrics->get('coupling.ca-own'));
+        self::assertSame($metrics->get('coupling.instability'), $metrics->get('coupling.instability-own'));
+        self::assertSame(1, $metrics->get('coupling.ce-own'));
+    }
+
     #[Test]
     public function itDoesNotRegisterASymbolForAnExternalDependencyClass(): void
     {
@@ -865,6 +940,22 @@ final class CouplingCollectorTest extends TestCase
             DependencyType::New_,
             new Location(RelativePath::fromString('test.php'), 1),
         );
+    }
+
+    /**
+     * The graph the product builds, rather than the adjacency double the rest
+     * of this file uses: the double knows no parent namespaces, so a subtree
+     * rollup and an own scope are the same number in it and a case about their
+     * difference would pass on a graph that never had one.
+     *
+     * @param list<Dependency> $dependencies
+     */
+    private function realGraph(array $dependencies): DependencyGraphInterface
+    {
+        return (new DependencyGraphBuilder())->build($dependencies, array_map(
+            static fn(Dependency $dependency): LogicalClassPath => new LogicalClassPath($dependency->sourceLogical()),
+            $dependencies,
+        ));
     }
 
     /**

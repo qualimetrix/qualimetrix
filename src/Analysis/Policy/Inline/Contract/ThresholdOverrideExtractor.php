@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Contract;
 
+use PhpParser\Comment\Doc;
 use PhpParser\Node;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
@@ -79,99 +80,159 @@ final readonly class ThresholdOverrideExtractor
         MetricSubject $subject,
         ControlScope $controlScope,
     ): ThresholdOverrideExtractionResult {
-        $docComment = $node->getDocComment();
-        if ($docComment === null) {
-            return new ThresholdOverrideExtractionResult([], []);
-        }
-
-        $text = self::stripBacktickRegions($docComment->getText());
-        if (!str_contains($text, '@qmx-threshold')) {
-            return new ThresholdOverrideExtractionResult([], []);
-        }
-
         $overrides = [];
         $diagnostics = [];
         /** @var array<string, true> $seenRules track rule patterns to detect duplicates */
         $seenRules = [];
 
-        $flags = \PREG_SET_ORDER | \PREG_OFFSET_CAPTURE | \PREG_UNMATCHED_AS_NULL;
-        if (preg_match_all(self::PATTERN, $text, $matches, $flags) !== 0) {
-            foreach ($matches as $match) {
-                $rulePattern = $match[1][0];
-                if (!\is_string($rulePattern)) {
-                    continue;
-                }
-
-                $valueString = self::cleanTrailingDocblock($match[2][0] ?? '');
-                $line = self::lineAtOffset($text, $docComment->getStartLine(), $match[0][1]);
-
-                $parsed = self::parseValues($valueString);
-                if ($parsed === null) {
-                    $diagnostics[] = new ThresholdDiagnostic(
-                        line: $line,
-                        subject: $subject,
-                        message: \sprintf(
-                            '@qmx-threshold %s: invalid syntax "%s" — expected a number or warning=N error=N',
-                            $rulePattern,
-                            $valueString,
-                        ),
-                    );
-
-                    continue;
-                }
-
-                [$warning, $error, $errorWasExplicit] = $parsed;
-
-                // Delegate validation to per-rule strategy.
-                // Unknown rule names (or wildcard / prefix patterns) skip validation —
-                // the post-analysis `annotation.unsupported-threshold` diagnostic
-                // surfaces those instead.
-                $validator = $this->validators[$rulePattern] ?? null;
-                if ($validator !== null) {
-                    $failure = $validator->validate($warning, $error, $errorWasExplicit);
-                    if ($failure !== null) {
-                        $diagnostics[] = new ThresholdDiagnostic(
-                            line: $line,
-                            subject: $subject,
-                            message: \sprintf('@qmx-threshold %s: %s', $rulePattern, $failure->message),
-                            code: $failure->code,
-                            hint: $failure->hint,
-                        );
-
-                        continue;
-                    }
-                }
-
-                // Validate: duplicate rule pattern on the same symbol
-                if (isset($seenRules[$rulePattern])) {
-                    $diagnostics[] = new ThresholdDiagnostic(
-                        line: $line,
-                        subject: $subject,
-                        message: \sprintf(
-                            '@qmx-threshold %s: duplicate annotation — rule "%s" already has a threshold override on this symbol',
-                            $rulePattern,
-                            $rulePattern,
-                        ),
-                    );
-
-                    continue;
-                }
-
-                $seenRules[$rulePattern] = true;
-
-                $overrides[] = new ThresholdOverride(
-                    rulePattern: $rulePattern,
-                    warning: $warning,
-                    error: $error,
-                    line: $line,
-                    subject: $subject,
-                    controlScope: $controlScope,
-                    endLine: $node->getEndLine() > 0 ? $node->getEndLine() : null,
-                );
-            }
+        foreach (self::docblocksOf($node) as $docComment) {
+            $this->readDocblock($docComment, $node, $subject, $controlScope, $overrides, $diagnostics, $seenRules);
         }
 
         return new ThresholdOverrideExtractionResult($overrides, $diagnostics);
+    }
+
+    /**
+     * Every docblock attached to the declaration, not the last one.
+     *
+     * `Node::getDocComment()` answers with the last, so a directive written in
+     * the first of two adjacent docblocks — an annotation added beside a
+     * generated block, a description left behind by a rewrite — was read by
+     * nothing at all. A threshold is still a docblock form: line and block
+     * comments are deliberately not searched.
+     *
+     * @return list<Doc>
+     */
+    private static function docblocksOf(Node $node): array
+    {
+        $docblocks = [];
+
+        foreach ($node->getComments() as $comment) {
+            if ($comment instanceof Doc) {
+                $docblocks[] = $comment;
+            }
+        }
+
+        return $docblocks;
+    }
+
+    /**
+     * Duplicate detection spans the declaration rather than one docblock:
+     * `$seenRules` is threaded through every block, because two annotations of
+     * one rule are the same mistake whether or not the author split them.
+     *
+     * @param list<ThresholdOverride> $overrides
+     * @param list<ThresholdDiagnostic> $diagnostics
+     * @param array<string, true> $seenRules
+     */
+    private function readDocblock(
+        Doc $docComment,
+        Node $node,
+        MetricSubject $subject,
+        ControlScope $controlScope,
+        array &$overrides,
+        array &$diagnostics,
+        array &$seenRules,
+    ): void {
+        $text = DocumentationRegions::mask($docComment->getText());
+        if (!str_contains($text, '@qmx-threshold')) {
+            return;
+        }
+
+        $flags = \PREG_SET_ORDER | \PREG_OFFSET_CAPTURE | \PREG_UNMATCHED_AS_NULL;
+        if (preg_match_all(self::PATTERN, $text, $matches, $flags) === 0) {
+            return;
+        }
+
+        foreach ($matches as $match) {
+            $rulePattern = $match[1][0];
+            if (!\is_string($rulePattern)) {
+                continue;
+            }
+
+            $valueString = self::cleanTrailingDocblock($match[2][0] ?? '');
+            $line = self::lineAtOffset($text, $docComment->getStartLine(), $match[0][1]);
+            $parsed = self::parseValues($valueString);
+
+            $problem = $this->problemWith($rulePattern, $valueString, $parsed, $line, $subject, $seenRules);
+            if ($problem !== null) {
+                $diagnostics[] = $problem;
+
+                continue;
+            }
+
+            $seenRules[$rulePattern] = true;
+            [$warning, $error] = $parsed ?? [null, null];
+
+            $overrides[] = new ThresholdOverride(
+                rulePattern: $rulePattern,
+                warning: $warning,
+                error: $error,
+                line: $line,
+                subject: $subject,
+                controlScope: $controlScope,
+                endLine: $node->getEndLine() > 0 ? $node->getEndLine() : null,
+            );
+        }
+    }
+
+    /**
+     * Why this annotation cannot be applied, or `null` when it can.
+     *
+     * The three refusals are one method because they are one decision with one
+     * outcome: values that do not parse, values a rule's own validator
+     * rejects, and a rule already retuned on this declaration.
+     *
+     * @param array{int|float|null, int|float|null, bool}|null $parsed
+     * @param array<string, true> $seenRules
+     */
+    private function problemWith(
+        string $rulePattern,
+        string $valueString,
+        ?array $parsed,
+        int $line,
+        MetricSubject $subject,
+        array $seenRules,
+    ): ?ThresholdDiagnostic {
+        if ($parsed === null) {
+            return new ThresholdDiagnostic(
+                line: $line,
+                subject: $subject,
+                message: \sprintf(
+                    '@qmx-threshold %s: invalid syntax "%s" — expected a number or warning=N error=N',
+                    $rulePattern,
+                    $valueString,
+                ),
+            );
+        }
+
+        // Unknown rule names (or wildcard / prefix patterns) skip validation —
+        // the post-analysis `annotation.unsupported-threshold` diagnostic
+        // surfaces those instead.
+        $failure = ($this->validators[$rulePattern] ?? null)?->validate($parsed[0], $parsed[1], $parsed[2]);
+        if ($failure !== null) {
+            return new ThresholdDiagnostic(
+                line: $line,
+                subject: $subject,
+                message: \sprintf('@qmx-threshold %s: %s', $rulePattern, $failure->message),
+                code: $failure->code,
+                hint: $failure->hint,
+            );
+        }
+
+        if (!isset($seenRules[$rulePattern])) {
+            return null;
+        }
+
+        return new ThresholdDiagnostic(
+            line: $line,
+            subject: $subject,
+            message: \sprintf(
+                '@qmx-threshold %s: duplicate annotation — rule "%s" already has a threshold override on this symbol',
+                $rulePattern,
+                $rulePattern,
+            ),
+        );
     }
 
     /**
@@ -305,18 +366,6 @@ final readonly class ThresholdOverrideExtractor
     private static function cleanTrailingDocblock(string $raw): string
     {
         return preg_replace('/\s*\*\/\s*$/', '', $raw) ?? $raw;
-    }
-
-    /**
-     * Strips backtick-delimited regions from text to avoid matching documentation references.
-     */
-    private static function stripBacktickRegions(string $text): string
-    {
-        return preg_replace_callback(
-            '/`[^`]*`/',
-            static fn(array $match): string => preg_replace('/[^\r\n]/', ' ', $match[0]) ?? $match[0],
-            $text,
-        ) ?? $text;
     }
 
     private static function lineAtOffset(string $text, int $startLine, int $offset): int

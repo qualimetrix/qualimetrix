@@ -86,6 +86,14 @@ final readonly class DirectiveAddressability
      */
     public function problemWithSuppression(Suppression $suppression): ?string
     {
+        $refusal = $suppression->refusal;
+        if ($refusal !== null) {
+            // Worded by the refusal: these two are decided against the grammar
+            // of the tag, while every answer below is decided against the
+            // channels this run resolved.
+            return $refusal->describe($suppression->rule);
+        }
+
         $target = $suppression->target();
         if ($target->appliesToEveryChannel()) {
             return null;

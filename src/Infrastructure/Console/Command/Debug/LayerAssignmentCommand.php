@@ -43,12 +43,16 @@ use Symfony\Component\Console\Output\OutputInterface;
  * (`ConsoleExitCode::Refusal`), and 1 (`Command::FAILURE`) for anything else
  * the configuration step throws.
  *
- * "No analysed class" and "analysed, but no layer matched" are two facts, so
- * they get two answers: the first is a refusal raised by
- * {@see LayerAssignmentResolver}, the second the `(no layer)` report. A class
- * that exists on disk but was kept out of the run by `paths`, `exclude` or
- * the generated-file filter takes the first branch — the command answers for
- * the set it analysed, not for the filesystem.
+ * "No analysed class", "analysed, every layer answered no" and "analysed, and
+ * a layer's criteria went unanswered" are three facts, so they get three
+ * answers: a refusal raised by {@see LayerAssignmentResolver}, the
+ * `(no layer)` report, and the `(undecided)` report. A class that exists on
+ * disk but was kept out of the run by `paths`, `exclude` or the
+ * generated-file filter takes the first branch — the command answers for the
+ * set it analysed, not for the filesystem. The third is informational like
+ * the second and exits 0: the class was analysed and the command reports what
+ * the run could and could not establish, while whether an undecidable
+ * membership fails the build is `architecture.coverage-gap`'s to say.
  *
  * `--format=json` renders the same {@see LayerAssignmentResolver::resolve()}
  * result as a machine-readable document instead of the human-readable
@@ -179,9 +183,9 @@ final class LayerAssignmentCommand extends Command
         }
 
         if ($format === 'json') {
-            $this->renderJson($output, $normalized, $resolution['matches'], $resolution['hasLayers']);
+            $this->renderJson($output, $normalized, $resolution['matches'], $resolution['hasLayers'], $resolution['undecided']);
         } else {
-            $this->renderReport($output, $normalized, $resolution['matches'], $resolution['hasLayers']);
+            $this->renderReport($output, $normalized, $resolution['matches'], $resolution['hasLayers'], $resolution['undecided']);
         }
 
         return self::SUCCESS;
@@ -239,15 +243,23 @@ final class LayerAssignmentCommand extends Command
 
     /**
      * @param list<LayerAssignmentMatch> $matches
+     * @param list<string> $undecided
      */
     private function renderReport(
         OutputInterface $output,
         string $fqn,
         array $matches,
         bool $hasLayers,
+        array $undecided,
     ): void {
         $output->writeln(\sprintf('Class: <info>%s</info>', $fqn));
         $output->writeln('');
+
+        if ($matches === [] && $undecided !== []) {
+            $this->renderUndecided($output, $undecided);
+
+            return;
+        }
 
         if ($matches === []) {
             $output->writeln('  Assigned to: <comment>(no layer)</comment>');
@@ -267,6 +279,18 @@ final class LayerAssignmentCommand extends Command
         $assigned = $matches[0];
         $output->writeln(\sprintf('  Assigned to: <info>%s</info>', $assigned->layerName));
         $output->writeln(\sprintf('    Matched by: <comment>%s</comment>', self::describeCriteria($assigned)));
+        if ($undecided !== []) {
+            // The assignment is not withdrawn by an unanswered layer — see
+            // `LayerRegistry::undecidedLayers()` for why — but printing it
+            // alone would hide that a layer declared before it might have
+            // owned the class. Whether one of these is declared earlier is
+            // deliberately not asserted here: the resolution carries two
+            // declaration-ordered lists and not the single order that would
+            // settle it.
+            $output->writeln(\sprintf('    Could not be decided: <comment>%s</comment>', implode(', ', $undecided)));
+            $output->writeln('    The assignment above is what the answered layers give; it can change');
+            $output->writeln('    once every link of this class\'s inheritance chain is analysed.');
+        }
         $output->writeln('');
 
         $shadowed = \array_slice($matches, 1);
@@ -303,6 +327,34 @@ final class LayerAssignmentCommand extends Command
     }
 
     /**
+     * The report for a class no layer claims *and* no layer answered about.
+     *
+     * Kept apart from the `(no layer)` branch because the two differ in what
+     * the reader should do next: an unclassified class is closed by writing a
+     * layer, and this one is not closed by writing anything — a catch-all
+     * layer would still be evaluated after the layer that could not be
+     * answered. The wording follows `architecture.coverage-gap`, which counts
+     * the same two populations separately from the same walk, so the two
+     * readers of one fact do not describe it differently.
+     *
+     * @param list<string> $undecided
+     */
+    private function renderUndecided(OutputInterface $output, array $undecided): void
+    {
+        $output->writeln('  Assigned to: <comment>(undecided)</comment>');
+        $output->writeln(\sprintf('    Could not be decided: <comment>%s</comment>', implode(', ', $undecided)));
+        $output->writeln('');
+        $output->writeln('  A declared <comment>extends</comment>/<comment>implements</comment>/<comment>attributes</comment> criterion reads facts this');
+        $output->writeln('  run did not collect, because a link in this class\'s inheritance chain is');
+        $output->writeln('  outside the analysed paths. No layer matched, and no layer answered — so');
+        $output->writeln('  this is not an unclassified class and a catch-all layer will not cover it.');
+        $output->writeln('');
+        $output->writeln('  Suggestion: widen <comment>paths</comment> so the whole chain is analysed, or accept the');
+        $output->writeln('  gap — <comment>architecture.coverage-gap</comment> counts these separately from classes');
+        $output->writeln('  every criterion answered "no" about.');
+    }
+
+    /**
      * Joins every matched criterion descriptor with a comma so the command
      * line surface mirrors the order that
      * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition::matches()}
@@ -321,13 +373,20 @@ final class LayerAssignmentCommand extends Command
      * than an omitted key, so a consumer can branch on presence without also
      * checking `shadowed === []`.
      *
+     * `undecided` is always present and names the layers this run could not
+     * answer for the class. A null `assigned` with a non-empty `undecided` is
+     * not "no layer claims this class" — it is "the run could not tell" — so a
+     * consumer branching on `assigned` alone must read this key too.
+     *
      * @param list<LayerAssignmentMatch> $matches
+     * @param list<string> $undecided
      */
     private function renderJson(
         OutputInterface $output,
         string $fqn,
         array $matches,
         bool $hasLayers,
+        array $undecided,
     ): void {
         $assigned = $matches[0] ?? null;
         $shadowed = $matches === [] ? [] : \array_slice($matches, 1);
@@ -336,6 +395,7 @@ final class LayerAssignmentCommand extends Command
             'fqn' => $fqn,
             'assigned' => $assigned === null ? null : self::matchToArray($assigned),
             'shadowed' => array_map(self::matchToArray(...), $shadowed),
+            'undecided' => $undecided,
             'hasLayers' => $hasLayers,
         ]));
     }

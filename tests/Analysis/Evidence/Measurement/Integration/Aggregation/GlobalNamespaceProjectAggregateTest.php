@@ -74,7 +74,7 @@ final class GlobalNamespaceProjectAggregateTest extends TestCase
         self::assertNotNull($globalDistance, 'The global namespace must carry a distance of its own');
         self::assertGreaterThan(0.0, (float) $globalDistance);
 
-        $projectDistance = self::$repository->get(SymbolPath::forProject())->get('coupling.distance.avg');
+        $projectDistance = self::$repository->get(SymbolPath::forProject())->get('coupling.distance-own.avg');
         self::assertNotNull(
             $projectDistance,
             'A project whose code is entirely global must still publish a structural aggregate',
@@ -91,5 +91,21 @@ final class GlobalNamespaceProjectAggregateTest extends TestCase
         self::assertNotNull($globalHealth);
         self::assertNotNull($projectHealth);
         self::assertLessThanOrEqual((float) $globalHealth, (float) $projectHealth);
+    }
+
+    /**
+     * The coverage denominator must see the global namespace too. It is counted
+     * from the declarations rather than from the namespace tree, and the tree
+     * is where the global namespace went missing in the first place, so this is
+     * the shape that would fail silently: `notApplicable` with "no namespaces
+     * declaring a type were measured" instead of a complete coverage.
+     */
+    #[Test]
+    public function itCountsTheGlobalNamespaceInTheCoveragePopulation(): void
+    {
+        $project = self::$repository->get(SymbolPath::forProject());
+
+        self::assertSame(1, $project->get('size.symbol-declaring-namespace-count'));
+        self::assertSame(1, $project->get('coupling.distance-own.count'));
     }
 }

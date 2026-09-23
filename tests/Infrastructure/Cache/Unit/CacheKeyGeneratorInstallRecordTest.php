@@ -119,6 +119,11 @@ final class CacheKeyGeneratorInstallRecordTest extends TestCase
      * with the given record; `null` for the version means the package is not
      * installed there at all.
      *
+     * The probe leaves `Composer` through a braced namespace rather than a
+     * second `namespace X;`, so it names no `Qualimetrix\Tests\…` namespace
+     * at all: `scripts/dangling-test-names.py` reads the tree, and a name
+     * written here that no file declares is one it has to adjudicate.
+     *
      * @return array{version: string, key: string, warnings: list<mixed>}
      */
     private function keyGeneratorUnder(?string $version, ?string $reference): array
@@ -127,48 +132,48 @@ final class CacheKeyGeneratorInstallRecordTest extends TestCase
             <<<'PHP'
                 <?php
 
-                namespace Composer;
-
-                final class InstalledVersions
-                {
-                    public static function isInstalled($package, $includeDevRequirements = true)
+                namespace Composer {
+                    final class InstalledVersions
                     {
-                        return $package === %s && %s !== null;
-                    }
+                        public static function isInstalled($package, $includeDevRequirements = true)
+                        {
+                            return $package === %s && %s !== null;
+                        }
 
-                    public static function getVersion($package)
-                    {
-                        return $package === %s ? %s : null;
-                    }
+                        public static function getVersion($package)
+                        {
+                            return $package === %s ? %s : null;
+                        }
 
-                    public static function getReference($package)
-                    {
-                        return $package === %s ? %s : null;
+                        public static function getReference($package)
+                        {
+                            return $package === %s ? %s : null;
+                        }
                     }
                 }
 
-                namespace Qualimetrix\Tests\Infrastructure\Cache\Unit\Child;
+                namespace {
+                    require %s;
 
-                require %s;
+                    $logger = new class extends \Psr\Log\AbstractLogger {
+                        public array $warnings = [];
 
-                $logger = new class extends \Psr\Log\AbstractLogger {
-                    public array $warnings = [];
-
-                    public function log($level, \Stringable|string $message, array $context = []): void
-                    {
-                        if ((string) $level === 'warning') {
-                            $this->warnings[] = (string) $message;
+                        public function log($level, \Stringable|string $message, array $context = []): void
+                        {
+                            if ((string) $level === 'warning') {
+                                $this->warnings[] = (string) $message;
+                            }
                         }
-                    }
-                };
+                    };
 
-                $generator = new \Qualimetrix\Infrastructure\Cache\CacheKeyGenerator($logger);
+                    $generator = new \Qualimetrix\Infrastructure\Cache\CacheKeyGenerator($logger);
 
-                echo json_encode([
-                    'version' => $generator->getCacheVersion(),
-                    'key' => $generator->generateForContent('<?php class A {}'),
-                    'warnings' => $logger->warnings,
-                ]);
+                    echo json_encode([
+                        'version' => $generator->getCacheVersion(),
+                        'key' => $generator->generateForContent('<?php class A {}'),
+                        'warnings' => $logger->warnings,
+                    ]);
+                }
                 PHP,
             var_export(self::PACKAGE, true),
             var_export($version, true),

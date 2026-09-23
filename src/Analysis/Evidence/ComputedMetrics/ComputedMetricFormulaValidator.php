@@ -229,6 +229,32 @@ final class ComputedMetricFormulaValidator
         }
     }
 
+    /**
+     * Refuses a formula that names a metric no symbol at the level carries.
+     *
+     * Beside the four checks above rather than at the site that measures it:
+     * this class is where a computed-metric formula is declared unacceptable,
+     * and a second author of the same refusal would be a second spelling of
+     * exit code 3 for the same mistake. Only the evidence differs — a key
+     * missing from the catalog is knowable from the configuration alone, while
+     * a key no symbol publishes is only knowable once a run has measured.
+     *
+     * @param list<string> $keys as the formula spells them
+     *
+     * @throws ConfigurationRefusal
+     */
+    public static function refuseMetricsAbsentAtLevel(
+        string $definitionName,
+        array $keys,
+        string $level,
+        string $formula,
+    ): never {
+        throw ConfigurationRefusal::atResolvedKey(
+            RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($definitionName), $definitionName),
+            ComputedMetricRefusalWording::referencesMetricAbsentAtLevel($definitionName, $keys, $level, $formula),
+        );
+    }
+
     private function validateFormulaMetricKeys(string $definitionName, string $formula): void
     {
         foreach ($this->expression->keysOf($formula) as $key) {

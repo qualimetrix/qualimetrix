@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph;
+use Qualimetrix\Analysis\Evidence\DependencyModel\NamespaceCouplings;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -381,8 +382,7 @@ final class JsonGraphExporterTest extends TestCase
             $byTarget,
             array_values($classMap),
             array_values($namespaceMap),
-            [],
-            [],
+            NamespaceCouplings::none(),
             [],
             [],
         );

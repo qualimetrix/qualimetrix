@@ -1,0 +1,53 @@
+--- candidate
++++ reference (mapped)
+@@ -392,1 +392,0 @@
+-                "size.symbol-declaring-namespace-count": 4,
+@@ -424,2 +423,2 @@
+-                "coupling.distance-own.avg": 0.3125,
+-                "coupling.distance-own.count": 4
++                "coupling.distance.avg": 0.3125,
++                "coupling.distance.count": 4
+@@ -604,1 +603,0 @@
+-                "coupling.abstractness-own": 1,
+@@ -609,5 +607,1 @@
+-                "coupling.ca-own": 3,
+-                "coupling.ce-own": 0,
+-                "coupling.instability-own": 0,
+-                "coupling.distance": 0,
+-                "coupling.distance-own": 0,
++                "coupling.distance": 0,
+@@ -839,1 +833,0 @@
+-                "coupling.abstractness-own": 0,
+@@ -844,5 +837,1 @@
+-                "coupling.ca-own": 5,
+-                "coupling.ce-own": 0,
+-                "coupling.instability-own": 0,
+-                "coupling.distance": 1,
+-                "coupling.distance-own": 1,
++                "coupling.distance": 1,
+@@ -1074,1 +1063,0 @@
+-                "coupling.abstractness-own": 0,
+@@ -1079,5 +1067,1 @@
+-                "coupling.ca-own": 2,
+-                "coupling.ce-own": 6,
+-                "coupling.instability-own": 0.75,
+-                "coupling.distance": 0.25,
+-                "coupling.distance-own": 0.25,
++                "coupling.distance": 0.25,
+@@ -1309,1 +1293,0 @@
+-                "coupling.abstractness-own": 0,
+@@ -1314,5 +1297,1 @@
+-                "coupling.ca-own": 0,
+-                "coupling.ce-own": 5,
+-                "coupling.instability-own": 1,
+-                "coupling.distance": 0,
+-                "coupling.distance-own": 0,
++                "coupling.distance": 0,
+@@ -1531,3 +1510,0 @@
+-                "coupling.ca-own": 0,
+-                "coupling.ce-own": 0,
+-                "coupling.instability-own": 0,
+@@ -1747,3 +1723,0 @@
+-                "coupling.ca-own": 0,
+-                "coupling.ce-own": 0,
+-                "coupling.instability-own": 0,

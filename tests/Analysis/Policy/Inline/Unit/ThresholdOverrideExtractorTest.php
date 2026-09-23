@@ -775,6 +775,67 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertEmpty($result->diagnostics);
     }
 
+    /**
+     * The threshold half read `getDocComment()` alone, which answers with the
+     * last docblock attached — so a threshold in the first of two adjacent
+     * blocks retuned nothing and said nothing about it either.
+     */
+    #[Test]
+    public function itReadsAThresholdInTheFirstOfTwoAdjacentDocblocks(): void
+    {
+        $node = new Class_('TestClass', [], ['startLine' => 20, 'endLine' => 50]);
+        $node->setAttribute('comments', [
+            new Doc('/** @qmx-threshold complexity.ccn 15 -- first of two */', 10, 10),
+            new Doc('/** Ordinary description. */', 11, 11),
+        ]);
+
+        $overrides = $this->extract($node);
+
+        self::assertCount(1, $overrides);
+        self::assertSame('complexity.ccn', $overrides[0]->rulePattern);
+        self::assertSame(15, $overrides[0]->warning);
+        self::assertSame(10, $overrides[0]->line);
+    }
+
+    /** Two annotations of one rule are the same mistake whether or not the author split the blocks. */
+    #[Test]
+    public function itReportsADuplicateThresholdAcrossTwoDocblocks(): void
+    {
+        $node = new Class_('TestClass', [], ['startLine' => 20, 'endLine' => 50]);
+        $node->setAttribute('comments', [
+            new Doc('/** @qmx-threshold complexity.ccn 15 */', 10, 10),
+            new Doc('/** @qmx-threshold complexity.ccn 20 */', 11, 11),
+        ]);
+
+        $result = $this->extractWithDiagnostics($node);
+
+        self::assertCount(1, $result->overrides);
+        self::assertCount(1, $result->diagnostics);
+        self::assertStringContainsString('duplicate annotation', $result->diagnostics[0]->message);
+        self::assertSame(11, $result->diagnostics[0]->line);
+    }
+
+    /** The quoting rule is shared with the suppression half, and so is this defect's cure. */
+    #[Test]
+    public function itKeepsAQuotedThresholdQuotedUnderAnUnpairedBacktick(): void
+    {
+        $node = $this->createClassNodeWithDoc(
+            <<<'DOC'
+            /**
+             * A literal ` is allowed in prose.
+             * See `@qmx-threshold complexity.ccn 15 -- lowers the bar` for the syntax.
+             */
+            DOC,
+            10,
+            50,
+        );
+
+        $result = $this->extractWithDiagnostics($node);
+
+        self::assertEmpty($result->overrides);
+        self::assertEmpty($result->diagnostics);
+    }
+
     private function createClassNodeWithDoc(string $docText, int $startLine, int $endLine): Class_
     {
         $docComment = new Doc($docText, $startLine, $startLine);

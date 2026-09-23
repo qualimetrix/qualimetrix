@@ -123,9 +123,26 @@ DependencyModel graph through `DependencyGraphInterface`; the graph itself and
 its extraction internals remain DependencyModel-owned.
 
 `NamespaceTree` holds the global namespace (the empty string) as an isolated
-leaf, so `NamespaceToProjectAggregator` reads its bag like any other leaf's.
+leaf, so `NamespaceToProjectAggregator` reads its bag like any other one's.
 Code written entirely in the global namespace would otherwise publish no
 project aggregate for namespace-collected metrics such as `coupling.distance`.
+
+The project fold admits **every** namespace carrying the key, parent as well as
+leaf, and the absence of a value decides membership. That is sound only while
+the folded key is an own-scope value: a subtree rollup would put a class under
+`P\C` into `P\C`'s value and into `P`'s, and the fold cannot tell the two apart.
+Declare a project aggregation on the own-scope key, never on the rollup —
+`governance/MeasurementIdentity/NamespaceFoldCountsEachDeclarationOnceTest.php`
+measures the difference rather than reading the name, by checking that a parent's
+folded value does not move when a child gains a type nothing references.
+
+`NamespaceToProjectAggregator` also publishes
+`size.symbol-declaring-namespace-count`: the number of namespaces that declare
+at least one type, counted from the symbols rather than from the tree walk the
+aggregate itself makes. It is the population a namespace-collected aggregate is
+offered, and Health reads it as the coverage denominator. Counting it from the
+walk would make the denominator shrink with the numerator and hide whatever the
+walk missed.
 
 The service receives the neutral Core profiler port through constructor
 injection. The per-container Infrastructure `ProfileSession` provides disabled

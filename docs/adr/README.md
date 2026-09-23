@@ -91,7 +91,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0059 — Declared-Layer Policy and Architecture Governance](0059-declared-layer-policy-and-architecture-governance.md) — current layer-policy semantics and manifest authority.
 - [0060 — Published Vocabulary and Name Ownership](0060-published-vocabulary-and-name-ownership.md) — current naming grammar, owners, and completeness rule.
 - [0061 — Configuration Miss and Refusal Semantics](0061-configuration-miss-and-refusal-semantics.md) — final miss classification and refusal contract.
-- [0062 — Health Scores Measure What They Cover](0062-health-scores-measure-what-they-cover.md) — aggregation, corpus floor, and recalibrated thresholds for the six health dimensions.
+- [0062 — Health Scores Measure What They Cover](0062-health-scores-measure-what-they-cover.md) — aggregation, corpus floor, and recalibrated thresholds for the six health dimensions, partially superseded by 0080.
 - [0063 — One Declaration Answers About a Rule's Options](0063-one-declaration-answers-about-a-rules-options.md) — the rules listing and the option refusal read one declaration.
 - [0064 — The HTML Viewer Lives Outside the PSR-4 Root](0064-the-html-viewer-lives-outside-the-psr-4-root.md) — the HTML report's browser program is a root-level subject, not a PSR-4 path.
 - [0065 — The Manifest Records Ownership, Not a Migration Schedule](0065-the-manifest-records-ownership-not-a-migration-schedule.md) — the migration's package labels leave the manifest; a consumer is owner-wide or exact, and never dated.
@@ -108,6 +108,8 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0076 — A Floor Is Reported, and Said to Be One](0076-a-floor-is-reported-and-said-to-be-one.md) — `design.dit` keeps publishing the depth it could reach and the run logs one warning naming the chains it did not follow to a root; withholding the value was rejected, and the diagnostic is deliberately not a published key.
 - [0077 — Open-Universe Selectors Are Explicit](0077-open-universe-selectors-are-explicit.md) — path and PHP-name selectors use explicit `exact`, `subtree`, or full-subject `regex` forms; closed identities and Architecture's binding DSL remain named exceptions.
 - [0078 — An Entry the Run Did Not Read Makes It Incomplete](0078-an-entry-the-run-did-not-read-makes-it-incomplete.md) — a directory symlink, a non-regular `*.php` entry and an unlistable directory are terminal failures rather than silent drops, so the run is incomplete and answers exit 4; the published `kind` vocabulary grows to five, and a path named on the command line is still followed.
+- [0079 — A Criterion the Run Cannot Answer Is Undecidable, Not a Non-Match](0079-a-criterion-the-run-cannot-answer-is-undecidable.md) — graph-backed layer criteria combine three-valued, so a chain that leaves the analysed set no longer reads as a confident non-match; an undecidable `exclude:` removes membership, an earlier undecidable layer does not withdraw a later match, template observation falls toward the layer existing, and a template naming a non-pattern criterion under `match: any` is refused.
+- [0080 — A Project Fold Reads a Partition, Not the Leaves](0080-a-project-fold-reads-a-partition-not-the-leaves.md) — the project population of a namespace-collected metric is every namespace declaring a type, folded over its own scope rather than its subtree rollup; the coverage denominator comes from a size measurement independent of that fold.
 
 ## Superseded history
 

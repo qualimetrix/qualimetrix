@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Unit;
 
-use LogicException;
 use PhpParser\Comment;
 use PhpParser\Comment\Doc;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusalReason;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
@@ -492,7 +493,7 @@ final class SuppressionExtractorTest extends TestCase
 
         self::assertCount(1, $suppressions);
         self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
-        self::assertSame(50, $suppressions[0]->endLine);
+        self::assertSame(50, $suppressions[0]->binding?->endLine);
     }
 
     #[Test]
@@ -515,7 +516,7 @@ final class SuppressionExtractorTest extends TestCase
 
         self::assertCount(1, $suppressions);
         self::assertSame(SuppressionType::NextLine, $suppressions[0]->type);
-        self::assertNull($suppressions[0]->endLine);
+        self::assertNull($suppressions[0]->binding?->endLine);
     }
 
     #[Test]
@@ -538,7 +539,7 @@ final class SuppressionExtractorTest extends TestCase
 
         self::assertCount(1, $suppressions);
         self::assertSame(SuppressionType::File, $suppressions[0]->type);
-        self::assertNull($suppressions[0]->endLine);
+        self::assertNull($suppressions[0]->binding?->endLine);
     }
 
     #[Test]
@@ -580,8 +581,13 @@ final class SuppressionExtractorTest extends TestCase
 
         $suppressions = $this->extract($node);
 
-        // Should not match as file-level, nor as symbol or next-line
-        self::assertEmpty($suppressions);
+        // Not read as file-level, symbol or next-line — and reported rather
+        // than dropped, which is the only way an author hears about a tag
+        // nobody reads.
+        self::assertCount(1, $suppressions);
+        self::assertSame(DirectiveRefusalReason::FormNotRecognised, $suppressions[0]->refusal?->reason);
+        self::assertSame('@qmx-ignore-file-section', $suppressions[0]->refusal->tag);
+        self::assertFalse($suppressions[0]->matches('complexity', null));
     }
 
     #[Test]
@@ -602,7 +608,9 @@ final class SuppressionExtractorTest extends TestCase
 
         $suppressions = $this->extract($node);
 
-        self::assertEmpty($suppressions);
+        self::assertCount(1, $suppressions);
+        self::assertSame(DirectiveRefusalReason::FormNotRecognised, $suppressions[0]->refusal?->reason);
+        self::assertFalse($suppressions[0]->matches('complexity', null));
     }
 
     #[Test]
@@ -701,7 +709,7 @@ final class SuppressionExtractorTest extends TestCase
         self::assertNull($suppressions[0]->reason);
         self::assertSame(10, $suppressions[0]->line);
         self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
-        self::assertSame(20, $suppressions[0]->endLine);
+        self::assertSame(20, $suppressions[0]->binding?->endLine);
     }
 
     #[Test]
@@ -800,7 +808,7 @@ final class SuppressionExtractorTest extends TestCase
         self::assertCount(1, $suppressions);
         self::assertSame('complexity', $suppressions[0]->rule);
         self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
-        self::assertSame(50, $suppressions[0]->endLine);
+        self::assertSame(50, $suppressions[0]->binding?->endLine);
     }
 
     #[Test]
@@ -900,7 +908,12 @@ final class SuppressionExtractorTest extends TestCase
 
         $suppressions = $this->extract($node);
 
-        self::assertEmpty($suppressions);
+        // A channel is the one thing this form cannot leave out, so the tag is
+        // refused where it stands instead of silencing nothing in silence.
+        self::assertCount(1, $suppressions);
+        self::assertSame(DirectiveRefusalReason::FormNotRecognised, $suppressions[0]->refusal?->reason);
+        self::assertSame(10, $suppressions[0]->line);
+        self::assertFalse($suppressions[0]->matches('complexity', null));
     }
 
     #[Test]
@@ -1013,15 +1026,21 @@ final class SuppressionExtractorTest extends TestCase
     }
 
     #[Test]
-    public function itRejectsADeclarationControlFromTheExplicitPhysicalOnlyPath(): void
+    public function itRefusesADeclarationControlFromTheExplicitPhysicalOnlyPath(): void
     {
         $node = new Class_('Foo');
         $node->setDocComment(new Doc('/** @qmx-ignore complexity */', 1, 1));
 
-        $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('requires an explicit declaration binding');
+        $suppressions = $this->extractor->extractPhysical($node);
 
-        $this->extractor->extractPhysical($node);
+        // It used to throw, and the exception was not contained: the file
+        // failed to process, so one misplaced annotation cost every metric and
+        // every finding in it.
+        self::assertCount(1, $suppressions);
+        self::assertSame(DirectiveRefusalReason::NoDeclarationToBind, $suppressions[0]->refusal?->reason);
+        self::assertSame('complexity', $suppressions[0]->rule);
+        self::assertNull($suppressions[0]->binding);
+        self::assertFalse($suppressions[0]->matches('complexity', null));
     }
 
     #[Test]
@@ -1098,6 +1117,353 @@ final class SuppressionExtractorTest extends TestCase
         $suppressions = $this->extractor->extractFileLevelSuppressions($node);
 
         self::assertEmpty($suppressions);
+    }
+
+    /**
+     * The escape promised by AGENTS.md §8 has to hold wherever the prose above
+     * it happens to put a backtick. It did not: pairing ran across the whole
+     * comment, so one stray backtick made the example's own opening backtick
+     * close the stray one and left the tag exposed.
+     */
+    #[Test]
+    public function itKeepsAQuotedExampleQuotedUnderAnUnpairedBacktick(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * A literal ` is allowed in prose.
+             * Use `@qmx-ignore complexity.ccn` to silence that rule.
+             */
+            DOC,
+            10,
+            14,
+        );
+
+        $node = new Class_('Foo', [], ['startLine' => 15, 'endLine' => 30]);
+        $node->setDocComment($docComment);
+
+        self::assertEmpty($this->extract($node));
+    }
+
+    /** The other direction of the same defect: the live directive was the one that vanished. */
+    #[Test]
+    public function itReadsARealDirectiveWrittenUnderAnUnpairedBacktick(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * The ` character is special.
+             * @qmx-ignore complexity.ccn -- real, with a trailing `code` word
+             */
+            DOC,
+            10,
+            14,
+        );
+
+        $node = new Class_('Foo', [], ['startLine' => 15, 'endLine' => 30]);
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('complexity.ccn', $suppressions[0]->rule);
+    }
+
+    #[Test]
+    public function itDoesNotReadATagInsideAFencedBlock(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * Example:
+             * ```php
+             * @qmx-ignore complexity.ccn -- inside a fence
+             * ```
+             */
+            DOC,
+            10,
+            16,
+        );
+
+        $node = new Class_('Foo', [], ['startLine' => 17, 'endLine' => 30]);
+        $node->setDocComment($docComment);
+
+        self::assertEmpty($this->extract($node));
+    }
+
+    #[Test]
+    public function itDoesNotReadATagInsideDoubleBacktickQuoting(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * Write `` `@qmx-ignore complexity.ccn` `` when quoting the tag.
+             */
+            DOC,
+            10,
+            13,
+        );
+
+        $node = new Class_('Foo', [], ['startLine' => 14, 'endLine' => 30]);
+        $node->setDocComment($docComment);
+
+        self::assertEmpty($this->extract($node));
+    }
+
+    /**
+     * `getDocComment()` answers with the last docblock attached, so the first
+     * of two was read by nothing: not by that call, and not by the loop over
+     * the comments that are not docblocks.
+     */
+    #[Test]
+    public function itReadsADirectiveInTheFirstOfTwoAdjacentDocblocks(): void
+    {
+        $node = new Class_('Foo', [], ['startLine' => 20, 'endLine' => 40]);
+        $node->setAttribute('comments', [
+            new Doc('/** @qmx-ignore complexity.ccn -- first of two */', 10, 10),
+            new Doc('/** Ordinary description. */', 11, 11),
+        ]);
+
+        $suppressions = $this->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('complexity.ccn', $suppressions[0]->rule);
+        self::assertSame(10, $suppressions[0]->line);
+    }
+
+    #[Test]
+    public function itRefusesATagNoGrammarReadsAndNamesItAsWritten(): void
+    {
+        $node = new Class_('Foo', [], ['startLine' => 20, 'endLine' => 40]);
+        $node->setDocComment(new Doc('/** @qmx-ignore-lines complexity.ccn -- a tag that does not exist */', 10, 10));
+
+        $suppressions = $this->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame(DirectiveRefusalReason::FormNotRecognised, $suppressions[0]->refusal?->reason);
+        self::assertSame('ignore-lines', $suppressions[0]->refusal->form);
+        self::assertSame('@qmx-ignore-lines', $suppressions[0]->refusal->tag);
+        self::assertFalse($suppressions[0]->matches('complexity.ccn', null));
+    }
+
+    /** The other family answers for its own spelling; refusing it here would report one mistake twice. */
+    #[Test]
+    public function itLeavesTheThresholdTagToItsOwnExtractor(): void
+    {
+        $node = new Class_('Foo', [], ['startLine' => 20, 'endLine' => 40]);
+        $node->setDocComment(new Doc('/** @qmx-threshold complexity.ccn 15 */', 10, 10));
+
+        self::assertEmpty($this->extract($node));
+    }
+
+    #[Test]
+    public function itRefusesAMisspelledThresholdTag(): void
+    {
+        $node = new Class_('Foo', [], ['startLine' => 20, 'endLine' => 40]);
+        $node->setDocComment(new Doc('/** @qmx-thresold complexity.ccn 15 */', 10, 10));
+
+        $suppressions = $this->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('thresold', $suppressions[0]->refusal?->form);
+    }
+
+    #[Test]
+    public function itReportsARefusedTagOnItsOwnLineRatherThanTheCommentsFirst(): void
+    {
+        $node = new Class_('Foo', [], ['startLine' => 20, 'endLine' => 40]);
+        $node->setDocComment(new Doc(
+            "/**\n * Description.\n *\n * @qmx-ignore-lines complexity.ccn\n */",
+            startLine: 10,
+            endLine: 14,
+        ));
+
+        $suppressions = $this->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame(13, $suppressions[0]->line);
+    }
+
+    /** A quoted mention of a tag nobody reads is documentation like any other. */
+    #[Test]
+    public function itDoesNotRefuseAQuotedUnknownTag(): void
+    {
+        $node = new Class_('Foo', [], ['startLine' => 20, 'endLine' => 40]);
+        $node->setDocComment(new Doc('/** There is no `@qmx-ignore-lines` tag. */', 10, 10));
+
+        self::assertEmpty($this->extract($node));
+    }
+
+    /**
+     * A comment terminator is the comment's, not the author's.
+     *
+     * `*` is a legitimate channel argument — it is how the symbol and
+     * next-line forms spell "no rule filter" — and the closing `*` of a
+     * docblock stands exactly where that argument would. A grammar that reads
+     * one as the other turns a directive that named nothing into the widest
+     * suppression there is, and says nothing about it: the run reports no
+     * refusal and no unused directive, because as far as it can tell the
+     * author asked for silence and got it.
+     */
+    #[Test]
+    #[DataProvider('provideChannellessDeclarationCarriers')]
+    public function itRefusesAChannellessDeclarationDirectiveInEveryCommentCarrier(string $text, bool $isDoc): void
+    {
+        $node = new Class_('Foo', [], ['startLine' => 20, 'endLine' => 40]);
+        $node->setAttribute('comments', [$isDoc ? new Doc($text, 10, 10) : new Comment($text, 10, 10)]);
+
+        $suppressions = $this->extract($node);
+
+        self::assertCount(1, $suppressions, $text);
+        self::assertSame(DirectiveRefusalReason::FormNotRecognised, $suppressions[0]->refusal?->reason, $text);
+        self::assertSame('@qmx-ignore', $suppressions[0]->refusal->tag, $text);
+        self::assertFalse($suppressions[0]->matches('complexity.ccn', null), $text);
+        self::assertFalse($suppressions[0]->target()->appliesToEveryChannel(), $text);
+    }
+
+    /** @return iterable<string, array{non-empty-string, bool}> */
+    public static function provideChannellessDeclarationCarriers(): iterable
+    {
+        yield 'line comment' => ['// @qmx-ignore', false];
+        yield 'block comment' => ['/* @qmx-ignore */', false];
+        yield 'docblock on one line' => ['/** @qmx-ignore */', true];
+        yield 'docblock on its own line' => ["/**\n * @qmx-ignore\n */", true];
+    }
+
+    /**
+     * The argument is written beside the tag, not under it: a docblock's
+     * leading asterisk is punctuation, and the tag on the line below is a
+     * different tag.
+     */
+    #[Test]
+    public function itDoesNotReadAChannelFromTheLineBelowTheTag(): void
+    {
+        $node = new Class_('Foo', [], ['startLine' => 20, 'endLine' => 40]);
+        $node->setDocComment(new Doc("/**\n * @qmx-ignore\n * @param int \$n\n */", 10, 13));
+
+        $suppressions = $this->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame(DirectiveRefusalReason::FormNotRecognised, $suppressions[0]->refusal?->reason);
+        self::assertSame(11, $suppressions[0]->line);
+    }
+
+    /** The next-line form requires a channel for the same reason, and loses it the same way. */
+    #[Test]
+    #[DataProvider('provideChannellessNextLineCarriers')]
+    public function itRefusesAChannellessNextLineDirectiveInEveryCommentCarrier(string $text, bool $isDoc): void
+    {
+        $node = new ClassMethod('doSomething', [], ['startLine' => 11, 'endLine' => 20]);
+        $node->setAttribute('comments', [$isDoc ? new Doc($text, 10, 10) : new Comment($text, 10, 10)]);
+
+        $suppressions = $this->extract($node);
+
+        self::assertCount(1, $suppressions, $text);
+        self::assertSame(DirectiveRefusalReason::FormNotRecognised, $suppressions[0]->refusal?->reason, $text);
+        self::assertSame('@qmx-ignore-next-line', $suppressions[0]->refusal->tag, $text);
+        self::assertFalse($suppressions[0]->matches('complexity.ccn', null), $text);
+    }
+
+    /** @return iterable<string, array{non-empty-string, bool}> */
+    public static function provideChannellessNextLineCarriers(): iterable
+    {
+        yield 'line comment' => ['// @qmx-ignore-next-line', false];
+        yield 'block comment' => ['/* @qmx-ignore-next-line */', false];
+        yield 'docblock on one line' => ['/** @qmx-ignore-next-line */', true];
+        yield 'docblock on its own line' => ["/**\n * @qmx-ignore-next-line\n */", true];
+    }
+
+    /** The authored `*` is the one spelling of "no rule filter", and it survives in every carrier. */
+    #[Test]
+    #[DataProvider('provideAuthoredEveryChannelCarriers')]
+    public function itStillReadsAnAuthoredEveryChannelStar(string $text, bool $isDoc): void
+    {
+        $node = new Class_('Foo', [], ['startLine' => 20, 'endLine' => 40]);
+        $node->setAttribute('comments', [$isDoc ? new Doc($text, 10, 10) : new Comment($text, 10, 10)]);
+
+        $suppressions = $this->extract($node);
+
+        self::assertCount(1, $suppressions, $text);
+        self::assertNull($suppressions[0]->refusal, $text);
+        self::assertSame(SuppressionTarget::NO_RULE_FILTER, $suppressions[0]->rule, $text);
+        self::assertTrue($suppressions[0]->target()->appliesToEveryChannel(), $text);
+        self::assertTrue($suppressions[0]->matches('complexity.ccn', null), $text);
+        self::assertSame('everything here', $suppressions[0]->reason, $text);
+    }
+
+    /** @return iterable<string, array{non-empty-string, bool}> */
+    public static function provideAuthoredEveryChannelCarriers(): iterable
+    {
+        yield 'line comment' => ['// @qmx-ignore * -- everything here', false];
+        yield 'block comment' => ['/* @qmx-ignore * -- everything here */', false];
+        yield 'docblock on one line' => ['/** @qmx-ignore * -- everything here */', true];
+        yield 'docblock on its own line' => ["/**\n * @qmx-ignore * -- everything here\n */", true];
+    }
+
+    /**
+     * A descendant selector written hard against the terminator is still the
+     * selector the author wrote; only an argument that *is* the terminator is
+     * not one.
+     */
+    #[Test]
+    public function itStillReadsADescendantSelectorAbuttingTheCommentTerminator(): void
+    {
+        $node = new Class_('Foo', [], ['startLine' => 20, 'endLine' => 40]);
+        $node->setAttribute('comments', [new Comment('/* @qmx-ignore complexity.*/', 10, 10)]);
+
+        $suppressions = $this->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertNull($suppressions[0]->refusal);
+        self::assertSame('complexity.*', $suppressions[0]->rule);
+        self::assertTrue($suppressions[0]->matches('complexity.ccn', null));
+    }
+
+    /** The file form spells "no rule filter" by omission, and the terminator is not an argument. */
+    #[Test]
+    #[DataProvider('provideBareFileCarriers')]
+    public function itStillReadsABareFileDirectiveAsNoRuleFilter(string $text, bool $isDoc): void
+    {
+        $node = new Class_('Foo', [], ['startLine' => 20, 'endLine' => 40]);
+        $node->setAttribute('comments', [$isDoc ? new Doc($text, 10, 10) : new Comment($text, 10, 10)]);
+
+        $suppressions = $this->extractFileLevel($node);
+
+        self::assertCount(1, $suppressions, $text);
+        self::assertNull($suppressions[0]->refusal, $text);
+        self::assertSame(SuppressionType::File, $suppressions[0]->type, $text);
+        self::assertSame(SuppressionTarget::NO_RULE_FILTER, $suppressions[0]->rule, $text);
+        self::assertTrue($suppressions[0]->target()->appliesToEveryChannel(), $text);
+    }
+
+    /** @return iterable<string, array{non-empty-string, bool}> */
+    public static function provideBareFileCarriers(): iterable
+    {
+        yield 'line comment' => ['// @qmx-ignore-file', false];
+        yield 'block comment' => ['/* @qmx-ignore-file */', false];
+        yield 'docblock on one line' => ['/** @qmx-ignore-file */', true];
+        yield 'docblock on its own line' => ["/**\n * @qmx-ignore-file\n */", true];
+    }
+
+    /** A refusal quotes what stands in the source, and the terminator does not stand in it. */
+    #[Test]
+    public function itNamesARefusedTagWithoutTheCommentTerminator(): void
+    {
+        $node = new Class_('Foo', [], ['startLine' => 20, 'endLine' => 40]);
+        $node->setDocComment(new Doc('/** @qmx-bogus */', 10, 10));
+
+        $suppressions = $this->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('', $suppressions[0]->rule);
+        self::assertSame('@qmx-bogus', $suppressions[0]->refusal?->tag);
+        self::assertStringContainsString('"@qmx-bogus"', $suppressions[0]->refusal->describe($suppressions[0]->rule));
+    }
+
+    /** @return list<\Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression> */
+    private function extractFileLevel(\PhpParser\Node $node): array
+    {
+        return $this->extractor->extractFileLevelSuppressions($node);
     }
 
     /** @return list<\Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression> */

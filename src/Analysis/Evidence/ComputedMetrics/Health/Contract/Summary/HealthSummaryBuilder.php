@@ -76,7 +76,6 @@ final readonly class HealthSummaryBuilder
      */
     private function buildHealthScores(MetricRepositoryInterface $metrics, NamespaceTree $tree): array
     {
-        $leafNamespaceCount = \count($tree->getLeaves());
         $projectMetrics = $metrics->get(SymbolPath::forProject());
         $healthScores = [];
 
@@ -99,7 +98,7 @@ final readonly class HealthSummaryBuilder
                 label: $this->hintProvider->getScoreLabel($scoreValue, $warnThreshold, $errThreshold),
                 warningThreshold: $warnThreshold,
                 errorThreshold: $errThreshold,
-                coverage: $this->coverage->read($dim->value, $projectMetrics->get(...), $leafNamespaceCount),
+                coverage: $this->coverage->read($dim->value, $projectMetrics->get(...)),
                 decomposition: $decomposition,
                 worstContributors: $contributors,
             );
@@ -115,7 +114,7 @@ final readonly class HealthSummaryBuilder
                 label: '0 classes analyzed',
                 warningThreshold: $typingWarning,
                 errorThreshold: $typingError,
-                coverage: $this->coverage->read(HealthDimension::Typing->value, $projectMetrics->get(...), $leafNamespaceCount),
+                coverage: $this->coverage->read(HealthDimension::Typing->value, $projectMetrics->get(...)),
             );
         }
 
@@ -261,13 +260,14 @@ final readonly class HealthSummaryBuilder
 
             $scoreValue = (float) $healthOverall;
 
-            // Skip namespaces with no direct classes (e.g., root namespace containers like "PHPUnit")
-            if ($level === SymbolLevel::Namespace_) {
-                $classCountInNs = (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0);
-
-                if ($classCountInNs === 0) {
-                    continue;
-                }
+            // Skip namespaces with no direct classes (e.g., root namespace
+            // containers like "PHPUnit"). The unsuffixed key is the namespace's
+            // own count; the `.sum` this used to read is the subtree's, which is
+            // positive for exactly the containers named here — so the guard let
+            // through the case it was written for, and a container ranked beside
+            // its own children carrying their weight.
+            if ($level === SymbolLevel::Namespace_ && (int) ($metrics->get(MetricName::SIZE_CLASS_COUNT) ?? 0) === 0) {
+                continue;
             }
 
             $candidates[] = ['score' => $scoreValue, 'info' => $symbolInfo];

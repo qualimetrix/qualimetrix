@@ -164,6 +164,32 @@ final class ComputedMetricRefusalWording
         );
     }
 
+    /**
+     * A formula naming a metric the product publishes, but not at the level the
+     * formula is declared for — distinguished from
+     * {@see self::referencesUnknownMetricKey()} because the key itself is
+     * spelled correctly and the reader would otherwise hunt for a typo that is
+     * not there.
+     *
+     * @param list<string> $keys as the formula spells them
+     */
+    public static function referencesMetricAbsentAtLevel(
+        string $metricName,
+        array $keys,
+        string $level,
+        string $formula,
+    ): string {
+        return \sprintf(
+            'Computed metric "%s" reads %s at level "%s", where no symbol carries %s.'
+            . ' Guard the read with "?? <fallback>" or declare the formula at a level that publishes it. Formula: %s',
+            $metricName,
+            implode(', ', array_map(static fn(string $key): string => \sprintf('"%s"', $key), $keys)),
+            $level,
+            \count($keys) === 1 ? 'it' : 'them',
+            $formula,
+        );
+    }
+
     public static function referencesUnknownMetricKey(string $metricName, string $key, string $formula): string
     {
         return \sprintf(

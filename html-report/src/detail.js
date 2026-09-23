@@ -25,6 +25,64 @@ export function setNavigateTo(fn) {
 }
 
 /**
+ * The coverage record this node may be shown for one health dimension, or null.
+ *
+ * The payload states coverage for the **project** scores only, so the question
+ * is not "is there a record under this key" — there always is, once the report
+ * carries the object at all — but "are the scores being drawn the ones it
+ * speaks for". Attaching the project's share to a namespace's own score would
+ * be a number about a different population printed next to it.
+ *
+ * @param {object} node - the selected tree node
+ * @param {object} summary - report summary data
+ * @param {string} metric - a `health.*` key
+ * @returns {object|null}
+ */
+export function coverageRecordFor(node, summary, metric) {
+  if (node?.type !== 'project') return null;
+
+  return summary?.healthCoverage?.[metric] ?? null;
+}
+
+/**
+ * The share of the subject a health score speaks for, as a cell and a sentence.
+ *
+ * A score over a tenth of the classes and a score over all of them look the
+ * same next to each other, which is why the payload carries this at all. The
+ * two states keep the same keys, so the reader branches on `state` rather than
+ * inferring absence from a zero: `n/a` (coverage is undefined and says why) and
+ * `0%` (nothing was measured) are different claims and never share a cell.
+ *
+ * Returns null when the payload carries nothing for this dimension — an older
+ * report, or a node that is not the project — so the caller renders the bar
+ * exactly as before rather than an empty cell that looks like a missing
+ * measurement.
+ *
+ * @param {object|undefined|null} record - one entry of summary.healthCoverage
+ * @returns {{short: string, full: string}|null}
+ */
+export function formatHealthCoverage(record) {
+  if (!record || typeof record !== 'object') return null;
+
+  if (record.state !== 'measured') {
+    return {
+      short: 'n/a',
+      full: record.reason ? `Coverage: not applicable — ${record.reason}` : 'Coverage: not applicable',
+    };
+  }
+
+  const ratio = typeof record.ratio === 'number' ? record.ratio : 0;
+  const percent = `${Math.round(ratio * 100)}%`;
+  const unit = record.unit ?? 'symbols';
+  const basis = record.basis ? `, from ${record.basis}` : '';
+
+  return {
+    short: percent,
+    full: `Computed over ${record.measured} of ${record.eligible} ${unit} (${percent})${basis}`,
+  };
+}
+
+/**
  * Renders the detail panel for a selected node.
  *
  * @param {object} node - Selected tree node
@@ -84,16 +142,34 @@ function renderHealthBars(node, summary) {
     row.appendChild(barOuter);
     row.appendChild(valueEl);
 
+    // ADR 0062 publishes coverage beside the score, and this surface showed
+    // the score alone. Which node may be shown it is decided by
+    // `coverageRecordFor()`, not here.
+    const coverage = formatHealthCoverage(coverageRecordFor(node, summary, metric));
+    if (coverage) {
+      const coverageEl = document.createElement('span');
+      coverageEl.className = 'health-bar-coverage';
+      coverageEl.textContent = coverage.short;
+      coverageEl.title = coverage.full;
+      row.appendChild(coverageEl);
+    }
+
     // Tooltip with health decomposition
     // For project nodes, health scores live in summary.healthScores, not node.metrics
     // `type` travels with the metrics: the decomposition is chosen by the
     // node's level, and a project node reads its scores from the summary.
     const hintNode = source === node.metrics ? node : { type: node.type, metrics: { ...node.metrics, ...source } };
     const hint = getHealthHint(metric, hintNode);
-    if (hint) {
+    if (hint || coverage) {
+      // The coverage sentence rides in the same tooltip as the decomposition:
+      // the cell shows the share, and what that share is of belongs next to
+      // the inputs it was measured from.
+      const details = [...(hint?.details ?? [])];
+      if (coverage) details.push(coverage.full);
+      const title = hint?.text ?? label;
       row.style.cursor = 'help';
       row.addEventListener('mouseenter', (e) => {
-        showDetailTooltip(e, hint.text, hint.details);
+        showDetailTooltip(e, title, details);
       });
       row.addEventListener('mousemove', (e) => moveDetailTooltip(e));
       row.addEventListener('mouseleave', () => hideDetailTooltip());

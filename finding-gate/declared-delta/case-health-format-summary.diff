@@ -1,0 +1,29 @@
+--- candidate
++++ reference (mapped)
+@@ -6,4 +6,2 @@
+-  coverage: not applicable — health.overall composes the other dimensions; each of them publishes its own coverage
+-
+-  Complexity      ████████████████████░░░░░░░░░░ 65.7% Critical
+-                   computed over 18 of 18 callables (100%)
++
++  Complexity      ████████████████████░░░░░░░░░░ 65.7% Critical
+@@ -16,6 +14,4 @@
+-                   computed over 7 of 7 classes (100%)
+-                   ↳ TCC: 0.9 (target: above 0.5) — methods share common fields
+-                   ↳ LCOM4 (avg): 1 (target: 1 or less) — classes are cohesive
+-  Coupling        ████████████████████████░░░░░░ 80% Critical
+-                   computed over 4 of 4 namespaces declaring a type (100%)
+-                   ↳ Distance (own): 0.8 (target: below 0.3) — poor balance of abstraction and stability in its own classes
++                   ↳ TCC: 0.9 (target: above 0.5) — methods share common fields
++                   ↳ LCOM4 (avg): 1 (target: 1 or less) — classes are cohesive
++  Coupling        ████████████████████████░░░░░░ 80% Critical
++                   ↳ Distance: 0.8 (target: below 0.3) — poor balance of abstraction and stability
+@@ -26,1 +22,0 @@
+-                   coverage: not applicable — the typing formula reads typed and total sums over declaration positions, and no .count is published for them
+@@ -31,1 +26,0 @@
+-                   computed over 18 of 18 callables (100%)
+@@ -39,2 +33,2 @@
+-  82.5 Corpus\Health\Support (3 classes, 21 violations, 24.1/100 LOC) — low type safety
+-  +1 more (use --format=html or --format-opt=top=4)
++  78.3 Corpus (5 classes, 53 violations, 25.2/100 LOC) — low type safety
++  +3 more (use --format=html or --format-opt=top=6)

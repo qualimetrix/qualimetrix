@@ -1,0 +1,47 @@
+--- candidate
++++ reference (mapped)
+@@ -242,2 +242,2 @@
+-                "unit": "namespaces declaring a type",
+-                "basis": "coupling.distance-own.count",
++                "unit": "leaf namespaces",
++                "basis": "coupling.distance.count",
+@@ -248,2 +248,2 @@
+-                    "metric": "coupling.distance-own.avg",
+-                    "humanName": "Distance (own)",
++                    "metric": "coupling.distance.avg",
++                    "humanName": "Distance",
+@@ -520,0 +520,34 @@
++            }
++        },
++        {
++            "symbolPath": "Corpus",
++            "healthOverall": 78.3210134944447,
++            "label": "Critical",
++            "reason": "low type safety",
++            "violationCount": 53,
++            "violationDensity": 25.2,
++            "size.class-count": 5,
++            "healthScores": {
++                "complexity": 62.94733002121196,
++                "cohesion": 96.55104724922953,
++                "coupling": 100,
++                "typing": 57.377049180327866,
++                "maintainability": 71.94450060101212,
++                "overall": 78.3210134944447
++            }
++        },
++        {
++            "symbolPath": "Corpus\\Health",
++            "healthOverall": 78.3210134944447,
++            "label": "Critical",
++            "reason": "low type safety",
++            "violationCount": 47,
++            "violationDensity": 22.4,
++            "size.class-count": 5,
++            "healthScores": {
++                "complexity": 62.94733002121196,
++                "cohesion": 96.55104724922953,
++                "coupling": 100,
++                "typing": 57.377049180327866,
++                "maintainability": 71.94450060101212,
++                "overall": 78.3210134944447

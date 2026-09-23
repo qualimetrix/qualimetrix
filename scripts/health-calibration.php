@@ -25,7 +25,7 @@ declare(strict_types=1);
  *    complexity formula invisible in the overall result, and the self-test
  *    would then pass tautologically.
  * 3. **The namespace-pooled aggregates are DERIVED from the captured
- *    children, not read.** `coupling.distance.avg` at project level is produced
+ *    children, not read.** `coupling.distance-own.avg` at project level is produced
  *    by
  *    {@see \Qualimetrix\Analysis\Evidence\Measurement\Aggregation\NamespaceToProjectAggregator}
  *    before any expression runs, so it sits in the capture as a finished
@@ -38,7 +38,7 @@ declare(strict_types=1);
  *    reproduction is the one measurement that makes this instrument evidence.
  *
  *    The set that is re-derived is {@see PROJECT_DERIVED}, and it is small on
- *    purpose: `coupling.distance` is the only base the product pools from
+ *    purpose: `coupling.distance-own` is the only base the product pools from
  *    namespaces to the project. Every other project input — `complexity.ccn.p95`,
  *    `maintainability.mi.min`, `size.symbol-method-count` and the rest — is an
  *    aggregate of *callables and classes*, with no namespace-pooling step to vary;
@@ -59,7 +59,7 @@ declare(strict_types=1);
  *   --projects=a,b          restrict the run to these capture ids
  *   --levels=project,namespace,class    default: project,namespace
  *   --aggregation=SCHEME    members[:weight]; see AggregationScheme. Default
- *                           `leaves:none`, aliased `current`.
+ *                           `declaring:none`, aliased `current`.
  *   --self-test             reproduce the published aggregates and health.*
  *   --tolerance=0.1         self-test tolerance on a score (default 0.1)
  *   --candidates=FILE       a YAML document with a `computed_metrics:` section
@@ -112,9 +112,9 @@ const USAGE = <<<'TEXT'
                               `bin/qmx --format=metrics` document is read too
       --projects=a,b          restrict the run to these capture ids
       --levels=…              project,namespace,class (default: project,namespace)
-      --aggregation=SCHEME    members[:weight]; members is leaves or
-                              leaves-no-global, weight is none, classes or loc.
-                              Default `current` = leaves:none
+      --aggregation=SCHEME    members[:weight]; members is declaring, leaves
+                              or leaves-no-global, weight is none, classes or
+                              loc. Default `current` = declaring:none
       --self-test             reproduce the published aggregates and health.*
       --tolerance=0.1         self-test tolerance on a score
       --candidates=FILE       a YAML document with a `computed_metrics:` section
@@ -142,18 +142,29 @@ const USAGE = <<<'TEXT'
  *
  * @var list<string>
  */
-const NAMESPACE_COLLECTED = ['coupling.distance', 'coupling.abstractness', 'coupling.instability'];
+const NAMESPACE_COLLECTED = [
+    'coupling.distance',
+    'coupling.abstractness',
+    'coupling.instability',
+    'coupling.distance-own',
+    'coupling.abstractness-own',
+    'coupling.instability-own',
+];
 
 /**
  * The namespace-collected bases the product actually aggregates to project
- * level: `DistanceCollector` declares `Project => [Average]` and nothing else
- * declares any project aggregation. Deriving a key the product never publishes
- * would put a number into the bench's input map that no run of `bin/qmx` ever
- * produces.
+ * level: `DistanceCollector` declares `Project => [Average]` on its own-scope
+ * key and nothing else declares any project aggregation. Deriving a key the
+ * product never publishes would put a number into the bench's input map that no
+ * run of `bin/qmx` ever produces.
+ *
+ * The own-scope key, not the subtree rollup published beside it: a parent
+ * publishes both, and pooling the rollup would count a parent's declarations
+ * once for the parent and once inside every ancestor above it.
  *
  * @var list<string>
  */
-const PROJECT_DERIVED = ['coupling.distance'];
+const PROJECT_DERIVED = ['coupling.distance-own'];
 
 /** The six dimensions, in report order. */
 const DIMENSIONS = [
@@ -227,6 +238,25 @@ final readonly class Capture
             $this->symbols,
             static fn(Subject $symbol): bool => $symbol->level === $level,
         ));
+    }
+
+    /**
+     * The namespaces a scheme pools a namespace-collected key over.
+     *
+     * `declaring` admits every captured namespace and lets the absence of the
+     * key decide, which is what the product does: it walks all namespaces and
+     * skips the ones carrying no value. The leaf schemes are the superseded
+     * rules, kept as candidates to measure against.
+     *
+     * @return list<Subject>
+     */
+    public function pooledNamespaces(AggregationScheme $scheme): array
+    {
+        return match ($scheme->members) {
+            AggregationScheme::MEMBERS_DECLARING => $this->at(SymbolLevel::Namespace_),
+            AggregationScheme::MEMBERS_LEAVES_NO_GLOBAL => $this->leafNamespaces(includeGlobal: false),
+            default => $this->leafNamespaces(includeGlobal: true),
+        };
     }
 
     /**
@@ -350,6 +380,7 @@ final readonly class Capture
  */
 final readonly class AggregationScheme
 {
+    public const string MEMBERS_DECLARING = 'declaring';
     public const string MEMBERS_LEAVES = 'leaves';
     public const string MEMBERS_LEAVES_NO_GLOBAL = 'leaves-no-global';
     public const string WEIGHT_NONE = 'none';
@@ -363,12 +394,12 @@ final readonly class AggregationScheme
 
     public static function parse(string $spec): self
     {
-        $normalized = $spec === 'current' ? self::MEMBERS_LEAVES . ':' . self::WEIGHT_NONE : $spec;
+        $normalized = $spec === 'current' ? self::MEMBERS_DECLARING . ':' . self::WEIGHT_NONE : $spec;
         $parts = explode(':', $normalized);
         $members = $parts[0];
         $weight = $parts[1] ?? self::WEIGHT_NONE;
 
-        if (!\in_array($members, [self::MEMBERS_LEAVES, self::MEMBERS_LEAVES_NO_GLOBAL], true)) {
+        if (!\in_array($members, [self::MEMBERS_DECLARING, self::MEMBERS_LEAVES, self::MEMBERS_LEAVES_NO_GLOBAL], true)) {
             throw new InvalidArgumentException(\sprintf('Unknown aggregation members "%s"', $members));
         }
 
@@ -380,18 +411,21 @@ final readonly class AggregationScheme
     }
 
     /**
-     * The rule the product applies today. The global namespace was excluded
-     * until the tree stopped skipping it; a bench that models the superseded
-     * rule reports disagreements that are its own and calls the product wrong.
+     * The rule the product applies today: every namespace that carries the
+     * pooled key contributes once, parent as well as leaf, because the key is
+     * an own-scope value and the parent's own declarations are in no other
+     * member. A bench that models a superseded rule — the global namespace
+     * excluded, or only leaves admitted — reports disagreements that are its
+     * own and calls the product wrong.
      */
     public static function current(): self
     {
-        return new self(self::MEMBERS_LEAVES, self::WEIGHT_NONE);
+        return new self(self::MEMBERS_DECLARING, self::WEIGHT_NONE);
     }
 
     public function isCurrent(): bool
     {
-        return $this->members === self::MEMBERS_LEAVES && $this->weight === self::WEIGHT_NONE;
+        return $this->members === self::MEMBERS_DECLARING && $this->weight === self::WEIGHT_NONE;
     }
 
     public function toString(): string
@@ -692,9 +726,7 @@ final class Bench
             return [];
         }
 
-        $members = $capture->leafNamespaces(
-            includeGlobal: $scheme->members === AggregationScheme::MEMBERS_LEAVES,
-        );
+        $members = $capture->pooledNamespaces($scheme);
 
         $derived = [];
 
@@ -890,7 +922,7 @@ final class CoverageCalculator
 
         $contributors = [];
 
-        foreach ($capture->leafNamespaces($scheme->members === AggregationScheme::MEMBERS_LEAVES) as $namespace) {
+        foreach ($capture->pooledNamespaces($scheme) as $namespace) {
             if (self::carries($namespace, $base)) {
                 $contributors[$namespace->name] = true;
             }
@@ -2159,7 +2191,8 @@ function reportCriteria(Options $options, array $evaluations, array $definitions
         $captures,
         $definitions,
         [SymbolLevel::Project],
-        new AggregationScheme(AggregationScheme::MEMBERS_LEAVES, AggregationScheme::WEIGHT_LOC),
+        // The same members as `current`, so the drift is the weighting alone.
+        new AggregationScheme(AggregationScheme::MEMBERS_DECLARING, AggregationScheme::WEIGHT_LOC),
     );
     $agreed = printAggregateDrift($evaluations, $weighted, $options->c4Tolerance) && $agreed;
 

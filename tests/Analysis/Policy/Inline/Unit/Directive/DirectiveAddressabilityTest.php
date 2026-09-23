@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusal;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability;
@@ -186,6 +187,62 @@ final class DirectiveAddressabilityTest extends TestCase
         self::assertStringContainsString('does not report at level "class"', $message);
         self::assertStringContainsString('The pair can never match anything', $message);
         self::assertStringNotContainsString('no directive may silence', $message);
+    }
+
+    /**
+     * The two refusals decided inside extraction are answered here like any
+     * other, so the author hears about them through the same channel on the
+     * same line. Before, both were dropped where they were found.
+     */
+    #[Test]
+    public function itAnswersForATagNoGrammarReads(): void
+    {
+        $problem = self::addressability()->problemWithSuppression(new Suppression(
+            'complexity.ccn',
+            null,
+            1,
+            SuppressionType::Symbol,
+            refusal: DirectiveRefusal::formNotRecognised('ignore-lines'),
+        ));
+
+        self::assertIsString($problem);
+        self::assertStringContainsString('@qmx-ignore-lines complexity.ccn', $problem);
+        self::assertStringContainsString('is not a tag this tool reads', $problem);
+    }
+
+    #[Test]
+    public function itAnswersForADeclarationFormWithNothingToBindTo(): void
+    {
+        $problem = self::addressability()->problemWithSuppression(new Suppression(
+            'complexity.ccn',
+            null,
+            1,
+            SuppressionType::Symbol,
+            refusal: DirectiveRefusal::noDeclarationToBind(),
+        ));
+
+        self::assertIsString($problem);
+        self::assertStringContainsString('@qmx-ignore complexity.ccn', $problem);
+        self::assertStringContainsString('@qmx-ignore-next-line', $problem);
+    }
+
+    /**
+     * A refusal is not a channel question, so it is answered before every
+     * channel question — including the one that returns "nothing to say" for a
+     * directive naming no channel at all.
+     */
+    #[Test]
+    public function itAnswersForARefusedDirectiveThatNamesNoChannel(): void
+    {
+        $problem = self::addressability()->problemWithSuppression(new Suppression(
+            '*',
+            null,
+            1,
+            SuppressionType::Symbol,
+            refusal: DirectiveRefusal::noDeclarationToBind(),
+        ));
+
+        self::assertIsString($problem);
     }
 
     private static function addressability(): DirectiveAddressability

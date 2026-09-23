@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDependencyGraphCalculator;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
@@ -15,7 +16,6 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use RuntimeException;
 use Throwable;
 
 class ComputedMetricEvaluator
@@ -74,8 +74,28 @@ class ComputedMetricEvaluator
 
         $this->validateFormulaVariables($repo, $definition, $level, $formula, $symbols);
 
+        $requiredKeys = $this->expression->requiredKeysOf($formula);
+
         foreach ($symbols as [$symbolPath, $file, $line]) {
             $metricBag = $repo->get($symbolPath);
+            $missing = $this->keysMissingFrom($metricBag, $requiredKeys);
+
+            if ($missing !== []) {
+                // The level carries the key somewhere; this symbol does not.
+                // Reading it unguarded would hand `null` to the arithmetic,
+                // which PHP coerces to 0 — a fabricated measurement that scores
+                // the symbol and can raise a finding. The formula asked for the
+                // key without `??`, so the honest answer is no value at all.
+                $this->logger->warning('Computed metric skipped a symbol that carries none of the metrics its formula requires', [
+                    'metric' => $definition->name,
+                    'symbol' => $symbolPath->toString(),
+                    'level' => $level->value,
+                    'missing' => implode(', ', $missing),
+                ]);
+
+                continue;
+            }
+
             $variables = $this->buildVariableMap($metricBag);
 
             try {
@@ -124,7 +144,7 @@ class ComputedMetricEvaluator
      *
      * @param list<array{SymbolPath, ?RelativePath, ?int}> $symbols
      *
-     * @throws RuntimeException If the formula references metrics that do not exist at this level
+     * @throws \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal if the formula names a metric no symbol at this level carries
      */
     private function validateFormulaVariables(
         MetricRepositoryInterface $repo,
@@ -147,14 +167,41 @@ class ComputedMetricEvaluator
         $unknownVars = $this->findUnknownVariables($requiredVars, $allKnownKeys);
 
         if ($unknownVars !== []) {
-            throw new RuntimeException(\sprintf(
-                'Computed metric "%s" at level "%s" references unknown metrics: %s. Check the formula: %s',
+            // The same class of user mistake as a misspelled key, and refused
+            // by the same class. A `RuntimeException` here surfaced as
+            // "Internal error" with exit code 1 — the code that means
+            // "warnings were found", so CI read a refusal as an ordinary result.
+            ComputedMetricFormulaValidator::refuseMetricsAbsentAtLevel(
                 $definition->name,
+                $unknownVars,
                 $level->value,
-                implode(', ', $unknownVars),
                 $formula,
-            ));
+            );
         }
+    }
+
+    /**
+     * The keys this formula needs present that this symbol does not carry.
+     *
+     * A `MetricBag` holds only `int|float`, so an absent key is the whole of
+     * what `get()` can answer `null` for, and it is the whole of what
+     * `MetricLookup` would hand the formula as `null`.
+     *
+     * @param list<string> $requiredKeys
+     *
+     * @return list<string>
+     */
+    private function keysMissingFrom(MetricBag $bag, array $requiredKeys): array
+    {
+        $missing = [];
+
+        foreach ($requiredKeys as $key) {
+            if ($bag->get($key) === null) {
+                $missing[] = $key;
+            }
+        }
+
+        return $missing;
     }
 
     /**

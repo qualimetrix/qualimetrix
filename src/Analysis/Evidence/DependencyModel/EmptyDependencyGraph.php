@@ -45,6 +45,16 @@ final class EmptyDependencyGraph implements DependencyGraphInterface
         return 0;
     }
 
+    public function getNamespaceOwnCe(SymbolPath $namespace): int
+    {
+        return 0;
+    }
+
+    public function getNamespaceOwnCa(SymbolPath $namespace): int
+    {
+        return 0;
+    }
+
     public function getAllClasses(): array
     {
         return [];

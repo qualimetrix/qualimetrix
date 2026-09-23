@@ -20,8 +20,9 @@ use Traversable;
  * class set for each {@see TemplateLayerDefinition} and collect observed
  * binding tuples.
  *
- * Lives in {@code Qualimetrix\Analysis\Policy\Architecture\Layer} (next to the other
- * layer primitives, per ADR 0010's vertical-slice layout).
+ * Lives under {@code Qualimetrix\Analysis\Policy\Architecture\Layer} next to the other layer
+ * primitives, because the subject it belongs to is layer membership rather
+ * than the run that supplies the class set (ADR 0016).
  *
  * **No internal caching.** Repeated {@see contextFor()} calls delegate
  * straight to the factory, which already memoises per-FQN contexts. The

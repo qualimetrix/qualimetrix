@@ -519,6 +519,35 @@ There are two bad zones:
 
 <!-- llms:skip-end -->
 
+### Two scopes on a namespace, and the project number
+
+A namespace that both declares classes of its own and contains sub-namespaces
+has two coupling scopes, and both are published:
+
+| Key                                                                                                                        | Scope                                                                                                             |
+| -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `coupling.ca` / `coupling.ce` / `coupling.instability` / `coupling.abstractness` / `coupling.distance`                     | The whole subtree rooted at this namespace — the value the rule judges and the one a namespace-level report shows |
+| `coupling.ca-own` / `coupling.ce-own` / `coupling.instability-own` / `coupling.abstractness-own` / `coupling.distance-own` | Only the types declared directly in this namespace, leaving the ones its sub-namespaces hold to those namespaces  |
+
+For a namespace with no sub-namespaces the two coincide. A namespace that
+declares no type of its own carries no own-scope abstractness at all and gets no
+`-own` key for abstractness or distance: how far a package sits from the main
+sequence is undefined where there is no package, and silence says that where
+`0.0` would not.
+
+**The project number is folded over own scopes.** `coupling.distance-own.avg` is
+the unweighted mean of `coupling.distance-own` across every namespace that
+publishes one — the project-level key is `coupling.distance-own.avg`, and
+`coupling.distance.avg` does not exist. Folding the subtree rollups instead
+would count a parent's declarations once for the parent and again for each
+child. The older fold avoided that double count by taking leaf namespaces only,
+which instead dropped every parent namespace that declares classes of its own: in
+a tree where intermediate namespaces hold real code, a large share of the classes
+were represented in the project average by no value at all.
+
+The population the fold runs over is also what the health coverage line is a
+share of; see [What a Score Covers](../reference/health-scores.md#what-a-score-covers).
+
 <!-- llms:skip-begin -->
 ### Thresholds
 
@@ -526,6 +555,8 @@ There are two bad zones:
 | ------- | --------- | -------- |
 | Warning | >= 0.3    | Warning  |
 | Error   | >= 0.5    | Error    |
+
+The rule judges the subtree value `coupling.distance`, not `coupling.distance-own`.
 
 Only namespaces with at least 3 classes are analyzed (configurable via `minClassCount`).
 <!-- llms:skip-end -->

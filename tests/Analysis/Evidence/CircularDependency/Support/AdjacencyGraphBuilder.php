@@ -201,6 +201,16 @@ final readonly class AdjacencyGraphBuilder
             {
                 return \count($this->namespaceCa[$namespace->toCanonical()] ?? []);
             }
+
+            public function getNamespaceOwnCe(SymbolPath $namespace): int
+            {
+                return \count($this->namespaceCe[$namespace->toCanonical()] ?? []);
+            }
+
+            public function getNamespaceOwnCa(SymbolPath $namespace): int
+            {
+                return \count($this->namespaceCa[$namespace->toCanonical()] ?? []);
+            }
             public function getAllClasses(): array
             {
                 return $this->classes;

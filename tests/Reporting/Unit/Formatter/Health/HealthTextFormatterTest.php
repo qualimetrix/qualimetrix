@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Reporting\Unit\Formatter\Health;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\CoverageUnit;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage;
@@ -385,6 +387,36 @@ final class HealthTextFormatterTest extends TestCase
         $output = $this->formatter->format($report, $context);
 
         self::assertStringNotContainsString('Worst contributors:', $output);
+    }
+
+    /**
+     * Coverage used to reach this format only through the decomposition block:
+     * wide terminals only, only for dimensions with a decomposition or a worst
+     * list, and never for `overall`. It is a column now, so every score that is
+     * printed says what share of the subject it speaks for.
+     */
+    #[Test]
+    #[DataProvider('provideTerminalWidths')]
+    public function itPrintsCoverageBesideEveryScore(int $terminalWidth): void
+    {
+        $report = $this->createReportWithHealthScores([
+            'cohesion' => new HealthScore('cohesion', 82.9, 'Excellent', 60.0, 30.0, HealthCoverage::over(3, 12, CoverageUnit::Classes, 'cohesion.tcc.count')),
+            'overall' => new HealthScore('overall', 75.3, 'Acceptable', 50.0, 30.0, HealthCoverage::notApplicable('composes the other dimensions')),
+        ]);
+
+        $output = $this->formatter->format($report, new FormatterContext(useColor: false, terminalWidth: $terminalWidth));
+
+        self::assertStringContainsString('25%', $output);
+        self::assertStringContainsString('n/a', $output);
+    }
+
+    /**
+     * @return iterable<string, array{int}>
+     */
+    public static function provideTerminalWidths(): iterable
+    {
+        yield 'wide' => [120];
+        yield 'narrow' => [50];
     }
 
     /**

@@ -10,6 +10,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\MetricLookup;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -90,6 +92,67 @@ final class HealthFormulaExcluderTest extends TestCase
         self::assertEqualsWithDelta(1.0, array_sum($weights), 0.001);
         self::assertEqualsWithDelta(0.5, $weights[0], 0.001);
         self::assertEqualsWithDelta(0.5, $weights[1], 0.001);
+    }
+
+    /**
+     * Rounding each normalized weight on its own leaves the scale short of one,
+     * and a subject scoring 100 everywhere then publishes 99.99. Measured
+     * before the fix: two of the thirty-one namespace-level subsets summed to
+     * 0.9999. Every subset of every level is checked, because which ones divide
+     * evenly is a property of the default weights, not of the arithmetic.
+     */
+    #[Test]
+    public function itKeepsTheWeightsSummingToOneForEveryExclusion(): void
+    {
+        $dimensions = ['complexity', 'cohesion', 'coupling', 'typing', 'maintainability'];
+        $checked = 0;
+
+        for ($mask = 0; $mask < 2 ** \count($dimensions); $mask++) {
+            $excluded = [];
+
+            foreach ($dimensions as $index => $dimension) {
+                if (($mask & (2 ** $index)) !== 0) {
+                    $excluded[] = $dimension;
+                }
+            }
+
+            $overall = $this->findByName(
+                $this->excluder->applyExcludeHealth(array_values(ComputedMetricDefaults::getDefaults()), $excluded),
+                'health.overall',
+            );
+
+            if ($overall === null) {
+                continue;
+            }
+
+            foreach ($overall->formulas as $level => $formula) {
+                preg_match_all('/\*\s*([\d.]+)/', $formula, $matches);
+                $weights = array_map('floatval', $matches[1]);
+                $context = \sprintf('level %s without [%s]', $level, implode(',', $excluded));
+
+                // Exact at the four decimals the weights are printed with.
+                self::assertSame(
+                    10000,
+                    (int) array_sum(array_map(static fn(float $w): int => (int) round($w * 10000), $weights)),
+                    $context,
+                );
+                // And the product's own evaluation of the rebuilt formula
+                // reaches the ceiling for a subject scoring 100 everywhere.
+                $lookup = new MetricLookup(array_fill_keys(
+                    array_map(static fn(string $d): string => 'health.' . $d, $dimensions),
+                    100.0,
+                ));
+                self::assertEqualsWithDelta(
+                    100.0,
+                    (float) (new ComputedMetricExpression())->evaluate($formula, ['m' => $lookup]),
+                    1e-9,
+                    $context,
+                );
+                $checked++;
+            }
+        }
+
+        self::assertGreaterThan(30, $checked, 'the sweep must actually carry subsets');
     }
 
     #[Test]
