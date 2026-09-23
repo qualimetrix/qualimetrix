@@ -39,7 +39,7 @@ final class PropertyHookControlPrecedenceTest extends TestCase
     #[Test]
     public function itUsesProductionExtractionForHookPropertyAndClassThresholdPrecedence(): void
     {
-        $ast = (new ParserFactory())->createForNewestSupportedVersion()->parse(<<<'PHP'
+        $source = <<<'PHP'
             <?php
             namespace App;
 
@@ -52,7 +52,8 @@ final class PropertyHookControlPrecedenceTest extends TestCase
                     get => 1;
                 }
             }
-            PHP);
+            PHP;
+        $ast = (new ParserFactory())->createForNewestSupportedVersion()->parse($source);
         self::assertIsArray($ast);
 
         $finder = new NodeFinder();
@@ -136,9 +137,18 @@ final class PropertyHookControlPrecedenceTest extends TestCase
             ], new DeclarationRegistrarFactory()),
             new SourceControlExtractor(),
         );
-        $processor->setProjectRoot(AbsolutePath::fromString('/tmp'));
+        $root = sys_get_temp_dir() . '/qmx-hook-precedence-' . bin2hex(random_bytes(6));
+        mkdir($root, 0o755, true);
+        $root = (string) realpath($root);
+        file_put_contents($root . '/test.php', $source);
+        $processor->setProjectRoot(AbsolutePath::fromString($root));
 
-        $result = $processor->process(new SplFileInfo('/tmp/test.php'));
+        try {
+            $result = $processor->process(new SplFileInfo($root . '/test.php'));
+        } finally {
+            unlink($root . '/test.php');
+            rmdir($root);
+        }
 
         self::assertTrue($result->isSuccessful());
         self::assertSame([], $result->thresholdDiagnostics());

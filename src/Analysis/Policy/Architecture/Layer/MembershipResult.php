@@ -32,16 +32,18 @@ use InvalidArgumentException;
  * non-membership; the {@see matchedCriteria} list is empty on both
  * non-matching variants.
  *
- * There are four variants, not two, and the extra two change nothing about
- * membership: {@see excluded()} is a NoMatch whose cause is a firing
- * `exclude:` clause rather than a positive criterion that did not fire, and
- * {@see undecided()} is a NoMatch the run never established at all. Every
- * consumer that reads {@see matched} sees the two variants it always saw. The
- * distinctions exist because each is otherwise indistinguishable from a plain
- * non-match from the outside, and each answers a question someone asks:
- * `architecture.unmatched-exclude` asks "did this clause ever cause the
- * difference", and `architecture.coverage-gap` asks whether the gap it reports
- * is one the author can close.
+ * Beside the plain match and non-match there are three variants, and none of
+ * them changes what {@see $matched} says. {@see excluded()} is a non-match
+ * whose cause is a firing `exclude:` clause rather than a positive criterion
+ * that did not fire; {@see undecided()} is a non-match the run never
+ * established; {@see doubtedMatch()} is a match the run could not fully
+ * establish, because the `exclude:` clause that would remove it could not be
+ * answered. Every consumer that reads {@see $matched} sees membership exactly
+ * as a two-valued reader would. The distinctions exist because each is
+ * otherwise indistinguishable from the outside, and each answers a question
+ * someone asks: `architecture.unmatched-exclude` asks "did this clause ever
+ * cause the difference", and `architecture.coverage-gap` and
+ * `debug:layer-assignment` ask what the run could not decide.
  */
 final readonly class MembershipResult
 {
@@ -97,18 +99,11 @@ final readonly class MembershipResult
 
     /**
      * A non-match the run could not actually establish: at least one declared
-     * criterion was {@see CriterionOutcome::Undecidable} and none of the
-     * decided ones settled the layer either way.
+     * positive criterion was {@see CriterionOutcome::Undecidable} and none of
+     * the decided ones settled the layer either way.
      *
      * Membership-wise it is {@see noMatch()} — {@see $matched} is false, so no
-     * consumer starts counting an unproven class as a member. The variant
-     * exists because the difference has to reach a reader: an unassigned class
-     * whose criteria were all answered is a coverage gap the author can close
-     * by declaring a layer, and one whose inheritance chain left the analysed
-     * set is a gap no layer declaration will close.
-     *
-     * Not a third state of {@see $excluded}: an `exclude:` clause that fired is
-     * a decision, and one that could not be decided lands here instead.
+     * consumer starts counting an unproven class as a member.
      *
      * Read through the {@see $undecided} property rather than a predicate, the
      * way {@see $matched} is; {@see isExcluded()} keeps its method only because
@@ -117,6 +112,22 @@ final readonly class MembershipResult
     public static function undecided(): self
     {
         return new self(false, [], undecided: true);
+    }
+
+    /**
+     * A match whose `exclude:` clause could not be answered.
+     *
+     * The positive criteria caught the class; whether the clause removes it
+     * is unknown. The match stands — withdrawing it would leave the class in
+     * no layer and its edges unjudged, a missing answer where a doubtful one
+     * was available — and {@see $undecided} carries the doubt to the same
+     * readers an unanswered earlier layer reaches.
+     *
+     * @param list<MatchedCriterion> $criteria
+     */
+    public static function doubtedMatch(array $criteria): self
+    {
+        return new self(true, self::match($criteria)->matchedCriteria, undecided: true);
     }
 
     public function isExcluded(): bool

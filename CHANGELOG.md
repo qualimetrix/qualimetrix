@@ -168,16 +168,26 @@ input like any other, not an internal failure of the tool.
 
 **A layer criterion the run could not answer no longer reads as a non-match.**
 `attributes:`, `implements:` and `extends:` are answered from the declarations
-the run analysed, so a chain whose middle link lies outside `paths:` — or a
-subject with no analysed declaration of its own — used to come back as a
-confident "this class does not match". Membership is three-valued now: such a
-layer neither matches nor reports a non-match, and `architecture.coverage-gap`
-says the gap is one no edit to the configuration can close. Two things move on
-an unchanged tree: an `exclude:` clause the run cannot decide now removes
-membership instead of leaving the class in the layer, and a class that used to
-be assigned to a layer on a criterion the run could not really answer is now
-unassigned — widen `paths:` to decide it. A criterion naming a class's own
-direct parent is unaffected, vendor or not. See
+the run analysed, so an inheritance chain that leaves `paths:` — through a
+vendor parent or interface, or a subject with no analysed declaration of its
+own — used to come back as a confident "this class does not match". Membership
+is three-valued now. PHP's own classes and interfaces end a chain on known
+ground (read from the running PHP), and a chain cut only among the interfaces
+leaves `extends:` decidable, so what stays undecided is a chain that reaches
+unanalysed vendor or project code. Two things move on an unchanged tree:
+
+- a class whose only layer is undecided is in no layer, and
+  `architecture.coverage-gap` counts it separately from a class every criterion
+  answered "no" about — a later layer, a catch-all included, still assigns it,
+  as a guess;
+- an unanswerable layer never withdraws a match: a class matched by one layer
+  keeps it when an earlier layer or its own `exclude:` clause cannot be
+  answered, its edges are judged by the allow-list, and
+  `architecture.coverage-gap` counts the assignment as resting on a layer the
+  run could not fully decide.
+
+`debug:layer-assignment` names where an undecided class's chain stops (the
+`The chain stops at:` line; `chainStopsAt` in `--format=json`). See
 [ADR 0079](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0079-a-criterion-the-run-cannot-answer-is-undecidable.md).
 
 **A layer template that declares `suffix:`, `attributes:`, `implements:` or
@@ -195,9 +205,9 @@ relation kind. `relations: []` was already refused for exactly that reason; both
 spellings of the same slip now refuse alike. Drop the key entirely to keep "any
 relation allowed".
 
-**`architecture.coverage-gap: warning` or `error` with no `architecture.layers`
-is refused.** With no layers every class is outside every layer, and the run
-reported none of them — so the strictest setting of the option was also the
+**`architecture.coverage-gap: warn` or `error` with no `architecture.layers`
+is refused** with exit 3. With no layers every class is outside every layer,
+and the run reported none of them — so the strictest setting of the option was also the
 silent one. The state is reachable without a typo, because `layers:` is replaced
 rather than merged across configuration contributions. Declare the layers the
 mode is meant to enforce, or leave `coverage-gap: ignore`.
@@ -207,20 +217,43 @@ refused with exit 3.** It used to surface as `Internal error` with exit 1 — th
 code that means "warnings were found" — so a misspelled or mis-levelled key in
 `computed_metrics:` reached CI as an ordinary result. It is the same class of
 mistake as a key missing from the catalog and is now refused the same way, with
-the definition, the level, the keys and the formula named.
+the definition, the level, the keys and the formula named. The refusal also
+covers another computed metric read without `??` at a level missing from its own
+`levels:`, raised before analysis; a `project` level inheriting the `namespace`
+formula is checked at `project`. It does not cover the right side of a `??`
+whose left side the level carries: `m["a"] ?? m["b"]` is refused only when
+neither key is carried there. A chain none of whose links the level carries is
+refused naming every link.
 
-**Three inline-directive forms that used to be silent now fail the run.** A
-declaration-form `@qmx-ignore` or `@qmx-threshold` written where nothing is
-measured (above a statement, on a property), a `@qmx-` tag name this tool does
-not read, and `@qmx-ignore` written without the channel it requires are now
-reported on `annotation.unresolved-directive` with `error` severity, so the run
-exits 1 under the default `--fail-on`. The
-first was worse than silent: it threw out of extraction, so the whole file was
-dropped from the analysis — its metrics and findings simply absent — while the
-run still called itself complete. No new channel and no new option: correct the
-directive or remove it. `@qmx-threshold` naming a declaration that is not
-measured, and `@qmx-threshold` with no argument, are still dropped silently;
-they have a different carrier and this change does not close them.
+**Inline-directive forms that used to be silent now fail the run.** Each is
+reported on `annotation.unresolved-directive` at the line it was written on.
+That channel is a configuration error, so the run exits 2 whatever `--fail-on`
+says — `--fail-on=none` included — and no baseline accepts it:
+
+- a declaration-form `@qmx-ignore` written where nothing is measured (above a
+  statement, on a property without hooks);
+- a docblock `@qmx-threshold` written where nothing it can retune is measured
+  (above a statement, on a property without hooks, a class constant or a
+  parameter);
+- `@qmx-threshold` in a `//` or `/* */` comment — a threshold is read only from
+  a docblock, and over a measured method this form used to retune nothing;
+- a `@qmx-` tag name this tool does not read (`@qmx-ignore-lines`);
+- `@qmx-ignore` or `@qmx-ignore-next-line` with no channel on the tag's line,
+  and `@qmx-threshold` with no rule — answered "names no channel" / "names no
+  rule". `/** @qmx-threshold */` used to be reported as an invalid threshold on
+  the rule `*`, which nobody wrote.
+
+The first was worse than silent: it threw out of extraction, so the whole file
+was dropped from the analysis — its metrics and findings simply absent — while
+the run still called itself complete. No new channel and no new option: correct
+the directive or remove it. Prose that mentions a tag in a `//` comment is read
+as the tag: quote it in backticks.
+
+**`bin/qmx directives --format=json` reports the form of a refused directive
+from its vocabulary.** A `@qmx-ignore` / `@qmx-ignore-next-line` refused for
+naming no channel appears under the form `symbol` / `next-line`, as every other
+directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
+`@qmx-threshold` appears under the form `threshold`.
 
 ### Changed
 
@@ -233,8 +266,10 @@ they have a different carrier and this change does not close them.
   share below 100% where it always read 100%.
 - The `architecture.coverage-gap` message says when a class is outside every
   layer because the run could not decide one, rather than because no layer
-  claims it. The two gaps read identically before, and only one of them is
-  something the author can close by writing a layer.
+  claims it, and counts assignments that rest on a layer the run could not
+  fully answer; it is emitted for those even when nothing is outside every
+  layer. The advice to widen `paths:` is given only where analysing more of the
+  project can decide the class.
 - `design.dit` says when it did not follow an inheritance chain to a root. A
   run writes one warning naming how many chains leaving the analysed path
   stopped early and where the walk stopped, so a depth that stopped short is no
@@ -328,14 +363,39 @@ they have a different carrier and this change does not close them.
   namespace's own class count. Expect pure container namespaces to drop out of
   the list in `--format=summary`, `--format=json` and the HTML report, and the
   entries below them to move up.
-- A computed metric is no longer scored for a symbol that carries none of the
-  metrics its formula requires. An absent metric reached the arithmetic as
-  `null`, which PHP coerces to `0`, so the symbol got a fabricated measurement
-  that could raise a finding of its own. Such a symbol is now skipped with a
-  warning naming the metric, the symbol and the missing keys. Expect a computed
-  metric — including a health dimension — to be absent where it used to carry a
-  value derived from nothing, and the findings that value produced to be gone
-  with it. Write `??` in the formula where a default is genuinely intended.
+- A computed metric is no longer scored for a symbol that lacks a metric its
+  formula reads without a `??` fallback. An absent metric reached the arithmetic
+  as `null`, which PHP coerces to `0`, so the symbol got a fabricated
+  measurement that could raise a finding of its own. Such a symbol now gets no
+  value, and the run logs one warning per metric and level with the number of
+  skipped symbols, some of their names and the missing keys. The right side of
+  `??` counts only where its left side is absent: `m["a"] ?? m["b"]` is computed
+  wherever either key is present. Expect a computed metric — including a health
+  dimension — to be absent where it used to carry a value derived from nothing,
+  and the findings that value produced to be gone with it. End the formula with
+  a literal (`?? 0`) where a default is genuinely intended.
+- Layer criteria written with a leading backslash (`\Throwable`,
+  `\App\Foo`) now match; they were accepted and never matched, which left no
+  way to name a class in the global namespace. A lone `\` is refused.
+- Layer criteria `implements:` and `attributes:` naming a PHP interface or
+  attribute (`\JsonSerializable`, `\AllowDynamicProperties`, or `\Traversable`
+  through `implements \IteratorAggregate`) now match a class that declares it;
+  they used to answer "no", and a template layer built on them was reported as
+  unreachable. Coupling metrics are unchanged.
+- An inline directive written between a declaration's attributes and the
+  declaration (`#[Attr]`, then `/** @qmx-ignore ... */`, then `public function`)
+  now applies exactly as it does above the attributes; it used to be ignored
+  without a word, and a misspelled tag there passed silently.
+- A `@qmx-` comment standing where no statement or declaration begins (after
+  the last argument of a call, after the last element of an array) is now read:
+  `@qmx-ignore-next-line` and `@qmx-ignore-file` work there, and a declaration
+  form is refused instead of being dropped.
+- A backtick written directly before a tag always opens a quote, so a stray
+  backtick earlier on the same docblock line no longer turns a quoted example
+  such as `` `@qmx-ignore complexity.ccn` `` into a live suppression.
+- Two different refused tags naming one channel on one line are reported as two
+  `annotation.unresolved-directive` findings and two audit verdicts; one used to
+  replace the other.
 - `--no-cache` and `cache.enabled: false` now switch the AST cache off. Both
   were read, and the cache was consulted and written anyway, so a run asked to
   ignore the cache could still be answered from it.

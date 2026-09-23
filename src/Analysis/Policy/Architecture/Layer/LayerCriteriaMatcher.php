@@ -43,9 +43,11 @@ final class LayerCriteriaMatcher
      * are always decided. `attributes` is decided iff the run analysed this
      * symbol's own declaration — attributes sit on the class itself and reach
      * no further. `implements` and `extends` read a transitive closure, so
-     * they are decided only when that closure was not cut: a truncated chain
-     * can still PROVE a hit (the evidence found stands), but it cannot prove
-     * the absence of one.
+     * they are decided only when the closure THEY read was not cut: a
+     * truncated chain can still PROVE a hit (the evidence found stands), but it
+     * cannot prove the absence of one. `extends` reads the parent-class chain
+     * alone, since no interface declares a parent class; `implements` reads
+     * that chain and the interfaces above it.
      *
      * @param list<string> $patterns Patterns exactly as the user wrote them.
      * @param list<string> $suffix
@@ -63,15 +65,16 @@ final class LayerCriteriaMatcher
     ): CriteriaEvaluation {
         self::refuseUnbackedCriteria($context, $attributes, $implements, $extends);
 
-        $ancestryComplete = $context->unresolvedDeclarations === [];
+        $parentChainKnown = $context->parentChainKnown();
+        $interfacesKnown = $context->interfacesKnown();
 
         /** @var list<array{0: ?MatchedCriterion, 1: list<string>, 2: bool, 3: MatchedCriterionKind}> $kinds */
         $kinds = [
             [self::matchPatterns($context, $patterns), $patterns, true, MatchedCriterionKind::Pattern],
             [self::matchSuffix($context, $suffix), $suffix, true, MatchedCriterionKind::Suffix],
             [self::matchAttributes($context, $attributes), $attributes, $context->declarationAnalysed, MatchedCriterionKind::Attribute],
-            [self::matchImplements($context, $implements), $implements, $ancestryComplete, MatchedCriterionKind::Implements],
-            [self::matchExtends($context, $extends), $extends, $ancestryComplete, MatchedCriterionKind::Extends],
+            [self::matchImplements($context, $implements), $implements, $interfacesKnown, MatchedCriterionKind::Implements],
+            [self::matchExtends($context, $extends), $extends, $parentChainKnown, MatchedCriterionKind::Extends],
         ];
 
         $matched = [];

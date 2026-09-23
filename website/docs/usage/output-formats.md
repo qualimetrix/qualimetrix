@@ -460,6 +460,9 @@ bin/qmx check src/ --format=metrics --no-progress > metrics.json
 !!! note
     The `metrics` format exports **all collected metrics**, not just those that triggered violations. This makes it useful for tracking metric trends over time, even for code that passes all rules.
 
+!!! info "Line counts at namespace and project level measure different lines"
+    `size.loc`, `size.lloc` and `size.cloc` count different populations at the two aggregate levels. A namespace counts the lines inside its `namespace` statement; the project counts every analysed file in full, including the opening tag, file header comments and `declare` above the namespace. The project's `size.loc.sum` is therefore larger than the sum of the namespaces' `size.loc`, and it is not a rounding or aggregation error. Within the namespace tree the sums do add up: a namespace's `size.loc.sum` equals its own `size.loc` plus its children's `size.loc.sum`.
+
 ---
 
 ## checkstyle

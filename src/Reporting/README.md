@@ -98,7 +98,7 @@ Reporting/
     │   └── SarifRuleCollector.php         # Collects rule metadata for SARIF tool component, joined from ChannelPresentationInterface
     ├── Health/
     │   ├── HealthTextFormatter.php         # Text-based health report with scores and decomposition
-    │   └── HealthCoverageNarrator.php      # What share of its subject a health score was computed over: the decomposition line, the one-line form beside a score, and the bare share for a table cell
+    │   └── HealthCoverageNarrator.php      # What share of its subject a health score was computed over: the decomposition line, the one-line form beside a score, the bare share for a table cell, and the coverage record both `--format=json` and the HTML payload publish
     ├── Html/
     │   ├── HtmlFormatter.php              # Interactive HTML report with D3 treemap
     │   ├── HtmlTreeBuilder.php            # Builds namespace tree from MetricRepository

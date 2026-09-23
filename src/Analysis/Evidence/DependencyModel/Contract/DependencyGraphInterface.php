@@ -106,4 +106,22 @@ interface DependencyGraphInterface
      * @return array<Dependency>
      */
     public function getAllDependencies(): array;
+
+    /**
+     * Returns every edge that states what a declaration is: its
+     * {@see DependencyType::Extends}, {@see DependencyType::Implements},
+     * {@see DependencyType::TraitUse} and {@see DependencyType::Attribute}
+     * edges, in encounter order.
+     *
+     * It keeps the `implements`, `trait_use` and attribute edges whose target
+     * is a class PHP itself declares, which every other query here leaves out
+     * (they keep only `extends` of those). Those edges count toward no coupling
+     * view — not the dependency lists, the class set, Ce/Ca, nor either
+     * namespace scope — but a reader asking what a class declares needs them:
+     * without them a class declaring `implements \JsonSerializable` reads as
+     * one that does not.
+     *
+     * @return list<Dependency>
+     */
+    public function getDeclarationDependencies(): array;
 }

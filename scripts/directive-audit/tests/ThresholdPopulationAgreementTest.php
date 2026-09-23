@@ -45,11 +45,9 @@ use RuntimeException;
  * character list that *grows* reads further than the product does, and no
  * narrowing catches that.
  *
- * One authored form is deliberately absent. The product's separator between
- * the tag and its target is `\s+`, which crosses a line break, so a tag alone
- * at the end of a line takes the next line's docblock star as its target. A
- * target of `*` is not something an author wrote, and reproducing that defect
- * in the second measure would make the pair agree about a bug.
+ * One authored form is absent: a tag with no target on its own line. The
+ * product refuses it as naming no rule rather than reading a site, and the
+ * scan finds no target there either, so neither measure counts it.
  *
  * The library has no PSR-4 entry, the same as `scripts/finding-gate/`, so this
  * test loads it the way its own scripts do.

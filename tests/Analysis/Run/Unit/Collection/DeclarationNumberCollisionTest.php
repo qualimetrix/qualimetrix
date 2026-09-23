@@ -42,10 +42,23 @@ final class DeclarationNumberCollisionTest extends TestCase
 {
     private FileParserInterface&Stub $parser;
 
+    /** A real project root: the processor reads the file it is handed. */
+    private string $root;
+
     protected function setUp(): void
     {
         $this->parser = self::createStub(FileParserInterface::class);
-        $this->parser->method('parse')->willReturn([]);
+        $this->parser->method('parseContent')->willReturn([]);
+        $root = sys_get_temp_dir() . '/qmx-declaration-collision-' . bin2hex(random_bytes(6));
+        mkdir($root, 0o755, true);
+        $this->root = (string) realpath($root);
+        file_put_contents($this->root . '/Dup.php', "<?php\n");
+    }
+
+    protected function tearDown(): void
+    {
+        unlink($this->root . '/Dup.php');
+        rmdir($this->root);
     }
 
     #[Test]
@@ -91,9 +104,9 @@ final class DeclarationNumberCollisionTest extends TestCase
             new CompositeCollector([$collector], new DeclarationRegistrarFactory()),
             new SourceControlExtractor(),
         );
-        $processor->setProjectRoot(AbsolutePath::fromString('/tmp'));
+        $processor->setProjectRoot(AbsolutePath::fromString($this->root));
 
-        return $processor->process(new SplFileInfo('/tmp/Dup.php'));
+        return $processor->process(new SplFileInfo($this->root . '/Dup.php'));
     }
 
     /** @param list<CallableWithMetrics> $callables */

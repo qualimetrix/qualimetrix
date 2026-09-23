@@ -74,7 +74,7 @@ final class DeclaredLayerReachability
      * The clause appears only when such a class exists, so a project with none
      * reads exactly the sentence it always did.
      *
-     * @param array{sourceEdges: int, targetEdges: int, classes: array<string, string>, undecidable: array<string, string>} $state
+     * @param array{sourceEdges: int, targetEdges: int, classes: array<string, string>, undecidable: array<string, string>, doubted: array<string, string>} $state
      *
      * @return list<Finding>
      */
@@ -85,7 +85,8 @@ final class DeclaredLayerReachability
         }
 
         $unmatched = array_values($state['classes']);
-        if ($state['sourceEdges'] + $state['targetEdges'] === 0 && $unmatched === []) {
+        $doubted = array_values($state['doubted']);
+        if ($state['sourceEdges'] + $state['targetEdges'] === 0 && $unmatched === [] && $doubted === []) {
             return [];
         }
 
@@ -108,12 +109,16 @@ final class DeclaredLayerReachability
                 $state['sourceEdges'],
                 $state['targetEdges'],
                 \count($unmatched),
-                self::undecidableClause($undecidable),
+                self::undecidableClause($undecidable) . self::doubtedClause($doubted),
             ),
             severity: $severity,
-            recommendation: $sampleList === null
+            recommendation: ($sampleList === null
                 ? 'Declare layers covering the remaining classes or accept the gap by leaving coverage-gap on "ignore".'
-                : 'Examples of unclassified classes: ' . $sampleList . '. Declare layers covering these classes or accept the gap by leaving coverage-gap on "ignore".',
+                : 'Examples of unclassified classes: ' . $sampleList . '. Declare layers covering these classes or accept the gap by leaving coverage-gap on "ignore".')
+                . self::undecidableRecommendation($undecidable)
+                . ($doubted === [] ? '' : ' An assignment in doubt stands, and its edges are judged against that layer\'s'
+                    . ' allow-list; "qmx debug:layer-assignment <class>" names the unanswered layer and where the chain'
+                    . ' stops, and analysing that declaration settles it.'),
         )];
     }
 
@@ -134,10 +139,53 @@ final class DeclaredLayerReachability
         return \sprintf(
             ' %d of them could not be decided: a declared "extends"/"implements"/"attributes" criterion'
             . ' reads facts this run did not collect, because the symbol or a link in its inheritance chain'
-            . ' is outside the analysed paths. Declaring a layer will not cover these%s.',
+            . ' is outside the analysed paths%s.',
             \count($undecidable),
             $sampleList === null ? '' : ' — for example ' . $sampleList,
         );
+    }
+
+    /**
+     * The sentence appended when an assignment stands on a layer the run could
+     * not fully answer — an earlier layer that went unanswered, or the
+     * assigned layer's own `exclude:` — and the empty string otherwise.
+     *
+     * @param list<string> $doubted
+     */
+    private static function doubtedClause(array $doubted): string
+    {
+        if ($doubted === []) {
+            return '';
+        }
+
+        $sampleList = DiagnosticSampleList::format($doubted);
+
+        return \sprintf(
+            ' %d assigned class(es) rest on a layer the run could not fully decide%s.',
+            \count($doubted),
+            $sampleList === null ? '' : ' — for example ' . $sampleList,
+        );
+    }
+
+    /**
+     * What each edit does to the undecided share. A later layer is named
+     * because it does cover these classes — an unanswered layer does not
+     * withdraw a later match — and because what it covers them with is a
+     * guess the reader has to know about.
+     *
+     * @param list<string> $undecidable
+     */
+    private static function undecidableRecommendation(array $undecidable): string
+    {
+        if ($undecidable === []) {
+            return '';
+        }
+
+        return ' For the undecided ones, a layer declared after the one that could not answer (a catch-all included)'
+            . ' covers them, but as a guess: each may belong to the unanswered layer. Widening paths to include'
+            . ' the declarations where their chains stop decides them — "qmx debug:layer-assignment <class>" names'
+            . ' those declarations for an analysed class; a vendor type that is itself undecided is decided by a'
+            . ' patterns layer for its namespace declared before the layer that could not answer.';
     }
 
     /**

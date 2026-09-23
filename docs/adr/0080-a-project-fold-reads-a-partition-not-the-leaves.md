@@ -59,7 +59,7 @@ measurement, not a walk of the tree the aggregate folds. The denominator is
 deliberately **not** equal to the fold's population: using the population would
 restore exactly the defect this record repairs. Two namespaces in this
 repository declare only a bare enum and enter the size count without entering
-the fold, so the line reads `127 of 168` rather than `127 of 127`; that
+the fold, so the line reads `166 of 168` rather than `166 of 166`; that
 permanent gap is by construction and is documented where the reader meets it.
 
 **Weighting by class count was rejected**, and not because its argument is weak.
@@ -74,7 +74,7 @@ named rather than quietly carried.
 
 ## Consequences
 
-- Measured on this repository: `coupling.distance-own.avg` 0.2729660 against
+- Measured on this repository: `coupling.distance-own.avg` 0.2718897 against
   the old `coupling.distance.avg` 0.2854663, `count` 127 → 166,
   `health.coupling` 51.16 → 51.28, `health.overall` 76.63 → 76.65, and **0 of
   152 ratchet entries move**. Across the fifteen-project benchmark corpus no

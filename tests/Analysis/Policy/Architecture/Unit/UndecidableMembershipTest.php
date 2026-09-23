@@ -64,6 +64,8 @@ final class UndecidableMembershipTest extends TestCase
 
     private const string BASE = 'Vendor\\Lib\\Base';
 
+    private const string UNRELATED_BASE = 'App\\Testing\\Base';
+
     #[Test]
     public function itMatchesACriterionNamingADirectParentOutsideTheAnalysedSet(): void
     {
@@ -279,11 +281,13 @@ final class UndecidableMembershipTest extends TestCase
     }
 
     #[Test]
-    public function itCannotDecideMembershipWhenTheExcludeClauseIsTheUnanswerableHalf(): void
+    public function itKeepsMembershipAndPublishesTheDoubtWhenTheExcludeClauseCannotBeAnswered(): void
     {
         // The positive criteria caught the class; whether the clause that would
-        // remove it fires is unknown. Reporting the class as a member would be
-        // deciding the clause in the layer's favour.
+        // remove it fires is unknown. Withdrawing the membership would leave
+        // the class in no layer and its edges unjudged — a missing answer,
+        // worse than the doubtful one — so the match stands and the doubt is
+        // published through the same exit an unanswered earlier layer uses.
         $registry = $this->registryFor(
             new MembershipSpec(
                 patterns: [self::CHILD_NS . '\\**'],
@@ -292,8 +296,9 @@ final class UndecidableMembershipTest extends TestCase
             [[self::CHILD, self::MIDDLE, DependencyType::Extends]],
         );
 
-        self::assertNull($registry->resolveLayer($this->child()));
+        self::assertSame('web', $registry->resolveLayer($this->child()));
         self::assertSame(['web'], $registry->undecidedLayers($this->child()));
+        self::assertSame([self::MIDDLE], $registry->chainStopsAt($this->child()));
         self::assertSame(
             [],
             $registry->excludedLayers($this->child()),
@@ -368,7 +373,7 @@ final class UndecidableMembershipTest extends TestCase
             [$this->child()],
         );
 
-        self::assertSame([self::MIDDLE], $factory->build($this->child())->unresolvedDeclarations);
+        self::assertSame([self::MIDDLE], $factory->build($this->child())->chainStopsAt());
         self::assertTrue($factory->build($this->child())->declarationAnalysed);
     }
 
@@ -511,6 +516,242 @@ final class UndecidableMembershipTest extends TestCase
         self::assertSame([], (new TupleExtractor())->collect($template, new ClassSet([$order], $factory)));
     }
 
+    /**
+     * Three shapes of a class whose parent chain is fully known although part
+     * of its ancestry was never analysed, each asked through an `extends`
+     * criterion in the three roles it can play.
+     *
+     * A PHP class ends its chain on ground whose hierarchy is known without
+     * reading a file. An interface — PHP's or a vendor's — cannot hide a parent
+     * class, so an unanalysed one says nothing about `extends`.
+     *
+     * @return iterable<string, array{0: array{0: string, 1: string, 2: DependencyType}, 1: MembershipSpec, 2: ?string}>
+     */
+    public static function provideKnownParentChainInEveryRole(): iterable
+    {
+        $shapes = [
+            'PHP parent' => [self::CHILD, 'RuntimeException', DependencyType::Extends],
+            'PHP interface' => [self::CHILD, 'JsonSerializable', DependencyType::Implements],
+            'vendor interface' => [self::CHILD, 'Vendor\\Contract\\Thing', DependencyType::Implements],
+        ];
+
+        foreach ($shapes as $shape => $edge) {
+            yield $shape . ', positive criterion' => [
+                $edge,
+                new MembershipSpec(extends: [self::UNRELATED_BASE]),
+                null,
+            ];
+            yield $shape . ', exclude clause' => [
+                $edge,
+                new MembershipSpec(
+                    patterns: [self::CHILD_NS . '\\**'],
+                    exclude: new ExcludeSpec(extends: [self::UNRELATED_BASE]),
+                ),
+                'web',
+            ];
+            yield $shape . ', match all' => [
+                $edge,
+                new MembershipSpec(
+                    patterns: [self::CHILD_NS . '\\**'],
+                    extends: [self::UNRELATED_BASE],
+                    mode: MatchMode::All,
+                ),
+                null,
+            ];
+        }
+    }
+
+    /**
+     * @param array{0: string, 1: string, 2: DependencyType} $edge
+     */
+    #[Test]
+    #[DataProvider('provideKnownParentChainInEveryRole')]
+    public function itDecidesExtendsWhenTheParentChainIsKnown(
+        array $edge,
+        MembershipSpec $membership,
+        ?string $expectedLayer,
+    ): void {
+        $registry = $this->registryFor($membership, [$edge]);
+
+        self::assertSame($expectedLayer, $registry->resolveLayer($this->child()));
+        self::assertSame(
+            [],
+            $registry->undecidedLayers($this->child()),
+            'Nothing that could hide a parent class was left unread.',
+        );
+    }
+
+    /**
+     * @return iterable<string, array{0: MembershipSpec}>
+     */
+    public static function provideCriteriaNamingAPhpAncestor(): iterable
+    {
+        yield 'direct PHP parent' => [new MembershipSpec(extends: ['RuntimeException'])];
+        yield 'PHP grandparent' => [new MembershipSpec(extends: ['Exception'])];
+        yield 'interface of a PHP parent' => [new MembershipSpec(implements: ['Throwable'])];
+    }
+
+    #[Test]
+    #[DataProvider('provideCriteriaNamingAPhpAncestor')]
+    public function itMatchesACriterionNamingAPhpAncestor(MembershipSpec $membership): void
+    {
+        $registry = $this->registryFor($membership, [[self::CHILD, 'RuntimeException', DependencyType::Extends]]);
+
+        self::assertSame('web', $registry->resolveLayer($this->child()));
+    }
+
+    #[Test]
+    public function itDecidesAgainstAPhpClassThatIsNotInTheChain(): void
+    {
+        // The chain above `RuntimeException` is known to its root, so a PHP
+        // class outside it is a decided "no", not a doubt.
+        $registry = $this->registryFor(
+            new MembershipSpec(extends: ['LogicException']),
+            [[self::CHILD, 'RuntimeException', DependencyType::Extends]],
+        );
+
+        self::assertNull($registry->resolveLayer($this->child()));
+        self::assertSame([], $registry->undecidedLayers($this->child()));
+    }
+
+    #[Test]
+    public function itReachesAPhpInterfaceThroughAnAnalysedInterfaceExtendingOne(): void
+    {
+        $contract = 'App\\Web\\Listing';
+        $registry = $this->registryFor(
+            new MembershipSpec(implements: ['Traversable']),
+            [
+                [self::CHILD, $contract, DependencyType::Implements],
+                [$contract, 'IteratorAggregate', DependencyType::Extends],
+            ],
+            analysed: [self::CHILD, $contract],
+        );
+
+        self::assertSame('web', $registry->resolveLayer($this->child()));
+    }
+
+    #[Test]
+    public function itStillDoubtsImplementsWhenAnInterfaceLeavesTheAnalysedSet(): void
+    {
+        // The other half of the split: an unread vendor interface may extend
+        // the named one, so `implements` stays unanswered while `extends`
+        // beside it is decided.
+        $registry = $this->registryFor(
+            new MembershipSpec(implements: ['Vendor\\Contract\\Other']),
+            [[self::CHILD, 'Vendor\\Contract\\Thing', DependencyType::Implements]],
+        );
+
+        self::assertNull($registry->resolveLayer($this->child()));
+        self::assertSame(['web'], $registry->undecidedLayers($this->child()));
+    }
+
+    #[Test]
+    public function itDoubtsBothKindsWhenTheParentChainLeavesTheAnalysedSet(): void
+    {
+        // An unread parent may extend the named class and may implement the
+        // named interface, so a cut in the parent chain reaches both kinds.
+        foreach ([new MembershipSpec(extends: [self::BASE]), new MembershipSpec(implements: ['Vendor\\Lib\\Marker'])] as $membership) {
+            $registry = $this->registryFor($membership, [[self::CHILD, self::MIDDLE, DependencyType::Extends]]);
+
+            self::assertSame(['web'], $registry->undecidedLayers($this->child()));
+        }
+    }
+
+    #[Test]
+    public function itNamesWhereTheChainStopsOnlyBesideAnUnansweredLayer(): void
+    {
+        // An unread vendor interface is a cut, but not one `extends` reads:
+        // with every layer answered there is no boundary to report.
+        $answered = $this->registryFor(
+            new MembershipSpec(extends: [self::UNRELATED_BASE]),
+            [[self::CHILD, 'Vendor\\Contract\\Thing', DependencyType::Implements]],
+        );
+        self::assertSame([], $answered->chainStopsAt($this->child()));
+
+        $unanswered = $this->registryFor(
+            new MembershipSpec(extends: [self::BASE]),
+            [[self::CHILD, self::MIDDLE, DependencyType::Extends]],
+        );
+        self::assertSame([self::MIDDLE], $unanswered->chainStopsAt($this->child()));
+    }
+
+    /**
+     * @return iterable<string, array{0: MembershipSpec, 1: ?string}>
+     */
+    public static function provideCriteriaAboutAPhpClassAsAnEdgeEnd(): iterable
+    {
+        yield 'extends, miss' => [new MembershipSpec(extends: [self::UNRELATED_BASE]), null];
+        yield 'extends, hit' => [new MembershipSpec(extends: ['Exception']), 'web'];
+        yield 'implements, hit' => [new MembershipSpec(implements: ['Throwable']), 'web'];
+        yield 'attributes, miss' => [new MembershipSpec(attributes: ['Vendor\\Lib\\AsEntity']), null];
+    }
+
+    #[Test]
+    public function itReadsTheAttributesOfAPhpClassSeenOnlyAsAnEdgeEnd(): void
+    {
+        // `stdClass` carries `#[\AllowDynamicProperties]` in PHP's own
+        // declaration; an empty list would answer "no" about it.
+        $registry = $this->registryFor(
+            new MembershipSpec(attributes: ['AllowDynamicProperties']),
+            [[self::CHILD, 'stdClass', DependencyType::Extends]],
+        );
+
+        self::assertSame('web', $registry->resolveLayer(SymbolPath::fromClassFqn('stdClass')));
+    }
+
+    #[Test]
+    public function itReadsTheOwnInterfacesOfAPhpClassSeenOnlyAsAnEdgeEnd(): void
+    {
+        // `Exception` has no parent to inherit `Throwable` from: the interface
+        // is its own.
+        $registry = $this->registryFor(
+            new MembershipSpec(implements: ['Throwable']),
+            [[self::CHILD, 'Exception', DependencyType::Extends]],
+        );
+
+        self::assertSame('web', $registry->resolveLayer(SymbolPath::fromClassFqn('Exception')));
+    }
+
+    #[Test]
+    #[DataProvider('provideCriteriaAboutAPhpClassAsAnEdgeEnd')]
+    public function itDecidesACriterionAboutAPhpClassSeenOnlyAsAnEdgeEnd(MembershipSpec $membership, ?string $expected): void
+    {
+        // `RuntimeException` is never analysed — it is the far end of the
+        // child's `extends` edge — but PHP declares it, so its own supertypes
+        // and attributes are known rather than missing.
+        $registry = $this->registryFor($membership, [[self::CHILD, 'RuntimeException', DependencyType::Extends]]);
+        $subject = SymbolPath::fromClassFqn('RuntimeException');
+
+        self::assertSame($expected, $registry->resolveLayer($subject));
+        self::assertSame([], $registry->undecidedLayers($subject));
+    }
+
+    #[Test]
+    public function itTreatsAPhpClassThisRuntimeDoesNotLoadAsACut(): void
+    {
+        // The builtin list is fixed and does not depend on which extensions
+        // this PHP loads; a class it names that is not loaded here has a
+        // hierarchy nobody read, and the answer says so.
+        $unloaded = null;
+        foreach (['EnchantBroker', 'GMP', 'finfo', 'Collator', 'SNMP', 'tidy', 'XSLTProcessor'] as $candidate) {
+            if (!class_exists($candidate, false) && !interface_exists($candidate, false)) {
+                $unloaded = $candidate;
+
+                break;
+            }
+        }
+        if ($unloaded === null) {
+            self::markTestSkipped('Every candidate PHP class is loaded in this runtime.');
+        }
+
+        $registry = $this->registryFor(
+            new MembershipSpec(extends: [self::UNRELATED_BASE]),
+            [[self::CHILD, $unloaded, DependencyType::Extends]],
+        );
+
+        self::assertSame(['web'], $registry->undecidedLayers($this->child()));
+    }
+
     private function child(): SymbolPath
     {
         return SymbolPath::forClass(self::CHILD_NS, 'OrderController');
@@ -616,6 +857,11 @@ final class UndecidableMembershipTest extends TestCase
             }
 
             public function getAllDependencies(): array
+            {
+                return $this->deps;
+            }
+
+            public function getDeclarationDependencies(): array
             {
                 return $this->deps;
             }

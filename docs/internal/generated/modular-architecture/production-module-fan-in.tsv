@@ -249,7 +249,7 @@ Qualimetrix\Core\Symbol\FileDeclarationIndex	Core.Symbol	11	2
 Qualimetrix\Core\Symbol\LogicalClassPath	Core.Symbol	7	3
 Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	47	16
 Qualimetrix\Core\Symbol\MetricSubjectCodec	Core.Symbol	7	3
-Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	4	2
+Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	5	3
 Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	28	9
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	114	21
 Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	6	4

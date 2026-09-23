@@ -69,4 +69,9 @@ final class EmptyDependencyGraph implements DependencyGraphInterface
     {
         return [];
     }
+
+    public function getDeclarationDependencies(): array
+    {
+        return [];
+    }
 }

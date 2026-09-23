@@ -816,6 +816,7 @@ final class LayerAssignmentCommandTest extends TestCase
                 ],
             ],
             'undecided' => [],
+            'chainStopsAt' => [],
             'hasLayers' => true,
         ], $decoded);
     }
@@ -885,6 +886,7 @@ final class LayerAssignmentCommandTest extends TestCase
             'assigned' => null,
             'shadowed' => [],
             'undecided' => [],
+            'chainStopsAt' => [],
             'hasLayers' => true,
         ], $decoded);
     }
@@ -1003,10 +1005,14 @@ final class LayerAssignmentCommandTest extends TestCase
         self::assertStringContainsString('Assigned to: (undecided)', $output);
         self::assertStringContainsString('Could not be decided: web', $output);
         self::assertStringContainsString('outside the analysed paths', $output);
-        // A catch-all layer answers an unclassified class and does nothing at
-        // all for an unanswered one, so suggesting it here sends the reader to
-        // a change that cannot help.
+        self::assertStringContainsString('The chain stops at: Vendor\\Lib\\Middle', $output);
+        // A later layer, a catch-all included, would assign this class — an
+        // unanswered layer does not withdraw a later match — but only as a
+        // guess. Offering it as the cure for an unclassified class, or saying
+        // it cannot help, are both wrong here.
         self::assertStringNotContainsString("catch-all layer with pattern '**'", $output);
+        self::assertStringNotContainsString('will not cover', $output);
+        self::assertStringContainsString('guess', $output);
     }
 
     #[Test]
@@ -1053,6 +1059,33 @@ final class LayerAssignmentCommandTest extends TestCase
         $output = $tester->getDisplay();
         self::assertStringContainsString('Assigned to: catch-all', $output);
         self::assertStringContainsString('Could not be decided: web', $output);
+        self::assertStringContainsString('The chain stops at: Vendor\\Lib\\Middle', $output);
+    }
+
+    #[Test]
+    public function itShowsAnAssignmentWhoseExcludeCannotBeAnsweredWithItsDoubt(): void
+    {
+        // The positive pattern caught the class and the `exclude:` clause
+        // cannot be answered past the vendor parent. The class stays in the
+        // layer, and the report names the doubt about that same layer.
+        $sourcePath = $this->sourcePath();
+        $configPath = $this->tempDir . '/qmx-' . bin2hex(random_bytes(6)) . '.yaml';
+        file_put_contents($configPath, "paths: ['{$sourcePath}']\narchitecture:\n  layers:\n"
+            . "    - name: web\n      patterns: ['App\\Web\\**']\n      exclude:\n        extends: ['Vendor\\Lib\\Base']\n"
+            . "  allow:\n    web: []\n");
+        $this->declareClassExtending('App\\Web\\OrderController', 'Vendor\\Lib\\Middle');
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'App\\Web\\OrderController',
+            '--config' => $configPath,
+        ]);
+
+        self::assertSame(Command::SUCCESS, $exit);
+        $output = $tester->getDisplay();
+        self::assertStringContainsString('Assigned to: web', $output);
+        self::assertStringContainsString('Could not be decided: web', $output);
+        self::assertStringContainsString('The chain stops at: Vendor\\Lib\\Middle', $output);
     }
 
     #[Test]
@@ -1076,6 +1109,7 @@ final class LayerAssignmentCommandTest extends TestCase
         $decoded = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertNull($decoded['assigned']);
         self::assertSame(['web'], $decoded['undecided']);
+        self::assertSame(['Vendor\\Lib\\Middle'], $decoded['chainStopsAt']);
 
         $control = $this->newTester();
         $control->execute([
@@ -1086,6 +1120,7 @@ final class LayerAssignmentCommandTest extends TestCase
         $decodedControl = json_decode($control->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertNull($decodedControl['assigned']);
         self::assertSame([], $decodedControl['undecided']);
+        self::assertSame([], $decodedControl['chainStopsAt']);
     }
 
     /**

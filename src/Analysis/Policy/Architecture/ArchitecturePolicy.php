@@ -120,6 +120,7 @@ final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterfac
             ),
             !$configuration->isEmpty(),
             $configuration->registry()->undecidedLayers($subject),
+            $configuration->registry()->chainStopsAt($subject),
         );
     }
 

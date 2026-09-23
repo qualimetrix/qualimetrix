@@ -154,6 +154,15 @@ reads the replaced immutable definition token, mutates only
 `MetricRepositoryInterface`, owns the `computed` profiler span, and is a no-op
 when no files or definitions exist.
 
+Which absent keys a formula would read as `null` is one query,
+`ComputedMetricExpression::missingKeysOf()`, asked against three presence
+sets. `ComputedMetricFormulaValidator` asks it with every referenced computed
+metric present only at its own `levels:`, so a bare cross-level read is a
+configuration refusal before the run. The evaluator asks it with the union of
+keys the level carries (a miss is the same refusal, after measurement) and then
+per symbol (a miss publishes no value, counted in one warning per metric and
+level). The right side of `??` counts only where its left side is absent.
+
 ## Public contracts and named consumers
 
 - `ComputedMetricConfiguratorInterface` —

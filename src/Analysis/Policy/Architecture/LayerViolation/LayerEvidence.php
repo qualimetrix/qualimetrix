@@ -48,12 +48,13 @@ final readonly class LayerEvidence
      *                                                                         numerator and denominator `architecture.unassigned-class` reports. `classes` is empty
      *                                                                         when {@see LayerEvidenceCollector::materializesUncovered()} found no consumer for
      *                                                                         it. One field rather than two because neither half answers anything alone.
-     * @param array{sourceEdges: int, targetEdges: int, classes: array<string, string>, undecidable: array<string, string>} $coverageState
-     *                                                                                                                                     `undecidable` is the subset of `classes` that no layer claims because some layer's
-     *                                                                                                                                     criteria could not be answered about it at all — a chain that left the analysed set, or
-     *                                                                                                                                     a symbol seen only as the far end of an edge. It travels beside the count rather than
-     *                                                                                                                                     inside it, because subtracting it would hide the gap and folding it in would tell the
-     *                                                                                                                                     author to declare a layer that cannot help.
+     * @param array{sourceEdges: int, targetEdges: int, classes: array<string, string>, undecidable: array<string, string>, doubted: array<string, string>} $coverageState
+     *                                                                                                                                                                     `undecidable` is the subset of `classes` that no layer claims because some layer's
+     *                                                                                                                                                                     criteria could not be answered about it at all — a chain that left the analysed set, or
+     *                                                                                                                                                                     a symbol seen only as the far end of an edge. It travels beside the count rather than
+     *                                                                                                                                                                     inside it, because subtracting it would hide the gap and folding it in would hide that a
+     *                                                                                                                                                                     layer declared for it only guesses. `doubted` is disjoint from `classes`: symbols
+     *                                                                                                                                                                     that ARE assigned while a layer declared no later than their own went unanswered.
      */
     public function __construct(
         public ArchitectureConfiguration $architecture,

@@ -88,9 +88,9 @@ final readonly class DirectiveAddressability
     {
         $refusal = $suppression->refusal;
         if ($refusal !== null) {
-            // Worded by the refusal: these two are decided against the grammar
-            // of the tag, while every answer below is decided against the
-            // channels this run resolved.
+            // Worded by the refusal: these are decided against the grammar of
+            // the tag and the place it was written, while every answer below
+            // is decided against the channels this run resolved.
             return $refusal->describe($suppression->rule);
         }
 

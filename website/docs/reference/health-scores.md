@@ -303,6 +303,14 @@ This is not an exhaustive list — any metric collected by Qualimetrix can be re
 !!! warning "Unknown metric references"
     If a formula references a metric key that does not exist (e.g., a typo like `m["complexity.ccn.abg"]` instead of `m["complexity.ccn.avg"]`), Qualimetrix will report a clear error instead of silently returning zero. Always use the `??` operator to provide a default for metrics that may legitimately be absent: `(m["complexity.ccn.avg"] ?? 0)`.
 
+!!! warning "Metrics a level does not carry"
+    A formula runs at each of its `levels:`, and a key is judged at that level:
+
+    - **No symbol at the level carries the key**, and the formula reads it without `??` — a configuration error (exit code 3). This includes another computed metric read at a level missing from its own `levels:`: `computed.a` with `levels: [class]` cannot be read bare by a `project` formula, and the error says where `computed.a` is published. A `project` level that inherits the `namespace` formula is checked at `project`.
+    - **Some symbols carry the key and others do not** — the symbols without it get no value rather than a fabricated 0, and the run logs one warning per metric and level with the number of skipped symbols and the missing keys.
+
+    `m["a"] ?? m["b"]` reads `b` only where `a` is absent, so a symbol is skipped only when it carries neither. End the chain with a literal — `m["a"] ?? m["b"] ?? 0` — to give every symbol a value.
+
 ### Available Functions
 
 | Function                 | Description                                          |

@@ -20,6 +20,8 @@ use Throwable;
 
 class ComputedMetricEvaluator
 {
+    private const int SKIPPED_SYMBOL_SAMPLE = 5;
+
     private readonly ComputedMetricExpression $expression;
     private readonly ComputedMetricDependencyGraphCalculator $dependencyGraphCalculator;
 
@@ -74,24 +76,25 @@ class ComputedMetricEvaluator
 
         $this->validateFormulaVariables($repo, $definition, $level, $formula, $symbols);
 
-        $requiredKeys = $this->expression->requiredKeysOf($formula);
+        $skipped = [];
+        $missingKeys = [];
 
         foreach ($symbols as [$symbolPath, $file, $line]) {
             $metricBag = $repo->get($symbolPath);
-            $missing = $this->keysMissingFrom($metricBag, $requiredKeys);
+            // `get()` answers null exactly where `MetricLookup` would hand the
+            // formula null: a bag holds only `int|float`.
+            $missing = $this->expression->missingKeysOf(
+                $formula,
+                static fn(string $key): bool => $metricBag->get($key) !== null,
+            );
 
             if ($missing !== []) {
                 // The level carries the key somewhere; this symbol does not.
-                // Reading it unguarded would hand `null` to the arithmetic,
-                // which PHP coerces to 0 — a fabricated measurement that scores
-                // the symbol and can raise a finding. The formula asked for the
-                // key without `??`, so the honest answer is no value at all.
-                $this->logger->warning('Computed metric skipped a symbol that carries none of the metrics its formula requires', [
-                    'metric' => $definition->name,
-                    'symbol' => $symbolPath->toString(),
-                    'level' => $level->value,
-                    'missing' => implode(', ', $missing),
-                ]);
+                // Evaluating would hand `null` to the arithmetic, which PHP
+                // coerces to 0 — a fabricated measurement that scores the
+                // symbol and can raise a finding. The honest answer is no value.
+                $skipped[] = $symbolPath->toString();
+                $missingKeys = [...$missingKeys, ...$missing];
 
                 continue;
             }
@@ -133,14 +136,57 @@ class ComputedMetricEvaluator
 
             $repo->addScalar($symbolPath, $definition->name, $result);
         }
+
+        $this->reportSkipped($definition, $level, $skipped, $missingKeys);
     }
 
     /**
-     * Validates that all required formula variables exist in the metric repository.
+     * One line per metric and level: a formula that misses on most of a large
+     * project would otherwise print one line per symbol.
      *
-     * Keys guarded by null-coalescing (`??`) are intentionally optional and skipped.
-     * References to other computed metrics (`health.*`, `computed.*`) are validated
-     * separately by `ComputedMetricFormulaValidator` and also skipped here.
+     * @param list<string> $skipped
+     * @param list<string> $missingKeys
+     */
+    private function reportSkipped(
+        ComputedMetricDefinition $definition,
+        SymbolLevel $level,
+        array $skipped,
+        array $missingKeys,
+    ): void {
+        if ($skipped === []) {
+            return;
+        }
+
+        $this->logger->warning('Computed metric published no value for symbols lacking a metric its formula reads without a "??" fallback', [
+            'metric' => $definition->name,
+            'level' => $level->value,
+            'skipped' => \count($skipped),
+            'symbols' => self::sampleOf($skipped),
+            'missing' => implode(', ', array_values(array_unique($missingKeys))),
+        ]);
+    }
+
+    /** @param non-empty-list<string> $symbols */
+    private static function sampleOf(array $symbols): string
+    {
+        $sample = implode(', ', \array_slice($symbols, 0, self::SKIPPED_SYMBOL_SAMPLE));
+        $rest = \count($symbols) - self::SKIPPED_SYMBOL_SAMPLE;
+
+        return $rest > 0 ? \sprintf('%s (and %d more)', $sample, $rest) : $sample;
+    }
+
+    /**
+     * Refuses a formula that would read, unguarded, a metric no symbol at this
+     * level carries.
+     *
+     * Presence is the union over the level's symbols, so a key some symbol
+     * carries is left to the per-symbol skip. A read behind `??` counts only
+     * where the fallback is reached. A reference to another computed metric is
+     * judged by the same union: evaluation runs in dependency order, so it is
+     * already published wherever it will be. Configuration has refused a bare
+     * one read at a level it does not declare; what remains is a chain such as
+     * `m["computed.x"] ?? m["size.y"]`, whose measured link only a run can
+     * judge.
      *
      * @param list<array{SymbolPath, ?RelativePath, ?int}> $symbols
      *
@@ -162,9 +208,10 @@ class ComputedMetricEvaluator
             return;
         }
 
-        // Extract required variables (excluding null-coalescing-protected ones)
-        $requiredVars = $this->extractRequiredFormulaVariables($formula);
-        $unknownVars = $this->findUnknownVariables($requiredVars, $allKnownKeys);
+        $unknownVars = $this->expression->missingKeysOf(
+            $formula,
+            static fn(string $key): bool => isset($allKnownKeys[$key]),
+        );
 
         if ($unknownVars !== []) {
             // The same class of user mistake as a misspelled key, and refused
@@ -178,30 +225,6 @@ class ComputedMetricEvaluator
                 $formula,
             );
         }
-    }
-
-    /**
-     * The keys this formula needs present that this symbol does not carry.
-     *
-     * A `MetricBag` holds only `int|float`, so an absent key is the whole of
-     * what `get()` can answer `null` for, and it is the whole of what
-     * `MetricLookup` would hand the formula as `null`.
-     *
-     * @param list<string> $requiredKeys
-     *
-     * @return list<string>
-     */
-    private function keysMissingFrom(MetricBag $bag, array $requiredKeys): array
-    {
-        $missing = [];
-
-        foreach ($requiredKeys as $key) {
-            if ($bag->get($key) === null) {
-                $missing[] = $key;
-            }
-        }
-
-        return $missing;
     }
 
     /**
@@ -221,44 +244,6 @@ class ComputedMetricEvaluator
         }
 
         return $allKnownKeys;
-    }
-
-    /**
-     * Finds formula variables that are neither known metrics nor computed-metric references.
-     *
-     * @param list<string> $requiredVars
-     * @param array<string, true> $allKnownKeys
-     *
-     * @return list<string>
-     */
-    private function findUnknownVariables(array $requiredVars, array $allKnownKeys): array
-    {
-        $unknownVars = [];
-        foreach ($requiredVars as $key) {
-            // Skip computed metric references — validated by ComputedMetricFormulaValidator
-            if (str_starts_with($key, 'health.') || str_starts_with($key, 'computed.')) {
-                continue;
-            }
-
-            if (!isset($allKnownKeys[$key])) {
-                $unknownVars[] = $key;
-            }
-        }
-
-        return $unknownVars;
-    }
-
-    /**
-     * Extracts formula variables that are NOT protected by null-coalescing (`??`).
-     *
-     * Variables appearing only in `(var ?? fallback)` patterns are intentionally optional
-     * and should not trigger validation errors.
-     *
-     * @return list<string>
-     */
-    private function extractRequiredFormulaVariables(string $formula): array
-    {
-        return $this->expression->requiredKeysOf($formula);
     }
 
     /**

@@ -228,6 +228,7 @@ final class NamespaceFilterTest extends TestCase
             namespaceCouplings: NamespaceCouplings::none(),
             classCe: [],
             classCa: [],
+            declarationDependencies: [],
         );
     }
 }

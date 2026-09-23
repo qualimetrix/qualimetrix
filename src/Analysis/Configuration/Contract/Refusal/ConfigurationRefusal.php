@@ -29,9 +29,7 @@ use Throwable;
  * carried kind of exit code 3 that number counts the places the product refuses
  * bad input instead of accepting it. Splitting the kind to lower it would buy a
  * number and a second way to spell a refusal, which is what the single-kind
- * design exists to prevent. A `@qmx-threshold` raising the bound used to stand
- * here; `bin/qmx directives` now measures it as inert, so it is gone rather
- * than kept as a claim nothing checks.
+ * design exists to prevent.
  */
 final class ConfigurationRefusal extends RuntimeException
 {

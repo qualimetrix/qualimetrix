@@ -737,6 +737,10 @@ Run `bin/qmx check src/` after modifying metric collection or aggregation logic 
 
 **How to interpret findings:**
 - **Invariant test failure** (e.g., parent.sum ≠ Σ children): **Bug** — fix immediately, add regression test
+  - Not an instance: for `size.loc`/`size.lloc`/`size.cloc` the project level counts whole files and the
+    namespace level counts lines inside the `namespace` statement, so project `size.loc.sum` ≠ Σ namespaces
+    is two quantities, not a broken invariant. Within the namespace tree it holds: a namespace's
+    `size.loc.sum` = its own `size.loc` + its children's `size.loc.sum`.
 - **Golden file test failure after intentional algorithm change**: Update expected values in `tests/Analysis/Evidence/Measurement/Integration/Aggregation/GoldenFileAggregationTest.php` after verifying new values are correct
 - **Coupling findings** (high CBO, circular dependencies): **Architecture issue** — evaluate refactoring vs. threshold adjustment
 - **Complexity findings** (CCN > threshold): **Code quality signal** — normal for complex algorithms, investigate only if unexpected

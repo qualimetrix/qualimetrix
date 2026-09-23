@@ -77,8 +77,10 @@ final readonly class HealthCoverageNarrator
      * The whole statement as data, for a payload rather than a line of text.
      *
      * The two states carry the same keys so a consumer reads `state` instead of
-     * inferring absence from a zero, which is the shape `--format=json`
-     * publishes; the HTML payload carries the same one beside its scores.
+     * inferring absence from a zero: an undefined coverage and a coverage of
+     * nothing are different claims about the subject. `--format=json` and the
+     * HTML payload both publish this record, so a key added here reaches both;
+     * JSON sanitizes `ratio` at its own boundary.
      *
      * @return array{state: string, measured: ?int, eligible: ?int, ratio: ?float, unit: ?string, basis: ?string, reason: ?string}
      */

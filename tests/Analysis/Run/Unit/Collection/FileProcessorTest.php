@@ -47,15 +47,31 @@ final class FileProcessorTest extends TestCase
 {
     private FileParserInterface&Stub $parser;
 
+    /** A real project root: the processor reads the file it is handed. */
+    private string $root;
+
     protected function setUp(): void
     {
         $this->parser = self::createStub(FileParserInterface::class);
+        $root = sys_get_temp_dir() . '/qmx-file-processor-' . bin2hex(random_bytes(6));
+        mkdir($root, 0o755, true);
+        $this->root = (string) realpath($root);
+        file_put_contents($this->root . '/test.php', "<?php\n");
+    }
+
+    protected function tearDown(): void
+    {
+        $files = glob($this->root . '/*');
+        foreach ($files === false ? [] : $files as $file) {
+            unlink($file);
+        }
+        rmdir($this->root);
     }
 
     private function makeProcessor(CompositeCollector $collector): FileProcessor
     {
         $processor = new FileProcessor($this->parser, $collector, new SourceControlExtractor());
-        $processor->setProjectRoot(AbsolutePath::fromString('/tmp'));
+        $processor->setProjectRoot(AbsolutePath::fromString($this->root));
 
         return $processor;
     }
@@ -72,17 +88,17 @@ final class FileProcessorTest extends TestCase
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('projectRoot must be set');
 
-        $processor->process(new SplFileInfo('/tmp/test.php'));
+        $processor->process(new SplFileInfo($this->root . '/test.php'));
     }
 
     #[Test]
     public function itProcessesFileSuccessfully(): void
     {
-        $file = new SplFileInfo('/tmp/test.php');
+        $file = new SplFileInfo($this->root . '/test.php');
         $ast = [];
         $fileBag = MetricBag::fromArray(['size.loc' => 50]);
 
-        $this->parser->method('parse')->willReturn($ast);
+        $this->parser->method('parseContent')->willReturn($ast);
 
         $collector = $this->createMock(MetricCollectorInterface::class);
         $collector->method('provides')->willReturn(['size.loc']);
@@ -100,13 +116,60 @@ final class FileProcessorTest extends TestCase
         self::assertSame(50, $result->fileBag()->get('size.loc'));
     }
 
+    /**
+     * A comment between a declaration's attributes and the declaration
+     * reaches no node of the AST, so extraction finds it in the source — and
+     * that source has to be the bytes the AST was parsed from, not a second
+     * read of a file that may have changed in between.
+     */
+    #[Test]
+    public function itHandsTheParserAndTheExtractorTheSameBytes(): void
+    {
+        $source = "<?php\n#[\\Deprecated]\n/** @qmx-ignorr complexity.ccn */\nfunction run(): void {}\n";
+        file_put_contents($this->root . '/test.php', $source);
+        $parsed = [];
+        $this->parser->method('parseContent')->willReturnCallback(function (SplFileInfo $file, string $content) use (&$parsed): array {
+            $parsed[] = $content;
+
+            return $this->parseLiteral($content);
+        });
+
+        $result = $this->makeProcessor(new CompositeCollector([], new DeclarationRegistrarFactory()))
+            ->process(new SplFileInfo($this->root . '/test.php'));
+
+        self::assertSame([$source], $parsed);
+        self::assertTrue($result->isSuccessful());
+        self::assertCount(1, $result->suppressions());
+        self::assertSame(3, $result->suppressions()[0]->line);
+        self::assertNotNull($result->suppressions()[0]->refusal);
+    }
+
+    /**
+     * Extraction cannot run without the bytes, so a parser that answers for a
+     * file the processor could not read does not turn it into a file with no
+     * directives.
+     */
+    #[Test]
+    public function itFailsAFileItCouldNotReadEvenWhenTheParserAnswers(): void
+    {
+        $this->parser->method('parse')->willReturn([]);
+
+        $result = $this->makeProcessor(new CompositeCollector([], new DeclarationRegistrarFactory()))
+            ->process(new SplFileInfo($this->root . '/missing.php'));
+
+        self::assertFalse($result->isSuccessful());
+        self::assertSame(FileProcessingFailureKind::Parse, $result->failureKind());
+        self::assertSame('Failed to read file contents', $result->error());
+    }
+
     #[Test]
     public function itReturnsFailureOnParseException(): void
     {
-        $file = new SplFileInfo('/tmp/invalid.php');
+        file_put_contents($this->root . '/invalid.php', "<?php\nfunction (\n");
+        $file = new SplFileInfo($this->root . '/invalid.php');
 
-        $this->parser->method('parse')->willThrowException(
-            new ParseException(AbsolutePath::fromString('/tmp/invalid.php'), 'Syntax error'),
+        $this->parser->method('parseContent')->willThrowException(
+            new ParseException(AbsolutePath::fromString($this->root . '/invalid.php'), 'Syntax error'),
         );
 
         $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory());
@@ -123,11 +186,11 @@ final class FileProcessorTest extends TestCase
     #[Test]
     public function itExtractsMethodMetricsFromCollectors(): void
     {
-        $file = new SplFileInfo('/tmp/test.php');
+        $file = new SplFileInfo($this->root . '/test.php');
         $ast = $this->parseLiteral('<?php class Service { public function calculate(): void {} }');
         $method = $this->singleNode($ast, Node\Stmt\ClassMethod::class);
 
-        $this->parser->method('parse')->willReturn($ast);
+        $this->parser->method('parseContent')->willReturn($ast);
 
         $symbolPath = SymbolPath::forMethod('App', 'Service', 'calculate');
         $methodBag = MetricBag::fromArray(['complexity.ccn' => 5]);
@@ -158,11 +221,11 @@ final class FileProcessorTest extends TestCase
     #[Test]
     public function itExtractsClassMetricsFromCollectors(): void
     {
-        $file = new SplFileInfo('/tmp/test.php');
+        $file = new SplFileInfo($this->root . '/test.php');
         $ast = $this->parseLiteral('<?php class Service {}');
         $class = $this->singleNode($ast, Node\Stmt\Class_::class);
 
-        $this->parser->method('parse')->willReturn($ast);
+        $this->parser->method('parseContent')->willReturn($ast);
 
         $symbolPath = SymbolPath::forClass('App', 'Service');
         $classBag = MetricBag::fromArray(['complexity.wmc' => 25]);
@@ -190,8 +253,8 @@ final class FileProcessorTest extends TestCase
     #[Test]
     public function itExtractsNamespaceMetricsFromCollectors(): void
     {
-        $file = new SplFileInfo('/tmp/test.php');
-        $this->parser->method('parse')->willReturn([]);
+        $file = new SplFileInfo($this->root . '/test.php');
+        $this->parser->method('parseContent')->willReturn([]);
         $namespace = new NamespaceWithMetrics('App', 3, MetricBag::fromArray(['size.loc' => 8]));
         $collector = $this->createMockCollectorWithNamespaceMetrics([$namespace]);
 
@@ -205,10 +268,10 @@ final class FileProcessorTest extends TestCase
     #[Test]
     public function itCollectsDependenciesWithDependencyVisitor(): void
     {
-        $file = new SplFileInfo('/tmp/test.php');
+        $file = new SplFileInfo($this->root . '/test.php');
         $ast = [];
 
-        $this->parser->method('parse')->willReturn($ast);
+        $this->parser->method('parseContent')->willReturn($ast);
 
         // Use real DependencyVisitor with DependencyResolver
         $dependencyResolver = new DependencyResolver();
@@ -227,11 +290,11 @@ final class FileProcessorTest extends TestCase
     #[Test]
     public function itPreservesClosuresWithDeclarationIdentity(): void
     {
-        $file = new SplFileInfo('/tmp/test.php');
+        $file = new SplFileInfo($this->root . '/test.php');
         $ast = $this->parseLiteral('<?php $value = function (): void {};');
         $closure = $this->singleNode($ast, Node\Expr\Closure::class);
 
-        $this->parser->method('parse')->willReturn($ast);
+        $this->parser->method('parseContent')->willReturn($ast);
 
         $closurePath = SymbolPath::forGlobalFunction('', '{closure:0}');
         $methodWithMetrics = new CallableWithMetrics(
@@ -258,10 +321,10 @@ final class FileProcessorTest extends TestCase
     #[Test]
     public function itPreservesCallableSourceLineWhenCollectorPayloadsMerge(): void
     {
-        $file = new SplFileInfo('/tmp/test.php');
+        $file = new SplFileInfo($this->root . '/test.php');
         $ast = $this->parseLiteral('<?php class Service { public function run(): void {} }');
         $method = $this->singleNode($ast, Node\Stmt\ClassMethod::class);
-        $this->parser->method('parse')->willReturn($ast);
+        $this->parser->method('parseContent')->willReturn($ast);
 
         $symbol = SymbolPath::forMethod('App', 'Service', 'run');
         $declaration = DeclarationPath::of($symbol, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
@@ -304,7 +367,7 @@ final class FileProcessorTest extends TestCase
     #[Test]
     public function itExtractsSuppressionsFromExpressionNodes(): void
     {
-        $file = new SplFileInfo('/tmp/test.php');
+        $file = new SplFileInfo($this->root . '/test.php');
 
         // Build AST: a class with a method containing an Expression with a docblock
         $docComment = new Doc(
@@ -322,7 +385,7 @@ final class FileProcessorTest extends TestCase
         $class = new Node\Stmt\Class_('MyClass', ['stmts' => [$method]], ['startLine' => 5, 'endLine' => 13]);
         $namespace = new Node\Stmt\Namespace_(new Node\Name('App'), [$class], ['startLine' => 1, 'endLine' => 14]);
 
-        $this->parser->method('parse')->willReturn([$namespace]);
+        $this->parser->method('parseContent')->willReturn([$namespace]);
 
         $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory());
 
@@ -342,7 +405,7 @@ final class FileProcessorTest extends TestCase
     #[Test]
     public function itCollectsClassAndNestedMethodThresholdOverrides(): void
     {
-        $file = new SplFileInfo('/tmp/test.php');
+        $file = new SplFileInfo($this->root . '/test.php');
 
         $method = new Node\Stmt\ClassMethod('run', attributes: [
             'startLine' => 10,
@@ -368,7 +431,7 @@ final class FileProcessorTest extends TestCase
             endLine: 4,
         ));
 
-        $this->parser->method('parse')->willReturn([$class]);
+        $this->parser->method('parseContent')->willReturn([$class]);
 
         $classPath = DeclarationPath::of(SymbolPath::forClass('', 'MyClass'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
         $class = new ClassWithMetrics(
@@ -695,7 +758,7 @@ final class FileProcessorTest extends TestCase
      */
     private function processLiteralAst(array $ast, array $classes = [], array $callables = []): \Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult
     {
-        $this->parser->method('parse')->willReturn($ast);
+        $this->parser->method('parseContent')->willReturn($ast);
         $collectors = [];
         if ($classes !== []) {
             $collectors[] = $this->createMockCollectorWithClassMetrics($classes);
@@ -704,7 +767,7 @@ final class FileProcessorTest extends TestCase
             $collectors[] = $this->createMockCollectorWithMethodMetrics($callables);
         }
 
-        return $this->makeProcessor(new CompositeCollector($collectors, new DeclarationRegistrarFactory()))->process(new SplFileInfo('/tmp/test.php'));
+        return $this->makeProcessor(new CompositeCollector($collectors, new DeclarationRegistrarFactory()))->process(new SplFileInfo($this->root . '/test.php'));
     }
 
     /**

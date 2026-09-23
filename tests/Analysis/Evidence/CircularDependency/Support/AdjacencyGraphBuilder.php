@@ -223,6 +223,18 @@ final readonly class AdjacencyGraphBuilder
             {
                 return $this->dependencies;
             }
+
+            public function getDeclarationDependencies(): array
+            {
+                return array_values(array_filter(
+                    $this->dependencies,
+                    static fn(Dependency $dependency): bool => \in_array(
+                        $dependency->type,
+                        [DependencyType::Extends, DependencyType::Implements, DependencyType::TraitUse, DependencyType::Attribute],
+                        true,
+                    ),
+                ));
+            }
         };
     }
 }

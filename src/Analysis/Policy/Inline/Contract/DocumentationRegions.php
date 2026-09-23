@@ -22,8 +22,17 @@ namespace Qualimetrix\Analysis\Policy\Inline\Contract;
  * directive under it disappears. Both outcomes are silent — the first silences
  * a channel nobody asked to silence, the second loses an annotation before any
  * part of the tool can report on it. An inline region therefore opens and
- * closes within one line, and a backtick with no partner on its line is an
- * ordinary character.
+ * closes within one line.
+ *
+ * Within the line the same failure had one form left: backticks paired left
+ * to right, so a stray one earlier on the line took the quote's opening
+ * backtick as its partner and the quoted tag came out live. A backtick written
+ * **directly before a tag** is therefore always an opening one, paired with
+ * the next backtick on the line; the others pair left to right among
+ * themselves, and one left without a partner is an ordinary character. The
+ * rule errs towards quoting, and that direction is the loud one: a tag
+ * wrongly taken as quoted leaves its finding reported, while a tag wrongly
+ * taken as written silences one.
  *
  * The multi-line form of quoting is a fenced block, recognised as itself rather
  * than as three inline regions that happen to pair up.
@@ -36,6 +45,8 @@ namespace Qualimetrix\Analysis\Policy\Inline\Contract;
 final readonly class DocumentationRegions
 {
     private const string FENCE = '```';
+
+    private const string TAG_PREFIX = '@qmx-';
 
     /** Blanks every quoted region, preserving the length and the line structure of the text. */
     public static function mask(string $text): string
@@ -69,21 +80,43 @@ final readonly class DocumentationRegions
 
     /**
      * Pairs the backticks of one line and blanks each pair with what it
-     * encloses. An odd one out is left alone: it quotes nothing, because
-     * nothing on this line closes it.
+     * encloses: first every backtick standing directly before a tag with the
+     * backtick after it, then the rest left to right. An odd one out is left
+     * alone: it quotes nothing, because nothing on this line closes it.
      */
     private static function maskInlineRegions(string $line): string
     {
-        $positions = self::backtickPositions($line);
-        $paired = intdiv(\count($positions), 2) * 2;
-
-        for ($i = 0; $i < $paired; $i += 2) {
-            $start = $positions[$i];
-            $length = $positions[$i + 1] - $start + 1;
+        foreach (self::pairs($line) as [$start, $end]) {
+            $length = $end - $start + 1;
             $line = substr_replace($line, str_repeat(' ', $length), $start, $length);
         }
 
         return $line;
+    }
+
+    /** @return list<array{int, int}> */
+    private static function pairs(string $line): array
+    {
+        $positions = self::backtickPositions($line);
+        $pairs = [];
+        $rest = [];
+
+        for ($i = 0, $count = \count($positions); $i < $count; ++$i) {
+            if ($i + 1 < $count && substr_compare($line, self::TAG_PREFIX, $positions[$i] + 1, \strlen(self::TAG_PREFIX)) === 0) {
+                $pairs[] = [$positions[$i], $positions[$i + 1]];
+                ++$i;
+
+                continue;
+            }
+
+            $rest[] = $positions[$i];
+        }
+
+        for ($i = 0, $last = \count($rest) - 1; $i < $last; $i += 2) {
+            $pairs[] = [$rest[$i], $rest[$i + 1]];
+        }
+
+        return $pairs;
     }
 
     /** @return list<int> */

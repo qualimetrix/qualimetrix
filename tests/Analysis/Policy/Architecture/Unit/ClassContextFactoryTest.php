@@ -319,6 +319,11 @@ final class ClassContextFactoryTest extends TestCase
             {
                 return $this->deps;
             }
+
+            public function getDeclarationDependencies(): array
+            {
+                return $this->deps;
+            }
         };
     }
 }

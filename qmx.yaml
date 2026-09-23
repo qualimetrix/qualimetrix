@@ -636,6 +636,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipResult'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\PatternScope'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Layer\PhpClassHierarchy'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition'
     - name: analysis-policy-baseline
       patterns:
@@ -738,11 +739,13 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule'
         - 'Qualimetrix\Analysis\Policy\Inline\Extraction\DeclarationControlBindings'
         - 'Qualimetrix\Analysis\Policy\Inline\Extraction\SourceControlExtractor'
+        - 'Qualimetrix\Analysis\Policy\Inline\Extraction\UnattachedComments'
         - 'Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter'
         - 'Qualimetrix\Analysis\Policy\Inline\ThresholdOverrideExtractionResult'
     - name: analysis-run
       patterns:
         - 'Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator'
+        - 'Qualimetrix\Analysis\Run\Collection\CollectionPhaseFold'
         - 'Qualimetrix\Analysis\Run\Collection\FileProcessor'
         - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage'
         - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeMeasurement'

@@ -1,6 +1,6 @@
 {
   "version": 13,
-  "generated": "2026-09-22T14:44:50+00:00",
+  "generated": "2026-09-23T08:00:55+00:00",
   "scope": ["src"],
   "entries": {
     "declaration:callable:Qualimetrix\\Analysis\\Configuration\\Contract\\Discovery\\ComposerAutoloadPathReaderInterface::extractAutoloadPaths@src/Analysis/Configuration/Contract/Discovery/ComposerAutoloadPathReaderInterface.php": [
@@ -166,11 +166,6 @@
     ],
     "declaration:callable:Qualimetrix\\Analysis\\Policy\\Baseline\\V5BaselineReader::readForMigration@src/Analysis/Policy/Baseline/V5BaselineReader.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"02e3476d01dac100","count":1}
-    ],
-    "declaration:callable:Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\ThresholdOverrideExtractor::extractWithDiagnostics@src/Analysis/Policy/Inline/Contract/ThresholdOverrideExtractor.php": [
-      {"channel":"complexity.ccn","magnitudes":[13]},
-      {"channel":"complexity.cognitive","magnitudes":[24]},
-      {"channel":"complexity.npath","magnitudes":[200]}
     ],
     "declaration:callable:Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline::__construct@src/Analysis/Run/Pipeline/AnalysisPipeline.php": [
       {"channel":"code-smell.constructor-overinjection","magnitudes":[10]}
@@ -469,9 +464,6 @@
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Size": [
       {"channel":"size.class-count","magnitudes":[15]}
-    ],
-    "ns:Qualimetrix\\Analysis\\Run\\Collection": [
-      {"channel":"health.maintainability","magnitudes":[49.4]}
     ],
     "ns:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass": [
       {"channel":"health.maintainability","magnitudes":[28.7]}

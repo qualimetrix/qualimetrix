@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Contract;
 
+use Closure;
 use LogicException;
 use PhpParser\Comment;
 use PhpParser\Comment\Doc;
@@ -79,19 +80,23 @@ final readonly class SuppressionExtractor
      * the tags below extraction judge the directives they are handed, so a
      * misspelling that never becomes one is invisible to all of them.
      *
+     * The argument is captured under the same two guards the grammars carry,
+     * so a tag with nothing on its own line after it is told apart from a tag
+     * whose name is wrong.
+     *
      * A letter is required after the prefix so that prose about the family
      * ("the @qmx- tags") is not read as a tag of its own.
      */
     private const PATTERN_ANY_TAG = '/@qmx-([a-zA-Z][\w-]*)(?:[^\S\n\r]+(?!\*+\/)([\w.*#:-]+))?/';
+
+    /** The one family this class does not read; {@see ThresholdOverrideExtractor} does. */
+    private const string THRESHOLD_TAG_NAME = 'threshold';
 
     /**
      * Public so that the one place deciding which nodes to read can ask for
      * the family by name instead of spelling the prefix a second time.
      */
     public const string TAG_PREFIX = '@qmx-';
-
-    /** The one family this class does not answer for; {@see ThresholdOverrideExtractor} reads it. */
-    private const string THRESHOLD_TAG = '@qmx-threshold';
 
     private const MODE_FULL = 'full';
     private const MODE_PHYSICAL = 'physical';
@@ -100,11 +105,20 @@ final readonly class SuppressionExtractor
     /**
      * Extracts suppression tags from node's docblock and regular comments.
      *
+     * `$thresholdRead` answers whether {@see ThresholdOverrideExtractor} carried
+     * the `@qmx-threshold` tag at an offset of a comment — as an override or
+     * as a diagnostic. That family is read there, not here, and only a tag the
+     * other reader answered for is left to it: every other one — in a line or
+     * block comment, over a node no threshold binds to, or with no rule on its
+     * line — is refused here, because nothing else would ever say so.
+     *
+     * @param Closure(Comment, int): bool $thresholdRead
+     *
      * @return list<Suppression>
      */
-    public function extract(Node $node, MetricSubject $subject, ControlScope $controlScope): array
+    public function extract(Node $node, MetricSubject $subject, ControlScope $controlScope, Closure $thresholdRead): array
     {
-        return $this->extractNode($node, $subject, $controlScope, self::MODE_FULL);
+        return $this->extractNode($node, $subject, $controlScope, self::MODE_FULL, $thresholdRead);
     }
 
     /**
@@ -118,11 +132,13 @@ final readonly class SuppressionExtractor
      * it. Throwing instead cost the whole file — the processing failure took
      * every metric and every finding in it down with the annotation.
      *
+     * @param Closure(Comment, int): bool $thresholdRead see {@see self::extract()}
+     *
      * @return list<Suppression>
      */
-    public function extractPhysical(Node $node): array
+    public function extractPhysical(Node $node, Closure $thresholdRead): array
     {
-        return $this->extractNode($node, null, null, self::MODE_PHYSICAL);
+        return $this->extractNode($node, null, null, self::MODE_PHYSICAL, $thresholdRead);
     }
 
     /**
@@ -132,13 +148,14 @@ final readonly class SuppressionExtractor
      */
     public function extractFileLevelSuppressions(Node $node): array
     {
-        return $this->extractNode($node, null, null, self::MODE_FILE_ONLY);
+        return $this->extractNode($node, null, null, self::MODE_FILE_ONLY, static fn(): bool => true);
     }
 
     /**
      * Extracts suppressions from a comment text block.
      *
      * @param 'full'|'physical'|'file-only' $mode
+     * @param Closure(Comment, int): bool $thresholdRead
      *
      * @return list<Suppression>
      */
@@ -147,6 +164,7 @@ final readonly class SuppressionExtractor
         ?MetricSubject $subject,
         ?ControlScope $controlScope,
         string $mode,
+        Closure $thresholdRead,
     ): array {
         $suppressions = [];
         $nodeEndLine = $node->getEndLine() > 0 ? $node->getEndLine() : null;
@@ -173,7 +191,7 @@ final readonly class SuppressionExtractor
             }
 
             if ($mode !== self::MODE_FILE_ONLY) {
-                array_push($suppressions, ...self::unreadableForms($text, $read, $comment->getStartLine()));
+                array_push($suppressions, ...self::unreadableForms($comment, $text, $read, $thresholdRead));
             }
         }
 
@@ -238,7 +256,7 @@ final readonly class SuppressionExtractor
     }
 
     /**
-     * The `@qmx-` tags in this comment that no grammar above read.
+     * The `@qmx-` tags in this comment that no grammar read.
      *
      * The line is computed from the tag's own offset rather than from the
      * comment's, because a refusal an author cannot find on the line it names
@@ -246,11 +264,13 @@ final readonly class SuppressionExtractor
      * {@see DocumentationRegions} blanks quoted prose in place, every offset
      * still addresses the character that was written.
      *
+     * @param string $text the comment with its quoted regions blanked
      * @param list<int> $read offsets the three grammars consumed
+     * @param Closure(Comment, int): bool $thresholdRead
      *
      * @return list<Suppression>
      */
-    private static function unreadableForms(string $text, array $read, int $startLine): array
+    private static function unreadableForms(Comment $comment, string $text, array $read, Closure $thresholdRead): array
     {
         if (preg_match_all(self::PATTERN_ANY_TAG, $text, $matches, \PREG_SET_ORDER | \PREG_OFFSET_CAPTURE) <= 0) {
             return [];
@@ -260,18 +280,26 @@ final readonly class SuppressionExtractor
 
         foreach ($matches as $match) {
             $offset = $match[0][1];
-            $form = $match[1][0];
+            $tag = $match[1][0];
+            $argument = $match[2][0] ?? '';
 
-            if (\in_array($offset, $read, true) || self::TAG_PREFIX . $form === self::THRESHOLD_TAG) {
+            if (\in_array($offset, $read, true)) {
+                continue;
+            }
+
+            $isThreshold = $tag === self::THRESHOLD_TAG_NAME;
+            if ($isThreshold && $thresholdRead($comment, $offset)) {
                 continue;
             }
 
             $refused[] = new Suppression(
-                rule: $match[2][0] ?? '',
+                rule: $argument,
                 reason: null,
-                line: self::lineAtOffset($text, $startLine, $offset),
+                line: self::lineAtOffset($text, $comment->getStartLine(), $offset),
                 type: SuppressionType::Symbol,
-                refusal: DirectiveRefusal::formNotRecognised($form),
+                refusal: $isThreshold && !$comment instanceof Doc
+                    ? DirectiveRefusal::thresholdOutsideDocblock()
+                    : DirectiveRefusal::ofUnreadTag($tag, $argument),
             );
         }
 

@@ -468,6 +468,102 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertNotNull($this->findByName($result, 'computed.derived'));
     }
 
+    /**
+     * A computed metric exists only at the levels it declares. A formula at
+     * another level reading it without `??` finds it on no symbol, so the
+     * metric it defines would be published nowhere: the same mistake as a base
+     * key no symbol at the level carries, refused by the same class.
+     */
+    #[Test]
+    public function itRefusesAnUnguardedReadOfAComputedMetricNotPublishedAtTheFormulasLevel(): void
+    {
+        try {
+            $this->resolver->resolve([
+                'computed.cls-only' => ['formula' => 'm["size.method-count"] + 1', 'levels' => ['class']],
+                'computed.proj-reads' => ['formula' => 'm["computed.cls-only"] + 1', 'levels' => ['project']],
+            ]);
+            self::fail('A cross-level unguarded read must be refused');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString(
+                'Computed metric "computed.proj-reads" reads "computed.cls-only" at level "project",'
+                . ' where it is not published (published at: class)',
+                $refusal->getMessage(),
+            );
+            self::assertStringContainsString('Formula: m["computed.cls-only"] + 1', $refusal->getMessage());
+        }
+    }
+
+    /**
+     * `project` inherits the `namespace` formula; the inherited formula is read
+     * at `project` and is refused there, not only where it is spelled.
+     */
+    #[Test]
+    public function itRefusesAnInheritedProjectFormulaReadingAMetricPublishedOnlyAtNamespaceLevel(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('reads "computed.ns-only" at level "project", where it is not published (published at: namespace)');
+
+        $this->resolver->resolve([
+            'computed.ns-only' => ['formula' => 'm["size.loc"] + 1', 'levels' => ['namespace']],
+            'computed.reader' => [
+                'formulas' => ['namespace' => 'm["computed.ns-only"] * 2'],
+                'levels' => ['namespace', 'project'],
+            ],
+        ]);
+    }
+
+    /** Per-level formulas are judged each at its own level. */
+    #[Test]
+    public function itRefusesOnlyTheLevelWhoseOwnFormulaReadsAnUnpublishedMetric(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('reads "computed.cls-only" at level "namespace"');
+
+        $this->resolver->resolve([
+            'computed.cls-only' => ['formula' => 'm["size.method-count"] + 1', 'levels' => ['class']],
+            'computed.reader' => [
+                'formulas' => [
+                    'class' => 'm["computed.cls-only"] * 2',
+                    'namespace' => 'm["computed.cls-only"] * 3',
+                    'project' => 'm["computed.cls-only"] ?? 0',
+                ],
+                'levels' => ['class', 'namespace', 'project'],
+            ],
+        ]);
+    }
+
+    /**
+     * The legitimate forms next to the refused one: a guarded read, per-level
+     * formulas that read the metric only where it is published, and a fallback
+     * whose left side is published at the level (the right side is then never
+     * read).
+     */
+    #[Test]
+    public function itAcceptsACrossLevelReadThatIsGuardedOrNeverReached(): void
+    {
+        $result = $this->resolver->resolve([
+            'computed.cls-only' => ['formula' => 'm["size.method-count"] + 1', 'levels' => ['class']],
+            'computed.everywhere' => ['formula' => '1', 'levels' => ['class', 'namespace', 'project']],
+            'computed.guarded' => ['formula' => 'm["computed.cls-only"] ?? 0', 'levels' => ['project']],
+            'computed.per-level' => [
+                'formulas' => ['class' => 'm["computed.cls-only"] * 2', 'project' => '(m["computed.cls-only"] ?? 0) + 1'],
+                'levels' => ['class', 'project'],
+            ],
+            'computed.left-published' => [
+                'formula' => 'm["computed.everywhere"] ?? m["computed.cls-only"]',
+                'levels' => ['project'],
+            ],
+            'computed.falls-through' => [
+                'formula' => 'm["computed.cls-only"] ?? m["computed.everywhere"]',
+                'levels' => ['project'],
+            ],
+        ]);
+
+        foreach (['computed.guarded', 'computed.per-level', 'computed.left-published', 'computed.falls-through'] as $name) {
+            self::assertNotNull($this->findByName($result, $name), $name);
+        }
+    }
+
     #[Test]
     public function itAcceptsAKnownAggregationSuffixOnACatalogKey(): void
     {

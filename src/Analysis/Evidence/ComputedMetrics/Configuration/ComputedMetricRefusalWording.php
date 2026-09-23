@@ -190,6 +190,38 @@ final class ComputedMetricRefusalWording
         );
     }
 
+    /**
+     * A formula reading another computed metric at a level that metric does
+     * not declare — the key is spelled right and exists, so the sentence names
+     * where it IS published rather than sending the reader after a typo.
+     *
+     * @param non-empty-array<string, list<string>> $publishedAt reference => the levels it declares
+     */
+    public static function readsComputedMetricNotPublishedAtLevel(
+        string $metricName,
+        array $publishedAt,
+        string $level,
+        string $formula,
+    ): string {
+        $single = \count($publishedAt) === 1;
+        $where = [];
+        foreach ($publishedAt as $reference => $levels) {
+            $where[] = ($single ? '' : \sprintf('"%s": ', $reference)) . implode(', ', $levels);
+        }
+
+        return \sprintf(
+            'Computed metric "%s" reads %s at level "%s", where %s not published (published at: %s).'
+            . ' Guard the read with "?? <fallback>", or declare level "%s" on the metric it reads. Formula: %s',
+            $metricName,
+            implode(', ', array_map(static fn(string $key): string => \sprintf('"%s"', $key), array_keys($publishedAt))),
+            $level,
+            $single ? 'it is' : 'they are',
+            implode('; ', $where),
+            $level,
+            $formula,
+        );
+    }
+
     public static function referencesUnknownMetricKey(string $metricName, string $key, string $formula): string
     {
         return \sprintf(

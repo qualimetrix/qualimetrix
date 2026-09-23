@@ -21,10 +21,17 @@ final readonly class LayerAssignment
      *                                      alongside it means the assignment
      *                                      stands but an earlier-declared layer
      *                                      went unanswered.
+     * @param list<string> $chainStopsAt Where the subject's inheritance
+     *                                   chain stopped because the run did not
+     *                                   read the declaration there: the
+     *                                   boundary a reader would move to answer
+     *                                   {@see $undecidedLayers}. Reported only
+     *                                   beside a non-empty list there.
      */
     public function __construct(
         public array $matches,
         public bool $hasLayers,
         public array $undecidedLayers = [],
+        public array $chainStopsAt = [],
     ) {}
 }

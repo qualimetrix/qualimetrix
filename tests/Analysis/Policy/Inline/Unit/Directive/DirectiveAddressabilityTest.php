@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
@@ -208,6 +209,65 @@ final class DirectiveAddressabilityTest extends TestCase
         self::assertIsString($problem);
         self::assertStringContainsString('@qmx-ignore-lines complexity.ccn', $problem);
         self::assertStringContainsString('is not a tag this tool reads', $problem);
+    }
+
+    /**
+     * A tag this tool reads, written without its argument, used to be told
+     * that it is not a tag this tool reads — and the sentence then listed it.
+     *
+     * @param non-empty-string $form
+     * @param non-empty-string $authored
+     * @param non-empty-string $missing
+     */
+    #[Test]
+    #[DataProvider('provideTagsWithNoTarget')]
+    public function itAnswersForAKnownTagThatNamesNoTarget(string $form, string $authored, string $missing): void
+    {
+        $problem = self::addressability()->problemWithSuppression(new Suppression(
+            '',
+            null,
+            1,
+            SuppressionType::Symbol,
+            refusal: DirectiveRefusal::namesNoTarget($form),
+        ));
+
+        self::assertIsString($problem);
+        self::assertStringContainsString(\sprintf('"%s" names no %s', $authored, $missing), $problem);
+        self::assertStringNotContainsString('not a tag this tool reads', $problem);
+    }
+
+    /** @return iterable<string, array{non-empty-string, non-empty-string, non-empty-string}> */
+    public static function provideTagsWithNoTarget(): iterable
+    {
+        yield 'declaration form' => [SuppressionType::Symbol->value, '@qmx-ignore', 'channel'];
+        yield 'next-line form' => [SuppressionType::NextLine->value, '@qmx-ignore-next-line', 'channel'];
+        yield 'threshold' => [DirectiveRefusal::THRESHOLD_FORM, '@qmx-threshold', 'rule'];
+    }
+
+    /** The threshold refusals name the tag that was written and the docblock it belongs in. */
+    #[Test]
+    public function itAnswersForAThresholdInTheWrongPlaceInItsOwnWords(): void
+    {
+        $unbound = self::addressability()->problemWithSuppression(new Suppression(
+            'complexity.ccn',
+            null,
+            1,
+            SuppressionType::Symbol,
+            refusal: DirectiveRefusal::thresholdWithNoDeclarationToBind(),
+        ));
+        $outsideDocblock = self::addressability()->problemWithSuppression(new Suppression(
+            'complexity.ccn',
+            null,
+            1,
+            SuppressionType::Symbol,
+            refusal: DirectiveRefusal::thresholdOutsideDocblock(),
+        ));
+
+        self::assertIsString($unbound);
+        self::assertStringContainsString('"@qmx-threshold complexity.ccn" is written where no declaration', $unbound);
+        self::assertStringNotContainsString('@qmx-ignore-next-line', $unbound);
+        self::assertIsString($outsideDocblock);
+        self::assertStringContainsString('"@qmx-threshold complexity.ccn" is written in a line or block comment', $outsideDocblock);
     }
 
     #[Test]

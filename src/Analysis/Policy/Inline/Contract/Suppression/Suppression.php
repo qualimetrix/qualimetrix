@@ -62,6 +62,29 @@ final readonly class Suppression
         $this->target = SuppressionTarget::fromAnnotation($rule);
     }
 
+    /**
+     * The form a report prints this directive under: its type, or for a
+     * refused directive the form the refusal names — every refusal shares
+     * one type, and two of them on one line are still two directives.
+     */
+    public function form(): string
+    {
+        return $this->refusal->form ?? $this->type->value;
+    }
+
+    /**
+     * One authored directive, whatever it was bound to: the key every reader
+     * that counts directives rather than bindings groups by.
+     *
+     * The refusal reason is part of it because one form can be refused for
+     * two reasons on one line — an unbound declaration form and the same tag
+     * with no channel — and each is a mistake of its own.
+     */
+    public function authoredSite(): string
+    {
+        return implode("\0", [(string) $this->line, $this->form(), $this->rule, $this->refusal->reason->value ?? '']);
+    }
+
     /** What this directive filters on — a channel selector, or nothing at all. */
     public function target(): SuppressionTarget
     {

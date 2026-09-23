@@ -103,6 +103,7 @@ final class DependencyGraphProjectorTest extends TestCase
             namespaceCouplings: NamespaceCouplings::none(),
             classCe: [],
             classCa: [],
+            declarationDependencies: [],
         );
     }
 }

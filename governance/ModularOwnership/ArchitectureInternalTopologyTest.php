@@ -97,6 +97,7 @@ final class ArchitectureInternalTopologyTest extends TestCase
         'Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipResult',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\PatternScope',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\PhpClassHierarchy',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition',
     ];
 

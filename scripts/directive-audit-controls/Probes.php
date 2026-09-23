@@ -858,8 +858,8 @@ final class Probes
                 "the product's own target class stops admitting the separators it captures in order to refuse",
                 self::EXTRACTOR,
                 [
-                    "'/@qmx-threshold\\s+([\\w.*#:-]+)(?:[ \\t]+([^\\n\\r]*))?/'"
-                    => "'/@qmx-threshold\\s+([\\w.-]+)(?:[ \\t]+([^\\n\\r]*))?/'",
+                    "'/@qmx-threshold[^\\S\\n\\r]+(?!\\*+\\/)([\\w.*#:-]+)(?:[ \\t]+([^\\n\\r]*))?/'"
+                    => "'/@qmx-threshold[^\\S\\n\\r]+(?!\\*+\\/)([\\w.-]+)(?:[ \\t]+([^\\n\\r]*))?/'",
                 ],
                 ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "star"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "hash"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "colon"'],
             )->alsoReddens(
@@ -873,8 +873,8 @@ final class Probes
                 "the product's own target class stops admitting digits, underscores and capitals",
                 self::EXTRACTOR,
                 [
-                    "'/@qmx-threshold\\s+([\\w.*#:-]+)(?:[ \\t]+([^\\n\\r]*))?/'"
-                    => "'/@qmx-threshold\\s+([a-z.*#:-]+)(?:[ \\t]+([^\\n\\r]*))?/'",
+                    "'/@qmx-threshold[^\\S\\n\\r]+(?!\\*+\\/)([\\w.*#:-]+)(?:[ \\t]+([^\\n\\r]*))?/'"
+                    => "'/@qmx-threshold[^\\S\\n\\r]+(?!\\*+\\/)([a-z.*#:-]+)(?:[ \\t]+([^\\n\\r]*))?/'",
                 ],
                 ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "digit"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "underscore"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "capital"'],
             )->alsoReddens(

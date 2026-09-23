@@ -43,6 +43,14 @@ final readonly class ThresholdOverrideExtractor
      *                  separator)
      * Capture group 2: threshold values (rest of line)
      *
+     * The rule stands on the tag's own line and may not begin with the
+     * comment's closing delimiter, for the reason the suppression grammars
+     * give: with a separator that crossed a line break, a tag written with
+     * nothing after it read the next line's leading asterisk — or the
+     * delimiter — as the rule `*`, and was reported as a directive its author
+     * never wrote. Such a tag is not read here; the suppression sweep refuses
+     * it as one that names no rule.
+     *
      * `#` and `:` are admitted so that the retired `rule#code` spelling and a
      * `channel:level` pair — which a threshold never addresses, ADR 0024 §2 —
      * are *captured* and then refused by name
@@ -51,7 +59,7 @@ final readonly class ThresholdOverrideExtractor
      * left half, which is the one outcome worse than either a match or a
      * refusal.
      */
-    private const PATTERN = '/@qmx-threshold\s+([\w.*#:-]+)(?:[ \t]+([^\n\r]*))?/';
+    private const PATTERN = '/@qmx-threshold[^\S\n\r]+(?!\*+\/)([\w.*#:-]+)(?:[ \t]+([^\n\r]*))?/';
 
     /**
      * @param array<string, OverrideValidatorInterface> $validators rule name => validator strategy
@@ -80,16 +88,20 @@ final readonly class ThresholdOverrideExtractor
         MetricSubject $subject,
         ControlScope $controlScope,
     ): ThresholdOverrideExtractionResult {
-        $overrides = [];
-        $diagnostics = [];
+        $read = ['overrides' => [], 'diagnostics' => [], 'overrideTags' => [], 'diagnosticTags' => []];
         /** @var array<string, true> $seenRules track rule patterns to detect duplicates */
         $seenRules = [];
 
         foreach (self::docblocksOf($node) as $docComment) {
-            $this->readDocblock($docComment, $node, $subject, $controlScope, $overrides, $diagnostics, $seenRules);
+            $this->readDocblock($docComment, $node, $subject, $controlScope, $read, $seenRules);
         }
 
-        return new ThresholdOverrideExtractionResult($overrides, $diagnostics);
+        return new ThresholdOverrideExtractionResult(
+            $read['overrides'],
+            $read['diagnostics'],
+            $read['overrideTags'],
+            $read['diagnosticTags'],
+        );
     }
 
     /**
@@ -99,7 +111,9 @@ final readonly class ThresholdOverrideExtractor
      * the first of two adjacent docblocks — an annotation added beside a
      * generated block, a description left behind by a rewrite — was read by
      * nothing at all. A threshold is still a docblock form: line and block
-     * comments are deliberately not searched.
+     * comments are not searched here, and the tags written in them are
+     * refused by the suppression sweep instead, since this reader never
+     * reports them as carried.
      *
      * @return list<Doc>
      */
@@ -121,8 +135,12 @@ final readonly class ThresholdOverrideExtractor
      * `$seenRules` is threaded through every block, because two annotations of
      * one rule are the same mistake whether or not the author split them.
      *
-     * @param list<ThresholdOverride> $overrides
-     * @param list<ThresholdDiagnostic> $diagnostics
+     * @param array{
+     *     overrides: list<ThresholdOverride>,
+     *     diagnostics: list<ThresholdDiagnostic>,
+     *     overrideTags: list<array{Doc, int}>,
+     *     diagnosticTags: list<array{Doc, int}>,
+     * } $read
      * @param array<string, true> $seenRules
      */
     private function readDocblock(
@@ -130,8 +148,7 @@ final readonly class ThresholdOverrideExtractor
         Node $node,
         MetricSubject $subject,
         ControlScope $controlScope,
-        array &$overrides,
-        array &$diagnostics,
+        array &$read,
         array &$seenRules,
     ): void {
         $text = DocumentationRegions::mask($docComment->getText());
@@ -156,7 +173,8 @@ final readonly class ThresholdOverrideExtractor
 
             $problem = $this->problemWith($rulePattern, $valueString, $parsed, $line, $subject, $seenRules);
             if ($problem !== null) {
-                $diagnostics[] = $problem;
+                $read['diagnostics'][] = $problem;
+                $read['diagnosticTags'][] = [$docComment, $match[0][1]];
 
                 continue;
             }
@@ -164,7 +182,8 @@ final readonly class ThresholdOverrideExtractor
             $seenRules[$rulePattern] = true;
             [$warning, $error] = $parsed ?? [null, null];
 
-            $overrides[] = new ThresholdOverride(
+            $read['overrideTags'][] = [$docComment, $match[0][1]];
+            $read['overrides'][] = new ThresholdOverride(
                 rulePattern: $rulePattern,
                 warning: $warning,
                 error: $error,

@@ -10486,6 +10486,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\PhpClassHierarchy": {
+      "path": "src/Analysis/Policy/Architecture/Layer/PhpClassHierarchy.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\TemplateLayerDefinition": {
       "path": "src/Analysis/Policy/Architecture/Layer/TemplateLayerDefinition.php",
       "kind": "class",
@@ -11507,6 +11514,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\UnattachedComments": {
+      "path": "src/Analysis/Policy/Inline/Extraction/UnattachedComments.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Policy\\Inline\\Suppression\\SuppressionFilter": {
       "path": "src/Analysis/Policy/Inline/Suppression/SuppressionFilter.php",
       "kind": "class",
@@ -11523,6 +11537,13 @@
     },
     "Qualimetrix\\Analysis\\Run\\Collection\\CollectionOrchestrator": {
       "path": "src/Analysis/Run/Collection/CollectionOrchestrator.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Run\\Collection\\CollectionPhaseFold": {
+      "path": "src/Analysis/Run/Collection/CollectionPhaseFold.php",
       "kind": "class",
       "owner": "Analysis.Run",
       "visibility": "internal",
@@ -13863,6 +13884,10 @@
         {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthResolver"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\PhpClassHierarchy"
         }
       ]
     },

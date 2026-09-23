@@ -89,6 +89,12 @@ final class EmptyDependencyGraphTest extends TestCase
         self::assertSame([], $this->graph->getAllDependencies());
     }
 
+    #[Test]
+    public function itGetDeclarationDependenciesReturnsEmptyArray(): void
+    {
+        self::assertSame([], $this->graph->getDeclarationDependencies());
+    }
+
     /**
      * The roll-call, read off the contract rather than restated here: every
      * method the graph promises answers emptily, so a method added to the

@@ -331,6 +331,33 @@ final class DirectiveUsageTest extends TestCase
         self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
     }
 
+    /**
+     * Two refusals of different tags naming one channel on one line are two
+     * mistakes, and the author has to fix both. The authored-site key named
+     * the type, which every refusal shares, instead of the form it was
+     * written as — so the store kept one and the report judged one.
+     */
+    #[Test]
+    public function itKeepsTwoRefusalsOfDifferentFormsOnOneLineApart(): void
+    {
+        $directives = [self::FILE => [
+            new Suppression(self::CHANNEL, null, 3, SuppressionType::Symbol, refusal: DirectiveRefusal::formNotRecognised('ignore-lines')),
+            new Suppression(self::CHANNEL, null, 3, SuppressionType::Symbol, refusal: DirectiveRefusal::formNotRecognised('ignore-lins')),
+            new Suppression(self::CHANNEL, null, 3, SuppressionType::Symbol, refusal: DirectiveRefusal::noDeclarationToBind()),
+        ]];
+
+        $policy = new InlineDirectivePolicy(self::usage());
+        $policy->prepare($directives, [], []);
+        $judged = array_map(
+            static fn(DirectiveVerdict $verdict): string => $verdict->site->form,
+            self::usage()->verdicts($directives, [], LevelActivity::empty()),
+        );
+        sort($judged);
+
+        self::assertCount(3, $policy->authoredSuppressions()[self::FILE]);
+        self::assertSame(['ignore-lines', 'ignore-lins', 'symbol'], $judged);
+    }
+
     /** @return array<string, list<Suppression>> */
     private static function fileDirective(string $authored): array
     {

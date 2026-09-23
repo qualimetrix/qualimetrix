@@ -111,6 +111,39 @@ final class DocumentationRegionsTest extends TestCase
     }
 
     /**
+     * Pairing left to right within a line still let a stray backtick earlier
+     * on the same line take the quote's opening backtick as its partner, and
+     * the quoted tag came out live — a silent suppression when the channel it
+     * names exists. A backtick written directly before a tag is the author
+     * quoting it, so it opens a region whatever stands before it.
+     */
+    #[Test]
+    public function itQuotesATagWhoseOpeningBacktickFollowsAStrayOneOnTheSameLine(): void
+    {
+        $masked = DocumentationRegions::mask("     * Don't put ` in names; quote the tag as `" . self::TAG . '` instead.');
+
+        self::assertStringNotContainsString('@qmx-ignore', $masked);
+    }
+
+    /**
+     * The legitimate neighbours of the rule above: a tag no backtick stands
+     * directly before is written, not quoted, whatever quoting surrounds it
+     * on its line — and an opening backtick nothing closes quotes nothing.
+     */
+    #[Test]
+    public function itReadsATagThatNoBacktickStandsDirectlyBefore(): void
+    {
+        foreach ([
+            '     * ' . self::TAG . ' -- keep `code` in the reason',
+            '     * See `this` first; ' . self::TAG . ' -- written after quoted prose',
+            '     * A stray ` then ' . self::TAG . ' -- written after an unpaired backtick',
+            '     * `' . self::TAG . ' -- an opening backtick nothing closes',
+        ] as $line) {
+            self::assertStringContainsString(self::TAG, DocumentationRegions::mask($line), $line);
+        }
+    }
+
+    /**
      * Blanking rather than deleting is what lets a caller report the line a tag
      * was written on: every offset in the result still addresses the character
      * the author wrote.

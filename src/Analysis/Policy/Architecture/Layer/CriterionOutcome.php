@@ -11,7 +11,8 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
  * The third case used to be spelled as the second. `extends` and `implements`
  * are answered from the transitive closure {@see ClassContextFactory} walks
  * over the run's declaration edges, and that walk stops wherever the next link
- * was not analysed — a vendor class, or anything outside `paths:`. An empty
+ * was not analysed — a vendor class, or anything outside `paths:`; a class PHP
+ * itself declares is not such a link, its supertypes being known. An empty
  * parent set then reads exactly like "this class has no parents", so a chain
  * whose middle link left the analysed set produced a confident non-match. The
  * same holds for a subject the run never analysed at all: a dependency-edge

@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -97,6 +98,64 @@ final class DependencyGraphBuilderTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsADeclarationEdgeToAPhpTypeForDeclarationReadersOnly(): void
+    {
+        $implementsPhp = self::dependency('App\Domain\Snapshot', 'JsonSerializable', DependencyType::Implements);
+        $attributePhp = self::dependency('App\Domain\Tagged', 'AllowDynamicProperties', DependencyType::Attribute);
+        $extendsPhp = self::dependency('App\Domain\Failure', 'Exception', DependencyType::Extends);
+        $implementsUser = self::dependency('App\Domain\Snapshot', 'App\Contract\Marker', DependencyType::Implements);
+        $typeHint = self::dependency('App\Domain\Snapshot', 'App\Infra\Db', DependencyType::TypeHint);
+        $newPhp = self::dependency('App\Domain\Tagged', 'ArrayObject', DependencyType::New_);
+        $universe = [
+            self::logical('App\Domain\Snapshot'),
+            self::logical('App\Domain\Tagged'),
+            self::logical('App\Domain\Failure'),
+            self::logical('App\Infra\Db'),
+        ];
+
+        $graph = (new DependencyGraphBuilder())->build(
+            [$implementsPhp, $typeHint, $attributePhp, $newPhp, $extendsPhp, $implementsUser],
+            $universe,
+        );
+
+        self::assertSame([$implementsPhp, $attributePhp, $extendsPhp, $implementsUser], $graph->getDeclarationDependencies());
+        self::assertSame([$typeHint, $extendsPhp, $implementsUser], $graph->getAllDependencies());
+    }
+
+    /**
+     * What coupling reads must be exactly what it read before the declaration
+     * view existed: the same graph built without the two PHP-typed
+     * declaration edges answers every coupling query the same way.
+     */
+    #[Test]
+    public function itLeavesEveryCouplingViewAsItWasWithoutThePhpTypedDeclarationEdges(): void
+    {
+        $implementsPhp = self::dependency('App\Domain\Snapshot', 'JsonSerializable', DependencyType::Implements);
+        $attributePhp = self::dependency('App\Domain\Tagged', 'AllowDynamicProperties', DependencyType::Attribute);
+        $rest = [
+            self::dependency('App\Domain\Snapshot', 'App\Infra\Db', DependencyType::TypeHint),
+            self::dependency('App\Domain\Tagged', 'App\Infra\Db', DependencyType::New_),
+            self::dependency('App\Domain\Failure', 'Exception', DependencyType::Extends),
+            self::dependency('App\Infra\Db', 'App\Domain\Tagged', DependencyType::StaticCall),
+        ];
+        $universe = [
+            self::logical('App\Domain\Snapshot'),
+            self::logical('App\Domain\Tagged'),
+            self::logical('App\Domain\Failure'),
+            self::logical('App\Infra\Db'),
+        ];
+
+        $with = (new DependencyGraphBuilder())->build([$implementsPhp, ...$rest, $attributePhp], $universe);
+        $without = (new DependencyGraphBuilder())->build($rest, $universe);
+
+        self::assertSame(self::couplingViews($without), self::couplingViews($with));
+        self::assertSame(1, $with->getClassCe(SymbolPath::fromClassFqn('App\Domain\Snapshot')));
+        self::assertSame(1, $with->getClassCe(SymbolPath::fromClassFqn('App\Domain\Tagged')));
+        self::assertSame(0, $with->getClassCa(SymbolPath::fromClassFqn('JsonSerializable')));
+        self::assertSame(1, $with->getClassCa(SymbolPath::fromClassFqn('App\Domain\Tagged')));
+    }
+
+    #[Test]
     public function itDeduplicatesClassAndNamespaceCouplingEndpoints(): void
     {
         $dependency = self::dependency('App\Service', 'Vendor\Contract', DependencyType::TypeHint);
@@ -149,6 +208,42 @@ final class DependencyGraphBuilderTest extends TestCase
         self::assertSame(1, $graph->getNamespaceCa(SymbolPath::forNamespace('Vendor')));
         self::assertSame(2, $graph->getNamespaceCe(SymbolPath::forNamespace('App\One')));
         self::assertSame(2, $graph->getNamespaceCa(SymbolPath::forNamespace('App\Two')));
+    }
+
+    /**
+     * Every coupling-facing answer of the graph, over every class and
+     * namespace it knows plus the PHP types it must not know.
+     *
+     * @return array<string, mixed>
+     */
+    private static function couplingViews(DependencyGraphInterface $graph): array
+    {
+        $views = [
+            'dependencies' => self::dependencyFields($graph->getAllDependencies()),
+            'classes' => self::canonicalPaths($graph->getAllClasses()),
+            'namespaces' => self::canonicalPaths($graph->getAllNamespaces()),
+        ];
+
+        $classes = [...$graph->getAllClasses(), SymbolPath::fromClassFqn('JsonSerializable'), SymbolPath::fromClassFqn('AllowDynamicProperties')];
+        foreach ($classes as $class) {
+            $views[$class->toCanonical()] = [
+                self::dependencyFields($graph->getClassDependencies($class)),
+                self::dependencyFields($graph->getClassDependents($class)),
+                $graph->getClassCe($class),
+                $graph->getClassCa($class),
+            ];
+        }
+
+        foreach ($graph->getAllNamespaces() as $namespace) {
+            $views[$namespace->toCanonical()] = [
+                $graph->getNamespaceCe($namespace),
+                $graph->getNamespaceCa($namespace),
+                $graph->getNamespaceOwnCe($namespace),
+                $graph->getNamespaceOwnCa($namespace),
+            ];
+        }
+
+        return $views;
     }
 
     private static function logical(string $class): LogicalClassPath

@@ -209,7 +209,7 @@ final class DirectiveUsage
                         site: new DirectiveSite(
                             file: RelativePath::fromString($file),
                             line: $directive->line,
-                            form: $directive->refusal->form ?? $directive->type->value,
+                            form: $directive->form(),
                             target: (string) $directive->target(),
                         ),
                         effect: $effect,
@@ -241,7 +241,7 @@ final class DirectiveUsage
         $groups = [];
 
         foreach ($suppressions as $suppression) {
-            $groups[$suppression->line . "\0" . $suppression->type->value . "\0" . $suppression->rule][] = $suppression;
+            $groups[$suppression->authoredSite()][] = $suppression;
         }
 
         return array_values($groups);
@@ -325,8 +325,8 @@ final class DirectiveUsage
         $suppression = $group[0];
         if ($suppression->refusal !== null) {
             // Asked before the target, because a refused directive has no
-            // usable one: the tag was unreadable, or it was written where
-            // nothing binds. `check` has already said so on this line, and the
+            // usable one: the tag was unreadable or incomplete, or it was
+            // written where nothing reads it. `check` has already said so on this line, and the
             // audit repeating it as `inert` would tell the author to delete an
             // annotation on the strength of a question nobody could ask.
             return DirectiveUnmeasurableReason::AlreadyRefused;

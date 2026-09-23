@@ -385,6 +385,7 @@ final class JsonGraphExporterTest extends TestCase
             NamespaceCouplings::none(),
             [],
             [],
+            DependencyGraph::declarationsAmong($dependencies),
         );
     }
 }

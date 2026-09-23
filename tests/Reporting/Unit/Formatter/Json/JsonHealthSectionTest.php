@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\CoverageUnit;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage;
@@ -226,5 +227,60 @@ final class JsonHealthSectionTest extends TestCase
         self::assertArrayHasKey('cohesion', $result);
         self::assertSame(80.0, $result['complexity']['score']);
         self::assertSame(55.0, $result['cohesion']['score']);
+    }
+
+    /**
+     * The coverage record is the one the HTML payload carries too; this pins
+     * what `--format=json` publishes from it, in both states, key for key.
+     */
+    #[Test]
+    public function itPublishesCoverageWithTheSameKeysInBothStates(): void
+    {
+        $scores = [
+            'coupling' => new HealthScore(
+                name: 'coupling',
+                score: 51.0,
+                label: 'Fair',
+                warningThreshold: 50.0,
+                errorThreshold: 25.0,
+                coverage: HealthCoverage::over(166, 168, CoverageUnit::DeclaringNamespaces, 'coupling.distance-own.count'),
+            ),
+            'typing' => new HealthScore(
+                name: 'typing',
+                score: 99.0,
+                label: 'Excellent',
+                warningThreshold: 80.0,
+                errorThreshold: 50.0,
+                coverage: HealthCoverage::notApplicable('no .count is published'),
+            ),
+        ];
+
+        $result = $this->section->format($this->buildReport($scores), new FormatterContext());
+
+        self::assertNotNull($result);
+        self::assertSame(
+            [
+                'state' => 'measured',
+                'measured' => 166,
+                'eligible' => 168,
+                'ratio' => 166 / 168,
+                'unit' => 'namespaces declaring a type',
+                'basis' => 'coupling.distance-own.count',
+                'reason' => null,
+            ],
+            $result['coupling']['coverage'],
+        );
+        self::assertSame(
+            [
+                'state' => 'not-applicable',
+                'measured' => null,
+                'eligible' => null,
+                'ratio' => null,
+                'unit' => null,
+                'basis' => null,
+                'reason' => 'no .count is published',
+            ],
+            $result['typing']['coverage'],
+        );
     }
 }

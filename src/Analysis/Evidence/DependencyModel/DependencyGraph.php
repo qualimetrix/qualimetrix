@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Evidence\DependencyModel;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
@@ -27,6 +28,9 @@ final class DependencyGraph implements DependencyGraphInterface
      * @param array<SymbolPath> $namespaces All unique namespace SymbolPaths
      * @param array<string, int> $classCe Precomputed efferent coupling per class (canonical key -> count)
      * @param array<string, int> $classCa Precomputed afferent coupling per class (canonical key -> count)
+     * @param list<Dependency> $declarationDependencies The declaration edges, including those to PHP's own
+     *                                                  classes. Not derived from `$dependencies`: those have
+     *                                                  already lost every such edge but `extends`
      */
     public function __construct(
         private readonly array $dependencies,
@@ -37,7 +41,24 @@ final class DependencyGraph implements DependencyGraphInterface
         private readonly NamespaceCouplings $namespaceCouplings,
         private readonly array $classCe,
         private readonly array $classCa,
+        private readonly array $declarationDependencies,
     ) {}
+
+    /**
+     * @param array<Dependency> $dependencies
+     *
+     * @return list<Dependency>
+     */
+    public static function declarationsAmong(array $dependencies): array
+    {
+        return array_values(array_filter(
+            $dependencies,
+            static fn(Dependency $dependency): bool => match ($dependency->type) {
+                DependencyType::Extends, DependencyType::Implements, DependencyType::TraitUse, DependencyType::Attribute => true,
+                default => false,
+            },
+        ));
+    }
 
     public function getClassDependencies(SymbolPath $class): array
     {
@@ -92,5 +113,10 @@ final class DependencyGraph implements DependencyGraphInterface
     public function getAllDependencies(): array
     {
         return $this->dependencies;
+    }
+
+    public function getDeclarationDependencies(): array
+    {
+        return $this->declarationDependencies;
     }
 }

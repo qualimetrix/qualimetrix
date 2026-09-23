@@ -33,8 +33,8 @@ use Symfony\Component\ExpressionLanguage\SyntaxError;
  * shapes its author thought of; the parser already knows all of them.
  *
  * Reading the tree also settles what a regular expression could only approximate:
- * a key is required unless EVERY one of its occurrences sits under a `??`, and
- * that is a fact about occurrences, not about names.
+ * whether a formula needs a key is a fact about where each read sits relative to
+ * `??`, and about which other keys are present — never about the name alone.
  */
 final class ComputedMetricExpression
 {
@@ -145,16 +145,10 @@ final class ComputedMetricExpression
             : null;
     }
 
-    /**
-     * Whether `??` guards this access, i.e. it is the LEFT side of one.
-     *
-     * Both sides of `a ?? b` share a parent, so asking only about the parent
-     * marks `b` guarded too — and `b` is read exactly when `a` is absent, which
-     * is the one case that makes it required.
-     */
-    private static function isGuardedBy(?Node $parent, Node $node): bool
+    /** Whether a key names another computed metric rather than a measured one. */
+    public static function isComputedReference(string $key): bool
     {
-        return $parent instanceof NullCoalesceNode && ($parent->nodes['expr1'] ?? null) === $node;
+        return str_starts_with($key, 'health.') || str_starts_with($key, 'computed.');
     }
 
     /**
@@ -166,7 +160,7 @@ final class ComputedMetricExpression
     {
         $keys = [];
 
-        foreach ($this->accesses($formula) as [$key, $guarded]) {
+        foreach ($this->accesses($formula) as $key) {
             $keys[$key] = true;
         }
 
@@ -174,22 +168,89 @@ final class ComputedMetricExpression
     }
 
     /**
-     * The keys a formula needs present: those with at least one occurrence not
-     * guarded by `??`.
+     * The absent keys this formula would read as `null` where it cannot use
+     * one: in arithmetic, a function argument, or as the formula's own value.
+     * Empty means the formula is computable from what is present.
      *
-     * @return list<string>
+     * Not a fixed list of "required" keys: `m["a"] ?? m["b"]` needs one of the
+     * two, and which one depends on what is present — `b` is read only where
+     * `a` is absent. A flat list either demands `b` where `a` answers, or
+     * demands neither and lets two absent keys reach the arithmetic as 0.
+     *
+     * @param callable(string): bool $isPresent
+     *
+     * @return list<string> in order of first appearance
      */
-    public function requiredKeysOf(string $formula): array
+    public function missingKeysOf(string $formula, callable $isPresent): array
     {
-        $required = [];
+        try {
+            $root = $this->parse($formula)->getNodes();
+        } catch (SyntaxError) {
+            return [];
+        }
 
-        foreach ($this->accesses($formula) as [$key, $guarded]) {
-            if (!$guarded) {
-                $required[$key] = true;
+        [$consumed, $value] = self::absentReads($root, $isPresent);
+
+        return array_values(array_unique([...$consumed, ...$value]));
+    }
+
+    /**
+     * Absent reads under a node, split by where their `null` goes.
+     *
+     * The second list holds the reads whose `null` becomes the node's own
+     * value, which an enclosing `??` can still catch; the first holds those
+     * already consumed by an operator or a function, which nothing can.
+     *
+     * @param callable(string): bool $isPresent
+     *
+     * @return array{0: list<string>, 1: list<string>}
+     */
+    private static function absentReads(Node $node, callable $isPresent): array
+    {
+        $key = self::keyReadFrom($node);
+
+        if ($key !== null) {
+            return [[], $isPresent($key) ? [] : [$key]];
+        }
+
+        if ($node instanceof NullCoalesceNode) {
+            return self::absentReadsOfFallback($node, $isPresent);
+        }
+
+        $consumed = [];
+
+        foreach ($node->nodes as $child) {
+            if ($child instanceof Node) {
+                [$childConsumed, $childValue] = self::absentReads($child, $isPresent);
+                $consumed = [...$consumed, ...$childConsumed, ...$childValue];
             }
         }
 
-        return array_keys($required);
+        return [$consumed, []];
+    }
+
+    /**
+     * @param callable(string): bool $isPresent
+     *
+     * @return array{0: list<string>, 1: list<string>}
+     */
+    private static function absentReadsOfFallback(NullCoalesceNode $node, callable $isPresent): array
+    {
+        $left = $node->nodes['expr1'];
+        [$consumed, $value] = self::absentReads($left, $isPresent);
+
+        // Only a read or another `??` says here whether it is null. Any
+        // other left side might be — a ternary, `max()` of two nulls — so
+        // the right side is taken as read: it cannot be decided, and
+        // demanding a key is the side that fabricates nothing.
+        if ($value === [] && (self::keyReadFrom($left) !== null || $left instanceof NullCoalesceNode)) {
+            return [$consumed, []];
+        }
+
+        [$rightConsumed, $rightValue] = self::absentReads($node->nodes['expr2'], $isPresent);
+
+        // Null only when both sides are; then both sides' keys are why.
+        return [[...$consumed, ...$rightConsumed], $rightValue === [] ? [] : [...$value, ...$rightValue]];
     }
 
     /**
@@ -201,14 +262,14 @@ final class ComputedMetricExpression
     {
         return array_values(array_filter(
             $this->keysOf($formula),
-            static fn(string $key): bool => str_starts_with($key, 'health.') || str_starts_with($key, 'computed.'),
+            self::isComputedReference(...),
         ));
     }
 
     /**
-     * Every `m["key"]` in the formula, with whether that occurrence is guarded.
+     * Every `m["key"]` in the formula, in order.
      *
-     * @return list<array{0: string, 1: bool}>
+     * @return list<string>
      */
     private function accesses(string $formula): array
     {
@@ -220,14 +281,12 @@ final class ComputedMetricExpression
 
         $accesses = [];
 
-        foreach (self::walk($nodes) as [$node, $parent]) {
+        foreach (self::walk($nodes) as [$node]) {
             $key = self::keyReadFrom($node);
 
-            if ($key === null) {
-                continue;
+            if ($key !== null) {
+                $accesses[] = $key;
             }
-
-            $accesses[] = [$key, self::isGuardedBy($parent, $node)];
         }
 
         return $accesses;
@@ -236,8 +295,8 @@ final class ComputedMetricExpression
     /**
      * The tree, flattened into (node, its parent) pairs.
      *
-     * The parent is what says whether an access is guarded and whether a `m`
-     * is an index base, so it travels with the node rather than being looked up.
+     * The parent is what says whether a `m` is an index base, so it travels
+     * with the node rather than being looked up.
      *
      * @return list<array{0: Node, 1: ?Node}>
      */

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Unit;
 
+use Closure;
 use PhpParser\Comment;
 use PhpParser\Comment\Doc;
 use PhpParser\Node\Stmt\Class_;
@@ -911,7 +912,8 @@ final class SuppressionExtractorTest extends TestCase
         // A channel is the one thing this form cannot leave out, so the tag is
         // refused where it stands instead of silencing nothing in silence.
         self::assertCount(1, $suppressions);
-        self::assertSame(DirectiveRefusalReason::FormNotRecognised, $suppressions[0]->refusal?->reason);
+        self::assertSame(DirectiveRefusalReason::NamesNoTarget, $suppressions[0]->refusal?->reason);
+        self::assertSame(SuppressionType::Symbol->value, $suppressions[0]->refusal->form);
         self::assertSame(10, $suppressions[0]->line);
         self::assertFalse($suppressions[0]->matches('complexity', null));
     }
@@ -1031,7 +1033,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo');
         $node->setDocComment(new Doc('/** @qmx-ignore complexity */', 1, 1));
 
-        $suppressions = $this->extractor->extractPhysical($node);
+        $suppressions = $this->extractor->extractPhysical($node, self::thresholdReadElsewhere(...));
 
         // It used to throw, and the exception was not contained: the file
         // failed to process, so one misplaced annotation cost every metric and
@@ -1053,7 +1055,7 @@ final class SuppressionExtractorTest extends TestCase
             endLine: 13,
         ));
 
-        $suppressions = $this->extractor->extractPhysical($node);
+        $suppressions = $this->extractor->extractPhysical($node, self::thresholdReadElsewhere(...));
 
         self::assertSame([SuppressionType::File, SuppressionType::NextLine], array_map(
             static fn($suppression): SuppressionType => $suppression->type,
@@ -1256,6 +1258,30 @@ final class SuppressionExtractorTest extends TestCase
         self::assertEmpty($this->extract($node));
     }
 
+    /**
+     * A threshold tag the other reader did not answer for is this sweep's to
+     * refuse, or it is answered by nobody. The carrier decides the wording.
+     */
+    #[Test]
+    public function itRefusesAThresholdTagTheThresholdReaderDidNotCarry(): void
+    {
+        $inADocblock = new Class_('Foo', [], ['startLine' => 20, 'endLine' => 40]);
+        $inADocblock->setDocComment(new Doc('/** @qmx-threshold complexity.ccn 15 */', 10, 10));
+        $inALineComment = new Class_('Foo', [], ['startLine' => 20, 'endLine' => 40]);
+        $inALineComment->setAttribute('comments', [new Comment('// @qmx-threshold complexity.ccn 15', 10, 10)]);
+        $carriedNothing = static fn(): bool => false;
+
+        $docblock = $this->extract($inADocblock, $carriedNothing);
+        $lineComment = $this->extract($inALineComment, $carriedNothing);
+
+        self::assertCount(1, $docblock);
+        self::assertSame(DirectiveRefusalReason::NoDeclarationToBind, $docblock[0]->refusal?->reason);
+        self::assertSame('threshold', $docblock[0]->refusal->form);
+        self::assertSame('complexity.ccn', $docblock[0]->rule);
+        self::assertCount(1, $lineComment);
+        self::assertSame(DirectiveRefusalReason::ThresholdOutsideDocblock, $lineComment[0]->refusal?->reason);
+    }
+
     #[Test]
     public function itRefusesAMisspelledThresholdTag(): void
     {
@@ -1315,8 +1341,9 @@ final class SuppressionExtractorTest extends TestCase
         $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions, $text);
-        self::assertSame(DirectiveRefusalReason::FormNotRecognised, $suppressions[0]->refusal?->reason, $text);
+        self::assertSame(DirectiveRefusalReason::NamesNoTarget, $suppressions[0]->refusal?->reason, $text);
         self::assertSame('@qmx-ignore', $suppressions[0]->refusal->tag, $text);
+        self::assertSame(SuppressionType::Symbol->value, $suppressions[0]->refusal->form, $text);
         self::assertFalse($suppressions[0]->matches('complexity.ccn', null), $text);
         self::assertFalse($suppressions[0]->target()->appliesToEveryChannel(), $text);
     }
@@ -1344,7 +1371,7 @@ final class SuppressionExtractorTest extends TestCase
         $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
-        self::assertSame(DirectiveRefusalReason::FormNotRecognised, $suppressions[0]->refusal?->reason);
+        self::assertSame(DirectiveRefusalReason::NamesNoTarget, $suppressions[0]->refusal?->reason);
         self::assertSame(11, $suppressions[0]->line);
     }
 
@@ -1359,8 +1386,9 @@ final class SuppressionExtractorTest extends TestCase
         $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions, $text);
-        self::assertSame(DirectiveRefusalReason::FormNotRecognised, $suppressions[0]->refusal?->reason, $text);
+        self::assertSame(DirectiveRefusalReason::NamesNoTarget, $suppressions[0]->refusal?->reason, $text);
         self::assertSame('@qmx-ignore-next-line', $suppressions[0]->refusal->tag, $text);
+        self::assertSame(SuppressionType::NextLine->value, $suppressions[0]->refusal->form, $text);
         self::assertFalse($suppressions[0]->matches('complexity.ccn', null), $text);
     }
 
@@ -1466,13 +1494,24 @@ final class SuppressionExtractorTest extends TestCase
         return $this->extractor->extractFileLevelSuppressions($node);
     }
 
-    /** @return list<\Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression> */
-    private function extract(\PhpParser\Node $node): array
+    /**
+     * @param ?Closure(\PhpParser\Comment, int): bool $thresholdRead whether the threshold reader carried a tag;
+     *                                                               by default it carried every one
+     *
+     * @return list<\Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression>
+     */
+    private function extract(\PhpParser\Node $node, ?Closure $thresholdRead = null): array
     {
         return $this->extractor->extract(
             $node,
             MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/Foo.php'))),
             ControlScope::Callable,
+            $thresholdRead ?? self::thresholdReadElsewhere(...),
         );
+    }
+
+    private static function thresholdReadElsewhere(): bool
+    {
+        return true;
     }
 }

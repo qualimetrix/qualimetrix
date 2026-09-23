@@ -515,6 +515,42 @@ final class LayersValidatorTest extends TestCase
         self::assertSame(['App\\A', 'App\\B'], self::criterionField($entries[0]->membership(), $kind));
     }
 
+    #[DataProvider('fqnCriterionProvider')]
+    #[Test]
+    public function itReadsALeadingNamespaceSeparatorAsTheGlobalNamespace(string $kind): void
+    {
+        // The only way to name a class in the global namespace — `\Throwable`
+        // — used to be accepted and kept verbatim, so it never equalled the
+        // `Throwable` the run records and the criterion silently never fired.
+        $entries = $this->validator->validate([
+            [
+                'name' => 'r',
+                $kind => ['\\Throwable', '\\App\\A'],
+                'exclude' => [$kind => '\\Exception'],
+            ],
+        ]);
+
+        self::assertSame(['Throwable', 'App\\A'], self::criterionField($entries[0]->membership(), $kind));
+        $exclude = $entries[0]->membership()->exclude;
+        self::assertNotNull($exclude);
+        self::assertSame(['Exception'], match ($kind) {
+            'attributes' => $exclude->attributes,
+            'implements' => $exclude->implements,
+            default => $exclude->extends,
+        });
+    }
+
+    #[DataProvider('fqnCriterionProvider')]
+    #[Test]
+    public function itRejectsANamespaceSeparatorThatNamesNoClass(string $kind): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+
+        $this->validator->validate([
+            ['name' => 'r', $kind => '\\'],
+        ]);
+    }
+
     /**
      * @return list<string>
      */
@@ -544,6 +580,11 @@ final class LayersValidatorTest extends TestCase
             self::assertStringContainsString('"' . $kind . '"', $e->getMessage());
             self::assertStringContainsString('fully-qualified', $e->getMessage());
             self::assertStringContainsString('Entity', $e->getMessage());
+            self::assertStringContainsString(
+                '"\\Entity"',
+                $e->getMessage(),
+                'The refusal must show how a global-namespace class is written.',
+            );
         }
     }
 

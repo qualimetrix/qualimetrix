@@ -84,22 +84,58 @@ final class ComputedMetricExpressionTest extends TestCase
 
     /**
      * The reason this reads the tree rather than the text: whether a key is
-     * required is a fact about each occurrence, and a name-keyed pattern cannot
+     * needed is a fact about each occurrence, and a name-keyed pattern cannot
      * hold two answers for one name.
      */
     #[Test]
-    public function itRequiresAKeyThatIsGuardedInOnePlaceAndBareInAnother(): void
+    public function itMissesAKeyThatIsGuardedInOnePlaceAndBareInAnother(): void
     {
         $formula = 'm["complexity.ccn"] * 2 + (m["complexity.ccn"] ?? 0)';
 
         self::assertSame(['complexity.ccn'], $this->expression->keysOf($formula));
-        self::assertSame(['complexity.ccn'], $this->expression->requiredKeysOf($formula));
+        self::assertSame(['complexity.ccn'], $this->missing($formula));
     }
 
-    #[Test]
-    public function itDoesNotRequireAKeyGuardedEverywhere(): void
+    /**
+     * What a formula misses, given which keys are present.
+     *
+     * @return iterable<string, array{string, list<string>, list<string>}>
+     */
+    public static function provideMissingKeyCases(): iterable
     {
-        self::assertSame([], $this->expression->requiredKeysOf('(m["complexity.ccn"] ?? 0) * 2'));
+        yield 'a guarded read with a literal fallback needs nothing' => ['(m["a"] ?? 0) * 2', [], []];
+        yield 'a bare read of an absent key' => ['m["a"] + 1', [], ['a']];
+        yield 'a bare read of a present key' => ['m["a"] + 1', ['a'], []];
+        yield 'two bare reads, one absent' => ['m["a"] + m["b"]', ['a'], ['b']];
+        // The right side of `??` is read only where the left is absent.
+        yield 'a fallback between metrics, left present' => ['m["a"] ?? m["b"]', ['a'], []];
+        yield 'a fallback between metrics, only right present' => ['m["a"] ?? m["b"]', ['b'], []];
+        yield 'a fallback between metrics, neither present' => ['m["a"] ?? m["b"]', [], ['a', 'b']];
+        yield 'a chain ending in a literal needs nothing' => ['m["a"] ?? m["b"] ?? 0', [], []];
+        yield 'a chain ending in a metric, only the last present' => ['m["a"] ?? m["b"] ?? m["c"]', ['c'], []];
+        yield 'a chain ending in a metric, none present' => ['m["a"] ?? m["b"] ?? m["c"]', [], ['a', 'b', 'c']];
+        // The inner null is handed to the outer `??`, which catches it.
+        yield 'a parenthesised chain guarded to its last link' => ['(m["a"] ?? m["b"]) ?? 0', [], []];
+        yield 'a fallback inside arithmetic, both absent' => ['(m["a"] ?? m["b"]) + m["c"]', ['c'], ['a', 'b']];
+        yield 'a fallback inside arithmetic, left present' => ['(m["a"] ?? m["b"]) + m["c"]', ['a', 'c'], []];
+        // `??` guards nothing inside an operator: `null * 2` is already 0.
+        yield 'a read inside arithmetic under ??' => ['(m["a"] * 2) ?? 0', [], ['a']];
+        // Whether an arithmetic left side is null is not decided here, so its
+        // right side is taken as read.
+        yield 'an undecidable left side reads the right side' => ['(m["a"] * 2) ?? m["b"]', ['a'], ['b']];
+        yield 'both branches of a ternary' => ['m["a"] > 0 ? m["b"] : m["c"]', ['a', 'b'], ['c']];
+        yield 'a function argument' => ['max(m["a"], 1)', [], ['a']];
+    }
+
+    /**
+     * @param list<string> $present
+     * @param list<string> $expected
+     */
+    #[Test]
+    #[DataProvider('provideMissingKeyCases')]
+    public function itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull(string $formula, array $present, array $expected): void
+    {
+        self::assertSame($expected, $this->missing($formula, $present));
     }
 
     #[Test]
@@ -133,12 +169,12 @@ final class ComputedMetricExpressionTest extends TestCase
     }
 
     /**
-     * Only the LEFT side of `??` is guarded by it. The right side is read
-     * exactly when the left is absent, which is what makes it required.
+     * @param list<string> $present
+     *
+     * @return list<string>
      */
-    #[Test]
-    public function itRequiresTheFallbackSideOfANullCoalesce(): void
+    private function missing(string $formula, array $present = []): array
     {
-        self::assertSame(['size.loc'], $this->expression->requiredKeysOf('m["complexity.ccn"] ?? m["size.loc"]'));
+        return $this->expression->missingKeysOf($formula, static fn(string $key): bool => \in_array($key, $present, true));
     }
 }

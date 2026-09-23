@@ -80,11 +80,15 @@ final class LayerCriterionNormalizer
     }
 
     /**
+     * A leading separator is accepted and dropped: it is the only way to name
+     * a class in the global namespace (`\Throwable`), and the run records
+     * every name without one, so a name kept verbatim could never match.
+     *
      * @return list<string>
      */
     public function normalizeFqnList(int $index, string $layerName, string $kind, mixed $value): array
     {
-        return self::normalizeStringList(
+        $entries = self::normalizeStringList(
             $index,
             $layerName,
             $kind,
@@ -93,15 +97,23 @@ final class LayerCriterionNormalizer
                 if (!str_contains($entry, '\\')) {
                     return \sprintf(
                         'must be a fully-qualified class name (containing at least one namespace separator); got "%s". '
-                        . 'Short names are not accepted in "%s".',
+                        . 'Short names are not accepted in "%s"; a class in the global namespace is written with a '
+                        . 'leading backslash, e.g. "\\%s".',
                         $entry,
                         $kind,
+                        $entry,
                     );
+                }
+
+                if (ltrim($entry, '\\') === '') {
+                    return \sprintf('must name a class; got "%s".', $entry);
                 }
 
                 return null;
             },
         );
+
+        return array_map(static fn(string $entry): string => ltrim($entry, '\\'), $entries);
     }
 
     /**

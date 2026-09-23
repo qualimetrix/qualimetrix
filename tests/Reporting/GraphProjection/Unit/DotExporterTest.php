@@ -388,6 +388,7 @@ final class DotExporterTest extends TestCase
             NamespaceCouplings::fromScopes($namespaceCe, $namespaceCa, $namespaceCe, $namespaceCa),
             [],
             [],
+            DependencyGraph::declarationsAmong($dependencies),
         );
     }
 }

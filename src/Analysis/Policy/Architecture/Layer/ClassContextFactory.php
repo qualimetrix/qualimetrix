@@ -32,9 +32,13 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * {@see DependencyType::Attribute}, {@see DependencyType::Implements} and
  * {@see DependencyType::Extends} edges (see
  * {@see \Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\ClassLikeHandler}).
- * The factory walks the merged graph once to build child→parent maps and
- * services membership queries from them — no new collector, no AST traversal,
- * no worker-serialisation impact.
+ * The factory walks the graph's declaration edges once to build child→parent
+ * maps and services membership queries from them — no new collector, no AST
+ * traversal, no worker-serialisation impact. It reads
+ * {@see DependencyGraphInterface::getDeclarationDependencies()}, not the
+ * coupling view: the coupling view leaves out edges to PHP's own classes, and
+ * a class declaring `implements \JsonSerializable` would read as one that
+ * does not.
  *
  * **Transitive resolution.** {@see ClassContext::$parentClasses} carries the
  * full extends chain; {@see ClassContext::$interfaces} adds direct interfaces,
@@ -43,16 +47,18 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * {@see DependencyType::Extends} for inheritance — same edge kind as classes,
  * disambiguated by walk start point).
  *
- * **Where a chain ends, and what that is allowed to mean.** A class outside
- * the analysed set is not followed: nothing reads it by reflection, and the
- * graph carries no edges out of it. Its own declaration edges were recorded
- * from the analysed child, so a criterion naming a DIRECT vendor parent still
- * matches; a criterion naming anything beyond that link cannot be answered.
- * The factory therefore reports where it stopped —
- * {@see ClassContext::$unresolvedDeclarations} names every FQN the walk
- * reached without facts of its own — instead of handing back a truncated chain
- * that reads like a complete one. Answering that difference is
+ * **Where a chain ends, and what that is allowed to mean.** A class the run
+ * did not analyse has no edges out of it in the graph. The edge INTO it was
+ * recorded from the analysed child, so a criterion naming a DIRECT vendor
+ * parent still matches; a criterion naming anything beyond that link cannot be
+ * answered. The factory therefore reports where it stopped —
+ * {@see ClassContext::$ancestryCuts} names every FQN the walks reached without
+ * facts of their own — instead of handing back a truncated chain that
+ * reads like a complete one. Answering that difference is
  * {@see CriterionOutcome}'s job; producing it is this class's.
+ *
+ * A class or interface PHP itself declares is not such a link: its supertypes
+ * are PHP's own, answered by {@see PhpClassHierarchy}.
  *
  * **No-graph mode.** Before {@see bindGraph()} is called (config load, and any
  * caller that builds its own registry without a run behind it), {@see build()}
@@ -76,7 +82,7 @@ final class ClassContextFactory
      * grammar, so a walk seeded from a class FQN only ever encounters parent
      * classes, and a walk seeded from an interface FQN only ever encounters
      * parent interfaces. The map is therefore safe to share between the
-     * {@see collectTransitiveParents()} (class chain) and the
+     * parent-class walk in {@see build()} and the
      * {@see collectTransitiveInterfaces()} (interface chain) walks. A future
      * walk starting from a hybrid seed list MUST disambiguate explicitly.
      *
@@ -187,15 +193,19 @@ final class ClassContextFactory
 
         $this->ensureMapsBuilt();
 
-        // The subject itself when the run never analysed it: the chain is cut
-        // at the class, not above it, and its attribute list is silence too —
-        // which is why ClassContext derives `declarationAnalysed` from this
-        // list rather than carrying a separate flag.
-        $unresolved = $this->analysed->contains($fqn) ? [] : [$fqn => true];
+        // The subject itself is the first step of the walk. When the run never
+        // analysed it and PHP does not declare it, the chain is cut at the
+        // class, not above it, and its attribute list is silence too — which
+        // is why ClassContext derives `declarationAnalysed` from the parent-
+        // chain cuts rather than carrying a separate flag. A class PHP declares
+        // is answered from PHP, as it is anywhere else on a chain.
+        $parentCuts = [];
+        $interfaceCuts = [];
+        $parentOf = PhpClassHierarchy::parentOf(...);
 
-        $attributes = $this->attributesMap[$fqn] ?? [];
-        $parents = $this->collectTransitiveParents($fqn, $unresolved);
-        $interfaces = $this->collectTransitiveInterfaces($fqn, $parents, $unresolved);
+        $attributes = $this->attributesMap[$fqn] ?? PhpClassHierarchy::attributesOf($fqn) ?? [];
+        $parents = $this->bfsClosure($this->supertypesOf($fqn, $parentCuts, $parentOf), $parentCuts, $parentOf);
+        $interfaces = $this->collectTransitiveInterfaces($fqn, $parents, $interfaceCuts);
 
         return $this->contextCache[$cacheKey] = new ClassContext(
             $fqn,
@@ -203,7 +213,7 @@ final class ClassContextFactory
             $attributes,
             $interfaces,
             $parents,
-            unresolvedDeclarations: array_keys($unresolved),
+            ancestryCuts: ['parentChain' => array_keys($parentCuts), 'interfaces' => array_keys($interfaceCuts)],
         );
     }
 
@@ -219,7 +229,7 @@ final class ClassContextFactory
         $implements = [];
         $attributes = [];
 
-        foreach ($this->graph->getAllDependencies() as $dependency) {
+        foreach ($this->graph->getDeclarationDependencies() as $dependency) {
             // An anonymous class's own extends/implements/attribute is
             // recorded with the enclosing class as source (it has no
             // declaration identity of its own) — membership must not move
@@ -256,27 +266,15 @@ final class ClassContextFactory
     }
 
     /**
-     * @param array<string, true> $unresolved Collects every FQN the walk
-     *                                        reached whose own declaration the
-     *                                        run did not analyse.
-     *
-     * @return list<string>
-     */
-    private function collectTransitiveParents(string $fqn, array &$unresolved): array
-    {
-        \assert($this->extendsMap !== null);
-
-        return $this->bfsClosure($this->extendsMap[$fqn] ?? [], $this->extendsMap, $unresolved);
-    }
-
-    /**
      * Direct implements + interfaces inherited from parent classes +
      * transitive interface-extends-interface walks. Returned in BFS order
      * from the class outwards; the list is deduplicated.
      *
      * @param list<string> $parentClasses Already-collected transitive
      *                                    parent-class FQNs.
-     * @param array<string, true> $unresolved See {@see collectTransitiveParents()}.
+     * @param array<string, true> $unresolved Collects every interface the walk
+     *                                        reached whose own declaration the
+     *                                        run did not analyse.
      *
      * @return list<string>
      */
@@ -285,57 +283,38 @@ final class ClassContextFactory
         \assert($this->implementsMap !== null);
         \assert($this->extendsMap !== null);
 
-        $seedQueue = self::collectDirectInterfacesIncludingParents(
-            $this->implementsMap,
-            $fqn,
-            $parentClasses,
-        );
-
-        // Interfaces extending other interfaces produce DependencyType::Extends
-        // edges (see ClassLikeHandler::handleInterface). The shared extendsMap
-        // is therefore the canonical source for interface inheritance too.
-        return $this->bfsClosure($seedQueue, $this->extendsMap, $unresolved);
-    }
-
-    /**
-     * @param array<string, list<string>> $implementsMap
-     * @param list<string> $parentClasses
-     *
-     * @return list<string>
-     */
-    private static function collectDirectInterfacesIncludingParents(
-        array $implementsMap,
-        string $fqn,
-        array $parentClasses,
-    ): array {
-        $seedQueue = $implementsMap[$fqn] ?? [];
+        $seedQueue = $this->implementsMap[$fqn] ?? PhpClassHierarchy::interfacesOf($fqn) ?? [];
         foreach ($parentClasses as $parent) {
-            foreach ($implementsMap[$parent] ?? [] as $iface) {
+            $declared = $this->implementsMap[$parent] ?? PhpClassHierarchy::interfacesOf($parent) ?? [];
+            foreach ($declared as $iface) {
                 $seedQueue[] = $iface;
             }
         }
 
-        return $seedQueue;
+        // Interfaces extending other interfaces produce DependencyType::Extends
+        // edges (see ClassLikeHandler::handleInterface). The shared extendsMap
+        // is therefore the canonical source for interface inheritance too.
+        return $this->bfsClosure($seedQueue, $unresolved, PhpClassHierarchy::interfacesOf(...));
     }
 
     /**
-     * Walks the BFS transitive closure of {@code $seedQueue} through
-     * {@code $adjacency}, returning the discovery order with duplicates
-     * removed.
+     * Walks the BFS transitive closure of {@code $seedQueue} through the
+     * extends map, returning the discovery order with duplicates removed.
      *
      * A node with no adjacency entry ends the walk along that branch, and the
      * walk cannot tell from the map alone whether it ended because the node
      * declares nothing above it or because the node was never analysed. The
      * universe answers that, and the second case is recorded in
-     * {@code $unresolved} rather than passed off as the first.
+     * {@code $unresolved} rather than passed off as the first. A node PHP
+     * declares is neither: its supertypes come from {@code $phpAbove}.
      *
      * @param list<string> $seedQueue
-     * @param array<string, list<string>> $adjacency
      * @param array<string, true> $unresolved
+     * @param callable(string): (list<string>|null) $phpAbove
      *
      * @return list<string>
      */
-    private function bfsClosure(array $seedQueue, array $adjacency, array &$unresolved): array
+    private function bfsClosure(array $seedQueue, array &$unresolved, callable $phpAbove): array
     {
         $result = [];
         $seen = [];
@@ -354,11 +333,7 @@ final class ClassContextFactory
             $seen[$next] = true;
             $result[] = $next;
 
-            if (!$this->analysed->contains($next)) {
-                $unresolved[$next] = true;
-            }
-
-            foreach ($adjacency[$next] ?? [] as $neighbour) {
+            foreach ($this->supertypesOf($next, $unresolved, $phpAbove) as $neighbour) {
                 if (!isset($seen[$neighbour])) {
                     $queue[] = $neighbour;
                     $tail++;
@@ -369,27 +344,40 @@ final class ClassContextFactory
         return $result;
     }
 
+    /**
+     * The next step up from one node: the run's own edges, PHP's declaration
+     * of it, or — for a node the run did not read — nothing, recorded as a cut.
+     *
+     * @param array<string, true> $unresolved
+     * @param callable(string): (list<string>|null) $phpAbove
+     *
+     * @return list<string>
+     */
+    private function supertypesOf(string $fqn, array &$unresolved, callable $phpAbove): array
+    {
+        \assert($this->extendsMap !== null);
+
+        $above = $this->extendsMap[$fqn] ?? $phpAbove($fqn);
+        if ($above !== null) {
+            return $above;
+        }
+
+        if (!$this->analysed->contains($fqn)) {
+            $unresolved[$fqn] = true;
+        }
+
+        return [];
+    }
+
+    /**
+     * `Namespace\Type`, the bare type, the bare namespace, or null when the
+     * path names neither.
+     */
     private function fqnFor(SymbolPath $class): ?string
     {
-        $namespace = $class->namespace;
-        $type = $class->type;
+        $fqn = trim(($class->namespace ?? '') . '\\' . ($class->type ?? ''), '\\');
 
-        $hasNamespace = $namespace !== null && $namespace !== '';
-        $hasType = $type !== null && $type !== '';
-
-        if (!$hasNamespace && !$hasType) {
-            return null;
-        }
-
-        if (!$hasNamespace) {
-            return $type;
-        }
-
-        if (!$hasType) {
-            return $namespace;
-        }
-
-        return $namespace . '\\' . $type;
+        return $fqn === '' ? null : $fqn;
     }
 
     private static function deriveShortName(string $fqn): string

@@ -88,8 +88,20 @@ edges this run recorded, so the answer is bounded by what the run analysed.
 `ClassContextFactory` is bound to the run's **class universe** alongside its
 graph (`ArchitecturePolicy::prepare()` is the single binding point) and reports
 where the facts ran out: `ClassContext::$declarationAnalysed` says whether the
-subject's own declaration was read, and `ClassContext::$unresolvedDeclarations`
-names every FQN a transitive walk reached without facts of its own.
+subject's own declaration was read, and `ClassContext::$ancestryCuts` names
+where the parent-class chain was cut and, separately, every interface the walk
+reached without facts of its own.
+
+A class or interface PHP declares is not a cut. `PhpClassHierarchy` reads its
+supertypes from the running PHP by reflection, gated by
+`PhpBuiltinClassRegistry` and with autoloading off, so no analysed or vendor
+file is ever loaded; a listed name the runtime does not provide (an extension
+not loaded here) is reported as a cut. It lives here rather than beside the
+registry in `Core` because this slice is its only reader; a second reader is
+what would move it.
+Criterion FQNs are stored without a leading `\`, which is how a class in the
+global namespace is written (`\Throwable`) and how the run records none of
+them.
 
 `LayerCriteriaMatcher` turns that into a third answer beside match and
 non-match. `CriterionOutcome::Undecidable` is what a declared criterion returns
@@ -103,32 +115,61 @@ because truncation can hide evidence but never invent it.
 
 Which kinds this reaches, and why exactly those: `patterns` and `suffix` are
 derived from the FQN and are always decided; `attributes` is decided whenever
-the subject's own declaration was analysed; `implements` and `extends` read a
-transitive closure and are decided only when that closure was not cut. The
-shape that breaks is narrow — a criterion naming the class's own **direct**
-parent still matches even when that parent is vendor code, because the edge was
-recorded from the analysed child. It is a link further up the chain, or a
-subject the run never analysed at all (a dependency-edge end outside `paths:`),
-that cannot be answered.
+the subject's own declaration was analysed; `extends` is decided when the
+parent-class chain was not cut, and `implements` when neither that chain nor
+the interfaces above it were. The two are kept apart because an unread parent
+class can hide both a parent and an interface, while an unread interface can
+hide only interfaces. A criterion naming the class's own **direct** parent or
+interface still matches even when it is vendor code, because the edge was
+recorded from the analysed child; what cannot be answered is a miss on a chain
+that passes through an unread non-PHP declaration, or any graph-backed
+criterion about a subject the run never analysed (a dependency-edge end outside
+`paths:`) unless PHP itself declares it.
 
-`MembershipResult::undecided()` carries it out of the layer,
-`LayerRegistry::undecidedLayers()` is the third exit of the one cached walk, and
-`architecture.coverage-gap` names the count and a sample in its message — only
-when such a class exists, so an all-decided project reads the sentence it always
-read. Assignment is deliberately unchanged: an undecidable layer declared before
-one that matched does not withdraw the match, because withdrawing it would leave
-the class in no layer, no allow-list would judge its edges, and real violations
-would stop being reported.
+`ClassContextFactory` reads a class's declared supertypes and attributes from
+the graph's declaration view, `DependencyGraphInterface::getDeclarationDependencies()`,
+not from `getAllDependencies()`. The coupling view leaves out every edge to a
+class PHP itself declares, `extends` aside, so that none counts toward coupling;
+read from there, a class declaring `implements \JsonSerializable` or carrying
+`#[\AllowDynamicProperties]` would be told it does neither. The declaration view
+keeps those edges, and from a direct PHP interface the walk continues through
+PHP's own hierarchy (`implements: ['\Traversable']` for a class declaring
+`implements \IteratorAggregate`). The allow-list check still reads the coupling
+view, so no edge to a PHP type is ever judged against a layer.
 
-Two declarations that used to be accepted and then do nothing are now refused at
-config load, because there is no correct silent reading of either. A template
-layer may not declare `suffix`, `attributes`, `implements` or `extends` under
+`MembershipResult::undecided()` carries an unanswered positive criterion out of
+the layer, `LayerRegistry::undecidedLayers()` is the third exit of the one
+cached walk, and `LayerRegistry::chainStopsAt()` names where the chain stopped,
+which `debug:layer-assignment` prints. `architecture.coverage-gap` names the
+count and a sample of undecided symbols outside every layer — only when such a
+symbol exists, so an all-decided project reads the sentence it always read —
+and says what a later layer does with them: it assigns them, as a guess.
+
+An unanswered layer never withdraws a match. Neither an undecidable layer
+declared before one that matched nor an undecidable `exclude:` on the matching
+layer itself removes the class: withdrawing it would leave the class in no
+layer, no allow-list would judge its edges, and real violations would stop being
+reported. The layer whose `exclude:` went unanswered answers
+`MembershipResult::doubtedMatch()` and is named in both the match list and
+`undecidedLayers()`. `LayerEvidenceCollector` counts every assignment that
+stands on a layer declared no later than the assigned one which went unanswered,
+and `architecture.coverage-gap` reports that count too, even when nothing is
+outside every layer.
+
+Four declarations that used to be accepted are now refused at config load,
+because there is no correct silent reading of any of them. A template layer may
+not declare `suffix`, `attributes`, `implements` or `extends` under
 `match: any`: only `patterns` carries capture variables, so the criterion would
 be copied into every expanded instance as one project-wide net and the instance
-that wins a class would be decided by binding-value order. And a non-`ignore`
+that wins a class would be decided by binding-value order. A non-`ignore`
 `coverage-gap:` requires at least one `layers:` entry, because with no layers
 every class is outside every layer while the walk short-circuits and the run
-exits 0 — the strictest setting producing the quietest outcome.
+exits 0 — the strictest setting producing the quietest outcome. An allow entry's
+`relations:` written without a value takes the same refusal as `relations: []`
+instead of reading as "every relation allowed". And an `attributes`,
+`implements` or `extends` entry that is nothing but `\` passed the
+namespace-separator check while naming no class; with the leading separator now
+dropped it is refused as such.
 
 `ClassContextFactory` skips a `Dependency` flagged
 `describesNestedAnonymousClass` when it builds `extendsMap`, `implementsMap`

@@ -173,12 +173,15 @@ final readonly class LayerDefinition
      * `architecture.unmatched-exclude` can tell a clause that removed
      * something from one that removed nothing.
      *
-     * Both combinations are three-valued: a kind the run has no facts to
-     * decide ({@see CriterionOutcome::Undecidable}) neither makes the layer
+     * Both combinations are three-valued: a positive kind the run has no facts
+     * to decide ({@see CriterionOutcome::Undecidable}) neither makes the layer
      * match nor lets it report a non-match, and the result is
      * {@see MembershipResult::undecided()} — a non-member the run never
-     * actually established. See {@see CriteriaEvaluation::outcome()} for the
-     * rule and {@see CriterionOutcome} for what produces the third state.
+     * actually established. An exclude clause the run cannot decide does not
+     * withdraw a match the positive criteria made: the result is
+     * {@see MembershipResult::doubtedMatch()}, a member with the doubt
+     * attached. See {@see CriteriaEvaluation::outcome()} for the rule and
+     * {@see CriterionOutcome} for what produces the third state.
      *
      * An empty FQN is always a non-match. A {@see MembershipSpec} with all
      * five positive criterion lists empty cannot exist (constructor invariant).
@@ -210,9 +213,9 @@ final readonly class LayerDefinition
         return match ($this->exclusionOutcome($context)) {
             CriterionOutcome::Matches => MembershipResult::excluded(),
             // The positive criteria caught the class and the clause that would
-            // remove it cannot be answered: whether this layer owns the class
-            // is unknown, not settled in the layer's favour.
-            CriterionOutcome::Undecidable => MembershipResult::undecided(),
+            // remove it cannot be answered. The match stands and carries the
+            // doubt, as an unanswered earlier layer does beside a later match.
+            CriterionOutcome::Undecidable => MembershipResult::doubtedMatch($evaluation->matched),
             CriterionOutcome::DoesNotMatch => MembershipResult::match($evaluation->matched),
         };
     }

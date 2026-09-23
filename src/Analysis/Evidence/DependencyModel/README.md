@@ -52,6 +52,22 @@ the logical class universe. The universe retains degree-zero declarations, while
 the builder derives all ancestor namespaces locally and preserves dependency
 encounter order and coupling semantics.
 
+### The coupling view and the declaration view
+
+The builder leaves every edge whose target is a class PHP itself declares out
+of the coupling view — `getAllDependencies()`, the per-class dependency lists,
+`getAllClasses()`, Ce/Ca and both namespace scopes — because coupling to the
+standard library is not architectural risk. An `extends` edge is the one
+exception there: DIT and NOC read inheritance from it.
+
+`getDeclarationDependencies()` answers a different question — what a
+declaration states about itself — and keeps every `extends`, `implements`,
+`trait_use` and attribute edge, PHP target or not, in encounter order. Layer
+membership reads it (`Policy\Architecture\Layer\ClassContextFactory`): read from
+the coupling view, a class declaring `implements \JsonSerializable` is
+indistinguishable from one that does not. Adding an edge to this view moves no
+coupling metric; adding one to the coupling view does.
+
 ### The two namespace coupling scopes
 
 A namespace that both declares classes and contains sub-namespaces is two things

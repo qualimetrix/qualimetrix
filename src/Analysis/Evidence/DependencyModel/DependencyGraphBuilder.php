@@ -18,10 +18,14 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * Constructs all indexes and precomputes namespace-level Ce/Ca metrics
  * for efficient coupling queries.
  *
- * Dependencies targeting PHP built-in classes are excluded from the graph
- * because coupling to stable standard library types does not contribute to
- * architectural risk measured by CBO. Only `extends` edges are preserved
- * (needed by DitGlobalCollector and NocCollector for inheritance metrics).
+ * Dependencies targeting PHP built-in classes are excluded from the coupling
+ * views because coupling to stable standard library types does not contribute
+ * to architectural risk measured by CBO. `extends` edges are the exception
+ * there (DitGlobalCollector and NocCollector read inheritance from them).
+ *
+ * The declaration view keeps every declaration edge, built-in target or not:
+ * what a class declares is a fact about the class, and a layer criterion
+ * naming `\JsonSerializable` has nothing else to read it from.
  */
 final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
 {
@@ -33,6 +37,7 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
      */
     public function build(array $dependencies, iterable $logicalClassUniverse): DependencyGraphInterface
     {
+        $declarationDependencies = DependencyGraph::declarationsAmong($dependencies);
         $dependencies = $this->retainGraphDependencies($dependencies);
         $indexes = $this->indexGraphInputs($dependencies, $logicalClassUniverse);
         [$canonicalNamespaceMap, $parentNamespaces] = $this->expandNamespaceUniverse($indexes['leafNamespaces']);
@@ -55,6 +60,7 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
             ),
             $this->computeClassCe($indexes['bySource']),
             $this->computeClassCa($indexes['byTarget']),
+            $declarationDependencies,
         );
     }
 

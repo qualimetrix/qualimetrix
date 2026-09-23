@@ -74,13 +74,14 @@ final class LayerRegistry
      * `matches`, the complete list of {@see LayerMatch} entries in declaration
      * order (empty means the class matches no layer), `excluded`, the
      * names of the layers whose positive criteria matched but whose
-     * `exclude:` clause then removed the class, and `undecided`, the names of
-     * the layers the run could not answer either way. One entry rather than
+     * `exclude:` clause then removed the class, `undecided`, the names of
+     * the layers the run could not answer either way, and `chainStopsAt`, where
+     * the inheritance chain stopped when any layer went unanswered. One entry rather than
      * parallel arrays because separate caches drift apart at every early return
      * and at {@see clearCache()}: a lookup that found one populated and the
      * others not would report an exclusion that never happened.
      *
-     * @var array<string, array{matches: list<LayerMatch>, excluded: list<string>, undecided: list<string>}>
+     * @var array<string, array{matches: list<LayerMatch>, excluded: list<string>, undecided: list<string>, chainStopsAt: list<string>}>
      */
     private array $matchCache = [];
 
@@ -207,19 +208,21 @@ final class LayerRegistry
      * decide for this symbol, in declaration order.
      *
      * The third exit of the same cached walk, for the same reason
-     * {@see excludedLayers()} is the second. `architecture.coverage-gap` is
-     * the consumer: a symbol in nobody's layer because the run answered every
-     * criterion is a hole the author closes by writing a layer, and a symbol in
-     * nobody's layer because its inheritance chain left the analysed set is
-     * not.
+     * {@see excludedLayers()} is the second. `architecture.coverage-gap` and
+     * `debug:layer-assignment` are the consumers: a symbol in nobody's layer
+     * because the run answered every criterion is a hole the author closes by
+     * writing a layer, a symbol in nobody's layer because its inheritance
+     * chain left the analysed set is not, and an assignment that stands on a
+     * layer the run could not fully answer is a doubt the reader must see.
      *
-     * **Assignment is unaffected on purpose.** An undecidable layer declared
-     * before one that matched does NOT withdraw the match, even though a
-     * strictly three-valued reading of declaration order would make the
-     * assignment unknown. Withdrawing it would leave the class in no layer, so
-     * no allow-list would judge its edges and real violations would stop being
-     * reported — trading a wrong answer for a missing one. The match stands and
-     * the doubt is published beside it.
+     * **Assignment is unaffected on purpose.** Neither an undecidable layer
+     * declared before one that matched nor an undecidable `exclude:` on the
+     * matching layer itself withdraws the match, even though a strictly
+     * three-valued reading would make the assignment unknown. Withdrawing it
+     * would leave the class in no layer, so no allow-list would judge its edges
+     * and real violations would stop being reported — trading a wrong answer
+     * for a missing one. The match stands and the doubt is published beside
+     * it; a layer whose exclude went unanswered is named in both lists.
      *
      * @return list<string> layer names
      */
@@ -229,7 +232,22 @@ final class LayerRegistry
     }
 
     /**
-     * @return array{matches: list<LayerMatch>, excluded: list<string>, undecided: list<string>}
+     * Returns where the class's inheritance chain stopped because the run did
+     * not read the declaration there — the subject's own FQN when it was not
+     * analysed — and nothing when every layer was answered.
+     *
+     * A reader told only that a layer could not be answered cannot tell
+     * which boundary to move; this names it.
+     *
+     * @return list<string> FQNs
+     */
+    public function chainStopsAt(SymbolPath $class): array
+    {
+        return $this->walk($class)['chainStopsAt'];
+    }
+
+    /**
+     * @return array{matches: list<LayerMatch>, excluded: list<string>, undecided: list<string>, chainStopsAt: list<string>}
      */
     private function walk(SymbolPath $class): array
     {
@@ -240,7 +258,7 @@ final class LayerRegistry
 
         $context = $this->contextFactory->build($class);
         if ($context->fqn === '') {
-            return $this->matchCache[$cacheKey] = ['matches' => [], 'excluded' => [], 'undecided' => []];
+            return $this->matchCache[$cacheKey] = ['matches' => [], 'excluded' => [], 'undecided' => [], 'chainStopsAt' => []];
         }
 
         $matches = [];
@@ -253,21 +271,21 @@ final class LayerRegistry
 
                 continue;
             }
+            // A doubted match lands in both lists: the class is a member and
+            // the run could not fully establish it.
             if ($result->undecided) {
                 $undecided[] = $layer->name();
-
-                continue;
             }
-            if (!$result->matched) {
-                continue;
+            if ($result->matched) {
+                $matches[] = new LayerMatch($layer->name(), $result->matchedCriteria);
             }
-            $matches[] = new LayerMatch($layer->name(), $result->matchedCriteria);
         }
 
         return $this->matchCache[$cacheKey] = [
             'matches' => $matches,
             'excluded' => $excluded,
             'undecided' => $undecided,
+            'chainStopsAt' => $undecided === [] ? [] : $context->chainStopsAt(),
         ];
     }
 

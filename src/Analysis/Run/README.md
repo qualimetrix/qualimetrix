@@ -24,7 +24,9 @@ Run/
 │   ├── Discovery/              # discovery contracts
 │   ├── Pipeline/               # analysis result and coverage contracts
 │   └── FileSetInspectionParticipantInterface.php
-├── Collection/                 # orchestration and per-file processing
+├── Collection/                 # orchestration and per-file processing;
+│                               # CollectionPhaseFold assembles per-file
+│                               # results into the phase output
 ├── Configuration/              # run configuration resolution and project
 │                               # scope coverage
 ├── Discovery/                  # discovery coordination and implementations

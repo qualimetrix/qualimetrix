@@ -88,7 +88,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(self::UNMATCHED_EXCLUDE_AUDIT_CLASS),
             ]);
 
-        // ThresholdOverrideExtractor - per-rule @qmx-threshold validator map injected
+        // ThresholdOverrideExtractor - per-rule `@qmx-threshold` validator map injected
         // by ThresholdValidatorMapCompilerPass after RuleRegistryCompilerPass runs
         $container->register(ThresholdOverrideExtractor::class)
             ->setArguments(['$validators' => []]);
