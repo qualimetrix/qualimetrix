@@ -12,11 +12,16 @@ use Symfony\Component\DependencyInjection\Reference;
  * Collects all services tagged with 'qmx.collector' and 'qmx.derived_collector'
  * and injects them into CompositeCollector.
  */
-final class CollectorCompilerPass implements CompilerPassInterface
+final class CollectorCompilerPass implements CompilerPassInterface, ConsumerBoundPassInterface
 {
     public const string TAG = 'qmx.collector';
     public const string TAG_DERIVED = 'qmx.derived_collector';
     private const string COLLECTOR_SERVICE_ID = 'qmx.measurement.file_collector';
+
+    public static function consumerServiceIds(): array
+    {
+        return [self::COLLECTOR_SERVICE_ID];
+    }
 
     public function process(ContainerBuilder $container): void
     {

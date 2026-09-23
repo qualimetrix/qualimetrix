@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Configuration\Pipeline\Stage;
 
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
-
 use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
@@ -14,7 +13,12 @@ use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface;
 /**
  * Auto-discovers paths from composer.json autoload (priority: 10).
  *
- * Extracts PSR-4 autoload paths and uses them as default analysis paths.
+ * Contributes the production and the `autoload-dev` PSR-4 roots as two
+ * lists, not as `paths`: whether test code is part of the project is
+ * `include_autoload_dev`, which a source after this one may write, so the run
+ * configuration picks the default analysis paths from both lists and judges
+ * scope against the same choice
+ * ({@see \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage}).
  */
 final class ComposerDiscoveryStage implements ConfigurationStageInterface
 {
@@ -38,14 +42,16 @@ final class ComposerDiscoveryStage implements ConfigurationStageInterface
     {
         $composerPath = $request->workingDirectory->value() . '/composer.json';
 
-        $paths = $this->composerReader->extractAutoloadPaths($composerPath);
+        $production = $this->composerReader->extractAutoloadPaths($composerPath);
+        $development = $this->composerReader->extractAutoloadDevPaths($composerPath);
 
-        if ($paths === []) {
+        if ($production === [] && $development === []) {
             return null;
         }
 
         return new ConfigurationLayer('composer.json', [
-            ConfigSchema::PATHS => $paths,
+            ConfigSchema::DISCOVERED_AUTOLOAD_PATHS => $production,
+            ConfigSchema::DISCOVERED_AUTOLOAD_DEV_PATHS => $development,
         ]);
     }
 }

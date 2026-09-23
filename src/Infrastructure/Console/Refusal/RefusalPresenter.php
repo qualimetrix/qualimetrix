@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Refusal;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Symfony\Component\Console\Formatter\OutputFormatter;
@@ -41,7 +42,7 @@ final class RefusalPresenter
     /** A refusal caused by user input: a configuration key, value, file, or selector. */
     public function refusal(OutputInterface $output, ?string $format, ConfigurationRefusal $refusal): int
     {
-        $this->present($output, $format, \sprintf('Configuration error: %s', $refusal->summary()), ConsoleExitCode::Refusal);
+        $this->present($output, $format, self::refusalSentence($refusal->summary()), ConsoleExitCode::Refusal, $refusal->position());
 
         return ConsoleExitCode::Refusal->value;
     }
@@ -50,12 +51,21 @@ final class RefusalPresenter
      * A caught `InvalidArgumentException` with no {@see ConfigurationRefusal}
      * behind it — the named secondary signal for code 3. A separate method rather than a
      * shared one, precisely so this path is visible as a call count.
+     *
+     * Framed exactly like {@see self::refusal()}: the split is bookkeeping about
+     * which inputs have not reached the carrier yet, and a reader shown two
+     * dialects for one exit code learned nothing from the difference.
      */
     public function fallbackRefusal(OutputInterface $output, ?string $format, Throwable $failure): int
     {
-        $this->present($output, $format, $failure->getMessage(), ConsoleExitCode::Refusal);
+        $this->present($output, $format, self::refusalSentence($failure->getMessage()), ConsoleExitCode::Refusal, null);
 
         return ConsoleExitCode::Refusal->value;
+    }
+
+    private static function refusalSentence(string $message): string
+    {
+        return \sprintf('Configuration error: %s', $message);
     }
 
     /**
@@ -67,7 +77,7 @@ final class RefusalPresenter
      */
     public function internalError(OutputInterface $output, ?string $format, Throwable $failure): int
     {
-        $this->present($output, $format, \sprintf('Internal error: %s', $failure->getMessage()), ConsoleExitCode::InternalError);
+        $this->present($output, $format, \sprintf('Internal error: %s', $failure->getMessage()), ConsoleExitCode::InternalError, null);
 
         if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
             $this->writeStderr($output, '<comment>Stack trace:</comment>');
@@ -77,14 +87,19 @@ final class RefusalPresenter
         return ConsoleExitCode::InternalError->value;
     }
 
-    private function present(OutputInterface $output, ?string $format, string $message, ConsoleExitCode $code): void
-    {
+    private function present(
+        OutputInterface $output,
+        ?string $format,
+        string $message,
+        ConsoleExitCode $code,
+        ?RefusedPosition $position,
+    ): void {
         // Erase the progress frame first: printed on top of a live frame, the
         // message is destroyed by the frame's next redraw.
         $this->errorStream->stopProgress();
 
         if (MachineReadableFormats::carriesJson($format)) {
-            $this->writeEnvelope($output, $message, $code->value);
+            $this->writeEnvelope($output, $message, $code->value, $position);
 
             return;
         }
@@ -126,10 +141,15 @@ final class RefusalPresenter
     }
 
     /**
-     * Writes the `{error, exit_code}` envelope to stdout — the shape every
-     * command's refusal and internal-error path shares. `origin()`/`position()` are not
-     * structural fields here; they reach the reader through the wording of
-     * `$message` instead.
+     * Writes the `{error, exit_code, position}` envelope to stdout — the shape
+     * every command's refusal and internal-error path shares.
+     *
+     * `position` is the key a refusal is addressed to — `{path, written,
+     * accepted, closed}` — and `null` whenever the run ended without one: a
+     * refusal about a whole document or a bare value, the fallback, an
+     * internal error. The key is always present, so the document's shape does
+     * not depend on what ended the run. The text path does not print it: the
+     * wording of `$message` already names the key for a reader.
      *
      * `JSON_INVALID_UTF8_SUBSTITUTE`: `$message` can embed raw CLI input
      * (an option value, a path) that the user typed, and PHP argv bytes are
@@ -140,10 +160,10 @@ final class RefusalPresenter
      * to returning. Substituting the invalid bytes keeps the envelope valid
      * JSON and keeps the refusal a refusal.
      */
-    private function writeEnvelope(OutputInterface $output, string $message, int $exitCode): void
+    private function writeEnvelope(OutputInterface $output, string $message, int $exitCode, ?RefusedPosition $position): void
     {
         $payload = json_encode(
-            ['error' => $message, 'exit_code' => $exitCode],
+            ['error' => $message, 'exit_code' => $exitCode, 'position' => self::positionDocument($position)],
             \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_INVALID_UTF8_SUBSTITUTE | \JSON_THROW_ON_ERROR,
         ) . "\n";
 
@@ -160,5 +180,20 @@ final class RefusalPresenter
         // markup embedded in `$message` and throw on a malformed style, and
         // the envelope this refusal promised would never be written at all.
         $output->write($payload, false, OutputInterface::OUTPUT_RAW | OutputInterface::VERBOSITY_QUIET);
+    }
+
+    /** @return ?array{path: list<string>, written: string, accepted: list<string>, closed: bool} */
+    private static function positionDocument(?RefusedPosition $position): ?array
+    {
+        if ($position === null) {
+            return null;
+        }
+
+        return [
+            'path' => $position->segments(),
+            'written' => $position->written(),
+            'accepted' => $position->accepted(),
+            'closed' => $position->isClosed(),
+        ];
     }
 }

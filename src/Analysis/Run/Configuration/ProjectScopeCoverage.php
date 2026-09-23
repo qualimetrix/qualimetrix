@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Run\Configuration;
 
 use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
@@ -17,9 +18,13 @@ use RuntimeException;
  * The denominator is the project's **production** autoload roots, not the
  * project root: `qmx check src/` on a repository whose `composer.json`
  * autoloads `src/` is a whole-project run even though the repository holds
- * `tests/`, `scripts/` and `website/` besides. `autoload-dev` is excluded for
- * the same reason the coupling warning excludes it — test code is not part of
- * the graph the metrics are about.
+ * `tests/`, `scripts/` and `website/` besides. `autoload-dev` is excluded by
+ * default for the same reason the coupling warning excludes it — test code is
+ * not part of the graph the metrics are about — and included when the run's
+ * {@see AutoloadDevPolicy} says the author counts it, the same policy that
+ * decides whether a run with no `paths` analyses it. One policy answers both,
+ * so the paths a run analyses and the project it is judged against cannot
+ * disagree about test code.
  *
  * **Why anything asks.** A statement that a configured value bound to nothing
  * is a statement about the pair (configuration, run scope), never about the
@@ -72,14 +77,14 @@ final readonly class ProjectScopeCoverage
     public function __construct(private ComposerAutoloadPathReaderInterface $composerReader) {}
 
     /** @param list<AbsolutePath> $analyzedPaths */
-    public function pathsCoverProjectScope(AbsolutePath $projectRoot, array $analyzedPaths): bool
+    public function pathsCoverProjectScope(AbsolutePath $projectRoot, array $analyzedPaths, AutoloadDevPolicy $autoloadDev): bool
     {
-        return $this->measure($projectRoot, $analyzedPaths)->covers();
+        return $this->measure($projectRoot, $analyzedPaths, $autoloadDev)->covers();
     }
 
     /**
-     * The production autoload targets no analysed path contains, in the
-     * spelling `composer.json` uses.
+     * The autoload targets the policy counts that no analysed path
+     * contains, in the spelling `composer.json` uses.
      *
      * Empty on a project whose production autoload this class cannot read:
      * there is no target to name, which is why the verdict and this list are
@@ -91,9 +96,9 @@ final readonly class ProjectScopeCoverage
      *
      * @return list<string>
      */
-    public function uncoveredAutoloadRoots(AbsolutePath $projectRoot, array $analyzedPaths): array
+    public function uncoveredAutoloadRoots(AbsolutePath $projectRoot, array $analyzedPaths, AutoloadDevPolicy $autoloadDev): array
     {
-        return $this->measure($projectRoot, $analyzedPaths)->uncoveredRoots;
+        return $this->measure($projectRoot, $analyzedPaths, $autoloadDev)->uncoveredRoots;
     }
 
     /**
@@ -101,7 +106,7 @@ final readonly class ProjectScopeCoverage
      *
      * @param list<AbsolutePath> $analyzedPaths
      */
-    public function measure(AbsolutePath $projectRoot, array $analyzedPaths): ProjectScopeMeasurement
+    public function measure(AbsolutePath $projectRoot, array $analyzedPaths, AutoloadDevPolicy $autoloadDev): ProjectScopeMeasurement
     {
         $composerJsonPath = $projectRoot->joinRelative(RelativePath::fromString('composer.json'));
 
@@ -113,7 +118,7 @@ final readonly class ProjectScopeCoverage
         // neither `-q` nor the machine formats, so on such a project this
         // silence is what a CI pipeline sees — the price of not guessing
         // "whole project" for a project that never said what its code is.
-        $autoloadPaths = $this->composerReader->productionAutoloadTargets($composerJsonPath->value());
+        $autoloadPaths = $this->declaredTargets($composerJsonPath->value(), $autoloadDev);
 
         // `[]` is the same answer as `null` and is spelled out rather than
         // trusted away: reading an empty denominator as "covers" is precisely
@@ -148,6 +153,28 @@ final readonly class ProjectScopeCoverage
         }
 
         return ProjectScopeMeasurement::against($uncoveredPaths);
+    }
+
+    /**
+     * The targets a run is measured against: the production ones, and the
+     * `autoload-dev` ones when the policy counts them. `null` when neither
+     * counted section declares anything readable.
+     *
+     * @return ?list<string>
+     */
+    private function declaredTargets(string $composerJsonPath, AutoloadDevPolicy $autoloadDev): ?array
+    {
+        $production = $this->composerReader->productionAutoloadTargets($composerJsonPath);
+        if ($autoloadDev === AutoloadDevPolicy::Exclude) {
+            return $production;
+        }
+
+        $development = $this->composerReader->developmentAutoloadTargets($composerJsonPath);
+        if ($production === null && $development === null) {
+            return null;
+        }
+
+        return array_values(array_unique([...$production ?? [], ...$development ?? []]));
     }
 
     /**

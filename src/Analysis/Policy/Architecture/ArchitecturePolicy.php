@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture;
 
 use LogicException;
+use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
@@ -39,7 +40,7 @@ final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterfac
 
     public function resolve(ConfigurationDocument $document): ResolvedArchitecturePolicyInterface
     {
-        return $this->factory->fromContributions($document->contributions('architecture'));
+        return $this->factory->fromContributions($document->contributions(ConfigSchema::ARCHITECTURE));
     }
 
     public function replace(ResolvedArchitecturePolicyInterface $policy): void

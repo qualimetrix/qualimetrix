@@ -1,14 +1,8 @@
 {
   "version": 13,
-  "generated": "2026-09-23T10:29:27+00:00",
+  "generated": "2026-09-23T20:01:50+00:00",
   "scope": ["src"],
   "entries": {
-    "declaration:callable:Qualimetrix\\Analysis\\Configuration\\Contract\\Discovery\\ComposerAutoloadPathReaderInterface::extractAutoloadPaths@src/Analysis/Configuration/Contract/Discovery/ComposerAutoloadPathReaderInterface.php": [
-      {"channel":"code-smell.boolean-argument","occurrence":"d9ba644b99bbbc45","count":1}
-    ],
-    "declaration:callable:Qualimetrix\\Analysis\\Configuration\\Discovery\\ComposerReader::extractAutoloadPaths@src/Analysis/Configuration/Discovery/ComposerReader.php": [
-      {"channel":"code-smell.boolean-argument","occurrence":"d9ba644b99bbbc45","count":1}
-    ],
     "declaration:callable:Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyDetector::strongConnect@src/Analysis/Evidence/CircularDependency/CircularDependencyDetector.php": [
       {"channel":"complexity.ccn","magnitudes":[10]},
       {"channel":"complexity.cognitive","magnitudes":[15]}
@@ -27,7 +21,7 @@
     ],
     "declaration:callable:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Summary\\HealthSummaryBuilder::buildWorstOffenders@src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php": [
       {"channel":"complexity.ccn","magnitudes":[12]},
-      {"channel":"complexity.cognitive","magnitudes":[17]}
+      {"channel":"complexity.cognitive","magnitudes":[15]}
     ],
     "declaration:callable:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Summary\\HealthSummaryBuilder::countFindingsPerSymbol@src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php": [
       {"channel":"complexity.ccn","magnitudes":[13]},
@@ -204,9 +198,7 @@
       {"channel":"code-smell.constructor-overinjection","magnitudes":[9]}
     ],
     "declaration:callable:Qualimetrix\\Infrastructure\\Console\\FormatterContextFactory::create@src/Infrastructure/Console/FormatterContextFactory.php": [
-      {"channel":"code-smell.boolean-argument","occurrence":"c7fac59b0cebc45a","count":1},
-      {"channel":"complexity.ccn","magnitudes":[13]},
-      {"channel":"complexity.npath","magnitudes":[576]}
+      {"channel":"code-smell.boolean-argument","occurrence":"c7fac59b0cebc45a","count":1}
     ],
     "declaration:callable:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleOptionsCompilerPass::resolveExtraDependencies@src/Infrastructure/DependencyInjection/CompilerPass/RuleOptionsCompilerPass.php": [
       {"channel":"complexity.ccn","magnitudes":[11]},
@@ -215,10 +207,6 @@
     "declaration:callable:Qualimetrix\\Infrastructure\\Git\\ReportingGitScopeQuery::extractNamespaces@src/Infrastructure/Git/ReportingGitScopeQuery.php": [
       {"channel":"complexity.ccn","magnitudes":[11]},
       {"channel":"complexity.cognitive","magnitudes":[17]}
-    ],
-    "declaration:callable:Qualimetrix\\Infrastructure\\Parallel\\FileProcessingTask::__construct@src/Infrastructure/Parallel/FileProcessingTask.php": [
-      {"channel":"code-smell.constructor-overinjection","magnitudes":[8]},
-      {"channel":"code-smell.long-parameter-list","magnitudes":[8]}
     ],
     "declaration:callable:Qualimetrix\\Infrastructure\\Parallel\\Strategy\\AmphpParallelStrategy::absolutePath@src/Infrastructure/Parallel/Strategy/AmphpParallelStrategy.php": [
       {"channel":"code-smell.error-suppression","occurrence":"4e6e45ba70fb46d4","count":1}
@@ -232,14 +220,10 @@
     "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Health\\HealthTextFormatter::renderTable@src/Reporting/Formatter/Health/HealthTextFormatter.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"8287b40263e2ac87","count":1}
     ],
-    "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlFindingPartitioner::partition@src/Reporting/Formatter/Html/HtmlFindingPartitioner.php": [
-      {"channel":"complexity.ccn","magnitudes":[14]},
-      {"channel":"complexity.cognitive","magnitudes":[17]}
-    ],
-    "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder::build@src/Reporting/Formatter/Html/HtmlTreeBuilder.php": [
+    "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlProjectMetadata::of@src/Reporting/Formatter/Html/HtmlProjectMetadata.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"c7fac59b0cebc45a","count":1}
     ],
-    "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder::buildProjectMetadata@src/Reporting/Formatter/Html/HtmlTreeBuilder.php": [
+    "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder::build@src/Reporting/Formatter/Html/HtmlTreeBuilder.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"c7fac59b0cebc45a","count":1}
     ],
     "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder::buildTree@src/Reporting/Formatter/Html/HtmlTreeBuilder.php": [
@@ -273,11 +257,8 @@
     "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Summary\\OffenderListRenderer::renderWorstOffender@src/Reporting/Formatter/Summary/OffenderListRenderer.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"79aecf1e084dd904","count":1}
     ],
-    "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Summary\\SummaryFormatter::format@src/Reporting/Formatter/Summary/SummaryFormatter.php": [
-      {"channel":"complexity.ccn","magnitudes":[10]}
-    ],
     "declaration:class:Qualimetrix\\Analysis\\Configuration\\Loader\\YamlConfigLoader@src/Analysis/Configuration/Loader/YamlConfigLoader.php": [
-      {"channel":"complexity.wmc","magnitudes":[70]},
+      {"channel":"complexity.wmc","magnitudes":[57]},
       {"channel":"health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyDetector@src/Analysis/Evidence/CircularDependency/CircularDependencyDetector.php": [
@@ -367,15 +348,6 @@
     "declaration:class:Qualimetrix\\Infrastructure\\Console\\ResultPresenter@src/Infrastructure/Console/ResultPresenter.php": [
       {"channel":"design.god-class","magnitudes":[3]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ConfigurationValidatorCompilerPass@src/Infrastructure/DependencyInjection/CompilerPass/ConfigurationValidatorCompilerPass.php": [
-      {"channel":"health.maintainability","magnitudes":[44.4]}
-    ],
-    "declaration:class:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\FileSetInspectionParticipantCompilerPass@src/Infrastructure/DependencyInjection/CompilerPass/FileSetInspectionParticipantCompilerPass.php": [
-      {"channel":"health.maintainability","magnitudes":[48.5]}
-    ],
-    "declaration:class:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ParallelCollectorClassesCompilerPass@src/Infrastructure/DependencyInjection/CompilerPass/ParallelCollectorClassesCompilerPass.php": [
-      {"channel":"health.maintainability","magnitudes":[40.8]}
-    ],
     "declaration:class:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\MeasurementConfigurator@src/Infrastructure/DependencyInjection/Configurator/MeasurementConfigurator.php": [
       {"channel":"health.maintainability","magnitudes":[40.3]}
     ],
@@ -398,15 +370,6 @@
     "declaration:class:Qualimetrix\\Reporting\\DrillDown\\DrillDownBinding@src/Reporting/DrillDown/DrillDownBinding.php": [
       {"channel":"health.cohesion","magnitudes":[40]}
     ],
-    "declaration:class:Qualimetrix\\Reporting\\Formatter\\GithubActionsFormatter@src/Reporting/Formatter/GithubActionsFormatter.php": [
-      {"channel":"health.cohesion","magnitudes":[40]}
-    ],
-    "declaration:class:Qualimetrix\\Reporting\\Formatter\\Health\\HealthTextFormatter@src/Reporting/Formatter/Health/HealthTextFormatter.php": [
-      {"channel":"complexity.wmc","magnitudes":[55]}
-    ],
-    "declaration:class:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder@src/Reporting/Formatter/Html/HtmlTreeBuilder.php": [
-      {"channel":"complexity.wmc","magnitudes":[51]}
-    ],
     "declaration:class:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeNode@src/Reporting/Formatter/Html/HtmlTreeNode.php": [
       {"channel":"design.data-class","magnitudes":[11]}
     ],
@@ -418,9 +381,6 @@
     ],
     "ns:Qualimetrix\\Analysis\\Configuration\\Contract": [
       {"channel":"health.cohesion","magnitudes":[36.5]}
-    ],
-    "ns:Qualimetrix\\Analysis\\Configuration\\Discovery": [
-      {"channel":"health.maintainability","magnitudes":[38.1]}
     ],
     "ns:Qualimetrix\\Analysis\\Configuration\\Pipeline\\Stage": [
       {"channel":"health.cohesion","magnitudes":[25]}
@@ -436,7 +396,7 @@
       {"channel":"health.maintainability","magnitudes":[43.7]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Summary": [
-      {"channel":"health.maintainability","magnitudes":[43.9]}
+      {"channel":"health.maintainability","magnitudes":[44.2]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Coupling": [
       {"channel":"coupling.cbo","magnitudes":[19]}
@@ -462,9 +422,6 @@
     "ns:Qualimetrix\\Analysis\\Evidence\\Size": [
       {"channel":"size.class-count","magnitudes":[15]}
     ],
-    "ns:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass": [
-      {"channel":"health.maintainability","magnitudes":[28.7]}
-    ],
     "ns:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator": [
       {"channel":"size.class-count","magnitudes":[22]}
     ],
@@ -475,7 +432,7 @@
       {"channel":"health.cohesion","magnitudes":[43.7]}
     ],
     "ns:Qualimetrix\\Reporting\\Formatter\\Html": [
-      {"channel":"health.cohesion","magnitudes":[37.5]}
+      {"channel":"health.cohesion","magnitudes":[42.9]}
     ],
     "ns:Qualimetrix\\Reporting\\Formatter\\Json": [
       {"channel":"health.cohesion","magnitudes":[30]}
@@ -487,7 +444,6 @@
       {"channel":"duplication.clone","occurrence":"67c3f109dc2d3e97","magnitudes":[28]},
       {"channel":"duplication.clone","occurrence":"9964fabbf3e849d9","magnitudes":[46]},
       {"channel":"duplication.clone","occurrence":"cf1eed47dd349df2","magnitudes":[45]},
-      {"channel":"duplication.clone","occurrence":"d3feecf066ef9d58","magnitudes":[30]},
       {"channel":"duplication.clone","occurrence":"d4a10c7cb6a1893d","magnitudes":[32]},
       {"channel":"duplication.clone","occurrence":"fd45a3650ac682e6","magnitudes":[20,20,20]},
       {"channel":"duplication.clone","occurrence":"ffe945d02651bf40","magnitudes":[24]},

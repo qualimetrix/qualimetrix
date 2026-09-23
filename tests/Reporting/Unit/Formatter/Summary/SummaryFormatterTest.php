@@ -24,6 +24,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
+use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\Formatter\Detail\DetailedFindingRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\FindingSummaryRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\HealthBarRenderer;
@@ -58,7 +59,7 @@ final class SummaryFormatterTest extends TestCase
             new HealthBarRenderer(new HealthScoreResolver($namespaceDrillDown)),
             $offenderListRenderer,
             new TopIssuesRenderer(),
-            new FindingSummaryRenderer($findingFilter, $registry),
+            new FindingSummaryRenderer($registry),
             new HintRenderer($offenderListRenderer),
         );
         $this->plainContext = new FormatterContext(useColor: false, terminalWidth: 120);
@@ -501,12 +502,11 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'), terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($this->selected($report, $context), $context);
 
-        // Only 1 finding in scope
-        self::assertStringContainsString('1 violation', $output);
-        self::assertStringContainsString('1 error', $output);
-        self::assertStringNotContainsString('warning', $output);
+        // Only 1 finding in scope; the other is named as outside it
+        self::assertStringContainsString('1 violation in this scope (1 error)', $output);
+        self::assertStringContainsString('1 outside it (1 warning) decide the exit code', $output);
     }
 
     #[Test]
@@ -536,11 +536,10 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(useColor: false, class: 'App\Service\UserService', terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($this->selected($report, $context), $context);
 
-        self::assertStringContainsString('1 violation', $output);
-        self::assertStringContainsString('1 error', $output);
-        self::assertStringNotContainsString('warning', $output);
+        self::assertStringContainsString('1 violation in this scope (1 error)', $output);
+        self::assertStringContainsString('1 outside it (1 warning) decide the exit code', $output);
     }
 
     #[Test]
@@ -562,7 +561,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'), terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($this->selected($report, $context), $context);
 
         self::assertStringContainsString('No violations in this scope.', $output);
     }
@@ -895,7 +894,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(useColor: false, class: 'App\Service\UserService', terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($this->selected($report, $context), $context);
 
         // Only god-class finding matches (120min = 2h)
         self::assertStringContainsString('Tech debt: 2h', $output);
@@ -922,7 +921,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'), terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($this->selected($report, $context), $context);
 
         // No findings in scope, so no tech debt line
         self::assertStringNotContainsString('Tech debt', $output);
@@ -1026,7 +1025,7 @@ final class SummaryFormatterTest extends TestCase
         $output = $this->formatter->format($report, $context);
 
         // Should NOT hint --detail since we're already in detail mode
-        self::assertStringNotContainsString('--detail to see all violations', $output);
+        self::assertStringNotContainsString('--detail to', $output);
     }
 
     #[Test]
@@ -1234,6 +1233,72 @@ final class SummaryFormatterTest extends TestCase
         // Finding counts in breakdown must reflect all findings
         self::assertStringContainsString('3 violations', $output);
         self::assertStringContainsString('1 violation)', $output);
+    }
+
+    /**
+     */
+    #[Test]
+    public function itCutsTheDetailListAfterSortingIt(): void
+    {
+        // Producer order: the warning first; the cut must still keep the error.
+        $report = $this->createReport(
+            findings: [
+                self::finding(
+                    location: new Location(RelativePath::fromString('src/Z.php'), 1),
+                    symbolPath: SymbolPath::forClass('App', 'Z'),
+                    ruleName: 'complexity.ccn',
+                    code: 'complexity.ccn',
+                    message: 'late',
+                    severity: Severity::Warning,
+                ),
+                self::finding(
+                    location: new Location(RelativePath::fromString('src/A.php'), 1),
+                    symbolPath: SymbolPath::forClass('App', 'A'),
+                    ruleName: 'cohesion.lcom',
+                    code: 'cohesion.lcom',
+                    message: 'early',
+                    severity: Severity::Error,
+                ),
+            ],
+            filesAnalyzed: 2,
+        );
+        $context = new FormatterContext(
+            useColor: false,
+            groupBy: GroupBy::Severity,
+            terminalWidth: 120,
+            detailLimit: 1,
+            isGroupByExplicit: true,
+        );
+
+        $output = $this->formatter->format($report, $context);
+        $listing = (string) strstr((string) strstr($output, 'Violations'), 'Technical debt by rule:', true);
+
+        self::assertStringContainsString('Errors (1)', $listing);
+        self::assertStringNotContainsString('Warnings', $listing);
+        self::assertStringContainsString('... and 1 more', $output);
+    }
+
+    /**
+     * Narrows a report the way the presenter does before any formatter runs:
+     * the findings become the selection, and what it left out is counted.
+     */
+    private function selected(Report $report, FormatterContext $context): Report
+    {
+        $selected = (new FindingFilter())->filterFindings($report->findings, $context);
+
+        return new Report(
+            findings: $selected,
+            filesAnalyzed: $report->filesAnalyzed,
+            filesSkipped: $report->filesSkipped,
+            duration: $report->duration,
+            errorCount: \count(array_filter($selected, static fn(Finding $f): bool => $f->severity === Severity::Error)),
+            warningCount: \count(array_filter($selected, static fn(Finding $f): bool => $f->severity === Severity::Warning)),
+            healthScores: $report->healthScores,
+            worstNamespaces: $report->worstNamespaces,
+            worstClasses: $report->worstClasses,
+            techDebtMinutes: $report->techDebtMinutes,
+            outOfScope: OutOfScopeFindings::between($report->findings, $selected),
+        );
     }
 
     /**

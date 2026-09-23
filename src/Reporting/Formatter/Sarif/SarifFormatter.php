@@ -8,8 +8,9 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Version;
-use Qualimetrix\Reporting\Formatter\AcceptedLevelNarrator;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\Formatter\PublishedFinding;
+use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
@@ -83,7 +84,20 @@ final class SarifFormatter implements FormatterInterface
             'runs' => [$run],
         ];
 
-        return json_encode($sarif, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
+        return PublishedUtf8::encodeJson(
+            $sarif,
+            \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES,
+            static function (array $sarif, int $repairs): array {
+                $sarif['runs'][0]['invocations'] ??= [['executionSuccessful' => true, 'toolExecutionNotifications' => []]];
+                $sarif['runs'][0]['invocations'][0]['toolExecutionNotifications'][] = [
+                    'level' => 'warning',
+                    'message' => ['text' => PublishedUtf8::describe($repairs)],
+                    'descriptor' => ['id' => 'QMX-PUBLICATION-INVALID-UTF8'],
+                ];
+
+                return $sarif;
+            },
+        );
     }
 
     public function getName(): string
@@ -118,7 +132,7 @@ final class SarifFormatter implements FormatterInterface
                     'ruleId' => $v->code,
                     'ruleIndex' => $ruleIndexMap[$v->code] ?? 0,
                     'level' => $this->ruleCollector->mapLevel($v->severity),
-                    'message' => ['text' => $v->message . $this->formatBreachSuffix($v)],
+                    'message' => ['text' => PublishedFinding::annotatedMessage($v)],
                     'partialFingerprints' => [
                         'primaryLocationLineHash' => $v->getFingerprint(),
                     ],
@@ -145,20 +159,7 @@ final class SarifFormatter implements FormatterInterface
 
                 if ($v->relatedLocations !== []) {
                     $result['relatedLocations'] = array_values(array_map(
-                        fn(int $index, Location $loc): array => [
-                            'id' => $index,
-                            'physicalLocation' => [
-                                'artifactLocation' => $this->buildArtifactLocation(
-                                    $context->relativizePath($loc->file),
-                                    $context->basePath !== '',
-                                ),
-                                'region' => [
-                                    'startLine' => $loc->line ?? 1,
-                                    'startColumn' => 1,
-                                ],
-                            ],
-                            'message' => ['text' => 'Related location'],
-                        ],
+                        fn(int $index, Location $loc): array => $this->buildRelatedLocation($index, $loc, $context),
                         array_keys($v->relatedLocations),
                         $v->relatedLocations,
                     ));
@@ -171,13 +172,31 @@ final class SarifFormatter implements FormatterInterface
     }
 
     /**
-     * " (accepted at 25, now 31)" on a measured breach, '' otherwise (ADR 0017).
+     * A related location without a file keeps its id and message and carries
+     * no physical location: `"uri": ""` would point at the base itself.
+     *
+     * @return array<string, mixed>
      */
-    private function formatBreachSuffix(Finding $finding): string
+    private function buildRelatedLocation(int $index, Location $loc, FormatterContext $context): array
     {
-        $breach = AcceptedLevelNarrator::describe($finding);
+        if ($loc->file === null) {
+            return ['id' => $index, 'message' => ['text' => 'Related location']];
+        }
 
-        return $breach === null ? '' : \sprintf(' (%s)', $breach);
+        return [
+            'id' => $index,
+            'physicalLocation' => [
+                'artifactLocation' => $this->buildArtifactLocation(
+                    $context->relativizePath($loc->file),
+                    $context->basePath !== '',
+                ),
+                'region' => [
+                    'startLine' => $loc->line ?? 1,
+                    'startColumn' => 1,
+                ],
+            ],
+            'message' => ['text' => 'Related location'],
+        ];
     }
 
     /**
@@ -188,9 +207,12 @@ final class SarifFormatter implements FormatterInterface
      *
      * @return array<string, string>
      */
-    private function buildArtifactLocation(string $uri, bool $hasBasePath): array
+    private function buildArtifactLocation(string $relativePath, bool $hasBasePath): array
     {
-        $location = ['uri' => $uri];
+        // A URI reference, encoded segment by segment like the base it is
+        // resolved against: a raw `#` would end it, a raw `%` would be read as
+        // an escape.
+        $location = ['uri' => implode('/', array_map('rawurlencode', explode('/', $relativePath)))];
 
         if ($hasBasePath) {
             $location['uriBaseId'] = '%SRCROOT%';

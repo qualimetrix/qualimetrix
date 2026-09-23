@@ -19,11 +19,11 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
  * Merges default computed metric definitions with user overrides from YAML
  * and validates the result (syntax, coverage, circular deps, references).
  *
- * The per-entry order below is part of the contract
- * (`02-computed-metric-keys.md` §6): an entry's name is recognised before its
- * keys are walked, and its keys are walked before the `enabled: false` branch
- * — otherwise a disabled entry would swallow a typo in a sibling key, which
- * is exactly the silent acceptance this stage exists to close.
+ * The per-entry order below is part of the contract: an entry's name is
+ * recognised before anything about its body is read, and its keys are walked
+ * before the `enabled: false` branch — otherwise a disabled entry would
+ * swallow a typo in a sibling key, which is exactly the silent acceptance
+ * this stage exists to close.
  */
 final class ComputedMetricsConfigResolver
 {
@@ -82,7 +82,7 @@ final class ComputedMetricsConfigResolver
 
     /**
      * Applies one raw `computed_metrics:` entry to the working definition
-     * map, in the five-step order the class docblock describes.
+     * map, in the order the class docblock describes.
      *
      * @param array<string, ComputedMetricDefinition> $definitions
      * @param list<string> $disabledHealth
@@ -92,21 +92,24 @@ final class ComputedMetricsConfigResolver
      */
     private function applyEntry(string $name, mixed $overrides, array &$definitions, array &$disabledHealth): void
     {
-        // Step 0 — an empty YAML block means the same as an omitted entry.
-        if ($overrides === null) {
-            return;
-        }
-
-        // Step 1 — the entry itself must be a map.
-        self::assertEntryIsMap($name, $overrides);
-
-        // Step 2 — the name is recognised before anything about its body is
+        // Step 1 — the name is recognised before anything about its body is
         // read: a `health.*` name must name one of the six known dimensions,
-        // regardless of what the entry goes on to say.
+        // and any other name must follow the grammar, whatever the entry goes
+        // on to say — including nothing at all.
         $isHealth = str_starts_with($name, 'health.');
         if ($isHealth && !isset($definitions[$name])) {
             $this->refuseUnknownHealthDimension($name);
         }
+        if (!$isHealth) {
+            self::refuseInvalidNameGrammar($name);
+        }
+
+        // Step 2 — `name: ~` is the entry written without a body, read as
+        // `name: {}`: the defaults for a built-in dimension, and for a user
+        // metric whatever refusal an empty body earns. It is not an omitted
+        // entry — the name was written, so there is a metric to answer for.
+        $overrides ??= [];
+        self::assertEntryIsMap($name, $overrides);
 
         // Step 3 — every key of the entry, and the shape of `formulas:`, is
         // walked before the `enabled: false` branch below, so a disabled
@@ -122,14 +125,31 @@ final class ComputedMetricsConfigResolver
         }
 
         // Step 5 — merge() / create(). A `health.*` name reaches here only
-        // known: an unknown one already refused in step 2.
+        // known: an unknown one already refused in step 1.
         $definitions[$name] = isset($definitions[$name])
             ? ComputedMetricOverrideReader::merge($definitions[$name], $overrides)
             : ComputedMetricOverrideReader::create($name, $overrides);
     }
 
     /**
-     * Step 1's own check, split out of {@see self::applyEntry()} to keep
+     * Step 1's grammar check for a name outside `health.*`.
+     *
+     * @throws ConfigurationRefusal
+     */
+    private static function refuseInvalidNameGrammar(string $name): void
+    {
+        if (ComputedMetricDefinition::isValidName($name)) {
+            return;
+        }
+
+        throw ConfigurationRefusal::atResolvedKey(
+            RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($name), $name),
+            ComputedMetricRefusalWording::nameGrammar($name, ComputedMetricDefinition::NAME_TEMPLATE),
+        );
+    }
+
+    /**
+     * Step 2's own check, split out of {@see self::applyEntry()} to keep
      * that method's cyclomatic weight readable.
      *
      * @phpstan-assert array<string, mixed> $overrides

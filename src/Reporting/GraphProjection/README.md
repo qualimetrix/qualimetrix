@@ -56,3 +56,10 @@ because they leave the graph exactly as it would have been.
 GraphProjection owns delivery-facing graph rendering. Console imports its
 four declared contracts; exporters and options remain internal, while graph
 semantics stay with DependencyModel.
+
+A symbol name can carry a byte the parser accepts inside an identifier but
+that is not valid UTF-8. `JsonGraphExporter` and `DotExporter` both repair it
+via `Reporting\Formatter\PublishedUtf8` — the same repair-and-mark treatment
+`check`'s own formatters give published strings — rather than let the export
+fail (JSON) or silently write the invalid byte into the document (DOT). This
+is the one production import this module takes from outside its own tree.

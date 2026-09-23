@@ -92,12 +92,20 @@
       "visibility": "contract",
       "consumers": [
         {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricContributionReader"
+        },
+        {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingAnalysis"
         },
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Configuration\\FindingConfigurationResolver"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\ArchitecturePolicy"
         },
         {
           "owner": "Analysis.Run",
@@ -497,6 +505,10 @@
         },
         {
           "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\AbstractHookCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCleanupCommand"
         },
         {
@@ -541,6 +553,10 @@
         },
         {
           "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ConfigurationInputAdapter"
+        },
+        {
+          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ExitPolicy"
         },
         {
@@ -550,6 +566,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ProfilePresenter"
         },
         {
           "owner": "Infrastructure.Console",
@@ -714,6 +734,10 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveOptions"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter"
         }
       ]
     },
@@ -727,6 +751,13 @@
     "Qualimetrix\\Analysis\\Configuration\\Loader\\ConfigLoaderInterface": {
       "path": "src/Analysis/Configuration/Loader/ConfigLoaderInterface.php",
       "kind": "interface",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Loader\\DocumentKeyNormalizer": {
+      "path": "src/Analysis/Configuration/Loader/DocumentKeyNormalizer.php",
+      "kind": "class",
       "owner": "Analysis.Configuration",
       "visibility": "internal",
       "consumers": []
@@ -777,13 +808,6 @@
     },
     "Qualimetrix\\Analysis\\Configuration\\Pipeline\\ConfigurationLayer": {
       "path": "src/Analysis/Configuration/Pipeline/ConfigurationLayer.php",
-      "kind": "class",
-      "owner": "Analysis.Configuration",
-      "visibility": "internal",
-      "consumers": []
-    },
-    "Qualimetrix\\Analysis\\Configuration\\Pipeline\\ConfigurationMerger": {
-      "path": "src/Analysis/Configuration/Pipeline/ConfigurationMerger.php",
       "kind": "class",
       "owner": "Analysis.Configuration",
       "visibility": "internal",
@@ -4534,6 +4558,10 @@
         },
         {
           "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlFindingPartitioner"
+        },
+        {
+          "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder"
         },
         {
@@ -6448,7 +6476,15 @@
         },
         {
           "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlFindingPartitioner"
+        },
+        {
+          "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Json\\JsonFindingSection"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\PublishedFinding"
         },
         {
           "owner": "Reporting",
@@ -6473,10 +6509,6 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\TextFormatter"
-        },
-        {
-          "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Report"
         },
         {
           "owner": "Reporting",
@@ -9649,6 +9681,10 @@
         },
         {
           "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\DrillDown\\OutOfScopeFindings"
+        },
+        {
+          "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\CheckstyleFormatter"
         },
         {
@@ -9686,10 +9722,6 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\TextFormatter"
-        },
-        {
-          "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Report"
         },
         {
           "owner": "Reporting",
@@ -9852,7 +9884,18 @@
       "kind": "class",
       "owner": "Analysis.Finding",
       "visibility": "internal",
-      "consumers": []
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\FindingConfigurator",
+          "operations": [
+            "service_alias",
+            "service_reference",
+            "service_registration"
+          ]
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleSuppressionSelectorDecoder": {
       "path": "src/Analysis/Finding/RuleConfiguration/RuleSuppressionSelectorDecoder.php",
@@ -9873,7 +9916,33 @@
       "kind": "class",
       "owner": "Analysis.Finding",
       "visibility": "internal",
-      "consumers": []
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass",
+          "operations": [
+            "definition_argument_mutation"
+          ]
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ConfigurationValidatorCompilerPass",
+          "operations": [
+            "definition_argument_mutation"
+          ]
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\FindingConfigurator",
+          "operations": [
+            "service_alias",
+            "service_registration"
+          ]
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Finding\\Rule\\InMemoryRuleChannelRegistry": {
       "path": "src/Analysis/Finding/Rule/InMemoryRuleChannelRegistry.php",
@@ -9927,7 +9996,16 @@
       "kind": "class",
       "owner": "Analysis.Finding",
       "visibility": "internal",
-      "consumers": []
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\FindingConfigurator",
+          "operations": [
+            "service_registration"
+          ]
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\ValueScopeJudgement": {
       "path": "src/Analysis/Finding/SuppressionBinding/ValueScopeJudgement.php",
@@ -11715,6 +11793,10 @@
         {
           "owner": "Infrastructure.Parallel",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\Strategy\\AmphpParallelStrategy"
+        },
+        {
+          "owner": "Infrastructure.Parallel",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\WorkerPool"
         }
       ]
     },
@@ -11792,6 +11874,18 @@
       "owner": "Analysis.Run",
       "visibility": "internal",
       "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\AutoloadDevPolicy": {
+      "path": "src/Analysis/Run/Contract/Configuration/AutoloadDevPolicy.php",
+      "kind": "enum",
+      "owner": "Analysis.Run",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\GeneratedFilePolicy": {
       "path": "src/Analysis/Run/Contract/Configuration/GeneratedFilePolicy.php",
@@ -14529,6 +14623,10 @@
         },
         {
           "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlFindingPartitioner"
+        },
+        {
+          "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder"
         },
         {
@@ -15074,7 +15172,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder"
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlProjectMetadata"
         },
         {
           "owner": "Reporting",
@@ -15154,7 +15252,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder"
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlProjectMetadata"
         },
         {
           "owner": "Reporting",
@@ -16382,6 +16480,20 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ConsumerBoundPassInterface": {
+      "path": "src/Infrastructure/DependencyInjection/CompilerPass/ConsumerBoundPassInterface.php",
+      "kind": "interface",
+      "owner": "Infrastructure.DependencyInjection",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ConsumerRegistrationCompilerPass": {
+      "path": "src/Infrastructure/DependencyInjection/CompilerPass/ConsumerRegistrationCompilerPass.php",
+      "kind": "class",
+      "owner": "Infrastructure.DependencyInjection",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\FileSetInspectionParticipantCompilerPass": {
       "path": "src/Infrastructure/DependencyInjection/CompilerPass/FileSetInspectionParticipantCompilerPass.php",
       "kind": "class",
@@ -17093,6 +17205,20 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Infrastructure\\Parallel\\WorkerComposition": {
+      "path": "src/Infrastructure/Parallel/WorkerComposition.php",
+      "kind": "class",
+      "owner": "Infrastructure.Parallel",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Parallel\\WorkerPool": {
+      "path": "src/Infrastructure/Parallel/WorkerPool.php",
+      "kind": "class",
+      "owner": "Infrastructure.Parallel",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Infrastructure\\Profiler\\Contract\\ProfileFormat": {
       "path": "src/Infrastructure/Profiler/Contract/ProfileFormat.php",
       "kind": "enum",
@@ -17507,6 +17633,18 @@
         }
       ]
     },
+    "Qualimetrix\\Reporting\\DrillDown\\OutOfScopeFindings": {
+      "path": "src/Reporting/DrillDown/OutOfScopeFindings.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter"
+        }
+      ]
+    },
     "Qualimetrix\\Reporting\\FindingProjection\\Configuration\\ConfiguredFindingExclusionsResolver": {
       "path": "src/Reporting/FindingProjection/Configuration/ConfiguredFindingExclusionsResolver.php",
       "kind": "class",
@@ -17793,6 +17931,18 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Reporting\\Formatter\\FormatOptionValue": {
+      "path": "src/Reporting/Formatter/FormatOptionValue.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FormatterContextFactory"
+        }
+      ]
+    },
     "Qualimetrix\\Reporting\\Formatter\\FormatterInterface": {
       "path": "src/Reporting/Formatter/FormatterInterface.php",
       "kind": "interface",
@@ -17892,6 +18042,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlProjectMetadata": {
+      "path": "src/Reporting/Formatter/Html/HtmlProjectMetadata.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder": {
       "path": "src/Reporting/Formatter/Html/HtmlTreeBuilder.php",
       "kind": "class",
@@ -17954,6 +18111,29 @@
       "owner": "Reporting",
       "visibility": "internal",
       "consumers": []
+    },
+    "Qualimetrix\\Reporting\\Formatter\\PublishedFinding": {
+      "path": "src/Reporting/Formatter/PublishedFinding.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Reporting\\Formatter\\PublishedUtf8": {
+      "path": "src/Reporting/Formatter/PublishedUtf8.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Reporting.GraphProjection",
+          "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\DotExporter"
+        },
+        {
+          "owner": "Reporting.GraphProjection",
+          "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\JsonGraphExporter"
+        }
+      ]
     },
     "Qualimetrix\\Reporting\\Formatter\\Sarif\\SarifFormatter": {
       "path": "src/Reporting/Formatter/Sarif/SarifFormatter.php",

@@ -50,7 +50,12 @@ preparation -> FileSet inspection -> Rule execution -> result projection
 a slice of it: its denominator is every production autoload target of
 `composer.json` — `psr-4` and `psr-0` roots, `classmap` and `files` entries
 alike — so `check src/` on a project autoloading `src/` covers the project
-while `check src/Foo/` does not. A `classmap` or `files` entry may name a
+while `check src/Foo/` does not. `autoload-dev` joins the denominator only
+under `AutoloadDevPolicy::Include` (`include_autoload_dev`), the same policy
+under which `RunConfigurationResolver` adds the `autoload-dev` roots Composer
+discovery contributed to a run's default paths; the policy travels on
+`RunConfiguration::$autoloadDevPolicy`, so a run narrowed later is judged
+against the same project. A `classmap` or `files` entry may name a
 single file, which changes nothing: the question is containment.
 `ProjectScopeMeasurement` carries both halves of one measurement — the
 uncovered targets the console warns about, and the verdict a channel reads —

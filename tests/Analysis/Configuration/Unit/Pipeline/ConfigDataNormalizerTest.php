@@ -241,6 +241,22 @@ final class ConfigDataNormalizerTest extends TestCase
         self::assertSame([null, 'health.typing'], $result['excludeHealth']);
     }
 
+    /**
+     * A level-1 key of an identifier-keyed root is an entity the author named,
+     * not an option with a default for `~` to fall back to. Erased here, the
+     * owner never saw it: `computed.foo: ~` ran clean while `computed.foo: {}`
+     * was refused.
+     */
+    #[Test]
+    public function itKeepsANullIdentifierEntryForTheRootOwnerToJudge(): void
+    {
+        $result = ConfigDataNormalizer::normalize([
+            'computedMetrics' => ['my-metric' => null, 'health.typing' => ['enabled' => null, 'warning' => 80]],
+        ]);
+
+        self::assertSame(['my-metric' => null, 'health.typing' => ['warning' => 80]], $result['computedMetrics']);
+    }
+
     #[Test]
     public function itLeavesNullsInsideTheRulesSubtreeAlone(): void
     {

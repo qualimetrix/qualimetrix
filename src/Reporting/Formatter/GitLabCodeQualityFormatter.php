@@ -29,7 +29,7 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
                 // description — the fingerprint below still hashes the
                 // unmodified $finding->message, so it stays stable across
                 // the run where a breach first appears.
-                'description' => $finding->message . $this->formatBreachSuffix($finding),
+                'description' => PublishedFinding::annotatedMessage($finding),
                 'check_name' => $finding->code,
                 'fingerprint' => $this->generateFingerprint($finding),
                 'severity' => $this->mapSeverity($finding->severity),
@@ -54,7 +54,17 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
             ];
         }
 
-        return json_encode($issues, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
+        return PublishedUtf8::encodeJson(
+            $issues,
+            \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES,
+            static fn(array $issues, int $repairs): array => [...$issues, [
+                'description' => PublishedUtf8::describe($repairs),
+                'check_name' => PublishedUtf8::REPAIR_CHECK,
+                'fingerprint' => md5(PublishedUtf8::REPAIR_CHECK),
+                'severity' => 'info',
+                'location' => ['path' => '_project', 'lines' => ['begin' => 1]],
+            ]],
+        );
     }
 
     public function getName(): string
@@ -92,15 +102,5 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
             Severity::Warning => 'major',
             Severity::Info => 'info',
         };
-    }
-
-    /**
-     * " (accepted at 25, now 31)" on a measured breach, '' otherwise (ADR 0017).
-     */
-    private function formatBreachSuffix(Finding $finding): string
-    {
-        $breach = AcceptedLevelNarrator::describe($finding);
-
-        return $breach === null ? '' : \sprintf(' (%s)', $breach);
     }
 }

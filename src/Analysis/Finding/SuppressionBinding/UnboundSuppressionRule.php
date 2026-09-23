@@ -126,9 +126,12 @@ final class UnboundSuppressionRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            UnboundSuppressionOptions::UNMATCHED_PATH => ChannelDeclaration::occurrence(SymbolLevel::Project),
-            UnboundSuppressionOptions::UNMATCHED_NAMESPACE => ChannelDeclaration::occurrence(SymbolLevel::Project),
-            UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER => ChannelDeclaration::occurrence(SymbolLevel::Project),
+            UnboundSuppressionOptions::UNMATCHED_PATH => ChannelDeclaration::occurrence(SymbolLevel::Project)
+                ->describedAs('Reports a global suppress_paths value that matches no analysed file.'),
+            UnboundSuppressionOptions::UNMATCHED_NAMESPACE => ChannelDeclaration::occurrence(SymbolLevel::Project)
+                ->describedAs('Reports a global suppress_namespaces value that matches no declared namespace.'),
+            UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER => ChannelDeclaration::occurrence(SymbolLevel::Project)
+                ->describedAs('Reports a suppression value configured under a rule that names nothing the run contains.'),
         ];
     }
 

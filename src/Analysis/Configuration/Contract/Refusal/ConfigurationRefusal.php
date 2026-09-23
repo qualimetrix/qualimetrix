@@ -31,6 +31,10 @@ use Throwable;
  * folding empty values into defaults. Splitting the kind to lower the rank would
  * buy a number and a second way to spell a refusal, which is what the
  * single-kind design exists to prevent.
+ *
+ * @qmx-threshold coupling.class-rank warning=0.025 -- The paragraph above is the
+ * reason. The tag takes the rule's unscaled units: raw rank 0.0064 at 1023 classes is
+ * 0.0205 before scaling, against the default 0.02; the error bound stays the default.
  */
 final class ConfigurationRefusal extends RuntimeException
 {

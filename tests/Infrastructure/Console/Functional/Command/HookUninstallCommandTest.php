@@ -8,10 +8,15 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Infrastructure\Console\Application as QualimetrixApplication;
 use Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\RunningBinaryLocator;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Tester\ApplicationTester;
 use Symfony\Component\Console\Tester\CommandTester;
 
 #[CoversClass(HookUninstallCommand::class)]
@@ -125,17 +130,12 @@ final class HookUninstallCommandTest extends TestCase
 
         $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
 
-        $application = new Application();
-        $application->addCommand($command);
-
-        $commandTester = new CommandTester($command);
-        $commandTester->execute([]);
+        $commandTester = self::throughLadder($command);
 
         // Assert failure
-        self::assertSame(1, $commandTester->getStatusCode());
-        $output = $commandTester->getDisplay();
-        self::assertStringContainsString('not an Qualimetrix hook', $output);
-        self::assertStringContainsString('Will not remove third-party hook', $output);
+        self::assertSame(3, $commandTester->getStatusCode());
+        $output = $commandTester->getErrorOutput();
+        self::assertStringContainsString('is not a Qualimetrix hook, so it is left alone', $output);
 
         // Verify hook still exists
         self::assertFileExists($hookPath);
@@ -240,15 +240,11 @@ final class HookUninstallCommandTest extends TestCase
 
         $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
 
-        $application = new Application();
-        $application->addCommand($command);
-
-        $commandTester = new CommandTester($command);
-        $commandTester->execute([]);
+        $commandTester = self::throughLadder($command);
 
         // Assert failure
-        self::assertSame(1, $commandTester->getStatusCode());
-        $output = $commandTester->getDisplay();
+        self::assertSame(3, $commandTester->getStatusCode());
+        $output = $commandTester->getErrorOutput();
         self::assertStringContainsString('Not a git repository', $output);
     }
 
@@ -266,14 +262,10 @@ final class HookUninstallCommandTest extends TestCase
 
         $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
 
-        $application = new Application();
-        $application->addCommand($command);
+        $commandTester = self::throughLadder($command);
 
-        $commandTester = new CommandTester($command);
-        $commandTester->execute([]);
-
-        self::assertSame(1, $commandTester->getStatusCode());
-        $output = $commandTester->getDisplay();
+        self::assertSame(3, $commandTester->getStatusCode());
+        $output = $commandTester->getErrorOutput();
         self::assertStringContainsString('leads nowhere', $output);
         self::assertStringNotContainsString('Nothing to uninstall', $output);
         self::assertTrue(is_link($hookPath));
@@ -294,5 +286,22 @@ final class HookUninstallCommandTest extends TestCase
             is_dir($path) && !is_link($path) ? $this->removeDirectory($path) : unlink($path);
         }
         rmdir($dir);
+    }
+
+    /**
+     * A refusal is a throw, so a refusing case runs through the application's
+     * exit ladder, which is what turns it into an exit code and a stderr line.
+     */
+    private static function throughLadder(Command $command): ApplicationTester
+    {
+        $errorStream = new ErrorStream();
+        $application = new QualimetrixApplication($errorStream, new RefusalPresenter($errorStream));
+        $application->setAutoExit(false);
+        $application->addCommand($command);
+
+        $tester = new ApplicationTester($application);
+        $tester->run(['command' => (string) $command->getName()], ['capture_stderr_separately' => true]);
+
+        return $tester;
     }
 }

@@ -181,3 +181,27 @@ run" (not).
 - Supersedes no prior ADR. Builds on ADR 0050 (the carrier type this
   decision routes) and ADR 0045 (the single `ErrorStream` owner this
   decision's stream and progress-frame handling depend on).
+
+## Amendment, 2026-09-23: the envelope carries the refused position
+
+Point 3 of the Decision describes the JSON envelope as `{error, exit_code}`.
+It is now `{error, exit_code, position}`. The decision is not rewritten; this
+paragraph records the addition and why it was made.
+
+Every refusal addressed to a key already carried that key's position to the
+presenter — its path, what was written there, the spellings accepted there and
+whether that list is exhaustive — and every throw site paid to assemble it.
+Nothing read it: the envelope published only the sentence, so a machine
+consumer had to parse prose to learn which key was refused, and a drift
+between the accepted list and the sentence could not be seen by anyone.
+Publishing the position gives the construction a reader. Removing it instead
+was rejected: it discards the one structured answer a script can act on, and
+the throw sites span eight capabilities.
+
+`position` is always present and is `null` when the run ended without one — a
+refusal about a whole document or a bare value, the fallback path, an internal
+error — so the envelope has one shape whatever ended the run. When present it
+is `{path: [...], written, accepted: [...], closed}`: `path` is the key's
+segments as the author spells them, and `accepted` is empty for an open
+position, where the grammar is named by the sentence rather than by a list.
+The text path is unchanged: the sentence on stderr already names the key.

@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\SelectorYamlDecoder;
+use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
@@ -29,7 +30,11 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
     public function resolve(ConfigurationDocument $document): RunConfiguration
     {
         $root = $document->workingDirectory();
-        $paths = self::analysedPaths($document->contributions(ConfigSchema::PATHS));
+        $autoloadDev = self::autoloadDevPolicy($document->contributions(ConfigSchema::INCLUDE_AUTOLOAD_DEV));
+        $paths = self::analysedPaths(
+            $document->contributions(ConfigSchema::PATHS),
+            self::discoveredPaths($document, $autoloadDev),
+        );
         $pathList = array_map(
             static fn(string $path): AbsolutePath => PathFactory::fromCliArgument(
                 self::acceptedPath($path),
@@ -42,7 +47,7 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
         $authoredExcludes = $this->accumulatedPathPatterns($excludeContributions);
 
         return new RunConfiguration(
-            coversProjectScope: $this->projectScopeCoverage->pathsCoverProjectScope($root, $pathList),
+            coversProjectScope: $this->projectScopeCoverage->pathsCoverProjectScope($root, $pathList, $autoloadDev),
             paths: $pathList,
             pathExcludes: [...DirectoryPruner::builtInPatterns(), ...$authoredExcludes],
             // The same contributions without the built-in floor: what the
@@ -53,6 +58,7 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
             generatedFilePolicy: self::generatedFilePolicy(
                 $document->contributions(ConfigSchema::INCLUDE_GENERATED),
             ),
+            autoloadDevPolicy: $autoloadDev,
         );
     }
 
@@ -77,8 +83,9 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
     }
 
     /**
-     * The paths this run will analyse: the last contribution that named any,
-     * or the working directory when no source named one.
+     * The paths this run will analyse: the last contribution that named any;
+     * when no source named one, the roots composer discovery found, or the
+     * working directory when it found none.
      *
      * Two questions, and they are answered at different points on purpose.
      * **Form** — is this a list, and is every entry a path — is asked of every
@@ -96,12 +103,13 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
      * more.
      *
      * @param list<mixed> $contributions
+     * @param list<string> $discovered
      *
      * @return list<string>
      */
-    private static function analysedPaths(array $contributions): array
+    private static function analysedPaths(array $contributions, array $discovered): array
     {
-        $paths = ['.'];
+        $paths = $discovered !== [] ? $discovered : ['.'];
         foreach ($contributions as $candidate) {
             $paths = self::acceptedPathList($candidate);
         }
@@ -200,6 +208,48 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
         }
 
         return array_values($patterns);
+    }
+
+    /**
+     * The roots composer discovery contributed: production always, and
+     * `autoload-dev` when the policy counts it. They are only the default —
+     * a `paths` any source wrote replaces them, flag or no flag.
+     *
+     * @return list<string>
+     */
+    private static function discoveredPaths(ConfigurationDocument $document, AutoloadDevPolicy $autoloadDev): array
+    {
+        $paths = self::lastStringList($document->contributions(ConfigSchema::DISCOVERED_AUTOLOAD_PATHS));
+        if ($autoloadDev === AutoloadDevPolicy::Include) {
+            $paths = [...$paths, ...self::lastStringList($document->contributions(ConfigSchema::DISCOVERED_AUTOLOAD_DEV_PATHS))];
+        }
+
+        return array_values(array_unique($paths));
+    }
+
+    /**
+     * @param list<mixed> $contributions
+     *
+     * @return list<string>
+     */
+    private static function lastStringList(array $contributions): array
+    {
+        $last = $contributions === [] ? [] : $contributions[array_key_last($contributions)];
+
+        return \is_array($last) ? array_values(array_filter($last, \is_string(...))) : [];
+    }
+
+    /** @param list<mixed> $contributions */
+    private static function autoloadDevPolicy(array $contributions): AutoloadDevPolicy
+    {
+        $policy = AutoloadDevPolicy::Exclude;
+        foreach ($contributions as $candidate) {
+            if (\is_bool($candidate)) {
+                $policy = $candidate ? AutoloadDevPolicy::Include : AutoloadDevPolicy::Exclude;
+            }
+        }
+
+        return $policy;
     }
 
     /** @param list<mixed> $contributions */

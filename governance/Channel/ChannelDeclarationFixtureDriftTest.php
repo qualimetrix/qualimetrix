@@ -59,8 +59,12 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
                     $key,
                 ),
             );
+            // The fixture states the structural facts; a channel's display
+            // text is held to its producer by ChannelDescriptionTest instead.
             self::assertEquals(
-                $expected[$key],
+                $declaration->description === null
+                    ? $expected[$key]
+                    : $expected[$key]->describedAs($declaration->description),
                 $declaration,
                 \sprintf('Fixture line for "%s" does not match the declaration the code actually registers.', $key),
             );

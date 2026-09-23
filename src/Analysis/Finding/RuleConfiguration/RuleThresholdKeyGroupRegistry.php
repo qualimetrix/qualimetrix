@@ -43,7 +43,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * to the class that consumes it, and each entry mirrors — rather than
  * reinterprets — the corresponding `ThresholdParser::parse()` call. Every
  * entry is exercised end-to-end (through the real Options class) by the
- * regression tests in `RuleOptionsFactoryTest` / `ConfigurationMergerTest`,
+ * regression tests in `RuleOptionsFactoryTest`,
  * and its completeness against every real call site is proved mechanically
  * by {@see \Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest},
  * so a call-site change that silently drifts out of sync with its registry

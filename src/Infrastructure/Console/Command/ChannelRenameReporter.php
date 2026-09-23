@@ -18,7 +18,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * shared {@see BaselineCommand} ladder's, via
  * {@see \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal}
  * and {@see \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter} — the
- * same `{error, exit_code}` envelope every other machine-readable refusal in
+ * same `{error, exit_code, position}` envelope every other machine-readable refusal in
  * this tool uses, rather than this class's own ad hoc `{"error": ...}` shape.
  */
 final class ChannelRenameReporter
@@ -34,16 +34,22 @@ final class ChannelRenameReporter
 
     private static function reportAsText(ChannelRenameReport $report, OutputInterface $output): void
     {
-        $output->writeln($report->written
-            ? \sprintf(
+        $output->writeln(match (true) {
+            $report->written => \sprintf(
                 '<info>Carried %d of %d entries onto a new channel name.</info>',
                 $report->renamedEntries,
                 $report->totalEntries,
-            )
-            : \sprintf(
+            ),
+            // Accepted rather than refused — a map is written for a vocabulary,
+            // and one that declares nothing yet is still a map — but it is not
+            // "nothing matched", and a commented-out or truncated map is the
+            // likelier cause.
+            $report->rowHits === [] => '<info>The map declares no rename (no row after its header); the file is unchanged.</info>',
+            default => \sprintf(
                 '<info>No entry of the %d in this baseline matched the map; the file is unchanged.</info>',
                 $report->totalEntries,
-            ));
+            ),
+        });
 
         foreach ($report->idleRows() as $old) {
             $output->writeln(\sprintf('<comment>Declared rename of "%s" matched no entry.</comment>', $old));
@@ -71,9 +77,11 @@ final class ChannelRenameReporter
             'written' => $report->written,
             'entries' => $report->totalEntries,
             'renamed' => $report->renamedEntries,
-            'rows' => $report->rowHits,
+            'declared_rows' => \count($report->rowHits),
+            // Both are maps; cast so an empty one is `{}` like a full one, not `[]`.
+            'rows' => (object) $report->rowHits,
             'idle_rows' => $report->idleRows(),
-            'unreadable' => $report->unreadable,
+            'unreadable' => (object) $report->unreadable,
         ], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES | \JSON_PRETTY_PRINT));
     }
 }

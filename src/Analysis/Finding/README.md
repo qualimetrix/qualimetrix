@@ -17,7 +17,7 @@ Finding/
 ├── RuleConfiguration/    # Option parsing, selector decoding, key recognition, normalization, and per-run state
 ├── SuppressionBinding/   # Whether a configured suppression value named anything the run holds
 ├── RuleExecution.php     # Selects producers, executes them, and returns what happened as a value
-└── ChannelPresentationView.php # Joins a channel's producer to that rule's own description and docs page
+└── ChannelPresentationView.php # Joins a channel to its description and its producer's docs page
 ```
 
 `RuleExecutionInterface::execute()` returns `RuleExecutionResult` (in `Contract/`)
@@ -176,8 +176,16 @@ expands to) — and Infrastructure supplies the single instance behind them.
 Matching stays string comparison in `NameSelector`, the one selector grammar
 there is now that a channel is one name; it does not consult the universe, and
 the universe validates and resolves. `ChannelDeclaration` carries `direction`
-(present only for a `magnitude` producer's channel), `levels`, and
-`configurationError`.
+(present only for a `magnitude` producer's channel), `levels`,
+`configurationError`, and `description` (ADR 0081).
+
+`description` is the channel's own display text, declared with `describedAs()`.
+The channel named after its producer declares none — the producer's
+`getDescription()` describes it — and every other channel must declare one:
+`architecture.doubted-assignment` is not a forbidden layer dependency, so the
+producer's text published under its name would describe the wrong finding.
+`ChannelDeclarationCompilerPass` refuses the container build on either
+violation, for rules and validators alike.
 
 `ChannelShape` (ADR 0031) is a producer property, not a channel one:
 `RuleInterface::shape()` and `ConfigurationValidatorInterface::shape()` answer
@@ -207,7 +215,7 @@ inline-directive errors carry it.
 A validator is not free-standing: `producerRuleName()` names the rule it belongs
 to, and that name is what registers its channels, what `--disable-rule`,
 `only_rules`, `suppress_paths` and `suppress_namespaces` address, what resolves its
-description, documentation page and remediation estimate, and whose options —
+documentation page and remediation estimate, and whose options —
 `enabled` included — it answers to. `RuleExecution` runs it in that rule's slot,
 so its findings keep their position in every report that does not sort, and
 refuses a finding on a channel the validator does not declare.
@@ -230,8 +238,10 @@ fixture (`ChannelDeclarationFixtureDriftTest`). Finding neither resolves compute
 definitions nor retains Infrastructure-owned definition state.
 
 `ChannelPresentationInterface` (`presentationFor()` → `ChannelPresentation`)
-joins `ChannelIdentityInterface::producerOf()` with that producer's own
-`RuleMetadata` (description) and its declared documentation page —
+joins `ChannelIdentityInterface::producerOf()` with the channel's declared
+`description`, falling back to the producer's own `RuleMetadata` description
+for the channel named after it, and with the producer's declared documentation
+page —
 `ChannelPresentationView` is the composing service, a small run-time join
 rather than a fourth view on the universe (rule *instances* do not exist when
 the universe is assembled). It cannot depend on `ComputedMetricDefinition` to

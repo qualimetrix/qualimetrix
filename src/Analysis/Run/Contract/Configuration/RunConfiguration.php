@@ -15,6 +15,7 @@ final readonly class RunConfiguration
      * @param list<PathPattern> $pathExcludes built-in and authored directory selectors
      * @param bool $coversProjectScope Whether `$paths` cover the project's production autoload roots
      * @param list<PathPattern> $authoredPathExcludes The subset of `$pathExcludes` the user wrote
+     * @param AutoloadDevPolicy $autoloadDevPolicy Whether `autoload-dev` code is part of the project
      *
      * `$coversProjectScope` is the answer
      * {@see \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage}
@@ -35,6 +36,12 @@ final readonly class RunConfiguration
      * configuration, and a defaulted answer would let one of them keep the
      * wider run's in silence — which is the acceptance these fields exist to
      * prevent.
+     *
+     * `$autoloadDevPolicy` does have one, and the reasoning above does not
+     * reach it: it is what the author said the project is, not an answer
+     * about these paths, so narrowing a run never changes it. It travels
+     * with the paths all the same, because a narrowed run is judged against
+     * the same project as the run it was narrowed from.
      */
     public function __construct(
         public array $paths,
@@ -43,6 +50,7 @@ final readonly class RunConfiguration
         public GeneratedFilePolicy $generatedFilePolicy,
         public bool $coversProjectScope,
         public array $authoredPathExcludes,
+        public AutoloadDevPolicy $autoloadDevPolicy = AutoloadDevPolicy::Exclude,
     ) {}
 
     /**
@@ -69,6 +77,7 @@ final readonly class RunConfiguration
             generatedFilePolicy: $this->generatedFilePolicy,
             coversProjectScope: true,
             authoredPathExcludes: $this->authoredPathExcludes,
+            autoloadDevPolicy: $this->autoloadDevPolicy,
         );
     }
 
@@ -89,6 +98,7 @@ final readonly class RunConfiguration
             generatedFilePolicy: $this->generatedFilePolicy,
             coversProjectScope: false,
             authoredPathExcludes: $this->authoredPathExcludes,
+            autoloadDevPolicy: $this->autoloadDevPolicy,
         );
     }
 }

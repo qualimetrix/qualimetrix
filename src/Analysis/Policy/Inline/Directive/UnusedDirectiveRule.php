@@ -82,7 +82,10 @@ final class UnusedDirectiveRule extends AbstractRule
     {
         $name = InlineDirectivePolicy::UNUSED_DIRECTIVE_NAME;
 
-        return [$name => ChannelDeclaration::occurrence(SymbolLevel::File)];
+        return [
+            $name => ChannelDeclaration::occurrence(SymbolLevel::File)
+                ->describedAs('Reports a valid inline directive that suppressed or overrode nothing in this run.'),
+        ];
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Loader;
 
+use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
@@ -77,7 +78,10 @@ final class RootContainerShapes
             }
 
             $originalSection = self::originalKey($section, $keyMap);
-            $originalSubKeys = array_map(self::snakeCase(...), $allowedSubKeys);
+            $originalSubKeys = array_map(
+                static fn(string $subKey): string => ConfigKeySpelling::offerLike($subKey, $originalSection),
+                $allowedSubKeys,
+            );
 
             throw ConfigurationRefusal::atConfigFileKey(
                 $path,
@@ -126,10 +130,5 @@ final class RootContainerShapes
     private static function originalKey(string $normalizedKey, array $keyMap): string
     {
         return $keyMap[$normalizedKey] ?? $normalizedKey;
-    }
-
-    private static function snakeCase(string $camelKey): string
-    {
-        return strtolower((string) preg_replace('/[A-Z]/', '_$0', $camelKey));
     }
 }

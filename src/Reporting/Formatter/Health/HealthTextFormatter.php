@@ -13,6 +13,7 @@ use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
 use Qualimetrix\Reporting\Formatter\CoverageNarrator;
 use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
+use Qualimetrix\Reporting\Formatter\FormatOptionValue;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
@@ -70,7 +71,7 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
         );
 
         $narrow = $terminalWidth < self::NARROW_TERMINAL_THRESHOLD;
-        $contributorsLimit = (int) $context->getOption('contributors', (string) self::DEFAULT_CONTRIBUTORS);
+        $contributorsLimit = FormatOptionValue::count('contributors', $context->getOption('contributors', (string) self::DEFAULT_CONTRIBUTORS));
 
         $this->renderTable($dimensions, $overall, $color, $narrow, $lines);
 

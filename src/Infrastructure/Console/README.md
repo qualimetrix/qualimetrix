@@ -135,7 +135,18 @@ way PHP folds class names; layer matching itself stays case-sensitive.
 | 4    | Analysis incomplete; policy result is not authoritative |
 
 Unknown `--only-rule` / `--disable-rule` selectors and unknown rule-option
-owners are input errors (exit 3). On incomplete analysis, the selected report is
+owners are input errors (exit 3); a bare group prefix is refused with the
+`NAME.*` spelling named when that spelling would match. `ConfigurationInputAdapter`
+refuses an empty value for the five doors whose owners would read it as
+"not given" (`--config`, `--preset`, `--baseline`, `--output`, `--report`), and
+`ProfilePresenter::refuseImpossibleExport()` refuses a `--profile-format` outside
+its closed set and an unwritable `--profile` target — all before analysis.
+`Application::doRun()` reads the long `--format` off the raw tokens, so a
+refusal it catches is enveloped for the JSON formats like one a command catches,
+and `RefusalPresenter` frames the fallback path exactly like a carried refusal.
+The JSON envelope is `{error, exit_code, position}`: `position` publishes a
+refusal's `RefusedPosition` (`path`, `written`, `accepted`, `closed`) and is
+`null` for every outcome without one. On incomplete analysis, the selected report is
 still rendered for diagnosis and exit 4 takes precedence over finding policy.
 Non-payload diagnostics from `check` are written to stderr.
 
@@ -184,6 +195,15 @@ from the composer distribution, so a script living there reaches no consumer
 All three commands test `is_link` before `file_exists`, because a hook
 installed by an earlier release is now a symlink leading nowhere, and
 `file_exists` follows the link and calls it absent.
+
+They refuse the way every other command does: by throwing a
+`ConfigurationRefusal`, which `Application::doRun()` turns into exit 3 and a
+line on stderr — no hook command writes its reason to stdout or returns 1.
+The `.backup` slot is single because `--restore-backup` reads it by that name,
+so `hook:install --force` refuses to overwrite a slot holding a different hook
+rather than lose it. `RunningBinaryLocator` resolves a relative
+`SCRIPT_FILENAME`/`argv[0]` through the entry script PHP opened at startup,
+not against the working directory `--working-dir` has since changed.
 
 ## CLI Options (main)
 

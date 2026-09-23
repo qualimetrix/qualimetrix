@@ -307,6 +307,44 @@ naming no channel appears under the form `symbol` / `next-line`, as every other
 directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
 `@qmx-threshold` appears under the form `threshold`.
 
+- **An option value that does not parse is refused instead of falling back to a
+  default.** `--detail`, `--top`, `--group-by`, every `--format-opt` value
+  (`violations`, `limit`, `top`, `contributors`, `rank-by`, `project-name`),
+  `--profile-format` outside `json`/`chrome-tracing`, and an empty `--config`,
+  `--baseline`, `--output` (whitespace-only included), `--report`, `--preset`
+  or `--profile` (or an empty name in `--preset=a,`) now exit `3` before the
+  analysis. They used to run on a default: `--config=` under the auto-discovered
+  `qmx.yaml`, `--output=` to stdout, `violations=xyz` with no limit,
+  `rank-by=typo` as `count`; `--format-opt=top=0` and `project-name=` are
+  refused as well.
+- **A run with no paths analyses the production PSR-4 roots of `composer.json`
+  only** (was `autoload` and `autoload-dev`), which is also the set
+  whole-project coverage is judged against. Set `include_autoload_dev: true`
+  or pass `--include-autoload-dev` to count `autoload-dev` code as part of the
+  project again, or name test code explicitly (`qmx check src/ tests/`).
+- **The JSON refusal envelope is `{error, exit_code, position}`** (was
+  `{error, exit_code}`): `position` is `{path, written, accepted, closed}` for a
+  refusal addressed to a configuration key and `null` otherwise. A consumer
+  comparing the key set exactly must accept the new key.
+- **`--format=json` `topIssues[].message` and every `--format=suppressed`
+  entry's `message` are now the finding's message**, as in
+  `violations[].message`; the recommendation they carried moved to a new
+  `recommendation` key (`null` when the rule gives none).
+- **`hook:install`, `hook:uninstall` and `hook:status` refuse with exit code
+  `3` and the reason on stderr** (was exit `1` with the reason on stdout): not a
+  git repository, an existing hook without `--force`, a hook that is not
+  Qualimetrix's, a dangling symlink, an unnameable binary, a failed write.
+- **A profile that cannot be written is a refusal.** An unwritable `--profile`
+  target exits `3` before the analysis, and a profile write that fails after
+  the run exits `3` instead of keeping the analysis exit code.
+- **Configuration values that used to be tolerated are refused with exit `3`:**
+  two spellings of one key in one mapping (`suppress_paths` beside
+  `suppressPaths`) instead of the later silently winning; `memory_limit: 0`, a
+  leading zero (`010M`, read by PHP as octal) and a limit the runtime rejects,
+  each with the value quoted; and a `computed_metrics` entry written as
+  `name: ~`, now read as `name: {}`, so an invalid or unknown name or a user
+  metric without a formula is refused instead of silently dropped.
+
 ### Changed
 
 - Health coverage is shown where the scores are. `--format=health` gains a
@@ -413,6 +451,22 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   project root, one left unmerged in the index by an unfinished conflict, one
   carrying a status this build does not know; `design.dit` names a Composer
   manifest it could not read; and the AST cache says when it turns itself off.
+- Refusals caught before a command runs (an unknown option or command, a bad
+  `--working-dir`) are printed as the JSON refusal envelope under a JSON
+  `--format`, like every other refusal, and every exit-3 message now starts
+  with `Configuration error:`.
+- A bare rule-group prefix (`--only-rule=complexity`) is refused with the
+  working spelling named (`write "complexity.*"`); `--help` for
+  `--only-rule`/`--disable-rule` no longer offers bare prefixes as examples.
+- A configuration key refused as unknown is answered with a suggestion in the
+  author's own spelling (`excludeHealh` → `excludeHealth`).
+- `--format=suppressed` entries gain `subject`, `occurrence` and `edge`, and the
+  document gains `coverage`.
+- `hook:install --force` refuses to overwrite a `pre-commit.backup` that holds
+  a different hook, instead of losing it.
+- `baseline:rename-channels` says when the map declares no rename at all,
+  reports `declared_rows` in JSON, and always publishes `rows` and `unreadable`
+  as JSON objects (an empty one was `[]`).
 
 ### Fixed
 
@@ -682,6 +736,49 @@ directions. See
   ancestry) stops matching the enclosing class on that basis. Coupling,
   ClassRank, cycle detection and `relations:` filtering are unaffected — the
   dependency itself is still recorded and read exactly as before.
+- `--detail=N` cuts the violation list after sorting it, in `text` and
+  `summary` and under every `--group-by`: the N shown are the first N
+  `--detail=all` prints, not the first N the rules produced. The hint reads
+  `--detail to list violations (up to 200; --detail=all for every one)` instead
+  of promising a "top 200".
+- `--namespace`/`--class` no longer prints `No violations found.` or a green
+  summary line while findings outside the selection make the run exit
+  non-zero: `summary` and `text` say the counts are for the selection and name
+  the findings outside it that decide the exit code, and `--format=json` keeps
+  `summary.debtPer1kLoc` (as `null`) instead of dropping the key.
+- `--format=html` lists every finding the report counts: project-level and
+  file-level findings and findings on global functions no longer disappear
+  from the tree while `summary.totalViolations` counted them, and a fileless
+  finding's `file` is `null` as in `json`.
+- `--format=html` names the report after the analysed project (the
+  `project-name` format option, else `composer.json` `name`, else its
+  directory) instead of the package qmx itself was loaded from.
+- `--format=html` no longer corrupts its embedded data when a symbol is named
+  like a template placeholder (`__APP_JS__`).
+- `--format=sarif` percent-encodes `artifactLocation.uri` like its `%SRCROOT%`
+  base (spaces, `#`, `%` in paths), and a related location without a file no
+  longer publishes `"uri": ""`.
+- SARIF `rules[].shortDescription` / `fullDescription` of a channel not named
+  after its rule now describe that channel: the seven `architecture.*` layer
+  diagnostics, the four `annotation.*` channels and the three
+  `suppression.unmatched-*` channels no longer repeat their producing rule's
+  description.
+- An identifier with invalid UTF-8 in the analysed source no longer breaks a
+  structured output: `json`, `metrics`, `suppressed`, `sarif`, `gitlab`,
+  `checkstyle`, `html` and `graph:export` (`json` and `dot`) publish each
+  invalid byte as U+FFFD and report the repair (an `invalidUtf8Replaced` count,
+  a SARIF notification, a GitLab issue, a checkstyle `[publication]` entry, an
+  HTML banner, a DOT comment). `json`, `sarif`, `gitlab`, `metrics`, `html` and
+  `graph:export --format=json` used to fail the run, and `checkstyle` and
+  `graph:export --format=dot` wrote documents no parser accepts.
+- `--memory-limit` / `memory_limit` now applies in the parallel worker
+  processes, not only in the coordinator; a file a worker could not finish is
+  reported as failed with the workers' limit named, instead of a bare "context
+  stopped responding".
+- A worker that died on one file no longer ends the whole run as
+  `Internal error: The worker crashed` when the next task reaches it.
+- `hook:install --working-dir <repo>` works when the binary was started by a
+  relative path.
 
 ## [0.27.0] - 2026-09-18
 

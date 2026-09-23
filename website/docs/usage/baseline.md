@@ -116,7 +116,7 @@ rename that matches nothing in this file is reported, not refused. Exit codes:
 baseline or the map not being a readable file, or on a malformed `--format`
 value; every refusal takes the same code regardless of which of those caused
 it. A refusal is reported in the chosen format: under `--format=json` it is
-the `{error, exit_code}` envelope every other machine-readable refusal in the
+the `{error, exit_code, position}` envelope every other machine-readable refusal in the
 tool uses, not a bespoke `error`-only object.
 
 Two consequences are worth knowing before you run it:

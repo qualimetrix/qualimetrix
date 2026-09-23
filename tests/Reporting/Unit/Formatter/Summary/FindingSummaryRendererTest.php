@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\DrillDown\FindingFilter;
+use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
 use Qualimetrix\Reporting\Formatter\Summary\FindingSummaryRenderer;
 use Qualimetrix\Reporting\FormatterContext;
@@ -30,7 +30,6 @@ final class FindingSummaryRendererTest extends TestCase
     protected function setUp(): void
     {
         $this->renderer = new FindingSummaryRenderer(
-            new FindingFilter(),
             new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()),
         );
         $this->color = new AnsiColor(false);
@@ -58,17 +57,16 @@ final class FindingSummaryRendererTest extends TestCase
     #[Test]
     public function itShowsNoFindingsInNamespaceScope(): void
     {
-        // Report has findings in a different namespace so isEmpty() is false,
-        // but the filtered findings for this namespace are empty.
-        $otherFinding = $this->createFinding(Severity::Error, 'Other\\Namespace', 'OtherService');
-
+        // The presenter builds the report from the selection; the finding in
+        // another namespace survives only as an out-of-scope count.
         $report = new Report(
-            findings: [$otherFinding],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 1,
+            errorCount: 0,
             warningCount: 0,
+            outOfScope: new OutOfScopeFindings(1, 0, 0),
         );
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
@@ -83,15 +81,14 @@ final class FindingSummaryRendererTest extends TestCase
     #[Test]
     public function itShowsNoFindingsInClassScope(): void
     {
-        $otherFinding = $this->createFinding(Severity::Error, 'App\\Service', 'OtherService');
-
         $report = new Report(
-            findings: [$otherFinding],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 1,
+            errorCount: 0,
             warningCount: 0,
+            outOfScope: new OutOfScopeFindings(1, 0, 0),
         );
 
         $context = new FormatterContext(class: 'App\\Service\\UserService');
@@ -101,6 +98,78 @@ final class FindingSummaryRendererTest extends TestCase
 
         $output = implode("\n", $lines);
         self::assertStringContainsString('No violations in this scope.', $output);
+    }
+
+    /**
+     * The report holds the selection; the run's other findings still decide
+     * the exit code, so the renderer must not call the run clean or colour it
+     * green.
+     */
+    #[Test]
+    public function itDoesNotCallTheRunCleanWhenOnlyTheSelectionIsEmpty(): void
+    {
+        $report = new Report(
+            findings: [],
+            filesAnalyzed: 10,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 0,
+            warningCount: 0,
+            outOfScope: new OutOfScopeFindings(5, 4, 0),
+        );
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Clean'));
+
+        $lines = [];
+        $this->renderer->render($report, $context, new AnsiColor(true), $lines);
+        $output = implode("\n", $lines);
+
+        self::assertStringNotContainsString('No violations found.', $output);
+        self::assertStringNotContainsString("\e[1;32m", $output);
+        self::assertStringContainsString('No violations in this scope', $output);
+        self::assertStringContainsString('9 outside it (5 errors, 4 warnings) decide the exit code', $output);
+    }
+
+    #[Test]
+    public function itNamesTheFindingsOutsideANonEmptySelection(): void
+    {
+        $report = new Report(
+            findings: [$this->createFinding(Severity::Warning)],
+            filesAnalyzed: 10,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 0,
+            warningCount: 1,
+            outOfScope: new OutOfScopeFindings(2, 0, 0),
+        );
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
+
+        $lines = [];
+        $this->renderer->render($report, $context, new AnsiColor(true), $lines);
+        $output = implode("\n", $lines);
+
+        self::assertStringContainsString('1 violation in this scope (1 warning)', $output);
+        self::assertStringContainsString('2 outside it (2 errors) decide the exit code', $output);
+        self::assertStringContainsString("\e[1;31m", $output, 'coloured by the worst severity of the run, not of the selection');
+    }
+
+    #[Test]
+    public function itCallsASelectionCleanInGreenWhenNothingOutsideItWasFoundEither(): void
+    {
+        $report = new Report(
+            findings: [],
+            filesAnalyzed: 10,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 0,
+            warningCount: 0,
+            outOfScope: new OutOfScopeFindings(0, 0, 0),
+        );
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Clean'));
+
+        $lines = [];
+        $this->renderer->render($report, $context, $this->color, $lines);
+
+        self::assertSame(['No violations in this scope.', ''], $lines);
     }
 
     #[Test]

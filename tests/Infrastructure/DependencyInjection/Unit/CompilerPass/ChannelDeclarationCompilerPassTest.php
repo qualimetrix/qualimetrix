@@ -394,6 +394,93 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         self::assertFalse($support[GotoRule::NAME]);
     }
 
+    /**
+     * The rule half of the description split: a channel not named after its
+     * producer would otherwise publish the producer's own text as its own.
+     */
+    #[Test]
+    public function itThrowsWhenARulesChannelNotNamedAfterItDeclaresNoDescription(): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $container->register(FixtureRuleWithUndescribedSecondaryChannel::class)
+            ->setClass(FixtureRuleWithUndescribedSecondaryChannel::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('Channel "fixture.secondary.undescribed" declared by');
+
+        (new ChannelDeclarationCompilerPass())->process($container);
+    }
+
+    /**
+     * The validator half: every channel a validator declares borrows its
+     * producer's name, so none of them is named after it and each needs its
+     * own text.
+     */
+    #[Test]
+    public function itThrowsWhenAValidatorsChannelDeclaresNoDescription(): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $container->register(FixtureRuleForShapeAgreement::class)
+            ->setClass(FixtureRuleForShapeAgreement::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+        $container->register(FixtureValidatorWithUndescribedChannel::class)
+            ->setClass(FixtureValidatorWithUndescribedChannel::class)
+            ->addTag(ConfigurationValidatorCompilerPass::TAG);
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('Channel "fixture.undescribed-diagnostic" declared by');
+
+        (new ChannelDeclarationCompilerPass())->process($container);
+    }
+
+    /** The channel named after its producer is described by the producer alone. */
+    #[Test]
+    public function itThrowsWhenTheChannelNamedAfterItsProducerDeclaresADescriptionToo(): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $container->register(FixtureRuleDescribingItsOwnChannel::class)
+            ->setClass(FixtureRuleDescribingItsOwnChannel::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('Channel "fixture.self-described" declared by');
+
+        (new ChannelDeclarationCompilerPass())->process($container);
+    }
+
+    /**
+     * The legitimate forms beside the two refusals: an undescribed channel
+     * named after its producer and a described one that is not both
+     * assemble, and the description reaches the registry intact.
+     */
+    #[Test]
+    public function itAcceptsADescribedSecondaryChannelBesideAnUndescribedPrimaryOne(): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $container->register(LayerViolationRule::class)
+            ->setClass(LayerViolationRule::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+        $container->register(LayerDeclarationValidator::class)
+            ->setClass(LayerDeclarationValidator::class)
+            ->addTag(ConfigurationValidatorCompilerPass::TAG);
+
+        (new ChannelDeclarationCompilerPass())->process($container);
+
+        /** @var array<string, ChannelDeclaration> $declarations */
+        $declarations = $container->getDefinition(ChannelUniverse::class)->getArgument('$staticDeclarations');
+
+        self::assertNull($declarations[LayerViolationRule::NAME]->description);
+        self::assertNotNull($declarations[LayerViolationRule::DOUBTED_ASSIGNMENT_NAME]->description);
+        // Stamped as a configuration error, and still carrying its own text.
+        self::assertTrue($declarations['architecture.coverage-gap']->isConfigurationError());
+        self::assertNotNull($declarations['architecture.coverage-gap']->description);
+    }
+
     private static function registerUniverse(ContainerBuilder $container): void
     {
         $container->register(ChannelUniverse::class)
@@ -935,5 +1022,139 @@ final class FixtureOccurrenceRuleJudgingAMetric implements RuleInterface
             JudgedMetrics::of('cohesion.lcom'),
             SymbolLevel::Class_,
         )];
+    }
+}
+
+/**
+ * @internal
+ *
+ * A primary channel plus one named otherwise and left undescribed —
+ * {@see ChannelDeclarationCompilerPassTest::itThrowsWhenARulesChannelNotNamedAfterItDeclaresNoDescription()}.
+ */
+final class FixtureRuleWithUndescribedSecondaryChannel implements RuleInterface
+{
+    public const string NAME = 'fixture.secondary';
+
+    public const string DOCS_PAGE = 'rules/code-smell.md';
+
+    public const int REMEDIATION_MINUTES = 5;
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public function getDescription(): string
+    {
+        return 'Fixture rule with an undescribed secondary channel.';
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Occurrence;
+    }
+
+    /** @return array<string, array<string, bool>> */
+    public function levelActivity(): array
+    {
+        return [];
+    }
+
+    public function analyze(AnalysisContext $context): array
+    {
+        return [];
+    }
+
+    /** @return class-string<RuleOptionsInterface> */
+    public static function getOptionsClass(): string
+    {
+        return FixtureOptionsWithNoChannelDeclarations::class;
+    }
+
+    /** @return array<string, ChannelDeclaration> */
+    public static function channelDeclarations(): array
+    {
+        return [
+            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Project),
+            'fixture.secondary.undescribed' => ChannelDeclaration::occurrence(SymbolLevel::Project),
+        ];
+    }
+}
+
+/**
+ * @internal
+ *
+ * Describes the channel named after it a second time —
+ * {@see ChannelDeclarationCompilerPassTest::itThrowsWhenTheChannelNamedAfterItsProducerDeclaresADescriptionToo()}.
+ */
+final class FixtureRuleDescribingItsOwnChannel implements RuleInterface
+{
+    public const string NAME = 'fixture.self-described';
+
+    public const string DOCS_PAGE = 'rules/code-smell.md';
+
+    public const int REMEDIATION_MINUTES = 5;
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public function getDescription(): string
+    {
+        return 'Fixture rule describing its own channel twice.';
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Occurrence;
+    }
+
+    /** @return array<string, array<string, bool>> */
+    public function levelActivity(): array
+    {
+        return [];
+    }
+
+    public function analyze(AnalysisContext $context): array
+    {
+        return [];
+    }
+
+    /** @return class-string<RuleOptionsInterface> */
+    public static function getOptionsClass(): string
+    {
+        return FixtureOptionsWithNoChannelDeclarations::class;
+    }
+
+    /** @return array<string, ChannelDeclaration> */
+    public static function channelDeclarations(): array
+    {
+        return [self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)->describedAs('A second text.')];
+    }
+}
+
+/** @internal Shares {@see FixtureRuleForShapeAgreement}'s shape and leaves its channel undescribed. */
+final class FixtureValidatorWithUndescribedChannel implements ConfigurationValidatorInterface
+{
+    public static function producerRuleName(): string
+    {
+        return FixtureRuleForShapeAgreement::NAME;
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Occurrence;
+    }
+
+    /** @return array<string, ChannelDeclaration> */
+    public static function channelDeclarations(): array
+    {
+        return ['fixture.undescribed-diagnostic' => ChannelDeclaration::occurrence(SymbolLevel::Project)];
+    }
+
+    public function validate(AnalysisContext $context): array
+    {
+        return [];
     }
 }

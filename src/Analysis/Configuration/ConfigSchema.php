@@ -22,6 +22,10 @@ use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
  * 1. Add a constant below
  * 2. Add an entry to ENTRIES (if YAML-configurable)
  * 3. Add handling in the appropriate consumer
+ *
+ * @qmx-threshold coupling.cbo warning=23 -- Afferent by rule: every consumer names a
+ * key through these constants instead of a literal, so CBO counts adoption, not
+ * entanglement (Ce=1). Raw CBO 22 gets one-edge headroom.
  */
 final class ConfigSchema
 {
@@ -46,8 +50,19 @@ final class ConfigSchema
     public const string COMPUTED_METRICS = 'computedMetrics';
     public const string EXCLUDE_HEALTH = 'excludeHealth';
     public const string INCLUDE_GENERATED = 'include_generated';
+    public const string INCLUDE_AUTOLOAD_DEV = 'include_autoload_dev';
     public const string MEMORY_LIMIT = 'memory_limit';
     public const string ARCHITECTURE = 'architecture';
+
+    /**
+     * The production and `autoload-dev` PSR-4 roots `composer.json` declares,
+     * contributed apart by composer discovery. Which of them become the
+     * default analysis paths depends on `include_autoload_dev`, which a later
+     * source may write, so the choice is the run configuration's, not the
+     * discovery stage's.
+     */
+    public const string DISCOVERED_AUTOLOAD_PATHS = 'discovered_autoload_paths';
+    public const string DISCOVERED_AUTOLOAD_DEV_PATHS = 'discovered_autoload_dev_paths';
 
     // The architecture root is transported as a preserve-subtree associative
     // document. Its subject-owned syntax and merge semantics are not part of
@@ -61,7 +76,7 @@ final class ConfigSchema
      *
      * @var list<string>
      */
-    public const array INTERNAL_KEYS = [];
+    public const array INTERNAL_KEYS = [self::DISCOVERED_AUTOLOAD_PATHS, self::DISCOVERED_AUTOLOAD_DEV_PATHS];
 
     /** Capability-owned roots transported in ordered configuration documents. */
     public const array DOCUMENT_ROOTS = [self::COUPLING, self::COMPUTED_METRICS, self::EXCLUDE_HEALTH, self::ARCHITECTURE];
@@ -92,7 +107,7 @@ final class ConfigSchema
      * - null      — sub-key of a section (root is auto-typed as section)
      *
      * Scalar type (only for keys whose leaf value must be a precise scalar):
-     * - 'boolean' — must be a bool (cache.enabled, include_generated)
+     * - 'boolean' — must be a bool (cache.enabled, include_generated, include_autoload_dev)
      * - 'integer' — must be an int (parallel.workers)
      * - 'string'  — must be a string (memory_limit)
      * - null      — no precise scalar type (list/mixed/section/loose-scalar keys)
@@ -119,6 +134,7 @@ final class ConfigSchema
 
         // Top-level camelCase keys (loader normalizes snake_case before these are resolved)
         ['includeGenerated', self::INCLUDE_GENERATED, self::SCALAR, self::BOOLEAN],
+        ['includeAutoloadDev', self::INCLUDE_AUTOLOAD_DEV, self::SCALAR, self::BOOLEAN],
         ['memoryLimit', self::MEMORY_LIMIT, self::SCALAR, self::STRING],
 
         // Architecture: free-form map with layers/allow/coverage-gap sub-structure.
@@ -223,12 +239,13 @@ final class ConfigSchema
             'failOn' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
             self::EXCLUDE_HEALTH => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
             'includeGenerated' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+            'includeAutoloadDev' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
             'memoryLimit' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
 
             // Typed sections — sub-keys are schema-known options.
             'cache' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
             'parallel' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
-            'coupling' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+            self::COUPLING => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
 
             // Identifier sections — level-1 keys are user-defined identifiers
             // (rule slugs / metric names); level-2+ are typed option keys.

@@ -6,6 +6,7 @@ namespace Qualimetrix\Reporting\GraphProjection;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 
 /**
  * Exports dependency graphs to DOT format (Graphviz).
@@ -39,10 +40,21 @@ final class DotExporter
         $lines[] = '';
 
         // Export nodes and edges
+        $repairs = 0;
         if ($this->options->groupByNamespace) {
-            $lines = [...$lines, ...$this->exportWithClusters($graph, $classes)];
+            $lines = [...$lines, ...$this->exportWithClusters($graph, $classes, $repairs)];
         } else {
-            $lines = [...$lines, ...$this->exportFlat($graph, $classes)];
+            $lines = [...$lines, ...$this->exportFlat($graph, $classes, $repairs)];
+        }
+
+        // A class or method name can carry a byte `nikic/php-parser` accepts
+        // inside an identifier but that is not valid UTF-8 — see
+        // {@see PublishedUtf8}. Unlike JSON, writing that byte here would not
+        // fail: DOT has no encoding check, so the document would carry it
+        // silently, with no diagnostic that anything was wrong.
+        if ($repairs > 0) {
+            $lines[] = '';
+            $lines[] = '    // ' . PublishedUtf8::REPAIR_CHECK . ': ' . PublishedUtf8::describe($repairs);
         }
 
         $lines[] = '}';
@@ -55,7 +67,7 @@ final class DotExporter
      *
      * @return array<string>
      */
-    private function exportFlat(DependencyGraphInterface $graph, array $classes): array
+    private function exportFlat(DependencyGraphInterface $graph, array $classes, int &$repairs): array
     {
         $lines = [];
         $classSet = [];
@@ -66,7 +78,7 @@ final class DotExporter
         // Nodes
         $lines[] = '    // Nodes';
         foreach ($classes as $classPath) {
-            $fqcn = $classPath->toString();
+            $fqcn = PublishedUtf8::repair($classPath->toString(), $repairs);
             $label = $this->getLabel($fqcn);
             $color = $this->getNodeColor($classPath, $graph);
             $lines[] = \sprintf(
@@ -79,7 +91,7 @@ final class DotExporter
 
         $lines[] = '';
 
-        $this->appendEdges($lines, $graph, $classSet);
+        $this->appendEdges($lines, $graph, $classSet, $repairs);
 
         return $lines;
     }
@@ -89,7 +101,7 @@ final class DotExporter
      *
      * @return array<string>
      */
-    private function exportWithClusters(DependencyGraphInterface $graph, array $classes): array
+    private function exportWithClusters(DependencyGraphInterface $graph, array $classes, int &$repairs): array
     {
         $lines = [];
         $byNamespace = $this->groupByNamespace($classes);
@@ -101,20 +113,21 @@ final class DotExporter
         // Subgraphs for each namespace
         $clusterIndex = 0;
         foreach ($byNamespace as $namespace => $namespaceClasses) {
+            $label = PublishedUtf8::repair($namespace !== '' ? $namespace : 'Global', $repairs);
             $lines[] = \sprintf('    subgraph cluster_%d {', $clusterIndex++);
-            $lines[] = \sprintf('        label="%s";', $this->escape($namespace !== '' ? $namespace : 'Global'));
+            $lines[] = \sprintf('        label="%s";', $this->escape($label));
             $lines[] = '        style=filled;';
             $lines[] = '        fillcolor=lightyellow;';
             $lines[] = '';
 
             foreach ($namespaceClasses as $classPath) {
-                $fqcn = $classPath->toString();
-                $label = $this->getLabel($fqcn);
+                $fqcn = PublishedUtf8::repair($classPath->toString(), $repairs);
+                $classLabel = $this->getLabel($fqcn);
                 $color = $this->getNodeColor($classPath, $graph);
                 $lines[] = \sprintf(
                     '        "%s" [label="%s", fillcolor="%s"];',
                     $this->escape($fqcn),
-                    $this->escape($label),
+                    $this->escape($classLabel),
                     $color,
                 );
             }
@@ -123,7 +136,7 @@ final class DotExporter
             $lines[] = '';
         }
 
-        $this->appendEdges($lines, $graph, $classSet);
+        $this->appendEdges($lines, $graph, $classSet, $repairs);
 
         return $lines;
     }
@@ -132,7 +145,7 @@ final class DotExporter
      * @param array<string> $lines
      * @param array<string, true> $classSet
      */
-    private function appendEdges(array &$lines, DependencyGraphInterface $graph, array $classSet): void
+    private function appendEdges(array &$lines, DependencyGraphInterface $graph, array $classSet, int &$repairs): void
     {
         $lines[] = '    // Edges';
 
@@ -144,8 +157,8 @@ final class DotExporter
 
             $lines[] = \sprintf(
                 '    "%s" -> "%s";',
-                $this->escape($dependency->sourceLogical()->toString()),
-                $this->escape($dependency->targetLogical()->toString()),
+                $this->escape(PublishedUtf8::repair($dependency->sourceLogical()->toString(), $repairs)),
+                $this->escape(PublishedUtf8::repair($dependency->targetLogical()->toString(), $repairs)),
             );
         }
     }

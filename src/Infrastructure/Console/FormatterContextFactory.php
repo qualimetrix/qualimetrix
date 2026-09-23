@@ -7,6 +7,7 @@ namespace Qualimetrix\Infrastructure\Console;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Reporting\Formatter\FormatOptionValue;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\FormatterContext;
@@ -41,67 +42,15 @@ final class FormatterContextFactory
         ?NamespacePattern $namespacePattern = null,
     ): FormatterContext {
         // Resolve group-by: explicit CLI option or formatter default
-        /** @var string|null $groupByValue */
-        $groupByValue = $input->getOption('group-by');
-        $isGroupByExplicit = $groupByValue !== null;
-        try {
-            $groupBy = $isGroupByExplicit
-                ? GroupBy::from($groupByValue)
-                : $formatter->getDefaultGroupBy();
-        } catch (ValueError) {
-            $valid = implode(', ', array_column(GroupBy::cases(), 'value'));
-            throw ConfigurationRefusal::aboutCommandLineInput(
-                '--group-by',
-                \sprintf('Invalid --group-by value "%s". Valid values: %s', $groupByValue, $valid),
-            );
-        }
+        $explicitGroupBy = $this->explicitGroupBy($input);
+        $isGroupByExplicit = $explicitGroupBy !== null;
+        $groupBy = $explicitGroupBy ?? $formatter->getDefaultGroupBy();
 
-        // Parse --format-opt key=value pairs
-        /** @var list<string> $formatOpts */
-        $formatOpts = $input->getOption('format-opt');
-        $options = [];
-        foreach ($formatOpts as $opt) {
-            $eqPos = strpos($opt, '=');
-            if ($eqPos === false) {
-                throw ConfigurationRefusal::aboutCommandLineInput(
-                    '--format-opt',
-                    \sprintf('Invalid --format-opt value "%s": expected format key=value', $opt),
-                );
-            }
-            $options[substr($opt, 0, $eqPos)] = substr($opt, $eqPos + 1);
-        }
-
-        // Handle --all flag: alias for --format-opt=violations=all --detail=all
+        $options = $this->formatOptions($input);
         $allFlag = (bool) $input->getOption('all');
-        if ($allFlag) {
-            $existingFindings = $options['violations'] ?? '';
-            if ($existingFindings !== '' && $existingFindings !== 'all') {
-                throw ConfigurationRefusal::aboutCommandLineInput(
-                    '--all',
-                    'Conflicting options: --all cannot be combined with --format-opt=violations=N. '
-                    . 'Use either --all (show everything) or --format-opt=violations=N (explicit limit)',
-                );
-            }
-            $options['violations'] = 'all';
-        }
-
-        // After --all, not before: the key this factory writes itself is held to
-        // the same declaration as one the user typed, so a formatter dropping
-        // `violations` cannot leave --all writing into a void.
-        $this->refuseUnknownFormatOptionKeys($options);
 
         // Parse --namespace and --class (mutually exclusive)
-        /** @var string|null $namespaceFilter */
-        $namespaceFilter = $input->getOption('namespace');
-        /** @var string|null $classFilter */
-        $classFilter = $input->getOption('class');
-
-        if ($namespaceFilter !== null && $classFilter !== null) {
-            throw ConfigurationRefusal::aboutCommandLineInput(
-                '--namespace/--class',
-                'Options --namespace and --class are mutually exclusive',
-            );
-        }
+        [$namespaceFilter, $classFilter] = $this->drillDownFilters($input);
 
         $detectedWidth = (new \Symfony\Component\Console\Terminal())->getWidth();
         $terminalWidth = $detectedWidth !== 0 ? $detectedWidth : 80;
@@ -130,9 +79,49 @@ final class FormatterContextFactory
     }
 
     /**
-     * Binds the report selector before an analysis starts.
+     * Binds every presentation option that can be judged without the analysis,
+     * and returns the bound namespace selector.
+     *
+     * {@see self::create()} runs only after the analysis, so a value refused
+     * there costs a whole run first. Everything read here is independent of
+     * the analysed code and of the output format a configuration file may
+     * still select, so it is refused before the run starts; `create()` parses
+     * the same values through the same methods and cannot disagree.
      */
-    public function namespacePattern(InputInterface $input): ?NamespacePattern
+    public function bindBeforeAnalysis(InputInterface $input): ?NamespacePattern
+    {
+        [$namespaceFilter, $classFilter] = $this->drillDownFilters($input);
+        $this->explicitGroupBy($input);
+        $this->formatOptions($input);
+        $this->parseDetailOption($input, $namespaceFilter, $classFilter);
+        $this->parseTopOption($input);
+
+        return $this->decodeNamespaceFilter($namespaceFilter);
+    }
+
+    private function explicitGroupBy(InputInterface $input): ?GroupBy
+    {
+        /** @var string|null $groupByValue */
+        $groupByValue = $input->getOption('group-by');
+        if ($groupByValue === null) {
+            return null;
+        }
+
+        try {
+            return GroupBy::from($groupByValue);
+        } catch (ValueError) {
+            $valid = implode(', ', array_column(GroupBy::cases(), 'value'));
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--group-by',
+                \sprintf('Invalid --group-by value "%s". Valid values: %s', $groupByValue, $valid),
+            );
+        }
+    }
+
+    /**
+     * @return array{?string, ?string} `--namespace` and `--class`, which are mutually exclusive
+     */
+    private function drillDownFilters(InputInterface $input): array
     {
         /** @var string|null $namespaceFilter */
         $namespaceFilter = $input->getOption('namespace');
@@ -146,7 +135,60 @@ final class FormatterContextFactory
             );
         }
 
-        return $this->decodeNamespaceFilter($namespaceFilter);
+        return [$namespaceFilter, $classFilter];
+    }
+
+    /**
+     * `--format-opt` pairs after `--all` has written its own, each key known to
+     * some formatter and each value parsing under that key's grammar.
+     *
+     * @return array<string, string>
+     */
+    private function formatOptions(InputInterface $input): array
+    {
+        /** @var list<string> $formatOpts */
+        $formatOpts = $input->getOption('format-opt');
+        $options = [];
+        foreach ($formatOpts as $opt) {
+            $eqPos = strpos($opt, '=');
+            if ($eqPos === false) {
+                throw ConfigurationRefusal::aboutCommandLineInput(
+                    '--format-opt',
+                    \sprintf('Invalid --format-opt value "%s": expected format key=value', $opt),
+                );
+            }
+            $options[substr($opt, 0, $eqPos)] = substr($opt, $eqPos + 1);
+        }
+
+        // Handle --all flag: alias for --format-opt=violations=all --detail=all
+        if ((bool) $input->getOption('all')) {
+            $existingFindings = $options['violations'] ?? '';
+            if ($existingFindings !== '' && $existingFindings !== 'all') {
+                throw ConfigurationRefusal::aboutCommandLineInput(
+                    '--all',
+                    'Conflicting options: --all cannot be combined with --format-opt=violations=N. '
+                    . 'Use either --all (show everything) or --format-opt=violations=N (explicit limit)',
+                );
+            }
+            $options['violations'] = 'all';
+        }
+
+        // After --all, not before: the key this factory writes itself is held to
+        // the same declaration as one the user typed, so a formatter dropping
+        // `violations` cannot leave --all writing into a void.
+        $this->refuseUnknownFormatOptionKeys($options);
+
+        foreach ($options as $key => $value) {
+            $expected = FormatOptionValue::problem($key, $value);
+            if ($expected !== null) {
+                throw ConfigurationRefusal::aboutCommandLineInput(
+                    '--format-opt',
+                    \sprintf('Invalid --format-opt value "%s=%s": expected %s.', $key, $value, $expected),
+                );
+            }
+        }
+
+        return $options;
     }
 
     private function decodeNamespaceFilter(?string $namespaceFilter): ?NamespacePattern
@@ -189,7 +231,7 @@ final class FormatterContextFactory
      * Parses --detail option into a detail limit.
      *
      * Returns: null = off, 0 = all, N = limit.
-     * --detail (no value) = 200, --detail=all = 0, --detail=N = N.
+     * --detail (no value) = 200, --detail=all = 0, --detail=N = N; anything else is refused.
      * --namespace/--class implicitly enables detail with default limit.
      */
     private function parseDetailOption(InputInterface $input, ?string $namespaceFilter, ?string $classFilter): ?int
@@ -206,25 +248,27 @@ final class FormatterContextFactory
             return null;
         }
 
-        if ($detailValue === null) {
-            // --detail without value
+        // `true` is the same flag written through an array input, which
+        // spells a value-less option that way rather than as null.
+        if ($detailValue === null || $detailValue === true) {
             return self::DEFAULT_DETAIL_LIMIT;
         }
 
         /** @var string $detailValue */
-        if ($detailValue === 'all' || $detailValue === '0') {
+        if ($detailValue === 'all') {
             return 0;
         }
 
-        $parsed = filter_var($detailValue, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-
-        return $parsed !== false ? $parsed : self::DEFAULT_DETAIL_LIMIT;
+        return self::wholeNumber($detailValue) ?? throw ConfigurationRefusal::aboutCommandLineInput(
+            '--detail',
+            \sprintf('Invalid --detail value "%s". Expected a whole number (0 for no cap) or "all".', $detailValue),
+        );
     }
 
     /**
      * Parses --top option into a top issues limit.
      *
-     * Returns default 10 when not set. Returns 0 to disable.
+     * Returns default 10 when not set. Returns 0 to disable. Anything else is refused.
      */
     private function parseTopOption(InputInterface $input): int
     {
@@ -235,8 +279,20 @@ final class FormatterContextFactory
             return FormatterContext::DEFAULT_TOP_ISSUES_LIMIT;
         }
 
-        $parsed = filter_var($topValue, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+        return self::wholeNumber($topValue) ?? throw ConfigurationRefusal::aboutCommandLineInput(
+            '--top',
+            \sprintf('Invalid --top value "%s". Expected a whole number (0 hides the section).', $topValue),
+        );
+    }
 
-        return $parsed !== false ? $parsed : FormatterContext::DEFAULT_TOP_ISSUES_LIMIT;
+    private static function wholeNumber(string $raw): ?int
+    {
+        if (preg_match('/^(0|[1-9][0-9]*)$/', $raw) !== 1) {
+            return null;
+        }
+
+        $value = filter_var($raw, \FILTER_VALIDATE_INT);
+
+        return $value === false ? null : $value;
     }
 }

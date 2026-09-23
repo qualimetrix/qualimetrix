@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Suppressed;
 
+use LogicException;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Reporting\FindingProjection\InertSuppressor;
 use Qualimetrix\Reporting\FindingProjection\SuppressedFinding;
-use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
 use Qualimetrix\Reporting\FindingProjection\SuppressionMechanism;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\Formatter\PublishedFinding;
+use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
@@ -28,7 +30,12 @@ final class SuppressedFormatter implements FormatterInterface
 {
     public function format(Report $report, FormatterContext $context): string
     {
-        $composition = $report->suppressionComposition ?? new SuppressionComposition([]);
+        // Empty means nothing was suppressed; absent means the run never built
+        // the composition, and answering "nothing" for that is the one answer
+        // this format must never give by accident.
+        $composition = $report->suppressionComposition ?? throw new LogicException(
+            'The suppressed format needs the run\'s suppression composition, and this report carries none.',
+        );
 
         $byMechanism = [];
         foreach (SuppressionMechanism::cases() as $mechanism) {
@@ -54,13 +61,14 @@ final class SuppressedFormatter implements FormatterInterface
             'note' => 'suppressed is a multiset of mechanism x finding, not a set of findings: one finding '
                 . 'can appear under more than one mechanism, so byMechanism counts do not sum to the number '
                 . 'of distinct findings suppressed.',
+            'coverage' => $report->coverage?->toArray(),
             'mechanisms' => array_map(static fn(SuppressionMechanism $m): string => $m->value, SuppressionMechanism::cases()),
             'byMechanism' => $byMechanism,
             'suppressed' => $suppressed,
             'neverMatched' => $neverMatched,
         ];
 
-        return json_encode($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
+        return PublishedUtf8::encodeJsonObject($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES);
     }
 
     /**
@@ -75,11 +83,15 @@ final class SuppressedFormatter implements FormatterInterface
             'suppressor' => $entry->suppressor,
             'rule' => $finding->ruleName,
             'channel' => $finding->code,
+            'subject' => $finding->subject->toCanonical(),
+            'occurrence' => $finding->occurrenceKey?->value,
+            'edge' => PublishedFinding::edge($finding),
             'file' => $finding->location->file === null ? null : $context->relativizePath($finding->location->file),
             'line' => $finding->location->line,
             'symbol' => $finding->symbolPath->toString(),
             'severity' => $finding->severity->value,
-            'message' => $finding->getDisplayMessage(),
+            'message' => $finding->message,
+            'recommendation' => $finding->recommendation,
         ];
     }
 

@@ -59,14 +59,18 @@ Reporting/
 │   └── RuleExclusionLedgerAttributor.php  # Publishes each ledger-excluded finding from the RuleExclusionAttribution the ledger recorded; finds inert patterns, including suppress_namespace_channels
 ├── DrillDown/
 │   ├── DrillDownBinding.php             # How many analyzed namespaces/classes a `--namespace` / `--class` value selects; zero is refused instead of emptying the report
-│   └── FindingFilter.php                # What `--namespace` / `--class` selects from findings and offenders
+│   ├── FindingFilter.php                # What `--namespace` / `--class` selects from findings and offenders — the one copy of that rule
+│   └── OutOfScopeFindings.php           # Severity counts of the run's findings a selection left out; lets a renderer say "clean here, not clean elsewhere"
 └── Formatter/
     ├── FormatterInterface.php              # Formatter contract
     ├── FormatOptionKeysInterface.php       # Opt-in: the --format-opt keys a formatter reads
+    ├── FormatOptionValue.php               # The value grammar of every --format-opt key; the CLI refuses by it, formatters read by it
+    ├── PublishedFinding.php                # Which composition of a finding's texts each surface publishes, and under which key
+    ├── PublishedUtf8.php                   # Repairs invalid UTF-8 from analysed identifiers in structured formats and counts the repair
     ├── FormatterRegistryInterface.php      # Registry contract
     ├── FormatterRegistry.php               # Registry implementation
     ├── TextFormatter.php                   # Compact text output (with colors)
-    ├── TextVerboseFormatter.php            # Verbose text output (grouped, colored)
+    ├── TextVerboseFormatter.php            # Deprecated alias of `text --detail` (hidden from listings)
     ├── CheckstyleFormatter.php             # Checkstyle XML
     ├── GithubActionsFormatter.php          # GitHub Actions annotation output
     ├── MetricsJsonFormatter.php            # Raw metrics JSON export
@@ -105,7 +109,8 @@ Reporting/
     │   ├── HtmlTreeNode.php               # Internal VO for tree construction
     │   ├── HtmlDebtCalculator.php         # Computes and aggregates technical debt for HTML reports
     │   ├── HtmlMetricAggregator.php       # Bottom-up metric aggregation for HTML tree
-    │   └── HtmlFindingPartitioner.php   # Partitions findings by file/class for HTML tree
+    │   ├── HtmlProjectMetadata.php        # The report's `project` object: analysed project's name, version, docs addresses
+    │   └── HtmlFindingPartitioner.php   # Puts every finding on exactly one tree node (root at the latest)
     ├── GitLabCodeQualityFormatter.php      # GitLab Code Climate JSON
     └── Suppressed/
         └── SuppressedFormatter.php          # Machine-readable suppression composition (`--format=suppressed`)
@@ -293,11 +298,15 @@ final readonly class Report
         public int $techDebtMinutes = 0,
         public ?float $debtPer1kLoc = null,    // debt density (min/kLOC), null if no LOC data
         public array $topIssues = [],          // list<RankedIssue> — top findings by impact
+        public ?NamespaceTree $namespaceTree = null,
+        public int $infoCount = 0,
+        public ?ReportCoverage $coverage = null,
+        public ?SuppressionComposition $suppressionComposition = null,
+        public ?OutOfScopeFindings $outOfScope = null, // what a --namespace/--class selection left out; null without one
     ) {}
 
     public function isEmpty(): bool;
     public function getTotalFindings(): int;
-    public function getFindingsBySeverity(Severity $severity): array;
 }
 ```
 
@@ -341,9 +350,19 @@ Supports ANSI colors for severity and summary (auto-detected, disabled with `--n
 
 **Output format:** `file:line: severity[code]: message (symbol)`
 
+Under `--namespace`/`--class` the closing summary line counts the selection
+("… in this scope"), names the findings outside it that decide the exit code,
+and takes its colour from the whole run; `summary` does the same in its
+finding-count line. `--detail=N` puts the whole list in its printed order
+first and cuts second, so the shown findings are the first ones `--detail=all`
+prints — in every grouping and in `summary --detail` alike.
+
 ### TextVerboseFormatter
 
 **Name:** `text-verbose` | **Default grouping:** `file`
+
+Deprecated alias of `--format=text --detail`, hidden from the format listings;
+selecting it prints a deprecation warning on stderr. Prefer `text --detail`.
 
 Human-readable verbose output with:
 - Findings grouped by file (default), rule, severity, or flat
@@ -431,7 +450,7 @@ Files: 1 analyzed, 0 skipped | Errors: 1 | Warnings: 1 | Time: 0.23s
 | ------------ | -------------- | ------------------------------------------------------------- | -------------------------- |
 | Summary      | `summary`      | **Default.** Health overview + worst offenders                | CLI                        |
 | Text         | `text`         | Compact human-readable text output                            | CLI                        |
-| Text Verbose | `text-verbose` | Detailed text output with sorting by severity                 | CLI                        |
+| Text Verbose | `text-verbose` | Deprecated alias of `text --detail` (grouped by file)         | CLI                        |
 | JSON         | `json`         | Summary-oriented JSON (health + findings)                     | AI agents, CI/CD           |
 | Checkstyle   | `checkstyle`   | Checkstyle XML for CI systems                                 | Jenkins, SonarQube         |
 | SARIF        | `sarif`        | SARIF 2.1.0 for static analysis                               | GitHub, VS Code, JetBrains |
@@ -446,11 +465,11 @@ Files: 1 analyzed, 0 skipped | Errors: 1 | Warnings: 1 | Time: 0.23s
 
 **Name:** `json`
 
-Summary-oriented JSON for AI agents, CI/CD, and programmatic consumption. Includes health scores, worst offenders, and findings (top 50 by default). Example:
+Summary-oriented JSON for AI agents, CI/CD, and programmatic consumption. Includes health scores, worst offenders, and every finding unless `violations=N` caps the list. Example:
 
 ```json
 {
-  "meta": { "version": "1.0.0", "package": "qmx", "timestamp": "...", "docs": "https://qualimetrix.dev", "llmsTxt": "https://qualimetrix.dev/llms.txt" },
+  "meta": { "version": "<qmx version>", "package": "qmx", "timestamp": "...", "docs": "https://qualimetrix.dev", "llmsTxt": "https://qualimetrix.dev/llms.txt" },
   "summary": { "filesAnalyzed": 342, "violationCount": 47, "errorCount": 12, "warningCount": 35, "techDebtMinutes": 270, "debtPer1kLoc": 5.4 },
   "health": { "complexity": { "score": 65, "label": "Fair", "threshold": { "warning": 50, "error": 25 }, "coverage": { "state": "measured", "measured": 2263, "eligible": 2263, "ratio": 1.0, "unit": "callables", "basis": "complexity.ccn.count", "reason": null }, "decomposition": [...] } },
   "worstNamespaces": [{ "symbolPath": "App\\Payment", "healthOverall": 31, "reason": "low cohesion, high complexity" }],
@@ -464,7 +483,11 @@ spells a documentation address itself. `suppressed` publishes the same block,
 and three commands outside `check` (`directives`,
 `baseline:rename-channels`, `debug:layer-assignment`) open their JSON with it.
 
-**Options:** `--format-opt=violations=all|0|N` (default: 50), `--format-opt=top=N` (default: 10 offenders). `--detail` shows findings (default limit: 200, `--detail=all` for unlimited). `--namespace`/`--class` filters findings and worst offenders. `coverage` always states whether the result is complete; policy and health results from an incomplete run are not authoritative.
+**Options:** `--format-opt=violations=all|0|N` (default: all), `--format-opt=top=N` (default: 10 offenders). An unparsable value is refused with exit code 3 before the analysis runs; the grammar of every key is `Formatter\FormatOptionValue`. A capped list is the first N in the identity order below. `--detail` shows findings (default limit: 200, `--detail=all` for unlimited). `--namespace`/`--class` filters findings and worst offenders; the `summary` section keeps its keys under a selection, with `debtPer1kLoc: null` (the selection's debt over the whole project's LOC would mix two scopes). `coverage` always states whether the result is complete; policy and health results from an incomplete run are not authoritative.
+
+**`message` / `recommendation`:** the finding's message and its optional recommendation, under the same two keys in `violations` and `topIssues` (see `Formatter\PublishedFinding`).
+
+**`invalidUtf8Replaced`:** present only when strings from the analysed source were not valid UTF-8; each invalid byte was replaced by U+FFFD and the key counts the strings repaired. `metrics`, `suppressed` and the HTML payload publish the same key; `sarif`, `gitlab` and `checkstyle` publish the repair in their own diagnostic channel (see `Formatter\PublishedUtf8`).
 
 **`acceptedLevel`:** `null` unless the finding is a measured baseline breach (see [Accepted level](#accepted-level-baseline-breach) below), in which case it is `{ "shape": "magnitude" | "occurrence", "describe": "25", "count": 1 }`. For a `magnitude` channel, the current value is the sibling `metricValue` field — not duplicated here.
 
@@ -488,7 +511,7 @@ target. Established no-edge and fully typed fingerprints remain unchanged.
 Checkstyle XML for Jenkins/SonarQube. Example:
 
 ```xml
-<checkstyle version="10.0">
+<checkstyle version="3.0">
   <file name="src/Service/UserService.php">
     <error line="42" severity="error" message="..." source="cyclomatic-complexity"/>
   </file>
@@ -665,6 +688,17 @@ Path and namespace suppressors reach this projection as bound `PathPattern` and
 `NamespacePattern` values. Their output is the stable authored `kind:value`
 definition, never the implementation's rendered PCRE string.
 
+Each `suppressed` entry carries the identity the `json` report publishes
+(`channel` — spelled here as the finding code —, `subject`, `occurrence`,
+`edge`), so a suppressed record can be joined to a published one by machine,
+and both texts under the keys `json` uses (`message`, `recommendation`). It
+deliberately omits the measurement fields (`metricValue`, `threshold`,
+`techDebtMinutes`, `acceptedLevel`): the format audits what held a finding back,
+and the identity is what reaches the finding's own record. The document
+carries `coverage` like every other format, so a suppression audit of an
+incomplete run says it is incomplete. A report without a composition is a
+wiring defect and fails, rather than publishing "nothing was suppressed".
+
 ### Capture
 
 Selecting this format arms the same per-rule ledger capture `--show-suppressed`
@@ -696,8 +730,8 @@ bin/qmx check src/ --format=suppressed > suppressed.json
 
 ```php
 $finding->severity      // Severity enum (Error, Warning, Info)
-$finding->message       // Finding description (technical, for text/checkstyle/sarif)
-$finding->recommendation  // ?string — human-readable message (for summary/detail/json)
+$finding->message       // Finding description; publish it through Formatter\PublishedFinding, not by hand
+$finding->recommendation  // ?string — human-readable advice; see PublishedFinding for which surface shows which
 $finding->threshold     // int|float|null — threshold that was exceeded
 $finding->ruleName      // Rule name
 $finding->code // Stable finding code for identification
@@ -757,6 +791,7 @@ Per-format decision — whether the accepted level is carried, and how:
 | `gitlab`                | Yes         | Appended to `description` (fingerprint still hashes the unmodified message)                                                                                        |
 | `github`                | Yes         | Appended to the annotation message, before escaping                                                                                                                |
 | `sarif`                 | Yes         | Appended to `message.text`; `result.level` and the rule's run-level default already derive from `Finding::severity`, so promotion propagates without extra mapping |
+| `suppressed`            | No          | An audit of suppression, not of measurement; the entry's identity reaches the finding's own record                                                                 |
 | `json`                  | Yes         | Structured `acceptedLevel: {shape, describe, count} \| null` field per finding; `now` is the existing sibling `metricValue` field, not duplicated                  |
 | `metrics`               | No          | Carries no findings at all — only raw collected metric values                                                                                                      |
 | `health`                | No          | Renders health-dimension scores, never individual findings                                                                                                         |
@@ -764,23 +799,23 @@ Per-format decision — whether the accepted level is carried, and how:
 
 ## Formatter Comparison
 
-| Characteristic          | Summary | Text   | Text Verbose | JSON    | Checkstyle        | SARIF        | GitLab | Metrics | Health | Html            | Suppressed |
-| ----------------------- | ------- | ------ | ------------ | ------- | ----------------- | ------------ | ------ | ------- | ------ | --------------- | ---------- |
-| **ANSI Colors**         | Yes     | Yes    | Yes          | No      | No                | No           | No     | No      | Yes    | No              | No         |
-| **Health overview**     | Yes     | No     | No           | No      | No                | No           | No     | No      | Yes    | Yes             | No         |
-| **Grouping**            | No      | No     | Yes (file)   | No      | No                | No           | No     | No      | No     | No              | No         |
-| **Readability**         | High    | High   | High         | No      | No                | No           | No     | No      | High   | Visual          | No         |
-| **CI/CD integration**   | No      | No     | No           | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab | Custom  | No     | CI artifacts    | Auditing   |
-| **IDE support**         | No      | No     | No           | No      | Limited           | VS Code/JB   | No     | No      | No     | No              | No         |
-| **PHPMD compatibility** | No      | Full   | No           | No      | Full              | No           | No     | No      | No     | No              | No         |
-| **Fingerprinting**      | No      | No     | No           | No      | No                | No           | Yes    | No      | No     | No              | No         |
-| **Output**              | STDOUT  | STDOUT | STDOUT       | STDOUT  | STDOUT            | STDOUT       | STDOUT | STDOUT  | STDOUT | File (--output) | STDOUT     |
+| Characteristic          | Summary | Text   | Text Verbose | JSON    | Checkstyle        | SARIF        | GitLab | GitHub         | Metrics | Health | Html            | Suppressed |
+| ----------------------- | ------- | ------ | ------------ | ------- | ----------------- | ------------ | ------ | -------------- | ------- | ------ | --------------- | ---------- |
+| **ANSI Colors**         | Yes     | Yes    | Yes          | No      | No                | No           | No     | No             | No      | Yes    | No              | No         |
+| **Health overview**     | Yes     | No     | No           | No      | No                | No           | No     | No             | No      | Yes    | Yes             | No         |
+| **Grouping**            | No      | No     | Yes (file)   | No      | No                | No           | No     | No             | No      | No     | No              | No         |
+| **Readability**         | High    | High   | High         | No      | No                | No           | No     | No             | No      | High   | Visual          | No         |
+| **CI/CD integration**   | No      | No     | No           | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab | GitHub Actions | Custom  | No     | CI artifacts    | Auditing   |
+| **IDE support**         | No      | No     | No           | No      | Limited           | VS Code/JB   | No     | No             | No      | No     | No              | No         |
+| **PHPMD compatibility** | No      | Full   | No           | No      | Full              | No           | No     | No             | No      | No     | No              | No         |
+| **Fingerprinting**      | No      | No     | No           | No      | No                | Yes          | Yes    | No             | No      | No     | No              | No         |
+| **Output**              | STDOUT  | STDOUT | STDOUT       | STDOUT  | STDOUT            | STDOUT       | STDOUT | STDOUT         | STDOUT  | STDOUT | File (--output) | STDOUT     |
 
 ### Choosing the Right Format
 
 - **CLI usage (overview)** -> `summary` (default)
 - **CLI usage (compact findings)** -> `text`
-- **CLI usage (detailed)** -> `text-verbose`
+- **CLI usage (detailed)** -> `text --detail`
 - **Generic CI/CD** (GitLab CI, CircleCI, Travis) -> `json`
 - **Jenkins / SonarQube** -> `checkstyle`
 - **GitHub** -> `sarif`
@@ -834,6 +869,18 @@ bin/qmx check src/ --format=html > report.html
 - `HtmlFormatter` — implements `FormatterInterface`, orchestrates assembly
 - `Html/HtmlTreeBuilder` — builds namespace hierarchy from `MetricRepositoryInterface`
 - `Html/HtmlTreeNode` — mutable VO for tree construction
+- `Html/HtmlFindingPartitioner` — puts every finding on exactly one node: a
+  callable or class finding on its class, a global function or namespace
+  finding on its namespace, a file finding on the one class its file declares,
+  and anything without such a node (a project finding, a file with no class or
+  several) on the nearest enclosing node, the project root at the latest. So
+  `summary.totalViolations` and the root's `violationCountTotal` count the same
+  findings, and the root's `debtMinutes` is the report's debt bottom-up. A
+  finding the partitioner cannot place fails the run instead of disappearing.
+
+The template placeholders (`__CSS__`, `__DATA__`, `__D3_JS__`, `__APP_JS__`)
+are substituted in a single pass, so a symbol spelled like a placeholder stays
+a value in the data.
 
 The browser program that renders the report is **not** under `src/Reporting/`.
 It lives at `html-report/` in the repository root — an npm project with its own
@@ -843,9 +890,13 @@ build and test toolchain, outside the PSR-4 autoload root by
 `report.css`, `dist/report.min.js` and `dist/d3.min.js`. See
 [html-report/README.md](../../html-report/README.md) for its structure.
 
-**Project metadata and footer:** `HtmlTreeBuilder` assembles the `project` key
+**Project metadata and footer:** `HtmlProjectMetadata` assembles the `project` key
 of the report data (`name`, `generatedAt`, `qmxVersion`, `scopedReporting`,
-plus `docs` and `llmsTxt` from `Core\ProductIdentity`). The browser program's
+plus `docs` and `llmsTxt` from `Core\ProductIdentity`). `name` is
+`--format-opt=project-name`, else the `name` of the analysed project's
+`composer.json`, else its root directory's name — never the Composer runtime's
+root package, which under a phar, a global install or a qmx checkout is qmx
+itself. The browser program's
 footer reads this object and renders `docs` and `llmsTxt` as links beside the
 existing generated-date and version line, so the same values that reach every
 other output channel also reach the HTML report — JavaScript cannot read a PHP

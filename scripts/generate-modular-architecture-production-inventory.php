@@ -2406,6 +2406,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0078-an-entry-the-run-did-not-read-makes-it-incomplete.md' => 'Analysis.Run',
         'docs/adr/0079-a-criterion-the-run-cannot-answer-is-undecidable.md' => 'Analysis.Policy.Architecture',
         'docs/adr/0080-a-project-fold-reads-a-partition-not-the-leaves.md' => 'Analysis.Evidence.Measurement',
+        'docs/adr/0081-a-channel-not-named-after-its-producer-describes-itself.md' => 'Analysis.Finding',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/Evidence/CircularDependency/README.md' => 'Analysis.Evidence.CircularDependency',

@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Reporting\Unit\Formatter\Json;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -221,6 +222,39 @@ final class JsonFormatterTest extends TestCase
 
         // message field always uses the raw finding message
         self::assertSame('Technical message only', $data['violations'][0]['message']);
+    }
+
+    /**
+     * One key, one field, within the document: `message` is the finding's
+     * message in both sections, and the recommendation has a key of its own.
+     */
+    #[Test]
+    public function itGivesMessageOneMeaningAcrossTheViolationsAndTopIssuesSections(): void
+    {
+        $finding = self::finding(
+            location: new Location(RelativePath::fromString('src/Foo.php'), 10),
+            symbolPath: SymbolPath::forClass('App', 'Foo'),
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
+            message: 'Cyclomatic complexity is 79, exceeds threshold of 20.',
+            severity: Severity::Error,
+            recommendation: 'Cyclomatic complexity: 79 (threshold: 20) - too many code paths',
+        );
+        $report = new Report(
+            findings: [$finding],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0.1,
+            errorCount: 1,
+            warningCount: 0,
+            topIssues: [new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($finding, 10.0, null, 30, 3)],
+        );
+
+        $data = json_decode($this->formatter->format($report, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame($data['violations'][0]['message'], $data['topIssues'][0]['message']);
+        self::assertSame('Cyclomatic complexity is 79, exceeds threshold of 20.', $data['topIssues'][0]['message']);
+        self::assertSame($finding->recommendation, $data['topIssues'][0]['recommendation']);
     }
 
     #[Test]
@@ -578,6 +612,74 @@ final class JsonFormatterTest extends TestCase
         self::assertSame(3, $data['summary']['filesAnalyzed']);
         // techDebtMinutes recalculated for filtered findings (2 × 15min default)
         self::assertSame(30, $data['summary']['techDebtMinutes']);
+    }
+
+    /**
+     * The section keeps its shape under a drill-down: the numerator of
+     * `debtPer1kLoc` would be the selection's and its denominator the
+     * project's, so the key says "not applicable" by value.
+     */
+    #[Test]
+    public function itKeepsTheSummaryShapeUnderADrillDown(): void
+    {
+        $report = new Report(
+            findings: [],
+            filesAnalyzed: 3,
+            filesSkipped: 0,
+            duration: 0.1,
+            errorCount: 0,
+            warningCount: 0,
+            debtPer1kLoc: 5.4,
+        );
+
+        $plain = json_decode($this->formatter->format($report, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
+        $scoped = json_decode(
+            $this->formatter->format($report, new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Payment'))),
+            true,
+            512,
+            \JSON_THROW_ON_ERROR,
+        );
+
+        self::assertSame(array_keys($plain['summary']), array_keys($scoped['summary']));
+        self::assertSame(5.4, $plain['summary']['debtPer1kLoc']);
+        self::assertNull($scoped['summary']['debtPer1kLoc']);
+    }
+
+    #[Test]
+    public function itCutsTheViolationListAfterItsIdentityOrder(): void
+    {
+        $report = ReportBuilder::create()
+            ->addFinding(self::finding(
+                location: new Location(RelativePath::fromString('src/A.php'), 1),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
+                message: 'produced first, ordered last',
+                severity: Severity::Error,
+            ))
+            ->addFinding(self::finding(
+                location: new Location(RelativePath::fromString('src/B.php'), 1),
+                symbolPath: SymbolPath::forClass('App', 'B'),
+                ruleName: 'cohesion.lcom',
+                code: 'cohesion.lcom',
+                message: 'produced last, ordered first',
+                severity: Severity::Warning,
+            ))
+            ->filesAnalyzed(2)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $data = json_decode(
+            $this->formatter->format($report, new FormatterContext(options: ['violations' => '1'])),
+            true,
+            512,
+            \JSON_THROW_ON_ERROR,
+        );
+
+        self::assertCount(1, $data['violations']);
+        self::assertSame('produced last, ordered first', $data['violations'][0]['message']);
+        self::assertTrue($data['violationsMeta']['truncated']);
     }
 
     #[Test]
@@ -958,7 +1060,7 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itFallsBackToDefaultForInvalidViolationsOption(): void
+    public function itRejectsAnInvalidViolationsOptionThatBypassedTheCommandLine(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -978,11 +1080,13 @@ final class JsonFormatterTest extends TestCase
 
         $report = $builder->build();
         $context = new FormatterContext(options: ['violations' => 'invalid']);
-        $output = $this->formatter->format($report, $context);
-        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
-        // Invalid value falls back to default (no limit)
-        self::assertCount(55, $data['violations']);
+        // The command line refuses this value before any formatter runs; one
+        // that bypassed that door is a wiring defect, not "no limit".
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('--format-opt violations=invalid reached a formatter unparsed');
+
+        $this->formatter->format($report, $context);
     }
 
     #[Test]

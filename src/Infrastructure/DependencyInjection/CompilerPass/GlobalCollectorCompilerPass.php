@@ -12,11 +12,16 @@ use Symfony\Component\DependencyInjection\Reference;
  * Collects all services tagged with 'qmx.global_collector'
  * and injects them into the Measurement aggregation service.
  */
-final class GlobalCollectorCompilerPass implements CompilerPassInterface
+final class GlobalCollectorCompilerPass implements CompilerPassInterface, ConsumerBoundPassInterface
 {
     public const string TAG = 'qmx.global_collector';
 
     private const string RUNNER_SERVICE_ID = 'qmx.measurement.aggregation';
+
+    public static function consumerServiceIds(): array
+    {
+        return [self::RUNNER_SERVICE_ID];
+    }
 
     public function process(ContainerBuilder $container): void
     {

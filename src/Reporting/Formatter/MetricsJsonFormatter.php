@@ -120,7 +120,7 @@ final class MetricsJsonFormatter implements FormatterInterface
             ],
         ];
 
-        return json_encode($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
+        return PublishedUtf8::encodeJsonObject($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES);
     }
 
     public function getName(): string

@@ -112,6 +112,7 @@ config	baseline:cleanup	exclude	whole-value	config-key	yes
 config	baseline:cleanup	excludeHealth	whole-value	config-key	yes		
 config	baseline:cleanup	failOn	whole-value	config-key	yes		invariant:fail-on
 config	baseline:cleanup	format	whole-value	config-key	yes		invariant:format
+config	baseline:cleanup	includeAutoloadDev	whole-value	config-key	no	boolean; nothing to point at	
 config	baseline:cleanup	includeGenerated	whole-value	config-key	no	boolean; nothing to point at	
 config	baseline:cleanup	memoryLimit	whole-value	config-key	no	PHP size string; nothing to point at	
 config	baseline:cleanup	onlyRules	whole-value	config-key	yes		
@@ -132,6 +133,7 @@ config	baseline:explain	exclude	whole-value	config-key	yes
 config	baseline:explain	excludeHealth	whole-value	config-key	yes		
 config	baseline:explain	failOn	whole-value	config-key	yes		invariant:fail-on
 config	baseline:explain	format	whole-value	config-key	yes		invariant:format
+config	baseline:explain	includeAutoloadDev	whole-value	config-key	no	boolean; nothing to point at	
 config	baseline:explain	includeGenerated	whole-value	config-key	no	boolean; nothing to point at	
 config	baseline:explain	memoryLimit	whole-value	config-key	no	PHP size string; nothing to point at	
 config	baseline:explain	onlyRules	whole-value	config-key	yes		
@@ -152,6 +154,7 @@ config	baseline:generate	exclude	whole-value	config-key	yes
 config	baseline:generate	excludeHealth	whole-value	config-key	yes		
 config	baseline:generate	failOn	whole-value	config-key	yes		invariant:fail-on
 config	baseline:generate	format	whole-value	config-key	yes		invariant:format
+config	baseline:generate	includeAutoloadDev	whole-value	config-key	no	boolean; nothing to point at	
 config	baseline:generate	includeGenerated	whole-value	config-key	no	boolean; nothing to point at	
 config	baseline:generate	memoryLimit	whole-value	config-key	no	PHP size string; nothing to point at	
 config	baseline:generate	onlyRules	whole-value	config-key	yes		
@@ -172,6 +175,7 @@ config	baseline:update	exclude	whole-value	config-key	yes
 config	baseline:update	excludeHealth	whole-value	config-key	yes		
 config	baseline:update	failOn	whole-value	config-key	yes		invariant:fail-on
 config	baseline:update	format	whole-value	config-key	yes		invariant:format
+config	baseline:update	includeAutoloadDev	whole-value	config-key	no	boolean; nothing to point at	
 config	baseline:update	includeGenerated	whole-value	config-key	no	boolean; nothing to point at	
 config	baseline:update	memoryLimit	whole-value	config-key	no	PHP size string; nothing to point at	
 config	baseline:update	onlyRules	whole-value	config-key	yes		
@@ -192,6 +196,7 @@ config	check	exclude	whole-value	config-key	yes
 config	check	excludeHealth	whole-value	config-key	yes		
 config	check	failOn	whole-value	config-key	yes		invariant:fail-on
 config	check	format	whole-value	config-key	yes		invariant:format
+config	check	includeAutoloadDev	whole-value	config-key	no	boolean; nothing to point at	
 config	check	includeGenerated	whole-value	config-key	no	boolean; nothing to point at	
 config	check	memoryLimit	whole-value	config-key	no	PHP size string; nothing to point at	
 config	check	onlyRules	whole-value	config-key	yes		
@@ -212,6 +217,7 @@ config	debug:layer-assignment	exclude	whole-value	config-key	yes
 config	debug:layer-assignment	excludeHealth	whole-value	config-key	yes		
 config	debug:layer-assignment	failOn	whole-value	config-key	yes		invariant:fail-on
 config	debug:layer-assignment	format	whole-value	config-key	yes		invariant:format
+config	debug:layer-assignment	includeAutoloadDev	whole-value	config-key	no	boolean; nothing to point at	
 config	debug:layer-assignment	includeGenerated	whole-value	config-key	no	boolean; nothing to point at	
 config	debug:layer-assignment	memoryLimit	whole-value	config-key	no	PHP size string; nothing to point at	
 config	debug:layer-assignment	onlyRules	whole-value	config-key	yes		
@@ -232,6 +238,7 @@ config	directives	exclude	whole-value	config-key	yes
 config	directives	excludeHealth	whole-value	config-key	yes		
 config	directives	failOn	whole-value	config-key	yes		invariant:fail-on
 config	directives	format	whole-value	config-key	yes		invariant:format
+config	directives	includeAutoloadDev	whole-value	config-key	no	boolean; nothing to point at	
 config	directives	includeGenerated	whole-value	config-key	no	boolean; nothing to point at	
 config	directives	memoryLimit	whole-value	config-key	no	PHP size string; nothing to point at	
 config	directives	onlyRules	whole-value	config-key	yes		

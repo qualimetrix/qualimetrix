@@ -22,6 +22,34 @@ final class DetailedFindingRenderer
     }
 
     /**
+     * The `--detail` listing under the context's cap: the whole list is put in
+     * its printed order first and cut second, so the findings shown are the
+     * first ones `--detail=all` would print, never the first ones the rules
+     * happened to produce.
+     *
+     * @param list<Finding> $findings every finding the listing is about
+     *
+     * @return string Formatted detail block (without trailing newline)
+     */
+    public function renderCapped(array $findings, FormatterContext $context): string
+    {
+        $ordered = FindingDetailRenderer::order($findings, $context);
+        $cap = $context->detailLimit;
+        $shown = $cap === null || $cap === 0 ? $ordered : \array_slice($ordered, 0, $cap);
+        $block = $this->render($shown, $context, $findings);
+
+        $remaining = \count($ordered) - \count($shown);
+        if ($remaining === 0) {
+            return $block;
+        }
+
+        return $block . "\n\n" . (new AnsiColor($context->useColor))->dim(\sprintf(
+            '... and %d more. Use --detail=all to see all violations',
+            $remaining,
+        ));
+    }
+
+    /**
      * @param list<Finding> $findings Findings to display (may be truncated by --detail limit)
      * @param list<Finding>|null $allFindings Full finding list for debt calculation (defaults to $findings)
      *

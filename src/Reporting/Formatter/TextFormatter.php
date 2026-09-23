@@ -89,27 +89,10 @@ final class TextFormatter implements FormatterInterface
 
     private function formatDetailed(Report $report, FormatterContext $context): string
     {
-        $findings = $report->findings;
-        $limit = $context->detailLimit;
-        $totalCount = \count($findings);
-        $showAll = $limit === null || $limit === 0 || $totalCount <= $limit;
-        $displayFindings = $showAll ? $findings : \array_slice($findings, 0, $limit);
-
         $color = new AnsiColor($context->useColor);
         $lines = [];
 
-        // Detailed finding list
-        $lines[] = $this->detailedRenderer->render($displayFindings, $context, $findings);
-
-        if (!$showAll) {
-            $remaining = $totalCount - $limit;
-            $lines[] = '';
-            $lines[] = $color->dim(\sprintf(
-                '... and %d more. Use --detail=all to see all violations',
-                $remaining,
-            ));
-        }
-
+        $lines[] = $this->detailedRenderer->renderCapped($report->findings, $context);
         $lines[] = '';
 
         // Summary line
@@ -129,23 +112,13 @@ final class TextFormatter implements FormatterInterface
         $line = $finding->location->line;
         $severity = $this->formatSeverity($finding->severity, $color);
         $rule = $color->dim($finding->code);
-        $message = $finding->message . $this->formatBreachSuffix($finding);
+        $message = PublishedFinding::annotatedMessage($finding);
         $symbol = $this->formatSymbol($finding);
 
         // Format: file:line: severity[rule]: message (accepted at X, now Y) (symbol)
         $location = $line !== null && $finding->location->precise ? "{$file}:{$line}" : $file;
 
         return \sprintf('%s: %s[%s]: %s%s', $location, $severity, $rule, $message, $symbol);
-    }
-
-    /**
-     * " (accepted at 25, now 31)" on a measured breach, '' otherwise (ADR 0017).
-     */
-    private function formatBreachSuffix(Finding $finding): string
-    {
-        $breach = AcceptedLevelNarrator::describe($finding);
-
-        return $breach === null ? '' : \sprintf(' (%s)', $breach);
     }
 
     private function formatSeverity(Severity $severity, AnsiColor $color): string
@@ -174,35 +147,52 @@ final class TextFormatter implements FormatterInterface
         return '';
     }
 
+    /**
+     * Under a `--namespace`/`--class` selection the counts are the selection's,
+     * so the line says so, names what lies outside it, and takes its colour
+     * from the whole run — those findings decide the exit code.
+     */
     private function formatSummary(Report $report, AnsiColor $color): string
     {
-        $version = Version::get();
-        $parts = [
-            \sprintf('%d error(s)', $report->errorCount),
-            \sprintf('%d warning(s)', $report->warningCount),
-        ];
-        if ($report->infoCount > 0) {
-            $parts[] = \sprintf('%d info', $report->infoCount);
-        }
+        $outOfScope = $report->outOfScope;
         $summary = \sprintf(
-            'Qualimetrix %s: %s in %d file(s)',
-            $version,
-            implode(', ', $parts),
+            $outOfScope === null ? 'Qualimetrix %s: %s in %d file(s)' : 'Qualimetrix %s: %s in this scope (%d file(s) analyzed)',
+            Version::get(),
+            $this->severityCounts($report->errorCount, $report->warningCount, $report->infoCount),
             $report->filesAnalyzed,
         );
 
-        if ($report->errorCount > 0) {
-            return $color->boldRed($summary);
+        $errors = $report->errorCount;
+        $warnings = $report->warningCount;
+        $info = $report->infoCount;
+        if ($outOfScope !== null && $outOfScope->total() > 0) {
+            $summary .= \sprintf(
+                '; outside it: %s, which decide the exit code',
+                $this->severityCounts($outOfScope->errorCount, $outOfScope->warningCount, $outOfScope->infoCount),
+            );
+            $errors += $outOfScope->errorCount;
+            $warnings += $outOfScope->warningCount;
+            $info += $outOfScope->infoCount;
         }
 
-        if ($report->warningCount > 0) {
-            return $color->boldYellow($summary);
+        return match (true) {
+            $errors > 0 => $color->boldRed($summary),
+            $warnings > 0 => $color->boldYellow($summary),
+            $info > 0 => $color->boldCyan($summary),
+            default => $color->boldGreen($summary),
+        };
+    }
+
+    private function severityCounts(int $errors, int $warnings, int $info): string
+    {
+        $parts = [
+            \sprintf('%d error(s)', $errors),
+            \sprintf('%d warning(s)', $warnings),
+        ];
+        if ($info > 0) {
+            $parts[] = \sprintf('%d info', $info);
         }
 
-        if ($report->infoCount > 0) {
-            return $color->boldCyan($summary);
-        }
-
-        return $color->boldGreen($summary);
+        return implode(', ', $parts);
     }
 }

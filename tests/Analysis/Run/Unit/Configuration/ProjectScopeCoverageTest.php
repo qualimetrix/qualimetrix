@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
+use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -237,6 +238,33 @@ final class ProjectScopeCoverageTest extends TestCase
         ]];
     }
 
+    /**
+     * The policy that adds `autoload-dev` to a run's default paths adds it to
+     * the denominator too, so a run that left test code out is named for it.
+     */
+    #[Test]
+    public function itCountsAutoloadDevTargetsOnlyUnderAPolicyThatIncludesThem(): void
+    {
+        $this->writeManifest([
+            'autoload' => ['psr-4' => ['Fixture\\' => 'src/']],
+            'autoload-dev' => ['classmap' => ['legacy/']],
+        ]);
+
+        self::assertTrue($this->covers($this->configuration(['src'])));
+        self::assertSame(['legacy'], $this->uncovered($this->configuration(['src'], AutoloadDevPolicy::Include)));
+        self::assertTrue($this->covers($this->configuration(['src', 'legacy'], AutoloadDevPolicy::Include)));
+    }
+
+    /** A manifest with only `autoload-dev` is judged once the policy counts it. */
+    #[Test]
+    public function itJudgesADevOnlyManifestUnderAPolicyThatIncludesIt(): void
+    {
+        $this->writeManifest(['autoload-dev' => ['psr-4' => ['Fixture\\Tests\\' => 'lib/']]]);
+
+        self::assertSame([], $this->uncovered($this->configuration(['src'])), 'Unreadable without the policy: nothing to name');
+        self::assertSame(['lib'], $this->uncovered($this->configuration(['src'], AutoloadDevPolicy::Include)));
+    }
+
     /** @param array<string, mixed> $manifest */
     private function writeManifest(array $manifest): void
     {
@@ -259,13 +287,13 @@ final class ProjectScopeCoverageTest extends TestCase
 
     private function covers(RunConfiguration $configuration): bool
     {
-        return $this->coverage()->pathsCoverProjectScope($configuration->projectRoot, $configuration->paths);
+        return $this->coverage()->pathsCoverProjectScope($configuration->projectRoot, $configuration->paths, $configuration->autoloadDevPolicy);
     }
 
     /** @return list<string> */
     private function uncovered(RunConfiguration $configuration): array
     {
-        return $this->coverage()->uncoveredAutoloadRoots($configuration->projectRoot, $configuration->paths);
+        return $this->coverage()->uncoveredAutoloadRoots($configuration->projectRoot, $configuration->paths, $configuration->autoloadDevPolicy);
     }
 
     private function coverage(): ProjectScopeCoverage
@@ -274,7 +302,7 @@ final class ProjectScopeCoverageTest extends TestCase
     }
 
     /** @param list<string> $paths */
-    private function configuration(array $paths): RunConfiguration
+    private function configuration(array $paths, AutoloadDevPolicy $autoloadDev = AutoloadDevPolicy::Exclude): RunConfiguration
     {
         $root = AbsolutePath::fromString($this->tempDir);
 
@@ -288,6 +316,7 @@ final class ProjectScopeCoverageTest extends TestCase
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
             coversProjectScope: true,
             authoredPathExcludes: [],
+            autoloadDevPolicy: $autoloadDev,
         );
     }
 }

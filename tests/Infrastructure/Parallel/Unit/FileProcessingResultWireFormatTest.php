@@ -31,6 +31,7 @@ use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTask;
+use Qualimetrix\Infrastructure\Parallel\WorkerComposition;
 use ReflectionProperty;
 
 /**
@@ -54,8 +55,8 @@ final class FileProcessingResultWireFormatTest extends TestCase
         $task = new FileProcessingTask(
             filePath: AbsolutePath::fromString('/tmp/x.php'),
             projectRoot: AbsolutePath::fromString('/tmp'),
-            collectorClasses: [],
-            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
+            composition: new WorkerComposition([], self::TRAVERSAL_PARTICIPANT_CLASS),
+            memoryLimit: '256M',
             cacheDir: AbsolutePath::fromString('/tmp/cache'),
         );
 
@@ -86,8 +87,9 @@ final class FileProcessingResultWireFormatTest extends TestCase
         self::assertInstanceOf(AbsolutePath::class, $cacheDir);
         self::assertSame('/tmp/cache', $cacheDir->value());
 
-        $participantClassProperty = new ReflectionProperty($restored, 'dependencyTraversalParticipantClass');
-        self::assertSame(self::TRAVERSAL_PARTICIPANT_CLASS, $participantClassProperty->getValue($restored));
+        $composition = (new ReflectionProperty($restored, 'composition'))->getValue($restored);
+        self::assertInstanceOf(WorkerComposition::class, $composition);
+        self::assertSame(self::TRAVERSAL_PARTICIPANT_CLASS, $composition->dependencyTraversalParticipantClass);
     }
 
     #[Test]

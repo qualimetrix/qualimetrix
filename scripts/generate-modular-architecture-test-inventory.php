@@ -233,7 +233,6 @@ const P3_TEST_PATHS = [
     'tests/Analysis/Configuration/Unit/Discovery/ComposerReaderTest.php',
     'tests/Analysis/Configuration/Unit/Loader/YamlConfigLoaderTest.php',
     'tests/Analysis/Configuration/Unit/Pipeline/ConfigDataNormalizerTest.php',
-    'tests/Analysis/Configuration/Unit/Pipeline/ConfigurationMergerTest.php',
     'tests/Analysis/Configuration/Unit/Pipeline/ConfigurationPipelineTest.php',
     'tests/Analysis/Configuration/Unit/Pipeline/RuleNameValidatorTest.php',
     'tests/Analysis/Configuration/Unit/Pipeline/Stage/CliStageTest.php',
@@ -433,6 +432,7 @@ const RETIRED_PATH_ASSERTIONS = [
     'tests/Analysis/Evidence/Measurement/Unit/Contract/CollectorRuntimeConfigurationTest.php' => 'P3 closure; the test was removed after the package.',
     'tests/Analysis/Run/Unit/Collection/Declaration/DeclarationBindingsTest.php' => 'P3 closure; the test was removed after the package.',
     'tests/Analysis/Run/Unit/Pipeline/MetricEnricherTest.php' => 'P3 closure; the test was removed after the package.',
+    'tests/Analysis/Configuration/Unit/Pipeline/ConfigurationMergerTest.php' => 'The class it covered had no production caller and was removed with it.',
     'tests/Infrastructure/Logging/LoggerFactoryTest.php' => 'The P8 LoggerFactory coverage consolidation described for this path has happened.',
     'tests/Unit/Infrastructure/Logging/LoggerFactoryTest.php' => 'The P8 LoggerFactory coverage consolidation described for this path has happened.',
 ];

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
@@ -64,30 +65,36 @@ abstract class AbstractHookCommand extends Command
     /**
      * The repository's pre-commit hook, wherever git would look for it.
      *
-     * @return string|null null when there is no such place, in which case the
-     *                     reason has already been written to $output
+     * @throws ConfigurationRefusal when there is no such place
      */
-    final protected function hookPath(OutputInterface $output): ?string
+    final protected function hookPath(): string
     {
         $hooksDir = $this->gitRepositoryLocator->findHooksDir();
 
         if ($hooksDir === null) {
-            $output->writeln('<error>Not a git repository</error>');
-            $output->writeln('');
-            $output->writeln('Initialize git first: git init');
-
-            return null;
+            throw $this->refusal(
+                'Not a git repository. Run this inside one, point --working-dir at one, or create one with: git init',
+            );
         }
 
         if (!is_dir($hooksDir->value())) {
-            $output->writeln('<error>Git hooks directory not found: ' . $hooksDir->value() . '</error>');
-            $output->writeln('');
-            $output->writeln('This is where git looks, so create it or change core.hooksPath.');
-
-            return null;
+            throw $this->refusal(\sprintf(
+                'Git hooks directory not found: %s. This is where git looks, so create it or change core.hooksPath.',
+                $hooksDir->value(),
+            ));
         }
 
         return $hooksDir->value() . '/pre-commit';
+    }
+
+    /**
+     * A hook command that cannot do what it was asked refuses through the
+     * application's exit ladder like every other command: code 3 and the
+     * message on stderr, never a failure code with the reason on stdout.
+     */
+    final protected function refusal(string $summary): ConfigurationRefusal
+    {
+        return ConfigurationRefusal::aboutCommandLineInput((string) $this->getName(), $summary);
     }
 
     /**

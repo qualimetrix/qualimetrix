@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
+use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
@@ -89,10 +90,11 @@ final readonly class FindingFilterOrchestrator
         OutputInterface $output,
         GitScopeResolution $scopeResolution,
         FindingProjectionOptions $options,
+        AutoloadDevPolicy $autoloadDev,
     ): FindingProjectionResult {
         $output = $this->errorStream->writer($output);
         $filterResult = $this->findingProjector->project(
-            [...$result->findings, ...$this->unboundSuppressions($result, $scopeResolution, $options)],
+            [...$result->findings, ...$this->unboundSuppressions($result, $scopeResolution, $options, $autoloadDev)],
             $result->suppressions,
             $options,
         );
@@ -133,10 +135,9 @@ final readonly class FindingFilterOrchestrator
      * the two answers cannot differ:** {@see CheckScopeResolver} asks
      * {@see ProjectScopeCoverage} with `$scope->projectRoot` and
      * `$scope->paths`, and this call passes the same two fields of the same
-     * resolution object. Carrying the answer instead would mean a parameter on
-     * this method and a value at its call site in `CheckCommand`, a file this
-     * change does not own. The cost is one extra read of `composer.json` per
-     * run.
+     * resolution object and the run's own {@see AutoloadDevPolicy}, the third
+     * input of that measurement. The cost is one extra read of
+     * `composer.json` per run.
      *
      * The second, per-value question is built here from the same two fields
      * and the manifest's PSR-4 map: a run wide enough to judge the project is
@@ -150,8 +151,9 @@ final readonly class FindingFilterOrchestrator
         AnalysisResult $result,
         GitScopeResolution $scopeResolution,
         FindingProjectionOptions $options,
+        AutoloadDevPolicy $autoloadDev,
     ): array {
-        if (!$this->projectScopeCoverage->pathsCoverProjectScope($scopeResolution->projectRoot, $scopeResolution->paths)) {
+        if (!$this->projectScopeCoverage->pathsCoverProjectScope($scopeResolution->projectRoot, $scopeResolution->paths, $autoloadDev)) {
             return [];
         }
 

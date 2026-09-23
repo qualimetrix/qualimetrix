@@ -74,19 +74,8 @@ final class GithubActionsFormatter implements FormatterInterface
             '::%s %s::%s',
             $command,
             implode(',', $params),
-            $this->escapeData($finding->message . $this->formatBreachSuffix($finding)),
+            $this->escapeData(PublishedFinding::annotatedMessage($finding)),
         );
-    }
-
-    /**
-     * " (accepted at 25, now 31)" on a measured breach, '' otherwise (ADR 0017).
-     * Appended before escaping, so it goes through escapeData() too.
-     */
-    private function formatBreachSuffix(Finding $finding): string
-    {
-        $breach = AcceptedLevelNarrator::describe($finding);
-
-        return $breach === null ? '' : \sprintf(' (%s)', $breach);
     }
 
     private function severityToCommand(Severity $severity): string

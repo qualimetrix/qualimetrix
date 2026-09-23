@@ -77,7 +77,7 @@ Top issues by impact
          complexity.ccn: Cyclomatic complexity: 13 (threshold: 10) — too many code paths (OrderRepository::findByCriteria)
 82 violations (19 errors, 63 warnings) | Tech debt: 6h 20min (54.3 min/kLOC to fix)
 
-Hints: --detail to see violations (top 200) | --namespace='subtree:App\Billing\Invoice' to drill down | --format=html -o report.html for full report
+Hints: --detail to list violations (up to 200; --detail=all for every one) | --namespace='subtree:App\Billing\Invoice' to drill down | --format=html -o report.html for full report
 Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
@@ -93,6 +93,14 @@ bin/qmx check src/ --namespace='subtree:App\Service'
 bin/qmx check src/ --class=App\\Service\\UserService
 ```
 
+Детализация сужает то, что показывает отчёт, но не то, что решает код
+возврата. Поэтому строка счётчиков говорит о выборке («… in this scope»),
+называет нарушения вне её, которые решают код возврата, и берёт цвет от всего
+прогона: чистое поддерево проекта с ошибками печатает
+`No violations in this scope. 9 outside it (5 errors, 4 warnings) decide the exit code`,
+а не зелёное `No violations found.`. `--format=text` делает то же в своей
+итоговой строке.
+
 **Режим детализации с `--detail`:**
 
 ```bash
@@ -105,6 +113,14 @@ bin/qmx check src/ --detail=all
 # Пользовательский лимит
 bin/qmx check src/ --detail=50
 ```
+
+`--detail` включает список нарушений с необязательным потолком; он ничего не
+ранжирует. `--detail=N` показывает первые N нарушений в том порядке, в каком
+список печатается (по файлу, если `--group-by` не задаёт другого), — то есть
+всегда первые N из тех, что напечатал бы `--detail=all`. `--detail=0` равен
+`--detail=all`. Любое другое значение (`--detail=abc`, `--detail=-1`)
+отклоняется с кодом 3 до начала анализа. Ранжированный раздел
+`Top issues by impact` — это `--top`.
 
 !!! note
     `--detail` включается автоматически при использовании `--namespace` или `--class`. Флаг также работает с `--format=text`: добавляет группированный список нарушений после компактного построчного вывода.
@@ -270,6 +286,7 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
             "rule": "complexity.ccn",
             "severity": "error",
             "message": "Cyclomatic complexity: 15 (threshold: 10) — too many code paths",
+            "recommendation": null,
             "impactScore": 3.71,
             "coupling.class-rank": 0.1237,
             "debtMinutes": 30
@@ -336,7 +353,22 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 `error`, что бы ни сообщило правило само по себе.
 `violationsMeta` также сообщает `shown` — число нарушений, фактически
 включённых в этот payload; оно может быть меньше `total`, когда
-`--format-opt=violations=N` обрезает список.
+`--format-opt=violations=N` обрезает список. Обрезанный список — это первые N
+в порядке идентичности, описанном ниже.
+
+`message` и `recommendation` значат одно и то же в `violations` и в
+`topIssues`: сообщение находки и её рекомендацию или `null`. При
+`--namespace`/`--class` объект `summary` сохраняет все свои ключи;
+`debtPer1kLoc` в нём равен `null`, потому что долг выборки на строки всего
+проекта смешал бы две области.
+
+Когда имя символа из анализируемого кода — невалидный UTF-8 (парсер принимает в
+идентификаторе любой байт выше 0x7F), каждый невалидный байт публикуется как
+U+FFFD, а документ получает ключ верхнего уровня `invalidUtf8Replaced` с числом
+исправленных строк. `metrics`, `suppressed` и нагрузка `html` делают то же;
+`sarif` сообщает об этом уведомлением инструмента
+`QMX-PUBLICATION-INVALID-UTF8`, `gitlab` — записью `publication.invalid-utf8`,
+`checkstyle` — ошибкой под синтетическим файлом `[publication]`.
 
 Для машинной идентичности используй `channel + subject + optional occurrence +
 optional edge`. `symbol` — логическая проекция для отображения; строка исходника,
@@ -375,7 +407,16 @@ bin/qmx check src/ --format=json --format-opt=violations=50
 
 # Управление количеством худших нарушителей (по умолчанию: 10)
 bin/qmx check src/ --format=json --format-opt=top=20
+```
 
+Каждое значение `--format-opt` разбирается до начала анализа, одной грамматикой
+на ключ, какой бы формат его ни читал: `violations` и `limit` принимают целое
+число или `all`, `top` — целое число от 1, `contributors` — целое число,
+`rank-by` — `count` или `density`, `project-name` — непустое имя. Значение,
+которое не разбирается, отклоняется с кодом 3, а не заменяется значением по
+умолчанию.
+
+```bash
 # Группировка нарушений по классу или пространству имён
 bin/qmx check src/ --format=json --group-by=class
 bin/qmx check src/ --format=json --group-by=namespace
@@ -520,7 +561,7 @@ SARIF (Static Analysis Results Interchange Format) 2.1.0. Стандартный
 
 SARIF 2.1.0: `runs[].results[]` с `ruleId`, `ruleIndex` (позиция правила в `tool.driver.rules`), `level` (error/warning/note), `message.text`, `partialFingerprints.primaryLocationLineHash`, и `locations[].physicalLocation.{artifactLocation.{uri,uriBaseId}, region.{startLine,startColumn}}`. `locations` есть не у каждой записи: у находки уровня проекта без позиции в исходнике (например, `architecture.unreachable-layer`) массива `locations` вообще нет.
 
-`runs[].invocations[0]` сообщает `executionSuccessful` (см. таблицу coverage ниже), а `runs[].originalUriBaseIds` объявляет базу `%SRCROOT%`, на которую ссылается каждый `artifactLocation.uriBaseId`, разрешая её в корень анализируемого проекта как `file://`-URI.
+`runs[].invocations[0]` сообщает `executionSuccessful` (см. таблицу coverage ниже), а `runs[].originalUriBaseIds` объявляет базу `%SRCROOT%`, на которую ссылается каждый `artifactLocation.uriBaseId`, разрешая её в корень анализируемого проекта как `file://`-URI. Каждый `artifactLocation.uri` — относительная ссылка в процентной кодировке (пробел — `%20`, `#` — `%23`), закодированная так же, как эта база. Связанное место без файла несёт `message` и не несёт `physicalLocation`.
 
 `runs[].tool.driver` описывает сам инструмент: `name`, `version`,
 `informationUri` (сайт документации, `https://qualimetrix.dev`), мешок
@@ -738,6 +779,8 @@ bin/qmx check src/ --format=health --namespace='subtree:App\Service'
 - Переход вглубь пространств имён по клику
 - Панель деталей с метриками, нарушениями и декомпозицией
 - Покрытие рядом с каждым проектным баром здоровья (`n/a`, когда покрытие не определено) — из объекта `summary.healthCoverage`, который нагрузка несёт рядом с `summary.healthScores`
+- Каждое нарушение отчёта висит на узле дерева, поэтому счётчики дерева сходятся с `summary.totalViolations`: нарушение без собственного узла класса или пространства имён — проектное, файловое в файле без класса или с несколькими, глобальная функция вне пространства имён — показывается на корне проекта
+- Отчёт назван по анализируемому проекту: `--format-opt=project-name=...`, иначе `name` из его `composer.json`, иначе имя его каталога
 - Самодостаточный HTML-файл (без внешних зависимостей)
 
 **Использование:**
@@ -807,9 +850,17 @@ xdg-open report.html  # Linux
 
 `meta` — тот же блок, что у `json`, включая `docs` и `llmsTxt`.
 
-**Ключи верхнего уровня:** `meta`, `note`, `mechanisms` (все семь, всегда
-присутствуют), `byMechanism` (счётчик на каждый механизм, включая нулевые),
-`suppressed` (само мультимножество), `neverMatched`.
+**Ключи верхнего уровня:** `meta`, `note`, `coverage` (тот же объект, что у
+`json`, — аудит неполного прогона говорит, что он неполон), `mechanisms` (все
+семь, всегда присутствуют), `byMechanism` (счётчик на каждый механизм, включая
+нулевые), `suppressed` (само мультимножество), `neverMatched`.
+
+Каждая запись `suppressed` несёт идентичность, которую публикует `json`, —
+`channel` (здесь это код находки), `subject`, `occurrence`, `edge`, — чтобы её
+можно было машинно сопоставить с записью `json`, и `message` и `recommendation`
+находки под теми же ключами, что в `json`. Полей `metricValue`, `threshold`,
+`techDebtMinutes` и `acceptedLevel` в ней нет: формат проверяет, что удержало
+находку, а идентичность ведёт к её собственной записи.
 
 <!-- llms:skip-begin -->
 **Пример вывода (сокращённый, из самоанализа этого проекта):**
@@ -824,6 +875,14 @@ xdg-open report.html  # Linux
         "llmsTxt": "https://qualimetrix.dev/llms.txt"
     },
     "note": "suppressed is a multiset of mechanism x finding, not a set of findings: one finding can appear under more than one mechanism, so byMechanism counts do not sum to the number of distinct findings suppressed.",
+    "coverage": {
+        "complete": true,
+        "discovered": 1204,
+        "analyzed": 1204,
+        "generatedExcluded": 0,
+        "failed": 0,
+        "failures": []
+    },
     "mechanisms": [
         "suppression",
         "path-suppression",
@@ -848,22 +907,30 @@ xdg-open report.html  # Linux
             "suppressor": "src/Infrastructure/Ast/CachedFileParser.php:15",
             "rule": "code-smell.empty-catch",
             "channel": "code-smell.empty-catch",
+            "subject": "aggregate:file:src/Infrastructure/Ast/CachedFileParser.php",
+            "occurrence": "6f1c0e9b2a4d7e35",
+            "edge": null,
             "file": "src/Infrastructure/Ast/CachedFileParser.php",
             "line": 73,
             "symbol": "src/Infrastructure/Ast/CachedFileParser.php",
             "severity": "error",
-            "message": "Log the exception or add a comment explaining why it is safe to ignore."
+            "message": "Empty catch block detected - exceptions should not be silently ignored",
+            "recommendation": "Log the exception or add a comment explaining why it is safe to ignore."
         },
         {
             "mechanism": "rule-path-suppression",
             "suppressor": "code-smell.constructor-overinjection",
             "rule": "code-smell.constructor-overinjection",
             "channel": "code-smell.constructor-overinjection",
+            "subject": "declaration:callable:Qualimetrix\\Analysis\\Run\\Contract\\Collection\\SuccessfulFileProcessing::__construct@src/Analysis/Run/Contract/Collection/SuccessfulFileProcessing.php",
+            "occurrence": null,
+            "edge": null,
             "file": "src/Analysis/Run/Contract/Collection/SuccessfulFileProcessing.php",
             "line": 28,
             "symbol": "Qualimetrix\\Analysis\\Run\\Contract\\Collection\\SuccessfulFileProcessing::__construct",
             "severity": "warning",
-            "message": "Constructor parameters: 8 (threshold: 8) — consider splitting responsibilities"
+            "message": "Constructor of SuccessfulFileProcessing has 8 parameters (threshold 8). Consider using a parameter object or splitting responsibilities",
+            "recommendation": "Constructor parameters: 8 (threshold: 8) — consider splitting responsibilities"
         }
     ],
     "neverMatched": [
@@ -915,7 +982,8 @@ bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
 
 Адреса есть не в каждом JSON-выводе. `gitlab` — голый массив, в нём нет объекта
 для них; у DOT-вывода `graph:export` нет конверта вовсе; отказ — это всегда
-ровно `{"error": ..., "exit_code": ...}`; а baseline-файл — который пишут
+ровно `{"error": ..., "exit_code": ..., "position": ...}`, где `position` равен
+`null`, когда отказ не называет ключ; а baseline-файл — который пишут
 `baseline:generate`, `update`, `cleanup` и переписывает на месте
 `baseline:rename-channels` — это версионированный входной артефакт, который
 инструмент читает обратно, со своей схемой, а не отчёт.
@@ -943,7 +1011,7 @@ bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
 | `checkstyle`   | Сбои как errors в синтетическом файле `[analysis]`, source — `qmx.analysis.<kind>`                                   |
 | `github`       | По одной `::error`-аннотации на каждый сбой; полный прогон без нарушений не даёт аннотаций                           |
 | `html`         | Встроенные данные `coverage`; при неполном анализе также виден warning-banner                                        |
-| `suppressed`   | Не представлено — этот формат публикует состав подавленного, а не объект `coverage`                                  |
+| `suppressed`   | Объект `coverage` верхнего уровня: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `failed`, `failures[]` |
 
 В `json` и `metrics` каждый элемент `failures[]` содержит `path`, `kind` и
 `message`. Текстовые форматы различают нуль найденных файлов, только

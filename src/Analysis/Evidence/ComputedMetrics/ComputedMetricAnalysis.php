@@ -26,10 +26,11 @@ final class ComputedMetricAnalysis implements
 
     public function resolve(ConfigurationDocument $document): ResolvedComputedMetricDefinitions
     {
-        $contributions = $this->contributionReader->read($document);
+        $computedMetrics = $this->contributionReader->computedMetrics($document);
+        $excludeHealth = $this->contributionReader->excludedHealthDimensions($document);
 
         return new ResolvedComputedMetricDefinitions(
-            $this->configResolver->resolve($contributions['computedMetrics'], $contributions['excludeHealth']),
+            $this->configResolver->resolve($computedMetrics, $excludeHealth),
         );
     }
 

@@ -30,28 +30,19 @@ final class HookInstallCommand extends AbstractHookCommand
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        $hookPath = $this->hookPath($output);
-        if ($hookPath === null) {
-            return self::FAILURE;
-        }
+        $hookPath = $this->hookPath();
 
         $binary = $this->runningBinaryLocator->path();
         if ($binary === null) {
-            $output->writeln('<error>Could not determine the path of the running qmx binary.</error>');
-            $output->writeln('The hook has to name it, so nothing was written.');
-
-            return self::FAILURE;
+            throw $this->refusal(
+                'Could not determine the path of the running qmx binary. The hook has to name it, so nothing was written.',
+            );
         }
 
-        $refusal = $this->clearExistingHook($input, $output, $hookPath);
-        if ($refusal !== null) {
-            return $refusal;
-        }
+        $this->clearExistingHook($input, $output, $hookPath);
 
         if (!$this->write($hookPath, PreCommitHook::script($binary))) {
-            $output->writeln('<error>Failed to write hook: ' . $hookPath . '</error>');
-
-            return self::FAILURE;
+            throw $this->refusal(\sprintf('Failed to write hook: %s', $hookPath));
         }
 
         $output->writeln('<info>✓ Pre-commit hook installed</info>');
@@ -64,12 +55,8 @@ final class HookInstallCommand extends AbstractHookCommand
         return self::SUCCESS;
     }
 
-    /**
-     * Makes room for a new hook, or refuses.
-     *
-     * @return int|null a command exit code to return, or null to carry on
-     */
-    private function clearExistingHook(InputInterface $input, OutputInterface $output, string $hookPath): ?int
+    /** Makes room for a new hook, or refuses. */
+    private function clearExistingHook(InputInterface $input, OutputInterface $output, string $hookPath): void
     {
         // A dangling symlink is a hook: `file_exists` follows the link and
         // says false for one, and earlier releases installed the hook as a
@@ -77,32 +64,24 @@ final class HookInstallCommand extends AbstractHookCommand
         // as "no hook" would write through the link and recreate the script
         // outside the hooks directory.
         if (!self::hookExists($hookPath)) {
-            return null;
+            return;
         }
 
         if ($input->getOption('force') !== true) {
-            $output->writeln('<comment>Pre-commit hook already exists.</comment>');
-            $output->writeln('Use --force to overwrite.');
-
-            return self::FAILURE;
+            throw $this->refusal(\sprintf(
+                'Pre-commit hook already exists: %s. Use --force to overwrite it; a hook that is not a Qualimetrix hook is backed up first.',
+                $hookPath,
+            ));
         }
 
-        $refusal = $this->backUp($output, $hookPath);
-
-        if ($refusal !== null) {
-            return $refusal;
-        }
+        $this->backUp($output, $hookPath);
 
         // The link itself, not what it points at: `rename()` would replace the
         // target through it and leave the repository pointing at a file that
         // no longer belongs there.
         if (is_link($hookPath) && !unlink($hookPath)) {
-            $output->writeln('<error>Failed to remove existing hook</error>');
-
-            return self::FAILURE;
+            throw $this->refusal(\sprintf('Failed to remove the existing hook: %s', $hookPath));
         }
-
-        return null;
     }
 
     /**
@@ -113,14 +92,17 @@ final class HookInstallCommand extends AbstractHookCommand
      * original with a copy of something they can regenerate at will. A broken
      * symlink has no contents to preserve either.
      *
-     * @return int|null a command exit code to return, or null to carry on
+     * The slot is single because `hook:uninstall --restore-backup` reads it by
+     * that one name. An occupied slot holding a different hook is therefore a
+     * refusal, not an overwrite: forcing a second foreign hook over the first
+     * would otherwise lose the first one, reported with the same success line.
      */
-    private function backUp(OutputInterface $output, string $hookPath): ?int
+    private function backUp(OutputInterface $output, string $hookPath): void
     {
         if (!file_exists($hookPath)) {
             $output->writeln('<comment>Existing hook is a broken symlink; nothing to back up.</comment>');
 
-            return null;
+            return;
         }
 
         $contents = @file_get_contents($hookPath);
@@ -128,20 +110,30 @@ final class HookInstallCommand extends AbstractHookCommand
         if ($contents !== false && PreCommitHook::isOurs($contents)) {
             $output->writeln('<comment>Replacing a Qualimetrix hook; the existing backup is left alone.</comment>');
 
-            return null;
+            return;
         }
 
         $backupPath = $hookPath . '.backup';
 
-        if (!copy($hookPath, $backupPath)) {
-            $output->writeln('<error>Failed to backup existing hook</error>');
+        if (file_exists($backupPath) || is_link($backupPath)) {
+            if ($contents !== false && @file_get_contents($backupPath) === $contents) {
+                $output->writeln(\sprintf('<comment>The backup %s already holds this hook; it is left as it is.</comment>', $backupPath));
 
-            return self::FAILURE;
+                return;
+            }
+
+            throw $this->refusal(\sprintf(
+                'The backup %s already holds a different hook, and it is the only copy hook:uninstall --restore-backup can restore. '
+                . 'Move it away, then run hook:install --force again.',
+                $backupPath,
+            ));
+        }
+
+        if (!copy($hookPath, $backupPath)) {
+            throw $this->refusal(\sprintf('Failed to back up the existing hook to %s, so it was left in place.', $backupPath));
         }
 
         $output->writeln(\sprintf('<info>Existing hook backed up to: %s</info>', $backupPath));
-
-        return null;
     }
 
     /**

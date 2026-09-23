@@ -43,7 +43,10 @@ final readonly class RuntimeLimitsController
             $this->setMemoryLimit(
                 $limits->memoryLimit,
                 static fn(): Throwable => ConfigurationRefusal::aboutResolvedInput(
-                    'Cannot set requested memory_limit.',
+                    \sprintf(
+                        'Cannot set requested memory_limit "%s": the PHP runtime refused it. A limit below the memory this process already uses is refused.',
+                        $limits->memoryLimit,
+                    ),
                     ConfigSchema::MEMORY_LIMIT,
                 ),
             );

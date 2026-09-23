@@ -13,6 +13,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarati
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\CollectorCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationStageCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationValidatorCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConsumerRegistrationCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FileSetInspectionParticipantCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FormatterCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\GlobalCollectorCompilerPass;
@@ -73,6 +74,19 @@ final class ContainerFactory
      */
     public function create(): ContainerBuilder
     {
+        $container = $this->configure();
+        $container->compile();
+
+        return $container;
+    }
+
+    /**
+     * Every service definition and compiler pass of the product container,
+     * not yet compiled — the container {@see create()} compiles, exposed so a
+     * test can take one definition out of the real build and watch it refuse.
+     */
+    public function configure(): ContainerBuilder
+    {
         $container = new ContainerBuilder();
 
         // Register autoconfiguration rules for interface tagging
@@ -112,9 +126,6 @@ final class ContainerFactory
 
         // Add compiler passes
         $this->registerCompilerPasses($container);
-
-        // Compile container
-        $container->compile();
 
         return $container;
     }
@@ -171,6 +182,10 @@ final class ContainerFactory
      */
     private function registerCompilerPasses(ContainerBuilder $container): void
     {
+        // Ahead of every pass it checks: those at the default priority run
+        // after it in this phase, and RuleOptionsCompilerPass/RuleCompilerPass
+        // run in a later phase that renames and removes no definition first.
+        $container->addCompilerPass(new ConsumerRegistrationCompilerPass(), PassConfig::TYPE_BEFORE_OPTIMIZATION, 50);
         $container->addCompilerPass(new CollectorCompilerPass());
         $container->addCompilerPass(new GlobalCollectorCompilerPass());
         $container->addCompilerPass(new ParallelCollectorClassesCompilerPass());

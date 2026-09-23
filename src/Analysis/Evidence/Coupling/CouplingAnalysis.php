@@ -45,7 +45,7 @@ final class CouplingAnalysis implements CouplingConfiguratorInterface
     {
         $frameworkNamespaces = [];
 
-        foreach ($document->contributions('coupling') as $contribution) {
+        foreach ($document->contributions(ConfigSchema::COUPLING) as $contribution) {
             $frameworkNamespaces = $this->replacementSelectors($contribution, $frameworkNamespaces);
         }
 

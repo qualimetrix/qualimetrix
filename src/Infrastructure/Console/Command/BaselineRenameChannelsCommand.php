@@ -73,9 +73,9 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
                 . 'of, so a carried entry gets a new selector: a saved' . "\n"
                 . '"baseline:cleanup --remove SELECTOR" stops addressing it.' . "\n\n"
                 . 'A refusal is reported in the chosen format too: with --format=json it' . "\n"
-                . 'is the {error, exit_code} envelope every other machine-readable refusal' . "\n"
-                . 'in this tool uses, so a script does not have to read the outcome off the' . "\n"
-                . 'exit code alone.',
+                . 'is the {error, exit_code, position} envelope every other' . "\n"
+                . 'machine-readable refusal in this tool uses, so a script does not have' . "\n"
+                . 'to read the outcome off the exit code alone.',
             ));
     }
 

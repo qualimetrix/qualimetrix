@@ -19,6 +19,7 @@ use Qualimetrix\Reporting\Contract\OutputFormat;
 use Qualimetrix\Reporting\CoverageFailure;
 use Qualimetrix\Reporting\DrillDown\DrillDownBinding;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
+use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\SuppressionCompositionBuilder;
@@ -119,6 +120,36 @@ final class ResultPresenter
             ->namespaceTree($analysisResult->namespaceTree)
             ->coverage($coverage);
 
+        if ($context->namespace !== null || $context->class !== null) {
+            $reportBuilder->outOfScope(OutOfScopeFindings::between($findings, $filteredFindings));
+        }
+
+        $this->attachSuppressionComposition($reportBuilder, $format, $input, $analysisResult, $filterResult, $projectionOptions);
+
+        $report = $reportBuilder->build();
+        $report = $this->summaryEnricher->enrich($report);
+        $formattedOutput = $formatter->format($report, $context);
+
+        $this->writeOutput($formattedOutput, $format, $input, $output);
+
+        $profiler->stop('reporting');
+
+        return $this->exitCodeResolver->resolve($findings, $coverage, $exitPolicy);
+    }
+
+    /**
+     * Builds what the `suppressed` format and `--show-suppressed` publish;
+     * left out of every other run, because the per-rule ledger it reads costs
+     * memory only those two ask for.
+     */
+    private function attachSuppressionComposition(
+        ReportBuilder $reportBuilder,
+        string $format,
+        InputInterface $input,
+        AnalysisResult $analysisResult,
+        ?FindingProjectionResult $filterResult,
+        ?FindingProjectionOptions $projectionOptions,
+    ): void {
         $showSuppressed = $input->hasOption('show-suppressed') && $input->getOption('show-suppressed') === true;
         if (
             ($format === 'suppressed' || $showSuppressed)
@@ -134,21 +165,19 @@ final class ResultPresenter
                 $analysisResult->suppressions,
             ));
         }
-
-        $report = $reportBuilder->build();
-        $report = $this->summaryEnricher->enrich($report);
-        $formattedOutput = $formatter->format($report, $context);
-
-        $this->writeOutput($formattedOutput, $format, $input, $output);
-
-        $profiler->stop('reporting');
-
-        return $this->exitCodeResolver->resolve($findings, $coverage, $exitPolicy);
     }
 
-    public function prepareNamespaceDrillDown(InputInterface $input): ?NamespacePattern
+    /**
+     * The presentation door the command opens before the analysis: it binds
+     * every output option whose value can be judged without the run
+     * ({@see FormatterContextFactory::bindBeforeAnalysis()}), so a mistyped
+     * `--detail`, `--top`, `--group-by` or `--format-opt` value costs no
+     * analysis, and answers with the `--namespace` pattern the report is
+     * drilled down to.
+     */
+    public function bindOutputOptions(InputInterface $input): ?NamespacePattern
     {
-        return $this->formatterContextFactory->namespacePattern($input);
+        return $this->formatterContextFactory->bindBeforeAnalysis($input);
     }
 
     /**
@@ -281,7 +310,9 @@ final class ResultPresenter
         /** @var string|null $outputPath */
         $outputPath = $input->hasOption('output') ? $input->getOption('output') : null;
 
-        return \is_string($outputPath) && $outputPath !== '' ? $outputPath : null;
+        // `--output=` never reaches here: the configuration adapter refuses
+        // an option written empty before the command reads this one.
+        return \is_string($outputPath) ? $outputPath : null;
     }
 
     private static function outputRefusal(string $summary): ConfigurationRefusal

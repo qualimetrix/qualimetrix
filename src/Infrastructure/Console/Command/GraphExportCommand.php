@@ -109,7 +109,7 @@ final class GraphExportCommand extends Command
      * Owns its own catch ladder rather than relying on `Application`'s:
      * `--format=json` renders a JSON
      * document exactly like `check --format=json` does, so a refusal here
-     * must arrive as the same `{error, exit_code}` envelope — which
+     * must arrive as the same `{error, exit_code, position}` envelope — which
      * `Application`'s ladder cannot
      * do, because it never learns this command's `--format`.
      */

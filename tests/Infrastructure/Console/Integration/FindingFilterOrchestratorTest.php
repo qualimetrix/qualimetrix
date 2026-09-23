@@ -23,6 +23,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
+use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
@@ -378,6 +379,7 @@ final class FindingFilterOrchestratorTest extends TestCase
             new FindingProjectionOptions(
                 baselinePath: \is_string($baselinePath) && $baselinePath !== '' ? $baselinePath : null,
             ),
+            AutoloadDevPolicy::Exclude,
         );
     }
 

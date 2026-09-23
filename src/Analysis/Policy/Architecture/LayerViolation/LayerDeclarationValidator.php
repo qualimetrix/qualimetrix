@@ -83,17 +83,17 @@ final class LayerDeclarationValidator implements ConfigurationValidatorInterface
      */
     public static function channelDeclarations(): array
     {
-        $keys = [
-            self::COVERAGE_DIAGNOSTIC_NAME,
-            self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
-            self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
-            self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
-            self::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME,
+        $descriptions = [
+            self::COVERAGE_DIAGNOSTIC_NAME => 'Reports analysed classes and dependency edges that belong to no declared layer.',
+            self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME => 'Reports a declared layer whose criteria matched no class and no dependency-edge end.',
+            self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME => 'Reports a more specific layer declared after a broader one that takes its classes first.',
+            self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME => 'Reports a template layer that expanded to no concrete instance.',
+            self::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME => 'Reports a layer declared pending whose criteria now match code.',
         ];
 
         $declarations = [];
-        foreach ($keys as $name) {
-            $declarations[$name] = ChannelDeclaration::occurrence(SymbolLevel::Project);
+        foreach ($descriptions as $name => $description) {
+            $declarations[$name] = ChannelDeclaration::occurrence(SymbolLevel::Project)->describedAs($description);
         }
 
         return $declarations;

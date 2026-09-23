@@ -185,6 +185,12 @@ final class YamlNormalizationCharacterizationTest extends TestCase
             ['includeGenerated' => true],
         ];
 
+        yield 'include_autoload_dev → includeAutoloadDev (scalar bool)' => [
+            'snake_case scalar root normalized to camelCase',
+            "include_autoload_dev: true\n",
+            ['includeAutoloadDev' => true],
+        ];
+
         yield 'memory_limit → memoryLimit (scalar)' => [
             'snake_case scalar root normalized to camelCase',
             "memory_limit: 512M\n",

@@ -122,8 +122,10 @@ final class LayerViolationRule extends AbstractRule
     {
         return [
             self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Class_),
-            self::UNMATCHED_EXCLUDE_NAME => ChannelDeclaration::occurrence(SymbolLevel::Project),
-            self::DOUBTED_ASSIGNMENT_NAME => ChannelDeclaration::occurrence(SymbolLevel::Project),
+            self::UNMATCHED_EXCLUDE_NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)
+                ->describedAs('Reports a layer\'s exclude clause that removed no class while the layer\'s own criteria matched some.'),
+            self::DOUBTED_ASSIGNMENT_NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)
+                ->describedAs('Counts the symbols whose layer assignment is in doubt because a layer criterion could not be answered about them.'),
         ];
     }
 

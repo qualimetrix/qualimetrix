@@ -16,6 +16,7 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphDirection;
 use Qualimetrix\Reporting\GraphProjection\DotExporter;
 use Qualimetrix\Reporting\GraphProjection\DotExporterOptions;
@@ -298,6 +299,59 @@ final class DotExporterTest extends TestCase
         $dot = $exporter->export($graph);
 
         self::assertStringContainsString('rankdir=TB', $dot);
+    }
+
+    /**
+     * `nikic/php-parser` accepts a byte like 0xFF inside an identifier, so a
+     * symbol name reaching this exporter need not be valid UTF-8. Before this
+     * repair, DOT export did not fail — `export()` wrote the raw invalid byte
+     * straight into the document, silently, with no diagnostic: a
+     * `graph:export` run exited 0 while producing a `.dot` file no
+     * UTF-8-aware reader (or Graphviz) can parse.
+     */
+    #[Test]
+    public function itRepairsInvalidUtf8InAClassNameInsteadOfCorruptingTheDocument(): void
+    {
+        $broken = "Bad\xFFClass";
+        $dependencies = [
+            new Dependency(
+                DeclarationPath::of(SymbolPath::fromClassFqn('App\\' . $broken), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\\Good')),
+                DependencyType::TypeHint,
+                new Location(RelativePath::fromString('test/file.php'), 10),
+            ),
+        ];
+
+        $graph = $this->createGraph($dependencies);
+        $exporter = new DotExporter(new DotExporterOptions(groupByNamespace: false));
+        $dot = $exporter->export($graph);
+
+        self::assertTrue(mb_check_encoding($dot, 'UTF-8'), 'the exported document is valid UTF-8');
+        self::assertStringContainsString("Bad\u{FFFD}Class", $dot);
+        self::assertStringContainsString(PublishedUtf8::REPAIR_CHECK, $dot);
+    }
+
+    /**
+     * The legitimate case next to the repaired one: nothing in the document
+     * needed repairing, so the repair mark must not appear.
+     */
+    #[Test]
+    public function itAddsNoRepairMarkWhenTheInputIsValid(): void
+    {
+        $dependencies = [
+            new Dependency(
+                DeclarationPath::of(SymbolPath::fromClassFqn('App\\Good'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\\Better')),
+                DependencyType::TypeHint,
+                new Location(RelativePath::fromString('test/file.php'), 10),
+            ),
+        ];
+
+        $graph = $this->createGraph($dependencies);
+        $exporter = new DotExporter();
+        $dot = $exporter->export($graph);
+
+        self::assertStringNotContainsString(PublishedUtf8::REPAIR_CHECK, $dot);
     }
 
     #[Test]

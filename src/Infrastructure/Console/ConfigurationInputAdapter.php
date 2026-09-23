@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Symfony\Component\Console\Input\InputInterface;
@@ -34,15 +35,54 @@ final class ConfigurationInputAdapter
 
     public function adapt(InputInterface $input, string $workingDirectory): ConfigurationResolutionRequest
     {
+        $this->refuseEmptyValues($input);
+
         $config = $this->option($input, 'config');
         $presets = $this->option($input, 'preset');
 
         return new ConfigurationResolutionRequest(
             self::absoluteWorkingDirectory($workingDirectory),
-            \is_string($config) && $config !== '' ? $config : null,
+            \is_string($config) ? $config : null,
             \is_array($presets) ? array_values(array_filter($presets, is_string(...))) : [],
             $this->overrides($input),
         );
+    }
+
+    /**
+     * Options whose owners read the empty string as "not given". Written
+     * empty — `--config=$QMX_CONFIG` with the variable unset — each of them
+     * used to run something other than what was asked: `--config=` fell back
+     * to discovering `qmx.yaml` in the working directory, `--output=` printed
+     * the report to stdout and left no artifact. The other doors of these
+     * commands carry the empty string to an owner that refuses it itself.
+     */
+    private const array DOORS_READING_EMPTY_AS_ABSENT = ['config', 'preset', 'baseline', 'output', 'report'];
+
+    /**
+     * Every command that analyses passes through here once, before analysis
+     * starts, so a door refused here is refused before any work is done.
+     */
+    private function refuseEmptyValues(InputInterface $input): void
+    {
+        foreach (self::DOORS_READING_EMPTY_AS_ABSENT as $name) {
+            $value = $this->option($input, $name);
+            $values = \is_array($value) ? $value : [$value];
+
+            foreach ($values as $written) {
+                if (\is_string($written) && trim($written) === '') {
+                    throw ConfigurationRefusal::aboutCommandLineInput(
+                        '--' . $name,
+                        \sprintf(
+                            'Option --%s was written with an empty value ("--%s="). '
+                            . 'Write a value after "=", or omit --%s entirely to use its default.',
+                            $name,
+                            $name,
+                            $name,
+                        ),
+                    );
+                }
+            }
+        }
     }
 
     /** @return array<string, mixed> */
@@ -66,6 +106,9 @@ final class ConfigurationInputAdapter
         }
         if ($this->option($input, 'include-generated') === true) {
             $values[ConfigSchema::INCLUDE_GENERATED] = true;
+        }
+        if ($this->option($input, 'include-autoload-dev') === true) {
+            $values[ConfigSchema::INCLUDE_AUTOLOAD_DEV] = true;
         }
         $workers = $this->option($input, 'workers');
         if ($workers !== null) {

@@ -57,6 +57,16 @@ bin/qmx hook:uninstall --restore-backup
 !!! warning
     `hook:install` will not overwrite an existing hook unless you pass `--force`.
 
+The backup is a single slot, `pre-commit.backup`, because `--restore-backup` restores from
+that one name. If the slot already holds a *different* hook, `hook:install --force` refuses
+rather than overwrite it — move the old backup away first. Forcing the same hook again, or
+replacing a Qualimetrix hook, leaves the backup as it is.
+
+When a hook command cannot do what it was asked — not a git repository, a hook that is not
+Qualimetrix's, an occupied backup slot — it exits with code `3` and prints the reason on
+stderr, like every other refused input. `--working-dir` works with all three commands, also
+when the binary was started by a relative path (`php vendor/bin/qmx hook:install -d ../app`).
+
 ---
 
 ## PR workflow with --report

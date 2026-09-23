@@ -32,7 +32,8 @@ final class CheckstyleFormatter implements FormatterInterface
         $xml->startElement('checkstyle');
         $xml->writeAttribute('version', self::VERSION);
 
-        $this->writeFiles($xml, $report->findings, $context);
+        $repairs = 0;
+        $this->writeFiles($xml, $report->findings, $context, $repairs);
 
         if ($report->coverage !== null && !$report->coverage->isComplete()) {
             $xml->startElement('file');
@@ -41,10 +42,22 @@ final class CheckstyleFormatter implements FormatterInterface
                 $xml->startElement('error');
                 $xml->writeAttribute('line', '1');
                 $xml->writeAttribute('severity', 'error');
-                $xml->writeAttribute('message', \sprintf('%s: %s', $failure->path, $failure->message));
+                self::attribute($xml, 'message', \sprintf('%s: %s', $failure->path, $failure->message), $repairs);
                 $xml->writeAttribute('source', 'qmx.analysis.' . $failure->kind);
                 $xml->endElement();
             }
+            $xml->endElement();
+        }
+
+        if ($repairs > 0) {
+            $xml->startElement('file');
+            $xml->writeAttribute('name', '[publication]');
+            $xml->startElement('error');
+            $xml->writeAttribute('line', '1');
+            $xml->writeAttribute('severity', 'info');
+            $xml->writeAttribute('message', PublishedUtf8::describe($repairs));
+            $xml->writeAttribute('source', 'qmx.' . PublishedUtf8::REPAIR_CHECK);
+            $xml->endElement();
             $xml->endElement();
         }
 
@@ -69,7 +82,7 @@ final class CheckstyleFormatter implements FormatterInterface
      *
      * @param list<Finding> $findings
      */
-    private function writeFiles(XMLWriter $xml, array $findings, FormatterContext $context): void
+    private function writeFiles(XMLWriter $xml, array $findings, FormatterContext $context, int &$repairs): void
     {
         /** @var array<string, list<Finding>> $grouped */
         $grouped = [];
@@ -84,10 +97,10 @@ final class CheckstyleFormatter implements FormatterInterface
 
         foreach ($grouped as $file => $fileFindings) {
             $xml->startElement('file');
-            $xml->writeAttribute('name', $file);
+            self::attribute($xml, 'name', (string) $file, $repairs);
 
             foreach ($fileFindings as $finding) {
-                $this->writeError($xml, $finding);
+                $this->writeError($xml, $finding, $repairs);
             }
 
             $xml->endElement(); // file
@@ -102,27 +115,27 @@ final class CheckstyleFormatter implements FormatterInterface
      * (ADR 0017) carries it appended to `message` — the only free-text
      * attribute Checkstyle consumers already surface.
      */
-    private function writeError(XMLWriter $xml, Finding $finding): void
+    private function writeError(XMLWriter $xml, Finding $finding, int &$repairs): void
     {
         $xml->startElement('error');
 
         $xml->writeAttribute('line', (string) ($finding->location->line ?? 1));
 
         $xml->writeAttribute('severity', $this->severityToString($finding->severity));
-        $xml->writeAttribute('message', $finding->message . $this->formatBreachSuffix($finding));
+        self::attribute($xml, 'message', PublishedFinding::annotatedMessage($finding), $repairs);
         $xml->writeAttribute('source', 'qmx.' . $finding->code);
 
         $xml->endElement(); // error
     }
 
     /**
-     * " (accepted at 25, now 31)" on a measured breach, '' otherwise (ADR 0017).
+     * An attribute whose value may quote the analysed source, which need not
+     * be UTF-8: XMLWriter would write the bytes into a document it declares
+     * UTF-8, and no XML parser would accept it.
      */
-    private function formatBreachSuffix(Finding $finding): string
+    private static function attribute(XMLWriter $xml, string $name, string $value, int &$repairs): void
     {
-        $breach = AcceptedLevelNarrator::describe($finding);
-
-        return $breach === null ? '' : \sprintf(' (%s)', $breach);
+        $xml->writeAttribute($name, PublishedUtf8::repair($value, $repairs));
     }
 
     private function severityToString(Severity $severity): string

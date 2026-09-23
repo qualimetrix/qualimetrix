@@ -18,7 +18,7 @@ finding-gate/
 │   ├── case.json          # run definition (schema below)
 │   ├── qmx.yaml           # the configuration that makes the channels fire
 │   ├── composer.json      # the case's own project root: without it a run warns
-│   │                      # `No composer.json found`. It does NOT set the
+│   │                      # `No composer.json found`. Its `name` is the
 │   │                      # reported project name — see the HTML note below
 │   └── src/**.php         # the fixtures
 ├── maps/                  # what a step declares it renamed; empty = renames nothing
@@ -304,11 +304,13 @@ the baseline surfaces would be compared against themselves. The
 where the gate had just cleared one: if the product ever caches somewhere else,
 this isolation must fail loudly rather than quietly guard nothing.
 
-HTML's `project.name` (`qualimetrix/qualimetrix`) and `qmxVersion` come from
-`Composer\InstalledVersions`, i.e. from our own repository rather than from the
-case. They are **not** normalized and cannot be: both sides run against the same
-cloned `vendor/`, so both read the same value and it stays compared like any
-other field.
+HTML's `project.name` is the analysed project's: the `project-name` format
+option, else the case's `composer.json` `name`, else the case directory's name.
+`qmxVersion` comes from `Composer\InstalledVersions`, i.e. from our own
+repository rather than from the case. Neither is normalized, and neither needs
+to be: both sides analyse the same case files against the same cloned
+`vendor/`, so both read the same values and they stay compared like any other
+field.
 
 ## Surfaces
 

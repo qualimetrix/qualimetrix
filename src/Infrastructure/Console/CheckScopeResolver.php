@@ -34,7 +34,7 @@ final readonly class CheckScopeResolver
         // uncovered target to warn about and no licence to judge either, so
         // reading the verdict off the empty warning list would silently call
         // it a whole-project run.
-        $measurement = $this->projectScopeCoverage->measure($scope->projectRoot, $scope->paths);
+        $measurement = $this->projectScopeCoverage->measure($scope->projectRoot, $scope->paths, $configuration->autoloadDevPolicy);
 
         return new ResolvedCheckScope(
             $scope,

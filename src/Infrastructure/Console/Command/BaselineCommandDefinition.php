@@ -103,14 +103,14 @@ final class BaselineCommandDefinition
                 'disable-rule',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Disable a rule or group by prefix (e.g., complexity, size.class-count)',
+                'Disable a rule or channel by exact name, or every rule under a group with NAME.* (e.g., complexity.*, size.class-count)',
                 [],
             )
             ->addOption(
                 'only-rule',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Run only specified rules or group by prefix (e.g., complexity, code-smell)',
+                'Run only the named rule or channel, or every rule under a group with NAME.* (e.g., complexity.*, code-smell.*)',
                 [],
             )
             ->addOption(

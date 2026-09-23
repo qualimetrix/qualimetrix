@@ -17,9 +17,14 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * This allows RuleRegistry to work with class names instead of instances,
  * enabling metadata extraction via reflection without instantiation.
  */
-final class RuleRegistryCompilerPass implements CompilerPassInterface
+final class RuleRegistryCompilerPass implements CompilerPassInterface, ConsumerBoundPassInterface
 {
-    public const string TAG = 'qmx.rule';
+    public const string TAG = RuleCompilerPass::TAG;
+
+    public static function consumerServiceIds(): array
+    {
+        return [RuleRegistry::class];
+    }
 
     public function process(ContainerBuilder $container): void
     {

@@ -105,9 +105,12 @@ final class InlineDirectiveValidator implements ConfigurationValidatorInterface
     public static function channelDeclarations(): array
     {
         return [
-            self::UNRESOLVED_CHANNEL => ChannelDeclaration::occurrence(SymbolLevel::File),
-            self::UNSUPPORTED_CHANNEL => ChannelDeclaration::occurrence(SymbolLevel::File),
-            self::INVALID_CHANNEL => ChannelDeclaration::occurrence(SymbolLevel::File),
+            self::UNRESOLVED_CHANNEL => ChannelDeclaration::occurrence(SymbolLevel::File)
+                ->describedAs('Reports an inline directive that addresses nothing it may address, or that is malformed before any channel is read.'),
+            self::UNSUPPORTED_CHANNEL => ChannelDeclaration::occurrence(SymbolLevel::File)
+                ->describedAs('Reports a threshold directive that targets a rule with no threshold-override support.'),
+            self::INVALID_CHANNEL => ChannelDeclaration::occurrence(SymbolLevel::File)
+                ->describedAs('Reports a threshold directive whose payload does not fit the targeted rule\'s options.'),
         ];
     }
 

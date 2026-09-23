@@ -9,7 +9,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathRe
 final class ComposerReader implements ComposerAutoloadPathReaderInterface
 {
     /**
-     * Extracts paths from autoload.psr-4 and optionally autoload-dev.psr-4.
+     * Extracts paths from autoload.psr-4.
      *
      * Handles both single-path strings and multi-path arrays per PSR-4 spec:
      *   "App\\": "src/"
@@ -17,7 +17,19 @@ final class ComposerReader implements ComposerAutoloadPathReaderInterface
      *
      * @return list<string> Paths relative to composer.json
      */
-    public function extractAutoloadPaths(string $composerJsonPath, bool $includeDev = true): array
+    public function extractAutoloadPaths(string $composerJsonPath): array
+    {
+        return $this->psr4Paths($composerJsonPath, 'autoload');
+    }
+
+    /** @return list<string> Paths relative to composer.json */
+    public function extractAutoloadDevPaths(string $composerJsonPath): array
+    {
+        return $this->psr4Paths($composerJsonPath, 'autoload-dev');
+    }
+
+    /** @return list<string> */
+    private function psr4Paths(string $composerJsonPath, string $section): array
     {
         $data = $this->decode($composerJsonPath);
         if ($data === null) {
@@ -25,11 +37,7 @@ final class ComposerReader implements ComposerAutoloadPathReaderInterface
         }
 
         $roots = [];
-        $this->collectPsr4Roots($data, 'autoload', $roots);
-
-        if ($includeDev) {
-            $this->collectPsr4Roots($data, 'autoload-dev', $roots);
-        }
+        $this->collectPsr4Roots($data, $section, $roots);
 
         $paths = [];
         foreach ($roots as $prefixPaths) {
@@ -76,14 +84,26 @@ final class ComposerReader implements ComposerAutoloadPathReaderInterface
      */
     public function productionAutoloadTargets(string $composerJsonPath): ?array
     {
+        return $this->sectionTargets($composerJsonPath, 'autoload');
+    }
+
+    /** @return ?list<string> */
+    public function developmentAutoloadTargets(string $composerJsonPath): ?array
+    {
+        return $this->sectionTargets($composerJsonPath, 'autoload-dev');
+    }
+
+    /** @return ?list<string> */
+    private function sectionTargets(string $composerJsonPath, string $section): ?array
+    {
         $data = $this->decode($composerJsonPath);
 
-        if (!\is_array($data['autoload'] ?? null)) {
+        if (!\is_array($data[$section] ?? null)) {
             return null;
         }
 
         /** @var array<string, mixed> $autoload */
-        $autoload = $data['autoload'];
+        $autoload = $data[$section];
 
         // Every section merged into one list: the comparison downstream is
         // about containment, not about which mechanism served a path.

@@ -73,6 +73,7 @@ docs/adr/0077-open-universe-selectors-are-explicit.md	Architecture.Governance	"M
 docs/adr/0078-an-entry-the-run-did-not-read-makes-it-incomplete.md	Analysis.Run	"Move or update atomically with the named subject owner."
 docs/adr/0079-a-criterion-the-run-cannot-answer-is-undecidable.md	Analysis.Policy.Architecture	"Move or update atomically with the named subject owner."
 docs/adr/0080-a-project-fold-reads-a-partition-not-the-leaves.md	Analysis.Evidence.Measurement	"Move or update atomically with the named subject owner."
+docs/adr/0081-a-channel-not-named-after-its-producer-describes-itself.md	Analysis.Finding	"Move or update atomically with the named subject owner."
 docs/adr/README.md	Architecture.Governance	"Repository-wide governance documentation; review with the manifest and generated topology."
 docs/internal/CLI_CONVENTIONS.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/COMPETITOR_COMPARISON.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."

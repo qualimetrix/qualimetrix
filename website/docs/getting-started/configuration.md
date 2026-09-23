@@ -50,6 +50,18 @@ include_generated: true
 
 Equivalent CLI: `--include-generated`
 
+### Include Autoload Dev
+
+By default, the code `composer.json` declares under `autoload-dev` is not part of the project: a run with no `paths` analyses only the `autoload` PSR-4 roots, and a run is judged against those alone when Qualimetrix asks whether it covered the whole project. To count test code as part of the project in both places:
+
+```yaml
+include_autoload_dev: true
+```
+
+Paths you write yourself are not widened; with `paths: [src]`, the run is reported as not covering the `autoload-dev` roots.
+
+Equivalent CLI: `--include-autoload-dev`
+
 ### Suppress Paths
 
 Path selectors suppress violations while the files **are still analyzed**. Each YAML item is a one-entry mapping: `exact` selects one canonical project-relative path, `subtree` also selects `/`-separated descendants, and `regex` accepts a delimiterless PCRE fragment that Qualimetrix anchors to the whole path:
@@ -233,7 +245,10 @@ rules:
 
 **Option key spellings are interchangeable, option keys themselves are not.**
 `max_warning`, `maxWarning` and `max-warning` are the same key and all three
-apply, at both depths. A key the rule does not have at that position is not
+apply, at both depths. Being one key, it is written once: two spellings of it in
+the same block — `max_warning: 1` beside `maxWarning: 999` — end the run with exit
+code 3 instead of letting the later one win. The same holds for every key in the
+document, root keys included. A key the rule does not have at that position is not
 guessed at: the run stops (see [Unknown rule option keys](#unknown-rule-option-keys)).
 
 **An empty level block means the same as an omitted one.** `callable:` with no
@@ -392,7 +407,7 @@ the name the same way:
 A bare prefix is **not** a group. `complexity` on its own selects nothing and is rejected:
 
 ```
-Configuration error: Rule selector "complexity" does not match any registered producer, group, or channel.
+Configuration error: Rule selector "complexity" does not match any registered producer or channel. A bare prefix is not a group: write "complexity.*" to select every rule under "complexity".
 Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
@@ -503,7 +518,7 @@ Equivalent CLI: `--exclude-health=typing --exclude-health=maintainability`
 
 ### Memory limit
 
-Set the PHP memory limit for analysis. By default, PHP's `memory_limit` from `php.ini` is used.
+Set the PHP memory limit for analysis. By default, PHP's `memory_limit` from `php.ini` is used. The limit applies to the worker processes as well, where files are parsed and measured; a file a worker could not finish within it is reported as failed, and the failure names the limit.
 
 ```yaml
 memory_limit: 1G    # 1 gigabyte

@@ -50,6 +50,18 @@ include_generated: true
 
 Эквивалент в CLI: `--include-generated`
 
+### Код autoload-dev как часть проекта (include_autoload_dev)
+
+По умолчанию код, объявленный в `composer.json` в секции `autoload-dev`, не входит в проект: прогон без `paths` анализирует только PSR-4 корни `autoload`, и только по ним Qualimetrix судит, охватил ли прогон весь проект. Чтобы считать тестовый код частью проекта в обоих местах:
+
+```yaml
+include_autoload_dev: true
+```
+
+Пути, которые вы пишете сами, не расширяются; при `paths: [src]` прогон будет отмечен как не охвативший корни `autoload-dev`.
+
+Эквивалент в CLI: `--include-autoload-dev`
+
 ### Подавление путей в отчёте (suppress_paths)
 
 Селекторы путей подавляют нарушения, но файлы **всё равно анализируются**. Каждый элемент YAML — отображение из одной пары: `exact` выбирает один project-relative путь, `subtree` также выбирает потомков через `/`, а `regex` принимает фрагмент PCRE без разделителей, который Qualimetrix привязывает ко всему пути:
@@ -238,7 +250,9 @@ rules:
 
 **Написание ключа опции взаимозаменяемо, сам ключ — нет.** `max_warning`,
 `maxWarning` и `max-warning` — один и тот же ключ, и все три применяются, на
-обеих глубинах. Ключ, которого у правила в этой позиции нет, не угадывается:
+обеих глубинах. Раз ключ один, он пишется один раз: два его написания в одном блоке —
+`max_warning: 1` рядом с `maxWarning: 999` — завершают прогон с кодом 3, а не отдают
+победу последнему. Это верно для любого ключа документа, включая корневые. Ключ, которого у правила в этой позиции нет, не угадывается:
 прогон останавливается — см. «Неизвестные ключи опций правила» в разделе
 «Валидация конфигурации» ниже.
 
@@ -400,7 +414,7 @@ CLI-эквиваленты, `suppress_namespace_channels` и семейство 
 отвергается:
 
 ```
-Configuration error: Rule selector "complexity" does not match any registered producer, group, or channel.
+Configuration error: Rule selector "complexity" does not match any registered producer or channel. A bare prefix is not a group: write "complexity.*" to select every rule under "complexity".
 Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
@@ -513,7 +527,7 @@ exclude_health:
 
 ### Лимит памяти (memory_limit)
 
-Лимит памяти PHP для анализа. По умолчанию используется значение `memory_limit` из `php.ini`.
+Лимит памяти PHP для анализа. По умолчанию используется значение `memory_limit` из `php.ini`. Лимит действует и в рабочих процессах, где файлы разбираются и измеряются; файл, который рабочий процесс не смог обработать в его пределах, отмечается как необработанный, и сообщение о сбое называет лимит.
 
 ```yaml
 memory_limit: 1G    # 1 гигабайт

@@ -85,7 +85,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0047 — Suppression and Exclusion](0047-suppression-is-not-exclusion.md) — produced-and-hidden findings use suppression vocabulary.
 - [0049 — Rule Option Recognition](0049-rule-option-key-recognition.md) — option keys are recognized at every declared depth or refused.
 - [0050 — Configuration Refusal Carrier](0050-configuration-refusal-carrier.md) — Configuration owns the typed bad-input carrier.
-- [0051 — Refusal Routing](0051-refusal-is-not-routed-by-command.md) — throwable kind, not command, determines refusal presentation.
+- [0051 — Refusal Routing](0051-refusal-is-not-routed-by-command.md) — throwable kind, not command, determines refusal presentation; amended 2026-09-23: the JSON envelope is `{error, exit_code, position}`, publishing the refused key's position.
 - [0055 — Rule Option Value Shape](0055-a-rule-option-declares-the-shape-of-its-value.md) — accepted option keys declare their value shape.
 - [0058 — Layered Value Survival](0058-a-layers-value-survives-the-layers-above-it.md) — higher layers preserve values they did not rewrite.
 - [0059 — Declared-Layer Policy and Architecture Governance](0059-declared-layer-policy-and-architecture-governance.md) — current layer-policy semantics and manifest authority.
@@ -110,6 +110,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0078 — An Entry the Run Did Not Read Makes It Incomplete](0078-an-entry-the-run-did-not-read-makes-it-incomplete.md) — a directory symlink, a non-regular `*.php` entry and an unlistable directory are terminal failures rather than silent drops, so the run is incomplete and answers exit 4; the published `kind` vocabulary grows to five, and a path named on the command line is still followed.
 - [0079 — A Criterion the Run Cannot Answer Is Undecidable, Not a Non-Match](0079-a-criterion-the-run-cannot-answer-is-undecidable.md) — graph-backed layer criteria combine three-valued, so a chain that leaves the analysed set no longer reads as a confident non-match; an unanswered layer or `exclude:` never withdraws a match and the doubt is published on `architecture.doubted-assignment`, a layer naming only types the run never met stays unreachable, template observation falls toward the layer existing, and a template naming a non-pattern criterion under `match: any` is refused.
 - [0080 — A Project Fold Reads a Partition, Not the Leaves](0080-a-project-fold-reads-a-partition-not-the-leaves.md) — the project population of a namespace-collected metric is every namespace declaring a type, folded over its own scope rather than its subtree rollup; the coverage denominator comes from a size measurement independent of that fold.
+- [0081 — A Channel Not Named After Its Producer Describes Itself](0081-a-channel-not-named-after-its-producer-describes-itself.md) — a channel's description lives on its declaration; a channel whose name differs from its producer's must declare one and the producer's own channel must not, or the container build refuses, so SARIF no longer publishes a producer's description for another channel.
 
 ## Superseded history
 

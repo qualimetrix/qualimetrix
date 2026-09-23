@@ -17,10 +17,7 @@ final class HookStatusCommand extends AbstractHookCommand
 {
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        $hookPath = $this->hookPath($output);
-        if ($hookPath === null) {
-            return self::FAILURE;
-        }
+        $hookPath = $this->hookPath();
 
         $output->writeln('<info>Git Pre-commit Hook Status</info>');
         $output->writeln('');

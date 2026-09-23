@@ -277,6 +277,13 @@ final class YamlKeyReachabilityTest extends TestCase
             true,
         ];
 
+        yield 'include_autoload_dev → includeAutoloadDev (scalar bool)' => [
+            'include_autoload_dev',
+            "include_autoload_dev: true\n",
+            ['includeAutoloadDev'],
+            true,
+        ];
+
         yield 'memory_limit → memoryLimit (scalar)' => [
             'memory_limit',
             "memory_limit: 512M\n",

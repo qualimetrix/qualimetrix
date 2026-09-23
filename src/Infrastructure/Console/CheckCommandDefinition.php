@@ -97,6 +97,12 @@ final class CheckCommandDefinition
                 'Include files marked with @generated annotation (skipped by default)',
             )
             ->addOption(
+                'include-autoload-dev',
+                null,
+                InputOption::VALUE_NONE,
+                'Count composer.json autoload-dev code as part of the project: analysed when no paths are given, and part of the scope a run is judged against (left out by default)',
+            )
+            ->addOption(
                 'config',
                 'c',
                 InputOption::VALUE_REQUIRED,
@@ -265,14 +271,14 @@ final class CheckCommandDefinition
                 'profile',
                 null,
                 InputOption::VALUE_OPTIONAL,
-                'Enable profiling and export to file (or show summary if no file specified)',
+                'Enable profiling and export to file (or show summary if no file specified). Refused before analysis when the file cannot be written',
                 false,
             )
             ->addOption(
                 'profile-format',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Profile export format (json or chrome-tracing)',
+                'Profile export format: json or chrome-tracing. Refused before analysis when it is anything else',
                 'json',
             );
     }
@@ -297,7 +303,7 @@ final class CheckCommandDefinition
                 'detail',
                 null,
                 InputOption::VALUE_OPTIONAL,
-                'Show detailed violations (default: 200, --detail=all for unlimited, --detail=N for custom limit)',
+                'Add the grouped violation list after the summary, capped at 200 entries: --detail=N caps it at N, --detail=all or --detail=0 removes the cap. Omitted, the list is not shown unless --namespace or --class is used',
                 false, // false = not passed, null = passed without value
             )
             ->addOption(
@@ -402,13 +408,13 @@ final class CheckCommandDefinition
                 'disable-rule',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Disable a rule or group by prefix (e.g., complexity, size.class-count). Disabling duplication.clone also skips the memory-intensive detection phase',
+                'Disable a rule or channel by exact name, or every rule under a group with NAME.* (e.g., complexity.*, size.class-count). Disabling duplication.clone also skips the memory-intensive detection phase',
             )
             ->addOption(
                 'only-rule',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Run only specified rules or group by prefix (e.g., complexity, code-smell)',
+                'Run only the named rule or channel, or every rule under a group with NAME.* (e.g., complexity.*, code-smell.*)',
             )
             ->addOption(
                 'rule-opt',

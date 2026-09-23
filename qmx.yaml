@@ -59,12 +59,12 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition'
         - 'Qualimetrix\Analysis\Configuration\Discovery\ComposerReader'
         - 'Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface'
+        - 'Qualimetrix\Analysis\Configuration\Loader\DocumentKeyNormalizer'
         - 'Qualimetrix\Analysis\Configuration\Loader\RootContainerShapes'
         - 'Qualimetrix\Analysis\Configuration\Loader\SectionNormalizationPolicy'
         - 'Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader'
         - 'Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer'
         - 'Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer'
-        - 'Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationMerger'
         - 'Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline'
         - 'Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface'
         - 'Qualimetrix\Analysis\Configuration\Pipeline\RuleNameValidator'
@@ -765,6 +765,7 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ParallelCapableInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\SuccessfulFileProcessing'
+        - 'Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface'
@@ -951,6 +952,8 @@ architecture:
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\CollectorCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationStageCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationValidatorCompilerPass'
+        - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConsumerBoundPassInterface'
+        - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConsumerRegistrationCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FileSetInspectionParticipantCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FormatterCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\GlobalCollectorCompilerPass'
@@ -1023,6 +1026,8 @@ architecture:
         - 'Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector'
         - 'Qualimetrix\Infrastructure\Parallel\Strategy\WorkerCountDetector'
         - 'Qualimetrix\Infrastructure\Parallel\WorkerBootstrap'
+        - 'Qualimetrix\Infrastructure\Parallel\WorkerComposition'
+        - 'Qualimetrix\Infrastructure\Parallel\WorkerPool'
     - name: infrastructure-profiler
       patterns:
         - 'Qualimetrix\Infrastructure\Profiler\Contract\ProfileFormat'
@@ -1059,6 +1064,7 @@ architecture:
         - 'Qualimetrix\Reporting\CoverageFailure'
         - 'Qualimetrix\Reporting\DrillDown\DrillDownBinding'
         - 'Qualimetrix\Reporting\DrillDown\FindingFilter'
+        - 'Qualimetrix\Reporting\DrillDown\OutOfScopeFindings'
         - 'Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface'
@@ -1085,6 +1091,7 @@ architecture:
         - 'Qualimetrix\Reporting\Formatter\Detail\DetailedFindingRenderer'
         - 'Qualimetrix\Reporting\Formatter\Detail\FindingDetailRenderer'
         - 'Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface'
+        - 'Qualimetrix\Reporting\Formatter\FormatOptionValue'
         - 'Qualimetrix\Reporting\Formatter\FormatterInterface'
         - 'Qualimetrix\Reporting\Formatter\FormatterRegistry'
         - 'Qualimetrix\Reporting\Formatter\FormatterRegistryInterface'
@@ -1096,6 +1103,7 @@ architecture:
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlFindingPartitioner'
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlFormatter'
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlMetricAggregator'
+        - 'Qualimetrix\Reporting\Formatter\Html\HtmlProjectMetadata'
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder'
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlTreeNode'
         - 'Qualimetrix\Reporting\Formatter\Json\JsonFindingSection'
@@ -1105,6 +1113,8 @@ architecture:
         - 'Qualimetrix\Reporting\Formatter\Json\JsonSanitizer'
         - 'Qualimetrix\Reporting\Formatter\MetricsJsonFormatter'
         - 'Qualimetrix\Reporting\Formatter\Ordering\FindingSorter'
+        - 'Qualimetrix\Reporting\Formatter\PublishedFinding'
+        - 'Qualimetrix\Reporting\Formatter\PublishedUtf8'
         - 'Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter'
         - 'Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector'
         - 'Qualimetrix\Reporting\Formatter\Summary\FindingSummaryRenderer'
@@ -1418,6 +1428,7 @@ architecture:
       - analysis-evidence-dependencymodel
       - core-neutral
       - core-symbol
+      - reporting
       - external
     external: []
 
@@ -1737,6 +1748,15 @@ rules:
         # what it judges, and a namespace channel is not addressable by
         # `@qmx-threshold`.
         - exact: 'Qualimetrix\Analysis\Evidence\Coupling'
+        # Ca=2 / Ce=22 (I=0.916667). Unmeasured until its second afferent edge:
+        # `Infrastructure\DependencyInjection\Configurator` now names
+        # `UnboundSuppressionRule` by `::class` so the architecture manifest can
+        # bind the registration, which lifts Ca over `min_afferent: 2` below.
+        # Ce did not move. The namespace is the unbound-suppression audit and
+        # its rule, a leaf that reads the Finding and Configuration vocabularies
+        # and is read back only by the console and the container, and a
+        # namespace channel is not addressable by `@qmx-threshold`.
+        - exact: 'Qualimetrix\Analysis\Finding\SuppressionBinding'
     suppress_paths:
       # Note: visitors and DI configurators are NOT listed here. They are indeed
       # inherently unstable, but `min_afferent: 2` below already filters them out

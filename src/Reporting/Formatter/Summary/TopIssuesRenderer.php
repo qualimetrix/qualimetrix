@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
+use Qualimetrix\Reporting\Formatter\PublishedFinding;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Report;
 
@@ -34,13 +35,10 @@ final class TopIssuesRenderer
             return;
         }
 
-        $filtered = $this->filterByContext($report->topIssues, $context);
-
-        if ($filtered === []) {
-            return;
-        }
-
-        $issues = \array_slice($filtered, 0, $context->topIssuesLimit);
+        // Ranked from the report's findings, which the presenter has already
+        // narrowed to any --namespace/--class selection: filtering again here
+        // would be a second copy of that rule, free to drift from the first.
+        $issues = \array_slice($report->topIssues, 0, $context->topIssuesLimit);
 
         $lines[] = '';
         $lines[] = $color->bold('Top issues by impact');
@@ -72,7 +70,7 @@ final class TopIssuesRenderer
 
         $locationStr = $this->formatLocation($finding, $context);
 
-        $detail = \sprintf('%s: %s%s', $finding->code, $finding->getDisplayMessage(), $this->formatSymbol($finding));
+        $detail = \sprintf('%s: %s%s', $finding->code, PublishedFinding::advice($finding), $this->formatSymbol($finding));
 
         $indent = str_repeat(' ', \strlen((string) $rank) + 8);
 
@@ -125,38 +123,6 @@ final class TopIssuesRenderer
         }
 
         return '';
-    }
-
-    /**
-     * Filters top issues by namespace/class drill-down context.
-     *
-     * @param list<RankedIssue> $issues
-     *
-     * @return list<RankedIssue>
-     */
-    private function filterByContext(array $issues, FormatterContext $context): array
-    {
-        if ($context->namespace === null && $context->class === null) {
-            return $issues;
-        }
-
-        return array_values(array_filter($issues, static function (RankedIssue $issue) use ($context): bool {
-            $sp = $issue->finding->symbolPath;
-            $ns = $sp->namespace ?? '';
-            $type = $sp->type;
-
-            if ($context->namespace !== null) {
-                return $context->namespace->matches($ns);
-            }
-
-            if ($context->class !== null && $type !== null) {
-                $fqcn = $ns !== '' ? $ns . '\\' . $type : $type;
-
-                return $fqcn === $context->class;
-            }
-
-            return false;
-        }));
     }
 
     private function formatScore(float $score): string

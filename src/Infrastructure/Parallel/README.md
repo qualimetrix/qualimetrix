@@ -18,6 +18,23 @@ assembling it. The assembly is the same subject as the container's
 `FileParserFactory`, and keeping it there is what keeps the cache vocabulary out
 of this namespace.
 
+**What a task carries.** A worker process has no container, so
+`FileProcessingTask` carries by name what the container registered —
+`WorkerComposition`: collectors, derived collectors, the traversal participant
+and the rules — beside the per-file path, the cache directory, the Cohesion
+configuration current at task creation, and the memory limit.
+
+**Memory limit.** A worker is a separate process that starts under `php.ini`,
+and the coordinator's `ini_set()` does not cross the process boundary.
+`FileProcessingTaskFactory` puts the coordinator's `memory_limit` on every
+task and `FileProcessingTask` applies it before processing. A worker that dies
+with a file in hand reaches the coordinator only as a context that stopped
+responding — its PHP fatal error goes to stderr past this code — so
+`WorkerPool`, which `AmphpParallelStrategy` runs collection on, names the
+workers' limit in the failed file's message, re-submits a task the dead worker
+refused before starting it, and routes the pool's own crash notices to the log
+instead of stdout.
+
 **Collector marker.** A registered collector that does not implement
 `ParallelSafeCollectorInterface` is refused, like a collector class that does not
 exist. Skipping it instead made `--workers=N` measure less than `--workers=0`

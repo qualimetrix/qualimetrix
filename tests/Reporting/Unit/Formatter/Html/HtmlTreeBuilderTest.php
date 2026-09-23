@@ -883,63 +883,16 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertSame('child', $array['children'][0]['name']);
     }
 
+    /**
+     * The summary counts every finding of the report, so the tree has to hold
+     * every one of them: a finding with no class or namespace node of its own
+     * lands on the nearest node that does exist, down to the project root.
+     */
     #[Test]
-    public function itSkipsFileFindingDuringBuild(): void
+    public function itAttachesEveryFindingSoTheTreeCountsWhatTheSummaryCounts(): void
     {
         $metrics = new InMemoryMetricRepository();
-
-        $metrics->add(
-            SymbolPath::forClass('App', 'Service'),
-            MetricBag::fromArray(['complexity.ccn.sum' => 5]),
-            RelativePath::fromString('src/Service.php'),
-            1,
-        );
-
-        // File-level finding should be skipped (not attached to any node)
-        $finding = self::finding(
-            location: new Location(RelativePath::fromString('src/helpers.php'), 1),
-            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/helpers.php')),
-            ruleName: 'size.loc',
-            code: 'size.loc',
-            message: 'File too large',
-            severity: Severity::Warning,
-            metricValue: 500,
-        );
-
-        $report = ReportBuilder::create()
-            ->filesAnalyzed(2)
-            ->filesSkipped(0)
-            ->duration(0.1)
-            ->metrics($metrics)
-            ->addFinding($finding)
-            ->build();
-
-        $result = $this->builder->build($report, new FormatterContext());
-
-        $tree = $result['tree'];
-        // Finding count in tree should be 0 (file-level skipped)
-        self::assertSame(0, $tree['violationCountTotal']);
-    }
-
-    #[Test]
-    public function itUsesReportTechDebtForTotalDebtMinutesWhenAvailable(): void
-    {
-        $metrics = new InMemoryMetricRepository();
-
-        $metrics->add(
-            SymbolPath::forProject(),
-            MetricBag::fromArray(['size.loc.sum' => 100, 'classes.count' => 1]),
-            null,
-            null,
-        );
-
-        $metrics->add(
-            SymbolPath::forNamespace('App'),
-            MetricBag::fromArray([]),
-            null,
-            null,
-        );
-
+        $metrics->add(SymbolPath::forNamespace('App'), MetricBag::fromArray([]), null, null);
         $metrics->add(
             SymbolPath::forClass('App', 'Foo'),
             MetricBag::fromArray(['complexity.ccn.sum' => 5]),
@@ -947,44 +900,79 @@ final class HtmlTreeBuilderTest extends TestCase
             1,
         );
 
-        // Class-level finding (30 min debt via RemediationTimeRegistry)
-        $classFinding = self::finding(
-            location: new Location(RelativePath::fromString('src/Foo.php'), 10),
-            symbolPath: SymbolPath::forClass('App', 'Foo'),
-            ruleName: 'complexity.ccn',
-            code: 'complexity.ccn',
-            message: 'Complex',
-            severity: Severity::Error,
-        );
-
-        // File-level finding — won't be partitioned into any node
-        $fileFinding = self::finding(
-            location: new Location(RelativePath::fromString('src/Foo.php'), null),
-            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Foo.php')),
-            ruleName: 'size.loc',
-            code: 'size.loc',
-            message: 'File too long',
+        $at = static fn(string $file, SymbolPath $symbol, string $code, string $message): Finding => self::finding(
+            location: new Location($file === '' ? null : RelativePath::fromString($file), 1),
+            symbolPath: $symbol,
+            ruleName: $code,
+            code: $code,
+            message: $message,
             severity: Severity::Warning,
         );
-
-        // Report with techDebtMinutes = 50 (includes both findings)
-        $report = new \Qualimetrix\Reporting\Report(
-            findings: [$classFinding, $fileFinding],
-            filesAnalyzed: 1,
-            filesSkipped: 0,
-            duration: 0.1,
-            errorCount: 1,
-            warningCount: 1,
-            metrics: $metrics,
-            techDebtMinutes: 50,
-        );
+        $report = ReportBuilder::create()
+            ->filesAnalyzed(2)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->metrics($metrics)
+            ->addFinding($at('src/Foo.php', SymbolPath::forClass('App', 'Foo'), 'complexity.ccn', 'on the class'))
+            ->addFinding($at('src/Foo.php', SymbolPath::forFile(RelativePath::fromString('src/Foo.php')), 'code-smell.eval', 'in the class file'))
+            ->addFinding($at('src/helpers.php', SymbolPath::forFile(RelativePath::fromString('src/helpers.php')), 'code-smell.debug-code', 'in a classless file'))
+            ->addFinding($at('src/helpers.php', SymbolPath::forGlobalFunction('App', 'helper'), 'complexity.ccn', 'on a function'))
+            ->addFinding($at('', SymbolPath::forProject(), 'complexity.ccn', 'on the project'))
+            ->build();
 
         $result = $this->builder->build($report, new FormatterContext());
+        $tree = $result['tree'];
+        $namespace = $tree['children'][0];
+        $class = $namespace['children'][0];
 
-        // Both tree root and summary should show 50 (report's techDebtMinutes),
-        // not the bottom-up aggregation which misses file-level findings (30)
-        self::assertSame(50, $result['tree']['debtMinutes']);
-        self::assertSame(50, $result['summary']['totalDebtMinutes']);
+        self::assertSame(5, $result['summary']['totalViolations']);
+        self::assertSame(5, $tree['violationCountTotal']);
+        self::assertSame(['in a classless file', 'on the project'], array_column($tree['violations'], 'message'));
+        self::assertSame(['on a function'], array_column($namespace['violations'], 'message'));
+        self::assertSame(['on the class', 'in the class file'], array_column($class['violations'], 'message'));
+    }
+
+    /**
+     * With every finding attached, the root's bottom-up debt is the report's
+     * debt; nothing needs overriding from outside the tree.
+     */
+    #[Test]
+    public function itAggregatesTheRootDebtFromEveryAttachedFinding(): void
+    {
+        $metrics = new InMemoryMetricRepository();
+        $metrics->add(SymbolPath::forNamespace('App'), MetricBag::fromArray([]), null, null);
+        $metrics->add(
+            SymbolPath::forClass('App', 'Foo'),
+            MetricBag::fromArray(['complexity.ccn.sum' => 5]),
+            RelativePath::fromString('src/Foo.php'),
+            1,
+        );
+
+        $findings = [
+            self::finding(
+                location: new Location(RelativePath::fromString('src/Foo.php'), 10),
+                symbolPath: SymbolPath::forClass('App', 'Foo'),
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
+                message: 'Complex',
+                severity: Severity::Error,
+            ),
+            self::finding(
+                location: new Location(RelativePath::fromString('src/other.php'), null),
+                symbolPath: SymbolPath::forFile(RelativePath::fromString('src/other.php')),
+                ruleName: 'size.loc',
+                code: 'size.loc',
+                message: 'File too long',
+                severity: Severity::Warning,
+            ),
+        ];
+        $debt = new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()));
+
+        $report = ReportBuilder::create()->filesAnalyzed(2)->filesSkipped(0)->duration(0.1)->metrics($metrics)->addFindings($findings)->build();
+        $result = $this->builder->build($report, new FormatterContext());
+
+        self::assertSame($debt->calculate($findings)->totalMinutes, $result['tree']['debtMinutes']);
+        self::assertSame($result['tree']['debtMinutes'], $result['summary']['totalDebtMinutes']);
     }
 
     private function catalog(): ComputedMetricDefinitionCatalogInterface

@@ -187,13 +187,14 @@ final class CheckCommand extends Command
     {
         $this->runtimeConfigurator->resetRunState();
 
+        // Resolve configuration through pipeline. It refuses an option written
+        // empty, so it runs before anything below reads `--output` as a path.
+        $document = $this->configurationInputAdapter->resolve($input);
+
         // Refuse an unwritable `--output` before analysis starts. This fast
         // precheck is not a guarantee because writability can change later.
         $this->resultPresenter->assertOutputIsWritable($input);
-        $namespacePattern = $this->resultPresenter->prepareNamespaceDrillDown($input);
-
-        // Resolve configuration through pipeline
-        $document = $this->configurationInputAdapter->resolve($input);
+        $namespacePattern = $this->resultPresenter->bindOutputOptions($input);
         $resolved = $this->configurationResolvers->resolve($document);
         $runConfiguration = $resolved->runConfiguration;
         $cacheConfiguration = $resolved->cacheConfiguration;
@@ -266,6 +267,7 @@ final class CheckCommand extends Command
             $output,
             $scopeResolution,
             $projectionOptions,
+            $runConfiguration->autoloadDevPolicy,
         );
         $filteredFindings = $filterResult->findings;
 

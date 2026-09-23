@@ -72,7 +72,8 @@ final readonly class RefusedPosition
     }
 
     /**
-     * Canonical spellings accepted at this position, sorted; empty for {@see self::open()}.
+     * Spellings accepted at this position, in the order and spelling the throw
+     * site gave them; empty for {@see self::open()}.
      *
      * @return list<string>
      */

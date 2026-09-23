@@ -11,11 +11,16 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
 /** Validates and injects file-set inspection participants in stable ID order. */
-final class FileSetInspectionParticipantCompilerPass implements CompilerPassInterface
+final class FileSetInspectionParticipantCompilerPass implements CompilerPassInterface, ConsumerBoundPassInterface
 {
     public const string TAG = 'qmx.analysis.run.file_set_inspection_participant';
 
     private const string COMPOSITE_SERVICE_ID = 'qmx.analysis.run.file_set_inspection_composite';
+
+    public static function consumerServiceIds(): array
+    {
+        return [self::COMPOSITE_SERVICE_ID];
+    }
 
     public function process(ContainerBuilder $container): void
     {

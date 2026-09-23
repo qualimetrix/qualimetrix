@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Html;
 
-use Composer\InstalledVersions;
-
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
@@ -13,10 +11,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
-use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\Formatter\Health\HealthCoverageNarrator;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Report;
@@ -63,31 +59,28 @@ final class HtmlTreeBuilder
 
         // 2. Attach findings to tree nodes
         $nodesByPath = $this->indexNodes($root);
-        $findingsByNode = $this->findingPartitioner->partition($report->findings, $nodesByPath);
+        $findingsByNode = $this->findingPartitioner->partition(
+            $report->findings,
+            $nodesByPath,
+            $report->metrics,
+        );
         $this->findingPartitioner->attach($nodesByPath, $findingsByNode, $context);
 
         // 3. Compute debt per node
         $this->htmlDebtCalculator->computeDebt($findingsByNode, $nodesByPath);
 
-        // 4. Compute violationCountTotal and aggregate debt bottom-up
+        // 4. Compute violationCountTotal and aggregate debt bottom-up; every
+        // finding is attached, so the root's totals are the report's.
         $this->htmlDebtCalculator->aggregateBottomUp($root);
 
-        // 5. Override root debt with report-level total when available.
-        // Bottom-up aggregation misses file-level/project-level findings
-        // that aren't partitioned into tree nodes. Report's techDebtMinutes
-        // (set by SummaryEnricher) covers all findings.
-        if ($report->techDebtMinutes > 0) {
-            $root->debtMinutes = $report->techDebtMinutes;
-        }
-
-        // 6. Build summary
+        // 5. Build summary
         $summary = $this->buildSummary($report, $root, $nodesByPath);
 
-        // 7. Build computed metric definitions
+        // 6. Build computed metric definitions
         $definitions = $this->buildComputedMetricDefinitions();
 
-        // 8. Build project metadata
-        $project = $this->buildProjectMetadata($scopedReporting, $projectName);
+        // 7. Build project metadata
+        $project = HtmlProjectMetadata::of($scopedReporting, $projectName, $context->basePath);
 
         return [
             'project' => $project,
@@ -341,27 +334,6 @@ final class HtmlTreeBuilder
                     array_values($report->healthScores),
                 ),
             ),
-        ];
-    }
-
-    /**
-     * Builds project metadata.
-     *
-     * `docs` and `llmsTxt` reach the footer the way `qmxVersion` already
-     * does: through this data structure, because the footer is written by
-     * JavaScript, which cannot read a PHP constant directly.
-     *
-     * @return array<string, mixed>
-     */
-    private function buildProjectMetadata(bool $scopedReporting, ?string $projectName = null): array
-    {
-        return [
-            'name' => $projectName ?? InstalledVersions::getRootPackage()['name'] ?? 'unknown',
-            'generatedAt' => gmdate('c'),
-            'qmxVersion' => Version::get(),
-            'scopedReporting' => $scopedReporting,
-            'docs' => ProductIdentity::docsUrl(),
-            'llmsTxt' => ProductIdentity::llmsTxtUrl(),
         ];
     }
 

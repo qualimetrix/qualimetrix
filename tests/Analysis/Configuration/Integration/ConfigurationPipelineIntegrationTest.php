@@ -51,7 +51,8 @@ final class ConfigurationPipelineIntegrationTest extends TestCase
         ));
 
         self::assertSame(['defaults', 'composer.json', 'qmx.yaml', 'cli'], $document->appliedSources());
-        self::assertSame([['src'], ['lib'], ['app']], $document->contributions('paths'));
+        self::assertSame([['lib'], ['app']], $document->contributions('paths'));
+        self::assertSame([['src']], $document->contributions('discovered_autoload_paths'));
         self::assertSame(['text', 'json'], $document->contributions('format'));
         self::assertSame([['build']], $document->contributions('excludes'));
     }

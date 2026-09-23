@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCollector;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTask;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
+use Qualimetrix\Infrastructure\Parallel\WorkerComposition;
 use ReflectionProperty;
 use stdClass;
 
@@ -50,9 +51,9 @@ final class FileProcessingTaskFactoryTest extends TestCase
         );
 
         self::assertTrue($factory->hasCollectors());
-        self::assertSame([CyclomaticComplexityCollector::class], $this->property($task, 'collectorClasses'));
-        self::assertSame([MaintainabilityIndexCollector::class], $this->property($task, 'derivedCollectorClasses'));
-        self::assertSame([ComplexityRule::class], $this->property($task, 'ruleClasses'));
+        self::assertSame([CyclomaticComplexityCollector::class], $this->composition($task)->collectorClasses);
+        self::assertSame([MaintainabilityIndexCollector::class], $this->composition($task)->derivedCollectorClasses);
+        self::assertSame([ComplexityRule::class], $this->composition($task)->ruleClasses);
     }
 
     #[Test]
@@ -82,8 +83,24 @@ final class FileProcessingTaskFactoryTest extends TestCase
         $first = $factory->create(AbsolutePath::fromString('/project/First.php'), AbsolutePath::fromString('/project'), null);
         $second = $factory->create(AbsolutePath::fromString('/project/Second.php'), AbsolutePath::fromString('/project'), null);
 
-        self::assertSame(DependencyVisitor::class, $this->property($first, 'dependencyTraversalParticipantClass'));
-        self::assertSame(DependencyVisitor::class, $this->property($second, 'dependencyTraversalParticipantClass'));
+        self::assertSame(DependencyVisitor::class, $this->composition($first)->dependencyTraversalParticipantClass);
+        self::assertSame(DependencyVisitor::class, $this->composition($second)->dependencyTraversalParticipantClass);
+    }
+
+    #[Test]
+    public function itCarriesTheCoordinatorsMemoryLimitIntoEveryTask(): void
+    {
+        $previous = (string) \ini_get('memory_limit');
+        ini_set('memory_limit', '345M');
+
+        try {
+            $task = (new FileProcessingTaskFactory($this->store, DependencyVisitor::class))
+                ->create(AbsolutePath::fromString('/project/First.php'), AbsolutePath::fromString('/project'), null);
+        } finally {
+            ini_set('memory_limit', $previous);
+        }
+
+        self::assertSame('345M', $this->property($task, 'memoryLimit'));
     }
 
     #[Test]
@@ -99,5 +116,13 @@ final class FileProcessingTaskFactoryTest extends TestCase
     private function property(FileProcessingTask $task, string $name): mixed
     {
         return (new ReflectionProperty(FileProcessingTask::class, $name))->getValue($task);
+    }
+
+    private function composition(FileProcessingTask $task): WorkerComposition
+    {
+        $composition = $this->property($task, 'composition');
+        self::assertInstanceOf(WorkerComposition::class, $composition);
+
+        return $composition;
     }
 }

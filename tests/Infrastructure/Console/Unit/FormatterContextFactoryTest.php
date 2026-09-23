@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
+use Qualimetrix\Reporting\Formatter\FormatOptionValue;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\GroupBy;
@@ -204,6 +206,125 @@ final class FormatterContextFactoryTest extends TestCase
             $this->formatter,
             $this->projectRoot(),
         );
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>, string, string}>
+     */
+    public static function provideUnparsableOutputOptionValues(): iterable
+    {
+        yield 'detail word' => [['--detail' => 'abc'], '--detail', 'Invalid --detail value "abc"'];
+        yield 'detail negative' => [['--detail' => '-1'], '--detail', 'Invalid --detail value "-1"'];
+        yield 'detail fraction' => [['--detail' => '2.5'], '--detail', 'Invalid --detail value "2.5"'];
+        yield 'top word' => [['--top' => 'abc'], '--top', 'Invalid --top value "abc"'];
+        yield 'top negative' => [['--top' => '-3'], '--top', 'Invalid --top value "-3"'];
+        yield 'violations word' => [['--format-opt' => ['violations=xyz']], '--format-opt', 'Invalid --format-opt value "violations=xyz": expected a whole number, 0 or more, or "all".'];
+        yield 'contributors word' => [['--format-opt' => ['contributors=abc']], '--format-opt', 'Invalid --format-opt value "contributors=abc": expected a whole number, 0 or more.'];
+    }
+
+    /**
+     * @param array<string, mixed> $parameters
+     */
+    #[Test]
+    #[DataProvider('provideUnparsableOutputOptionValues')]
+    public function itRefusesAnUnparsableOutputOptionValueInsteadOfFallingBackToADefault(
+        array $parameters,
+        string $option,
+        string $message,
+    ): void {
+        try {
+            $this->factory->create($this->createInput($parameters), $this->output, $this->formatter, $this->projectRoot());
+            self::fail('An unparsable value must be refused, not replaced by a default.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString($message, $refusal->getMessage());
+            self::assertSame($option, $refusal->origin()->locator());
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $parameters
+     */
+    #[Test]
+    #[DataProvider('provideUnparsableOutputOptionValues')]
+    public function itRefusesTheSameValuesBeforeTheAnalysisStarts(array $parameters, string $option, string $message): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage($message);
+
+        $this->factory->bindBeforeAnalysis($this->createInput($parameters));
+    }
+
+    /**
+     * One grammar per key, whichever format reads it: `top=2.9` used to be 2 in
+     * `summary` and the default 10 in `json`.
+     *
+     * @return iterable<string, array{string, string}>
+     */
+    public static function provideUnparsableFormatOptValuesOfEveryGrammar(): iterable
+    {
+        yield 'top fraction' => ['top=2.9', 'expected a whole number, 1 or more.'];
+        yield 'top zero' => ['top=0', 'expected a whole number, 1 or more.'];
+        yield 'limit word' => ['limit=many', 'expected a whole number, 0 or more, or "all".'];
+        yield 'rank-by typo' => ['rank-by=dnesity', 'expected one of: count, density.'];
+        yield 'empty project name' => ['project-name=', 'expected a non-empty name.'];
+        yield 'contributors negative' => ['contributors=-1', 'expected a whole number, 0 or more.'];
+    }
+
+    #[Test]
+    #[DataProvider('provideUnparsableFormatOptValuesOfEveryGrammar')]
+    public function itRefusesAnUnparsableValueOfEveryDeclaredFormatOptKey(string $pair, string $expected): void
+    {
+        $registry = self::createStub(FormatterRegistryInterface::class);
+        $registry->method('declaredFormatOptionKeys')->willReturn(FormatOptionValue::keys());
+        $factory = new FormatterContextFactory($registry);
+
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage(\sprintf('Invalid --format-opt value "%s": %s', $pair, $expected));
+
+        $factory->bindBeforeAnalysis($this->createInput(['--format-opt' => [$pair]]));
+    }
+
+    #[Test]
+    public function itRefusesAMistypedGroupByBeforeTheAnalysisStarts(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('Invalid --group-by value "sevrity"');
+
+        $this->factory->bindBeforeAnalysis($this->createInput(['--group-by' => 'sevrity']));
+    }
+
+    #[Test]
+    public function itRefusesTheUnknownFormatOptKeyBeforeTheAnalysisStarts(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('Unknown --format-opt key "zzz"');
+
+        $this->factory->bindBeforeAnalysis($this->createInput(['--format-opt' => ['zzz=1']]));
+    }
+
+    /**
+     * The legitimate forms beside each refused one still parse to what they meant.
+     */
+    #[Test]
+    public function itStillAcceptsEveryDocumentedFormOfDetailAndTop(): void
+    {
+        $parse = fn(array $parameters): \Qualimetrix\Reporting\FormatterContext => $this->factory->create(
+            $this->createInput($parameters),
+            $this->output,
+            $this->formatter,
+            $this->projectRoot(),
+        );
+
+        self::assertNull($parse([])->detailLimit);
+        self::assertSame(200, $parse(['--detail' => null])->detailLimit);
+        self::assertSame(0, $parse(['--detail' => 'all'])->detailLimit);
+        self::assertSame(0, $parse(['--detail' => '0'])->detailLimit);
+        self::assertSame(7, $parse(['--detail' => '7'])->detailLimit);
+        self::assertSame(10, $parse([])->topIssuesLimit);
+        self::assertSame(0, $parse(['--top' => '0'])->topIssuesLimit);
+        self::assertSame(3, $parse(['--top' => '3'])->topIssuesLimit);
+        self::assertSame('0', $parse(['--format-opt' => ['violations=0']])->getOption('violations'));
+        self::assertNull($this->factory->bindBeforeAnalysis($this->createInput(['--detail' => '5', '--top' => '2'])));
     }
 
     /**

@@ -273,6 +273,7 @@ Available tests:
  - Qualimetrix\Governance\ConfigurationVocabulary\YamlKeyReachabilityTest::itLetsATopLevelKeySurviveNormalization"exclude_health → excludeHealth (list)"
  - Qualimetrix\Governance\ConfigurationVocabulary\YamlKeyReachabilityTest::itLetsATopLevelKeySurviveNormalization"fail_on → failOn (scalar)"
  - Qualimetrix\Governance\ConfigurationVocabulary\YamlKeyReachabilityTest::itLetsATopLevelKeySurviveNormalization"format (scalar)"
+ - Qualimetrix\Governance\ConfigurationVocabulary\YamlKeyReachabilityTest::itLetsATopLevelKeySurviveNormalization"include_autoload_dev → includeAutoloadDev (scalar bool)"
  - Qualimetrix\Governance\ConfigurationVocabulary\YamlKeyReachabilityTest::itLetsATopLevelKeySurviveNormalization"include_generated → includeGenerated (scalar bool)"
  - Qualimetrix\Governance\ConfigurationVocabulary\YamlKeyReachabilityTest::itLetsATopLevelKeySurviveNormalization"memory_limit → memoryLimit (scalar)"
  - Qualimetrix\Governance\ConfigurationVocabulary\YamlKeyReachabilityTest::itLetsATopLevelKeySurviveNormalization"only_rules → onlyRules (list)"
@@ -322,6 +323,7 @@ Available tests:
  - Qualimetrix\Governance\ConfigurationVocabulary\YamlNormalizationCharacterizationTest::itNormalizesEachRootKeyExactlyAsTheCurrentSnapshot"exclude_health → excludeHealth"
  - Qualimetrix\Governance\ConfigurationVocabulary\YamlNormalizationCharacterizationTest::itNormalizesEachRootKeyExactlyAsTheCurrentSnapshot"fail_on → failOn (scalar)"
  - Qualimetrix\Governance\ConfigurationVocabulary\YamlNormalizationCharacterizationTest::itNormalizesEachRootKeyExactlyAsTheCurrentSnapshot"format (scalar)"
+ - Qualimetrix\Governance\ConfigurationVocabulary\YamlNormalizationCharacterizationTest::itNormalizesEachRootKeyExactlyAsTheCurrentSnapshot"include_autoload_dev → includeAutoloadDev (scalar bool)"
  - Qualimetrix\Governance\ConfigurationVocabulary\YamlNormalizationCharacterizationTest::itNormalizesEachRootKeyExactlyAsTheCurrentSnapshot"include_generated → includeGenerated (scalar bool)"
  - Qualimetrix\Governance\ConfigurationVocabulary\YamlNormalizationCharacterizationTest::itNormalizesEachRootKeyExactlyAsTheCurrentSnapshot"memory_limit → memoryLimit (scalar)"
  - Qualimetrix\Governance\ConfigurationVocabulary\YamlNormalizationCharacterizationTest::itNormalizesEachRootKeyExactlyAsTheCurrentSnapshot"only_rules → onlyRules"
@@ -1159,6 +1161,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Integration\ConfigurationPipelineIntegrationTest::itRetainsComposerConfigAndCliSourcesInPrecedenceOrder
  - Qualimetrix\Tests\Analysis\Configuration\Integration\FullPipelineIntegrationTest::itLetsEachOwnerFoldTheSameOrderedDocumentWithItsOwnSemantics
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Pipeline\ContainerConfigurationStagesTest::itRegistersAllStagesWithTheCorrectPriorities
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Pipeline\ContainerRuleNameValidationTest::itAcceptsARegisteredRuleName
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Pipeline\ContainerRuleNameValidationTest::itRefusesAnUnknownRuleNameInAPreset
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Pipeline\ContainerRuleNameValidationTest::itRefusesAnUnknownRuleNameInTheConfigurationFile
  - Qualimetrix\Tests\Analysis\Configuration\Integration\PresetIntegrationTest::itDeduplicatesPresetNamesBeforeLoading
  - Qualimetrix\Tests\Analysis\Configuration\Integration\PresetIntegrationTest::itRetainsBuiltInPresetDocumentsInRequestedOrder
  - Qualimetrix\Tests\Analysis\Configuration\Unit\AnalysisConfigurationTest::itDoesNotExposeAMergedGenericConfigurationBag
@@ -1194,16 +1199,19 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\RefusedPositionTest::itBuildsAClosedPositionWithItsAcceptedSpellings
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\RefusedPositionTest::itBuildsAnOpenPositionWithoutAnAcceptedList
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\RefusedPositionTest::itRefusesToBuildAClosedPositionWithNoAcceptedSpelling
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itAnswersForAPathSharedByBothSectionsInEach
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itAnswersNullWhenAutoloadDevDeclaresNothing
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itDeclaresNoProductionTargetsWhenTheManifestDoesNotParse
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itDeclaresNoProductionTargetsWhenTheManifestIsAbsent
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itDeduplicatesPathsSharedAcrossAutoloadAndAutoloadDev
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itDeduplicatesRepeatedPathsWithinAutoload
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itExtractsAllPathsFromAMultiPathPsr4Mapping
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itExtractsPathsFromPsr4Autoload
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itIncludesAutoloadDevPaths
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itLeavesAutoloadDevOutUnlessAsked
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itMapsAnEmptyPathInAMultiPathMappingToTheProjectRoot
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itMapsAnEmptyPsr4PathToTheProjectRoot
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itMergesAutoloadAndAutoloadDevPaths
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReadsAutoloadAndAutoloadDevApart
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReadsEveryAutoloadDevSectionAsTargets
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReadsEveryProductionAutoloadSectionAsPaths"a dev section is not production"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReadsEveryProductionAutoloadSectionAsPaths"a multi-path prefix contributes each of its paths"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReadsEveryProductionAutoloadSectionAsPaths"a scalar in that position is not a declaration"
@@ -1220,6 +1228,17 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReturnsAnEmptyArrayWhenTheComposerFileDoesNotExist
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReturnsAnEmptyArrayWhenThereIsNoAutoloadSection
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itStripsTrailingSlashesFromExtractedPaths
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderKeySpellingTest::itAcceptsOneSpellingAndRepeatsAcrossSiblings
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderKeySpellingTest::itListsSectionKeysInTheAuthorsSpelling"camel"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderKeySpellingTest::itListsSectionKeysInTheAuthorsSpelling"kebab"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderKeySpellingTest::itListsSectionKeysInTheAuthorsSpelling"snake"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderKeySpellingTest::itRefusesTwoSpellingsOfOneKeyInOneDocument"root, kebab then snake"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderKeySpellingTest::itRefusesTwoSpellingsOfOneKeyInOneDocument"root, snake then camel"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderKeySpellingTest::itRefusesTwoSpellingsOfOneKeyInOneDocument"rule option group"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderKeySpellingTest::itRefusesTwoSpellingsOfOneKeyInOneDocument"section sub-key"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderKeySpellingTest::itSuggestsARootKeyInTheAuthorsSpelling"camel"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderKeySpellingTest::itSuggestsARootKeyInTheAuthorsSpelling"kebab"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderKeySpellingTest::itSuggestsARootKeyInTheAuthorsSpelling"snake"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itAcceptsAllValidRootKeys
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itAcceptsAnEmptyContainerOnEveryShapedRoot
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itAcceptsBooleanRuleConfig
@@ -1295,6 +1314,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itFlattensCacheSectionIntoDottedKeys
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itFlattensCouplingFrameworkNamespacesWhileKeepingTheOriginalSection
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itFlattensParallelWorkersIntoADottedKey
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itKeepsANullIdentifierEntryForTheRootOwnerToJudge
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itKeepsANullListElement
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itKeepsExcludeHealthKeyAsCamelCase
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itKeepsFalsyValuesThatAreNotNullAtEveryDepth
@@ -1316,10 +1336,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itRenamesIncludeGeneratedToSnakeCase
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itRenamesMemoryLimitToSnakeCase
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReturnsAnEmptyArrayForEmptyInput
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationMergerTest::itKeepsBaseKeysThatAreAbsentFromTheOverlay
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationMergerTest::itOverlaysTopLevelScalarValues
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationMergerTest::itReplacesListsWithoutApplyingOwnerUnionSemantics
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationMergerTest::itReplacesNestedDocumentsWithoutApplyingFindingSemantics
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itExpandsMultiDocumentLayersWithoutCollapsingThem
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itRetainsOrderedContributionsInsteadOfApplyingFeatureMergeSemantics
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itReturnsAnEmptyDocumentWithTheInvocationDirectoryWhenThereAreNoStages
@@ -1342,6 +1358,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\CliStageTest::itPublishesAlreadyNormalizedOverridesWithoutSymfonyInput
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\CliStageTest::itReturnsNullWithoutNormalizedOverrides
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ComposerDiscoveryStageTest::itHasComposerSourceIdentity
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ComposerDiscoveryStageTest::itKeepsTheProductionAndDevelopmentRootsApart
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ComposerDiscoveryStageTest::itPublishesDiscoveredPathsFromTheInvocationDirectory
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ComposerDiscoveryStageTest::itReturnsNullWhenComposerHasNoAutoloadPaths
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itHasConfigFileSourceIdentity
@@ -1350,10 +1367,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itReturnsNullWhenNoConfigFileExists
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itUsesTheExplicitConfigPathInsteadOfAutoDetection
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\DefaultsStageTest::itContributesOnlySourceProvenanceBecauseDefaultsAreOwnerLocal
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\PresetStageTest::itFiltersEmptyPresetSegments
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\PresetStageTest::itHasPresetSourceIdentity
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\PresetStageTest::itRefusesAnEmptyPresetSegment
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\PresetStageTest::itReturnsNullWithoutPresetNames
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\PresetStageTest::itSplitsAndDeduplicatesPresetNamesWhileRetainingOrderedDocuments
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\PresetStageTest::itTrimsWhitespaceAroundAPresetName
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Preset\PresetResolverTest::itDoesNotRecognizeUnknownNamesAsBuiltIn
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Preset\PresetResolverTest::itListsAvailablePresetNamesAlphabetically
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Preset\PresetResolverTest::itRecognizesKnownPresetNamesAsBuiltIn
@@ -2655,6 +2673,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderTest::itCarriesEveryOptionalEvidenceFieldThroughFromEvidence
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderTest::itConstructsWithDefaults
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\HealthCoverageAgreesWithCountsTest::itPublishesTheCountTheSameRunMeasured
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\UnwrittenEntryBodyTest::itReadsANullBodyUnderAKnownHealthDimensionAsItsDefaults
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\UnwrittenEntryBodyTest::itRefusesANullBodyExactlyAsItRefusesAnEmptyOne"a name outside both prefixes"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\UnwrittenEntryBodyTest::itRefusesANullBodyExactlyAsItRefusesAnEmptyOne"a user metric with no formula"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\UnwrittenEntryBodyTest::itRefusesANullBodyExactlyAsItRefusesAnEmptyOne"an unknown health dimension"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricAnalysisTest::itDefaultReturnsEmptyArray
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricAnalysisTest::itPreservesInstalledDefinitionsWhenResolutionFails
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricAnalysisTest::itSetAndGetDefinitions
@@ -4891,6 +4913,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itDeclaresTheMaintainabilityIndexMagnitudeChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itDeclaresTheTypeCoverageParamMagnitudeChannelWhereLowerIsWorse
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itDeclaresTheUnusedDirectiveChannel
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDescriptionTest::itPresentsEveryChannelNotNamedAfterItsProducerWithATextOfItsOwn
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelSuggestionTieTest::itConfirmsATieIsReachableBetweenTheThreeTypeCoverageChannels
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelSuggestionTieTest::itFindsNoInputThatTiesTheSelectedChannelAgainstOtherArchitectureChannels
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelSuggestionTieTest::itYieldsTheTiedTypeCoverageChannelsInTheDeclaredOrder
@@ -4969,15 +4992,18 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itBuildsAMagnitudeDeclarationViaTheFactory
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itBuildsAnOccurrenceDeclarationViaTheFactory
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itCarriesTheJudgedMetricsThroughTheConfigurationErrorWither
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itKeepsEveryOtherFactWhenADescriptionIsDeclared
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itKeepsItsConstructorPrivateSoOnlyTheFactoriesCanShapeADeclaration
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itLeavesTheDirectionPairingUnrepresentableThroughTheFactorySignatures
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itLeavesTheEmptyLevelListRefusalUnstatableThroughTheFactorySignatures
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itLeavesTheJudgedMetricsUnsetForTheTwoOlderFactories
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itOrdersDeclaredLevelsCanonicallySoTwoSpellingsOfOneChannelCompareEqual
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRefusesABlankDescription
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRefusesARepeatedLevel
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itReportsLowerWorseFalseForAHigherDirection
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itReportsLowerWorseNullForAnOccurrenceDeclaration
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itReportsLowerWorseTrueForALowerDirection
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itStatesNoDescriptionUntilOneIsDeclared
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itYieldsAConfigurationErrorOnlyThroughTheWither
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelAddressingTest::itAcceptsAPairInsideASetWhenOneMemberReportsAtTheLevel
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelAddressingTest::itJudgesLevelFreeTextAgainstTheSetAsWell
@@ -5008,6 +5034,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelSelectorTest::itRefusesTextThatIsNotOne"two levels"
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itFailsLoudWhenTheProducingRuleHasNoDeclaredDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itJoinsTheProducersDescriptionAndDeclaredDocsPage
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itPrefersTheChannelsOwnDeclaredDescriptionOverItsProducers
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itReturnsNullForACodeNoChannelCarries
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itReturnsNullWhenTheResolvedDescriptionIsEmpty
  - Qualimetrix\Tests\Analysis\Finding\Unit\Exclusion\ConfiguredSuppressionTest::itReadsNothingRatherThanThrowingOnAMalformedValue
@@ -7595,8 +7622,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itCannotJudgeAProjectThatDeclaresNoReadableProductionAutoload"no composer.json at all"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itCannotJudgeAProjectThatDeclaresNoReadableProductionAutoload"only a dev section"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itCannotJudgeAProjectThatDeclaresNoReadableProductionAutoload"production sections that are all empty"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itCountsAutoloadDevTargetsOnlyUnderAPolicyThatIncludesThem
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itCoversTheProjectWhenEveryProductionAutoloadRootIsAnalysed
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itDoesNotCoverTheProjectWhenAnAutoloadRootIsOutsideTheRun
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itJudgesADevOnlyManifestUnderAPolicyThatIncludesIt
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itMeasuresEveryProductionSectionAgainstTheRun"a classmap-only project is measured, not refused"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itMeasuresEveryProductionSectionAgainstTheRun"a files entry inside an analysed directory is covered"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itMeasuresEveryProductionSectionAgainstTheRun"a files entry named by the run itself is covered"
@@ -7610,6 +7639,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itStillCoversTheProjectWhenTheExtraSectionAddsNoProductionTarget"exclude-from-classmap removes code rather than declaring it"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itKeepsRelativePathsRootedAtIngressWhenTheProcessDirectoryChanges
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itResolvesOwnerDefaultsAndLastPathContributionAgainstTheInvocationRoot
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itTakesDefaultPathsAndThePolicyFromTheSameFlag"a later false wins over an earlier true"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itTakesDefaultPathsAndThePolicyFromTheSameFlag"autoload-dev added by the flag"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itTakesDefaultPathsAndThePolicyFromTheSameFlag"nothing discovered and nothing written"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itTakesDefaultPathsAndThePolicyFromTheSameFlag"production only by default"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itTakesDefaultPathsAndThePolicyFromTheSameFlag"written paths are not widened by the flag"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationScopeTest::itCarriesEveryFieldExceptTheScopeItIsGiven
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationScopeTest::itTakesTheCoverageAnswerFromTheCallerRatherThanInheritingIt
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Collection\CollectionPhaseOutputTest::itCalculatesTotalFiles
@@ -7951,6 +7985,13 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itAsksToRunTheAlternativeInteractivelyInsteadOfRefusingOutright
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itCancelsExitCode255ForAnUncaughtPhpError
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itCatchesTheSameErrorEvenWithoutSetCatchErrors
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itEnvelopesAnOuterLadderRefusalWhenJsonWasRequested"bad working directory"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itEnvelopesAnOuterLadderRefusalWhenJsonWasRequested"unknown command"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itEnvelopesAnOuterLadderRefusalWhenJsonWasRequested"unknown option"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itEnvelopesAnOuterLadderRefusalWhenJsonWasRequested"unknown option, separate value"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itKeepsTheOuterLadderRefusalOnStderrWithoutAJsonFormat"dot format"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itKeepsTheOuterLadderRefusalOnStderrWithoutAJsonFormat"short -f"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itKeepsTheOuterLadderRefusalOnStderrWithoutAJsonFormat"text format"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itPrintsATraceForAnInternalErrorUnderVerboseButNotForARefusal
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itRefusesAWorkingDirectoryThatIsAFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itRefusesAnUnknownCommandNonInteractively
@@ -7968,6 +8009,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itExcludesUnderTheHyphenatedChannelLevelPair
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itPublishesTheNamespaceAggregateWithoutTheKey
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itRefusesTheRetiredPairSpellingUnderTheWrittenKey
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandAutoloadDevScopeTest::itDoesNotWidenPathsTheAuthorNamed
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandAutoloadDevScopeTest::itLeavesTestCodeOutOfBothHalvesByDefault
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandAutoloadDevScopeTest::itTakesTestCodeIntoBothHalvesWhenTheFlagIsGiven
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandAutoloadDevScopeTest::itTakesTestCodeIntoBothHalvesWhenTheKeyIsWritten
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itCombinesConfiguredAndCliExclusionsWithoutLosingBaselineAnnotationOrGit
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itDoesNotPromoteWhenTheEntryCannotBeApplied
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itKeepsAGroupWithAnIgnoredMemberAcceptedAcrossGenerateAndCheck
@@ -7980,6 +8025,16 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigErrorExitCodeTest::itClassifiesUnknownComputedMetricReferenceAsConfigError
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigurationErrorGateTest::itFailsAndReportsThroughAPathExclusionCoveringTheFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigurationErrorGateTest::itFailsAndReportsThroughAnInlineSuppressionOfTheDiagnostic
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandEmptyOptionValueTest::itRefusesAnEmptyOutputAsEmptyEvenFromAnUnwritableDirectory"nothing after "=""
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandEmptyOptionValueTest::itRefusesAnEmptyOutputAsEmptyEvenFromAnUnwritableDirectory"only whitespace after "=""
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandEmptyOptionValueTest::itRefusesAnEmptyValueByTheOptionName"--baseline"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandEmptyOptionValueTest::itRefusesAnEmptyValueByTheOptionName"--config"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandEmptyOptionValueTest::itRefusesAnEmptyValueByTheOptionName"--output"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandEmptyOptionValueTest::itRefusesAnEmptyValueByTheOptionName"--preset repeated with one empty"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandEmptyOptionValueTest::itRefusesAnEmptyValueByTheOptionName"--preset with an empty list element"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandEmptyOptionValueTest::itRefusesAnEmptyValueByTheOptionName"--preset"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandEmptyOptionValueTest::itRefusesAnEmptyValueByTheOptionName"--report"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandEmptyOptionValueTest::itStillRunsWhenNoneOfTheDoorsIsWritten
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itAcceptsAPathValueSpelledLikeARetiredFlag
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itAcceptsASelectionSelectorNamingADeclaredLevel
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itClassifiesMissingGitReferenceAsInputErrorBeforePayload
@@ -8004,6 +8059,13 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itAcceptsRelativePath
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itAcceptsSymlinkedPath
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itRejectsNonExistentPath
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itExportsInAnAcceptedFormat"chrome-tracing"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itExportsInAnAcceptedFormat"json"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itRefusesAnImpossibleExportBeforeAnalysis"empty format"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itRefusesAnImpossibleExportBeforeAnalysis"empty path"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itRefusesAnImpossibleExportBeforeAnalysis"missing directory"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itRefusesAnImpossibleExportBeforeAnalysis"unknown format without an export"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itRefusesAnImpossibleExportBeforeAnalysis"unknown format"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProjectScopedGateTest::itFailsAndReportsThroughAReportNarrowedToAnEmptyGitScope
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProjectScopedGateTest::itFailsAndReportsWithTheLayerViolationRuleSwitchedOff
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProjectScopedGateTest::itStillDropsAFileScopedFindingFromTheSameRun
@@ -8082,6 +8144,14 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itRefusesWhenTheRunningBinaryCannotBeNamed
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itReplacesADanglingSymlinkInsteadOfWritingThroughIt
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itWritesAHookThatNamesTheBinaryThatInstalledIt
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallWorkingDirectoryTest::itNamesTheRunningBinaryWhenStartedByARelativePathFromAnotherDirectory
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookRefusalLadderTest::itRefusesAnExistingHookWithoutForce
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookRefusalLadderTest::itRefusesOutsideARepositoryWithTheRefusalCodeOnStderr
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookRefusalLadderTest::itRefusesToOverwriteABackupHoldingADifferentForeignHook
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookRefusalLadderTest::itRefusesToUninstallADanglingSymlink
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookRefusalLadderTest::itRefusesToUninstallAThirdPartyHook
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookRefusalLadderTest::itRefusesWhenTheRunningBinaryCannotBeNamed
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookRefusalLadderTest::itReusesABackupThatAlreadyHoldsTheSameHook
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itFailsWhenNotInGitRepository
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itPrintsTheDocsPointerAfterTheReport
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itReportsADanglingSymlinkRatherThanCallingItAbsent
@@ -8164,7 +8234,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itDrawsTheFrameBelowEveryLineWrittenBeforeIt
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itDropsDiagnosticsWhenTheOutputHasNoErrorChannel
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itKeepsALoggerLineAboveTheFrame
- - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itKeepsAProfileSummaryAboveTheFrame
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itKeepsAProfileExportLineAboveTheFrame
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itKeepsAnUncaughtThrowableAboveNoFrameAtAll
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itRendersAnUncaughtThrowableIntoAnOutputThatHasNoErrorChannel
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itKeepsThePayloadFreeOfTheTerminal"-v"
@@ -8232,6 +8302,28 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleOptionKeyDoorSymmetryTest::itRunsToCompletionWhenTheSameOptionIsSpelledCorrectly"rule-opt flag"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleOptionKeyDoorSymmetryTest::itStillRefusesUnderQuiet
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleOptionKeyDoorSymmetryTest::itStillRefusesWithMultipleWorkers
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itAcceptsTheBareNameOfAProducerThatSharesItsFirstSegmentWithNothing
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itGivesNoStarHintWhenTheStarSpellingWouldMatchNothingEither
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itOffersOnlyExamplesTheSelectorGrammarAccepts"BaselineGenerateCommand --disable-rule"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itOffersOnlyExamplesTheSelectorGrammarAccepts"BaselineGenerateCommand --only-rule"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itOffersOnlyExamplesTheSelectorGrammarAccepts"CheckCommand --disable-rule"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itOffersOnlyExamplesTheSelectorGrammarAccepts"CheckCommand --only-rule"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itOffersOnlyExamplesTheSelectorGrammarAccepts"DirectivesCommand --disable-rule"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itOffersOnlyExamplesTheSelectorGrammarAccepts"DirectivesCommand --only-rule"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itRefusesABareGroupNameAndNamesTheStarSpelling"annotation"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itRefusesABareGroupNameAndNamesTheStarSpelling"architecture"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itRefusesABareGroupNameAndNamesTheStarSpelling"code-smell"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itRefusesABareGroupNameAndNamesTheStarSpelling"cohesion"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itRefusesABareGroupNameAndNamesTheStarSpelling"complexity"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itRefusesABareGroupNameAndNamesTheStarSpelling"coupling"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itRefusesABareGroupNameAndNamesTheStarSpelling"design"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itRefusesABareGroupNameAndNamesTheStarSpelling"discovery"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itRefusesABareGroupNameAndNamesTheStarSpelling"duplication"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itRefusesABareGroupNameAndNamesTheStarSpelling"health"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itRefusesABareGroupNameAndNamesTheStarSpelling"maintainability"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itRefusesABareGroupNameAndNamesTheStarSpelling"security"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itRefusesABareGroupNameAndNamesTheStarSpelling"size"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itRefusesABareGroupNameAndNamesTheStarSpelling"suppression"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\SuppressedFormatWiringTest::itKeepsShowSuppressedWorkingOnTextFormat
  - Qualimetrix\Tests\Infrastructure\Console\Functional\SuppressedFormatWiringTest::itPopulatesTheLedgerHalvesWhenOnlyTheFormatFlagAsksForThem
  - Qualimetrix\Tests\Infrastructure\Console\Functional\SuppressedFormatWiringTest::itReportsTheSameCompositionWhetherTheFormatCameFromTheCliOrFromConfig
@@ -8425,6 +8517,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliSelectorDecoderTest::itRefusesMalformedCliSelectorScalars"empty value"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliSelectorDecoderTest::itRefusesMalformedCliSelectorScalars"invalid pcre"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliSelectorDecoderTest::itRefusesMalformedCliSelectorScalars"unknown kind"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\ChannelRenameReporterTest::itCountsTheDeclaredRowsInJson
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\ChannelRenameReporterTest::itKeepsTheMatchedNothingSentenceForAMapWithDeclaredRows
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\ChannelRenameReporterTest::itPublishesTheTwoMapsAsObjectsEvenWhenEmpty
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\ChannelRenameReporterTest::itSaysSoWhenTheMapDeclaresNoRename
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\HookStatusCommandTest::itAdvertisesTheDocsAddressInItsHelp
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\HookStatusCommandTest::itDefinesNoArguments
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\HookStatusCommandTest::itDefinesNoCustomOptions
@@ -8490,9 +8586,32 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itNamesEveryUnknownKeyAtOnce
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesABareNamespaceSelector
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAFormatOptKeyNoFormatterReads
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAMistypedGroupByBeforeTheAnalysisStarts
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAnUnparsableOutputOptionValueInsteadOfFallingBackToADefault"contributors word"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAnUnparsableOutputOptionValueInsteadOfFallingBackToADefault"detail fraction"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAnUnparsableOutputOptionValueInsteadOfFallingBackToADefault"detail negative"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAnUnparsableOutputOptionValueInsteadOfFallingBackToADefault"detail word"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAnUnparsableOutputOptionValueInsteadOfFallingBackToADefault"top negative"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAnUnparsableOutputOptionValueInsteadOfFallingBackToADefault"top word"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAnUnparsableOutputOptionValueInsteadOfFallingBackToADefault"violations word"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAnUnparsableValueOfEveryDeclaredFormatOptKey"contributors negative"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAnUnparsableValueOfEveryDeclaredFormatOptKey"empty project name"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAnUnparsableValueOfEveryDeclaredFormatOptKey"limit word"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAnUnparsableValueOfEveryDeclaredFormatOptKey"rank-by typo"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAnUnparsableValueOfEveryDeclaredFormatOptKey"top fraction"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAnUnparsableValueOfEveryDeclaredFormatOptKey"top zero"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesTheSameValuesBeforeTheAnalysisStarts"contributors word"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesTheSameValuesBeforeTheAnalysisStarts"detail fraction"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesTheSameValuesBeforeTheAnalysisStarts"detail negative"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesTheSameValuesBeforeTheAnalysisStarts"detail word"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesTheSameValuesBeforeTheAnalysisStarts"top negative"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesTheSameValuesBeforeTheAnalysisStarts"top word"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesTheSameValuesBeforeTheAnalysisStarts"violations word"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesTheUnknownFormatOptKeyBeforeTheAnalysisStarts
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesTheViolationsKeyTheAllFlagWritesWhenNoFormatterDeclaresIt
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itSetsTheDetailLimitToUnlimitedWhenAllFlagIsPassed
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itSetsTheViolationsOptionToAllWhenAllFlagIsPassed
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itStillAcceptsEveryDocumentedFormOfDetailAndTop
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itThrowsWhenAllFlagConflictsWithANumericViolationsFormatOpt
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itCarriesTheMarkerThatMakesAHookOurs
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"backslash"
@@ -8527,6 +8646,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\MeasuredFindingSetTest::itListsOnlyStagesThatDefineTheMeasuredSet
  - Qualimetrix\Tests\Infrastructure\Console\Unit\MeasuredFindingSetTest::itReturnsTheRunAlongsideTheSameMeasuredSetForPathsReturns
  - Qualimetrix\Tests\Infrastructure\Console\Unit\MeasuredFindingSetTest::itUsesExplicitDiscoveryWithoutCallingTheFactory
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ProfilePresenterTest::itRefusesAnExportWhoseWriteFails
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ProfilePresenterTest::itWritesAnExportItCanWrite
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ProfileSummaryRendererTest::itRendersTheDurationAndTheCountAndNoOtherStatistic
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ProfileSummaryRendererTest::itSaysSoWhenThereIsNothingToRender
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Progress\SwitchableProgressReporterTest::itDelegatesToTheEnabledReporter
@@ -8553,12 +8674,13 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalAsAnEnvelopeOnEveryJsonFormat#4
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalAsAnEnvelopeOnEveryJsonFormat#5
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalOnStderrWithCodeThree
- - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAFallbackRefusalWithTheCaughtMessageUnframed
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAnInternalErrorAsAnEnvelopeUnderAJsonFormat
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAnInternalErrorWithTheInternalHeaderAndCodeOne
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAppendsTheDocumentationPointerOnAConfigurationRefusal
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAppendsTheDocumentationPointerOnAFallbackRefusal
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAppendsTheDocumentationPointerOnAnInternalError
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itCarriesANullPositionWhenTheRunEndedWithoutOne
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itFramesAFallbackRefusalLikeACarriedOne
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheDocumentationPointerOutOfTheJsonEnvelope
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheDocumentationPointerVisibleUnderQuiet
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheEnvelopeParseableForAMessageCarryingConsoleMarkup
@@ -8569,6 +8691,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itNeverPrintsATraceForARefusal
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itOmitsTheTraceBelowVerboseVerbosity
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itPrintsTheTraceFromVerboseUpwardsForAnInternalErrorOnly
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itPublishesTheRefusedPositionInTheEnvelope
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itStopsALiveProgressFrameBeforePresenting
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itAcceptsAChannelExclusionKeyNamingTheChannel
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itAcceptsARuleOptionPairThatCarriesAValue
@@ -8583,6 +8706,15 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itRejectsAChannelExclusionKeyThatAddressesNoChannel
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itStopsAProducerWhoseEveryDeclaredLevelTheRunDisabled
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itValidatesEveryComputedChannelSelectorFromTheSameResolvedDefinitions
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeLimitsTest::itAcceptsAPositiveSizeOrUnlimited"bytes"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeLimitsTest::itAcceptsAPositiveSizeOrUnlimited"lowercase suffix"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeLimitsTest::itAcceptsAPositiveSizeOrUnlimited"megabytes"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeLimitsTest::itAcceptsAPositiveSizeOrUnlimited"unlimited"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeLimitsTest::itRefusesANonPositiveSizeQuotingTheValue"leading zero, which PHP reads as octal"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeLimitsTest::itRefusesANonPositiveSizeQuotingTheValue"negative other than -1"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeLimitsTest::itRefusesANonPositiveSizeQuotingTheValue"zero with a suffix"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeLimitsTest::itRefusesANonPositiveSizeQuotingTheValue"zero"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeLimitsTest::itRefusesANonPositiveSizeQuotingTheValue"zeros"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeLoggerConfiguratorTest::itCreatesPublishesAndReturnsTheSameLogger
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeLoggerConfiguratorTest::itPassesADeclaredLogLevelToTheFactory
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeLoggerConfiguratorTest::itRefusesALogLevelItCannotBuild
@@ -8592,6 +8724,26 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ScopeWarningCheckerTest::itReturnsWarningForPartialCoverage
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ScopeWarningCheckerTest::itSkipsNonexistentAutoloadPaths
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ScopeWarningCheckerTest::itTreatsDotPathAsFullCoverage
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\CompilerPass\ConsumerRegistrationTest::itBindsEveryPassThatAsksForARegisteredServiceToTheCheck
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\CompilerPass\ConsumerRegistrationTest::itBuildsTheProductContainerWithEveryConsumerRegistered
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\CompilerPass\ConsumerRegistrationTest::itRefusesTheBuildWhenAServiceAPassWritesIntoIsNotRegistered"Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass -> Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry"
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\CompilerPass\ConsumerRegistrationTest::itRefusesTheBuildWhenAServiceAPassWritesIntoIsNotRegistered"Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass -> Qualimetrix\Analysis\Finding\ChannelPresentationView"
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\CompilerPass\ConsumerRegistrationTest::itRefusesTheBuildWhenAServiceAPassWritesIntoIsNotRegistered"Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass -> Qualimetrix\Analysis\Finding\RuleExecution"
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\CompilerPass\ConsumerRegistrationTest::itRefusesTheBuildWhenAServiceAPassWritesIntoIsNotRegistered"Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass -> Qualimetrix\Infrastructure\Rule\ChannelUniverse"
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\CompilerPass\ConsumerRegistrationTest::itRefusesTheBuildWhenAServiceAPassWritesIntoIsNotRegistered"Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass -> Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter"
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\CompilerPass\ConsumerRegistrationTest::itRefusesTheBuildWhenAServiceAPassWritesIntoIsNotRegistered"Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\CollectorCompilerPass -> qmx.measurement.file_collector"
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\CompilerPass\ConsumerRegistrationTest::itRefusesTheBuildWhenAServiceAPassWritesIntoIsNotRegistered"Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationStageCompilerPass -> qmx.configuration.pipeline"
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\CompilerPass\ConsumerRegistrationTest::itRefusesTheBuildWhenAServiceAPassWritesIntoIsNotRegistered"Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationValidatorCompilerPass -> Qualimetrix\Analysis\Finding\RuleExecution"
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\CompilerPass\ConsumerRegistrationTest::itRefusesTheBuildWhenAServiceAPassWritesIntoIsNotRegistered"Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationValidatorCompilerPass -> Qualimetrix\Infrastructure\Rule\ConfigurationValidatorRegistry"
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\CompilerPass\ConsumerRegistrationTest::itRefusesTheBuildWhenAServiceAPassWritesIntoIsNotRegistered"Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FileSetInspectionParticipantCompilerPass -> qmx.analysis.run.file_set_inspection_composite"
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\CompilerPass\ConsumerRegistrationTest::itRefusesTheBuildWhenAServiceAPassWritesIntoIsNotRegistered"Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FormatterCompilerPass -> Qualimetrix\Reporting\Formatter\FormatterRegistry"
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\CompilerPass\ConsumerRegistrationTest::itRefusesTheBuildWhenAServiceAPassWritesIntoIsNotRegistered"Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\GlobalCollectorCompilerPass -> qmx.measurement.aggregation"
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\CompilerPass\ConsumerRegistrationTest::itRefusesTheBuildWhenAServiceAPassWritesIntoIsNotRegistered"Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ParallelCollectorClassesCompilerPass -> Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory"
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\CompilerPass\ConsumerRegistrationTest::itRefusesTheBuildWhenAServiceAPassWritesIntoIsNotRegistered"Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass -> Qualimetrix\Analysis\Finding\RuleExecution"
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\CompilerPass\ConsumerRegistrationTest::itRefusesTheBuildWhenAServiceAPassWritesIntoIsNotRegistered"Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass -> Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory"
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\CompilerPass\ConsumerRegistrationTest::itRefusesTheBuildWhenAServiceAPassWritesIntoIsNotRegistered"Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass -> Qualimetrix\Infrastructure\Rule\RuleRegistry"
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\CompilerPass\ConsumerRegistrationTest::itRefusesTheBuildWhenAServiceAPassWritesIntoIsNotRegistered"Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ThresholdValidatorMapCompilerPass -> Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor"
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\CompilerPass\ConsumerRegistrationTest::itRegistersEveryConsumerBoundPassOfTheDirectoryWithTheProductContainer
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\CompilerPass\SharedRuleOptionsContainerTest::itCreatesIndependentlyConfiguredOptionsForEverySharedOptionsProducer
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itAllowsConfiguringRuleOptionsAtRuntime
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itCreatesCompiledContainer
@@ -8616,6 +8768,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itWiresOwnerLocalRuntimeConfiguration
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itWiresTheDuplicationCapabilityThroughItsContractAndRegistries
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\RulesCommandWiringTest::itRefusesAGroupNoProducerHas
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itAcceptsADescribedSecondaryChannelBesideAnUndescribedPrimaryOne
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itAcceptsAnAggregateSpellingOfAPublishedMetric
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itAttributesDiagnosticChannelsToTheirProducerRule
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itAttributesRemediationMinutesToADiagnosticsOwnChannelName
@@ -8629,7 +8782,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itThrowsWhenAChannelJudgesAMetricTheCatalogDoesNotPublish
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itThrowsWhenAProducerNameIsMalformed
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itThrowsWhenAProducersDeclaredShapeDisagreesWithItsChannelDirection
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itThrowsWhenARulesChannelNotNamedAfterItDeclaresNoDescription
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itThrowsWhenAValidatorsChannelDeclaresNoDescription
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itThrowsWhenAnOccurrenceProducerNamesAJudgedMetric
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itThrowsWhenTheChannelNamedAfterItsProducerDeclaresADescriptionToo
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itThrowsWhenTwoClassesUnderOneProducerNameDeclareDifferentShapes
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\CollectorCompilerPassTest::itCollectsTaggedServicesIntoTheCompositeCollector
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\CollectorCompilerPassTest::itDoesNothingWhenTheCompositeCollectorIsNotRegistered
@@ -8856,14 +9012,18 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerHolderTest::itCanReplaceLogger
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerHolderTest::itCanSetCustomLogger
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerHolderTest::itInitiallyContainsNullLogger
+ - Qualimetrix\Tests\Infrastructure\Parallel\Integration\WorkerMemoryLimitTest::itFailsTheFileInTheWorkerWhenTheResolvedLimitIsTooSmallAndNamesTheLimit
+ - Qualimetrix\Tests\Infrastructure\Parallel\Integration\WorkerMemoryLimitTest::itLetsTheWorkerUseALimitLargerThanPhpIni
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\FileProcessingResultWireFormatTest::itRoundTripsFileProcessingResultFailureViaPhpSerialize
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\FileProcessingResultWireFormatTest::itRoundTripsFileProcessingResultSuccessViaPhpSerialize
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\FileProcessingResultWireFormatTest::itRoundTripsFileProcessingResultViaIgbinary
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\FileProcessingResultWireFormatTest::itRoundTripsFileProcessingTaskViaPhpSerialize
+ - Qualimetrix\Tests\Infrastructure\Parallel\Unit\FileProcessingTaskFactoryTest::itCarriesTheCoordinatorsMemoryLimitIntoEveryTask
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\FileProcessingTaskFactoryTest::itCarriesTheTraversalParticipantClassIntoEveryTask
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\FileProcessingTaskFactoryTest::itCreatesATaskWithCollectorDerivedCollectorAndRuleMetadata
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\FileProcessingTaskFactoryTest::itReadsRuntimeCollectorConfigurationForEveryTaskCreation
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\FileProcessingTaskFactoryTest::itRejectsAnInvalidTraversalParticipantClass
+ - Qualimetrix\Tests\Infrastructure\Parallel\Unit\FileProcessingTaskTest::itRunsUnderTheMemoryLimitItCarries
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\ParallelConfigurationResolverTest::itRejectsNegativeWorkerCounts
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\ParallelConfigurationResolverTest::itUsesTheLastWorkerContribution
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\ParallelConfigurationStoreTest::itResetsToAutomaticWorkerSelection
@@ -9045,6 +9205,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itForwardsNamespaceFiltersToJsonProjection
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itProjectsSupportedFormats"dot"
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itProjectsSupportedFormats"json"
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itAddsNoRepairMarkWhenTheInputIsValid
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itChangesDirection
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itColorsByInstability
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itDisablesColorByInstability
@@ -9055,10 +9216,12 @@ Available tests:
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itFiltersExcludeNamespaces
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itFiltersIncludeNamespaces
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itGroupsByNamespace
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itRepairsInvalidUtf8InAClassNameInsteadOfCorruptingTheDocument
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itUsesFullLabelsInClusterModeWhenShortLabelsDisabled
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itUsesFullLabelsWhenDisabled
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itUsesShortLabels
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itUsesShortLabelsInClusterMode
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itAddsNoRepairMarkWhenTheInputIsValid
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itAggregatesEdges
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itCarriesTheDocumentationAddresses
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itExportsValidJson
@@ -9071,6 +9234,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itIncludesFqnAndNamespaceInNodes
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itOutputsPrettyPrintedJson
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itPreservesAllDependencyTypes
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itRepairsInvalidUtf8InAClassNameInsteadOfFailing
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itSortsEdgesByFromThenTo
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itCombinesIncludesWithOrAndLetsARegexExclusionWin
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itIgnoresExcludeNamespacesThatMatchNothing
@@ -9132,6 +9296,11 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\CoverageProjectionFormatterTest::itProjectsCoverageInEveryNativeFormat"summary-empty"
  - Qualimetrix\Tests\Reporting\Integration\CoverageProjectionFormatterTest::itProjectsCoverageInEveryNativeFormat"summary-generated-only"
  - Qualimetrix\Tests\Reporting\Integration\CoverageProjectionFormatterTest::itProjectsCoverageInEveryNativeFormat"summary-partial-failure"
+ - Qualimetrix\Tests\Reporting\Integration\CoverageProjectionFormatterTest::itProjectsCoverageInEveryNativeFormat"suppressed-all-failed"
+ - Qualimetrix\Tests\Reporting\Integration\CoverageProjectionFormatterTest::itProjectsCoverageInEveryNativeFormat"suppressed-complete"
+ - Qualimetrix\Tests\Reporting\Integration\CoverageProjectionFormatterTest::itProjectsCoverageInEveryNativeFormat"suppressed-empty"
+ - Qualimetrix\Tests\Reporting\Integration\CoverageProjectionFormatterTest::itProjectsCoverageInEveryNativeFormat"suppressed-generated-only"
+ - Qualimetrix\Tests\Reporting\Integration\CoverageProjectionFormatterTest::itProjectsCoverageInEveryNativeFormat"suppressed-partial-failure"
  - Qualimetrix\Tests\Reporting\Integration\CoverageProjectionFormatterTest::itProjectsCoverageInEveryNativeFormat"text-all-failed"
  - Qualimetrix\Tests\Reporting\Integration\CoverageProjectionFormatterTest::itProjectsCoverageInEveryNativeFormat"text-complete"
  - Qualimetrix\Tests\Reporting\Integration\CoverageProjectionFormatterTest::itProjectsCoverageInEveryNativeFormat"text-empty"
@@ -9207,6 +9376,19 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleCollectorTest::itReturnsDescriptionsForKnownChannelsFromTheRealPresentation
  - Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleCollectorTest::itReturnsHelpUriForKnownChannelsFromTheRealPresentation
  - Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleDescriptorCoverageTest::itKeepsTheHumanisedFallbackAndTheRepositoryUrlForAnUnknownCode
+ - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itAddsNoRepairMarkWhenNothingNeededRepair
+ - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itPublishesAValidDocumentAndSaysItRepairedOne"checkstyle"
+ - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itPublishesAValidDocumentAndSaysItRepairedOne"gitlab"
+ - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itPublishesAValidDocumentAndSaysItRepairedOne"html"
+ - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itPublishesAValidDocumentAndSaysItRepairedOne"json"
+ - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itPublishesAValidDocumentAndSaysItRepairedOne"metrics"
+ - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itPublishesAValidDocumentAndSaysItRepairedOne"sarif"
+ - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itPublishesAValidDocumentAndSaysItRepairedOne"suppressed"
+ - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itStillRendersTheProseFormats"github"
+ - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itStillRendersTheProseFormats"health"
+ - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itStillRendersTheProseFormats"summary"
+ - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itStillRendersTheProseFormats"text"
+ - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itStillRendersTheProseFormats"text-verbose"
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsAClassByItsFullyQualifiedName
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsANamespaceThatNamesAnAnalyzedOne
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsANamespaceThatOnlyTheNamespaceTreeKnows
@@ -9325,6 +9507,10 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Detail\DetailedFindingRendererTest::itShowsTheAcceptedLevelOnABreach
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Detail\DetailedFindingRendererTest::itUsesAllFindingsForDebtBreakdownWhenProvided
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Detail\DetailedFindingRendererTest::itUsesHumanMessageWhenAvailable
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\FormatOptionValueTest::itParsesTheLegitimateFormsOfEveryGrammar
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\FormatOptionValueTest::itRefusesAKeyWithoutAGrammar
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\FormatOptionValueTest::itRefusesToReadAValueTheDoorShouldHaveRefused
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\FormatOptionValueTest::itWritesAGrammarForEveryKeyAFormatterDeclares
  - Qualimetrix\Tests\Reporting\Unit\Formatter\FormatterRegistryTest::itAcceptsIterableOfFormattersInConstructor
  - Qualimetrix\Tests\Reporting\Unit\Formatter\FormatterRegistryTest::itAddsFormatterOnRegister
  - Qualimetrix\Tests\Reporting\Unit\Formatter\FormatterRegistryTest::itDeclaresKeysOfFormattersHiddenFromListings
@@ -9401,7 +9587,6 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itAttachesClassFindingToClassNode
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itAttachesMethodFindingToParentClassNode
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itAttachesNothingWhenNoFindings
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itDropsMethodFindingWhenNoClassAndNoNamespaceNode
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itFallsBackToNamespaceNodeForClassWhenClassNodeMissing
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itFallsBackToNamespaceNodeForMethodWhenClassNodeMissing
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itFormatsFindingDataOnAttach
@@ -9411,9 +9596,11 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPartitionsFindingsAcrossMultipleFilesAndTypes
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPartitionsNamespaceFinding
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPreservesCanonicalSubjectAndOccurrenceInHtmlPayload
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itProducesEmptyFileWhenAttachingLocationNone
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itSkipsFileFindingDuringPartition
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itSkipsUnknownNodePathsOnAttach
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPublishesNullFileWhenAttachingLocationNoneLikeTheJsonReport
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPutsAFileFindingWithoutASoleClassOnTheRoot
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPutsAMethodFindingWithoutClassOrNamespaceNodeOnTheRoot
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itRefusesToAttachToAPathThatIsNotANode
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itRefusesToDropAFindingWhenNotEvenTheRootNodeExists
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itCarriesTheFooterElementTheFooterScriptLooksUp
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itEmbedsCssInline
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itEmbedsHintsData
@@ -9421,6 +9608,8 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itEmbedsJsonData
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itEncodesScopedReportingFlag
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itFormatsWithNullMetrics
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itKeepsAValueSpelledLikeATemplatePlaceholderInTheData
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itNamesTheReportAfterTheAnalysedProjectNotAfterTheRunningTool
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itProducesValidHtml
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itReturnsHtmlAsName
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itReturnsNoneAsDefaultGroupBy
@@ -9436,6 +9625,8 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlMetricAggregatorTest::itLeavesLeafNodeMetricsUnchanged
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlMetricAggregatorTest::itSkipsChildWithoutHealthScoreInWeighting
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itAggregatesLocSumBottomUpDuringBuild
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itAggregatesTheRootDebtFromEveryAttachedFinding
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itAttachesEveryFindingSoTheTreeCountsWhatTheSummaryCounts
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itAttachesFindingToTreeNode
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itBuildsMultipleRootNamespaces
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itBuildsNestedNamespaces
@@ -9459,8 +9650,6 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itNullsNanMetricValueInFinding
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itOmitsChildrenFromArrayWhenEmpty
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itSetsScopedReportingFalseByDefault
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itSkipsFileFindingDuringBuild
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itUsesReportTechDebtForTotalDebtMinutesWhenAvailable
  - Qualimetrix\Tests\Reporting\Unit\Formatter\JsonShapePreservationTest::itEmitsTheArtifactLocationUriInTheSarifFormatter
  - Qualimetrix\Tests\Reporting\Unit\Formatter\JsonShapePreservationTest::itEmitsTheFileAsAStringFieldInTheMetricsJsonFormatter
  - Qualimetrix\Tests\Reporting\Unit\Formatter\JsonShapePreservationTest::itEmitsThePathAsAStringInTheGitlabFormatter
@@ -9484,8 +9673,8 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFindingSectionTest::itSortsTheExactNoEdgeUntypedAndTypedMatrix
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itBuildsFindingGroupsFromTruncatedList
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itBuildsWorstClassesFromMetricsWithNamespaceFilter
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itCutsTheViolationListAfterItsIdentityOrder
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itDoesNotIncludeFindingGroupsWhenGroupByNone
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itFallsBackToDefaultForInvalidViolationsOption
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itFiltersFindingsByClass
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itFiltersFindingsByNamespace
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itFiltersFindingsByNamespaceBoundaryAware
@@ -9494,6 +9683,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itFormatsFilelessFinding
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itFormatsNamespaceLevelFinding
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itFormatsReportWithFindings
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itGivesMessageOneMeaningAcrossTheViolationsAndTopIssuesSections
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itIncludesAllFindingsByDefault
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itIncludesFindingGroupsWhenGroupByClassName
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itIncludesFindingGroupsWhenGroupByFile
@@ -9502,6 +9692,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itIncludesShownCountInFindingsMeta
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itIncludesWorstClasses
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itIncludesWorstNamespaces
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itKeepsTheSummaryShapeUnderADrillDown
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itLimitsWorstNamespacesWithTopNOption
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itOverridesDefaultWithFormatOptLimit
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itOverridesDetailWithFormatOptViolations
@@ -9509,6 +9700,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itProducesIso8601Timestamp
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itProducesNullForEmptyHealthScores
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itProducesNullForNanAndInfMetricValues
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itRejectsAnInvalidViolationsOptionThatBypassedTheCommandLine
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itRendersInfoSeverityWithoutUsingItAsTheSortKey
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itReturnsDefaultGroupByNone
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itReturnsEmptyFindingGroupsWhenNoFindings
@@ -9596,9 +9788,11 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterTest::itOmitsLocationsForProjectLevelFinding
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterTest::itOmitsRelatedLocationsFieldWhenEmpty
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterTest::itPercentEncodesPathWithSpaces
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterTest::itPercentEncodesTheRelativeArtifactUriLikeTheBaseUri
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterTest::itProducesCorrectRuleDescriptions
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterTest::itProducesThreeSlashesForUnixPathFileUri
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterTest::itPropagatesAMeasuredBreachsPromotedSeverityToResultAndRuleLevel
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterTest::itPublishesAFilelessRelatedLocationWithoutAnEmptyUri
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterTest::itReturnsDefaultGroupByNone
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterTest::itReturnsSarifName
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterTest::itReturnsValidJson
@@ -9612,16 +9806,19 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifSchemaValidationTest::itConformsToTheSarifSchemaWithTheDocumentationAddressesOnTheDriver
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifSchemaValidationTest::itRefusesTheLlmsTxtAddressOutsideThePropertiesBag
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itCalculatesScopedDebt
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itCallsASelectionCleanInGreenWhenNothingOutsideItWasFoundEither
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itColorsSummaryBoldForErrors
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itColorsSummaryBoldForInfoOnly
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itColorsSummaryBoldForWarningsOnly
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itDisplaysTechDebt
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itDisplaysTechDebtWithDensity
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itDoesNotCallTheRunCleanWhenOnlyTheSelectionIsEmpty
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itDoesNotDisplayZeroTechDebt
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itFormatsMixedErrorsAndWarnings
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itFormatsSingleError
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itFormatsSingleInfo
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itFormatsSingleWarning
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itNamesTheFindingsOutsideANonEmptySelection
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itShowsNoFindingsFoundForEmptyReport
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itShowsNoFindingsFoundForNonEmptyReportWithNoScope
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itShowsNoFindingsInClassScope
@@ -9683,6 +9880,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\SummaryFormatterTest::itColorsScoreBoundaryAtWarningThreshold
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\SummaryFormatterTest::itColorsScoreGreenAboveWarningThreshold
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\SummaryFormatterTest::itColorsScoreRedAtErrorThreshold
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\SummaryFormatterTest::itCutsTheDetailListAfterSortingIt
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\SummaryFormatterTest::itDoesNotShowDetailForEmptyReport
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\SummaryFormatterTest::itDoesNotShowDetailHintWhenDetailActive
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\SummaryFormatterTest::itDoesNotShowZeroTechDebt
@@ -9720,6 +9918,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\TopIssuesRendererTest::itRendersFunctionLevelSymbol
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\TopIssuesRendererTest::itRendersLineNumberWhenPrecise
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\TopIssuesRendererTest::itRendersNamespaceLevelFindings
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\TopIssuesRendererTest::itRendersTheRankingItIsGivenWithoutReapplyingTheDrillDown
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\TopIssuesRendererTest::itRendersTopIssues
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\TopIssuesRendererTest::itRespectsLimit
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\TopIssuesRendererTest::itSkipsRenderingWhenLimitIsZero
@@ -9728,12 +9927,19 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itNamesItselfSuppressedAndDefaultsToNoGrouping
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itPublishesNeverMatchedSuppressorsSeparatelyFromSuppressedFindings
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itPublishesTheDocumentationAddressesInItsMeta
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itPublishesTheIdentityAndBothTextsOfASuppressedFinding
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itPublishesTheMultisetNoteSoCountsAreNotMisreadAsFindings
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itTreatsAMissingCompositionAsEmptyRatherThanFailing
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itPublishesTheRunsCoverageLikeEveryOtherFormat
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itRefusesToPublishAReportWhoseCompositionWasNeverBuilt
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itCarriesTheDocumentationPointerInDetailMode
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itCarriesTheDocumentationPointerInFlatMode
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itColorsSummaryGreenForNoFindings
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itColorsSummaryRedForErrors
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itCutsTheDetailListAfterSortingIt"default grouping (by file)"
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itCutsTheDetailListAfterSortingIt"explicit flat list"
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itCutsTheDetailListAfterSortingIt"explicit rule grouping"
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itCutsTheDetailListAfterSortingIt"explicit severity grouping"
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itDoesNotSummariseADrillDownAsACleanRun
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itFormatsClassLevelFinding
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itFormatsEmptyReport
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itFormatsFileLevelFinding
@@ -9822,7 +10028,6 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\ReportBuilderTest::itSupportsFluentInterface
  - Qualimetrix\Tests\Reporting\Unit\ReportTest::itCountsTotalFindings
  - Qualimetrix\Tests\Reporting\Unit\ReportTest::itExposesReportProperties
- - Qualimetrix\Tests\Reporting\Unit\ReportTest::itFiltersFindingsBySeverity
  - Qualimetrix\Tests\Reporting\Unit\ReportTest::itIsEmptyWhenNoFindings
  - Qualimetrix\Tests\Reporting\Unit\ReportTest::itIsNotEmptyWhenHasFindings
  - Qualimetrix\Tests\Unit\Core\Path\AbsolutePathSerializationTest::itPinsWireFormatToValueKey

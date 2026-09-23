@@ -350,7 +350,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
             new HealthBarRenderer(new HealthScoreResolver($namespaceDrillDown)),
             $offenderListRenderer,
             new TopIssuesRenderer(),
-            new FindingSummaryRenderer($findingFilter, $registry),
+            new FindingSummaryRenderer($registry),
             new HintRenderer($offenderListRenderer),
         );
 

@@ -6,8 +6,21 @@ namespace Qualimetrix\Analysis\Configuration\Contract\Discovery;
 
 interface ComposerAutoloadPathReaderInterface
 {
-    /** @return list<string> */
-    public function extractAutoloadPaths(string $composerJsonPath, bool $includeDev = true): array;
+    /**
+     * The production PSR-4 roots — the `autoload` section's.
+     *
+     * @return list<string>
+     */
+    public function extractAutoloadPaths(string $composerJsonPath): array;
+
+    /**
+     * The `autoload-dev` PSR-4 roots, apart from the production ones: whether
+     * a run treats test code as the project is its configuration's decision,
+     * so the two lists reach it separately.
+     *
+     * @return list<string>
+     */
+    public function extractAutoloadDevPaths(string $composerJsonPath): array;
 
     /**
      * The PSR-4 map itself: namespace prefix as `composer.json` spells it,
@@ -52,4 +65,13 @@ interface ComposerAutoloadPathReaderInterface
      * @return ?list<string> paths relative to composer.json, or null when nothing production was declared
      */
     public function productionAutoloadTargets(string $composerJsonPath): ?array;
+
+    /**
+     * Every path the manifest's `autoload-dev` declares, read exactly as
+     * {@see self::productionAutoloadTargets()} reads `autoload` — for a run
+     * whose configuration counts test code as part of the project.
+     *
+     * @return ?list<string> paths relative to composer.json, or null when `autoload-dev` declares nothing readable
+     */
+    public function developmentAutoloadTargets(string $composerJsonPath): ?array;
 }
