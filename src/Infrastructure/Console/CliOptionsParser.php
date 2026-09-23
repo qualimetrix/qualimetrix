@@ -34,11 +34,7 @@ final readonly class CliOptionsParser
      */
     public function parseRuleOptions(InputInterface $input): array
     {
-        /** @var list<string> $genericOptions */
-        $genericOptions = $this->optionValue($input, 'rule-opt', []);
-        $ruleOptions = \is_array($genericOptions)
-            ? $this->ruleOptionsParser->parseRuleOptions($genericOptions)
-            : [];
+        $ruleOptions = $this->ruleOptionsParser->parseRuleOptions(CommandLineSpelling::options($input, 'rule-opt'));
 
         // Parse all registered short aliases (from rule definitions)
         foreach ($this->ruleOptionsParser->getAliasNames() as $alias) {

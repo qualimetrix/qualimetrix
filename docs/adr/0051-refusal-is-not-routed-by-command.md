@@ -108,9 +108,12 @@ each measured rather than assumed:
    without `-q`.
 3. Under one of the six JSON-document formats (`json`, `sarif`, `gitlab`,
    `metrics`, `health`, `suppressed` — {@see MachineReadableFormats}) the
-   message is not text at all: it is the `{error, exit_code}` envelope on
-   stdout (`RefusalPresenter::writeEnvelope()`), the shape every command's
-   refusal and internal error now shares. `-q` does not remove the envelope;
+   message is not text at all: it is the JSON envelope on stdout
+   (`RefusalPresenter::writeEnvelope()`), the shape every command's
+   refusal and internal error now shares. The envelope was `{error,
+   exit_code}` when this was decided; its current keys, and the one ending
+   that is written to stderr instead because the report already holds
+   stdout, are in the amendments below. `-q` does not remove the envelope;
    a JSON-document consumer piping stdout still gets a parseable document on
    both the success and the failure path. The other six formats (`text`,
    `text-verbose`, `summary`, `checkstyle`, `github`, `html`) keep their
@@ -199,9 +202,42 @@ was rejected: it discards the one structured answer a script can act on, and
 the throw sites span eight capabilities.
 
 `position` is always present and is `null` when the run ended without one — a
-refusal about a whole document or a bare value, the fallback path, an internal
-error — so the envelope has one shape whatever ended the run. When present it
-is `{path: [...], written, accepted: [...], closed}`: `path` is the key's
-segments as the author spells them, and `accepted` is empty for an open
-position, where the grammar is named by the sentence rather than by a list.
-The text path is unchanged: the sentence on stderr already names the key.
+refusal about a whole document, a command-line value, a merged value, the
+fallback path, an internal error — so the envelope has one shape whatever
+ended the run. A merged value (`memory_limit: 010M`, an unknown `format:`)
+carries `null` even though its sentence names the key: after the merge the
+throw site cannot tell whether a file or a command-line option wrote the
+value, so any position it published could name a key nobody wrote. When
+present it is `{path: [...], written, accepted: [...], closed}`, and it
+promises what `RefusedPosition` promises: it locates the refused spot as the
+throw site located it, not a round trip to the document's text. A segment
+can be a normalized or schema spelling, and for a required key the author
+left out, `path` ends at that key and `written` names it. `accepted` is empty
+for an open position, where the grammar is named by the sentence rather than
+by a list. The text path is unchanged: the sentence on stderr already names
+the key.
+
+Giving every merged-value refusal a position was rejected: it needs the
+merge to keep each contribution's source, which it drops by design
+(`ConfigurationSource::Resolved`), and a position guessed from the schema key
+would be wrong whenever the value came from the command line.
+
+## Amendment, 2026-09-24: an ending after the published report goes to stderr
+
+Point 3 promises a JSON-document consumer a parseable stdout on both paths.
+One ending broke it: `check` publishes its report first and writes a
+`--profile` export after it, so an export that failed there appended the
+envelope to the report — two documents on stdout, which no JSON reader
+accepts. An ending that comes after the command has published its document
+is now written to stderr as the text path's sentence, whatever the format
+(`RefusalPresenter::refusalAfterPublishedReport()` and its internal-error
+twin), and keeps its code: 3 for the refusal, 1 for an internal error. The
+report stays the only document on stdout.
+
+The export target is checked before the analysis against what the write
+needs — a temporary file in the target's directory, renamed over a target
+that is not a directory — so this ending is left to failures no precheck can
+see. Keeping the analysis exit code for it was rejected: the run was asked
+for an artifact it did not deliver, and exit 3 is how a wrapper learns that.
+Writing the profile before the report was rejected too: the profile would
+then miss the reporting phase it measures.

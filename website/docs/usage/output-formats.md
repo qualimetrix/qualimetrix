@@ -101,6 +101,26 @@ its colour from the whole run: a clean subtree of a failing project prints
 never a green `No violations found.`. `--format=text` does the same in its
 closing summary line.
 
+The structured formats list only the selection too, and each says what it left
+out in the channel it already uses for diagnostics about the document itself:
+
+| Format       | What the selection left out                                                                                     |
+| ------------ | --------------------------------------------------------------------------------------------------------------- |
+| `json`       | Top-level `outOfScope` object: `violationCount`, `errorCount`, `warningCount`, `infoCount`                      |
+| `metrics`    | Top-level `outOfScope` object: `violations`, `errors`, `warnings`, `info`                                       |
+| `sarif`      | A `note` in `runs[0].invocations[0].toolExecutionNotifications[]` with descriptor `QMX-DRILL-DOWN-OUT-OF-SCOPE` |
+| `gitlab`     | An `info` issue with `check_name: drill-down.out-of-scope` on `_project`                                        |
+| `checkstyle` | An `info` error under the synthetic file `[drill-down]`, with source `qmx.drill-down.out-of-scope`              |
+| `github`     | A `::notice title=drill-down.out-of-scope::` line                                                               |
+| `html`       | A banner above the report                                                                                       |
+| `suppressed` | Nothing: its document is the run's suppression composition, which a selection does not narrow                   |
+
+`json` and `metrics` carry `outOfScope` in every document: `null` without a
+selection, and zero counts when the selection left nothing out. The other
+formats add their entry only when something lies outside the selection. The
+exit code is resolved over the selection and `outOfScope` together, so a clean
+selection can exit 2.
+
 **Detail mode with `--detail`:**
 
 ```bash
@@ -178,7 +198,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
 
 **When to use:** Custom scripts, dashboards, programmatic processing.
 
-**Top-level keys:** `meta`, `summary`, `coverage`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, plus `violationGroups` when `--group-by` is passed — without it, the key is absent entirely, not an empty object.
+**Top-level keys:** `meta`, `summary`, `outOfScope`, `coverage`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, plus `violationGroups` when `--group-by` is passed — without it, the key is absent entirely, not an empty object.
 
 `meta` identifies the tool that wrote the document: `version`, `package`, `timestamp`, and two documentation addresses — `docs`, the documentation site, and `llmsTxt`, the index written for AI agents. Every JSON report with an envelope object carries the same two addresses; see the exceptions in [Documentation addresses in JSON reports](#documentation-addresses).
 
@@ -205,6 +225,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
         "techDebtMinutes": 270,
         "debtPer1kLoc": 2.1
     },
+    "outOfScope": null,
     "health": {
         "complexity": {
             "score": 78.0,
@@ -358,9 +379,11 @@ described below.
 
 `message` and `recommendation` mean the same in `violations` and in
 `topIssues`: the finding's message, and its recommendation or `null`. Under
-`--namespace`/`--class` the `summary` object keeps all its keys; `debtPer1kLoc`
-is `null` there, because the selection's debt over the whole project's lines
-would mix two scopes.
+`--namespace`/`--class` the `summary` object keeps all its keys and counts only
+the selection; `debtPer1kLoc` is `null` there, because the selection's debt
+over the whole project's lines would mix two scopes. The findings the
+selection left out are counted in `outOfScope`, which is `null` without a
+selection, as the drill-down table under `summary` above shows for every format.
 
 When a symbol name from the analysed source is not valid UTF-8 (the parser
 accepts any byte above 0x7F in an identifier), each invalid byte is published
@@ -368,7 +391,10 @@ as U+FFFD and the document gains a top-level `invalidUtf8Replaced` key counting
 the repaired strings. `metrics`, `suppressed` and the `html` payload do the
 same; `sarif` reports it as a `QMX-PUBLICATION-INVALID-UTF8` tool notification,
 `gitlab` as a `publication.invalid-utf8` issue, and `checkstyle` as an error
-under the synthetic file `[publication]`.
+under the synthetic file `[publication]`. A file path that is not valid UTF-8
+is repaired and reported the same way; `sarif` repairs it before
+percent-encoding it, so the artifact URI carries `%EF%BF%BD` and never a bare
+`%FF`.
 
 For machine identity, use `channel + subject + optional occurrence + optional
 edge`. `symbol` is the logical display projection; source line, message, and
@@ -414,7 +440,9 @@ per key whichever format reads it: `violations` and `limit` take a whole number
 or `all`, `top` a whole number of 1 or more, `contributors` a whole number,
 `rank-by` `count` or `density`, `project-name` a non-empty name. A value that
 does not parse is refused with exit code 3 instead of falling back to a
-default.
+default. `violations` and `limit` bound the same list — `violations=0` shows
+none, `limit=0` shows all — so writing both, or `limit` beside `--all`, is
+refused with exit code 3 rather than one of them being ignored.
 
 ```bash
 # Group violations by class or namespace
@@ -436,7 +464,7 @@ Raw metric values for every symbol (file, class, namespace, method, function, pr
 
 **When to use:** Custom dashboards, trend analysis, data science pipelines, or building your own quality gates on raw metrics.
 
-**Top-level keys:** `version`, `toolVersion`, `package`, `timestamp`, `docs`, `llmsTxt`, `symbols[]` (each with `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`. There is no `callable` type; a single `project` entry aggregates project-wide statistical metrics (min/max/avg/p95 across all symbols) and has a `null` `line`. Here `version` is the version of this export format and `toolVersion` the version of Qualimetrix; `docs` and `llmsTxt` are the documentation addresses `json` carries in its `meta`.
+**Top-level keys:** `version`, `toolVersion`, `package`, `timestamp`, `docs`, `llmsTxt`, `symbols[]` (each with `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `outOfScope`, `coverage`, `summary`. Under `--namespace`/`--class` the `summary` counts only the selection and `outOfScope` counts what it left out; `symbols[]` is never narrowed. There is no `callable` type; a single `project` entry aggregates project-wide statistical metrics (min/max/avg/p95 across all symbols) and has a `null` `line`. Here `version` is the version of this export format and `toolVersion` the version of Qualimetrix; `docs` and `llmsTxt` are the documentation addresses `json` carries in its `meta`.
 
 <!-- llms:skip-begin -->
 **Example output (abbreviated):**
@@ -498,7 +526,8 @@ Raw metric values for every symbol (file, class, namespace, method, function, pr
         "errors": 2,
         "warnings": 1,
         "info": 0
-    }
+    },
+    "outOfScope": null
 }
 ```
 <!-- llms:skip-end -->
@@ -981,7 +1010,12 @@ format, not the tool's) the way `metrics` keeps its own.
 Not every JSON output carries the addresses. `gitlab` is a bare array with no
 object to hold them; `graph:export`'s DOT output has no envelope at all; a
 refusal is always exactly `{"error": ..., "exit_code": ..., "position": ...}`,
-`position` being `null` when the refusal names no key; and the baseline
+`position` being `null` unless the refusal was raised at a place in a
+configuration document — a command-line value, a whole file and a merged value
+such as `memory_limit: 010M` carry `null` even when the message names the key.
+When present, `position` locates the refused spot as the check found it: for a
+required key that was left out, `path` ends at that key and `written` names it;
+and the baseline
 file — written by `baseline:generate`, `update`, `cleanup`, and rewritten in
 place by `baseline:rename-channels` — is a versioned input artifact the tool
 reads back, with its own schema, not a report.

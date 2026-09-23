@@ -11,8 +11,9 @@ use Symfony\Component\Console\Input\InputOption;
 /**
  * The input every baseline command shares, defined once.
  *
- * **The line these options are drawn along is ADR 0017 asymmetry: a flag may
- * narrow the measured set, none may widen it.**
+ * **The line these options are drawn along is ADR 0017's: the measured set
+ * is defined by configuration, so a flag that is configuration is accepted
+ * and a flag that only filters a report is not.**
  *
  * *Absent, and deliberately so* — the exclusion and suppression flags `check`
  * accepts (`--suppress-path`, `--suppress-namespace`,
@@ -20,12 +21,16 @@ use Symfony\Component\Console\Input\InputOption;
  * report, so a baseline command that took them would capture less than the
  * `check` it must agree with, leaving entries that can never apply.
  *
- * *Present, and equally deliberately* — the four options that decide **which
- * rules run and against which thresholds**: `--preset`, `--rule-opt`,
- * `--only-rule`, `--disable-rule`. These are configuration, not exclusion — a
- * preset is a configuration layer, and ADR 0017 defines the measured set by
- * configuration. Denying them to these commands does not keep the two sides
- * in agreement, it breaks them: `check --preset=strict --baseline=b.json`
+ * *Present, and equally deliberately* — the options that decide **which rules
+ * run, against which thresholds, over which project**: `--preset`,
+ * `--rule-opt`, `--only-rule`, `--disable-rule`, `--include-generated` and
+ * `--include-autoload-dev`. These are configuration, not exclusion — a preset
+ * is a configuration layer, and the two `--include-*` flags are the
+ * command-line spelling of `include_generated` and `include_autoload_dev`,
+ * which decide what the project is: the default paths a run analyses and the
+ * scope it is judged against. Denying any of them to these commands does not
+ * keep the two sides in agreement, it breaks them: `check --preset=strict
+ * --baseline=b.json`, or `check --include-autoload-dev --baseline=b.json`,
  * measures strictly more than `baseline:generate b.json` captured, and every
  * finding the capture could not see reads as a breach and promotes its whole
  * group to Error on code nobody touched (ADR 0017). Widening is the direction
@@ -62,9 +67,9 @@ final class BaselineCommandDefinition
      *
      * Every name below is spelled exactly as `check` spells it, and that is
      * the requirement rather than a convenience: `paths`, `preset`,
-     * `disable-rule` and `only-rule` are read by
-     * {@see \Qualimetrix\Analysis\Configuration\Pipeline\Stage\CliStage} and
-     * {@see \Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage} off the
+     * `disable-rule`, `only-rule`, `include-generated` and
+     * `include-autoload-dev` are read by
+     * {@see \Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter} off the
      * `InputInterface` by name, and `rule-opt` by
      * {@see \Qualimetrix\Infrastructure\Console\CliOptionsParser}. A different
      * spelling here would leave the option accepted and inert — the failure
@@ -119,6 +124,18 @@ final class BaselineCommandDefinition
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
                 'Rule-specific option (format: rule-name:option=value)',
                 [],
+            )
+            ->addOption(
+                'include-generated',
+                null,
+                InputOption::VALUE_NONE,
+                'Include files marked with @generated annotation (skipped by default)',
+            )
+            ->addOption(
+                'include-autoload-dev',
+                null,
+                InputOption::VALUE_NONE,
+                'Count composer.json autoload-dev code as part of the project: analysed when no paths are given, and part of the scope a run is judged against (left out by default)',
             )
             ->addOption(
                 'no-progress',

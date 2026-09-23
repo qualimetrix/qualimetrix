@@ -211,20 +211,19 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
     }
 
     /**
-     * The roots composer discovery contributed: production always, and
-     * `autoload-dev` when the policy counts it. They are only the default —
-     * a `paths` any source wrote replaces them, flag or no flag.
+     * The targets composer discovery contributed, taken under the run's
+     * policy through the same question {@see ProjectScopeCoverage} asks of
+     * the denominator. They are only the default — a `paths` any source
+     * wrote replaces them, flag or no flag.
      *
      * @return list<string>
      */
     private static function discoveredPaths(ConfigurationDocument $document, AutoloadDevPolicy $autoloadDev): array
     {
-        $paths = self::lastStringList($document->contributions(ConfigSchema::DISCOVERED_AUTOLOAD_PATHS));
-        if ($autoloadDev === AutoloadDevPolicy::Include) {
-            $paths = [...$paths, ...self::lastStringList($document->contributions(ConfigSchema::DISCOVERED_AUTOLOAD_DEV_PATHS))];
-        }
-
-        return array_values(array_unique($paths));
+        return $autoloadDev->projectTargets(
+            self::lastStringList($document->contributions(ConfigSchema::DISCOVERED_AUTOLOAD_PATHS)),
+            self::lastStringList($document->contributions(ConfigSchema::DISCOVERED_AUTOLOAD_DEV_PATHS)),
+        ) ?? [];
     }
 
     /**

@@ -51,12 +51,18 @@ a slice of it: its denominator is every production autoload target of
 `composer.json` — `psr-4` and `psr-0` roots, `classmap` and `files` entries
 alike — so `check src/` on a project autoloading `src/` covers the project
 while `check src/Foo/` does not. `autoload-dev` joins the denominator only
-under `AutoloadDevPolicy::Include` (`include_autoload_dev`), the same policy
-under which `RunConfigurationResolver` adds the `autoload-dev` roots Composer
-discovery contributed to a run's default paths; the policy travels on
-`RunConfiguration::$autoloadDevPolicy`, so a run narrowed later is judged
-against the same project. A `classmap` or `files` entry may name a
-single file, which changes nothing: the question is containment.
+under `AutoloadDevPolicy::Include` (`include_autoload_dev`). The denominator
+and a run's default paths are one answer: Composer discovery contributes the
+same whole-manifest target lists the denominator reads (a `classmap` `*`
+expanded to its directories), and both `RunConfigurationResolver` and
+`ProjectScopeCoverage` take them through `AutoloadDevPolicy::projectTargets()`,
+so a run with no `paths` covers what it is judged against in every autoload
+form. The policy travels on `RunConfiguration::$autoloadDevPolicy`, so a run
+narrowed later is judged against the same project. A `classmap` or `files`
+entry may name a single file, which changes nothing: discovery analyses the
+file, and the denominator's question is containment. A declared target
+missing on disk is skipped by the denominator, and as a default path it is
+refused by the path check before analysis, as a stale PSR-4 root always was.
 `ProjectScopeMeasurement` carries both halves of one measurement — the
 uncovered targets the console warns about, and the verdict a channel reads —
 because a manifest declaring no readable production autoload at all (absent,
@@ -207,8 +213,8 @@ that would not list, and says the run makes no claim about the selector. A
 project that accepted "nothing matched this" has not thereby accepted "nobody
 looked".
 
-The channel is silent on a run narrowed below the project's production
-autoload roots (`RunConfiguration::$coversProjectScope`): there a pattern binds
+The channel is silent on a run narrowed below the project's autoload
+targets (`RunConfiguration::$coversProjectScope`): there a pattern binds
 nothing because of the path the caller chose, not because of anything the
 author wrote.
 

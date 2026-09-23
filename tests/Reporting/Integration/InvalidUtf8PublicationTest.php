@@ -63,7 +63,79 @@ final class InvalidUtf8PublicationTest extends TestCase
 
         self::assertTrue(mb_check_encoding($output, 'UTF-8'), 'the document is valid UTF-8');
         self::assertStringContainsString("Br\u{FFFD}ken", $this->readable($format, $output));
+        self::assertRepairMarked($format, $output);
+    }
 
+    /**
+     * A path reaches publication through its own route: SARIF percent-encodes
+     * it, which turns an invalid byte into a valid `%FF` no encoder refuses.
+     */
+    #[Test]
+    #[DataProvider('structuredFormats')]
+    public function itRepairsAnInvalidPathInEveryFormat(string $format): void
+    {
+        $output = $this->format($format, 'Intact', "src/Br\xFFken.php");
+
+        self::assertTrue(mb_check_encoding($output, 'UTF-8'), 'the document is valid UTF-8');
+        self::assertStringNotContainsString('%FF', $output);
+        self::assertStringContainsString(
+            $format === 'sarif' ? 'src/Br%EF%BF%BDken.php' : "src/Br\u{FFFD}ken.php",
+            $this->readable($format, $output),
+        );
+        self::assertRepairMarked($format, $output);
+    }
+
+    /**
+     * A related location is repaired and counted like the primary one; the
+     * primary path stays valid here, so the related path is the only repair.
+     */
+    #[Test]
+    public function itCountsARepairedSarifRelatedPath(): void
+    {
+        $output = $this->format('sarif', 'Intact', 'src/A.php', '/project', "src/Rel\xFFated.php");
+        $sarif = self::decode($output);
+        $result = $sarif['runs'][0]['results'][0];
+
+        self::assertSame('src/Rel%EF%BF%BDated.php', $result['relatedLocations'][0]['physicalLocation']['artifactLocation']['uri']);
+        self::assertSame(
+            [[
+                'level' => 'warning',
+                'message' => ['text' => PublishedUtf8::describe(1)],
+                'descriptor' => ['id' => 'QMX-PUBLICATION-INVALID-UTF8'],
+            ]],
+            $sarif['runs'][0]['invocations'][0]['toolExecutionNotifications'],
+        );
+    }
+
+    #[Test]
+    public function itRepairsAnInvalidSarifBaseBeforeEncodingIt(): void
+    {
+        $output = $this->format('sarif', 'Intact', 'src/A.php', "/pro\xFFject");
+        $run = self::decode($output)['runs'][0];
+
+        self::assertSame('file:///pro%EF%BF%BDject/', $run['originalUriBaseIds']['%SRCROOT%']['uri']);
+        self::assertRepairMarked('sarif', $output);
+    }
+
+    /**
+     * Valid UTF-8 outside ASCII is encoded as before and marks nothing.
+     */
+    #[Test]
+    public function itLeavesAValidNonAsciiSarifPathAsItWas(): void
+    {
+        $output = $this->format('sarif', 'Intact', 'src/Sérvice/a b#c%.php', '/prøject');
+        $run = self::decode($output)['runs'][0];
+
+        self::assertSame(
+            'src/S%C3%A9rvice/a%20b%23c%25.php',
+            $run['results'][0]['locations'][0]['physicalLocation']['artifactLocation']['uri'],
+        );
+        self::assertSame('file:///pr%C3%B8ject/', $run['originalUriBaseIds']['%SRCROOT%']['uri']);
+        self::assertSame([], $run['invocations'][0]['toolExecutionNotifications']);
+    }
+
+    private static function assertRepairMarked(string $format, string $output): void
+    {
         match ($format) {
             'json', 'metrics', 'suppressed' => self::assertGreaterThanOrEqual(1, self::decode($output)['invalidUtf8Replaced'] ?? 0),
             'sarif' => self::assertContains(
@@ -95,10 +167,15 @@ final class InvalidUtf8PublicationTest extends TestCase
         self::assertNotSame('', $this->format($format));
     }
 
-    private function format(string $format, string $className = self::BROKEN): string
-    {
+    private function format(
+        string $format,
+        string $className = self::BROKEN,
+        string $path = 'src/A.php',
+        string $basePath = '/project',
+        ?string $relatedPath = null,
+    ): string {
         $symbol = SymbolPath::forClass('App', $className);
-        $file = RelativePath::fromString('src/A.php');
+        $file = RelativePath::fromString($path);
         $finding = new Finding(
             location: new Location($file, 3),
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank(0))),
@@ -107,6 +184,7 @@ final class InvalidUtf8PublicationTest extends TestCase
             code: 'complexity.ccn',
             message: \sprintf('Class %s is too complex', $className),
             severity: Severity::Error,
+            relatedLocations: $relatedPath === null ? [] : [new Location(RelativePath::fromString($relatedPath), 1)],
         );
 
         $metrics = new InMemoryMetricRepository();
@@ -127,15 +205,15 @@ final class InvalidUtf8PublicationTest extends TestCase
         /** @var FormatterRegistryInterface $registry */
         $registry = (new ContainerFactory())->create()->get(FormatterRegistryInterface::class);
 
-        return $registry->get($format)->format($report, new FormatterContext(useColor: false, basePath: '/project'));
+        return $registry->get($format)->format($report, new FormatterContext(useColor: false, basePath: $basePath));
     }
 
     private function readable(string $format, string $output): string
     {
         return match ($format) {
             'checkstyle' => self::parsedXml($output),
-            'html' => (string) json_encode(self::htmlPayload($output), \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR),
-            default => (string) json_encode(self::decode($output), \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR),
+            'html' => (string) json_encode(self::htmlPayload($output), \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR),
+            default => (string) json_encode(self::decode($output), \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR),
         };
     }
 

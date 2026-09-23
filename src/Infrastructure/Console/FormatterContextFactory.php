@@ -7,7 +7,6 @@ namespace Qualimetrix\Infrastructure\Console;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
-use Qualimetrix\Reporting\Formatter\FormatOptionValue;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\FormatterContext;
@@ -23,15 +22,14 @@ final class FormatterContextFactory
 {
     private const int DEFAULT_DETAIL_LIMIT = 200;
 
-    /**
-     * Takes the registry rather than reading the one formatter passed to create():
-     * the set of real keys is the union over every formatter, and a key another
-     * format reads is a real key typed at the wrong run, not a typo.
-     */
+    private readonly FormatOptionPairs $formatOptionPairs;
+
     public function __construct(
-        private readonly FormatterRegistryInterface $formatterRegistry,
+        FormatterRegistryInterface $formatterRegistry,
         private readonly CliSelectorDecoder $selectorDecoder = new CliSelectorDecoder(),
-    ) {}
+    ) {
+        $this->formatOptionPairs = new FormatOptionPairs($formatterRegistry);
+    }
 
     public function create(
         InputInterface $input,
@@ -101,8 +99,7 @@ final class FormatterContextFactory
 
     private function explicitGroupBy(InputInterface $input): ?GroupBy
     {
-        /** @var string|null $groupByValue */
-        $groupByValue = $input->getOption('group-by');
+        $groupByValue = CommandLineSpelling::option($input, 'group-by');
         if ($groupByValue === null) {
             return null;
         }
@@ -123,10 +120,8 @@ final class FormatterContextFactory
      */
     private function drillDownFilters(InputInterface $input): array
     {
-        /** @var string|null $namespaceFilter */
-        $namespaceFilter = $input->getOption('namespace');
-        /** @var string|null $classFilter */
-        $classFilter = $input->getOption('class');
+        $namespaceFilter = CommandLineSpelling::option($input, 'namespace');
+        $classFilter = CommandLineSpelling::option($input, 'class');
 
         if ($namespaceFilter !== null && $classFilter !== null) {
             throw ConfigurationRefusal::aboutCommandLineInput(
@@ -138,57 +133,14 @@ final class FormatterContextFactory
         return [$namespaceFilter, $classFilter];
     }
 
-    /**
-     * `--format-opt` pairs after `--all` has written its own, each key known to
-     * some formatter and each value parsing under that key's grammar.
-     *
-     * @return array<string, string>
-     */
+    /** @return array<string, string> */
     private function formatOptions(InputInterface $input): array
     {
-        /** @var list<string> $formatOpts */
-        $formatOpts = $input->getOption('format-opt');
-        $options = [];
-        foreach ($formatOpts as $opt) {
-            $eqPos = strpos($opt, '=');
-            if ($eqPos === false) {
-                throw ConfigurationRefusal::aboutCommandLineInput(
-                    '--format-opt',
-                    \sprintf('Invalid --format-opt value "%s": expected format key=value', $opt),
-                );
-            }
-            $options[substr($opt, 0, $eqPos)] = substr($opt, $eqPos + 1);
-        }
+        $written = CommandLineSpelling::options($input, 'format-opt');
 
-        // Handle --all flag: alias for --format-opt=violations=all --detail=all
-        if ((bool) $input->getOption('all')) {
-            $existingFindings = $options['violations'] ?? '';
-            if ($existingFindings !== '' && $existingFindings !== 'all') {
-                throw ConfigurationRefusal::aboutCommandLineInput(
-                    '--all',
-                    'Conflicting options: --all cannot be combined with --format-opt=violations=N. '
-                    . 'Use either --all (show everything) or --format-opt=violations=N (explicit limit)',
-                );
-            }
-            $options['violations'] = 'all';
-        }
-
-        // After --all, not before: the key this factory writes itself is held to
-        // the same declaration as one the user typed, so a formatter dropping
-        // `violations` cannot leave --all writing into a void.
-        $this->refuseUnknownFormatOptionKeys($options);
-
-        foreach ($options as $key => $value) {
-            $expected = FormatOptionValue::problem($key, $value);
-            if ($expected !== null) {
-                throw ConfigurationRefusal::aboutCommandLineInput(
-                    '--format-opt',
-                    \sprintf('Invalid --format-opt value "%s=%s": expected %s.', $key, $value, $expected),
-                );
-            }
-        }
-
-        return $options;
+        return (bool) $input->getOption('all')
+            ? $this->formatOptionPairs->resolveUnderAllFlag($written)
+            : $this->formatOptionPairs->resolve($written);
     }
 
     private function decodeNamespaceFilter(?string $namespaceFilter): ?NamespacePattern
@@ -196,35 +148,6 @@ final class FormatterContextFactory
         return $namespaceFilter !== null
             ? $this->selectorDecoder->decodeNamespace($namespaceFilter, '--namespace')
             : null;
-    }
-
-    /**
-     * Refuses keys no registered formatter reads.
-     *
-     * A key belonging to another formatter passes: scripts run one option set
-     * through several formats, and only a key nobody reads is a miss.
-     *
-     * @param array<string, string> $options
-     */
-    private function refuseUnknownFormatOptionKeys(array $options): void
-    {
-        $known = $this->formatterRegistry->declaredFormatOptionKeys();
-        $unknown = array_values(array_diff(array_keys($options), $known));
-
-        if ($unknown === []) {
-            return;
-        }
-
-        throw ConfigurationRefusal::aboutCommandLineInput(
-            '--format-opt',
-            \sprintf(
-                'Unknown --format-opt %s %s. No formatter reads %s. Known keys: %s.',
-                \count($unknown) === 1 ? 'key' : 'keys',
-                implode(', ', array_map(static fn(string $key): string => \sprintf('"%s"', $key), $unknown)),
-                \count($unknown) === 1 ? 'it' : 'them',
-                $known !== [] ? implode(', ', $known) : 'none',
-            ),
-        );
     }
 
     /**
@@ -254,7 +177,7 @@ final class FormatterContextFactory
             return self::DEFAULT_DETAIL_LIMIT;
         }
 
-        /** @var string $detailValue */
+        $detailValue = CommandLineSpelling::of($detailValue, '--detail');
         if ($detailValue === 'all') {
             return 0;
         }
@@ -272,8 +195,7 @@ final class FormatterContextFactory
      */
     private function parseTopOption(InputInterface $input): int
     {
-        /** @var string|null $topValue */
-        $topValue = $input->getOption('top');
+        $topValue = CommandLineSpelling::option($input, 'top');
 
         if ($topValue === null) {
             return FormatterContext::DEFAULT_TOP_ISSUES_LIMIT;

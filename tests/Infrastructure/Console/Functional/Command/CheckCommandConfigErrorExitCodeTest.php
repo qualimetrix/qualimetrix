@@ -75,6 +75,33 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
         self::assertStringContainsString('references unknown metric', self::envelopeError($tester));
     }
 
+    /**
+     * The envelope's `position` promises what the throw site located, no more:
+     * a merged value carries none even though its sentence names the key, and
+     * a required key the author left out is where the path ends.
+     */
+    #[Test]
+    public function itPublishesOnlyThePositionItsThrowSiteLocated(): void
+    {
+        $merged = $this->runCheck([
+            '--format' => 'json',
+            '--config' => $this->writeFile('merged.yaml', "memory_limit: 010M\n"),
+        ]);
+        $missing = $this->runCheck([
+            '--format' => 'json',
+            '--config' => $this->writeFile('missing.yaml', "computed_metrics:\n  computed.foo: ~\n"),
+        ]);
+
+        self::assertSame(3, $merged->getStatusCode());
+        self::assertStringContainsString('memory_limit', self::envelopeError($merged));
+        self::assertNull(self::envelope($merged)['position']);
+        self::assertSame(3, $missing->getStatusCode());
+        self::assertSame(
+            ['path' => ['computed_metrics', 'computed.foo', 'formulas', 'namespace'], 'written' => 'namespace', 'accepted' => [], 'closed' => false],
+            self::envelope($missing)['position'],
+        );
+    }
+
     #[Test]
     public function itClassifiesCorruptBaselineJsonAsConfigError(): void
     {
@@ -150,13 +177,19 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
         return $tester;
     }
 
-    /** Parses the `{error, exit_code}` envelope off stdout and returns its message. */
+    /** Parses the envelope off stdout and returns its message. */
     private static function envelopeError(CommandTester $tester): string
     {
-        /** @var array{error: string, exit_code: int} $envelope */
+        return self::envelope($tester)['error'];
+    }
+
+    /** @return array{error: string, exit_code: int, position: mixed} */
+    private static function envelope(CommandTester $tester): array
+    {
+        /** @var array{error: string, exit_code: int, position: mixed} $envelope */
         $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
 
-        return $envelope['error'];
+        return $envelope;
     }
 
     private function writeFile(string $name, string $contents): string

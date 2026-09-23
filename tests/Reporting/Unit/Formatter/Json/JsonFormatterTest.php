@@ -28,6 +28,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
+use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\Formatter\Json\JsonFindingSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonFormatter;
 use Qualimetrix\Reporting\Formatter\Json\JsonHealthSection;
@@ -572,8 +573,10 @@ final class JsonFormatterTest extends TestCase
     public function itFiltersFindingsByNamespace(): void
     {
         // Findings are pre-filtered by ResultPresenter before reaching the formatter.
-        // Only in-scope findings are passed to the report builder.
+        // Only in-scope findings are passed to the report builder, beside the
+        // count of what the selection left out.
         $report = ReportBuilder::create()
+            ->outOfScope(new OutOfScopeFindings(0, 0, 0))
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Payment/Pay.php'), 10),
                 symbolPath: SymbolPath::forClass('App\Payment', 'PayService'),
@@ -618,11 +621,15 @@ final class JsonFormatterTest extends TestCase
      * The section keeps its shape under a drill-down: the numerator of
      * `debtPer1kLoc` would be the selection's and its denominator the
      * project's, so the key says "not applicable" by value.
+     *
+     * "Under a drill-down" is the report's own `outOfScope`, the one fact
+     * that also decides the `outOfScope` key — not the context's selector,
+     * which a second copy of the predicate would read and could disagree on.
      */
     #[Test]
     public function itKeepsTheSummaryShapeUnderADrillDown(): void
     {
-        $report = new Report(
+        $plain = new Report(
             findings: [],
             filesAnalyzed: 3,
             filesSkipped: 0,
@@ -631,18 +638,25 @@ final class JsonFormatterTest extends TestCase
             warningCount: 0,
             debtPer1kLoc: 5.4,
         );
-
-        $plain = json_decode($this->formatter->format($report, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
-        $scoped = json_decode(
-            $this->formatter->format($report, new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Payment'))),
-            true,
-            512,
-            \JSON_THROW_ON_ERROR,
+        $selected = new Report(
+            findings: [],
+            filesAnalyzed: 3,
+            filesSkipped: 0,
+            duration: 0.1,
+            errorCount: 0,
+            warningCount: 0,
+            debtPer1kLoc: 5.4,
+            outOfScope: new OutOfScopeFindings(1, 0, 0),
         );
 
-        self::assertSame(array_keys($plain['summary']), array_keys($scoped['summary']));
-        self::assertSame(5.4, $plain['summary']['debtPer1kLoc']);
-        self::assertNull($scoped['summary']['debtPer1kLoc']);
+        $plainData = json_decode($this->formatter->format($plain, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
+        $scopedData = json_decode($this->formatter->format($selected, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame(array_keys($plainData['summary']), array_keys($scopedData['summary']));
+        self::assertSame(5.4, $plainData['summary']['debtPer1kLoc']);
+        self::assertNull($plainData['outOfScope']);
+        self::assertNull($scopedData['summary']['debtPer1kLoc']);
+        self::assertSame(1, $scopedData['outOfScope']['errorCount']);
     }
 
     #[Test]
@@ -1413,34 +1427,24 @@ final class JsonFormatterTest extends TestCase
         self::assertFalse($data['violationsMeta']['truncated']);
     }
 
+    /**
+     * `violations` and `limit` set one value, and the command line refuses
+     * the pair; a formatter that still receives both is wired wrong, and
+     * picking one would drop the other in silence.
+     */
     #[Test]
-    public function itPrioritizesFormatOptViolationsOverLimit(): void
+    public function itRefusesToPickBetweenViolationsAndLimit(): void
     {
-        $builder = ReportBuilder::create()
+        $report = ReportBuilder::create()
             ->filesAnalyzed(1)
             ->filesSkipped(0)
-            ->duration(0.1);
+            ->duration(0.1)
+            ->build();
 
-        for ($i = 0; $i < 20; $i++) {
-            $builder->addFinding(self::finding(
-                location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
-                symbolPath: SymbolPath::forClass('App', 'A'),
-                ruleName: 'test',
-                code: 'test',
-                message: "Violation {$i}",
-                severity: Severity::Warning,
-            ));
-        }
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('violations and limit reached the formatter together');
 
-        $report = $builder->build();
-
-        // When both are set, findings takes precedence
-        $context = new FormatterContext(options: ['violations' => '3', 'limit' => '10']);
-        $output = $this->formatter->format($report, $context);
-        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
-
-        self::assertCount(3, $data['violations']);
-        self::assertSame(3, $data['violationsMeta']['shown']);
+        $this->formatter->format($report, new FormatterContext(options: ['violations' => '3', 'limit' => '10']));
     }
 
     #[Test]

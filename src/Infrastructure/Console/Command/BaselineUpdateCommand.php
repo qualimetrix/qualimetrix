@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateDisposition;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateResult;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
+use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -67,8 +68,7 @@ final class BaselineUpdateCommand extends BaselineCommand
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        /** @var string $baselinePath */
-        $baselinePath = $input->getArgument('baseline');
+        $baselinePath = CommandLineSpelling::requiredArgument($input, 'baseline');
 
         $measured = $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $baselinePath);
 

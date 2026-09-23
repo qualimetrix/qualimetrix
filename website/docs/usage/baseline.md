@@ -41,9 +41,11 @@ All analysis-bearing baseline commands accept the same configuration options nee
 --rule-opt=RULE-OPT
 --only-rule=ONLY-RULE
 --disable-rule=DISABLE-RULE
+--include-generated
+--include-autoload-dev
 ```
 
-They also accept `--config=CONFIG`. They do **not** accept `--suppress-path` or `--suppress-namespace`, because those safe `check` narrowings would otherwise make lifecycle operations asymmetric. They also do not accept `--no-suppression-annotations`, which is report-only and cannot widen the measured set.
+The two `--include-*` flags decide what the project is — the paths a run with no paths analyses and the scope it is judged against — so a baseline captured without the flag a later `check` uses does not measure the same set. They also accept `--config=CONFIG`. They do **not** accept `--suppress-path` or `--suppress-namespace`, because those safe `check` narrowings would otherwise make lifecycle operations asymmetric. They also do not accept `--no-suppression-annotations`, which is report-only and cannot widen the measured set.
 
 ### Generate
 

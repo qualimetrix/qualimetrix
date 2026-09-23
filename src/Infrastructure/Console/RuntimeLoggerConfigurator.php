@@ -26,16 +26,8 @@ final readonly class RuntimeLoggerConfigurator
 
     public function configure(InputInterface $input, OutputInterface $output): LoggerInterface
     {
-        $logFile = $input->hasOption('log-file') ? $input->getOption('log-file') : null;
-        $logLevel = $input->hasOption('log-level') ? $input->getOption('log-level') : null;
-
-        if (!\is_string($logFile) && $logFile !== null) {
-            $logFile = null;
-        }
-
-        if (!\is_string($logLevel)) {
-            $logLevel = LogLevel::INFO;
-        }
+        $logFile = CommandLineSpelling::option($input, 'log-file');
+        $logLevel = CommandLineSpelling::option($input, 'log-level') ?? LogLevel::INFO;
 
         // The refusal quotes what was typed, not its folded form: an answer
         // naming a value the user never wrote reads as a different miss.

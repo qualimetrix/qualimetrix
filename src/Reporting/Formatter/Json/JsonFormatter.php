@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Json;
 
+use LogicException;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
 use Qualimetrix\Reporting\Formatter\FormatOptionValue;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
@@ -46,12 +48,10 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
 
         $topN = $this->getTopN($context);
 
-        // When drill-down is active, compute summary from filtered findings
-        $isDrillDown = $context->namespace !== null || $context->class !== null;
-
         $data = [
             'meta' => ProductIdentity::meta(gmdate('c')),
-            'summary' => $this->buildSummary($report, $filteredFindings, $isDrillDown),
+            'summary' => $this->buildSummary($report, $filteredFindings),
+            'outOfScope' => $this->buildOutOfScope($report->outOfScope),
             'coverage' => $report->coverage?->toArray(),
             'health' => $this->healthSection->format($report, $context),
             'worstNamespaces' => $this->offenderSection->formatNamespaces(
@@ -146,15 +146,17 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
     /**
      * Builds the summary section.
      *
-     * When drill-down is active, finding counts reflect the filtered set.
+     * Under a drill-down, finding counts reflect the selection. A drill-down
+     * is what `outOfScope` says it is — the same fact the `outOfScope` key
+     * publishes, so the two sections cannot disagree about whether one ran.
      *
      * @param list<Finding> $filteredFindings
      *
      * @return array<string, mixed>
      */
-    private function buildSummary(Report $report, array $filteredFindings, bool $isDrillDown): array
+    private function buildSummary(Report $report, array $filteredFindings): array
     {
-        if ($isDrillDown) {
+        if ($report->outOfScope !== null) {
             $errorCount = 0;
             $warningCount = 0;
             $infoCount = 0;
@@ -198,6 +200,24 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
     }
 
     /**
+     * What a `--namespace`/`--class` selection left out of `summary`: the exit
+     * code is resolved over both. `null` without a selection, and zeroes when
+     * the selection left nothing out — present either way, so the document's
+     * shape does not move with the command line.
+     *
+     * @return array{violationCount: int, errorCount: int, warningCount: int, infoCount: int}|null
+     */
+    private function buildOutOfScope(?OutOfScopeFindings $outOfScope): ?array
+    {
+        return $outOfScope === null ? null : [
+            'violationCount' => $outOfScope->total(),
+            'errorCount' => $outOfScope->errorCount,
+            'warningCount' => $outOfScope->warningCount,
+            'infoCount' => $outOfScope->infoCount,
+        ];
+    }
+
+    /**
      * Builds grouped finding structure sorted by count descending.
      *
      * @param list<Finding> $findings Already limited findings
@@ -226,26 +246,30 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
     /**
      * Returns the finding limit based on context.
      *
-     * Priority: explicit --format-opt violations=N > --detail > default (no limit).
-     * Returns null for "all findings" (no limit).
+     * Priority: an explicit `violations`/`limit` format option > --detail >
+     * default (no limit). Returns null for "all findings" (no limit).
      */
     private function getViolationLimit(FormatterContext $context): ?int
     {
-        // Support both --format-opt=violations=N and --format-opt=limit=N
-        // "violations" takes precedence when both are set
-        $opt = $context->getOption('violations');
-        $isLimitAlias = false;
+        $violations = $context->getOption('violations');
+        $limit = $context->getOption('limit');
 
-        if ($opt === '') {
-            $opt = $context->getOption('limit');
-            $isLimitAlias = $opt !== '';
+        if ($violations !== '' && $limit !== '') {
+            throw new LogicException(
+                '--format-opt violations and limit reached the formatter together; the command line must refuse the pair first.',
+            );
         }
 
-        if ($opt !== '') {
-            $parsed = FormatOptionValue::limit($isLimitAlias ? 'limit' : 'violations', $opt);
+        if ($violations !== '') {
+            // violations=0 means "show none"
+            return FormatOptionValue::limit('violations', $violations);
+        }
 
-            // limit=0 means "no limit" (show all), violations=0 means "show none"
-            return $isLimitAlias && $parsed === 0 ? null : $parsed;
+        if ($limit !== '') {
+            // limit=0 means "no limit" (show all)
+            $parsed = FormatOptionValue::limit('limit', $limit);
+
+            return $parsed === 0 ? null : $parsed;
         }
 
         // --detail mode: respect limit (0 = all)

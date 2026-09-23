@@ -148,6 +148,9 @@ Infrastructure/
     ├── ScopeWarningChecker.php        # Renders the incomplete-scope warning from Run's ProjectScopeCoverage answer
     ├── ProfilePresenter.php           # Handles profiling output: summary to stderr or export to file
     ├── FormatterContextFactory.php    # Creates FormatterContext from CLI input options
+    ├── FormatOptionPairs.php          # The --format-opt door: every written pair judged, a repeated key and two spellings of one value refused
+    ├── ArtifactFile.php               # A file an option names for an artifact: the precheck and the tmp+rename write it models
+    ├── CommandLineSpelling.php        # An option or argument value as argv would spell it; other shapes refused with exit 3
     ├── CheckCommandDefinition.php     # Command option definitions
     ├── FilteredInputDefinition.php    # InputDefinition that hides rule-specific options from --help
     ├── Progress/
@@ -156,7 +159,7 @@ Infrastructure/
     └── Command/
         ├── CheckCommand.php           # Thin orchestrator (delegates to extracted classes)
         ├── BaselineCommand.php              # Base class for the five lifecycle commands: shared error-to-exit-code mapping, and — for cleanup/update — the measured-run preamble and scope validation
-        ├── BaselineCommandDefinition.php    # Shared input definition: paths + the configuration options that decide what is measured (--config, --preset, --rule-opt, --only-rule, --disable-rule), deliberately without check's exclusion/suppression flags (ADR 0017)
+        ├── BaselineCommandDefinition.php    # Shared input definition: paths + the configuration options that decide what is measured (--config, --preset, --rule-opt, --only-rule, --disable-rule, --include-generated, --include-autoload-dev), deliberately without check's exclusion/suppression flags (ADR 0017)
         ├── BaselineRunInterface.php         # The one way a baseline command obtains the set it measures
         ├── BaselineRun.php                  # Implements BaselineRunInterface: resolves configuration, configures the runtime and runs the analysis exactly as `check` does
         ├── BaselineRunContext.php           # VO: one run's measured findings, its RunScope and project root

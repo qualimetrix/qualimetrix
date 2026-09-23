@@ -30,7 +30,7 @@ final readonly class CheckScopeResolver
         // makes a scope-conditioned channel speak.
         //
         // One measurement, two answers, and they are not the same answer: a
-        // project that declares no readable production autoload at all has no
+        // project whose counted autoload sections declare nothing readable has no
         // uncovered target to warn about and no licence to judge either, so
         // reading the verdict off the empty warning list would silently call
         // it a whole-project run.

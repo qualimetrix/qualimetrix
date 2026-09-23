@@ -41,27 +41,23 @@ final class ComposerReaderTest extends TestCase
         ];
         $this->writeComposerJson($composerJson);
 
-        $paths = $this->reader->extractAutoloadPaths($this->tempDir . '/composer.json');
+        $paths = $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json');
 
         self::assertSame(['src', 'tests'], $paths);
     }
 
     #[Test]
-    public function itReturnsAnEmptyArrayWhenTheComposerFileDoesNotExist(): void
+    public function itAnswersNullWhenTheComposerFileDoesNotExist(): void
     {
-        $paths = $this->reader->extractAutoloadPaths('/nonexistent/composer.json');
-
-        self::assertSame([], $paths);
+        self::assertNull($this->reader->productionAutoloadTargets('/nonexistent/composer.json'));
     }
 
     #[Test]
-    public function itReturnsAnEmptyArrayWhenThereIsNoAutoloadSection(): void
+    public function itAnswersNullWhenThereIsNoAutoloadSection(): void
     {
         $this->writeComposerJson(['name' => 'test/package']);
 
-        $paths = $this->reader->extractAutoloadPaths($this->tempDir . '/composer.json');
-
-        self::assertSame([], $paths);
+        self::assertNull($this->reader->productionAutoloadTargets($this->tempDir . '/composer.json'));
     }
 
     #[Test]
@@ -76,13 +72,13 @@ final class ComposerReaderTest extends TestCase
         ];
         $this->writeComposerJson($composerJson);
 
-        $paths = $this->reader->extractAutoloadPaths($this->tempDir . '/composer.json');
+        $paths = $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json');
 
         self::assertSame(['src', 'lib'], $paths);
     }
 
     #[Test]
-    public function itIncludesAutoloadDevPaths(): void
+    public function itReadsAutoloadDevPathsOnlyThroughTheirOwnQuestion(): void
     {
         $composerJson = [
             'autoload-dev' => [
@@ -93,8 +89,8 @@ final class ComposerReaderTest extends TestCase
         ];
         $this->writeComposerJson($composerJson);
 
-        self::assertSame([], $this->reader->extractAutoloadPaths($this->tempDir . '/composer.json'));
-        self::assertSame(['tests'], $this->reader->extractAutoloadDevPaths($this->tempDir . '/composer.json'));
+        self::assertNull($this->reader->productionAutoloadTargets($this->tempDir . '/composer.json'));
+        self::assertSame(['tests'], $this->reader->developmentAutoloadTargets($this->tempDir . '/composer.json'));
     }
 
     #[Test]
@@ -105,7 +101,7 @@ final class ComposerReaderTest extends TestCase
             'autoload-dev' => ['psr-4' => ['Tests\\' => 'tests/']],
         ]);
 
-        self::assertSame(['src'], $this->reader->extractAutoloadPaths($this->tempDir . '/composer.json'));
+        self::assertSame(['src'], $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json'));
     }
 
     #[Test]
@@ -126,10 +122,10 @@ final class ComposerReaderTest extends TestCase
         ];
         $this->writeComposerJson($composerJson);
 
-        self::assertSame(['src'], $this->reader->extractAutoloadPaths($this->tempDir . '/composer.json'));
+        self::assertSame(['src'], $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json'));
         self::assertSame(
             ['tests', 'fixtures', 'test-data'],
-            $this->reader->extractAutoloadDevPaths($this->tempDir . '/composer.json'),
+            $this->reader->developmentAutoloadTargets($this->tempDir . '/composer.json'),
         );
     }
 
@@ -150,8 +146,8 @@ final class ComposerReaderTest extends TestCase
         ];
         $this->writeComposerJson($composerJson);
 
-        self::assertSame(['src'], $this->reader->extractAutoloadPaths($this->tempDir . '/composer.json'));
-        self::assertSame(['src'], $this->reader->extractAutoloadDevPaths($this->tempDir . '/composer.json'));
+        self::assertSame(['src'], $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json'));
+        self::assertSame(['src'], $this->reader->developmentAutoloadTargets($this->tempDir . '/composer.json'));
     }
 
     #[Test]
@@ -167,7 +163,7 @@ final class ComposerReaderTest extends TestCase
         ];
         $this->writeComposerJson($composerJson);
 
-        $paths = $this->reader->extractAutoloadPaths($this->tempDir . '/composer.json');
+        $paths = $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json');
 
         self::assertSame(['src'], $paths);
     }
@@ -184,7 +180,7 @@ final class ComposerReaderTest extends TestCase
         ];
         $this->writeComposerJson($composerJson);
 
-        $paths = $this->reader->extractAutoloadPaths($this->tempDir . '/composer.json');
+        $paths = $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json');
 
         self::assertSame(['.'], $paths);
     }
@@ -201,7 +197,7 @@ final class ComposerReaderTest extends TestCase
         ];
         $this->writeComposerJson($composerJson);
 
-        $paths = $this->reader->extractAutoloadPaths($this->tempDir . '/composer.json');
+        $paths = $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json');
 
         self::assertSame(['.', 'src'], $paths);
     }
@@ -218,9 +214,54 @@ final class ComposerReaderTest extends TestCase
         ];
         $this->writeComposerJson($composerJson);
 
-        $paths = $this->reader->extractAutoloadPaths($this->tempDir . '/composer.json');
+        $paths = $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json');
 
         self::assertSame(['src'], $paths);
+    }
+
+    /**
+     * Composer expands `*` in a `classmap` entry to the directories it
+     * matches; left unexpanded the entry names no path, and a run over the
+     * default paths would be refused over a manifest Composer accepts.
+     */
+    #[Test]
+    public function itExpandsAClassmapWildcardToTheDirectoriesItMatches(): void
+    {
+        mkdir($this->tempDir . '/modules/beta/lib', 0777, true);
+        mkdir($this->tempDir . '/modules/alpha/lib', 0777, true);
+        touch($this->tempDir . '/modules/stray.php');
+        $this->writeComposerJson([
+            'autoload' => ['classmap' => ['modules/*/lib', 'modules/*']],
+            'autoload-dev' => ['classmap' => ['modules/*/lib/']],
+        ]);
+
+        self::assertSame(
+            ['modules/alpha/lib', 'modules/beta/lib', 'modules/alpha', 'modules/beta'],
+            $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json'),
+        );
+        self::assertSame(
+            ['modules/alpha/lib', 'modules/beta/lib'],
+            $this->reader->developmentAutoloadTargets($this->tempDir . '/composer.json'),
+        );
+    }
+
+    /**
+     * A wildcard matching nothing is kept as written: it then meets the same
+     * refusal as any other missing target, as it does in Composer. Only
+     * `classmap` expands — Composer gives `*` no meaning in the other forms.
+     */
+    #[Test]
+    public function itKeepsAWildcardMatchingNothingAndLeavesOtherFormsUnexpanded(): void
+    {
+        mkdir($this->tempDir . '/lib/a', 0777, true);
+        $this->writeComposerJson([
+            'autoload' => ['classmap' => ['nowhere/*'], 'files' => ['lib/*'], 'psr-4' => ['App\\' => 'lib/*']],
+        ]);
+
+        self::assertSame(
+            ['lib/*', 'nowhere/*'],
+            $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json'),
+        );
     }
 
     /**

@@ -159,9 +159,7 @@ final readonly class RuleInputValidator
         array $producers,
     ): void {
         $owners = array_keys($configuration->ruleOptions->rules);
-        /** @var list<string> $cliOptions */
-        $cliOptions = $input->hasOption('rule-opt') ? $input->getOption('rule-opt') : [];
-        foreach ($cliOptions as $option) {
+        foreach (CommandLineSpelling::options($input, 'rule-opt') as $option) {
             $owners[] = self::ownerOfWellFormedPair($option);
         }
 
@@ -257,11 +255,7 @@ final readonly class RuleInputValidator
 
     private function validateWorkers(InputInterface $input): void
     {
-        if (!$input->hasOption('workers')) {
-            return;
-        }
-
-        $workers = $input->getOption('workers');
+        $workers = CommandLineSpelling::option($input, 'workers');
         if ($workers === null) {
             return;
         }

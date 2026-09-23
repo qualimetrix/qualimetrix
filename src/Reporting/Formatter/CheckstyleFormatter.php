@@ -6,6 +6,7 @@ namespace Qualimetrix\Reporting\Formatter;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
@@ -46,6 +47,18 @@ final class CheckstyleFormatter implements FormatterInterface
                 $xml->writeAttribute('source', 'qmx.analysis.' . $failure->kind);
                 $xml->endElement();
             }
+            $xml->endElement();
+        }
+
+        if ($report->outOfScope !== null && $report->outOfScope->total() > 0) {
+            $xml->startElement('file');
+            $xml->writeAttribute('name', '[drill-down]');
+            $xml->startElement('error');
+            $xml->writeAttribute('line', '1');
+            $xml->writeAttribute('severity', 'info');
+            $xml->writeAttribute('message', $report->outOfScope->describe());
+            $xml->writeAttribute('source', 'qmx.' . OutOfScopeFindings::CHECK);
+            $xml->endElement();
             $xml->endElement();
         }
 

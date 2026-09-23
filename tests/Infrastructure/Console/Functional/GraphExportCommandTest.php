@@ -467,6 +467,28 @@ final class GraphExportCommandTest extends TestCase
         chmod($unwritableDir, 0o755);
     }
 
+    /**
+     * A directory passes a check that only asks whether the path is writable,
+     * and the write then fails after the whole analysis.
+     */
+    #[Test]
+    public function itRefusesADirectoryOutputPathBeforeAnalysis(): void
+    {
+        file_put_contents($this->tempDir . '/ClassA.php', '<?php namespace Test; class ClassA {}');
+        mkdir($this->tempDir . '/out');
+
+        $analyzer = new CountingDependencyGraphAnalyzer($this->createAnalyzer());
+        $tester = $this->createCommandTesterWithAnalyzer($analyzer);
+        $exit = $tester->execute(
+            ['paths' => [$this->tempDir], '--output' => $this->tempDir . '/out'],
+            ['capture_stderr_separately' => true],
+        );
+
+        self::assertSame(3, $exit, $tester->getErrorOutput());
+        self::assertSame(0, $analyzer->calls);
+        self::assertStringContainsString('is a directory', $tester->getErrorOutput());
+    }
+
     /** @return iterable<string, array{string}> */
     public static function provideExportFormats(): iterable
     {

@@ -17,7 +17,7 @@ Console/
 ├── Application.php
 ├── CliSelectorDecoder.php       # explicit kind:value scalar → Core path/namespace pattern
 ├── CliOptionsParser.php
-├── MeasuredFindingSet.php         # The set a baseline measures (ADR 0017): the pipeline's findings before the baseline stage. Defined by config + source annotations; a CLI flag may narrow it, never widen it
+├── MeasuredFindingSet.php         # The set a baseline measures (ADR 0017): the pipeline's findings before the baseline stage. Defined by configuration alone — qmx.yaml, source annotations, and the config CLI flags baseline commands share with check (--preset, --disable-rule, --only-rule, --include-generated, --include-autoload-dev), which can narrow or widen it; check's own --suppress-path/--suppress-namespace flags never reach it, since baseline commands deliberately omit them
 ├── FindingFilterOrchestrator.php  # Builds Reporting projection options and renders stage diagnostics; policy and ordering remain in Reporting
 ├── RuntimeConfigurator.php
 ├── RuntimeLoggerConfigurator.php    # Creates, publishes, and returns the logger for one run
@@ -29,6 +29,9 @@ Console/
 ├── ChannelExclusionKeyValidator.php  # Whether one suppress_namespace_channels key can exclude anything
 ├── ChannelExclusionKeyHints.php      # What to say when it cannot
 ├── ResultPresenter.php
+├── ArtifactFile.php                 # A file an option names for an artifact (--output, --profile, graph --output): the precheck and the tmp+rename write it models
+├── CommandLineSpelling.php          # An option or argument value as argv would spell it; every valued door reads through it
+├── FormatOptionPairs.php            # The --format-opt door: every written pair judged, a repeated key and two spellings of one value refused
 ├── CheckCommandDefinition.php
 ├── FilteredInputDefinition.php      # InputDefinition that hides rule-specific options from --help
 ├── OutputHelper.php                 # Line-by-line output with flush (avoids PTY truncation)
@@ -68,8 +71,9 @@ has no logger, `GitScopeResolver`, or `ScopeWarningChecker` property.
 
 `CheckScopeResolver` owns the narrow scope seam. It resolves
 `GitScopeResolution` first, so invalid Git references fail before warnings or a
-payload are produced, and only then asks Run's `ProjectScopeCoverage` which
-production autoload roots the resolved paths leave uncovered. That one answer
+payload are produced, and only then asks Run's `ProjectScopeCoverage` which of
+the project's autoload targets — production, plus `autoload-dev` under
+`AutoloadDevPolicy::Include` — the resolved paths leave uncovered. That one answer
 feeds both outputs of `ResolvedCheckScope`: `ScopeWarningChecker` renders it as
 the partial-autoload warning, and its emptiness is the `coversProjectScope`
 boolean `CheckCommand` puts on the scoped `RunConfiguration`, so a rule that
@@ -140,13 +144,31 @@ owners are input errors (exit 3); a bare group prefix is refused with the
 refuses an empty value for the five doors whose owners would read it as
 "not given" (`--config`, `--preset`, `--baseline`, `--output`, `--report`), and
 `ProfilePresenter::refuseImpossibleExport()` refuses a `--profile-format` outside
-its closed set and an unwritable `--profile` target — all before analysis.
+its closed set and a `--profile` target the export cannot be written to, and
+`ResultPresenter::assertOutputIsWritable()` the same for `--output` — all before
+analysis. Both targets, and `graph:export --output`, are judged by
+`ArtifactFile`, which also makes the write (a temporary file beside the target,
+renamed over it), so the precheck cannot model a different write than the one
+made: a directory, a file in a directory it cannot write and an unwritable file
+are refused. A profile write that still fails after the report is published
+ends the run with exit 3 through `RefusalPresenter::refusalAfterPublishedReport()`:
+the sentence goes to stderr whatever the format, so stdout keeps the report as
+its only document. `FormatOptionPairs` judges every written `--format-opt` pair
+before any fold by key and refuses a key written twice, and two keys that set
+one value (`violations` and `limit`, or `limit` beside `--all`).
+Every valued option and argument is read through `CommandLineSpelling`: argv
+delivers strings, and an embedder's array input may deliver any PHP value, so an
+integer is read as its digits and any other shape is refused (exit 3) instead
+of reaching a string-typed reader as a type error (exit 1) or being dropped.
+Flags are read as booleans, and a value-optional option decides its "written
+alone" forms (`null`, or `true` from an array input) before spelling the value.
 `Application::doRun()` reads the long `--format` off the raw tokens, so a
 refusal it catches is enveloped for the JSON formats like one a command catches,
 and `RefusalPresenter` frames the fallback path exactly like a carried refusal.
 The JSON envelope is `{error, exit_code, position}`: `position` publishes a
-refusal's `RefusedPosition` (`path`, `written`, `accepted`, `closed`) and is
-`null` for every outcome without one. On incomplete analysis, the selected report is
+refusal's `RefusedPosition` (`path`, `written`, `accepted`, `closed`) — the
+refused spot as its throw site located it — and is `null` for every outcome
+without one, including a merged value whose sentence names its key. On incomplete analysis, the selected report is
 still rendered for diagnosis and exit 4 takes precedence over finding policy.
 Non-payload diagnostics from `check` are written to stderr.
 

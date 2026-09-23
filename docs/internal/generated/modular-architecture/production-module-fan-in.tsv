@@ -7,7 +7,7 @@ Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface	Anal
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface	Analysis.Configuration	3	2
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest	Analysis.Configuration	1	1
 Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	Analysis.Configuration	3	3
-Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	62	11
+Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	65	11
 Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	Analysis.Configuration	3	3
 Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	27	7
 Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions	Analysis.Configuration	3	2
@@ -309,7 +309,7 @@ Qualimetrix\Reporting\FindingProjection\SuppressionCompositionBuilder	Reporting	
 Qualimetrix\Reporting\FormatterContext	Reporting	2	1
 Qualimetrix\Reporting\Formatter\FormatOptionValue	Reporting	1	1
 Qualimetrix\Reporting\Formatter\FormatterInterface	Reporting	2	2
-Qualimetrix\Reporting\Formatter\FormatterRegistryInterface	Reporting	3	2
+Qualimetrix\Reporting\Formatter\FormatterRegistryInterface	Reporting	4	2
 Qualimetrix\Reporting\Formatter\PublishedUtf8	Reporting	2	1
 Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface	Reporting.GraphProjection	1	1
 Qualimetrix\Reporting\GraphProjection\Contract\GraphDirection	Reporting.GraphProjection	1	1

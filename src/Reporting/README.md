@@ -60,13 +60,13 @@ Reporting/
 ├── DrillDown/
 │   ├── DrillDownBinding.php             # How many analyzed namespaces/classes a `--namespace` / `--class` value selects; zero is refused instead of emptying the report
 │   ├── FindingFilter.php                # What `--namespace` / `--class` selects from findings and offenders — the one copy of that rule
-│   └── OutOfScopeFindings.php           # Severity counts of the run's findings a selection left out; lets a renderer say "clean here, not clean elsewhere"
+│   └── OutOfScopeFindings.php           # Severity counts of the run's findings a selection left out; every renderer and structured format publishes them
 └── Formatter/
     ├── FormatterInterface.php              # Formatter contract
     ├── FormatOptionKeysInterface.php       # Opt-in: the --format-opt keys a formatter reads
-    ├── FormatOptionValue.php               # The value grammar of every --format-opt key; the CLI refuses by it, formatters read by it
+    ├── FormatOptionValue.php               # The value grammar of every --format-opt key, and which keys set one value; the CLI refuses by it, formatters read by it
     ├── PublishedFinding.php                # Which composition of a finding's texts each surface publishes, and under which key
-    ├── PublishedUtf8.php                   # Repairs invalid UTF-8 from analysed identifiers in structured formats and counts the repair
+    ├── PublishedUtf8.php                   # Repairs invalid UTF-8 from analysed identifiers and paths in structured formats and counts the repair
     ├── FormatterRegistryInterface.php      # Registry contract
     ├── FormatterRegistry.php               # Registry implementation
     ├── TextFormatter.php                   # Compact text output (with colors)
@@ -471,6 +471,7 @@ Summary-oriented JSON for AI agents, CI/CD, and programmatic consumption. Includ
 {
   "meta": { "version": "<qmx version>", "package": "qmx", "timestamp": "...", "docs": "https://qualimetrix.dev", "llmsTxt": "https://qualimetrix.dev/llms.txt" },
   "summary": { "filesAnalyzed": 342, "violationCount": 47, "errorCount": 12, "warningCount": 35, "techDebtMinutes": 270, "debtPer1kLoc": 5.4 },
+  "outOfScope": null,
   "health": { "complexity": { "score": 65, "label": "Fair", "threshold": { "warning": 50, "error": 25 }, "coverage": { "state": "measured", "measured": 2263, "eligible": 2263, "ratio": 1.0, "unit": "callables", "basis": "complexity.ccn.count", "reason": null }, "decomposition": [...] } },
   "worstNamespaces": [{ "symbolPath": "App\\Payment", "healthOverall": 31, "reason": "low cohesion, high complexity" }],
   "worstClasses": [{ "symbolPath": "App\\Payment\\PaymentService", "file": "src/...", "healthOverall": 28, "metrics": {...} }],
@@ -483,11 +484,13 @@ spells a documentation address itself. `suppressed` publishes the same block,
 and three commands outside `check` (`directives`,
 `baseline:rename-channels`, `debug:layer-assignment`) open their JSON with it.
 
-**Options:** `--format-opt=violations=all|0|N` (default: all), `--format-opt=top=N` (default: 10 offenders). An unparsable value is refused with exit code 3 before the analysis runs; the grammar of every key is `Formatter\FormatOptionValue`. A capped list is the first N in the identity order below. `--detail` shows findings (default limit: 200, `--detail=all` for unlimited). `--namespace`/`--class` filters findings and worst offenders; the `summary` section keeps its keys under a selection, with `debtPer1kLoc: null` (the selection's debt over the whole project's LOC would mix two scopes). `coverage` always states whether the result is complete; policy and health results from an incomplete run are not authoritative.
+**Options:** `--format-opt=violations=all|0|N` (default: all), `--format-opt=top=N` (default: 10 offenders). An unparsable value is refused with exit code 3 before the analysis runs; the grammar of every key is `Formatter\FormatOptionValue`. `limit` sets the same value as `violations` (with `0` meaning no cap), and `FormatOptionValue::spellingsOf()` says so: the command line refuses both together, or `limit` beside `--all`, and `JsonFormatter` treats receiving both as a wiring defect. A capped list is the first N in the identity order below. `--detail` shows findings (default limit: 200, `--detail=all` for unlimited). `--namespace`/`--class` filters findings and worst offenders; the `summary` section keeps its keys under a selection — a selection being a report whose `outOfScope` is set, the one fact the `outOfScope` key publishes too — and counts only the selection, with `debtPer1kLoc: null` (the selection's debt over the whole project's LOC would mix two scopes). `coverage` always states whether the result is complete; policy and health results from an incomplete run are not authoritative.
 
 **`message` / `recommendation`:** the finding's message and its optional recommendation, under the same two keys in `violations` and `topIssues` (see `Formatter\PublishedFinding`).
 
-**`invalidUtf8Replaced`:** present only when strings from the analysed source were not valid UTF-8; each invalid byte was replaced by U+FFFD and the key counts the strings repaired. `metrics`, `suppressed` and the HTML payload publish the same key; `sarif`, `gitlab` and `checkstyle` publish the repair in their own diagnostic channel (see `Formatter\PublishedUtf8`).
+**`outOfScope`:** always present. `null` without `--namespace`/`--class`; under a selection, `{violationCount, errorCount, warningCount, infoCount}` of the run's findings the selection left out, zeroes when it left none. The exit code is resolved over `summary` and `outOfScope` together. `metrics` publishes the same key in its own vocabulary; `sarif`, `gitlab`, `checkstyle`, `github` and `html` add one diagnostic entry under `drill-down.out-of-scope` only when something lies outside (see `DrillDown\OutOfScopeFindings`). `suppressed` has none: a selection does not narrow it.
+
+**`invalidUtf8Replaced`:** present only when strings from the analysed source were not valid UTF-8; each invalid byte was replaced by U+FFFD and the key counts the strings repaired. `metrics`, `suppressed` and the HTML payload publish the same key; `sarif`, `gitlab` and `checkstyle` publish the repair in their own diagnostic channel (see `Formatter\PublishedUtf8`). SARIF repairs a path before percent-encoding it, because `%FF` is valid ASCII the encoder would never refuse.
 
 **`acceptedLevel`:** `null` unless the finding is a measured baseline breach (see [Accepted level](#accepted-level-baseline-breach) below), in which case it is `{ "shape": "magnitude" | "occurrence", "describe": "25", "count": 1 }`. For a `magnitude` channel, the current value is the sibling `metricValue` field — not duplicated here.
 

@@ -13,6 +13,7 @@ use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition;
+use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
@@ -117,31 +118,50 @@ final class LayerAssignmentCommand extends Command
             );
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output): int
+    /**
+     * The supported format and the FQN, as written.
+     *
+     *
+     * @throws ConfigurationRefusal for a value no command line can spell
+     * @throws InvalidArgumentException for an unsupported format or a malformed FQN
+     *
+     * @return array{string, string}
+     */
+    private function request(InputInterface $input): array
     {
-        /** @var string $format */
-        $format = $input->getOption('format');
+        $format = CommandLineSpelling::option($input, 'format') ?? '';
         if (!\in_array($format, self::SUPPORTED_FORMATS, true)) {
-            // Malformed CLI input is a refusal (exit 3), not
-            // `Command::INVALID`. Routed through the shared presenter (not a
-            // local `writeln()`) so the framing, the stream and the
-            // `-q`/`--silent` survival contract are the same one every other
-            // command's refusal gets.
-            return $this->refusalPresenter->fallbackRefusal($output, $format, new InvalidArgumentException(\sprintf(
+            throw new InvalidArgumentException(\sprintf(
                 'Unknown format "%s". Supported formats: %s.',
                 $format,
                 implode(', ', self::SUPPORTED_FORMATS),
-            )));
+            ));
         }
 
-        /** @var string $rawFqn */
-        $rawFqn = $input->getArgument('fqn');
-
+        $rawFqn = CommandLineSpelling::requiredArgument($input, 'fqn');
         $validationError = $this->validateFqn($rawFqn);
         if ($validationError !== null) {
-            // Same rationale as the format check above: through the shared
-            // presenter, not the command's own `reportError()`.
-            return $this->refusalPresenter->fallbackRefusal($output, $format, new InvalidArgumentException($validationError));
+            throw new InvalidArgumentException($validationError);
+        }
+
+        return [$format, $rawFqn];
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        $rawFormat = $input->getOption('format');
+        $format = \is_string($rawFormat) ? $rawFormat : null;
+
+        // Malformed CLI input is a refusal (exit 3), not `Command::INVALID`.
+        // Routed through the shared presenter (not a local `writeln()`) so
+        // the framing, the stream and the `-q`/`--silent` survival contract
+        // are the same one every other command's refusal gets.
+        try {
+            [$format, $rawFqn] = $this->request($input);
+        } catch (ConfigurationRefusal $refusal) {
+            return $this->refusalPresenter->refusal($output, $format, $refusal);
+        } catch (InvalidArgumentException $failure) {
+            return $this->refusalPresenter->fallbackRefusal($output, $format, $failure);
         }
 
         $symbol = SymbolPath::fromClassFqn($rawFqn);

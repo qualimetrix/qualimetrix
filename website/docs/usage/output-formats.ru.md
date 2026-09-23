@@ -101,6 +101,27 @@ bin/qmx check src/ --class=App\\Service\\UserService
 а не зелёное `No violations found.`. `--format=text` делает то же в своей
 итоговой строке.
 
+Структурированные форматы тоже перечисляют только выборку, и каждый сообщает,
+что осталось вне её, в том канале, которым уже пользуется для диагностики о
+самом документе:
+
+| Формат       | Что осталось вне выборки                                                                                                       |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| `json`       | Объект верхнего уровня `outOfScope`: `violationCount`, `errorCount`, `warningCount`, `infoCount`                               |
+| `metrics`    | Объект верхнего уровня `outOfScope`: `violations`, `errors`, `warnings`, `info`                                                |
+| `sarif`      | Уведомление уровня `note` в `runs[0].invocations[0].toolExecutionNotifications[]` с дескриптором `QMX-DRILL-DOWN-OUT-OF-SCOPE` |
+| `gitlab`     | Запись уровня `info` с `check_name: drill-down.out-of-scope` на `_project`                                                     |
+| `checkstyle` | Ошибка уровня `info` под синтетическим файлом `[drill-down]` с source `qmx.drill-down.out-of-scope`                            |
+| `github`     | Строка `::notice title=drill-down.out-of-scope::`                                                                              |
+| `html`       | Баннер над отчётом                                                                                                             |
+| `suppressed` | Ничего: его документ — состав подавлений всего прогона, выборка его не сужает                                                  |
+
+`json` и `metrics` несут `outOfScope` в каждом документе: `null` без выборки и
+нулевые счётчики, когда вне выборки ничего не осталось. Остальные форматы
+добавляют свою запись, только когда вне выборки что-то есть. Код возврата
+вычисляется по выборке и `outOfScope` вместе, поэтому чистая выборка может
+завершиться с кодом 2.
+
 **Режим детализации с `--detail`:**
 
 ```bash
@@ -179,7 +200,7 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 
 **Когда использовать:** Пользовательские скрипты, дашборды, программная обработка.
 
-**Ключи верхнего уровня:** `meta`, `summary`, `coverage`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, плюс `violationGroups`, когда передан `--group-by` — без него ключа нет вовсе, это не пустой объект.
+**Ключи верхнего уровня:** `meta`, `summary`, `outOfScope`, `coverage`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, плюс `violationGroups`, когда передан `--group-by` — без него ключа нет вовсе, это не пустой объект.
 
 `meta` называет инструмент, записавший документ: `version`, `package`, `timestamp` и два адреса документации — `docs`, сайт документации, и `llmsTxt`, индекс для ИИ-агентов. Оба адреса есть в каждом JSON-отчёте, у которого есть объект-конверт; см. исключения в [Адреса документации в JSON-отчётах](#documentation-addresses).
 
@@ -206,6 +227,7 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
         "techDebtMinutes": 270,
         "debtPer1kLoc": 2.1
     },
+    "outOfScope": null,
     "health": {
         "complexity": {
             "score": 78.0,
@@ -358,9 +380,11 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 
 `message` и `recommendation` значат одно и то же в `violations` и в
 `topIssues`: сообщение находки и её рекомендацию или `null`. При
-`--namespace`/`--class` объект `summary` сохраняет все свои ключи;
-`debtPer1kLoc` в нём равен `null`, потому что долг выборки на строки всего
-проекта смешал бы две области.
+`--namespace`/`--class` объект `summary` сохраняет все свои ключи и считает
+только выборку; `debtPer1kLoc` в нём равен `null`, потому что долг выборки на
+строки всего проекта смешал бы две области. Находки, оставшиеся вне выборки,
+посчитаны в `outOfScope`; без выборки он равен `null` — как и у остальных
+форматов, это показано в таблице детализации в разделе `summary` выше.
 
 Когда имя символа из анализируемого кода — невалидный UTF-8 (парсер принимает в
 идентификаторе любой байт выше 0x7F), каждый невалидный байт публикуется как
@@ -368,7 +392,10 @@ U+FFFD, а документ получает ключ верхнего уров�
 исправленных строк. `metrics`, `suppressed` и нагрузка `html` делают то же;
 `sarif` сообщает об этом уведомлением инструмента
 `QMX-PUBLICATION-INVALID-UTF8`, `gitlab` — записью `publication.invalid-utf8`,
-`checkstyle` — ошибкой под синтетическим файлом `[publication]`.
+`checkstyle` — ошибкой под синтетическим файлом `[publication]`. Путь к файлу,
+не являющийся валидным UTF-8, исправляется и помечается так же; `sarif`
+исправляет его до процентного кодирования, поэтому URI артефакта несёт
+`%EF%BF%BD`, а не голый `%FF`.
 
 Для машинной идентичности используй `channel + subject + optional occurrence +
 optional edge`. `symbol` — логическая проекция для отображения; строка исходника,
@@ -414,7 +441,10 @@ bin/qmx check src/ --format=json --format-opt=top=20
 число или `all`, `top` — целое число от 1, `contributors` — целое число,
 `rank-by` — `count` или `density`, `project-name` — непустое имя. Значение,
 которое не разбирается, отклоняется с кодом 3, а не заменяется значением по
-умолчанию.
+умолчанию. `violations` и `limit` ограничивают один и тот же список —
+`violations=0` не показывает ничего, `limit=0` показывает всё, — поэтому оба
+вместе или `limit` рядом с `--all` отклоняются с кодом 3, а не игнорируется
+один из них.
 
 ```bash
 # Группировка нарушений по классу или пространству имён
@@ -436,7 +466,7 @@ bin/qmx check src/ --format=json --no-progress > report.json
 
 **Когда использовать:** Пользовательские дашборды, анализ трендов, пайплайны data science или создание собственных критериев качества на основе сырых метрик.
 
-**Ключи верхнего уровня:** `version`, `toolVersion`, `package`, `timestamp`, `docs`, `llmsTxt`, `symbols[]` (каждый с `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`. Типа `callable` не существует; одна запись `project` агрегирует статистические метрики по всему проекту (min/max/avg/p95 по всем символам) и имеет `line` равным `null`. Здесь `version` — версия формата этой выгрузки, а `toolVersion` — версия Qualimetrix; `docs` и `llmsTxt` — те же адреса документации, что `json` публикует в `meta`.
+**Ключи верхнего уровня:** `version`, `toolVersion`, `package`, `timestamp`, `docs`, `llmsTxt`, `symbols[]` (каждый с `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `outOfScope`, `coverage`, `summary`. При `--namespace`/`--class` `summary` считает только выборку, а `outOfScope` — то, что осталось вне её; `symbols[]` выборка не сужает никогда. Типа `callable` не существует; одна запись `project` агрегирует статистические метрики по всему проекту (min/max/avg/p95 по всем символам) и имеет `line` равным `null`. Здесь `version` — версия формата этой выгрузки, а `toolVersion` — версия Qualimetrix; `docs` и `llmsTxt` — те же адреса документации, что `json` публикует в `meta`.
 
 <!-- llms:skip-begin -->
 **Пример вывода (сокращённо):**
@@ -498,7 +528,8 @@ bin/qmx check src/ --format=json --no-progress > report.json
         "errors": 2,
         "warnings": 1,
         "info": 0
-    }
+    },
+    "outOfScope": null
 }
 ```
 <!-- llms:skip-end -->
@@ -983,7 +1014,12 @@ bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
 Адреса есть не в каждом JSON-выводе. `gitlab` — голый массив, в нём нет объекта
 для них; у DOT-вывода `graph:export` нет конверта вовсе; отказ — это всегда
 ровно `{"error": ..., "exit_code": ..., "position": ...}`, где `position` равен
-`null`, когда отказ не называет ключ; а baseline-файл — который пишут
+`null`, если отказ не привязан к месту в конфигурационном документе: значение
+из командной строки, файл целиком и объединённое значение вроде
+`memory_limit: 010M` дают `null`, даже когда сообщение называет ключ. Если
+`position` есть, он указывает отвергнутое место так, как его нашла проверка:
+для обязательного ключа, которого нет, `path` заканчивается этим ключом, а
+`written` называет его; а baseline-файл — который пишут
 `baseline:generate`, `update`, `cleanup` и переписывает на месте
 `baseline:rename-channels` — это версионированный входной артефакт, который
 инструмент читает обратно, со своей схемой, а не отчёт.

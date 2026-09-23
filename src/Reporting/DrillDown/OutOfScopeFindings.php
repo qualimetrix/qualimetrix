@@ -15,9 +15,16 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * report built from the selection alone reads "0 errors" in green over a run
  * that exits 2. These counts are what lets a renderer say the selection is
  * clean while the run is not.
+ *
+ * Every structured format publishes them: a document with a summary under a
+ * key of its own, a list format as one diagnostic entry in the channel it
+ * already uses for {@see \Qualimetrix\Reporting\Formatter\PublishedUtf8}.
  */
 final readonly class OutOfScopeFindings
 {
+    /** Check name / descriptor / source suffix the list formats publish the entry under. */
+    public const string CHECK = 'drill-down.out-of-scope';
+
     public function __construct(
         public int $errorCount,
         public int $warningCount,
@@ -45,6 +52,21 @@ final readonly class OutOfScopeFindings
     public function total(): int
     {
         return $this->errorCount + $this->warningCount + $this->infoCount;
+    }
+
+    /**
+     * The sentence every list format uses for its entry.
+     */
+    public function describe(): string
+    {
+        return \sprintf(
+            '%d finding(s) outside the --namespace/--class selection (%d error(s), %d warning(s), %d info)'
+            . ' are not listed in this report; the exit code is resolved over them as well.',
+            $this->total(),
+            $this->errorCount,
+            $this->warningCount,
+            $this->infoCount,
+        );
     }
 
     /**

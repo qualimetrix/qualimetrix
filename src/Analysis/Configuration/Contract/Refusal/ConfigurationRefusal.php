@@ -184,7 +184,9 @@ final class ConfigurationRefusal extends RuntimeException
 
     /**
      * A merged value with no position in any document. The locator trails for
-     * the same reason as in {@see self::atResolvedKey()}.
+     * the same reason as in {@see self::atResolvedKey()}, and naming the key
+     * there does not give the refusal a position: the merge no longer tells
+     * whether a file or a command-line option wrote the value.
      */
     public static function aboutResolvedInput(
         string $summary,

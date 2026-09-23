@@ -55,7 +55,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0014 — Deptrac Retirement](0014-deptrac-retirement.md) — project-owned architecture enforcement replaces deptrac.
 - [0015 — Typed Paths](0015-relative-path-vo.md) — typed absolute and relative path boundaries.
 - [0016 — Subject Cohesion](0016-subject-cohesion.md) — directories and module boundaries follow subjects.
-- [0017 — Baseline Ceiling](0017-baseline-ceiling.md) — baselines cap the reported magnitude they accepted.
+- [0017 — Baseline Ceiling](0017-baseline-ceiling.md) — baselines cap the reported magnitude they accepted; amended 2026-09-24: the baseline commands accept the project-scope flags `--include-generated` and `--include-autoload-dev`.
 - [0018 — Coverage, Verdict, and Projection](0018-analysis-coverage-verdict-and-output-projection.md) — analysis completeness is separate from verdict and presentation; its discovered population is widened by 0078.
 - [0019 — Namespace Metric Ownership](0019-namespace-metric-ownership-and-attribution.md) — explicit namespace contribution and attribution.
 - [0020 — Method Size and NPath](0020-method-size-and-npath-semantics.md) — method-size and recursive NPath semantics.
@@ -85,7 +85,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0047 — Suppression and Exclusion](0047-suppression-is-not-exclusion.md) — produced-and-hidden findings use suppression vocabulary.
 - [0049 — Rule Option Recognition](0049-rule-option-key-recognition.md) — option keys are recognized at every declared depth or refused.
 - [0050 — Configuration Refusal Carrier](0050-configuration-refusal-carrier.md) — Configuration owns the typed bad-input carrier.
-- [0051 — Refusal Routing](0051-refusal-is-not-routed-by-command.md) — throwable kind, not command, determines refusal presentation; amended 2026-09-23: the JSON envelope is `{error, exit_code, position}`, publishing the refused key's position.
+- [0051 — Refusal Routing](0051-refusal-is-not-routed-by-command.md) — throwable kind, not command, determines refusal presentation; amended 2026-09-23: the JSON envelope is `{error, exit_code, position}`, publishing the refused key's position; amended 2026-09-24: an ending after the report is published goes to stderr.
 - [0055 — Rule Option Value Shape](0055-a-rule-option-declares-the-shape-of-its-value.md) — accepted option keys declare their value shape.
 - [0058 — Layered Value Survival](0058-a-layers-value-survives-the-layers-above-it.md) — higher layers preserve values they did not rewrite.
 - [0059 — Declared-Layer Policy and Architecture Governance](0059-declared-layer-policy-and-architecture-governance.md) — current layer-policy semantics and manifest authority.

@@ -52,13 +52,13 @@ Equivalent CLI: `--include-generated`
 
 ### Include Autoload Dev
 
-By default, the code `composer.json` declares under `autoload-dev` is not part of the project: a run with no `paths` analyses only the `autoload` PSR-4 roots, and a run is judged against those alone when Qualimetrix asks whether it covered the whole project. To count test code as part of the project in both places:
+By default, the code `composer.json` declares under `autoload-dev` is not part of the project: a run with no `paths` analyses only the paths `autoload` declares (in any autoload form: `psr-4`, `psr-0`, `classmap`, `files`), and a run is judged against those alone when Qualimetrix asks whether it covered the whole project. To count test code as part of the project in both places:
 
 ```yaml
 include_autoload_dev: true
 ```
 
-Paths you write yourself are not widened; with `paths: [src]`, the run is reported as not covering the `autoload-dev` roots.
+Paths you write yourself are not widened; with `paths: [src]`, the run is reported as not covering the `autoload-dev` paths.
 
 Equivalent CLI: `--include-autoload-dev`
 

@@ -46,7 +46,9 @@ less-severe member is repaired.
 The baseline runs after source/configuration suppressions and path/namespace
 exclusions, and before git report scoping. `generate`, `migrate`, `update`,
 `cleanup`, and `check` use that same measured set. Configuration options
-`--preset`, `--rule-opt`, `--only-rule`, and `--disable-rule` are available to
+`--preset`, `--rule-opt`, `--only-rule`, `--disable-rule`,
+`--include-generated` and `--include-autoload-dev` (the last two added by the
+2026-09-24 amendment below) are available to
 the lifecycle commands so their set can match `check`; CLI-only exclusions and
 `--no-suppression-annotations` are not. The latter restores annotations only
 for presentation after the baseline has measured the set, so it never widens a
@@ -120,3 +122,15 @@ rejected boundary.
 10. **Aggregate magnitudes can move after another file changes.** A class CBO boundary can breach without an edit to that class.
 11. **Three project-keyed architecture channels form multi-member groups.** `architecture.unreachable-layer`, `architecture.potential-shadow`, and `architecture.empty-template` have occurrence ceilings with no member-position information; single-result `architecture.coverage` is unaffected.
 12. **A survivor can grow into a repaired member's slot.** Cumulative comparison accepts redistribution below the worst previously accepted magnitude; this is the cost of not tracking member identity.
+
+## Amendment, 2026-09-24: the project-scope flags are configuration too
+
+`--include-generated` and `--include-autoload-dev` are the command-line
+spellings of `include_generated` and `include_autoload_dev`. Both decide what
+the project is — which files a run with no paths analyses, and, for the second,
+the scope a run is judged against — so they change the measured set exactly as
+a preset does. Offered by `check` alone, they let `check --include-autoload-dev
+--baseline=b.json` measure more than `baseline:generate b.json` captured, and
+every finding the capture could not see read as a breach. The baseline
+lifecycle commands now accept both, spelled as `check` spells them; the YAML
+keys were already shared, since both sides resolve the same configuration.

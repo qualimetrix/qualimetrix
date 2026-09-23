@@ -13,7 +13,7 @@ final readonly class RunConfiguration
     /**
      * @param list<AbsolutePath> $paths
      * @param list<PathPattern> $pathExcludes built-in and authored directory selectors
-     * @param bool $coversProjectScope Whether `$paths` cover the project's production autoload roots
+     * @param bool $coversProjectScope Whether `$paths` cover every autoload target `$autoloadDevPolicy` counts as the project
      * @param list<PathPattern> $authoredPathExcludes The subset of `$pathExcludes` the user wrote
      * @param AutoloadDevPolicy $autoloadDevPolicy Whether `autoload-dev` code is part of the project
      *
@@ -55,7 +55,7 @@ final readonly class RunConfiguration
 
     /**
      * The same configuration over a re-resolved set of paths that still covers
-     * the project's production autoload roots.
+     * the project's autoload targets.
      *
      * Two methods rather than one taking the answer as a flag, because the
      * answer is not a parameter of the same operation — it is which operation
@@ -82,7 +82,7 @@ final readonly class RunConfiguration
     }
 
     /**
-     * The same configuration over paths that no longer cover those roots.
+     * The same configuration over paths that no longer cover those targets.
      *
      * @param list<AbsolutePath> $paths
      */

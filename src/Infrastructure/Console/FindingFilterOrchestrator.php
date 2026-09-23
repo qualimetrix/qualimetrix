@@ -51,10 +51,8 @@ final readonly class FindingFilterOrchestrator
         InputInterface $input,
         GitScopeResolution $scope,
     ): FindingProjectionOptions {
-        /** @var list<string> $cliExcludePaths */
-        $cliExcludePaths = $input->getOption('suppress-path');
-        /** @var list<string> $cliExcludeNamespaces */
-        $cliExcludeNamespaces = $input->getOption('suppress-namespace');
+        $cliExcludePaths = CommandLineSpelling::options($input, 'suppress-path');
+        $cliExcludeNamespaces = CommandLineSpelling::options($input, 'suppress-namespace');
         $decoder = new CliSelectorDecoder();
         $exclusions = $configuredExclusions->withAdditional(
             array_map(fn(string $value) => $decoder->decodePath($value, '--suppress-path'), $cliExcludePaths),
@@ -70,10 +68,10 @@ final readonly class FindingFilterOrchestrator
             );
         }
 
-        $baselinePath = $input->getOption('baseline');
+        $baselinePath = CommandLineSpelling::option($input, 'baseline');
 
         return new FindingProjectionOptions(
-            baselinePath: \is_string($baselinePath) && $baselinePath !== '' ? $baselinePath : null,
+            baselinePath: $baselinePath !== '' ? $baselinePath : null,
             suppressPaths: $exclusions->suppressPaths,
             suppressNamespaces: $exclusions->suppressNamespaces,
             annotationSuppressionDisabled: (bool) $input->getOption('no-suppression-annotations'),
@@ -127,7 +125,7 @@ final readonly class FindingFilterOrchestrator
      *
      * **The coverage precondition is asked here, using the same predicate as
      * the rest of the run.** A value that names nothing binds nothing on a
-     * run narrowed below the project's production autoload roots for a reason
+     * run narrowed below the project's autoload targets for a reason
      * its author did not choose, so on such a run there is nothing to judge and
      * the audit is not called at all.
      *
@@ -164,7 +162,7 @@ final readonly class FindingFilterOrchestrator
             $result->namespaceTree?->getAllNamespaces(),
             new ValueScopeJudgement(
                 $scopeResolution->projectRoot->value(),
-                // `autoload-dev` included, unlike the coverage denominator:
+                // `autoload-dev` included whatever the run's policy, unlike the coverage denominator:
                 // this map is asked where a namespace lives, not which roots a
                 // whole-project run must reach, and a value naming test code
                 // is judged exactly by a run that analysed it.

@@ -33,15 +33,13 @@ final class CheckCommandProfileExportTest extends TestCase
     protected function setUp(): void
     {
         $this->directory = sys_get_temp_dir() . '/qmx-profile-export-' . bin2hex(random_bytes(6));
-        mkdir($this->directory, 0777, true);
+        mkdir($this->directory . '/target-dir', 0777, true);
+        mkdir($this->directory . '/sealed', 0777, true);
     }
 
     protected function tearDown(): void
     {
-        foreach (self::filesIn($this->directory) as $file) {
-            unlink($file);
-        }
-        rmdir($this->directory);
+        self::remove($this->directory);
     }
 
     /** @return iterable<string, array{array<string, string>, string}> */
@@ -52,6 +50,7 @@ final class CheckCommandProfileExportTest extends TestCase
         yield 'empty format' => [['--profile' => '{dir}/p.json', '--profile-format' => ''], '--profile-format'];
         yield 'missing directory' => [['--profile' => '{dir}/missing/p.json'], '--profile'];
         yield 'empty path' => [['--profile' => ''], '--profile'];
+        yield 'a directory as the target' => [['--profile' => '{dir}/target-dir'], '--profile'];
     }
 
     /** @param array<string, string> $options */
@@ -66,7 +65,61 @@ final class CheckCommandProfileExportTest extends TestCase
         $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertSame(['error', 'exit_code', 'position'], array_keys($envelope), 'Analysis ran: a report precedes the refusal.');
         self::assertStringContainsString($option, $envelope['error']);
-        self::assertSame([], self::filesIn($this->directory));
+        self::assertSame([], array_values(array_filter(self::filesIn($this->directory), is_file(...))));
+    }
+
+    /**
+     * The export is written beside its target and renamed over it, so an
+     * existing, writable target file in a directory that cannot be written
+     * cannot be exported to — and is refused before analysis, not after it.
+     */
+    #[Test]
+    public function itRefusesAWritableTargetInADirectoryItCannotWriteBeforeAnalysis(): void
+    {
+        if (\function_exists('posix_geteuid') && posix_geteuid() === 0) {
+            self::markTestSkipped('Directory permissions do not bind root.');
+        }
+
+        $sealed = $this->directory . '/sealed';
+        touch($sealed . '/p.json');
+        chmod($sealed, 0o555);
+
+        try {
+            $tester = $this->runCheck(['--profile' => '{dir}/sealed/p.json']);
+        } finally {
+            chmod($sealed, 0o755);
+        }
+
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
+        /** @var array{error: string, exit_code: int, position: mixed} $envelope */
+        $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(['error', 'exit_code', 'position'], array_keys($envelope), 'Analysis ran: a report precedes the refusal.');
+        self::assertStringContainsString('--profile', $envelope['error']);
+    }
+
+    /**
+     * A write that fails after the report is on stdout cannot turn stdout into
+     * two documents: the report stays the only one, and the refusal is a line
+     * on stderr with exit code 3.
+     *
+     * The failure is planted where no precheck can see it: the temporary file
+     * the export writes first is taken by a directory of the same name.
+     */
+    #[Test]
+    public function itKeepsTheReportTheOnlyStdoutDocumentWhenTheExportFailsAfterIt(): void
+    {
+        mkdir($this->directory . '/p.json.tmp.' . getmypid());
+
+        $tester = $this->runCheck(['--profile' => '{dir}/p.json']);
+
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
+        /** @var array<string, mixed> $report */
+        $report = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertArrayNotHasKey('error', $report, 'The refusal was written to stdout as a second document.');
+        self::assertArrayHasKey('summary', $report);
+        self::assertStringContainsString('Configuration error:', $tester->getErrorOutput());
+        self::assertStringContainsString('--profile', $tester->getErrorOutput());
+        self::assertFileDoesNotExist($this->directory . '/p.json');
     }
 
     /** @return iterable<string, array{string}> */
@@ -94,6 +147,20 @@ final class CheckCommandProfileExportTest extends TestCase
         $files = glob($directory . '/*');
 
         return $files === false ? [] : $files;
+    }
+
+    private static function remove(string $path): void
+    {
+        if (is_dir($path) && !is_link($path)) {
+            foreach (self::filesIn($path) as $child) {
+                self::remove($child);
+            }
+            rmdir($path);
+
+            return;
+        }
+
+        unlink($path);
     }
 
     /** @param array<string, string> $options */

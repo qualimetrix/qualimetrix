@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Qualimetrix\Infrastructure\Console\RuleListingPresenter;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -55,8 +56,7 @@ final class RulesCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        /** @var string|null $groupFilter */
-        $groupFilter = $input->getOption('group');
+        $groupFilter = CommandLineSpelling::option($input, 'group');
 
         if ($groupFilter !== null && !\in_array($groupFilter, $this->families(), true)) {
             // With no machine format or catch ladder of its own, the carrier

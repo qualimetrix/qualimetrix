@@ -275,52 +275,21 @@ final class ResultPresenter
     }
 
     /**
-     * Refuses an unwritable `--output` target before analysis runs. This is
-     * not a guarantee: the path can still
-     * become unwritable between this check and the write, which
-     * {@see self::writeOutput()} catches on its own.
+     * Refuses an `--output` target the report cannot be written to, before
+     * analysis runs; {@see ArtifactFile} judges it by the write it makes.
      */
     public function assertOutputIsWritable(InputInterface $input): void
     {
-        $target = self::outputTarget($input);
-        if ($target === null) {
-            return;
-        }
-
-        if (file_exists($target)) {
-            if (!is_writable($target)) {
-                throw self::outputRefusal(\sprintf('Path "%s" is not writable.', $target));
-            }
-
-            return;
-        }
-
-        $directory = \dirname($target);
-        if (!is_dir($directory) || !is_writable($directory)) {
-            throw self::outputRefusal(\sprintf(
-                'Directory "%s" for output path "%s" does not exist or is not writable.',
-                $directory,
-                $target,
-            ));
-        }
+        self::outputTarget($input)?->refuseUnwritable();
     }
 
-    private static function outputTarget(InputInterface $input): ?string
+    private static function outputTarget(InputInterface $input): ?ArtifactFile
     {
-        /** @var string|null $outputPath */
-        $outputPath = $input->hasOption('output') ? $input->getOption('output') : null;
-
         // `--output=` never reaches here: the configuration adapter refuses
         // an option written empty before the command reads this one.
-        return \is_string($outputPath) ? $outputPath : null;
-    }
+        $path = CommandLineSpelling::option($input, 'output');
 
-    private static function outputRefusal(string $summary): ConfigurationRefusal
-    {
-        return ConfigurationRefusal::aboutCommandLineInput(
-            '--output',
-            $summary,
-        );
+        return $path === null ? null : new ArtifactFile($path, '--output');
     }
 
     /**
@@ -340,28 +309,14 @@ final class ResultPresenter
         InputInterface $input,
         OutputInterface $output,
     ): void {
-        $outputPath = self::outputTarget($input);
+        $target = self::outputTarget($input);
 
-        if ($outputPath !== null) {
-            // Atomic write: tmp file + rename
-            $tmpFile = $outputPath . '.tmp.' . getmypid();
-            $writeResult = @file_put_contents($tmpFile, $formattedOutput);
-
-            if ($writeResult === false) {
-                throw self::outputRefusal(\sprintf('Failed to write output to %s', $outputPath));
-            }
-
-            if (!rename($tmpFile, $outputPath)) {
-                if (file_exists($tmpFile)) {
-                    unlink($tmpFile);
-                }
-
-                throw self::outputRefusal(\sprintf('Failed to rename temporary file to %s', $outputPath));
-            }
+        if ($target !== null) {
+            $target->replaceWith($formattedOutput);
 
             $this->errorStream->write(
                 $output,
-                \sprintf('<info>Report written to %s</info>', $outputPath),
+                \sprintf('<info>Report written to %s</info>', $target->path),
             );
 
             return;

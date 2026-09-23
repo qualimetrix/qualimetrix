@@ -39,6 +39,15 @@ final class FormatOptionValue
         'violations' => self::LIMIT,
     ];
 
+    /**
+     * Keys that set one value between them, in the order a refusal names
+     * them. `limit` is `violations` reading 0 as "no cap" instead of "none";
+     * written together, a reader would have to pick one silently.
+     *
+     * @var list<list<string>>
+     */
+    private const array ONE_VALUE = [['violations', 'limit']];
+
     /** @var list<string> */
     private const array RANKINGS = ['count', 'density'];
 
@@ -65,6 +74,23 @@ final class FormatOptionValue
         };
 
         return $parses ? null : $grammar;
+    }
+
+    /**
+     * Every key that sets the same value as `$key`, `$key` included, in the
+     * order a refusal names them; `[$key]` for a key no other key spells.
+     *
+     * @return list<string>
+     */
+    public static function spellingsOf(string $key): array
+    {
+        foreach (self::ONE_VALUE as $spellings) {
+            if (\in_array($key, $spellings, true)) {
+                return $spellings;
+            }
+        }
+
+        return [$key];
     }
 
     /** @return list<string> every key a grammar is written for */

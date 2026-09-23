@@ -48,9 +48,10 @@ Stages do not merge: the document keeps every contribution in that order, and
 each owner folds its own key — a scalar is usually taken from the last layer
 that wrote it, while each collection states its own semantics (`disabled_rules`
 accumulates, `only_rules` is replaced). Composer discovery contributes the
-production and `autoload-dev` PSR-4 roots under two internal keys rather than
-`paths`: `include_autoload_dev`, which a later source may write, decides which
-of them Run takes as the default paths.
+production and `autoload-dev` targets — every autoload form, `psr-4`, `psr-0`,
+`classmap` and `files`, the list the scope denominator also reads — under two
+internal keys rather than `paths`: `include_autoload_dev`, which a later
+source may write, decides which of them Run takes as the default paths.
 
 A key is written once per document. `suppress_paths`, `suppress-paths` and
 `suppressPaths` fold into one key, so writing two of them in one mapping is

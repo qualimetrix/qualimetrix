@@ -15,7 +15,9 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Infrastructure\Console\ArtifactFile;
 use Qualimetrix\Infrastructure\Console\CliSelectorDecoder;
+use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
@@ -115,41 +117,38 @@ final class GraphExportCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        /** @var string $rawFormat */
+        // The envelope's format is the one written, read before anything can
+        // refuse; a value of another type is refused inside the ladder below.
         $rawFormat = $input->getOption('format');
+        $envelopeFormat = \is_string($rawFormat) ? $rawFormat : null;
 
         try {
-            return $this->doExecute($input, $output, $rawFormat);
+            return $this->doExecute($input, $output);
         } catch (ConfigurationRefusal $refusal) {
-            return $this->refusalPresenter->refusal($output, $rawFormat, $refusal);
+            return $this->refusalPresenter->refusal($output, $envelopeFormat, $refusal);
         } catch (InvalidArgumentException $failure) {
             // Named secondary signal for code 3: an
             // `InvalidArgumentException` that never became a
             // carrier — e.g. from the path value objects below.
-            return $this->refusalPresenter->fallbackRefusal($output, $rawFormat, $failure);
+            return $this->refusalPresenter->fallbackRefusal($output, $envelopeFormat, $failure);
         } catch (Throwable $failure) {
-            return $this->refusalPresenter->internalError($output, $rawFormat, $failure);
+            return $this->refusalPresenter->internalError($output, $envelopeFormat, $failure);
         }
     }
 
-    private function doExecute(InputInterface $input, OutputInterface $output, string $rawFormat): int
+    private function doExecute(InputInterface $input, OutputInterface $output): int
     {
         // Every check in this method runs before `analyzeDependencyGraph()`:
         // `--direction`/`--format`/`--output` refusals must
         // not pay for a Discovery+Collection run that their own answer
         // throws away. A bogus `--direction` or `--format` must reach the
         // analyzer zero times.
-        $format = self::resolveFormat($rawFormat);
+        $format = self::resolveFormat(CommandLineSpelling::option($input, 'format') ?? '');
+        $direction = self::resolveDirection(CommandLineSpelling::option($input, 'direction') ?? '');
 
-        /** @var string $rawDirection */
-        $rawDirection = $input->getOption('direction');
-        $direction = self::resolveDirection($rawDirection);
-
-        /** @var string|null $outputFile */
-        $outputFile = $input->getOption('output');
-        if ($outputFile !== null) {
-            self::assertWritable($outputFile);
-        }
+        $outputPath = CommandLineSpelling::option($input, 'output');
+        $outputFile = $outputPath === null ? null : new ArtifactFile($outputPath, '--output');
+        $outputFile?->refuseUnwritable();
 
         $cwd = AbsolutePath::fromString((string) getcwd());
         $paths = self::resolvePaths($input, $cwd);
@@ -267,21 +266,16 @@ final class GraphExportCommand extends Command
     /** @return list<AbsolutePath> */
     private static function resolvePaths(InputInterface $input, AbsolutePath $cwd): array
     {
-        /** @var list<string> $rawPaths */
-        $rawPaths = $input->getArgument('paths');
-
         return array_map(
             static fn(string $raw): AbsolutePath => PathFactory::fromCliArgument($raw, $cwd),
-            $rawPaths,
+            CommandLineSpelling::arguments($input, 'paths'),
         );
     }
 
     private function buildProjectionRequest(InputInterface $input, GraphExportFormat $format, GraphDirection $direction): GraphProjectionRequest
     {
-        /** @var array<string> $includeNamespaces */
-        $includeNamespaces = $input->getOption('namespace');
-        /** @var array<string> $excludeNamespaces */
-        $excludeNamespaces = $input->getOption('exclude-namespace');
+        $includeNamespaces = CommandLineSpelling::options($input, 'namespace');
+        $excludeNamespaces = CommandLineSpelling::options($input, 'exclude-namespace');
 
         return new GraphProjectionRequest(
             format: $format,
@@ -299,48 +293,14 @@ final class GraphExportCommand extends Command
     }
 
     /** @throws ConfigurationRefusal */
-    private static function writeToFile(OutputInterface $output, string $outputFile, string $content, GraphExportFormat $format): void
+    private static function writeToFile(OutputInterface $output, ArtifactFile $outputFile, string $content, GraphExportFormat $format): void
     {
-        // The pre-check in doExecute() catches most cases before analysis
-        // runs; this catches the race (writability changed since) and a
-        // `rename()` or write failure suppressed by `@` below.
-        if (@file_put_contents($outputFile, $content) === false) {
-            throw ConfigurationRefusal::aboutCommandLineInput(
-                '--output',
-                \sprintf('Failed to write output to %s', $outputFile),
-            );
-        }
+        $outputFile->replaceWith($content);
 
-        $output->writeln(\sprintf('<info>Graph exported to %s</info>', $outputFile));
+        $output->writeln(\sprintf('<info>Graph exported to %s</info>', $outputFile->path));
 
         if ($format === GraphExportFormat::Dot) {
-            $output->writeln(\sprintf('<comment>Render with: dot -Tpng %s -o graph.png</comment>', $outputFile));
-        }
-    }
-
-    /**
-     * Checked before analysis so a doomed `--output` fails fast rather than
-     * after a full Discovery+Collection run.
-     */
-    private static function assertWritable(string $outputFile): void
-    {
-        if (file_exists($outputFile)) {
-            if (!is_writable($outputFile)) {
-                throw ConfigurationRefusal::aboutCommandLineInput(
-                    '--output',
-                    \sprintf('Output path "%s" is not writable', $outputFile),
-                );
-            }
-
-            return;
-        }
-
-        $directory = \dirname($outputFile);
-        if (!is_dir($directory) || !is_writable($directory)) {
-            throw ConfigurationRefusal::aboutCommandLineInput(
-                '--output',
-                \sprintf('Output path "%s" is not writable', $outputFile),
-            );
+            $output->writeln(\sprintf('<comment>Render with: dot -Tpng %s -o graph.png</comment>', $outputFile->path));
         }
     }
 

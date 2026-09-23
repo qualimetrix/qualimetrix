@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationStatus;
 use Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundary;
 use Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundaryBaselineSource;
+use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -92,8 +93,7 @@ final class BaselineExplainCommand extends BaselineCommand
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        /** @var string $subjectKey */
-        $subjectKey = $input->getArgument('subject');
+        $subjectKey = CommandLineSpelling::requiredArgument($input, 'subject');
 
         $channel = $this->readChannel($input);
 
@@ -149,17 +149,17 @@ final class BaselineExplainCommand extends BaselineCommand
 
     private function readBaseline(InputInterface $input): ?Baseline
     {
-        $path = $input->getOption('baseline');
+        $path = CommandLineSpelling::option($input, 'baseline');
 
-        return \is_string($path) && $path !== '' ? $this->loader->load($path) : null;
+        return $path !== null && $path !== '' ? $this->loader->load($path) : null;
     }
 
     /** `null` when `--channel` was not given at all, which means "every channel". */
     private function readChannel(InputInterface $input): ?FindingChannel
     {
-        $raw = $input->getOption('channel');
+        $raw = CommandLineSpelling::option($input, 'channel');
 
-        if (!\is_string($raw) || $raw === '') {
+        if ($raw === null || $raw === '') {
             return null;
         }
 

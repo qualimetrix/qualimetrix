@@ -220,6 +220,54 @@ final class ResultPresenterTest extends TestCase
         }
     }
 
+    /**
+     * The report is written beside its target and renamed over it, so the
+     * precheck asks about that write: a directory cannot be renamed over, and
+     * a writable file in a directory that cannot be written cannot be
+     * replaced. Either used to pass the precheck and fail after the analysis.
+     */
+    #[Test]
+    public function itRefusesADirectoryOutputTargetBeforeAnalysis(): void
+    {
+        $dir = sys_get_temp_dir() . '/qmx-result-presenter-directory-' . bin2hex(random_bytes(6));
+        mkdir($dir, 0o755, true);
+
+        try {
+            $this->presenter(self::createStub(FormatterRegistryInterface::class))
+                ->assertOutputIsWritable($this->input(['--output' => $dir]));
+            self::fail('A directory named by --output must be refused before analysis runs.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString('is a directory', $refusal->summary());
+        } finally {
+            rmdir($dir);
+        }
+    }
+
+    #[Test]
+    public function itRefusesAWritableOutputFileInADirectoryItCannotWriteBeforeAnalysis(): void
+    {
+        if (\function_exists('posix_geteuid') && posix_geteuid() === 0) {
+            self::markTestSkipped('Directory permissions do not bind root.');
+        }
+
+        $dir = sys_get_temp_dir() . '/qmx-result-presenter-sealed-' . bin2hex(random_bytes(6));
+        mkdir($dir, 0o755, true);
+        touch($dir . '/report.json');
+        chmod($dir, 0o555);
+
+        try {
+            $this->presenter(self::createStub(FormatterRegistryInterface::class))
+                ->assertOutputIsWritable($this->input(['--output' => $dir . '/report.json']));
+            self::fail('A target file whose directory cannot be written must be refused before analysis runs.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString($dir, $refusal->summary());
+        } finally {
+            chmod($dir, 0o755);
+            unlink($dir . '/report.json');
+            rmdir($dir);
+        }
+    }
+
     #[Test]
     public function itAcceptsAWritableOutputTargetOrNoTargetAtAll(): void
     {

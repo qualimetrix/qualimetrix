@@ -37,20 +37,29 @@ final class PublishedUtf8
      * them. `$mark` receives the repaired document and the number of strings
      * repaired, and returns the document with that count published in it.
      *
+     * `$repairedBefore` counts strings the caller repaired with {@see self::repair()}
+     * itself, because a transformation of its own — percent-encoding a path —
+     * would otherwise turn an invalid byte into valid ASCII the encoder never
+     * refuses. They are marked even when the encoder accepts the document.
+     *
      * @param array<mixed> $document
      * @param callable(array<mixed>, int): array<mixed> $mark
      */
-    public static function encodeJson(array $document, int $flags, callable $mark): string
+    public static function encodeJson(array $document, int $flags, callable $mark, int $repairedBefore = 0): string
     {
         try {
-            return json_encode($document, $flags | \JSON_THROW_ON_ERROR);
+            $encoded = json_encode($document, $flags | \JSON_THROW_ON_ERROR);
+
+            return $repairedBefore === 0
+                ? $encoded
+                : json_encode($mark($document, $repairedBefore), $flags | \JSON_THROW_ON_ERROR);
         } catch (JsonException $exception) {
             if ($exception->getCode() !== \JSON_ERROR_UTF8) {
                 throw $exception;
             }
         }
 
-        $repairs = 0;
+        $repairs = $repairedBefore;
         $repaired = self::repairTree($document, $repairs);
 
         return json_encode($mark($repaired, $repairs), $flags | \JSON_THROW_ON_ERROR);

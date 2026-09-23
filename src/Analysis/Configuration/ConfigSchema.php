@@ -55,8 +55,9 @@ final class ConfigSchema
     public const string ARCHITECTURE = 'architecture';
 
     /**
-     * The production and `autoload-dev` PSR-4 roots `composer.json` declares,
-     * contributed apart by composer discovery. Which of them become the
+     * The production and `autoload-dev` targets `composer.json` declares —
+     * every autoload form, not PSR-4 alone — contributed apart by composer
+     * discovery. Which of them become the
      * default analysis paths depends on `include_autoload_dev`, which a later
      * source may write, so the choice is the run configuration's, not the
      * discovery stage's.

@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupReason;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Analysis\Policy\Baseline\EntrySelector;
+use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -80,8 +81,11 @@ final class BaselineCleanupCommand extends BaselineCommand
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        /** @var string $baselinePath */
-        $baselinePath = $input->getArgument('baseline');
+        $baselinePath = CommandLineSpelling::requiredArgument($input, 'baseline');
+        // Spelled before the run, parsed after it: a value no command line can
+        // write is refused before any work, and a malformed selector is
+        // refused beside the candidates it should have been copied from.
+        $written = CommandLineSpelling::options($input, 'remove');
 
         $measured = $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $baselinePath);
 
@@ -95,7 +99,7 @@ final class BaselineCleanupCommand extends BaselineCommand
         $candidates = $this->cleaner->candidates($baseline, $context->findings(), $this->declarations);
         self::reportCandidates($candidates, $output);
 
-        $selectors = $this->readSelectors($input);
+        $selectors = self::readSelectors($written);
 
         if ($selectors === []) {
             $output->writeln('<info>Nothing removed: pass --remove=SELECTOR for each entry you want gone.</info>');
@@ -144,13 +148,12 @@ final class BaselineCleanupCommand extends BaselineCommand
      * the subset that parsed is how a typo turns into "it worked" over a file
      * that lost the wrong lines.
      *
+     * @param list<string> $raw the `--remove` values as written
+     *
      * @return list<EntrySelector>
      */
-    private function readSelectors(InputInterface $input): array
+    private static function readSelectors(array $raw): array
     {
-        /** @var list<string> $raw */
-        $raw = $input->getOption('remove');
-
         $selectors = [];
         $invalid = [];
 

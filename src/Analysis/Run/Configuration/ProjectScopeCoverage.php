@@ -15,16 +15,17 @@ use RuntimeException;
 /**
  * Whether a run looked at the whole project or at a slice of it.
  *
- * The denominator is the project's **production** autoload roots, not the
+ * The denominator is the project's **production** autoload targets, not the
  * project root: `qmx check src/` on a repository whose `composer.json`
  * autoloads `src/` is a whole-project run even though the repository holds
  * `tests/`, `scripts/` and `website/` besides. `autoload-dev` is excluded by
  * default for the same reason the coupling warning excludes it — test code is
  * not part of the graph the metrics are about — and included when the run's
- * {@see AutoloadDevPolicy} says the author counts it, the same policy that
- * decides whether a run with no `paths` analyses it. One policy answers both,
- * so the paths a run analyses and the project it is judged against cannot
- * disagree about test code.
+ * {@see AutoloadDevPolicy} says the author counts it. The targets and the
+ * policy are the ones a run with no `paths` analyses: the same reader answer
+ * taken through {@see AutoloadDevPolicy::projectTargets()}, so a run over
+ * the defaults covers what it is judged against whatever autoload form
+ * declared the code.
  *
  * **Why anything asks.** A statement that a configured value bound to nothing
  * is a statement about the pair (configuration, run scope), never about the
@@ -66,11 +67,9 @@ use RuntimeException;
  * illegibility closes the gate.
  *
  * **A target that does not exist on disk is skipped**, and skipping opens the
- * gate rather than closing it. That covers a stale entry and a `classmap`
- * glob alike — Composer accepts `*` in a `classmap` entry, this class does not
- * expand it, and such an entry therefore contributes nothing to the
- * denominator. Measured on `benchmarks/vendor`: no manifest of the 125 uses
- * one.
+ * gate rather than closing it. A `classmap` `*` reaches this class already
+ * expanded by the reader to the directories it matches; one matching nothing
+ * stays as written and is skipped like any other missing target.
  */
 final readonly class ProjectScopeCoverage
 {
@@ -156,25 +155,18 @@ final readonly class ProjectScopeCoverage
     }
 
     /**
-     * The targets a run is measured against: the production ones, and the
-     * `autoload-dev` ones when the policy counts them. `null` when neither
-     * counted section declares anything readable.
+     * The targets a run is measured against — the reader's whole-manifest
+     * answer under the run's policy, which is also what a run with no
+     * `paths` analyses.
      *
      * @return ?list<string>
      */
     private function declaredTargets(string $composerJsonPath, AutoloadDevPolicy $autoloadDev): ?array
     {
-        $production = $this->composerReader->productionAutoloadTargets($composerJsonPath);
-        if ($autoloadDev === AutoloadDevPolicy::Exclude) {
-            return $production;
-        }
-
-        $development = $this->composerReader->developmentAutoloadTargets($composerJsonPath);
-        if ($production === null && $development === null) {
-            return null;
-        }
-
-        return array_values(array_unique([...$production ?? [], ...$development ?? []]));
+        return $autoloadDev->projectTargets(
+            $this->composerReader->productionAutoloadTargets($composerJsonPath),
+            $autoloadDev === AutoloadDevPolicy::Include ? $this->composerReader->developmentAutoloadTargets($composerJsonPath) : null,
+        );
     }
 
     /**

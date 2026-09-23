@@ -328,6 +328,148 @@ final class FormatterContextFactoryTest extends TestCase
     }
 
     /**
+     * An embedder's `ArrayInput` hands over the PHP value it was given, and a
+     * number there is the number a command line would have typed: it used to
+     * reach a string-typed parser and end the run as an internal error.
+     */
+    #[Test]
+    public function itReadsANumberAnEmbedderPassesAsANumber(): void
+    {
+        $parse = fn(array $parameters): \Qualimetrix\Reporting\FormatterContext => $this->factory->create(
+            $this->createInput($parameters),
+            $this->output,
+            $this->formatter,
+            $this->projectRoot(),
+        );
+
+        self::assertSame(50, $parse(['--detail' => 50])->detailLimit);
+        self::assertSame(0, $parse(['--detail' => 0])->detailLimit);
+        self::assertSame(200, $parse(['--detail' => true])->detailLimit);
+        self::assertSame(5, $parse(['--top' => 5])->topIssuesLimit);
+        self::assertSame(0, $parse(['--top' => 0])->topIssuesLimit);
+        self::assertNull($this->factory->bindBeforeAnalysis($this->createInput(['--detail' => 5, '--top' => 2])));
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>, string, string}>
+     */
+    public static function provideEmbedderValuesNoCommandLineCouldType(): iterable
+    {
+        yield 'negative detail' => [['--detail' => -1], '--detail', 'Invalid --detail value "-1"'];
+        yield 'negative top' => [['--top' => -3], '--top', 'Invalid --top value "-3"'];
+        yield 'numeric group-by' => [['--group-by' => 5], '--group-by', 'Invalid --group-by value "5"'];
+        yield 'fractional top' => [['--top' => 2.5], '--top', 'Invalid --top value of type float'];
+        yield 'list as detail' => [['--detail' => ['7']], '--detail', 'Invalid --detail value of type array'];
+        yield 'numeric format-opt pair' => [['--format-opt' => [5]], '--format-opt', 'Invalid --format-opt value "5": expected format key=value'];
+    }
+
+    /**
+     * The value is refused as input, never left to a type error that reports
+     * the product as broken.
+     *
+     * @param array<string, mixed> $parameters
+     */
+    #[Test]
+    #[DataProvider('provideEmbedderValuesNoCommandLineCouldType')]
+    public function itRefusesAnEmbedderValueOfTheWrongShapeAsInput(array $parameters, string $option, string $message): void
+    {
+        try {
+            $this->factory->bindBeforeAnalysis($this->createInput($parameters));
+            self::fail('A value of the wrong shape must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString($message, $refusal->getMessage());
+            self::assertSame($option, $refusal->origin()->locator());
+        }
+    }
+
+    /**
+     * A lone string is one pair written through an array input, not a value
+     * to iterate: iterating it dropped the pair unread.
+     */
+    #[Test]
+    public function itReadsALoneFormatOptStringAsOnePair(): void
+    {
+        $context = $this->factory->create(
+            $this->createInput(['--format-opt' => 'violations=3']),
+            $this->output,
+            $this->formatter,
+            $this->projectRoot(),
+        );
+
+        self::assertSame('3', $context->getOption('violations'));
+
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('Invalid --format-opt value "violations=xyz"');
+
+        $this->factory->bindBeforeAnalysis($this->createInput(['--format-opt' => 'violations=xyz']));
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>, string}>
+     */
+    public static function provideFormatOptPairsAFoldWouldHaveHidden(): iterable
+    {
+        yield 'unparsable pair overwritten by a valid one' => [
+            ['--format-opt' => ['violations=bad', 'violations=1']],
+            'Invalid --format-opt value "violations=bad"',
+        ];
+        yield 'empty pair overwritten by --all' => [
+            ['--format-opt' => ['violations='], '--all' => true],
+            'Invalid --format-opt value "violations="',
+        ];
+        yield 'one key written twice' => [
+            ['--format-opt' => ['violations=2', 'violations=1']],
+            'The --format-opt key "violations" is written twice',
+        ];
+        yield 'one key written twice with one value' => [
+            ['--format-opt' => ['violations=all', 'violations=all']],
+            'The --format-opt key "violations" is written twice',
+        ];
+    }
+
+    /**
+     * Every pair is judged as written: folding pairs by key first let a later
+     * pair of one key replace an earlier one unjudged, and `--all` replace a
+     * written `violations` the same way.
+     *
+     * @param array<string, mixed> $parameters
+     */
+    #[Test]
+    #[DataProvider('provideFormatOptPairsAFoldWouldHaveHidden')]
+    public function itJudgesEveryWrittenFormatOptPairBeforeFoldingThem(array $parameters, string $message): void
+    {
+        try {
+            $this->factory->bindBeforeAnalysis($this->createInput($parameters));
+            self::fail('Every written pair must be judged.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString($message, $refusal->getMessage());
+            self::assertSame('--format-opt', $refusal->origin()->locator());
+        }
+    }
+
+    /** The lawful neighbours of a repeated key: two different keys, and `--all` beside its synonym. */
+    #[Test]
+    public function itStillAcceptsDistinctKeysAndTheAllFlagBesideItsSynonym(): void
+    {
+        $context = $this->factory->create(
+            $this->createInput(['--format-opt' => ['violations=2', 'contributors=4']]),
+            $this->output,
+            $this->formatter,
+            $this->projectRoot(),
+        );
+        self::assertSame('2', $context->getOption('violations'));
+        self::assertSame('4', $context->getOption('contributors'));
+
+        $withAll = $this->factory->create(
+            $this->createInput(['--format-opt' => ['violations=all'], '--all' => true]),
+            $this->output,
+            $this->formatter,
+            $this->projectRoot(),
+        );
+        self::assertSame('all', $withAll->getOption('violations'));
+    }
+
+    /**
      * @param array<string, mixed> $parameters
      */
     private function createInput(array $parameters): ArrayInput

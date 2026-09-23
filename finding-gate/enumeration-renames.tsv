@@ -18,8 +18,8 @@ code-smell.constructor-overinjection	channel	?		15	11	2	2	5	31	0	6	0	0	0	0
 code-smell.count-in-loop	channel	?		1	8	0	0	0	12	0	7	0	0	1	1
 code-smell.debug-code	channel	?		1	45	0	0	0	13	0	7	0	0	1	1
 code-smell.empty-catch	channel	?		4	8	0	0	0	16	0	7	0	0	1	1
-code-smell.error-suppression	channel	?		1	13	1	2	2	20	0	7	0	0	1	1
-code-smell.eval	channel	?		1	28	0	0	0	16	0	23	0	0	1	1
+code-smell.error-suppression	channel	?		1	14	1	2	2	20	0	7	0	0	1	1
+code-smell.eval	channel	?		1	29	0	0	0	16	0	23	0	0	1	1
 code-smell.exit	channel	?		1	9	0	0	0	16	0	7	0	0	1	1
 code-smell.goto	channel	?		2	118	0	0	0	12	0	13	0	0	1	1
 code-smell.identical-subexpression	channel	?		3	10	0	0	0	13	0	7	1	1	0	0
@@ -28,7 +28,7 @@ code-smell.superglobals	channel	?		2	7	1	0	0	12	0	13	0	0	1	1
 code-smell.unreachable-code	channel	?		8	41	0	1	0	29	0	9	0	0	0	0
 code-smell.unused-private	channel	?		2	8	0	0	0	15	0	7	0	0	0	0
 cohesion.lcom	channel	?		41	173	2	2	0	45	0	16	0	0	0	0
-complexity.ccn	channel	?		74	1216	2	3	37	231	0	30	0	0	0	0
+complexity.ccn	channel	?		74	1218	2	3	37	231	0	30	0	0	0	0
 complexity.cognitive	channel	?		22	93	2	2	25	54	0	25	0	0	0	0
 complexity.npath	channel	?		19	108	2	2	5	52	0	20	0	0	0	0
 complexity.wmc	channel	?		21	87	2	2	5	37	0	17	0	0	0	0
@@ -39,7 +39,7 @@ coupling.instability	channel	?		46	117	2	3	9	60	0	19	0	0	0	0
 coupling.unmatched-framework-namespace	channel	?		3	8	0	0	0	15	0	6	0	0	0	0
 design.data-class	channel	?		16	19	1	1	7	37	0	7	0	0	0	0
 design.dit	channel	?		13	183	2	2	0	38	0	19	0	0	0	0
-design.god-class	channel	?		18	25	1	2	3	38	0	11	0	0	0	0
+design.god-class	channel	?		18	25	1	2	2	38	0	11	0	0	0	0
 design.noc	channel	?		12	43	2	2	0	29	0	16	0	0	0	0
 design.type-coverage.param	channel	?		8	55	2	1	1	30	0	14	0	0	0	0
 design.type-coverage.property	channel	?		8	27	2	1	1	29	0	16	0	0	0	0
@@ -70,7 +70,7 @@ cohesion.lcc	metric-key	?		7	50	0	0	0	6	0	2	0	0	0	0
 cohesion.lcom	metric-key	?		41	173	2	2	0	45	0	16	0	0	0	0
 cohesion.pure-method-count	metric-key	?		5	8	0	0	0	2	0	2	0	0	0	0
 cohesion.tcc	metric-key	?		26	114	0	0	0	16	0	5	0	0	0	0
-complexity.ccn	metric-key	?		74	1216	2	3	37	231	0	30	0	0	0	0
+complexity.ccn	metric-key	?		74	1218	2	3	37	231	0	30	0	0	0	0
 complexity.cognitive	metric-key	?		22	93	2	2	25	54	0	25	0	0	0	0
 complexity.npath	metric-key	?		19	108	2	2	5	52	0	20	0	0	0	0
 complexity.wmc	metric-key	?		21	87	2	2	5	37	0	17	0	0	0	0
@@ -155,8 +155,8 @@ code-smell.constructor-overinjection	producer	?		15	11	2	2	5	31	0	6	0	0	0	0
 code-smell.count-in-loop	producer	?		1	8	0	0	0	12	0	7	0	0	0	0
 code-smell.debug-code	producer	?		1	45	0	0	0	13	0	7	0	0	0	0
 code-smell.empty-catch	producer	?		4	8	0	0	0	16	0	7	0	0	0	0
-code-smell.error-suppression	producer	?		1	13	1	2	2	20	0	7	0	0	0	0
-code-smell.eval	producer	?		1	28	0	0	0	16	0	23	0	0	0	0
+code-smell.error-suppression	producer	?		1	14	1	2	2	20	0	7	0	0	0	0
+code-smell.eval	producer	?		1	29	0	0	0	16	0	23	0	0	0	0
 code-smell.exit	producer	?		1	9	0	0	0	16	0	7	0	0	0	0
 code-smell.goto	producer	?		2	118	0	0	0	12	0	13	0	0	0	0
 code-smell.identical-subexpression	producer	?		3	10	0	0	0	13	0	7	0	0	0	0
@@ -165,7 +165,7 @@ code-smell.superglobals	producer	?		2	7	1	0	0	12	0	13	0	0	0	0
 code-smell.unreachable-code	producer	?		8	41	0	1	0	29	0	9	0	0	0	0
 code-smell.unused-private	producer	?		2	8	0	0	0	15	0	7	0	0	0	0
 cohesion.lcom	producer	?		41	173	2	2	0	45	0	16	0	0	0	0
-complexity.ccn	producer	?		74	1216	2	3	37	231	0	30	0	0	0	0
+complexity.ccn	producer	?		74	1218	2	3	37	231	0	30	0	0	0	0
 complexity.cognitive	producer	?		22	93	2	2	25	54	0	25	0	0	0	0
 complexity.npath	producer	?		19	108	2	2	5	52	0	20	0	0	0	0
 complexity.wmc	producer	?		21	87	2	2	5	37	0	17	0	0	0	0
@@ -177,7 +177,7 @@ coupling.instability	producer	?		46	117	2	3	9	60	0	19	0	0	0	0
 coupling.unmatched-framework-namespace	producer	?		3	8	0	0	0	15	0	6	0	0	0	0
 design.data-class	producer	?		16	19	1	1	7	37	0	7	0	0	0	0
 design.dit	producer	?		13	183	2	2	0	38	0	19	0	0	0	0
-design.god-class	producer	?		18	25	1	2	3	38	0	11	0	0	0	0
+design.god-class	producer	?		18	25	1	2	2	38	0	11	0	0	0	0
 design.noc	producer	?		12	43	2	2	0	29	0	16	0	0	0	0
 design.type-coverage.param	producer	?		8	55	2	1	1	30	0	14	0	0	0	0
 design.type-coverage.property	producer	?		8	27	2	1	1	29	0	16	0	0	0	0

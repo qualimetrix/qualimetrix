@@ -11,7 +11,7 @@ final readonly class ResolvedCheckScope
 {
     /**
      * @param list<string> $warnings
-     * @param bool $coversProjectScope Whether the resolved paths cover the project's production autoload roots
+     * @param bool $coversProjectScope Whether the resolved paths cover every autoload target the run's `AutoloadDevPolicy` counts as the project
      */
     public function __construct(
         public GitScopeResolution $scope,

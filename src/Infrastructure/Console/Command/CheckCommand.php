@@ -247,6 +247,18 @@ final class CheckCommand extends Command
             $this->writeWarning($output, \sprintf('Warning: %s', $warning));
         }
 
+        // Decodes `--suppress-path`, `--suppress-namespace` and `--baseline`
+        // as written — a KIND:VALUE selector parse and a command-line-spelling
+        // type check, neither of which reads an analysis result — so it runs
+        // before the analysis those options will filter, not after. Applying
+        // what a well-formed baseline path names still happens inside
+        // filterAndReport() below, which does read the analysis result.
+        $projectionOptions = $this->findingFilterOrchestrator->projectionOptions(
+            $findingExclusions,
+            $input,
+            $scopeResolution,
+        );
+
         // Named, and carrying the coverage answer with the paths it is about:
         // rebuilding this positionally lost every field added to the run
         // configuration after the call site was written, silently and once per
@@ -256,11 +268,6 @@ final class CheckCommand extends Command
             : $runConfiguration->narrowedTo($scopeResolution->paths);
         $result = $this->runAnalysis($scopedRunConfiguration, $scopeResolution->fileDiscovery);
 
-        $projectionOptions = $this->findingFilterOrchestrator->projectionOptions(
-            $findingExclusions,
-            $input,
-            $scopeResolution,
-        );
         $filterResult = $this->findingFilterOrchestrator->filterAndReport(
             $result,
             $input,
@@ -288,7 +295,22 @@ final class CheckCommand extends Command
             namespacePattern: $namespacePattern,
         );
 
-        $this->resultPresenter->presentProfile($input, $output);
+        return $this->presentProfile($input, $output, $exitCode);
+    }
+
+    /**
+     * The report is on stdout by now, so whatever ends the run here is
+     * presented without a second stdout document, whatever the format.
+     */
+    private function presentProfile(InputInterface $input, OutputInterface $output, int $exitCode): int
+    {
+        try {
+            $this->resultPresenter->presentProfile($input, $output);
+        } catch (ConfigurationRefusal $refusal) {
+            return $this->refusalPresenter->refusalAfterPublishedReport($output, $refusal);
+        } catch (Throwable $e) {
+            return $this->refusalPresenter->internalErrorAfterPublishedReport($output, $e);
+        }
 
         return $exitCode;
     }

@@ -881,6 +881,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition'
         - 'Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator'
         - 'Qualimetrix\Infrastructure\Console\Application'
+        - 'Qualimetrix\Infrastructure\Console\ArtifactFile'
         - 'Qualimetrix\Infrastructure\Console\ChannelExclusionKeyHints'
         - 'Qualimetrix\Infrastructure\Console\ChannelExclusionKeyValidator'
         - 'Qualimetrix\Infrastructure\Console\CheckCommandDefinition'
@@ -889,6 +890,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\CheckScopeResolver'
         - 'Qualimetrix\Infrastructure\Console\CliOptionsParser'
         - 'Qualimetrix\Infrastructure\Console\CliSelectorDecoder'
+        - 'Qualimetrix\Infrastructure\Console\CommandLineSpelling'
         - 'Qualimetrix\Infrastructure\Console\Command\AbstractHookCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineCaptureReporter'
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand'
@@ -920,6 +922,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\ExitPolicy'
         - 'Qualimetrix\Infrastructure\Console\FilteredInputDefinition'
         - 'Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator'
+        - 'Qualimetrix\Infrastructure\Console\FormatOptionPairs'
         - 'Qualimetrix\Infrastructure\Console\FormatterContextFactory'
         - 'Qualimetrix\Infrastructure\Console\Hook\PreCommitHook'
         - 'Qualimetrix\Infrastructure\Console\LayerAssignmentResolver'
@@ -1730,6 +1733,13 @@ rules:
       # number and cost the reader.
       - exact: 'Qualimetrix\Analysis\Configuration\Contract'
       - exact: 'Qualimetrix\Analysis\Configuration\Contract\Refusal'
+      # Every structured format now tells its reader what a --namespace/--class
+      # selection left out, so the checkstyle, GitLab, GitHub Actions and JSON
+      # formatters name `OutOfScopeFindings`: four afferent edges, abstractness
+      # unchanged. Measured Ca=11, Ce=11, A=0, D=0.5 exactly. Reading the
+      # entry's check name off an instance instead of the class would drop the
+      # edges from the count and keep every one of them in the code.
+      - exact: 'Qualimetrix\Reporting\DrillDown'
     max_distance_warning: 0.5
     max_distance_error: 0.7
 

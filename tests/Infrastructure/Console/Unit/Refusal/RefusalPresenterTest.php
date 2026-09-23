@@ -380,6 +380,31 @@ final class RefusalPresenterTest extends TestCase
         self::assertStringNotContainsString('qualimetrix.dev', $output->standardOutputContent());
     }
 
+    /**
+     * Once a command has published its document on stdout, a second document
+     * there would leave neither parseable: what ends the run is a sentence on
+     * stderr, whatever the format, with the code of its kind.
+     */
+    #[Test]
+    public function itKeepsStdoutToThePublishedReportWhenTheRunEndsAfterIt(): void
+    {
+        $refused = self::terminalOutput();
+        $failed = self::terminalOutput();
+
+        $refusalExit = $this->presenter()->refusalAfterPublishedReport(
+            $refused,
+            ConfigurationRefusal::aboutCommandLineInput('--profile', 'Failed to write the export'),
+        );
+        $failureExit = $this->presenter()->internalErrorAfterPublishedReport($failed, new RuntimeException('boom'));
+
+        self::assertSame(3, $refusalExit);
+        self::assertSame('', $refused->standardOutputContent());
+        self::assertStringContainsString('Configuration error: Failed to write the export', $refused->errorOutputContent());
+        self::assertSame(1, $failureExit);
+        self::assertSame('', $failed->standardOutputContent());
+        self::assertStringContainsString('Internal error: boom', $failed->errorOutputContent());
+    }
+
     #[Test]
     public function itStopsALiveProgressFrameBeforePresenting(): void
     {

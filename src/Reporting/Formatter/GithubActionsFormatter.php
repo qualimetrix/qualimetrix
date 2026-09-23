@@ -6,6 +6,7 @@ namespace Qualimetrix\Reporting\Formatter;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
@@ -22,10 +23,6 @@ final class GithubActionsFormatter implements FormatterInterface
 {
     public function format(Report $report, FormatterContext $context): string
     {
-        if ($report->isEmpty() && ($report->coverage === null || $report->coverage->isComplete())) {
-            return '';
-        }
-
         $lines = [];
 
         foreach ($report->coverage === null ? [] : $report->coverage->failures as $failure) {
@@ -39,6 +36,15 @@ final class GithubActionsFormatter implements FormatterInterface
 
         foreach ($report->findings as $finding) {
             $lines[] = $this->formatFinding($finding, $context);
+        }
+
+        $outOfScope = $report->outOfScope;
+        if ($outOfScope !== null && $outOfScope->total() > 0) {
+            $lines[] = \sprintf('::notice title=%s::%s', OutOfScopeFindings::CHECK, $this->escapeData($outOfScope->describe()));
+        }
+
+        if ($lines === [] && ($report->coverage === null || $report->coverage->isComplete())) {
+            return '';
         }
 
         return implode("\n", $lines) . "\n";

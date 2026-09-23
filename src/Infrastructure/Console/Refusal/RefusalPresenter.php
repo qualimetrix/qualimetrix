@@ -18,7 +18,9 @@ use Throwable;
  *
  * Three outcomes, each with its own factory-shaped method rather than one
  * method with a kind flag, so a caller cannot pass the wrong exit code for
- * the throwable it caught:
+ * the throwable it caught. A run that ends after its command has already
+ * published a document on stdout uses the `…AfterPublishedReport()` twin of
+ * its outcome instead, which never writes a second document there:
  *
  * - {@see self::refusal()} — {@see ConfigurationRefusal}, the carrier for
  *   exit code 3.
@@ -61,6 +63,22 @@ final class RefusalPresenter
         $this->present($output, $format, self::refusalSentence($failure->getMessage()), ConsoleExitCode::Refusal, null);
 
         return ConsoleExitCode::Refusal->value;
+    }
+
+    /**
+     * A refusal that ends the run after the command's report is already on
+     * stdout. Written to stderr whatever the format: an envelope appended to
+     * a JSON report would leave neither document parseable.
+     */
+    public function refusalAfterPublishedReport(OutputInterface $output, ConfigurationRefusal $refusal): int
+    {
+        return $this->refusal($output, null, $refusal);
+    }
+
+    /** The internal-error twin of {@see self::refusalAfterPublishedReport()}. */
+    public function internalErrorAfterPublishedReport(OutputInterface $output, Throwable $failure): int
+    {
+        return $this->internalError($output, null, $failure);
     }
 
     private static function refusalSentence(string $message): string
@@ -144,12 +162,14 @@ final class RefusalPresenter
      * Writes the `{error, exit_code, position}` envelope to stdout — the shape
      * every command's refusal and internal-error path shares.
      *
-     * `position` is the key a refusal is addressed to — `{path, written,
+     * `position` is the refusal's {@see RefusedPosition} — `{path, written,
      * accepted, closed}` — and `null` whenever the run ended without one: a
-     * refusal about a whole document or a bare value, the fallback, an
-     * internal error. The key is always present, so the document's shape does
-     * not depend on what ended the run. The text path does not print it: the
-     * wording of `$message` already names the key for a reader.
+     * refusal about a whole document, a command-line value, a merged value
+     * (even when the sentence names its key), the fallback, an internal
+     * error. What `path` and `written` promise is what `RefusedPosition`
+     * promises, no more. The key is always present, so the document's shape
+     * does not depend on what ended the run. The text path does not print it:
+     * the wording of `$message` already names the key for a reader.
      *
      * `JSON_INVALID_UTF8_SUBSTITUTE`: `$message` can embed raw CLI input
      * (an option value, a path) that the user typed, and PHP argv bytes are

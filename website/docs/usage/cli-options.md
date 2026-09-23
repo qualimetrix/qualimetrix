@@ -20,7 +20,7 @@ bin/qmx check src/ lib/
 bin/qmx check src/Service/UserService.php
 ```
 
-If you omit paths, Qualimetrix auto-detects them from the PSR-4 roots of the `autoload` section of your `composer.json`. `autoload-dev` is not included: test code is analysed only when you name its path (`bin/qmx check src/ tests/`, or `paths:` in `qmx.yaml`), or when you count it as part of the project with [`--include-autoload-dev`](#--include-autoload-dev).
+If you omit paths, Qualimetrix auto-detects them from every path the `autoload` section of your `composer.json` declares — `psr-4` and `psr-0` roots, `classmap` entries (a `*` wildcard expanded to the directories it matches) and `files` entries alike. These are the same paths a run is judged against when Qualimetrix asks whether it covered the whole project, so a run with no paths always counts as covering it. A declared path that does not exist on disk stops the run with a configuration error. `autoload-dev` is not included: test code is analysed only when you name its path (`bin/qmx check src/ tests/`, or `paths:` in `qmx.yaml`), or when you count it as part of the project with [`--include-autoload-dev`](#--include-autoload-dev).
 
 ---
 
@@ -50,8 +50,9 @@ bin/qmx check src/ --exclude=subtree:src/Generated --exclude=exact:src/Legacy
 
 A value that removes no directory is reported as
 [`discovery.unmatched-exclude`](../rules/discovery.md) — a `warning` at project
-level, not a refusal, and only on a run whose paths cover the project's
-production autoload roots. On a narrower run the pattern may bind nothing
+level, not a refusal, and only on a run whose paths cover the project: every
+path `composer.json` declares under `autoload`, and under `autoload-dev` too
+with [`--include-autoload-dev`](#--include-autoload-dev). On a narrower run the pattern may bind nothing
 simply because the code it names lies outside the slice.
 
 ### `--include-generated`
@@ -72,7 +73,7 @@ include_generated: true
 
 Counts the code `composer.json` declares under `autoload-dev` as part of the project. Both halves of a run follow it together:
 
-- a run with no paths analyses the `autoload-dev` PSR-4 roots beside the `autoload` ones;
+- a run with no paths analyses every path `autoload-dev` declares, in any autoload form, beside the `autoload` ones;
 - a run is judged against `autoload-dev` too when Qualimetrix asks whether it covered the whole project — so `bin/qmx check src/ --include-autoload-dev` warns that `tests/` was not analysed, and the channels that only speak on a whole-project run stay silent.
 
 Paths you name yourself are not widened. Off by default:
@@ -159,6 +160,20 @@ Available formats: `summary`, `text`, `text-verbose`, `json`, `metrics`, `checks
 
 See [Output Formats](output-formats.md) for details on each format.
 
+### `--output`, `-o`
+
+Write the report to a file instead of stdout:
+
+```bash
+bin/qmx check src/ --format=html --output=report.html
+```
+
+The report is written beside the target and renamed over it, so a reader never
+sees half a report. A target that cannot be written is refused with exit code 3
+before analysis starts: a directory, a file in a directory that does not exist
+or cannot be written, or a file that is not writable. A write that still fails
+after the run also exits with code 3.
+
 ### `--group-by`
 
 Group violations in the output. Default depends on the formatter.
@@ -179,14 +194,19 @@ bin/qmx check src/ --format-opt=key=value
 
 A key no formatter reads is refused with exit 3. A key some other formatter
 reads stays accepted, so a script that sweeps one option set across formats
-still works.
+still works. Each key may be written once: `--format-opt=violations=2
+--format-opt=violations=1` is refused with exit 3 rather than the later value
+winning, and every pair is checked as written, so an unparsable value is
+refused even when another pair or `--all` would have replaced it. Two keys
+that set one value are refused the same way: `violations` beside `limit`, or
+`limit` beside `--all` (which writes `violations=all`).
 
 **JSON format options:**
 
 | Option                   | Default | Description                                                                                                 |
 | ------------------------ | ------- | ----------------------------------------------------------------------------------------------------------- |
 | `violations=N\|all`      | all     | Max violations in output (0=none)                                                                           |
-| `limit=N`                | all     | Alias for `violations`                                                                                      |
+| `limit=N\|all`           | all     | The same value as `violations`, except that `0` means no limit; write one of the two                        |
 | `top=N`                  | 10      | Number of worst offenders to include                                                                        |
 | `rank-by=count\|density` | count   | Reorder worst-offender lists by violation count (default) or by [violation density](output-formats.md#json) |
 
@@ -667,9 +687,14 @@ bin/qmx check src/ --profile
 bin/qmx check src/ --profile=profile.json
 ```
 
-A file that cannot be written — its directory does not exist, or it is not writable — is
-refused with exit code 3 before analysis starts, as is an empty `--profile=`. A write that
-still fails after the run is refused the same way, never reported beside a finished run.
+A target that cannot be written is refused with exit code 3 before analysis
+starts: a directory, a file in a directory that does not exist or cannot be
+written (the export is written beside the target and renamed over it), or a
+file that is not writable. An empty `--profile=` is refused the same way. A
+write that still fails after the run also exits with code 3, never reported
+beside a finished run. The report is already published by then, so the reason
+goes to stderr and stdout keeps the report as its only document, even under
+`--format=json`.
 
 ### `--profile-format`
 
@@ -1066,6 +1091,11 @@ bin/qmx graph:export src/ --no-clusters
 A `--namespace` value matching no vertex is refused with exit 3 rather than
 exporting an empty graph. `--exclude-namespace` keeps its silence on purpose: a
 missed exclusion leaves the picture whole, so the viewer loses nothing.
+
+An `--output` target is judged before analysis the way `check` judges its own
+[`--output`](#--output--o): the graph is written beside the target and renamed
+over it, so a directory, a file in a directory that does not exist or cannot be
+written, and an unwritable file are refused with exit 3 before any file is read.
 
 If any discovered file fails parsing or processing, `graph:export` exits 4 and
 emits no partial graph. It does not create a missing output file and preserves

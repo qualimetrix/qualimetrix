@@ -64,6 +64,13 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
             $rendered = str_replace('<body>', '<body>' . $banner, $rendered);
         }
 
+        if ($report->outOfScope !== null && $report->outOfScope->total() > 0) {
+            $rendered = str_replace('<body>', '<body>' . \sprintf(
+                '<div role="status" data-qmx-drill-down="out-of-scope" style="padding:12px;background:#78350f;color:#fff">%s</div>',
+                htmlspecialchars($report->outOfScope->describe(), \ENT_QUOTES),
+            ), $rendered);
+        }
+
         if ($repairs > 0) {
             $rendered = str_replace('<body>', '<body>' . \sprintf(
                 '<div role="alert" data-qmx-publication="invalid-utf8" style="padding:12px;background:#78350f;color:#fff">%s</div>',

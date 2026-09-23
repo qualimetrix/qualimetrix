@@ -15,8 +15,9 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * An export that cannot happen is refused, never reported beside a finished
  * run: {@see self::refuseImpossibleExport()} before analysis, and a typed
- * refusal from {@see self::present()} when the write itself fails — the same
- * contract `--output` keeps.
+ * refusal from {@see self::present()} when the write itself fails. The latter
+ * comes after the report is published, so the command presents it on stderr
+ * and leaves stdout to the report.
  */
 final class ProfilePresenter
 {
@@ -32,21 +33,18 @@ final class ProfilePresenter
      *
      * The format is judged whenever the option is written, even without
      * `--profile`: a value outside the set is wrong wherever it stands. The
-     * target check is a fast precheck, not a guarantee — writability can
-     * change during the run, which {@see self::present()} answers on its own.
+     * target is judged by {@see ArtifactFile}, which also makes the write.
      */
     public static function refuseImpossibleExport(InputInterface $input): void
     {
-        if ($input->hasOption('profile-format')) {
-            self::format($input->getOption('profile-format'));
-        }
+        self::format($input);
 
-        $target = $input->hasOption('profile') ? $input->getOption('profile') : false;
-        if (!\is_string($target)) {
+        $target = self::exportTarget($input);
+        if ($target === null) {
             return;
         }
 
-        if (trim($target) === '') {
+        if (trim($target->path) === '') {
             throw self::refusal(
                 '--profile',
                 'Option --profile was written with an empty value ("--profile="). '
@@ -54,13 +52,7 @@ final class ProfilePresenter
             );
         }
 
-        $directory = \dirname($target);
-        if (file_exists($target) ? !is_writable($target) : !is_dir($directory) || !is_writable($directory)) {
-            throw self::refusal(
-                '--profile',
-                \sprintf('Option --profile names "%s", which is not writable, or whose directory "%s" does not exist.', $target, $directory),
-            );
-        }
+        $target->refuseUnwritable();
     }
 
     /**
@@ -75,10 +67,10 @@ final class ProfilePresenter
             return;
         }
 
-        $profileOption = $input->getOption('profile');
+        $target = self::exportTarget($input);
 
         // If --profile without value, output summary to stderr
-        if ($profileOption === null) {
+        if ($target === null) {
             $summary = $this->profileRenderer->render($this->profileReport->summary());
             $output->writeln('', OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL);
             $output->writeln($summary, OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL);
@@ -86,44 +78,39 @@ final class ProfilePresenter
             return;
         }
 
-        $profileData = $this->profileReport->export(self::format($input->getOption('profile-format') ?? 'json'));
-
-        // Atomic write: write to temp file first, then rename
-        $tmpFile = $profileOption . '.tmp.' . getmypid();
-        $writeResult = @file_put_contents($tmpFile, $profileData);
-
-        if ($writeResult === false) {
-            throw self::refusal('--profile', \sprintf('Failed to write the --profile export to temporary file %s', $tmpFile));
-        }
-
-        if (!@rename($tmpFile, $profileOption)) {
-            // Clean up temp file on rename failure
-            if (file_exists($tmpFile)) {
-                unlink($tmpFile);
-            }
-
-            throw self::refusal('--profile', \sprintf('Failed to rename the --profile export %s to %s', $tmpFile, $profileOption));
-        }
+        $target->replaceWith($this->profileReport->export(self::format($input) ?? ProfileFormat::Json));
 
         $output->writeln(
-            \sprintf('<info>Profile exported to %s</info>', $profileOption),
+            \sprintf('<info>Profile exported to %s</info>', $target->path),
             OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL,
         );
     }
 
-    private static function format(mixed $value): ProfileFormat
+    /**
+     * The file `--profile` names; null when the option was not written, or
+     * written alone — which an array input spells `true` rather than null.
+     */
+    private static function exportTarget(InputInterface $input): ?ArtifactFile
     {
-        $format = \is_string($value) ? ProfileFormat::tryFrom($value) : null;
+        $value = $input->hasOption('profile') ? $input->getOption('profile') : false;
 
-        if ($format === null) {
-            throw self::refusal('--profile-format', \sprintf(
-                'Invalid value "%s" for --profile-format. Expected one of: %s.',
-                \is_scalar($value) ? (string) $value : get_debug_type($value),
-                implode(', ', array_map(static fn(ProfileFormat $case): string => $case->value, ProfileFormat::cases())),
-            ));
+        return $value === false || $value === null || $value === true
+            ? null
+            : new ArtifactFile(CommandLineSpelling::of($value, '--profile'), '--profile');
+    }
+
+    private static function format(InputInterface $input): ?ProfileFormat
+    {
+        $value = CommandLineSpelling::option($input, 'profile-format');
+        if ($value === null) {
+            return null;
         }
 
-        return $format;
+        return ProfileFormat::tryFrom($value) ?? throw self::refusal('--profile-format', \sprintf(
+            'Invalid value "%s" for --profile-format. Expected one of: %s.',
+            $value,
+            implode(', ', array_map(static fn(ProfileFormat $case): string => $case->value, ProfileFormat::cases())),
+        ));
     }
 
     private static function refusal(string $option, string $summary): ConfigurationRefusal

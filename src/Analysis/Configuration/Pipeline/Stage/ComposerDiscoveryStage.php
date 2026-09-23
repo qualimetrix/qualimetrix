@@ -13,12 +13,14 @@ use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface;
 /**
  * Auto-discovers paths from composer.json autoload (priority: 10).
  *
- * Contributes the production and the `autoload-dev` PSR-4 roots as two
- * lists, not as `paths`: whether test code is part of the project is
+ * Contributes the production and the `autoload-dev` targets as two lists,
+ * not as `paths`: whether test code is part of the project is
  * `include_autoload_dev`, which a source after this one may write, so the run
- * configuration picks the default analysis paths from both lists and judges
- * scope against the same choice
- * ({@see \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage}).
+ * configuration picks the default analysis paths from both lists. The lists
+ * are the reader's whole-manifest answer, the one
+ * {@see \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage}
+ * judges scope against, so a run over the defaults covers what it is judged
+ * against whatever autoload form declared the code.
  */
 final class ComposerDiscoveryStage implements ConfigurationStageInterface
 {
@@ -42,8 +44,8 @@ final class ComposerDiscoveryStage implements ConfigurationStageInterface
     {
         $composerPath = $request->workingDirectory->value() . '/composer.json';
 
-        $production = $this->composerReader->extractAutoloadPaths($composerPath);
-        $development = $this->composerReader->extractAutoloadDevPaths($composerPath);
+        $production = $this->composerReader->productionAutoloadTargets($composerPath) ?? [];
+        $development = $this->composerReader->developmentAutoloadTargets($composerPath) ?? [];
 
         if ($production === [] && $development === []) {
             return null;

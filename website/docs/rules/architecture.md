@@ -577,10 +577,11 @@ What the channel deliberately does not do:
   is reported under [Assignments in doubt](#doubted-assignment).
 - **It is only judged on a run that can judge it.** Like the other channels
   about a configured value that bound to nothing, it needs paths covering
-  everything `composer.json` declares as production code — `psr-4` and `psr-0`
-  roots, `classmap` and `files` entries alike. A narrower run, or a project
-  whose manifest declares no production autoload at all, leaves the channel
-  silent.
+  everything `composer.json` declares under `autoload` — `psr-4` and `psr-0`
+  roots, `classmap` and `files` entries alike — and under `autoload-dev` too
+  with [`--include-autoload-dev`](../usage/cli-options.md#--include-autoload-dev).
+  A narrower run, or a project whose manifest declares nothing in the sections
+  the run counts, leaves the channel silent.
 
 Unlike the architecture *configuration* diagnostics, this one is an ordinary
 rule finding: it answers to `fail_on`, `--disable-rule`, `@qmx-ignore

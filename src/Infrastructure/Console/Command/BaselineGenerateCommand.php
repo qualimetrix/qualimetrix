@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
+use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
@@ -95,8 +96,7 @@ final class BaselineGenerateCommand extends BaselineCommand
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        /** @var string $baselinePath */
-        $baselinePath = $input->getArgument('baseline');
+        $baselinePath = CommandLineSpelling::requiredArgument($input, 'baseline');
         $force = $input->getOption('force') === true;
 
         $mode = $this->readMode($input);
@@ -189,7 +189,7 @@ final class BaselineGenerateCommand extends BaselineCommand
      */
     private function readMode(InputInterface $input): ?BaselineEntryMode
     {
-        $raw = $input->getOption('mode');
+        $raw = CommandLineSpelling::option($input, 'mode');
 
         if ($raw === self::MODE_RATCHET) {
             return null;
@@ -203,7 +203,7 @@ final class BaselineGenerateCommand extends BaselineCommand
             '--mode',
             \sprintf(
                 'Unknown --mode value "%s". Expected %s or %s.',
-                \is_scalar($raw) ? (string) $raw : \gettype($raw),
+                $raw,
                 self::MODE_RATCHET,
                 self::MODE_SUPPRESS,
             ),

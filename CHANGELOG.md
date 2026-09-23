@@ -316,16 +316,35 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   analysis. They used to run on a default: `--config=` under the auto-discovered
   `qmx.yaml`, `--output=` to stdout, `violations=xyz` with no limit,
   `rank-by=typo` as `count`; `--format-opt=top=0` and `project-name=` are
-  refused as well.
-- **A run with no paths analyses the production PSR-4 roots of `composer.json`
-  only** (was `autoload` and `autoload-dev`), which is also the set
-  whole-project coverage is judged against. Set `include_autoload_dev: true`
-  or pass `--include-autoload-dev` to count `autoload-dev` code as part of the
-  project again, or name test code explicitly (`qmx check src/ tests/`).
+  refused as well. `--format-opt` pairs that contradict each other are refused
+  instead of one silently winning, each pair judged as written before `--all`
+  or a later pair could replace it: one key written twice
+  (`--format-opt=violations=bad --format-opt=violations=1`), `violations`
+  beside `limit`, and `limit` or an empty `violations=` beside `--all`. A
+  malformed `--suppress-path`, `--suppress-namespace` or `--baseline` is
+  refused before the analysis instead of after it.
+- **A run with no paths analyses every production autoload target of
+  `composer.json`, and only those**: `psr-4` and `psr-0` roots, `classmap`
+  entries (a `*` wildcard expanded) and `files` entries of `autoload` (was the
+  PSR-4 roots of `autoload` and `autoload-dev`). Whole-project coverage is
+  judged against the same list, so a run no longer warns "Analyzed paths do not
+  cover all autoload entries" about its own defaults, nor silences
+  whole-project channels on a project that declares code through `classmap`,
+  `psr-0` or `files`. Such projects analyse more files than before, and a
+  declared target missing on disk stops the run with exit `3`, as a missing
+  PSR-4 root already did. Set `include_autoload_dev: true` or pass
+  `--include-autoload-dev` to count `autoload-dev` code as part of the project
+  again, or name paths explicitly (`qmx check src/ tests/`);
+  `baseline:generate`, `baseline:update`, `baseline:cleanup` and
+  `baseline:explain` now accept `--include-autoload-dev` and
+  `--include-generated`, so a baseline covers the same project `check`
+  measures with them.
 - **The JSON refusal envelope is `{error, exit_code, position}`** (was
-  `{error, exit_code}`): `position` is `{path, written, accepted, closed}` for a
-  refusal addressed to a configuration key and `null` otherwise. A consumer
-  comparing the key set exactly must accept the new key.
+  `{error, exit_code}`): `position` is `{path, written, accepted, closed}` when
+  the refusal was raised at a place in a configuration document, and `null`
+  otherwise — including a merged value such as `memory_limit: 010M` whose
+  message names the key. A consumer comparing the key set exactly must accept
+  the new key.
 - **`--format=json` `topIssues[].message` and every `--format=suppressed`
   entry's `message` are now the finding's message**, as in
   `violations[].message`; the recommendation they carried moved to a new
@@ -334,9 +353,14 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   `3` and the reason on stderr** (was exit `1` with the reason on stdout): not a
   git repository, an existing hook without `--force`, a hook that is not
   Qualimetrix's, a dangling symlink, an unnameable binary, a failed write.
-- **A profile that cannot be written is a refusal.** An unwritable `--profile`
-  target exits `3` before the analysis, and a profile write that fails after
-  the run exits `3` instead of keeping the analysis exit code.
+- **An output file that cannot be written is a refusal.** `--profile`,
+  `check --output` and `graph:export --output` judge a target by the write they
+  make — a temporary file beside it renamed over it — so a directory, a target
+  in a directory that cannot be written, or an unwritable file exits `3` before
+  the analysis instead of failing after it; `graph:export --output` now writes
+  that way too instead of overwriting in place. A profile write that still
+  fails after the run exits `3` instead of keeping the analysis exit code, with
+  the reason on stderr so stdout keeps the report as its only document.
 - **Configuration values that used to be tolerated are refused with exit `3`:**
   two spellings of one key in one mapping (`suppress_paths` beside
   `suppressPaths`) instead of the later silently winning; `memory_limit: 0`, a
@@ -745,7 +769,12 @@ directions. See
   summary line while findings outside the selection make the run exit
   non-zero: `summary` and `text` say the counts are for the selection and name
   the findings outside it that decide the exit code, and `--format=json` keeps
-  `summary.debtPer1kLoc` (as `null`) instead of dropping the key.
+  `summary.debtPer1kLoc` (as `null`) instead of dropping the key. Every
+  structured format says the same: `json` and `metrics` carry a top-level
+  `outOfScope` object (always present, `null` without a selection), and
+  `sarif`, `gitlab`, `checkstyle`, `github` and `html` add one
+  `drill-down.out-of-scope` entry when findings lie outside the selection; the
+  JSON `summary` judges whether a selection ran by the same fact.
 - `--format=html` lists every finding the report counts: project-level and
   file-level findings and findings on global functions no longer disappear
   from the tree while `summary.totalViolations` counted them, and a fileless
@@ -770,7 +799,20 @@ directions. See
   a SARIF notification, a GitLab issue, a checkstyle `[publication]` entry, an
   HTML banner, a DOT comment). `json`, `sarif`, `gitlab`, `metrics`, `html` and
   `graph:export --format=json` used to fail the run, and `checkstyle` and
-  `graph:export --format=dot` wrote documents no parser accepts.
+  `graph:export --format=dot` wrote documents no parser accepts. A file path
+  that is not valid UTF-8 is repaired the same way before SARIF percent-encodes
+  it, instead of publishing a bare `%FF`.
+- A command run through an embedding `ArrayInput` reads an integer option or
+  argument value as its digits and refuses any other non-string value
+  (`true`, a float, a nested array) with exit `3` naming the option and the
+  type, instead of an internal error (exit `1`) or a silently dropped value:
+  `--detail`, `--top` and `--group-by` given as integers ended the run as an
+  internal error; `--output`, `--config`, `--baseline`, `--log-file`,
+  `--log-level`, `--preset`, `--exclude`, `--report`, `--memory-limit`,
+  `--disable-rule` and `--only-rule` were ignored or coerced; `--workers` read
+  `true` as `1`; and a lone `--format-opt` string was dropped unread instead of
+  read as one pair. `--profile` passed as `true` is the flag alone, not an
+  export to a file named `1`.
 - `--memory-limit` / `memory_limit` now applies in the parallel worker
   processes, not only in the coordinator; a file a worker could not finish is
   reported as failed with the workers' limit named, instead of a bare "context
