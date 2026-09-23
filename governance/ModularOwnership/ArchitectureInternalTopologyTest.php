@@ -57,12 +57,16 @@ final class ArchitectureInternalTopologyTest extends TestCase
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DeclaredLayerReachability',
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DiagnosticSampleList',
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator',
-        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerEvidence',
-        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerEvidenceCollector',
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerRoutingGuidance',
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFinding',
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions',
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule',
+        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\ClassWalkEvidence',
+        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\EdgeWalkEvidence',
+        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\ForbiddenEdge',
+        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidence',
+        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector',
+        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\ShadowedClass',
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\OwnedLayerTargets',
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassMode',
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions',
@@ -105,7 +109,8 @@ final class ArchitectureInternalTopologyTest extends TestCase
         'Configuration' => ['Contract', 'Configuration/Allow', 'Layer'],
         'Layer/Expansion' => ['Contract', 'Configuration', 'Configuration/Allow', 'Layer'],
         'ArchitecturePolicy' => ['Contract', 'Configuration', 'Layer', 'Layer/Expansion'],
-        'LayerViolation' => ['Contract', 'ArchitecturePolicy', 'Configuration', 'Layer'],
+        'LayerViolation/Observation' => ['Contract', 'ArchitecturePolicy', 'Configuration', 'Layer'],
+        'LayerViolation' => ['Contract', 'ArchitecturePolicy', 'Configuration', 'Layer', 'LayerViolation/Observation'],
     ];
 
     #[Test]
@@ -146,6 +151,7 @@ final class ArchitectureInternalTopologyTest extends TestCase
     {
         self::assertNotContains('ArchitecturePolicy', self::ALLOWED['Layer']);
         self::assertNotContains('Layer/Expansion', self::ALLOWED['Configuration']);
+        self::assertNotContains('LayerViolation', self::ALLOWED['LayerViolation/Observation']);
         self::assertArrayNotHasKey('*', self::ALLOWED);
         foreach (self::ALLOWED as $allowed) {
             self::assertNotContains('*', $allowed);
@@ -160,6 +166,16 @@ final class ArchitectureInternalTopologyTest extends TestCase
             $inlineDependencies,
         );
         self::assertSame($inlineDependencies, $this->disallowedDependencies('Layer', $inlineDependencies));
+
+        $observationReverse = $this->architectureDependencies(
+            '<?php use Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationOptions; function probe(LayerViolationOptions $options): void {}',
+            'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\Probe',
+        );
+        self::assertSame(
+            ['Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationOptions'],
+            $observationReverse,
+        );
+        self::assertSame($observationReverse, $this->disallowedDependencies('LayerViolation/Observation', $observationReverse));
 
         $groupedDependencies = $this->architectureDependencies(
             '<?php use Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\{Expansion\\LayerExpansionStage as Stage}; new Stage();',
@@ -198,6 +214,7 @@ final class ArchitectureInternalTopologyTest extends TestCase
             str_contains($path, '/Contract/') => 'Contract',
             str_contains($path, '/Configuration/Allow/') => 'Configuration/Allow',
             str_contains($path, '/Layer/Expansion/') => 'Layer/Expansion',
+            str_contains($path, '/LayerViolation/Observation/') => 'LayerViolation/Observation',
             str_contains($path, '/LayerViolation/') => 'LayerViolation',
             str_ends_with($path, '/ArchitecturePolicy.php') => 'ArchitecturePolicy',
             str_contains($path, '/Configuration/') => 'Configuration',

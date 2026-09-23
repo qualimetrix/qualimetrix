@@ -39,7 +39,7 @@ Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore	
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummary	Analysis.Evidence.ComputedMetrics.Health	1	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummaryBuilder	Analysis.Evidence.ComputedMetrics.Health	1	1
 Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface	Analysis.Evidence.Coupling	3	2
-Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency	Analysis.Evidence.DependencyModel	2	1
+Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency	Analysis.Evidence.DependencyModel	3	1
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface	Analysis.Evidence.DependencyModel	6	3
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	27	8
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyLocationInterface	Analysis.Evidence.DependencyModel	1	1
@@ -141,7 +141,7 @@ Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey	Analysis.Finding	49	14
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet	Analysis.Finding	48	14
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape	Analysis.Finding	48	14
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface	Analysis.Finding	1	1
-Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface	Analysis.Finding	43	16
+Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface	Analysis.Finding	44	16
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector	Analysis.Finding	9	4
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleShapeReader	Analysis.Finding	1	1

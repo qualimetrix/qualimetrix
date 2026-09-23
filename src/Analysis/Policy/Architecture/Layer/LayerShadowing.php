@@ -22,7 +22,7 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
  * stays reported, since a false alarm costs a configuration review while a
  * missed shadow costs a layer that silently owns nothing.
  *
- * @internal Consumed by {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule}.
+ * @internal Consumed by {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector}.
  */
 final class LayerShadowing
 {
