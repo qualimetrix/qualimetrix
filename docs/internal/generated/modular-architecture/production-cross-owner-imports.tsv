@@ -1908,7 +1908,6 @@ Qualimetrix\Infrastructure\Console\Command\BaselineRun	Infrastructure.Console	Qu
 Qualimetrix\Infrastructure\Console\Command\BaselineRunContext	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\RunScope	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineRunContext	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineRunContext	Infrastructure.Console	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
-Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\Baseline	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineLoader	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateDisposition	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateResult	Analysis.Policy.Baseline	contract
@@ -1947,6 +1946,7 @@ Qualimetrix\Infrastructure\Console\Command\GraphExportCommand	Infrastructure.Con
 Qualimetrix\Infrastructure\Console\Command\GraphExportCommand	Infrastructure.Console	Qualimetrix\Reporting\GraphProjection\Contract\GraphDirection	Reporting.GraphProjection	contract
 Qualimetrix\Infrastructure\Console\Command\GraphExportCommand	Infrastructure.Console	Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat	Reporting.GraphProjection	contract
 Qualimetrix\Infrastructure\Console\Command\GraphExportCommand	Infrastructure.Console	Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest	Reporting.GraphProjection	contract
+Qualimetrix\Infrastructure\Console\Command\LoadedBaselineRun	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\Baseline	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\RulesCommand	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
 Qualimetrix\Infrastructure\Console\Command\RulesCommand	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface	Analysis.Finding	contract
 Qualimetrix\Infrastructure\Console\Command\RulesCommand	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface	Analysis.Finding	contract

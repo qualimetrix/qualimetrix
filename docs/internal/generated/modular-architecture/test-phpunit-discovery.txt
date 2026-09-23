@@ -6703,6 +6703,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itRefusesAMagnitudeEntryWhoseMeasuredGroupReportsNoFiniteNumber
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itRefusesAnEntryOnAChannelNoRuleDeclares
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itRefusesAnEntryWhoseShapeDisagreesWithItsChannel
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itReportsNoChangeWhenAnUpdatedEntryWritesBackTheSamePayload
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itReportsNoChangeWhenEveryEntryIsSkipped
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itStampsTheResultFromTheInjectedClock
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itStillNamesAnOrdinaryEntrysRefusalAWorsening
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itClassifiesCurrentBaselineOnlyAndUnknownSymbolsExplicitly

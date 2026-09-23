@@ -853,6 +853,12 @@ a differing span whose line pairs exceed the search budget is **refused** rather
 than emitted as one padded hunk — falling back would silently restore the
 behaviour the hunks exist to remove.
 
+**A declared delta is one-shot.** It is true against the one reference the step
+was measured from. Once the step merges, `main` carries the diff too, so every
+row is `delta-stale` against the new `main`, and the next change that runs the
+gate is red until the rows and their diff files are removed. Retire them in the
+first change after the merge, as its own commit.
+
 ## What a declared field move declares
 
 `delta-overreach` refuses a diff line that *moves* a field the equivalence tuple

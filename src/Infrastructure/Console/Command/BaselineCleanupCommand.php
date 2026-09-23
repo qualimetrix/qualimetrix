@@ -89,7 +89,8 @@ final class BaselineCleanupCommand extends BaselineCommand
             return self::FAILURE;
         }
 
-        [$context, $baseline] = $measured;
+        $context = $measured->context;
+        $baseline = $measured->baseline;
 
         $candidates = $this->cleaner->candidates($baseline, $context->findings(), $this->declarations);
         self::reportCandidates($candidates, $output);
