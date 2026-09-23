@@ -249,13 +249,20 @@ final class UndecidableCoverageGapTest extends TestCase
         $recommendation = (string) $doubt->recommendation;
         self::assertStringContainsString('patterns layer for its namespace declared before', $recommendation);
         self::assertStringNotContainsString('debug:layer-assignment', $recommendation);
+        // "Outside the analysed paths" is a fact about the run, not about whose
+        // code the symbol is: a run over one directory leaves the project's own
+        // classes there too, and for them a patterns layer is a remodelling,
+        // not the answer — analysing them is.
+        self::assertStringContainsString('your own code', $recommendation);
+        self::assertStringContainsString('widening paths', $recommendation);
     }
 
     #[Test]
-    public function itPublishesNoDoubtWhileCoverageAccountingIsOff(): void
+    public function itPublishesTheDoubtWhateverTheCoverageMode(): void
     {
-        // `coverage-gap: ignore` is the project declining coverage accounting;
-        // the doubt count is part of it and must not appear uninvited.
+        // `coverage-gap: ignore` is the default. Gating the doubt on it left an
+        // `exclude:` the run could not answer with no trace in `check` at all,
+        // on exactly the configuration most projects run.
         $findings = $this->findingsFor(
             [
                 new LayerDefinition('web', new MembershipSpec(
@@ -268,6 +275,127 @@ final class UndecidableCoverageGapTest extends TestCase
             CoverageMode::Ignore,
         );
 
+        $doubt = self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME);
+        self::assertNotNull($doubt);
+        self::assertSame(Severity::Info, $doubt->severity);
+        self::assertNull(self::findingOn($findings, LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME));
+        // The class walk has to book the analysed class whatever the mode: the
+        // edge walk sees it too, and without the class walk's booking it would
+        // be counted as a symbol the run never analysed.
+        self::assertStringContainsString('(1 analysed class(es))', $doubt->message);
+        self::assertStringContainsString('App\\Web\\OrderController', $doubt->message);
+        self::assertStringContainsString('"web" (1 assigned in doubt)', $doubt->message);
+    }
+
+    #[Test]
+    public function itNamesTheLayersThatCouldNotAnswerAndHowMuchEachLeftInDoubt(): void
+    {
+        // Two layers could not answer: `controllers` about the vendor parent
+        // (never analysed), `models` about both ends. The reader has to know
+        // which layer to settle, and for a symbol outside the paths nothing
+        // but this finding names it.
+        $findings = $this->findingsFor(
+            [
+                new LayerDefinition('models', new MembershipSpec(extends: ['Vendor\\Lib\\Base'])),
+                new LayerDefinition('controllers', new MembershipSpec(extends: ['Vendor\\Lib\\Middle'])),
+                new LayerDefinition('vendor', new MembershipSpec(patterns: ['Vendor\\**'])),
+            ],
+            'Vendor\\Lib\\Middle',
+        );
+
+        $doubt = self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME);
+        self::assertNotNull($doubt);
+        self::assertStringContainsString('"models" (2 assigned in doubt)', $doubt->message);
+        self::assertStringContainsString('"controllers" (1 assigned in doubt)', $doubt->message);
+        self::assertStringContainsString('at most 10 of each kind', $doubt->message);
+    }
+
+    #[Test]
+    public function itKeepsALayerThatCouldNotAnswerVisibleWhenItLeftSymbolsInNoLayer(): void
+    {
+        // No later layer catches the class, so the doubt is not about an
+        // assignment but about the absence of one. `architecture.unreachable-layer`
+        // may no longer say "matches no class" about this layer, and under the
+        // default `coverage-gap: ignore` nothing else would name it.
+        $findings = $this->findingsFor(
+            [new LayerDefinition('controllers', new MembershipSpec(extends: ['Vendor\\Lib\\Base']))],
+            'Vendor\\Lib\\Middle',
+            CoverageMode::Ignore,
+        );
+
+        self::assertNull(self::findingOn($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
+        $doubt = self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME);
+        self::assertNotNull($doubt);
+        self::assertStringContainsString('2 symbol(s) are in no layer because a layer could not answer about them', $doubt->message);
+        self::assertStringContainsString('"controllers" (2 in no layer)', $doubt->message);
+        self::assertStringNotContainsString('assigned symbol(s)', $doubt->message);
+    }
+
+    #[Test]
+    public function itDoesNotCallALayerUnreachableWhileTheRunCouldNotAnswerIt(): void
+    {
+        // `controllers` matched nothing because the run could not answer it,
+        // not because its criteria match no class — the finding said the
+        // latter, as a configuration error that fails the run. `ghost` is the
+        // control: its criteria really match nothing, and that is still
+        // reported.
+        $findings = $this->findingsFor(
+            [
+                new LayerDefinition('controllers', new MembershipSpec(extends: ['Vendor\\Lib\\Base'])),
+                new LayerDefinition('app', new MembershipSpec(patterns: ['App\\**'])),
+                new LayerDefinition('ghost', new MembershipSpec(patterns: ['Nowhere\\**'])),
+            ],
+            'Vendor\\Lib\\Middle',
+        );
+
+        $unreachable = self::findingsOn($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
+        self::assertCount(1, $unreachable);
+        self::assertStringContainsString('Layer "ghost"', $unreachable[0]->message);
+    }
+
+    #[Test]
+    public function itBuildsNoShadowFromAMatchWhoseExcludeCouldNotBeAnswered(): void
+    {
+        // `app` carves the repositories out with an `exclude:` the run cannot
+        // answer. Had it answered "yes", `repos` would own the class: neither
+        // "app shadows repos" nor "repos is unreachable" is a conclusion the
+        // run reached.
+        $findings = $this->findingsFor(
+            [
+                new LayerDefinition('app', new MembershipSpec(
+                    patterns: ['App\\**'],
+                    exclude: new ExcludeSpec(extends: ['Vendor\\Lib\\Base']),
+                )),
+                new LayerDefinition('repos', new MembershipSpec(patterns: ['App\\Web\\**'])),
+                new LayerDefinition('vendor', new MembershipSpec(patterns: ['Vendor\\**'])),
+            ],
+            'Vendor\\Lib\\Middle',
+        );
+
+        self::assertNull(self::findingOn($findings, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME));
+        self::assertNull(self::findingOn($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
+        self::assertNotNull(self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME));
+    }
+
+    #[Test]
+    public function itStillReportsTheShadowWhenTheExcludeAnswered(): void
+    {
+        // Control: the same carve-out over a class whose chain is complete.
+        // The clause answered "no", `app` owns the class for certain, and the
+        // narrower `repos` declared after it can never win.
+        $findings = $this->findingsFor(
+            [
+                new LayerDefinition('app', new MembershipSpec(
+                    patterns: ['App\\**'],
+                    exclude: new ExcludeSpec(extends: ['Vendor\\Lib\\Base']),
+                )),
+                new LayerDefinition('repos', new MembershipSpec(patterns: ['App\\Web\\**'])),
+            ],
+            null,
+        );
+
+        self::assertNotNull(self::findingOn($findings, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME));
+        self::assertNotNull(self::findingOn($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
         self::assertNull(self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME));
     }
 
@@ -391,6 +519,16 @@ final class UndecidableCoverageGapTest extends TestCase
         }
 
         return null;
+    }
+
+    /**
+     * @param list<Finding> $findings
+     *
+     * @return list<Finding>
+     */
+    private static function findingsOn(array $findings, string $channel): array
+    {
+        return array_values(array_filter($findings, static fn(Finding $finding): bool => $finding->ruleName === $channel));
     }
 
     /**

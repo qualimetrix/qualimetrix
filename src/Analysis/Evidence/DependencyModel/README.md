@@ -114,6 +114,14 @@ outside this module (`Design\Inheritance\DitGlobalCollector`, `NocCollector`,
 `Policy\Architecture\Layer\ClassContextFactory`) skip a flagged edge instead.
 See ADR 0071.
 
+`Dependency::$interfaceExtends` marks an `extends` edge an interface declares
+(`interface I extends J`). The same `DependencyType::Extends` names a parent
+class when a class declares it, and the graph carries no declaration kind
+otherwise, so a reader asking which interfaces a declaration has needs the
+flag to count `J` for `I` without counting a parent class for its subclass.
+Only `ClassContextFactory` (layer `implements:` membership) reads it; DIT, NOC,
+coupling and `graph:export` treat both edges alike.
+
 `DependencyGraphInterface` has raw CBO 27 and the inclusive point threshold 28,
 so one additional edge fails rather than being absorbed. Its five net consumers
 are `DependencyGraphBuilderInterface`, `DependencyGraphBuilder`,

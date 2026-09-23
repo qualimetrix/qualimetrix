@@ -208,6 +208,11 @@ final class AncestryBorderIntegrationTest extends TestCase
         yield 'interface two steps above the PHP interface an interface extends' => ['extends', '\\Traversable', 'Bag'];
         yield 'the same chain written by the project' => ['extends', self::NS . '\\Library\\Root', 'Leaf'];
         yield 'PHP interface above the one an interface extends' => ['implements', '\\Traversable', 'Bag'];
+        // What an interface extends is among its interfaces, as
+        // `getInterfaceNames()` has it, not only what is above that.
+        yield 'PHP interface an interface extends' => ['implements', '\\IteratorAggregate', 'Bag'];
+        yield 'project interface an interface extends' => ['implements', self::NS . '\\Library\\Mid', 'Leaf'];
+        yield 'project interface two steps up an interface chain' => ['implements', self::NS . '\\Library\\Root', 'Leaf'];
         yield 'enum' => ['implements', '\\UnitEnum', 'Phase'];
         yield 'backed enum' => ['implements', '\\BackedEnum', 'Status'];
         yield 'interface above the one a backed enum gets' => ['implements', '\\UnitEnum', 'Status'];
@@ -248,6 +253,8 @@ final class AncestryBorderIntegrationTest extends TestCase
         yield 'a pure enum is not backed' => ['implements', '\\BackedEnum', 'Phase'];
         yield 'a class without __toString' => ['implements', '\\Stringable', 'Silent'];
         yield 'an interface off the chain of the one an interface extends' => ['extends', '\\Countable', 'Bag'];
+        yield 'nor is it implemented' => ['implements', '\\Countable', 'Bag'];
+        yield 'a parent class is not an interface' => ['implements', '\\stdClass', 'Loose'];
     }
 
     #[Test]

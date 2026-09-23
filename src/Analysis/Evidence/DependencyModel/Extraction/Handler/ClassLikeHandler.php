@@ -89,11 +89,7 @@ final readonly class ClassLikeHandler implements NodeDependencyHandlerInterface
     private function handleInterface(Interface_ $node, DependencyContext $context): void
     {
         foreach ($node->extends as $parent) {
-            $context->addDependency(
-                $context->getResolver()->resolve($parent),
-                DependencyType::Extends,
-                $parent->getStartLine(),
-            );
+            $context->addInterfaceParent($context->getResolver()->resolve($parent), $parent->getStartLine());
         }
 
         self::recordImplicitStringable($node, $context);

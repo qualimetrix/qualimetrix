@@ -32,9 +32,11 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * being this rule's channel rather than {@see LayerDeclarationValidator}'s
  * lives.
  *
- * A third, `architecture.doubted-assignment`, counts the symbols that stand
- * assigned while a layer bearing on the assignment could not be answered. It
- * is information, reported at `info` and never gating, and
+ * A third, `architecture.doubted-assignment`, counts the symbols whose layer
+ * the run could not fully decide — assigned while a layer bearing on the
+ * assignment could not be answered, or in no layer only because of one — and
+ * names those layers. It is information, reported at `info` and never
+ * gating, whatever the coverage mode, and
  * {@see DeclaredLayerReachability::doubtedAssignments()} says why it is not
  * the coverage gap.
  *
@@ -157,12 +159,14 @@ final class LayerViolationRule extends AbstractRule
             ...($context->coversProjectScope
                 ? UnmatchedExcludeDiagnostic::forInertClauses($evidence, self::UNMATCHED_EXCLUDE_NAME)
                 : []),
-            // Not scope-gated: the count is about the symbols this run looked
-            // at, and a narrower run reports fewer of them rather than a
-            // conclusion it cannot reach.
+            // Not scope-gated: the doubt is about the symbols this run looked
+            // at. A narrower run reports different doubts, not fewer — a
+            // project class it left outside can be in doubt where a run over
+            // the whole project decides it — which is why the advice for a
+            // symbol outside the analysed paths names analysing it as well.
             ...DeclaredLayerReachability::doubtedAssignments(
-                $evidence->architecture->coverage(),
                 $evidence->coverageState,
+                $evidence->undecidedSymbolsByLayer(),
                 self::DOUBTED_ASSIGNMENT_NAME,
             ),
         ];

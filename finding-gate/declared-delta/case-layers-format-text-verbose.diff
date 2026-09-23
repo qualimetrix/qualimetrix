@@ -1,21 +1,5 @@
 --- candidate
 +++ reference (mapped)
-@@ -6,1 +6,1 @@
--    Examples of unclassified classes: Corpus\Layers\GraphBase\Marker, Corpus\Layers\GraphBase\MarkerAttribute, Corpus\Layers\GraphBase\MarkerContract, Corpus\Layers\Orphan\Loner. Declare layers covering these classes or accept the gap by leaving coverage-gap on "ignore". The assignments in doubt are not part of the gap and do not fail the run: each stands and its edges are judged against its layer's allow-list; architecture.doubted-assignment names them and what settles each.  [architecture.coverage-gap]
-+    Examples of unclassified classes: Corpus\Layers\GraphBase\Marker, Corpus\Layers\GraphBase\MarkerAttribute, Corpus\Layers\GraphBase\MarkerContract, Corpus\Layers\Orphan\Loner. Declare layers covering these classes or accept the gap by leaving coverage-gap on "ignore".  [architecture.coverage-gap]
-@@ -29,2 +29,2 @@
--  INFO
--    For an analysed class, "qmx debug:layer-assignment <class>" names the unanswered layer and where its inheritance chain stops; widening paths to include that declaration settles it. For a symbol outside the analysed paths, a patterns layer for its namespace declared before the layer that could not answer settles it.  [architecture.doubted-assignment]
-+  WARN
-+    Check the exclude criteria against the classes layer "doubt" actually holds — "qmx debug:layer-assignment <class>" shows what a given class matched. Correct the criteria, or drop the "exclude" clause if the classes it was written for are gone.  [architecture.unmatched-exclude]
-@@ -44,4 +44,3 @@
--  architecture.unreachable-layer           ~30min    (2 violations)
--  architecture.potential-shadow            ~30min    (2 violations)
--  architecture.unmatched-exclude           ~15min    (1 violation)
--  architecture.doubted-assignment          ~15min    (1 violation)
-+  architecture.unmatched-exclude           ~30min    (2 violations)
-+  architecture.unreachable-layer           ~30min    (2 violations)
-+  architecture.potential-shadow            ~30min    (2 violations)
-@@ -53,1 +52,1 @@
--Qualimetrix dev-main: 8 error(s), 3 warning(s), 1 info in 12 file(s)
-+Qualimetrix dev-main: 8 error(s), 4 warning(s) in 12 file(s)
+@@ -30,1 +30,1 @@
+-    For an analysed class, "qmx debug:layer-assignment <class>" names the unanswered layer and where its inheritance chain stops; widening paths to include that declaration settles it. For a symbol outside the analysed paths, what settles it depends on whose code it is: your own code is settled by analysing it — widening paths to include it, or running over the whole project rather than part of it; a dependency's class by a patterns layer for its namespace declared before the layer that could not answer.  [architecture.doubted-assignment]
++    For an analysed class, "qmx debug:layer-assignment <class>" names the unanswered layer and where its inheritance chain stops; widening paths to include that declaration settles it. For a symbol outside the analysed paths, a patterns layer for its namespace declared before the layer that could not answer settles it.  [architecture.doubted-assignment]

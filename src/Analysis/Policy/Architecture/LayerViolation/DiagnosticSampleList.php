@@ -23,7 +23,8 @@ namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
  */
 final class DiagnosticSampleList
 {
-    private const int LIMIT = 10;
+    /** Public because a text that samples has to say how far the sample reaches. */
+    public const int LIMIT = 10;
 
     /**
      * @param list<string> $fqns

@@ -177,7 +177,7 @@ answer does not depend on the PHP version or extensions of the machine running
 the analysis. The interfaces PHP adds unwritten count (`UnitEnum` and
 `BackedEnum` on enums, `Stringable` on a declared `__toString()`), and a chain
 cut only among the interfaces leaves `extends:` decidable. What stays
-undecided is a chain that reaches unanalysed vendor or project code. Three
+undecided is a chain that reaches unanalysed vendor or project code. Four
 things move on an unchanged tree:
 
 - a class whose only layer is undecided is in no layer, and
@@ -188,9 +188,14 @@ things move on an unchanged tree:
   keeps it when an earlier layer or its own `exclude:` clause cannot be
   answered, and its edges are judged by the allow-list. Such an assignment is
   in doubt, not a coverage gap: it is counted on the new `info` channel
-  `architecture.doubted-assignment` (while `coverage-gap` is `warn` or
-  `error`), split into analysed classes and symbols outside the paths, and
-  never fails the run;
+  `architecture.doubted-assignment` in every `coverage-gap` mode, together
+  with the symbols left in no layer only because a layer could not answer
+  about them, split into analysed classes and symbols outside the paths, with
+  each unanswered layer named and counted, and never fails the run;
+- `architecture.unreachable-layer` no longer calls a layer the run could not
+  answer one whose criteria "match no class", and `architecture.potential-shadow`
+  no longer builds a shadow from a match whose `exclude:` could not be
+  answered — both used to fail the run on a conclusion it had not reached;
 - `architecture.unmatched-exclude` no longer reports an `exclude:` clause that
   could not be answered as having removed no class.
 
@@ -393,6 +398,11 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
 - Layer criteria written with a leading backslash (`\Throwable`,
   `\App\Foo`) now match; they were accepted and never matched, which left no
   way to name a class in the global namespace. A lone `\` is refused.
+- Layer criterion `implements:` counts, for an interface, the interfaces it
+  extends itself, as `getInterfaceNames()` does, not only the ones above them:
+  `interface Bag extends \IteratorAggregate` matches
+  `implements: ['\IteratorAggregate']`. A class still does not match
+  `implements:` naming its parent class.
 - Layer criteria `implements:` and `attributes:` naming a PHP interface or
   attribute (`\JsonSerializable`, `\AllowDynamicProperties`, or `\Traversable`
   through `implements \IteratorAggregate`) now match a class that declares it;

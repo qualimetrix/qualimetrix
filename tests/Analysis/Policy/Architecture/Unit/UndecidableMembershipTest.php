@@ -376,6 +376,36 @@ final class UndecidableMembershipTest extends TestCase
 
         self::assertSame([], $registry->undecidedLayers($this->child()));
         self::assertSame(['infra'], $registry->unansweredExcludeLayers($this->child()));
+        self::assertSame([], $registry->contenders($this->child()), 'Nothing bears on the assignment, so nothing contests it.');
+    }
+
+    #[Test]
+    public function itNamesEveryLayerThatCouldStillOwnAClassWhoseAssignmentIsInDoubt(): void
+    {
+        // `app` won the class on a match its own `exclude:` may withdraw. If
+        // it does, `vendorish` — which the run could not answer either — or
+        // else `web` owns the class; `rest`, declared after a match the run
+        // established, could not own it whatever happened before it.
+        $registry = new LayerRegistry(
+            [
+                new LayerDefinition('app', new MembershipSpec(
+                    patterns: ['App\\**'],
+                    exclude: new ExcludeSpec(extends: [self::BASE]),
+                )),
+                new LayerDefinition('vendorish', new MembershipSpec(extends: [self::BASE])),
+                new LayerDefinition('web', new MembershipSpec(patterns: [self::CHILD_NS . '\\**'])),
+                new LayerDefinition('rest', new MembershipSpec(patterns: ['**'])),
+            ],
+            new ClassContextFactory(),
+        );
+        $registry->bindGraph(
+            self::graphWith([[self::CHILD, self::MIDDLE, DependencyType::Extends]]),
+            [$this->child()],
+        );
+
+        self::assertSame('app', $registry->resolveLayer($this->child()));
+        self::assertSame(['app', 'vendorish'], $registry->undecidedLayers($this->child()));
+        self::assertSame(['app', 'vendorish', 'web'], $registry->contenders($this->child()));
     }
 
     #[Test]

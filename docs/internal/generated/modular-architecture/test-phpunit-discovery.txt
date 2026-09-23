@@ -5609,6 +5609,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"PHP class of a newer PHP than the analysing one"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"PHP class of an extension the analysing PHP may not load"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"PHP interface above the one an interface extends"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"PHP interface an interface extends"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"backed enum"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"class declaring __toString"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"class implementing an interface that declares __toString"
@@ -5617,6 +5618,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"interface above the one a backed enum gets"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"interface declaring __toString"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"interface two steps above the PHP interface an interface extends"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"project interface an interface extends"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"project interface two steps up an interface chain"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"the same chain written by the project"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionNamingAPhpAncestor"direct parent"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionNamingAPhpAncestor"grandparent"
@@ -5635,8 +5638,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itKeepsTheClassInItsLayerWhenAnExcludeByParentCanBeAnswered"implements a PHP interface"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itKeepsTheClassInItsLayerWhenAnExcludeByParentCanBeAnswered"implements a vendor interface"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itStillDecidesANonMatchNextToWhatPhpDeclares"a class without __toString"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itStillDecidesANonMatchNextToWhatPhpDeclares"a parent class is not an interface"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itStillDecidesANonMatchNextToWhatPhpDeclares"a pure enum is not backed"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itStillDecidesANonMatchNextToWhatPhpDeclares"an interface off the chain of the one an interface extends"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itStillDecidesANonMatchNextToWhatPhpDeclares"nor is it implemented"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AnonymousClassInheritanceIntegrationTest::itDoesNotAssignTheEnclosingClassByItsNestedAnonymousClassesAttribute
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AnonymousClassInheritanceIntegrationTest::itDoesNotAssignTheEnclosingClassByItsNestedAnonymousClassesDirectExtends
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AnonymousClassInheritanceIntegrationTest::itDoesNotAssignTheEnclosingClassByItsNestedAnonymousClassesImplements
@@ -6025,10 +6030,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itBuildsAMinimalContextForANamespacePathEvenWithABoundGraph
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itBuildsAMinimalContextWithoutABoundGraph
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itCollectsDirectAttributesInterfacesAndParentFromTheGraph
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itCountsAnUnreadInterfaceAnInterfaceExtendsAndSaysWhereItStopped
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itCountsEveryInterfaceUpAChainTheProjectWrites
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itCountsTheInterfacesAnInterfaceExtendsAmongItsInterfaces
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itDeduplicatesRepeatedAttributeAndRelationEdges
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itIgnoresDependencyTypesOtherThanExtendsImplementsAndAttribute
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itIncludesInterfacesInheritedFromAParentClass
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itKeepsAClassAndTheNamespaceOfItsOwnNameApart
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itKeepsTheParentsOfAClassOutOfItsInterfaces
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itMemoizesTheBuiltContextAcrossRepeatedCalls
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itResetsCachedContextsWhenTheGraphIsRebound
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itSwitchesBackToAMinimalContextWhenTheGraphIsUnbound
@@ -6419,19 +6428,24 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itRefusesAnEnabledThatWouldLie#2
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itRejectsAnUnknownMode
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itAdvisesANamespaceLayerForADoubtedSymbolOutsideThePaths
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itBuildsNoShadowFromAMatchWhoseExcludeCouldNotBeAnswered
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itCountsADoubtedEdgeEndWhoseOtherEndIsInNoLayer
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itDoesNotCallALayerUnreachableWhileTheRunCouldNotAnswerIt
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itDoesNotDoubtAnAssignmentOverALayerDeclaredAfterIt
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itGivesOnlyTheAnalysedClassAdviceWhenEveryUndecidedSymbolWasAnalysed
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itGivesOnlyTheOutsideAdviceWhenEveryUndecidedSymbolIsOutsideThePaths
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itKeepsALayerThatCouldNotAnswerVisibleWhenItLeftSymbolsInNoLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itKeepsTheExcludeClauseThatCouldNotAnswerOutOfTheInertReport
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itLeavesAFullyCoveredRunWithoutAGapWhenOnlyAssignmentsAreInDoubt
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itLeavesTheSentenceAloneWhenTheWholeGapWasDecided
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itNamesAnAssignmentAnUnanswerableExcludeLeftInDoubt
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itNamesTheLayersThatCouldNotAnswerAndHowMuchEachLeftInDoubt
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itNamesTheUndecidedShareOfTheGap
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itPublishesNoDoubtWhileCoverageAccountingIsOff
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itPublishesTheDoubtAsInformationWhenNothingIsOutsideEveryLayer
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itPublishesTheDoubtWhateverTheCoverageMode
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itSaysWhatALaterLayerDoesWithTheUndecidedShare
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itStillReportsAnExcludeClauseThatAnsweredNoEverywhere
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itStillReportsTheShadowWhenTheExcludeAnswered
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itAnswersDecisivelyWhenNoAnalysedUniverseWasBound
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itCannotDecideAttributesForASymbolTheRunNeverAnalysed
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itCannotDecideExtendsWhenAMidChainLinkIsOutsideTheAnalysedSet
@@ -6473,6 +6487,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itMatchesACriterionNamingAPhpAncestor"direct PHP parent"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itMatchesACriterionNamingAPhpAncestor"interface of a PHP parent"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itNamesAnUnansweredExcludeWhateverLayerWonTheClass
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itNamesEveryLayerThatCouldStillOwnAClassWhoseAssignmentIsInDoubt
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itNamesWhereTheChainStopsOnlyBesideAnUnansweredLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itObservesNoTupleWhenTheTemplatesCriterionIsDecidedAgainst
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itObservesNoTupleWhenTheTemplatesExcludeIsDecidedToFire

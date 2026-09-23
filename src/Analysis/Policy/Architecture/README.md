@@ -149,9 +149,12 @@ the layer, `LayerRegistry::undecidedLayers()` is the third exit of the one
 cached walk, and `LayerRegistry::chainStopsAt()` names where the chain stopped,
 which `debug:layer-assignment` prints. `undecidedLayers()` is also the one place
 that decides which unanswered layers bear on an assignment: all of them for a
-symbol nothing matched, only those declared no later than the assigned layer
-otherwise. Every reader of the doubt takes that list as it comes rather than
-re-deriving the rule from the declaration order. `architecture.coverage-gap` names the
+symbol nothing matched, otherwise those declared before the first match the run
+established — a match whose own `exclude:` went unanswered is not established.
+Every reader of the doubt takes that list as it comes rather than
+re-deriving the rule from the declaration order. `LayerRegistry::contenders()`,
+the fifth exit, names the layers that could own the symbol once those are
+answered. `architecture.coverage-gap` names the
 count and a sample of undecided symbols outside every layer — only when such a
 symbol exists, so an all-decided project reads the sentence it always read —
 and says what a later layer does with them: it assigns them, as a guess.
@@ -169,8 +172,16 @@ non-empty `undecidedLayers()` — analysed classes and dependency-edge ends
 alike, each end on its own — and keeps apart those the run did not analyse.
 That count is information, not a gap: `architecture.coverage-gap` names it only
 when it fires for unassigned or undecidable symbols, and never fires for it.
-`architecture.doubted-assignment` publishes it at `info` while the coverage mode
-is not `ignore`.
+`architecture.doubted-assignment` publishes it at `info` in every coverage mode,
+together with the symbols in no layer only because a layer could not answer,
+and names each such layer with its counts — the per-layer `undecided` column of
+the walk's symbol sets.
+
+The two declaration verdicts that conclude something from who won read the
+walk's `contended` column and `unansweredExcludeLayers()` instead of the bare
+match list: a layer that could still own a symbol in doubt is not
+`architecture.unreachable-layer`, and `LayerShadowing` draws a shadow only
+between matches the run established.
 
 Four declarations that used to be accepted are now refused at config load,
 because there is no correct silent reading of any of them. A template layer may
@@ -248,8 +259,9 @@ builds all five: `architecture.coverage-gap`, `architecture.unreachable-layer`,
 as its producer, so all five are registered, addressed, excluded, described and
 switched off exactly as they were while the rule declared them, and it runs in
 the rule's slot so their position in an unsorted report is unchanged.
-`DiagnosticSampleList` formats the bounded FQN samples both
-`architecture.coverage-gap` and `architecture.unassigned-class` print, and is the
+`DiagnosticSampleList` formats the bounded FQN samples
+`architecture.coverage-gap`, `architecture.doubted-assignment` and
+`architecture.unassigned-class` print, and is the
 one piece of code shared across the code/declaration split — a narrow
 formatting utility with no policy semantics of its own.
 

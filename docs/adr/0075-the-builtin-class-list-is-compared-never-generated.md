@@ -132,9 +132,10 @@ compares the list.** Which names it answers for is the registry's list itself,
 not a copy: four homogeneous maps (interface names, parents, interfaces,
 attributes) hold only the names with something to say, so an absent entry
 means "none". A name is compared wherever the running PHP declares it; a name
-no reachable witness loads (`Pdo\Firebird`, `EnchantBroker`,
-`EnchantDictionary` on the developer machines) was written from php-src's
-stubs and is verified where a runner loads the extension. Every map key must be
+no developer machine loads (`Pdo\Firebird`, `EnchantBroker`,
+`EnchantDictionary`) was written from php-src's stubs and is verified by the CI
+job that pins `enchant` and `pdo_firebird` in its extension list, so the
+comparison does not depend on what the runner image happens to preinstall. Every map key must be
 registered, every supertype named must itself be registered so a walk never
 leaves the table, and a floor refuses a run that compared too few names.
 

@@ -59,6 +59,26 @@ final class DependencyContext
     }
 
     /**
+     * Adds the `extends` edge an interface declares — see
+     * {@see Dependency::$interfaceExtends}. An interface cannot be declared
+     * inside an anonymous class, so the edge is never one of its facts.
+     */
+    public function addInterfaceParent(string $resolvedParentInterface, int $line): void
+    {
+        if ($resolvedParentInterface === $this->currentClass->logical->toString()) {
+            return;
+        }
+
+        $this->dependencies[] = new Dependency(
+            $this->currentClass,
+            new LogicalClassPath(\Qualimetrix\Core\Symbol\SymbolPath::fromClassFqn($resolvedParentInterface)),
+            DependencyType::Extends,
+            new DependencyLocation($this->file, $line),
+            interfaceExtends: true,
+        );
+    }
+
+    /**
      * Called by the visitor immediately before a call it knows will produce a
      * declaration edge of a nested anonymous class. Never read back —
      * {@see addDependency()} consumes the flag directly. Pair with

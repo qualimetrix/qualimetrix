@@ -43,9 +43,13 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * **Transitive resolution.** {@see ClassContext::$parentClasses} carries the
  * full extends chain; {@see ClassContext::$interfaces} adds direct interfaces,
  * interfaces inherited from parent classes, and interfaces transitively
- * reached via interface-extends-interface edges (interfaces use
- * {@see DependencyType::Extends} for inheritance — same edge kind as classes,
- * disambiguated by walk start point).
+ * reached via interface-extends-interface edges. For an interface, the
+ * interfaces it extends are among its interfaces, as `getInterfaceNames()`
+ * reports them: `implements:` sees the parent an interface names, not only
+ * what is above it. An analysed interface is told from a class by the edges it
+ * declares ({@see \Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency::$interfaceExtends});
+ * one extending nothing has no parent to add, and a PHP interface's table
+ * entry already lists what it extends.
  *
  * **Where a chain ends, and what that is allowed to mean.** A class the run
  * did not analyse has no edges out of it in the graph. The edge INTO it was
@@ -88,8 +92,10 @@ final class ClassContextFactory
      * classes, and a walk seeded from an interface FQN only ever encounters
      * parent interfaces. The map is therefore safe to share between the
      * parent-class walk in {@see build()} and the
-     * {@see collectTransitiveInterfaces()} (interface chain) walks. A future
-     * walk starting from a hybrid seed list MUST disambiguate explicitly.
+     * {@see collectTransitiveInterfaces()} walk, which is seeded with a
+     * subject's parents only when {@see $interfaceSources} says the subject is
+     * an interface. Any other walk mixing the two seeds MUST disambiguate the
+     * same way.
      *
      * Built lazily on first {@see build()} after {@see bindGraph()}; cleared
      * when the graph is rebound.
@@ -97,6 +103,14 @@ final class ClassContextFactory
      * @var array<string, list<string>>|null
      */
     private ?array $extendsMap = null;
+
+    /**
+     * FQNs of the analysed interfaces that extend something — the sources of
+     * the {@see DependencyType::Extends} edges an interface declares.
+     *
+     * @var array<string, true>|null
+     */
+    private ?array $interfaceSources = null;
 
     /**
      * Class FQN → list of direct implemented interface FQNs.
@@ -156,6 +170,7 @@ final class ClassContextFactory
     {
         $this->graph = $graph;
         $this->extendsMap = null;
+        $this->interfaceSources = null;
         $this->implementsMap = null;
         $this->attributesMap = null;
         $this->contextCache = [];
@@ -230,9 +245,12 @@ final class ClassContextFactory
 
         \assert($this->graph !== null);
 
-        $extends = [];
-        $implements = [];
-        $attributes = [];
+        $byType = [
+            DependencyType::Extends->name => [],
+            DependencyType::Implements->name => [],
+            DependencyType::Attribute->name => [],
+        ];
+        $interfaceSources = [];
 
         foreach ($this->graph->getDeclarationDependencies() as $dependency) {
             // An anonymous class's own extends/implements/attribute is
@@ -250,24 +268,16 @@ final class ClassContextFactory
                 continue;
             }
 
-            switch ($dependency->type) {
-                case DependencyType::Extends:
-                    $extends[$sourceFqn][] = $targetFqn;
-                    break;
-                case DependencyType::Implements:
-                    $implements[$sourceFqn][] = $targetFqn;
-                    break;
-                case DependencyType::Attribute:
-                    $attributes[$sourceFqn][] = $targetFqn;
-                    break;
-                default:
-                    break;
+            $byType[$dependency->type->name][$sourceFqn][] = $targetFqn;
+            if ($dependency->interfaceExtends) {
+                $interfaceSources[$sourceFqn] = true;
             }
         }
 
-        $this->extendsMap = self::dedupeListValues($extends);
-        $this->implementsMap = self::dedupeListValues($implements);
-        $this->attributesMap = self::dedupeListValues($attributes);
+        $this->extendsMap = self::dedupeListValues($byType[DependencyType::Extends->name]);
+        $this->interfaceSources = $interfaceSources;
+        $this->implementsMap = self::dedupeListValues($byType[DependencyType::Implements->name]);
+        $this->attributesMap = self::dedupeListValues($byType[DependencyType::Attribute->name]);
     }
 
     /**
@@ -276,7 +286,8 @@ final class ClassContextFactory
      * from the class outwards; the list is deduplicated.
      *
      * @param list<string> $parentClasses Already-collected transitive
-     *                                    parent-class FQNs.
+     *                                    parent-class FQNs — for an interface,
+     *                                    the interfaces it extends.
      * @param array<string, true> $unresolved Collects every interface the walk
      *                                        reached whose own declaration the
      *                                        run did not analyse.
@@ -287,8 +298,17 @@ final class ClassContextFactory
     {
         \assert($this->implementsMap !== null);
         \assert($this->extendsMap !== null);
+        \assert($this->interfaceSources !== null);
 
         $seedQueue = $this->implementsMap[$fqn] ?? PhpBuiltinClassHierarchy::interfacesOf($fqn) ?? [];
+        // What an interface extends it has; a class's parents it does not, so
+        // `implements: [SomeClass]` stays off the subclasses. A PHP interface
+        // needs no seeding: its table entry already lists what it extends.
+        if (isset($this->interfaceSources[$fqn])) {
+            foreach ($parentClasses as $parent) {
+                $seedQueue[] = $parent;
+            }
+        }
         foreach ($parentClasses as $parent) {
             $declared = $this->implementsMap[$parent] ?? PhpBuiltinClassHierarchy::interfacesOf($parent) ?? [];
             foreach ($declared as $iface) {

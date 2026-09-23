@@ -21,6 +21,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
  *
  * @phpstan-type ShadowEntry array{fqn: string, assignedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion}
  * @phpstan-type ForbiddenEdge array{dependency: Dependency, fromMatch: LayerMatch, toMatch: LayerMatch}
+ * @phpstan-type SymbolSets array{matched: array<string, array<string, true>>, excluded: array<string, array<string, true>>, unanswered: array<string, array<string, true>>, undecided: array<string, array<string, true>>, contended: array<string, array<string, true>>}
  */
 final readonly class LayerEvidence
 {
@@ -34,16 +35,19 @@ final readonly class LayerEvidence
      *                                            guidance — stays with the rule.
      * @param array<string, int> $assignedHits Layer name => number of classes and dependency-edge
      *                                         ends assigned to it.
-     * @param array{matched: array<string, array<string, true>>, excluded: array<string, array<string, true>>, unanswered: array<string, array<string, true>>} $symbolSets
-     *                                                                                                                                                                     The per-layer symbol sets the walk records, as one field: `matched` is every canonical symbol
-     *                                                                                                                                                                     the layer's criteria matched at all, winning or not; `excluded` is every one its `exclude:`
-     *                                                                                                                                                                     clause removed after those criteria had already succeeded; `unanswered` is every one the
-     *                                                                                                                                                                     criteria matched while the clause could not be answered about it. One field rather than
-     *                                                                                                                                                                     adjacent parameters of the same type because they are columns of a single observation —
-     *                                                                                                                                                                     filled by the same tally helper and merged by the same merge. `excluded` is disjoint from
-     *                                                                                                                                                                     the other two, since an excluded symbol is not a member; `unanswered` is a subset of
-     *                                                                                                                                                                     `matched`. Read through {@see matchedCounts()}, {@see excludedCounts()} and
-     *                                                                                                                                                                     {@see unansweredExcludeCounts()}.
+     * @param SymbolSets $symbolSets
+     *                               The per-layer symbol sets the walk records, as one field: `matched` is every canonical symbol
+     *                               the layer's criteria matched at all, winning or not; `excluded` is every one its `exclude:`
+     *                               clause removed after those criteria had already succeeded; `unanswered` is every one the
+     *                               criteria matched while the clause could not be answered about it. One field rather than
+     *                               adjacent parameters of the same type because they are columns of a single observation —
+     *                               filled by the same tally helper and merged by the same merge. `excluded` is disjoint from
+     *                               the other two, since an excluded symbol is not a member; `unanswered` is a subset of
+     *                               `matched`. `undecided` is every symbol the layer could not answer about while it bore on
+     *                               the symbol's assignment, and `contended` every symbol the layer could still own once the
+     *                               run answers that — both straight from the registry's walk, never re-derived here. Read
+     *                               through {@see matchedCounts()}, {@see excludedCounts()}, {@see unansweredExcludeCounts()},
+     *                               {@see undecidedSymbolsByLayer()} and {@see reachedCounts()}.
      * @param array<string, array<string, list<ShadowEntry>>> $shadowEvidence (assigned, shadowed) => evidence.
      * @param array{classes: array<string, string>, analysed: int} $unassigned What the analysed set left
      *                                                                         outside every declared layer, and how many class-like declarations the walk saw — the
@@ -51,12 +55,12 @@ final readonly class LayerEvidence
      *                                                                         when {@see LayerEvidenceCollector::materializesUncovered()} found no consumer for
      *                                                                         it. One field rather than two because neither half answers anything alone.
      * @param array{sourceEdges: int, targetEdges: int, classes: array<string, string>, undecidable: array<string, string>, undecidableOutsidePaths: array<string, string>, doubted: array<string, string>, doubtedOutsidePaths: array<string, string>} $coverageState
-     *                                                                                                                                                                                                                                                                 `undecidable` is the subset of `classes` that no layer claims because some layer's criteria
+     *                                                                                                                                                                                                                                                                 `undecidable` is the symbols no layer claims because some layer's criteria
      *                                                                                                                                                                                                                                                                 could not be answered about it at all — a chain that left the analysed set, or a symbol seen
      *                                                                                                                                                                                                                                                                 only as the far end of an edge. It travels beside the count rather than inside it, because
      *                                                                                                                                                                                                                                                                 subtracting it would hide the gap and folding it in would hide that a layer declared for it
      *                                                                                                                                                                                                                                                                 only guesses. `doubted` is disjoint from `classes`: symbols that ARE assigned while a layer
-     *                                                                                                                                                                                                                                                                 bearing on the assignment went unanswered. `undecidableOutsidePaths` and `doubtedOutsidePaths` are the subsets of `undecidable` and `doubted`
+     *                                                                                                                                                                                                                                                                 bearing on the assignment went unanswered. Both are booked in every coverage mode, while the analysed share of `classes` is booked only when a consumer reads it. `undecidableOutsidePaths` and `doubtedOutsidePaths` are the subsets of `undecidable` and `doubted`
      *                                                                                                                                                                                                                                                                 the run did not analyse — dependency-edge ends — kept apart because what settles the doubt
      *                                                                                                                                                                                                                                                                 differs for them.
      */
@@ -111,5 +115,43 @@ final readonly class LayerEvidence
     public function unansweredExcludeCounts(): array
     {
         return array_map(\count(...), $this->symbolSets['unanswered']);
+    }
+
+    /**
+     * @return array<string, array<string, true>> layer name => the canonical
+     *                                            symbols it could not answer
+     *                                            about while it bore on their
+     *                                            assignment, in declaration
+     *                                            order, only layers with any
+     */
+    public function undecidedSymbolsByLayer(): array
+    {
+        $byLayer = [];
+        foreach ($this->architecture->registry()->layerNames() as $layerName) {
+            $symbols = $this->symbolSets['undecided'][$layerName] ?? [];
+            if ($symbols !== []) {
+                $byLayer[$layerName] = $symbols;
+            }
+        }
+
+        return $byLayer;
+    }
+
+    /**
+     * What `architecture.unreachable-layer` asks of a layer: how many
+     * assignments it received — class and dependency-edge end alike — plus how
+     * many symbols it could still own once the run answers what it could not
+     * about them. Zero is the only value that says the layer owns nothing.
+     *
+     * @return array<string, int> layer name => count
+     */
+    public function reachedCounts(): array
+    {
+        $counts = $this->assignedHits;
+        foreach ($this->symbolSets['contended'] as $layerName => $symbols) {
+            $counts[$layerName] = ($counts[$layerName] ?? 0) + \count($symbols);
+        }
+
+        return $counts;
     }
 }

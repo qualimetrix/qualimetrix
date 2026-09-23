@@ -28,6 +28,11 @@ final readonly class Dependency
      *                                            readers (DIT, NOC, layer membership) must skip a flagged edge; dependency readers
      *                                            (coupling, ClassRank, cycles, violation checks, graph export) read it as-is,
      *                                            because it is still the only recorded evidence of the underlying dependency.
+     * @param bool $interfaceExtends True on an {@see DependencyType::Extends} edge an interface declares
+     *                               (`interface I extends J`): its target is an interface the source has, where an
+     *                               unflagged `Extends` names a parent class. The graph carries no declaration kind
+     *                               otherwise, and a reader asking what a declaration implements has to tell the two
+     *                               apart; DIT, NOC and coupling read both alike.
      */
     public function __construct(
         public DeclarationPath $source,
@@ -35,6 +40,7 @@ final readonly class Dependency
         public DependencyType $type,
         public DependencyLocationInterface $location,
         public bool $describesNestedAnonymousClass = false,
+        public bool $interfaceExtends = false,
     ) {}
 
     /**

@@ -1,14 +1,5 @@
 --- candidate
 +++ reference (mapped)
-@@ -39,4 +39,4 @@
--        "description": "3 assigned symbol(s) rest on a layer the run could not fully decide (1 analysed class(es), 2 outside the analysed paths) — for example Corpus\\Layers\\Doubt\\Gateway, Corpus\\Outside\\Vendorish\\Base, Corpus\\Outside\\Vendorish\\Port. Each assignment stands and its edges are judged against its layer's allow-list; whether a layer the run could not answer — an earlier one, or the assigned layer's own \"exclude\" — would change it is unknown.",
--        "check_name": "architecture.doubted-assignment",
--        "fingerprint": "architecture.doubted-assignment:project:",
--        "severity": "info",
-+        "description": "The \"exclude\" clause of layer \"doubt\" (implements: \"Corpus\\Layers\\GraphBase\\Marker\") removed no class from it, while the layer's own criteria (patterns: \"Corpus\\Layers\\Doubt\\**\") matched 1 symbol(s). The layer is therefore wider than the declaration asks for, and every verdict about it is drawn from that wider set.",
-+        "check_name": "architecture.unmatched-exclude",
-+        "fingerprint": "architecture.unmatched-exclude:project::eec2223e5a9bbe2f",
-+        "severity": "major",
-@@ -63,1 +63,1 @@
--        "description": "Architecture coverage-gap: 1 edge(s) with unmatched source layer, 4 edge(s) with unmatched target layer, 4 class(es) outside all declared layers. 3 assigned class(es) rest on a layer the run could not fully decide — for example Corpus\\Layers\\Doubt\\Gateway, Corpus\\Outside\\Vendorish\\Base, Corpus\\Outside\\Vendorish\\Port.",
-+        "description": "Architecture coverage-gap: 1 edge(s) with unmatched source layer, 4 edge(s) with unmatched target layer, 4 class(es) outside all declared layers.",
+@@ -39,1 +39,1 @@
+-        "description": "3 assigned symbol(s) rest on a layer the run could not fully decide (1 analysed class(es), 2 outside the analysed paths). Layers that could not answer: \"graph-extends\" (2 assigned in doubt), \"doubt\" (1 assigned in doubt). Examples, at most 10 of each kind by name — analysed: Corpus\\Layers\\Doubt\\Gateway; outside the analysed paths: Corpus\\Outside\\Vendorish\\Base, Corpus\\Outside\\Vendorish\\Port. Each assignment stands and its edges are judged against its layer's allow-list; whether a layer the run could not answer — an earlier one, or the assigned layer's own \"exclude\" — would change it is unknown.",
++        "description": "3 assigned symbol(s) rest on a layer the run could not fully decide (1 analysed class(es), 2 outside the analysed paths) — for example Corpus\\Layers\\Doubt\\Gateway, Corpus\\Outside\\Vendorish\\Base, Corpus\\Outside\\Vendorish\\Port. Each assignment stands and its edges are judged against its layer's allow-list; whether a layer the run could not answer — an earlier one, or the assigned layer's own \"exclude\" — would change it is unknown.",

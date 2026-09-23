@@ -48,6 +48,7 @@ PHP;
         self::assertSame('App\\MyClass', $deps[0]->sourceLogical()->toString());
         self::assertSame('Vendor\\BaseClass', $deps[0]->targetLogical()->toString());
         self::assertSame(DependencyType::Extends, $deps[0]->type);
+        self::assertFalse($deps[0]->interfaceExtends, 'A parent class is not an interface the class has.');
     }
 
     #[Test]
@@ -411,6 +412,7 @@ PHP;
         self::assertCount(1, $deps);
         self::assertSame('Vendor\\ParentInterface', $deps[0]->targetLogical()->toString());
         self::assertSame(DependencyType::Extends, $deps[0]->type);
+        self::assertTrue($deps[0]->interfaceExtends);
     }
 
     #[Test]

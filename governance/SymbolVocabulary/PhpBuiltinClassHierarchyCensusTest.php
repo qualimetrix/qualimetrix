@@ -18,9 +18,9 @@ use ReflectionClass;
  *
  * A name is compared wherever this PHP declares it and nowhere else, the
  * policy {@see PhpBuiltinClassRegistryCensusTest} already applies to the
- * names. A name no witness here loads — `Pdo\Firebird`, `EnchantBroker` and
- * `EnchantDictionary` on the developer machines — is verified only where a
- * runner loads its extension.
+ * names. A name no developer machine loads — `Pdo\Firebird`, `EnchantBroker`
+ * and `EnchantDictionary` — is verified by the CI job, which pins `enchant` and
+ * `pdo_firebird`.
  *
  * No version cells: on every name PHP 8.4 and 8.5 both declare, their parent,
  * interfaces and class-level attributes were measured identical. A later PHP

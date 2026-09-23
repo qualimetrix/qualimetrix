@@ -112,6 +112,13 @@ final class FileProcessingResultWireFormatTest extends TestCase
             new Location($path, 11),
             true,
         );
+        $interfaceParent = new Dependency(
+            DeclarationPath::of(SymbolPath::forClass('One', 'Contract'), $path, DeclarationOrdinal::fromRank(0)),
+            new LogicalClassPath(SymbolPath::forClass('Two', 'Port')),
+            DependencyType::Extends,
+            new Location($path, 13),
+            interfaceExtends: true,
+        );
         $suppression = new Suppression(
             'complexity',
             'fixture',
@@ -137,7 +144,7 @@ final class FileProcessingResultWireFormatTest extends TestCase
                         'line' => 2,
                     ],
                 ],
-                dependencies: [$dependency],
+                dependencies: [$dependency, $interfaceParent],
                 suppressions: [$suppression],
                 thresholdOverrides: [$override],
                 thresholdDiagnostics: [$diagnostic],
@@ -161,6 +168,7 @@ final class FileProcessingResultWireFormatTest extends TestCase
         // unserialize would make the default parallel run silently disagree
         // with --workers=0 for every anonymous-class fixture in this plan.
         self::assertTrue($restored->dependencies()[0]->describesNestedAnonymousClass);
+        self::assertTrue($restored->dependencies()[1]->interfaceExtends);
         self::assertEquals($suppression, $restored->suppressions()[0]);
         self::assertEquals($override, $restored->thresholdOverrides()[0]);
         self::assertEquals($diagnostic, $restored->thresholdDiagnostics()[0]);

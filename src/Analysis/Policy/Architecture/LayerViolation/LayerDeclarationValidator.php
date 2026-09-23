@@ -26,7 +26,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  *
  * Both read one {@see LayerEvidence}, produced once per run by the shared
  * {@see LayerEvidenceCollector}: `coverage` needs the coverage state,
- * `unreachable-layer` the merged assignment hits, `pending-layer-matched` the
+ * `unreachable-layer` the merged assignment hits and the symbols each layer
+ * could still own while the run could not decide them, `pending-layer-matched` the
  * merged match sets, `potential-shadow` the class-walk shadow evidence, and
  * `empty-template` only the configuration.
  */
@@ -119,7 +120,7 @@ final class LayerDeclarationValidator implements ConfigurationValidatorInterface
 
         return [
             ...DeclaredLayerReachability::coverage($evidence->architecture->coverage(), $evidence->coverageState),
-            ...DeclaredLayerReachability::unreachableLayers($definitions, $evidence->assignedHits),
+            ...DeclaredLayerReachability::unreachableLayers($definitions, $evidence->reachedCounts()),
             ...DeclaredLayerReachability::pendingLayersMatched($definitions, $evidence->matchedCounts()),
             ...DeclaredLayerReachability::potentialShadows($evidence->shadowEvidence),
             ...DeclaredLayerReachability::emptyTemplates($evidence->architecture->emptyTemplateNames()),

@@ -22,6 +22,13 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
  * stays reported, since a false alarm costs a configuration review while a
  * missed shadow costs a layer that silently owns nothing.
  *
+ * A match whose `exclude:` clause the run could not answer is not an
+ * established one, and a shadow is a conclusion about who won: a winner
+ * whose clause may still remove the class shadows nothing, and a layer whose
+ * match stands on such a clause is not shadowed. That is a doubt about the
+ * assignment rather than a mistake in the declaration, and
+ * `architecture.doubted-assignment` publishes it.
+ *
  * @internal Consumed by {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule}.
  */
 final class LayerShadowing
@@ -29,14 +36,16 @@ final class LayerShadowing
     /**
      * @param list<LayerMatch> $matches As returned by {@see LayerRegistry::resolveAll()}:
      *                                  declaration order, first entry assigned.
+     * @param list<string> $unansweredExcludes As returned by {@see LayerRegistry::unansweredExcludeLayers()}
+     *                                         for the same class: the matches that are not established.
      *
      * @return list<LayerMatch> The shadowed matches that indicate a declaration
      *                          defect, in declaration order.
      */
-    public static function reportableShadows(array $matches): array
+    public static function reportableShadows(array $matches, array $unansweredExcludes): array
     {
         $assigned = array_shift($matches);
-        if ($assigned === null) {
+        if ($assigned === null || \in_array($assigned->layerName, $unansweredExcludes, true)) {
             return [];
         }
 
@@ -44,10 +53,8 @@ final class LayerShadowing
 
         return array_values(array_filter(
             $matches,
-            static fn(LayerMatch $shadowed): bool => !self::isStrictlyMoreSpecific(
-                $assignedCriterion,
-                $shadowed->primaryCriterion(),
-            ),
+            static fn(LayerMatch $shadowed): bool => !\in_array($shadowed->layerName, $unansweredExcludes, true)
+                && !self::isStrictlyMoreSpecific($assignedCriterion, $shadowed->primaryCriterion()),
         ));
     }
 

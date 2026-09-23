@@ -131,11 +131,13 @@ its edges would still go unjudged, and every configuration with such a clause
 would gain a mandatory diagnostic in place of the violations it lost.
 
 **Which unanswered layer is a doubt is decided once, in the walk.** A layer
-declared after the assigned one is not a doubt: first match wins, so it could
-not have owned the class whatever it answered. `LayerRegistry::undecidedLayers()`
-applies that rule while it walks the layers in declaration order — every
-unanswered layer for a class nothing matched, only those declared no later than
-the assigned layer otherwise — and every reader takes the list as it comes:
+declared after a match the run established is not a doubt: first match wins,
+so it could not have owned the class whatever it answered. A match whose own
+`exclude:` went unanswered is not established — the clause may remove the
+class — so the layers after it, up to the first established match, still bear
+on the assignment. `LayerRegistry::undecidedLayers()` applies that rule while
+it walks the layers in declaration order, and every reader takes the list as
+it comes:
 `debug:layer-assignment`, whose "it can change" is then true of every layer it
 names, and the evidence walk that counts doubted assignments. The first version
 left the list unordered and let one reader filter it; the other printed
@@ -143,7 +145,9 @@ left the list unordered and let one reader filter it; the other printed
 disagreed about the same class. A separate exit of the same walk,
 `unansweredExcludeLayers()`, names every matching layer whose `exclude:` went
 unanswered, winning or not, because the reader that asks — the inert-clause
-check below — asks about the clause, not about the assignment.
+check below — asks about the clause, not about the assignment. A third,
+`contenders()`, names the layers that could own the class once the unanswered
+ones are answered, for the verdicts below that conclude something from who won.
 
 **A doubt is information, not a gap.** An assignment in doubt is in a layer,
 its edges are judged, and no `layers:` entry is missing, so it does not raise
@@ -158,15 +162,54 @@ laravel/framework, of which 122, 93 and 364 were symbols outside the analysed
 paths; every run exited 2 with no other error, where the previous revision
 exited 0. The doubt is published instead by `architecture.doubted-assignment`,
 a channel of `architecture.layer-violation` reported at `info`, so it never
-gates: one finding per run, only while the coverage mode is not `ignore`, with
-the count split into analysed classes and symbols outside the analysed paths
-and a recommendation for each kind present. `architecture.coverage-gap` still
+gates: one finding per run, with the count split into analysed classes and
+symbols outside the analysed paths, each layer that could not answer named
+with how many symbols it left in doubt, examples of each kind, and a
+recommendation for each kind present. `architecture.coverage-gap` still
 names the count in its text when it fires for its own reasons, and points
 there. The same three runs now exit 0 with the doubt count unchanged. Declaring
 the vendor `patterns` layers first removes the outside-the-paths share (to 37,
 26 and 47 on the three projects); declaring the `extends:` layer last, with its
 population carved out of the earlier layers by a decidable `exclude:`, removes
 the doubt entirely.
+
+The channel is published whatever the coverage mode. It was first published
+only while `coverage-gap` was `warn` or `error`, as part of the coverage
+accounting that mode turns on — but it says whether membership is right, not
+how much of the code a layer covers, and `ignore` is the default. Under it, an
+`exclude:` the run could not answer left no trace in `check` at all: the inert
+clause it used to be misreported as was gone, and the doubt that replaced it
+was gated off. A channel that never gates costs a project one line, and a
+project that does not want it lists it under `disabled_rules`.
+
+For the same reason it also counts the symbols that are in no layer only
+because a layer could not answer about them. Those are part of the coverage
+gap, and `architecture.coverage-gap` counts them when it is on; but the layer
+that could not answer is otherwise named nowhere once
+`architecture.unreachable-layer` stops calling it empty (below).
+
+**A layer the run could not answer is not unreachable, and a match it could
+not establish shadows nothing.** `architecture.unreachable-layer` said "the
+declared criteria match no class" about a layer whose criteria the run could
+not answer for any class, and `architecture.potential-shadow` built a shadow
+from a winner whose `exclude:` the run could not evaluate — together they told
+the author of a carve-out that did not answer to reorder or delete the layer it
+was written for. Both are configuration errors that fail the run, so neither
+may rest on a conclusion the run did not reach: a layer that could still own a
+symbol whose assignment is in doubt (one of its `contenders()`) is not
+unreachable, and a shadow is drawn only between matches the run established.
+The doubt is visible in `architecture.doubted-assignment`, `coverage-gap` and
+`debug:layer-assignment` instead. A layer the run could not answer about a
+symbol that an established match declared earlier already owns is still
+unreachable if it owns nothing else: it could not have won that symbol, and
+"shadowed" is then the right reading of the finding.
+
+The alternative for `unreachable-layer` was a separate sentence naming the
+undecided symbols, as `coverage-gap` has. It was rejected because the finding
+fails the run: a statement that the run cannot decide is not an error in the
+configuration, and a severity that depends on which sentence the message
+carries would make one channel two — the reason a doubt was kept out of
+`coverage-gap`.
 
 The alternative was to keep the doubt inside `architecture.coverage-gap` and
 lower the finding to `info` when the doubt is all there is. It was rejected
@@ -192,9 +235,11 @@ would delete the layer, runtime would never evaluate any class against it, and
 the doubt would come out as a plain non-match with nothing left to report. An
 instance created through an unanswerable `exclude:` is reached at runtime,
 since that clause no longer withdraws the match. One created through an
-unanswerable *positive* criterion (`match: all` with `extends:`) may still be
-named by `architecture.unreachable-layer` — noisy rather than silent is the
-failure direction chosen there.
+unanswerable *positive* criterion (`match: all` with `extends:`) is not
+reached. Where no match the run established is declared before it, it could
+still own the class, so `architecture.unreachable-layer` does not call it empty
+and `architecture.doubted-assignment` names it; where one is, it is shadowed
+there whatever it would have answered.
 
 **A template declaring a non-pattern criterion under `match: any` is refused at
 configuration time.** Only `patterns` carry capture variables, so `suffix`,
@@ -230,8 +275,13 @@ global net if that is really what was wanted.
   `debug:layer-assignment` names where the chain stops (`chainStopsAt` in
   JSON).
 - `architecture.doubted-assignment` is a new, never-gating channel of
-  `architecture.layer-violation`, published while `coverage-gap` is `warn` or
-  `error`.
+  `architecture.layer-violation`, published in every coverage mode. It names
+  each layer that could not answer, with how many assignments it left in doubt
+  and how many symbols in no layer.
+- `architecture.unreachable-layer` and `architecture.potential-shadow` no longer
+  fire on an answer the run did not reach: a layer that could still own a
+  symbol in doubt is not unreachable, and a match whose `exclude:` went
+  unanswered neither shadows nor is shadowed.
 - Membership is now a function of what the run analysed. Widening `paths:`
   can turn an undecidable layer into a decided one, in either direction. A
   criterion that names a class's direct parent or interface keeps matching, and
