@@ -9,10 +9,19 @@ version of this plan.
 
 ## One package for the seven channels
 
-All seven publish the same four facts. Split across executors they acquire seven
-key spellings — `llmsTxt`, `llms_txt`, `llms`, `docsUrl` — and the divergence is
-invisible until a consumer hits it. One executor, one spelling, every value read
-from `ProductIdentity::identity()`.
+Five of the seven — `json`, `suppressed`, `directives`, `baseline:rename-channels`
+and `debug:layer-assignment` — publish the same four facts in a `meta` object and
+read every one of them from `ProductIdentity::identity()`, `timestamp` merged in
+by the caller. `metrics` and `sarif` take only `docs` and `llmsTxt` from it:
+`metrics` keeps its own `version` (the export-format version) and `toolVersion`
+rather than being overwritten by the tool's, and `sarif` has no `package` field
+at all. Split across executors these keys acquire seven spellings — `llmsTxt`,
+`llms_txt`, `llms`, `docsUrl` — and the divergence is invisible until a consumer
+hits it. One executor, one spelling.
+
+`identity()`'s `package` is `qmx` — the name every JSON document already
+publishes in its `meta`, not the Composer package `qualimetrix/qualimetrix`.
+`ProductIdentity` states the published fact rather than the installable unit.
 
 Key names: `docs` and `llmsTxt`, camelCase, matching the surrounding JSON house
 style (`worstNamespaces`, `toolVersion`).
@@ -58,8 +67,9 @@ the no-presentation fallback and the tool-level field change.
 
 ## DoD
 
-- All seven channels carry the fields, spelled identically, every value from
-  `ProductIdentity::identity()`.
+- All seven channels carry `docs` and `llmsTxt`, spelled identically; the five
+  `meta`-object channels also carry `version` and `package` (`qmx`), all four
+  read from `ProductIdentity::identity()`.
 - The SARIF document validates against the `$schema` it declares.
 - No real channel's `helpUri` changed; `SarifRuleDescriptorCoverageTest` green.
 - `metrics` gains no field colliding with its existing `version` (the export

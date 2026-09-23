@@ -121,16 +121,18 @@ the guard asserts over, not about which channels carry the pointer.
 
 **Excluded, with cause:**
 
-| Channel                               | Why not                                                                                    |
-| ------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `checkstyle`                          | Fixed XML schema, no field for free text outside a violation                               |
-| `gitlab`                              | Payload is a bare JSON array, no wrapper object                                            |
-| `github`                              | Command stream with no header or footer; any line renders as an annotation                 |
-| `graph:export` stdout                 | The output *is* the artifact (DOT or JSON)                                                 |
-| `--version`                           | Unix convention: name and version only. `getHelp()` reaches the header without touching it |
-| `text-verbose`                        | Deprecated. It delegates to `text` and inherits whatever `text` prints                     |
-| JSON refusal envelope                 | `{error, exit_code}` is deliberately closed at two keys                                    |
-| HTML `#node-summary`, coverage banner | Per-selection and conditional                                                              |
+| Channel                                                                    | Why not                                                                                    |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `checkstyle`                                                               | Fixed XML schema, no field for free text outside a violation                               |
+| `gitlab`                                                                   | Payload is a bare JSON array, no wrapper object                                            |
+| `github`                                                                   | Command stream with no header or footer; any line renders as an annotation                 |
+| `graph:export` stdout                                                      | The output *is* the artifact (DOT or JSON)                                                 |
+| `--version`                                                                | Unix convention: name and version only. `getHelp()` reaches the header without touching it |
+| `text-verbose`                                                             | Deprecated. It delegates to `text` and inherits whatever `text` prints                     |
+| JSON refusal envelope                                                      | `{error, exit_code}` is deliberately closed at two keys                                    |
+| HTML `#node-summary`, coverage banner                                      | Per-selection and conditional                                                              |
+| `Infrastructure\Profiler\Export\JsonExporter`, `...\ChromeTracingExporter` | Like `graph:export`, the output *is* the artifact (a profiling trace), not a report        |
+| `Infrastructure\Logging\FileLogger` JSON lines                             | A log stream, not a report                                                                 |
 
 ## Stage map
 
