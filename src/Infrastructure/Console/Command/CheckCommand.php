@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\CheckConfigurationResolvers;
 use Qualimetrix\Infrastructure\Console\CheckScopeResolver;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
@@ -55,7 +56,8 @@ final class CheckCommand extends Command
         $this->hiddenOptionNames = $this->ruleInputValidator->configureCheckCommand($this);
         $this->setHelp(
             'Run <info>bin/qmx rules</info> to see all available rules and their options.' . "\n"
-            . 'Use <info>--rule-opt=rule-name:option=value</info> to set rule-specific thresholds.',
+            . 'Use <info>--rule-opt=rule-name:option=value</info> to set rule-specific thresholds.' . "\n\n"
+            . \sprintf('Docs: %s', ProductIdentity::llmsTxtUrl()),
         );
     }
 

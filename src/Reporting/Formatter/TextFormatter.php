@@ -7,6 +7,7 @@ namespace Qualimetrix\Reporting\Formatter;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
@@ -37,11 +38,16 @@ final class TextFormatter implements FormatterInterface
 
     public function format(Report $report, FormatterContext $context): string
     {
-        if ($context->isDetailEnabled()) {
-            return $this->formatDetailed($report, $context);
-        }
+        $formatted = $context->isDetailEnabled()
+            ? $this->formatDetailed($report, $context)
+            : $this->formatFlat($report, $context);
 
-        return $this->formatFlat($report, $context);
+        // The single point every `text` path reaches, flat or --detail alike —
+        // `text-verbose` delegates here too, so it inherits the pointer rather
+        // than needing its own.
+        $color = new AnsiColor($context->useColor);
+
+        return $formatted . $color->dim(ProductIdentity::pointerText()) . "\n";
     }
 
     public function getName(): string

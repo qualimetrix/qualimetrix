@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Version;
@@ -330,6 +331,10 @@ final class HtmlTreeBuilder
     /**
      * Builds project metadata.
      *
+     * `docs` and `llmsTxt` reach the footer the way `qmxVersion` already
+     * does: through this data structure, because the footer is written by
+     * JavaScript, which cannot read a PHP constant directly.
+     *
      * @return array<string, mixed>
      */
     private function buildProjectMetadata(bool $scopedReporting, ?string $projectName = null): array
@@ -339,6 +344,8 @@ final class HtmlTreeBuilder
             'generatedAt' => gmdate('c'),
             'qmxVersion' => Version::get(),
             'scopedReporting' => $scopedReporting,
+            'docs' => ProductIdentity::docsUrl(),
+            'llmsTxt' => ProductIdentity::llmsTxtUrl(),
         ];
     }
 

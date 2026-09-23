@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Functional\Command;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -54,6 +55,21 @@ final class CheckCommandTest extends TestCase
         $output = $commandTester->getDisplay();
         // Text format shows "0 error(s), 0 warning(s) in X file(s)"
         self::assertStringContainsString('0 error(s), 0 warning(s)', $output);
+    }
+
+    /**
+     * `check`'s own output is entirely the formatter's — the formatters
+     * already carry the pointer — so this command adds no tail of its own,
+     * only the `Help:` line.
+     */
+    #[Test]
+    public function itAdvertisesTheDocsAddressInItsHelp(): void
+    {
+        $container = (new ContainerFactory())->create();
+        $command = $container->get(CheckCommand::class);
+        self::assertInstanceOf(CheckCommand::class, $command);
+
+        self::assertStringContainsString('Docs: ' . ProductIdentity::llmsTxtUrl(), $command->getHelp());
     }
 
     #[Test]

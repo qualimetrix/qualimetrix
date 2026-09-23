@@ -796,6 +796,7 @@ architecture:
         - 'Qualimetrix\Core\Pattern\SelectorDefinition'
         - 'Qualimetrix\Core\Pattern\SelectorKind'
         - 'Qualimetrix\Core\Pattern\SelectorMatchFailure'
+        - 'Qualimetrix\Core\ProductIdentity'
         - 'Qualimetrix\Core\Time\ClockInterface'
         - 'Qualimetrix\Core\Time\SystemClock'
         - 'Qualimetrix\Core\Version'

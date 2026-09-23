@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineFormatVersion;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Command\BaselineRenameChannelsCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
@@ -86,6 +87,35 @@ final class BaselineRenameChannelsCommandTest extends TestCase
         self::assertSame(1, $report['renamed']);
         self::assertSame(['alpha.one' => 1], $report['rows']);
         self::assertStringContainsString('"channel":"alpha.renamed"', (string) file_get_contents($baseline));
+    }
+
+    /**
+     * The pointer follows the same guard the shared `BaselineCommand` ladder
+     * uses for every command's `--format`: printed for text, held back for
+     * json so the envelope stays parseable.
+     */
+    #[Test]
+    public function itPrintsTheDocsPointerInTextOutputButNotInJson(): void
+    {
+        $map = $this->map("alpha.one\talpha.renamed");
+        $status = 0;
+
+        $textOutput = $this->qmx(\sprintf(
+            'baseline:rename-channels %s %s',
+            escapeshellarg($this->baseline(['class:App\Foo' => [['channel' => 'alpha.one', 'count' => 1]]])),
+            escapeshellarg($map),
+        ), $status);
+        self::assertSame(0, $status, $textOutput);
+        self::assertStringContainsString('Docs: ' . ProductIdentity::docsUrl(), $textOutput);
+
+        $jsonOutput = $this->qmx(\sprintf(
+            'baseline:rename-channels %s %s --format=json',
+            escapeshellarg($this->baseline(['class:App\Foo' => [['channel' => 'alpha.one', 'count' => 1]]])),
+            escapeshellarg($map),
+        ), $status);
+        self::assertSame(0, $status, $jsonOutput);
+        self::assertStringNotContainsString('Docs:', $jsonOutput);
+        json_decode($jsonOutput, true, 512, \JSON_THROW_ON_ERROR);
     }
 
     /**

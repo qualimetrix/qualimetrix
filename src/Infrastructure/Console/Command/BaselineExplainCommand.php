@@ -82,12 +82,12 @@ final class BaselineExplainCommand extends BaselineCommand
                 InputOption::VALUE_REQUIRED,
                 'Restrict the answer to one channel, in "rule-name#violation-code" form',
             )
-            ->setHelp(
+            ->setHelp(self::withDocsPointer(
                 'Prints, for every channel that either the baseline or the current run has'
                 . "\n" . 'something to say about: the level the baseline accepted and what is'
                 . "\n" . 'reported now, the threshold qmx.yaml configures, and any'
                 . "\n" . '`@qmx-threshold` annotation covering the symbol.',
-            );
+            ));
     }
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int

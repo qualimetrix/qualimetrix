@@ -1,0 +1,5 @@
+--- candidate
++++ reference (mapped)
+@@ -6,2 +6,0 @@
+-    "docs": "https://qualimetrix.dev",
+-    "llmsTxt": "https://qualimetrix.dev/llms.txt",

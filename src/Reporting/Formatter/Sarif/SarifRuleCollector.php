@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelPresentation;
 use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Core\ProductIdentity;
 
 /**
  * Collects and describes SARIF rule entries from a set of findings.
@@ -22,14 +23,12 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  */
 final class SarifRuleCollector
 {
-    public const INFORMATION_URI = 'https://github.com/qualimetrix/qualimetrix';
-
     /**
-     * Site root, not `/rules/`: the computed-metric family documents outside `rules/`
-     * entirely (`reference/health-scores`), which no `/rules/`-rooted base
-     * could ever address.
+     * The `helpUri` of a code no channel presents (a user-defined computed
+     * metric, a code this build does not know). It is a fallback for one rule
+     * entry, not the tool's `informationUri`, which is the documentation site.
      */
-    private const DOCS_BASE_URI = 'https://qualimetrix.dev/';
+    public const FALLBACK_HELP_URI = 'https://github.com/qualimetrix/qualimetrix';
 
     public function __construct(
         private readonly ChannelPresentationInterface $presentation,
@@ -130,9 +129,10 @@ final class SarifRuleCollector
      * Returns the documentation URL for a channel.
      *
      * Built from the producing rule's declared documentation page (see
-     * {@see ChannelPresentationInterface}), rewriting the `.md` extension to
-     * a trailing slash to match the site's clean-URL routing — the same
-     * rewrite {@see \Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader}'s
+     * {@see ChannelPresentationInterface}) by
+     * {@see ProductIdentity::docsPageUrl()}, which owns the site's clean-URL
+     * routing — the same rewrite
+     * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader}'s
      * docblock documents. Falls back to the repository URL for unknown or
      * user-defined codes.
      */
@@ -144,10 +144,10 @@ final class SarifRuleCollector
     private function helpUriFrom(?ChannelPresentation $presentation): string
     {
         if ($presentation === null) {
-            return self::INFORMATION_URI;
+            return self::FALLBACK_HELP_URI;
         }
 
-        return self::DOCS_BASE_URI . preg_replace('/\.md$/', '/', $presentation->docsPage);
+        return ProductIdentity::docsPageUrl($presentation->docsPage);
     }
 
     /**

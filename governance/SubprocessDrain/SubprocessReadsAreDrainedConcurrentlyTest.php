@@ -221,7 +221,7 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . '`php -r`, so this is a literal here and a real call in the child. The child opens no pipe at all — '
             . 'its descriptors are the STDIN/STDOUT/STDERR constants — so it carries none of this hazard.',
 
-        'scripts/finding-gate/SelfTest.php:2916' => 'The interrupt self-test needs the child back *alive*, with its '
+        'scripts/finding-gate/SelfTest.php:2919' => 'The interrupt self-test needs the child back *alive*, with its '
             . 'stdout handle, after reading two announcement lines while the child runs `sleep 30`; the module '
             . 'waits for exit. Stderr goes to a file, leaving stdout the only blocking stream, and the bespoke loop '
             . 'keeps its deadline and SIGKILL backstop.',
@@ -243,7 +243,7 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'construction instead: `git rev-parse` gets no stdin pipe and its stderr goes to a file, so stdout is '
             . 'the only blocking stream.',
 
-        'tests/Infrastructure/Console/Functional/Command/HookInstallCommandTest.php:285' => 'Arranging a git '
+        'tests/Infrastructure/Console/Functional/Command/HookInstallCommandTest.php:286' => 'Arranging a git '
             . 'repository for the case under test: both streams go to `/dev/null` and no pipe is opened, so only '
             . 'the exit status is read.',
 

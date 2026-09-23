@@ -45,6 +45,7 @@ Worst namespaces
 45 violations (12 errors, 33 warnings) | Tech debt: 2d 4h (8.5 min/kLOC)
 
 Hints: --detail to see violations (top 200) | --namespace='subtree:App\Service' to drill down | --format=html -o report.html for full report
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 Each category gets a label: **Excellent** (top quality), **Good** (solid), **Fair** (room for improvement), **Poor** (needs attention), or **Critical** (action required). The "Worst namespaces" section highlights where to focus first.

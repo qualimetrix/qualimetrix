@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\CliSelectorDecoder;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
@@ -100,7 +101,8 @@ final class GraphExportCommand extends Command
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
                 'Exclude these namespaces',
-            );
+            )
+            ->setHelp(\sprintf('Docs: %s', ProductIdentity::llmsTxtUrl()));
     }
 
     /**

@@ -815,6 +815,7 @@ Class: App\Service\UserService
 
   Would also match (in declaration order):
     (none — the assignment is unique)
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 Пример вывода для затенённого класса:
@@ -831,6 +832,7 @@ Class: App\Service\Foo
   Diagnostic hint:
     Class is shadowed: would have matched 'service' if 'any-foo' was declared later.
     See architecture.potential-shadow diagnostic for the broader picture.
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 Коды выхода соответствуют стандартному соглашению, а `0` — это утверждение о классе, который прогон анализировал: `0` для любого информационного результата о таком классе (включая "он не соответствует ни одному объявленному слою"), `3` для отказа — пустого или некорректного FQN, ошибки загрузки конфигурации, а также FQN, не называющего ни одной разобранной этой конфигурацией декларации: именно так отсюда выглядит непроанализированный класс, — и `1` только для дефекта, который ввод не мог вызвать.

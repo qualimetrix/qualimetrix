@@ -85,8 +85,9 @@ require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
  * 6. a case the runner runs that no suite reaches — the direction the
  *    difference in 3 would otherwise discard in silence.
  *
- * Refusals 3–5 are why `SuppressionSnapshotFreshnessTest` and
- * `ModularArchitectureGovernanceIntegrationTest` are visible at all: they sit in
+ * Refusals 3–5 are why `SuppressionSnapshotFreshnessTest`,
+ * `ModularArchitectureGovernanceIntegrationTest` and `HtmlBundleFreshnessTest`
+ * (all three named in {@see SILENTLY_EXCLUDED}) are visible at all: they sit in
  * listed directories, carry `#[Test]`, are named `itXxx` and have correct
  * namespaces — and still do not run under `composer check`. Nothing else in the
  * tree sees that. They also make `--exclude-group=benchmark` a measured fact:
@@ -116,6 +117,8 @@ final class TestFilesAreExecutedTest extends TestCase
             . '::itChecksEveryGeneratedProjectionWithoutWriting',
         'Qualimetrix\Governance\GeneratedArtifactFreshness\SuppressionSnapshotFreshnessTest'
             . '::itMatchesAFreshSelfAnalysisOfSrc',
+        'Qualimetrix\Governance\GeneratedArtifactFreshness\HtmlBundleFreshnessTest'
+            . '::itMatchesAFreshBuildOfHtmlReportSrc',
     ];
 
     /** @var array<string, list<string>> */

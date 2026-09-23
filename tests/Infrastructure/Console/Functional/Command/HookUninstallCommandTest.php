@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Functional\Command;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand;
 use Qualimetrix\Infrastructure\Console\RunningBinaryLocator;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
@@ -72,6 +73,28 @@ final class HookUninstallCommandTest extends TestCase
 
         // Verify hook was removed
         self::assertFileDoesNotExist($hookPath);
+    }
+
+    #[Test]
+    public function itPrintsTheDocsPointerAfterRemovingTheHook(): void
+    {
+        $hookPath = $this->gitDir . '/hooks/pre-commit';
+        file_put_contents($hookPath, "#!/bin/bash\n# Qualimetrix pre-commit hook\necho 'Running hook'\n");
+        chmod($hookPath, 0755);
+
+        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $commandTester = new CommandTester($command);
+        $commandTester->execute([]);
+
+        self::assertStringContainsString('Docs: ' . ProductIdentity::docsUrl(), $commandTester->getDisplay());
+    }
+
+    #[Test]
+    public function itAdvertisesTheDocsAddressInItsHelp(): void
+    {
+        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+
+        self::assertStringContainsString('Docs: ' . ProductIdentity::llmsTxtUrl(), $command->getHelp());
     }
 
     #[Test]

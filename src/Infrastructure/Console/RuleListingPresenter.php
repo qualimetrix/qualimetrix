@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
+use Qualimetrix\Core\ProductIdentity;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -58,6 +59,8 @@ final readonly class RuleListingPresenter
         $output->writeln('');
         $output->writeln('<info>Usage:</info> bin/qmx check --disable-rule=<name> | --only-rule=<name>');
         $output->writeln('        bin/qmx check --rule-opt=<name>:<option>=<value>');
+        $output->writeln('');
+        $output->writeln(\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
     }
 
     /**

@@ -78,6 +78,7 @@ Top issues by impact
 82 violations (19 errors, 63 warnings) | Tech debt: 6h 20min (54.3 min/kLOC to fix)
 
 Hints: --detail to see violations (top 200) | --namespace='subtree:App\Billing\Invoice' to drill down | --format=html -o report.html for full report
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 See [CLI Options](cli-options.md) for the flag that controls how many `Top issues by impact` entries are shown.
@@ -119,11 +120,16 @@ Compact, one-line-per-violation output. Compatible with GCC/Clang error format, 
 **Example output:**
 
 ```
-src/Service/UserService.php:42: warning[code-smell.error-suppression]: Error suppression (@) on find() - handle errors explicitly
-src/Service/UserService.php: warning[complexity.ccn]: Cyclomatic complexity is 15, exceeds threshold of 10. Consider extracting methods or simplifying conditions (UserService::calculate)
-src/Repository/OrderRepository.php: warning[coupling.class-rank]: ClassRank is 0.041, exceeds threshold of 0.037 (scaled for 45 classes). This class is a critical hub — changes have wide impact (OrderRepository)
+src/Repository/OrderRepository.php: error[coupling.class-rank]: ClassRank is 0.5000, exceeds threshold of 0.3536 (scaled for 2 classes). This class is a critical hub — changes have wide impact (OrderRepository)
+src/Service/UserService.php: error[coupling.class-rank]: ClassRank is 0.5000, exceeds threshold of 0.3536 (scaled for 2 classes). This class is a critical hub — changes have wide impact (UserService)
+src/Repository/OrderRepository.php: warning[complexity.ccn]: Cyclomatic complexity is 10, exceeds threshold of 10. Consider extracting methods or simplifying conditions (OrderRepository::findByCriteria)
+src/Service/UserService.php:9: warning[code-smell.error-suppression]: Error suppression (@) on file_get_contents() - handle errors explicitly
+src/Service/UserService.php: warning[complexity.ccn]: Cyclomatic complexity is 14, exceeds threshold of 10. Consider extracting methods or simplifying conditions (UserService::calculate)
 
-0 error(s), 3 warning(s) in 45 file(s)
+Qualimetrix 0.26.0: 2 error(s), 3 warning(s) in 2 file(s)
+Analysis complete: 2 analyzed, 0 generated file(s) excluded.
+Technical debt: 2h 10min
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 **Format:** there are three line shapes, depending on what the finding is about.
@@ -159,6 +165,8 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
 
 **Top-level keys:** `meta`, `summary`, `coverage`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, plus `violationGroups` when `--group-by` is passed — without it, the key is absent entirely, not an empty object.
 
+`meta` identifies the tool that wrote the document: `version`, `package`, `timestamp`, and two documentation addresses — `docs`, the documentation site, and `llmsTxt`, the index written for AI agents. Every JSON report with an envelope object carries the same two addresses; see the exceptions in [Documentation addresses in JSON reports](#documentation-addresses).
+
 <!-- llms:skip-begin -->
 **Example output:**
 
@@ -167,7 +175,9 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
     "meta": {
         "version": "1.0.0",
         "package": "qmx",
-        "timestamp": "2025-01-15T10:30:00+00:00"
+        "timestamp": "2025-01-15T10:30:00+00:00",
+        "docs": "https://qualimetrix.dev",
+        "llmsTxt": "https://qualimetrix.dev/llms.txt"
     },
     "summary": {
         "filesAnalyzed": 45,
@@ -386,7 +396,7 @@ Raw metric values for every symbol (file, class, namespace, method, function, pr
 
 **When to use:** Custom dashboards, trend analysis, data science pipelines, or building your own quality gates on raw metrics.
 
-**Top-level keys:** `version`, `toolVersion`, `package`, `timestamp`, `symbols[]` (each with `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`. There is no `callable` type; a single `project` entry aggregates project-wide statistical metrics (min/max/avg/p95 across all symbols) and has a `null` `line`.
+**Top-level keys:** `version`, `toolVersion`, `package`, `timestamp`, `docs`, `llmsTxt`, `symbols[]` (each with `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`. There is no `callable` type; a single `project` entry aggregates project-wide statistical metrics (min/max/avg/p95 across all symbols) and has a `null` `line`. Here `version` is the version of this export format and `toolVersion` the version of Qualimetrix; `docs` and `llmsTxt` are the documentation addresses `json` carries in its `meta`.
 
 <!-- llms:skip-begin -->
 **Example output (abbreviated):**
@@ -397,6 +407,8 @@ Raw metric values for every symbol (file, class, namespace, method, function, pr
     "toolVersion": "0.26.0",
     "package": "qmx",
     "timestamp": "2025-01-15T10:30:00+00:00",
+    "docs": "https://qualimetrix.dev",
+    "llmsTxt": "https://qualimetrix.dev/llms.txt",
     "symbols": [
         {
             "type": "file",
@@ -509,8 +521,11 @@ SARIF 2.1.0 spec — `runs[].results[]` entries with `ruleId`, `ruleIndex` (posi
 `runs[].invocations[0]` reports `executionSuccessful` (see the coverage table below), and `runs[].originalUriBaseIds` declares the `%SRCROOT%` base referenced by every `artifactLocation.uriBaseId`, resolving it to the analyzed project root as a `file://` URI.
 
 `runs[].tool.driver` describes the tool itself: `name`, `version`,
-`informationUri`, and a `rules[]` catalogue that every result's `ruleIndex`
-points into. Each rules entry is
+`informationUri` (the documentation site, `https://qualimetrix.dev`), a
+`properties` bag whose `properties.llmsTxt` is the index written for AI agents,
+and a `rules[]` catalogue that every result's `ruleIndex` points into. The
+address rides in `properties` because SARIF closes `driver` to keys it does not
+define, and `properties` is its extension point. Each rules entry is
 `{"id": "...", "name": "...", "shortDescription": {"text": "..."}, "fullDescription": {"text": "..."}, "helpUri": "...", "defaultConfiguration": {"level": "..."}}`.
 
 Each `runs[].invocations[]` entry is
@@ -538,6 +553,10 @@ fingerprint is stable between runs.
                 "driver": {
                     "name": "Qualimetrix",
                     "version": "0.26.0",
+                    "informationUri": "https://qualimetrix.dev",
+                    "properties": {
+                        "llmsTxt": "https://qualimetrix.dev/llms.txt"
+                    },
                     "rules": [...]
                 }
             },
@@ -779,6 +798,8 @@ A separate `neverMatched` list reports configured suppressors that excluded
 nothing this run: without it, a stale `suppress_paths` entry pointing at a
 deleted file is indistinguishable from one that was never written.
 
+`meta` is the same block `json` carries, including `docs` and `llmsTxt`.
+
 **Top-level keys:** `meta`, `note`, `mechanisms` (all seven, always present),
 `byMechanism` (count per mechanism, including zero), `suppressed` (the
 multiset), `neverMatched`.
@@ -791,7 +812,9 @@ multiset), `neverMatched`.
     "meta": {
         "version": "dev-main",
         "package": "qmx",
-        "timestamp": "2026-08-29T09:14:02+00:00"
+        "timestamp": "2026-08-29T09:14:02+00:00",
+        "docs": "https://qualimetrix.dev",
+        "llmsTxt": "https://qualimetrix.dev/llms.txt"
     },
     "note": "suppressed is a multiset of mechanism x finding, not a set of findings: one finding can appear under more than one mechanism, so byMechanism counts do not sum to the number of distinct findings suppressed.",
     "mechanisms": [
@@ -860,6 +883,36 @@ bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
 ```
 
 ---
+
+## Documentation addresses in JSON reports {#documentation-addresses}
+
+Each JSON report in the table below names where its documentation lives, so a
+script or an AI agent that has only the output can find the rest: `docs` is the
+documentation site and `llmsTxt` is the index written for AI agents.
+
+| Document                                 | Where the addresses are                                                             |
+| ---------------------------------------- | ----------------------------------------------------------------------------------- |
+| `check --format=json`                    | `meta.docs`, `meta.llmsTxt`                                                         |
+| `check --format=suppressed`              | `meta.docs`, `meta.llmsTxt`                                                         |
+| `check --format=metrics`                 | Top-level `docs`, `llmsTxt`, beside `version` (the export format) and `toolVersion` |
+| `check --format=sarif`                   | `runs[].tool.driver.informationUri` and `runs[].tool.driver.properties.llmsTxt`     |
+| `directives --format=json`               | `meta.docs`, `meta.llmsTxt`                                                         |
+| `baseline:rename-channels --format=json` | `meta.docs`, `meta.llmsTxt`                                                         |
+| `debug:layer-assignment --format=json`   | `meta.docs`, `meta.llmsTxt`                                                         |
+| `graph:export --format=json`             | `meta.docs`, `meta.llmsTxt`, beside its own `meta.version` (the graph format)       |
+
+The three commands outside `check` open their document with the same `meta`
+object `json` does — `version`, `package`, `timestamp`, `docs`, `llmsTxt` — ahead
+of the keys that are their own. `graph:export --format=json` extends the same
+`meta` block its envelope already carried, keeping its own `version` (the graph
+format, not the tool's) the way `metrics` keeps its own.
+
+Not every JSON output carries the addresses. `gitlab` is a bare array with no
+object to hold them; `graph:export`'s DOT output has no envelope at all; a
+refusal is always exactly `{"error": ..., "exit_code": ...}`; and the baseline
+file — written by `baseline:generate`, `update`, `cleanup`, and rewritten in
+place by `baseline:rename-channels` — is a versioned input artifact the tool
+reads back, with its own schema, not a report.
 
 ## Analysis coverage in every format
 

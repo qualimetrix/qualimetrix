@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition;
 use Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter;
@@ -118,6 +119,8 @@ final class DirectivesCommand extends Command
                 'Examples:',
                 '  <info>bin/qmx directives src/</info>',
                 '  <info>bin/qmx directives src/ --format=json</info>',
+                '',
+                \sprintf('Docs: %s', ProductIdentity::llmsTxtUrl()),
             ]));
     }
 
@@ -241,7 +244,12 @@ final class DirectivesCommand extends Command
         $selection = $prepared->findingConfiguration->selection;
         $presenter = new DirectiveAuditPresenter($report, $selection->only, $selection->disabled);
 
-        OutputHelper::write($output, $format === 'json' ? $presenter->json($exitCode) : $presenter->text());
+        if ($format === 'json') {
+            OutputHelper::write($output, $presenter->json($exitCode));
+        } else {
+            OutputHelper::write($output, $presenter->text());
+            $output->writeln(\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
+        }
 
         return $exitCode;
     }

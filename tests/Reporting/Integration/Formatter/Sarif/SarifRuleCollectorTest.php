@@ -286,7 +286,7 @@ final class SarifRuleCollectorTest extends TestCase
         $collector = new SarifRuleCollector($blank);
 
         self::assertSame('Health cohesion', $collector->getRuleDescription('health.cohesion'));
-        self::assertSame(SarifRuleCollector::INFORMATION_URI, $collector->getHelpUri('health.cohesion'));
+        self::assertSame(SarifRuleCollector::FALLBACK_HELP_URI, $collector->getHelpUri('health.cohesion'));
     }
 
     // --- getHelpUri ---
@@ -307,13 +307,13 @@ final class SarifRuleCollectorTest extends TestCase
     #[Test]
     public function itFallsBackToRepositoryUrlForHelpUri(): void
     {
-        self::assertSame(SarifRuleCollector::INFORMATION_URI, $this->collector->getHelpUri('unknown.rule'));
+        self::assertSame(SarifRuleCollector::FALLBACK_HELP_URI, $this->collector->getHelpUri('unknown.rule'));
     }
 
     #[Test]
     public function itFallsBackHelpUriWhenNoDot(): void
     {
-        self::assertSame(SarifRuleCollector::INFORMATION_URI, $this->collector->getHelpUri('norule'));
+        self::assertSame(SarifRuleCollector::FALLBACK_HELP_URI, $this->collector->getHelpUri('norule'));
     }
 
     // --- mapLevel ---

@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Version;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Symfony\Component\Console\Application as BaseApplication;
@@ -33,6 +34,11 @@ use Throwable;
  * It does not cover the `configureIO()` window inside `run()`: that stays on
  * Symfony's own `catchExceptions` handling; no accepted input can raise a
  * {@see ConfigurationRefusal} in that window.
+ *
+ * @qmx-threshold cohesion.lcom 6 -- this is the composition root: wiring
+ * together the otherwise-unrelated errorStream, refusalPresenter and
+ * exit-code ladder is its job, not a sign that unrelated responsibilities
+ * accreted onto one class.
  */
 final class Application extends BaseApplication
 {
@@ -43,6 +49,34 @@ final class Application extends BaseApplication
         private readonly RefusalPresenter $refusalPresenter,
     ) {
         parent::__construct(self::NAME, Version::get());
+
+        self::appendPointerToListCommandHelp($this);
+    }
+
+    /**
+     * Bare `--help`, with no target command, never reaches
+     * {@see self::getHelp()} — see that method's docblock for the measured
+     * seam. The only place left to carry the pointer on that path is the
+     * `list` command's own `Help:` section, since `--help` with no command
+     * renders that command's description ({@see \Symfony\Component\Console\Command\ListCommand},
+     * a framework command this project does not own the file of).
+     * `Command::setHelp()` is public API, not a vendor patch: `list` is
+     * registered eagerly here (`Application::get()` runs the base class's
+     * lazy `init()` on first call, which is safe to force this early — it
+     * only populates `$this->commands` from `getDefaultCommands()` and does
+     * not depend on the command loader set later in production wiring).
+     * `getHelp()`'s own template uses `%command.name%`/`%command.full_name%`
+     * placeholders processed by {@see \Symfony\Component\Console\Command\Command::getProcessedHelp()};
+     * appending plain text with no `%` in it cannot collide with that
+     * substitution.
+     */
+    private static function appendPointerToListCommandHelp(self $app): void
+    {
+        $listCommand = $app->get('list');
+
+        $listCommand->setHelp(
+            $listCommand->getHelp() . "\n\n" . \sprintf('<comment>%s</comment>', ProductIdentity::pointerText()),
+        );
     }
 
     /**
@@ -63,6 +97,29 @@ final class Application extends BaseApplication
         $this->errorStream->stopProgress();
 
         parent::renderThrowable($e, $this->errorStream->boundWriter($output));
+    }
+
+    /**
+     * The stock long version plus the documentation pointer.
+     *
+     * {@see \Symfony\Component\Console\Descriptor\TextDescriptor::describeApplication()}
+     * renders this exact return value as the header of bare `qmx` and `list`
+     * — both run {@see \Symfony\Component\Console\Command\ListCommand}, which
+     * describes the {@see \Symfony\Component\Console\Application}. Measured:
+     * `--help` with no target command does not reach this override — Symfony
+     * rewrites it to the `help` command describing the `list` *command*
+     * object instead ({@see \Symfony\Component\Console\Application::doRun()},
+     * the `!$name` branch), which is `describeCommand()`, not
+     * `describeApplication()`. That path carries the pointer separately, in
+     * `list`'s own `Help:` section — see
+     * {@see self::appendPointerToListCommandHelp()}. `--version` calls
+     * {@see self::getLongVersion()} directly and never reaches this override
+     * either, so it stays the unix-convention "name version" line that
+     * scripts parse.
+     */
+    public function getHelp(): string
+    {
+        return $this->getLongVersion() . "\n\n" . \sprintf('<comment>%s</comment>', ProductIdentity::pointerText());
     }
 
     /**

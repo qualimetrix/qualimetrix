@@ -911,6 +911,13 @@ bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
 
 ```json
 {
+  "meta": {
+    "version": "0.26.0",
+    "package": "qmx",
+    "timestamp": "2026-01-15T10:30:00+00:00",
+    "docs": "https://qualimetrix.dev",
+    "llmsTxt": "https://qualimetrix.dev/llms.txt"
+  },
   "fqn": "App\\Service\\Foo",
   "assigned": { "layer": "any-foo", "criteria": ["pattern \"App\\**\\Foo\""] },
   "shadowed": [
@@ -920,6 +927,7 @@ bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
 }
 ```
 
+- `meta` — тот же блок, с которого начинается `check --format=json`: `version` и `package` инструмента, `timestamp` прогона и адреса документации `docs` и `llmsTxt` (см. [Адреса документации в JSON-отчётах](output-formats.md#documentation-addresses)).
 - `assigned` — `null`, если ни один слой не совпал (в этом случае `shadowed` пуст).
 - `shadowed` перечисляет все остальные совпавшие слои в порядке объявления — каждый из них получил бы класс, будь он объявлен раньше `assigned`.
 - `hasLayers` различает «слои не объявлены» (`false`) и «слои объявлены, но ни один не совпал с этим классом» (`true` при `assigned: null`).
@@ -1087,6 +1095,8 @@ Every rule also takes: suppress-namespace-channels, suppress-namespaces, suppres
 
 Usage: bin/qmx check --disable-rule=<name> | --only-rule=<name>
         bin/qmx check --rule-opt=<name>:<option>=<value>
+
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 Правила сгруппированы по категориям. Строка `options:` называет то, что

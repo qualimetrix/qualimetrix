@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Formatter\Detail\DetailedFindingRenderer;
 use Qualimetrix\Reporting\Formatter\TextFormatter;
@@ -82,6 +83,25 @@ final class TextVerboseFormatterTest extends TestCase
         $detailOutput = $this->textFormatter->format($report, $detailContext);
 
         self::assertSame($detailOutput, $verboseOutput);
+    }
+
+    /**
+     * The delegate inherits the pointer from `TextFormatter::format()` rather
+     * than needing its own — proven directly, not only by the byte-for-byte
+     * comparison in {@see self::itDelegatesToTextFormatterWithDetailEnabled()}.
+     */
+    #[Test]
+    public function itInheritsTheDocumentationPointerFromTextFormatter(): void
+    {
+        $report = ReportBuilder::create()
+            ->filesAnalyzed(5)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, $this->plainContext);
+
+        self::assertStringContainsString(ProductIdentity::pointerText(), $output);
     }
 
     #[Test]

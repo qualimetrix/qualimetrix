@@ -53,8 +53,6 @@ predates this change and is unchanged by it. See
   follow still reports the depth it did reach; it no longer reports the tool's
   answer to a different question. See ADR 0074.
 
-### Breaking
-
 **`hook:install` writes a file where it used to write a symlink.** Every hook
 installed by an earlier release points at `scripts/pre-commit-hook.sh`, which
 is deleted; the link is now dangling and git runs nothing. Run
@@ -109,9 +107,36 @@ remove a link it cannot identify rather than deleting someone else's hook.
   under the old namespace or `Formatter/Support/` path goes inert without
   saying so, and a baseline entry keyed on one of the eight classes stops
   matching and is reported as an entry that did not appear.
+- SARIF `runs[].tool.driver.informationUri` is now the documentation site,
+  `https://qualimetrix.dev`, instead of the repository,
+  `https://github.com/qualimetrix/qualimetrix`. A consumer that reads the tool
+  link from it now lands on the documentation. Rule-level `helpUri` values are
+  unchanged, including the repository URL a code with no documentation page
+  falls back to.
 
 ### Changed
 
+- Every JSON report that has an envelope object now names the documentation
+  site (`docs`) and the index written for AI agents (`llmsTxt`) — `gitlab`'s
+  bare array has no object to hold them, so it is unaffected: in `meta` for
+  `--format=json` and `--format=suppressed`, at the top level of
+  `--format=metrics` beside its existing fields, and in
+  `runs[].tool.driver.properties.llmsTxt` for `--format=sarif`. The JSON output
+  of `directives`, `baseline:rename-channels` and `debug:layer-assignment` now
+  opens with the same `meta` object as `--format=json` (`version`, `package`,
+  `timestamp`, `docs`, `llmsTxt`), and `graph:export --format=json` extends the
+  `meta` block its envelope already had with the same two addresses. Existing
+  keys keep their values.
+- Every human-readable output channel now points to the documentation: the
+  `summary`, `text`, and `health` tails, the free-text refusal on stderr, the
+  header of bare `qmx`/`qmx list`, the `Help:` section of every command, the
+  `rules` listing, the baseline lifecycle commands' tails, the `directives`
+  and `debug:layer-assignment` text reports, and the `hook:*` commands. An
+  agent or reader who lands on any one of these now has a way to reach the
+  full documentation and the agent-facing index without already knowing the
+  project.
+- The HTML report's footer now links to the documentation site and the
+  agent-facing index, alongside the existing generated-date and version line.
 - `design.dit` says when it did not follow an inheritance chain to a root. A
   run writes one warning naming how many chains leaving the analysed path
   stopped early and where the walk stopped, so a depth that stopped short is no
@@ -139,6 +164,11 @@ remove a link it cannot identify rather than deleting someone else's hook.
 
 ### Fixed
 
+- `graph:export --format=json`'s `meta.timestamp` is now `gmdate('c')` (UTC),
+  matching every other JSON channel's `meta` block; it previously used
+  `date('c')`, the PHP process's local zone, so a consumer comparing
+  timestamps across documents could see different offsets on a machine whose
+  default zone was not UTC.
 - Generated pre-commit hooks now fail closed when staged-file enumeration fails
   and preserve the actual `qmx` exit status.
 - `design.dit` now resolves `$baseDir` entries in Composer classmaps when the

@@ -8,9 +8,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
+use Qualimetrix\Infrastructure\Console\Command\BaselineRenameChannelsCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -48,6 +50,7 @@ use Symfony\Component\Console\Command\Command;
 #[CoversClass(BaselineUpdateCommand::class)]
 #[CoversClass(BaselineCleanupCommand::class)]
 #[CoversClass(BaselineExplainCommand::class)]
+#[CoversClass(BaselineRenameChannelsCommand::class)]
 final class BaselineCommandOptionSurfaceTest extends TestCase
 {
     private const array FORBIDDEN_OPTIONS = ['suppress-path', 'suppress-namespace', 'no-suppression-annotations'];
@@ -157,6 +160,35 @@ final class BaselineCommandOptionSurfaceTest extends TestCase
         self::assertFalse($definition->hasOption('generate-baseline'));
         self::assertTrue($definition->hasOption('baseline'));
         self::assertTrue($definition->hasOption('show-resolved'));
+    }
+
+    /**
+     * @return iterable<string, array{class-string<Command>}>
+     */
+    public static function provideAllFiveBaselineCommands(): iterable
+    {
+        yield 'generate' => [BaselineGenerateCommand::class];
+        yield 'update' => [BaselineUpdateCommand::class];
+        yield 'cleanup' => [BaselineCleanupCommand::class];
+        yield 'explain' => [BaselineExplainCommand::class];
+        yield 'rename-channels' => [BaselineRenameChannelsCommand::class];
+    }
+
+    /**
+     * All five, unlike the option surface above: `baseline:rename-channels`
+     * measures nothing and so is absent from {@see self::provideBaselineCommands()},
+     * but every one of the five still owes a reader of `--help` the same
+     * address.
+     *
+     * @param class-string<Command> $commandClass
+     */
+    #[Test]
+    #[DataProvider('provideAllFiveBaselineCommands')]
+    public function itAdvertisesTheDocsAddressInItsHelp(string $commandClass): void
+    {
+        $command = self::command($commandClass);
+
+        self::assertStringContainsString('Docs: ' . ProductIdentity::llmsTxtUrl(), $command->getHelp());
     }
 
     /**

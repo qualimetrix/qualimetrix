@@ -6,10 +6,27 @@
 
 Qualimetrix (Qualimetrix) analyzes PHP code and reports quality violations across complexity, coupling, cohesion, maintainability, size, design, architecture, code smells, and security.
 
-Key commands:
+Commands:
 
 ```
-vendor/bin/qmx check src/                              # health summary (default)
+vendor/bin/qmx check <paths>                            # analyze code, report violations
+vendor/bin/qmx rules                                    # list all rules with options
+vendor/bin/qmx graph:export <paths> -o graph.dot        # export dependency graph (dot/json)
+vendor/bin/qmx baseline:generate <file> [paths]         # capture current findings as a new baseline
+vendor/bin/qmx baseline:update <file> [paths]           # tighten an existing baseline against current findings
+vendor/bin/qmx baseline:cleanup <file> [paths]          # list/remove baseline entries nothing reports any more
+vendor/bin/qmx baseline:explain <file> <subject>        # show a metric subject's effective boundary and its source
+vendor/bin/qmx baseline:rename-channels <file> <map>    # rewrite baseline channel names along a declared rename map
+vendor/bin/qmx directives [paths]                       # audit inline @qmx-* directives for stale/inert ones
+vendor/bin/qmx debug:layer-assignment <fqn>             # show which architecture layer a class would be assigned to
+vendor/bin/qmx hook:install                             # install git pre-commit hook
+vendor/bin/qmx hook:uninstall                           # uninstall git pre-commit hook
+vendor/bin/qmx hook:status                              # show git pre-commit hook status
+```
+
+Full option list per command: `qmx <command> --help`. Common `check` options:
+
+```
 vendor/bin/qmx check src/ --detail                     # summary + violation list
 vendor/bin/qmx check src/ --format=text                # one line per finding, ordered by file
 vendor/bin/qmx check src/ --format=metrics             # raw metric values for all symbols
@@ -21,17 +38,19 @@ vendor/bin/qmx check src/ --namespace='subtree:App\Service'    # drill down into
 vendor/bin/qmx check src/ --disable-rule=complexity.*   # disable a rule group (star required)
 vendor/bin/qmx check src/ --only-rule=coupling.cbo     # run specific rule
 vendor/bin/qmx check src/ --baseline=baseline.json     # ignore known violations
-vendor/bin/qmx baseline:generate b.json src/       # generate baseline
-vendor/bin/qmx rules                                   # list all rules with options
-vendor/bin/qmx graph:export src/ -o graph.dot          # dependency graph
-vendor/bin/qmx hook:install                            # pre-commit hook
+vendor/bin/qmx check src/ --preset=strict              # built-in preset (also: legacy, ci; composable: --preset=strict,ci)
+vendor/bin/qmx check src/ --fail-on=warning            # exit code threshold for CI (none|warning|error, default: error)
 ```
 
-Output formats: `summary` (default), `text`, `json`, `checkstyle`, `sarif`, `gitlab`, `github`, `metrics`, `health` (text table), `html` (interactive treemap), `suppressed` (machine-readable composition of what was suppressed and why).
+Output formats: `summary` (default), `text`, `json`, `checkstyle`, `sarif`, `gitlab`, `github`, `metrics`, `health` (text table), `html` (interactive treemap), `suppressed` (machine-readable composition of what was suppressed and why), `text-verbose` (deprecated, use `text --detail`).
 
-Rule groups: `complexity`, `coupling`, `size`, `design`, `maintainability`, `cohesion`, `architecture`, `duplication`, `code-smell`, `security`.
+Presets: `strict` (greenfield, tight thresholds), `legacy` (relaxed thresholds), `ci`. Composable: `--preset=strict,ci`.
 
-Configuration: `qmx.yaml` (auto-discovered) or `--config=path`. Suppression: `@qmx-ignore` / `@qmx-ignore-next-line` in docblocks or comments.
+Rule groups: `complexity`, `coupling`, `size`, `design`, `maintainability`, `cohesion`, `architecture`, `duplication`, `code-smell`, `security`. Full rule list with IDs, thresholds, and options: `qmx rules`.
+
+Configuration: `qmx.yaml` (auto-discovered) or `--config=path`. Root keys: `paths`, `exclude`, `format`, `rules`, `disabledRules`, `onlyRules`, `suppressPaths`, `suppressNamespaces`, `failOn`, `cache`, `parallel`, `coupling`, `includeGenerated`, `memoryLimit`, `architecture`, `computedMetrics`, `excludeHealth`.
+
+Suppression: `@qmx-ignore` / `@qmx-ignore-next-line` in docblocks or comments (symbol/line scope), `@qmx-ignore-file` (whole file). Threshold override: `@qmx-threshold` on a class/method.
 
 ## Docs
 

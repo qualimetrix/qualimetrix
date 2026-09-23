@@ -1818,7 +1818,10 @@ final class SelfTest
                 'the declared delta of ' . $surface . ' is a diff, not an empty file',
             );
         }
-        $this->same(null, $delta->claim('case:smells|format:json'), 'a surface nothing declares claims nothing');
+        // A corpus surface would go stale the day a step declares it; no case is named this.
+        $undeclared = 'case:self-test-undeclared|format:json';
+        $this->assert(!\in_array($undeclared, $delta->surfaces(), true), 'the undeclared probe surface is not declared');
+        $this->same(null, $delta->claim($undeclared), 'a surface nothing declares claims nothing');
         $this->declaredDeltaWrite();
     }
 

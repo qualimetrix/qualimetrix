@@ -60,7 +60,7 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
                 'Output format (text, json)',
                 'text',
             )
-            ->setHelp(
+            ->setHelp(self::withDocsPointer(
                 'Rewrites the "channel" field of the entries the map names, and nothing' . "\n"
                 . 'else: subject keys, occurrence, count, magnitudes, mode and edge are' . "\n"
                 . 'carried through untouched, and no analysis is run.' . "\n\n"
@@ -76,7 +76,7 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
                 . 'is the {error, exit_code} envelope every other machine-readable refusal' . "\n"
                 . 'in this tool uses, so a script does not have to read the outcome off the' . "\n"
                 . 'exit code alone.',
-            );
+            ));
     }
 
     /**

@@ -181,4 +181,26 @@ final class HtmlFormatterTest extends TestCase
         self::assertStringContainsString('"metricHints"', $output);
         self::assertStringContainsString('"healthDecomposition"', $output);
     }
+
+    /**
+     * The shipped page must carry the element `html-report/src/main.js`'s
+     * `renderFooter()` looks up (`document.getElementById('report-footer')`);
+     * without it the footer silently renders nothing, however correct the
+     * embedded `report-data` payload is. `itProducesValidHtml()` covers the
+     * static wrapper markup, but not this specific id, which is the one
+     * `main.js` and this template must agree on.
+     */
+    #[Test]
+    public function itCarriesTheFooterElementTheFooterScriptLooksUp(): void
+    {
+        $report = ReportBuilder::create()
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
+
+        self::assertStringContainsString('id="report-footer"', $output);
+    }
 }

@@ -1,0 +1,7 @@
+--- candidate
++++ reference (mapped)
+@@ -6,3 +6,1 @@
+-        "scopedReporting": false,
+-        "docs": "https://qualimetrix.dev",
+-        "llmsTxt": "https://qualimetrix.dev/llms.txt"
++        "scopedReporting": false

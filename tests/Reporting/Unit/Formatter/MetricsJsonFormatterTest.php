@@ -10,9 +10,11 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\Formatter\MetricsJsonFormatter;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
@@ -26,6 +28,31 @@ final class MetricsJsonFormatterTest extends TestCase
     protected function setUp(): void
     {
         $this->formatter = new MetricsJsonFormatter();
+    }
+
+    /**
+     * The root's `version` is the export-format version and `toolVersion`
+     * the tool's; the documentation addresses are added beside them without
+     * displacing either.
+     */
+    #[Test]
+    public function itPublishesTheDocumentationAddressesWithoutDisplacingEitherVersion(): void
+    {
+        $data = json_decode(
+            $this->formatter->format(new Report([], 0, 0, 0.0, 0, 0), new FormatterContext()),
+            true,
+            512,
+            \JSON_THROW_ON_ERROR,
+        );
+
+        self::assertSame(
+            ['version', 'toolVersion', 'package', 'timestamp', 'docs', 'llmsTxt'],
+            \array_slice(array_keys($data), 0, 6),
+        );
+        self::assertSame('1.0.0', $data['version']);
+        self::assertSame(Version::get(), $data['toolVersion']);
+        self::assertSame(ProductIdentity::docsUrl(), $data['docs']);
+        self::assertSame(ProductIdentity::llmsTxtUrl(), $data['llmsTxt']);
     }
 
     #[Test]

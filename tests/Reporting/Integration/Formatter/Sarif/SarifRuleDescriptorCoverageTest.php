@@ -38,7 +38,7 @@ final class SarifRuleDescriptorCoverageTest extends TestCase
 
         self::assertCount(1, $rules);
         self::assertSame('Custom made up rule', $rules[0]['shortDescription']['text']);
-        self::assertSame(SarifRuleCollector::INFORMATION_URI, $rules[0]['helpUri']);
+        self::assertSame(SarifRuleCollector::FALLBACK_HELP_URI, $rules[0]['helpUri']);
     }
 
     private static function finding(string $ruleName, string $code): \Qualimetrix\Analysis\Finding\Contract\Finding

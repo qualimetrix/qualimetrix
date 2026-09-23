@@ -907,6 +907,13 @@ bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
 
 ```json
 {
+  "meta": {
+    "version": "0.26.0",
+    "package": "qmx",
+    "timestamp": "2026-01-15T10:30:00+00:00",
+    "docs": "https://qualimetrix.dev",
+    "llmsTxt": "https://qualimetrix.dev/llms.txt"
+  },
   "fqn": "App\\Service\\Foo",
   "assigned": { "layer": "any-foo", "criteria": ["pattern \"App\\**\\Foo\""] },
   "shadowed": [
@@ -916,6 +923,7 @@ bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
 }
 ```
 
+- `meta` is the same block `check --format=json` opens with: the tool's `version`, `package`, the run's `timestamp`, and the documentation addresses `docs` and `llmsTxt` (see [Documentation addresses in JSON reports](output-formats.md#documentation-addresses)).
 - `assigned` is `null` when no layer matched (empty `shadowed` follows).
 - `shadowed` lists every other matching layer in declaration order — each entry would have won the assignment had it been declared before `assigned`.
 - `hasLayers` distinguishes "no layers configured" (`false`) from "layers configured but none matched this class" (`true` with `assigned: null`).
@@ -1082,6 +1090,8 @@ Every rule also takes: suppress-namespace-channels, suppress-namespaces, suppres
 
 Usage: bin/qmx check --disable-rule=<name> | --only-rule=<name>
         bin/qmx check --rule-opt=<name>:<option>=<value>
+
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 Rules are grouped by category. `options:` names what the rule accepts in its

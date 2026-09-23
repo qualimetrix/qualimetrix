@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Refusal;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -95,6 +96,12 @@ final class RefusalPresenter
         // the exit ladder above reports that instead of this refusal. Only
         // the frame below is ours to have the formatter read.
         $this->writeStderr($output, \sprintf('<error>%s</error>', OutputFormatter::escape($message)));
+
+        // The `--quiet` rule that hides the pointer on a report does not apply
+        // here: this presenter writes at VERBOSITY_QUIET on purpose, because a
+        // run that ends this way must still reach a reader who asked for
+        // silence — see the class docblock.
+        $this->writeStderr($output, \sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
     }
 
     /**
