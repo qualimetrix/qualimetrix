@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -17,6 +19,13 @@ use Symfony\Component\Console\Output\OutputInterface;
  * spell `hooks/pre-commit` for itself. The three copies of that had already
  * drifted — one checked that the hooks directory exists and two did not, and
  * the refusal read differently in each.
+ *
+ * @qmx-ignore health.cohesion -- the final execute() / abstract doExecute()
+ * split is a template-method seam: this base class carries the shared
+ * ladder and none of a subcommand's own state, so it measures as low
+ * cohesion by construction, not as a defect. `@qmx-threshold` cannot retune
+ * this instead: `health.cohesion` is a computed metric with no per-symbol
+ * override support.
  */
 abstract class AbstractHookCommand extends Command
 {
@@ -26,6 +35,31 @@ abstract class AbstractHookCommand extends Command
     ) {
         parent::__construct();
     }
+
+    /**
+     * The one line every hook command's `--help` carries. A subclass that adds
+     * its own options overrides {@see self::configure()} and calls this first.
+     */
+    protected function configure(): void
+    {
+        $this->setHelp(\sprintf('Docs: %s', ProductIdentity::llmsTxtUrl()));
+    }
+
+    /**
+     * Shared by the three hook commands: whatever `doExecute()` reports, the
+     * pointer follows it. None of the three has a machine-readable format to
+     * protect, unlike the baseline family this mirrors.
+     */
+    final protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        $exitCode = $this->doExecute($input, $output);
+
+        $output->writeln(\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
+
+        return $exitCode;
+    }
+
+    abstract protected function doExecute(InputInterface $input, OutputInterface $output): int;
 
     /**
      * The repository's pre-commit hook, wherever git would look for it.

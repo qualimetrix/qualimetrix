@@ -392,7 +392,8 @@ the name the same way:
 A bare prefix is **not** a group. `complexity` on its own selects nothing and is rejected:
 
 ```
-Rule selector "complexity" does not match any registered producer, group, or channel.
+Configuration error: Rule selector "complexity" does not match any registered producer, group, or channel.
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 A `X.*` that has no descendants is rejected for the same reason. Most rules emit a single
@@ -779,8 +780,8 @@ Qualimetrix validates your configuration file and reports clear errors for commo
 Any unrecognized key — at the root level or inside a section — produces an error with a suggestion:
 
 ```
-Invalid configuration in qmx.yaml:
-  Unknown key "workes" in "parallel" section. Did you mean "workers"?
+Configuration error: Unknown key in "parallel" section: "workes" (did you mean "workers"?). Allowed keys: workers
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 ### Type errors
@@ -788,7 +789,8 @@ Invalid configuration in qmx.yaml:
 If a value has the wrong type, you'll get a clear message instead of silent fallback to defaults:
 
 ```
-Invalid value for "cache.enabled": expected boolean, got string
+Configuration error: Invalid value for "cache.enabled": expected boolean, got string
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 ### Unknown rule names
@@ -796,7 +798,8 @@ Invalid value for "cache.enabled": expected boolean, got string
 Misspelled rule names in the `rules:` section are rejected:
 
 ```
-Unknown rule "complexty.cyclomatic" in qmx.yaml. Did you mean "complexity.ccn"?
+Configuration error: Unknown rule "complexty.ccn" in qmx.yaml. Did you mean "complexity.ccn"?
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 ### Unknown rule option keys
@@ -806,6 +809,7 @@ it can be written at — the run stops with exit code 3 and nothing is analyzed:
 
 ```
 Configuration error: Option "warningThreshold" is not an option of rule "complexity.ccn". Options here: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 Inside a level slot the message names the slot, because the allowed set is per
@@ -813,6 +817,7 @@ level and not per rule:
 
 ```
 Configuration error: Option "warning" is not an option of rule "complexity.ccn" at level "class". Options at that level: enabled, max-error, max-warning, threshold. Other levels of this rule take different options.
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 The same applies to `--rule-opt` on the command line, with the same code and the
@@ -843,6 +848,12 @@ Configuration error: Option "warning" of rule "complexity.ccn" at level "callabl
 Configuration error: Invalid value for "only_rules": expected a list of entries, got a map.
 Configuration error: Invalid value for "cache": expected a section of named keys (dir, enabled), got a list.
 ```
+
+These are three separate runs, one mistake apiece — a real run stops at its own
+first error. Each one's stderr ends with the same documentation pointer line
+shown throughout this page (e.g. `Docs: https://qualimetrix.dev · AI agents:
+https://qualimetrix.dev/llms.txt`); it is omitted above so the three messages
+can be compared side by side.
 
 The shapes a key can ask for, in the words the refusal uses:
 

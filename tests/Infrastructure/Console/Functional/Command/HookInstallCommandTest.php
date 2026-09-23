@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Functional\Command;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Command\HookInstallCommand;
 use Qualimetrix\Infrastructure\Console\Hook\PreCommitHook;
 use Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface;
@@ -291,6 +292,27 @@ final class HookInstallCommandTest extends TestCase
         self::assertIsResource($process);
 
         return proc_close($process);
+    }
+
+    /**
+     * The pointer comes from the shared `AbstractHookCommand::execute()`
+     * wrapper, not from this command's own body — every one of the three
+     * hook commands' exits carries it, success or failure alike.
+     */
+    #[Test]
+    public function itPrintsTheDocsPointerAfterInstalling(): void
+    {
+        $tester = $this->install([]);
+
+        self::assertStringContainsString('Docs: ' . ProductIdentity::docsUrl(), $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itAdvertisesTheDocsAddressInItsHelp(): void
+    {
+        $command = new HookInstallCommand(new GitRepositoryLocator(), $this->locator(self::BINARY));
+
+        self::assertStringContainsString('Docs: ' . ProductIdentity::llmsTxtUrl(), $command->getHelp());
     }
 
     private function removeDirectory(string $dir): void

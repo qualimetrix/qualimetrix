@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
@@ -88,6 +89,32 @@ final class DirectivesCommandTest extends TestCase
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode());
         self::assertStringContainsString('effective: removing it changes what the rules produce.', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itPrintsTheDocsPointerInTextOutput(): void
+    {
+        $this->writeSource('Live.php', self::sevenParameterMethod(
+            '@qmx-threshold code-smell.long-parameter-list warning=9 error=12 — live',
+        ));
+
+        $tester = $this->audit(['paths' => [$this->tempDir . '/src']]);
+
+        self::assertStringContainsString('Docs: ' . ProductIdentity::docsUrl(), $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itOmitsTheDocsPointerFromJsonOutput(): void
+    {
+        $this->writeSource('Live.php', self::sevenParameterMethod(
+            '@qmx-threshold code-smell.long-parameter-list warning=9 error=12 — live',
+        ));
+
+        $tester = $this->audit(['paths' => [$this->tempDir . '/src'], '--format' => 'json']);
+
+        $output = $tester->getDisplay();
+        self::assertStringNotContainsString('Docs:', $output);
+        json_decode($output, true, flags: \JSON_THROW_ON_ERROR);
     }
 
     #[Test]

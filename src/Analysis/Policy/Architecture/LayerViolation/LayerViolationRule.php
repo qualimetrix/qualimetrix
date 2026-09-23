@@ -12,6 +12,8 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidence;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
@@ -183,14 +185,14 @@ final class LayerViolationRule extends AbstractRule
         $findings = [];
 
         foreach ($evidence->forbiddenEdges as $edge) {
-            $dependency = $edge['dependency'];
-            $fromLayer = $edge['fromMatch']->layerName;
-            $toLayer = $edge['toMatch']->layerName;
+            $dependency = $edge->dependency;
+            $fromLayer = $edge->fromMatch->layerName;
+            $toLayer = $edge->toMatch->layerName;
 
             $edgeFindings = (new LayerViolationFinding(
                 dependency: $dependency,
-                fromMatch: $edge['fromMatch'],
-                toMatch: $edge['toMatch'],
+                fromMatch: $edge->fromMatch,
+                toMatch: $edge->toMatch,
                 ownedTargets: $ownedTargets->forLogical($dependency->targetLogical()),
                 ruleName: self::NAME,
                 severity: $this->options->severity,

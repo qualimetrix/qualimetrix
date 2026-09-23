@@ -133,7 +133,7 @@ acquires a dependency on raw I/O through this namespace.
   HTML report consumers (`composer test:js` / vitest) and SARIF
   consumers see no change in output shape.
 - The Reporting layer no longer normalizes separators manually
-  (`SarifFormatter.php:173`): `RelativePath` stores POSIX-only state.
+  (`SarifFormatter.php:205`): `RelativePath` stores POSIX-only state.
 - Parallel-worker serialization (`amphp/parallel` ships
   `FileProcessingTask` / `FileProcessingResult` between processes) keeps
   working — explicit `__serialize`/`__unserialize` pins the wire format
@@ -164,6 +164,6 @@ acquires a dependency on raw I/O through this namespace.
 - Affected boundary today: `src/Core/Util/PathNormalizer.php`,
   `src/Infrastructure/Git/GitScopeFilter.php:74`,
   `src/Baseline/BaselineWriter.php:86-100`,
-  `src/Reporting/Formatter/Sarif/SarifFormatter.php:170-191`
+  `src/Reporting/Formatter/Sarif/SarifFormatter.php:202-226`
 - Architectural framework: ADR 0012 (hybrid direction) — `Core\Path` is
   a cross-cutting primitive in the retained `Core` horizontal layer

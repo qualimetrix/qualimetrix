@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
@@ -162,6 +163,44 @@ final class SarifSchemaValidationTest extends TestCase
     }
 
     /**
+     * The documentation addresses ride on the driver: `informationUri` is a
+     * field the schema defines, and `llmsTxt` sits in the `properties` bag,
+     * which is where the schema lets a producer add a key of its own.
+     */
+    #[Test]
+    public function itConformsToTheSarifSchemaWithTheDocumentationAddressesOnTheDriver(): void
+    {
+        $output = $this->formatter->format(ReportBuilder::create()->build(), new FormatterContext());
+
+        $driver = json_decode($output, true, 512, \JSON_THROW_ON_ERROR)['runs'][0]['tool']['driver'];
+        self::assertSame(ProductIdentity::docsUrl(), $driver['informationUri']);
+        self::assertSame(['llmsTxt' => ProductIdentity::llmsTxtUrl()], $driver['properties']);
+
+        $this->assertOutputMatchesSarifSchema($output);
+    }
+
+    /**
+     * Witness that the validation above can refuse this field: the schema
+     * closes `toolComponent`, so the same key written straight onto the
+     * driver instead of into its `properties` bag is invalid.
+     */
+    #[Test]
+    public function itRefusesTheLlmsTxtAddressOutsideThePropertiesBag(): void
+    {
+        $sarif = json_decode(
+            $this->formatter->format(ReportBuilder::create()->build(), new FormatterContext()),
+            true,
+            512,
+            \JSON_THROW_ON_ERROR,
+        );
+        $driver = &$sarif['runs'][0]['tool']['driver'];
+        $driver['llmsTxt'] = $driver['properties']['llmsTxt'];
+        unset($driver['properties'], $driver);
+
+        self::assertFalse(self::validate(json_encode($sarif, \JSON_THROW_ON_ERROR))->isValid());
+    }
+
+    /**
      * Decodes the formatter output as an object tree (the shape the schema
      * library expects) and validates it against the SARIF 2.1.0 schema.
      */
@@ -169,14 +208,7 @@ final class SarifSchemaValidationTest extends TestCase
     {
         self::assertJson($output);
 
-        $schemaJson = file_get_contents(self::SCHEMA_FIXTURE);
-        self::assertNotFalse($schemaJson, 'SARIF schema fixture must be readable');
-
-        $schema = json_decode($schemaJson, false, 512, \JSON_THROW_ON_ERROR);
-        $data = json_decode($output, false, 512, \JSON_THROW_ON_ERROR);
-
-        $validator = new Validator();
-        $validator->validate($data, $schema);
+        $validator = self::validate($output);
 
         self::assertTrue(
             $validator->isValid(),
@@ -186,6 +218,20 @@ final class SarifSchemaValidationTest extends TestCase
             $validator->getErrors(),
             'SARIF output produced schema errors: ' . self::formatErrors($validator->getErrors()),
         );
+    }
+
+    private static function validate(string $output): Validator
+    {
+        $schemaJson = file_get_contents(self::SCHEMA_FIXTURE);
+        self::assertNotFalse($schemaJson, 'SARIF schema fixture must be readable');
+
+        $schema = json_decode($schemaJson, false, 512, \JSON_THROW_ON_ERROR);
+        $data = json_decode($output, false, 512, \JSON_THROW_ON_ERROR);
+
+        $validator = new Validator();
+        $validator->validate($data, $schema);
+
+        return $validator;
     }
 
     /**

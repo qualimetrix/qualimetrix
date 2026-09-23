@@ -7,8 +7,10 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
@@ -26,6 +28,13 @@ use Throwable;
  * exist. Left to each command those become five slightly different
  * spellings of the same three sentences, and the one that forgets a `catch`
  * answers a bad path with a stack trace.
+ *
+ * @qmx-ignore health.cohesion -- the final execute() / abstract doExecute()
+ * split is a template-method seam: this base class carries the shared
+ * ladder and none of a subcommand's own state, so it measures as low
+ * cohesion by construction, not as a defect. `@qmx-threshold` cannot retune
+ * this instead: `health.cohesion` is a computed metric with no per-symbol
+ * override support.
  */
 abstract class BaselineCommand extends Command
 {
@@ -50,7 +59,17 @@ abstract class BaselineCommand extends Command
         $format = $this->refusalFormat($input);
 
         try {
-            return $this->doExecute($input, $output);
+            $exitCode = $this->doExecute($input, $output);
+
+            // Only `baseline:rename-channels` ever answers `json` here (the other
+            // four declare no `--format` and this stays `null` for them), which
+            // is exactly the guard that keeps its machine-readable branch a
+            // document a script can still parse.
+            if ($format !== 'json') {
+                $output->writeln(\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
+            }
+
+            return $exitCode;
         } catch (ConfigurationRefusal $refusal) {
             // First clause: the carrier is a RuntimeException, and the split
             // pair below would otherwise catch it and answer with code 1
@@ -94,6 +113,16 @@ abstract class BaselineCommand extends Command
     }
 
     abstract protected function doExecute(InputInterface $input, OutputInterface $output): int;
+
+    /**
+     * Appends the documentation address to a command's own `--help` text, so
+     * each of the five commands states only its own explanation and this line
+     * is written once.
+     */
+    protected static function withDocsPointer(string $help): string
+    {
+        return $help . "\n\n" . \sprintf('Docs: %s', ProductIdentity::llmsTxtUrl());
+    }
 
     /**
      * Reports a failure, with the trace when the user asked for verbosity.
@@ -158,5 +187,35 @@ abstract class BaselineCommand extends Command
         ));
 
         return false;
+    }
+
+    /**
+     * The preamble `baseline:cleanup` and `baseline:update` share (ADR 0017):
+     * measure before loading — a `computed.*` / `health.*` declaration only
+     * exists once the run has resolved configuration, so loading the file
+     * first would leave every such entry inert, and each command would
+     * answer differently than the `check` applying the very same entry —
+     * then refuse when the run's scope does not cover what the file records.
+     *
+     * Returns `null` when the caller must answer with `self::FAILURE`; the
+     * scope guard has already written its own message to `$output`.
+     */
+    protected function measureAgainstBaseline(
+        BaselineRunInterface $baselineRun,
+        BaselineLoader $loader,
+        InputInterface $input,
+        OutputInterface $output,
+        string $baselinePath,
+    ): ?LoadedBaselineRun {
+        $force = $input->getOption('force') === true;
+
+        $context = $baselineRun->measure($input, $output);
+        $baseline = $loader->load($baselinePath);
+
+        if (!$this->assertScopeCovers($context->scope, $baseline->scope, $force, $output)) {
+            return null;
+        }
+
+        return new LoadedBaselineRun($context, $baseline);
     }
 }

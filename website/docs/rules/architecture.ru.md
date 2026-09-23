@@ -901,6 +901,7 @@ Class: App\Service\UserService
 
   Would also match (in declaration order):
     (none — the assignment is unique)
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 Пример вывода для затенённого класса:
@@ -917,6 +918,7 @@ Class: App\Service\Foo
   Diagnostic hint:
     Class is shadowed: would have matched 'service' if 'any-foo' was declared later.
     See architecture.potential-shadow diagnostic for the broader picture.
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 Пример вывода для класса, принадлежность которого прогон не смог разрешить — критерий `extends` / `implements` / `attributes` называет что-то выше по цепочке наследования, покидающей `paths` (см. [Принадлежность за пределами namespace-паттернов](#принадлежность-за-пределами-namespace-паттернов)):

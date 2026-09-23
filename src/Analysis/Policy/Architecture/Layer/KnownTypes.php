@@ -17,7 +17,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * mistyped one, while a criterion naming a type it met may still hold for a
  * class whose chain the run could not follow to the end. Only the second is a
  * reason to doubt rather than to report, which is what
- * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerEvidence::reachedCounts()}
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidence::reachedCounts()}
  * asks.
  *
  * Nothing is kept: one pass over the edges answers every name asked, and the

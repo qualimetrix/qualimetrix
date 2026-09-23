@@ -9,6 +9,7 @@ use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition;
@@ -111,7 +112,8 @@ final class LayerAssignmentCommand extends Command
                 . 'Examples:' . "\n"
                 . '  <info>bin/qmx debug:layer-assignment \'App\\Service\\Foo\'</info>' . "\n"
                 . '  <info>bin/qmx debug:layer-assignment \'App\\Service\\Foo\' --config qmx.yaml</info>' . "\n"
-                . '  <info>bin/qmx debug:layer-assignment \'App\\Service\\Foo\' --format=json</info>',
+                . '  <info>bin/qmx debug:layer-assignment \'App\\Service\\Foo\' --format=json</info>' . "\n\n"
+                . \sprintf('Docs: %s', ProductIdentity::llmsTxtUrl()),
             );
     }
 
@@ -187,7 +189,12 @@ final class LayerAssignmentCommand extends Command
         if ($format === 'json') {
             $this->renderJson($output, $normalized, $resolution);
         } else {
+            // `renderReport()` returns void and always runs to completion before
+            // control reaches this line, whichever of its own exits it took —
+            // so this single point after the call carries the pointer for all
+            // of them, without touching the JSON branch above.
             $this->renderReport($output, $normalized, $resolution);
+            $output->writeln(\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
         }
 
         return self::SUCCESS;
@@ -451,6 +458,7 @@ final class LayerAssignmentCommand extends Command
             + ['reported' => \in_array($match->layerName, $reported, true)];
 
         OutputHelper::write($output, $this->encodeJson([
+            'meta' => ProductIdentity::meta(gmdate('c')),
             'fqn' => $fqn,
             'assigned' => $assigned === null ? null : self::matchToArray($assigned),
             'contendingMatches' => array_map($toEntry, $contending),

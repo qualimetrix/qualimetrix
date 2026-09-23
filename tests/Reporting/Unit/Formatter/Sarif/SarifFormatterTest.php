@@ -164,7 +164,8 @@ final class SarifFormatterTest extends TestCase
         self::assertSame('Qualimetrix', $run['tool']['driver']['name']);
         self::assertIsString($run['tool']['driver']['version']);
         self::assertMatchesRegularExpression('/^(v?\d+\.\d+|dev-)/', $run['tool']['driver']['version']);
-        self::assertSame('https://github.com/qualimetrix/qualimetrix', $run['tool']['driver']['informationUri']);
+        self::assertSame('https://qualimetrix.dev', $run['tool']['driver']['informationUri']);
+        self::assertSame(['llmsTxt' => 'https://qualimetrix.dev/llms.txt'], $run['tool']['driver']['properties']);
 
         // Empty report should have no rules and no results
         self::assertSame([], $run['tool']['driver']['rules']);

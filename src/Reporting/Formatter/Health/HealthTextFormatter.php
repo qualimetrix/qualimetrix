@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\Decompos
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
 use Qualimetrix\Reporting\Formatter\CoverageNarrator;
@@ -23,6 +24,10 @@ use Qualimetrix\Reporting\Report;
  *
  * Renders a table of health dimensions with scores, status labels,
  * and threshold info, followed by decomposition details for each dimension.
+ *
+ * @qmx-threshold complexity.wmc warning=60 -- average per-method complexity
+ * here is about 3.5; WMC is high because of how many small rendering
+ * methods the formatter has, not because any one of them is complex.
  */
 final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysInterface
 {
@@ -52,6 +57,7 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
             $lines[] = $color->dim('No health data available.');
             $lines[] = $color->dim('Run a full analysis with computed metrics enabled to see health scores.');
             $lines[] = '';
+            $this->appendPointer($color, $lines);
 
             return implode("\n", $lines) . "\n";
         }
@@ -73,6 +79,7 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
         }
 
         $lines[] = '';
+        $this->appendPointer($color, $lines);
 
         return implode("\n", $lines) . "\n";
     }
@@ -90,6 +97,17 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
     public function formatOptionKeys(): array
     {
         return ['contributors'];
+    }
+
+    /**
+     * Called at both of `format()`'s exits — the empty-data early return and
+     * the normal tail — so neither one is left without the pointer.
+     *
+     * @param list<string> $lines
+     */
+    private function appendPointer(AnsiColor $color, array &$lines): void
+    {
+        $lines[] = $color->dim(ProductIdentity::pointerText());
     }
 
     /**

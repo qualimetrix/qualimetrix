@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Summary;
 
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Report;
@@ -42,6 +43,10 @@ final class HintRenderer
         $hints[] = '--format=html -o report.html for full report';
 
         $lines[] = $color->dim('Hints: ' . implode(' | ', $hints));
+
+        // Own line, not another hint: a documentation address is not an action,
+        // and folding it into the already-long Hints line would bury both.
+        $lines[] = $color->dim(ProductIdentity::pointerText());
     }
 
     private function buildDetailHint(Report $report, FormatterContext $context): ?string

@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\FindingProjection\InertSuppressor;
@@ -25,6 +26,16 @@ use Qualimetrix\Reporting\Report;
 #[CoversClass(SuppressedFormatter::class)]
 final class SuppressedFormatterTest extends TestCase
 {
+    #[Test]
+    public function itPublishesTheDocumentationAddressesInItsMeta(): void
+    {
+        $meta = $this->decode($this->format(new SuppressionComposition([])))['meta'];
+
+        self::assertSame(['version', 'package', 'timestamp', 'docs', 'llmsTxt'], array_keys($meta));
+        self::assertSame(ProductIdentity::docsUrl(), $meta['docs']);
+        self::assertSame(ProductIdentity::llmsTxtUrl(), $meta['llmsTxt']);
+    }
+
     #[Test]
     public function itNamesItselfSuppressedAndDefaultsToNoGrouping(): void
     {

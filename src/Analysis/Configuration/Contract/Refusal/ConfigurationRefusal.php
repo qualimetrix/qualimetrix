@@ -27,9 +27,10 @@ use Throwable;
  *
  * ClassRank measures how much of the graph flows into a type, and for the one
  * carried kind of exit code 3 that number counts the places the product refuses
- * bad input instead of accepting it. Splitting the kind to lower it would buy a
- * number and a second way to spell a refusal, which is what the single-kind
- * design exists to prevent.
+ * bad input instead of accepting it. CLI doors must use this carrier instead of
+ * folding empty values into defaults. Splitting the kind to lower the rank would
+ * buy a number and a second way to spell a refusal, which is what the
+ * single-kind design exists to prevent.
  */
 final class ConfigurationRefusal extends RuntimeException
 {

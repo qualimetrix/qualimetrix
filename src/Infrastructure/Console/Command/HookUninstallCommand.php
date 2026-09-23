@@ -18,6 +18,8 @@ final class HookUninstallCommand extends AbstractHookCommand
 {
     protected function configure(): void
     {
+        parent::configure();
+
         $this->addOption(
             'restore-backup',
             'r',
@@ -26,7 +28,7 @@ final class HookUninstallCommand extends AbstractHookCommand
         );
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output): int
+    protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         // Find .git directory
         $hookPath = $this->hookPath($output);

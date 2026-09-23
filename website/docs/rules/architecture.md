@@ -896,6 +896,7 @@ Class: App\Service\UserService
 
   Would also match (in declaration order):
     (none — the assignment is unique)
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 Example output for a shadowed class:
@@ -912,6 +913,7 @@ Class: App\Service\Foo
   Diagnostic hint:
     Class is shadowed: would have matched 'service' if 'any-foo' was declared later.
     See architecture.potential-shadow diagnostic for the broader picture.
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 Example output for a class whose membership the run could not decide — an `extends` / `implements` / `attributes` criterion naming something further up an inheritance chain that leaves `paths` (see [Membership beyond namespace patterns](#membership-beyond-namespace-patterns)):

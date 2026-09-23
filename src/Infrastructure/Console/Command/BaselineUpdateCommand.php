@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateDisposition;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
@@ -12,7 +11,6 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateResult;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -55,45 +53,36 @@ final class BaselineUpdateCommand extends BaselineCommand
         BaselineCommandDefinition::addBaselineFileArgument($this, 'Path of the baseline file to update in place');
         BaselineCommandDefinition::addMeasuredRunInput($this);
 
-        $this
-            ->addOption(
-                'force',
-                null,
-                InputOption::VALUE_NONE,
-                'Write even when this run does not cover the scope the baseline records',
-            )
-            ->setHelp(
-                'Replaces each entry with what its group reports now, but only where that'
-                . "\n" . 'is no more permissive than what the entry already accepted. A group'
-                . "\n" . 'that worsened is refused and its entry is written back unchanged.' . "\n\n"
-                . 'An identity that no longer reports anything is left alone: a vanished'
-                . "\n" . 'group is `baseline:cleanup`\'s business, and rewriting the entry to'
-                . "\n" . 'nothing would delete an acceptance by inference.',
-            );
+        BaselineCommandDefinition::addScopeOverrideOption($this);
+
+        $this->setHelp(self::withDocsPointer(
+            'Replaces each entry with what its group reports now, but only where that'
+            . "\n" . 'is no more permissive than what the entry already accepted. A group'
+            . "\n" . 'that worsened is refused and its entry is written back unchanged.' . "\n\n"
+            . 'An identity that no longer reports anything is left alone: a vanished'
+            . "\n" . 'group is `baseline:cleanup`\'s business, and rewriting the entry to'
+            . "\n" . 'nothing would delete an acceptance by inference.',
+        ));
     }
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         /** @var string $baselinePath */
         $baselinePath = $input->getArgument('baseline');
-        $force = $input->getOption('force') === true;
 
-        // The run first, then the file (ADR 0017): a `computed.*` channel resolves
-        // its shape and direction from configuration this run resolves, and a
-        // file read before it loads every such entry inert — which here means
-        // silently declining to tighten entries `check` applies normally.
-        $context = $this->baselineRun->measure($input, $output);
-        $baseline = $this->loader->load($baselinePath);
+        $measured = $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $baselinePath);
 
-        if (!$this->assertScopeCovers($context->scope, $baseline->scope, $force, $output)) {
+        if ($measured === null) {
             return self::FAILURE;
         }
 
-        $result = $this->updater->update($baseline, $context->findings(), $context->scope);
+        $context = $measured->context;
+
+        $result = $this->updater->update($measured->baseline, $context->findings(), $context->scope);
 
         self::report($result, $output);
 
-        if (!self::changed($baseline, $result->baseline)) {
+        if (!$result->changed) {
             $output->writeln('<info>No entry moved; the baseline is unchanged.</info>');
 
             return self::SUCCESS;
@@ -104,35 +93,6 @@ final class BaselineUpdateCommand extends BaselineCommand
         $output->writeln(\sprintf('<info>Baseline updated: %s</info>', $baselinePath));
 
         return self::SUCCESS;
-    }
-
-    /**
-     * Whether the update produced entries that differ from the loaded ones.
-     *
-     * Compared as the payloads that would be written rather than by counting
-     * `Updated` outcomes: an entry whose group reports exactly what it
-     * already recorded is legitimately "updated" and changes nothing, and
-     * rewriting the file for it would move `generated` on every run.
-     * {@see BaselineUpdater} preserves the loaded order, so a positional
-     * comparison is a comparison of the same entries.
-     */
-    private static function changed(Baseline $loaded, Baseline $updated): bool
-    {
-        return self::payloads($loaded) !== self::payloads($updated);
-    }
-
-    /**
-     * @return list<array<string, mixed>>
-     */
-    private static function payloads(Baseline $baseline): array
-    {
-        $payloads = [];
-
-        foreach ($baseline->entries as $entry) {
-            $payloads[] = $entry->toArray();
-        }
-
-        return $payloads;
     }
 
     private static function report(BaselineUpdateResult $result, OutputInterface $output): void

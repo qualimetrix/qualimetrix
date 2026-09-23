@@ -127,4 +127,23 @@ final class BaselineCommandDefinition
                 'Disable progress bar',
             );
     }
+
+    /**
+     * The override for `baseline:cleanup` and `baseline:update`'s scope guard
+     * (ADR 0017): only these two commands write into a file whose recorded
+     * scope a run might not cover, and only they need a way to write anyway.
+     *
+     * `baseline:generate` also declares a `--force`, but its meaning is
+     * unrelated — overwriting an existing destination file — so it is not
+     * this option and stays defined on that command directly.
+     */
+    public static function addScopeOverrideOption(Command $command): void
+    {
+        $command->addOption(
+            'force',
+            null,
+            InputOption::VALUE_NONE,
+            'Write even when this run does not cover the scope the baseline records',
+        );
+    }
 }

@@ -39,7 +39,7 @@ Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore	
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummary	Analysis.Evidence.ComputedMetrics.Health	1	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummaryBuilder	Analysis.Evidence.ComputedMetrics.Health	1	1
 Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface	Analysis.Evidence.Coupling	3	2
-Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency	Analysis.Evidence.DependencyModel	2	1
+Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency	Analysis.Evidence.DependencyModel	3	1
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface	Analysis.Evidence.DependencyModel	6	3
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	28	8
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyLocationInterface	Analysis.Evidence.DependencyModel	1	1
@@ -141,7 +141,7 @@ Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey	Analysis.Finding	49	14
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet	Analysis.Finding	48	14
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape	Analysis.Finding	48	14
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface	Analysis.Finding	1	1
-Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface	Analysis.Finding	43	16
+Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface	Analysis.Finding	44	16
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector	Analysis.Finding	8	4
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleShapeReader	Analysis.Finding	1	1
@@ -171,7 +171,7 @@ Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException	Analysis.Policy.B
 Qualimetrix\Analysis\Policy\Baseline\BaselineEntry	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator	Analysis.Policy.Baseline	2	2
-Qualimetrix\Analysis\Policy\Baseline\BaselineLoader	Analysis.Policy.Baseline	5	3
+Qualimetrix\Analysis\Policy\Baseline\BaselineLoader	Analysis.Policy.Baseline	6	3
 Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateDisposition	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateResult	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater	Analysis.Policy.Baseline	2	2
@@ -240,6 +240,7 @@ Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	10	5
 Qualimetrix\Core\Pattern\PatternMatch	Core.Neutral	1	1
 Qualimetrix\Core\Pattern\SelectorDefinition	Core.Neutral	9	5
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	4	3
+Qualimetrix\Core\ProductIdentity	Core.Neutral	22	3
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	22	8
 Qualimetrix\Core\Symbol\CallableKind	Core.Symbol	9	2
 Qualimetrix\Core\Symbol\DeclarationKey	Core.Symbol	3	2
@@ -254,10 +255,10 @@ Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	4	2
 Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	28	9
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	114	21
 Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	6	4
-Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	77	20
+Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	76	20
 Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	31	11
 Qualimetrix\Core\Time\ClockInterface	Core.Neutral	4	2
-Qualimetrix\Core\Version	Core.Neutral	9	2
+Qualimetrix\Core\Version	Core.Neutral	7	2
 Qualimetrix\Infrastructure\Ast\CachedFileParser	Infrastructure.Ast	1	1
 Qualimetrix\Infrastructure\Ast\PhpFileParser	Infrastructure.Ast	1	1
 Qualimetrix\Infrastructure\Ast\WorkerParserFactory	Infrastructure.Ast	1	1

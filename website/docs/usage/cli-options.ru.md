@@ -911,6 +911,13 @@ bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
 
 ```json
 {
+  "meta": {
+    "version": "0.26.0",
+    "package": "qmx",
+    "timestamp": "2026-01-15T10:30:00+00:00",
+    "docs": "https://qualimetrix.dev",
+    "llmsTxt": "https://qualimetrix.dev/llms.txt"
+  },
   "fqn": "App\\Service\\Foo",
   "assigned": { "layer": "any-foo", "criteria": ["pattern \"App\\**\\Foo\""] },
   "contendingMatches": [],
@@ -925,6 +932,7 @@ bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
 }
 ```
 
+- `meta` — тот же блок, с которого начинается `check --format=json`: `version` и `package` инструмента, `timestamp` прогона и адреса документации `docs` и `llmsTxt` (см. [Адреса документации в JSON-отчётах](output-formats.md#documentation-addresses)).
 - `assigned` — `null`, если ни один слой не совпал; тогда пусты и `contendingMatches`, и `shadowed`.
 - `shadowed` перечисляет совпадения после `shadowedBy` — первого совпадения, которое прогон установил, — в порядке объявления. Каждое проигрывает класс, как бы ни ответили слои, на которые прогон не смог ответить, а `reported` говорит, сообщает ли о нём `architecture.potential-shadow`. `shadowedBy` равен `null`, когда `shadowed` пуст, и не совпадает с `assigned`, когда перед ним стоит совпадение с неразрешённым `exclude:`.
 - `contendingMatches` в той же форме перечисляет все остальные совпадения после `assigned`: совпадения, чей `exclude:` остался без ответа, и — если такое стоит перед ним — `shadowedBy`. Кому из них достанется класс, зависит от этих клауз, поэтому `reported` всегда `false`. Вместе с `shadowed` это все совпадения, которые текстовый отчёт перечисляет после назначения.
@@ -1094,6 +1102,8 @@ Every rule also takes: suppress-namespace-channels, suppress-namespaces, suppres
 
 Usage: bin/qmx check --disable-rule=<name> | --only-rule=<name>
         bin/qmx check --rule-opt=<name>:<option>=<value>
+
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 Правила сгруппированы по категориям. Строка `options:` называет то, что

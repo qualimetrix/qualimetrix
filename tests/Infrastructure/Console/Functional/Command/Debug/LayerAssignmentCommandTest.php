@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
 use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
@@ -802,6 +803,9 @@ final class LayerAssignmentCommandTest extends TestCase
 
         self::assertSame(Command::SUCCESS, $exit);
         $decoded = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        // `meta` carries a run timestamp, so it is compared on its own.
+        self::assertIsArray($decoded['meta'] ?? null);
+        unset($decoded['meta']);
 
         self::assertSame([
             'fqn' => 'App\\Service\\Foo',
@@ -884,6 +888,9 @@ final class LayerAssignmentCommandTest extends TestCase
 
         self::assertSame(Command::SUCCESS, $exit);
         $decoded = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        // `meta` carries a run timestamp, so it is compared on its own.
+        self::assertIsArray($decoded['meta'] ?? null);
+        unset($decoded['meta']);
 
         self::assertSame([
             'fqn' => 'Other\\Place\\Thing',
@@ -1379,6 +1386,67 @@ final class LayerAssignmentCommandTest extends TestCase
             $this->sourcePath() . '/' . str_replace('\\', '_', $fqn) . '.php',
             $body,
         );
+    }
+
+    /**
+     * The text branch has several internal exits inside its own renderer
+     * (matched, no-layer, undecided and unique-match among them), but they all fall through to one
+     * call site in the command — this pins that the pointer reaches all of
+     * them by covering the matched case here and the no-layer case below.
+     */
+    #[Test]
+    public function itPrintsTheDocsPointerAfterATextReportForAMatchedClass(): void
+    {
+        $configPath = $this->writeConfig([
+            ['service', ['App\\Service\\**']],
+        ]);
+        $this->declareClasses(['App\\Service\\UserService']);
+
+        $tester = $this->newTester();
+        $tester->execute(['fqn' => 'App\\Service\\UserService', '--config' => $configPath]);
+
+        self::assertStringContainsString('Docs: ' . ProductIdentity::docsUrl(), $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itPrintsTheDocsPointerAfterATextReportForAnUnmatchedClass(): void
+    {
+        $configPath = $this->writeConfig([
+            ['controller', ['App\\Controller\\**']],
+        ]);
+        $this->declareClasses(['App\\Service\\UserService']);
+
+        $tester = $this->newTester();
+        $tester->execute(['fqn' => 'App\\Service\\UserService', '--config' => $configPath]);
+
+        self::assertStringContainsString('Assigned to: (no layer)', $tester->getDisplay());
+        self::assertStringContainsString('Docs: ' . ProductIdentity::docsUrl(), $tester->getDisplay());
+    }
+
+    /**
+     * The JSON branch shares the same call site as the text branch (see
+     * above), so this is the negative half of the same regression: an agent
+     * parsing `--format=json` must never see the pointer mixed into the
+     * document.
+     */
+    #[Test]
+    public function itOmitsTheDocsPointerFromJsonOutput(): void
+    {
+        $configPath = $this->writeConfig([
+            ['service', ['App\\Service\\**']],
+        ]);
+        $this->declareClasses(['App\\Service\\UserService']);
+
+        $tester = $this->newTester();
+        $tester->execute([
+            'fqn' => 'App\\Service\\UserService',
+            '--config' => $configPath,
+            '--format' => 'json',
+        ]);
+
+        $output = $tester->getDisplay();
+        self::assertStringNotContainsString('Docs:', $output);
+        json_decode($output, true, flags: \JSON_THROW_ON_ERROR);
     }
 
     private function newTester(): CommandTester

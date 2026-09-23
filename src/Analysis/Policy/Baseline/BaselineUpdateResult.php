@@ -16,9 +16,18 @@ final readonly class BaselineUpdateResult
     /**
      * @param list<BaselineEntryUpdateOutcome> $outcomes one per entry the loaded
      *                                                   baseline held, in that order
+     * @param bool $changed whether $baseline's entries serialize to anything different
+     *                      from the loaded ones — an entry can carry the `Updated`
+     *                      disposition while writing back the exact payload it already
+     *                      held, and that is not a change {@see BaselineWriter} should
+     *                      touch the file for. {@see BaselineUpdater} computes this
+     *                      alongside the entry it just wrote, rather than a caller
+     *                      re-deriving it from $outcomes or from a positional read of
+     *                      $baseline afterward
      */
     public function __construct(
         public Baseline $baseline,
         public array $outcomes,
+        public bool $changed,
     ) {}
 }

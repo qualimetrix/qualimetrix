@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -336,6 +337,20 @@ final class HintRendererTest extends TestCase
         // Report is empty (no findings), so --detail hint should be shown
         // Actually: !$report->isEmpty() means findings !== [], so for empty report detail hint is hidden
         self::assertStringNotContainsString('--detail', $output);
+    }
+
+    #[Test]
+    public function itAddsTheDocumentationPointerAsItsOwnLineBelowHints(): void
+    {
+        $report = $this->createNonEmptyReport();
+        $context = new FormatterContext();
+        $lines = [];
+
+        $this->renderer->render($report, $context, $this->color, $lines);
+
+        self::assertCount(2, $lines);
+        self::assertStringStartsWith('Hints: ', $lines[0]);
+        self::assertSame(ProductIdentity::pointerText(), $lines[1]);
     }
 
     private function createNonEmptyReport(): Report

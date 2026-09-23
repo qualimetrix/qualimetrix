@@ -350,6 +350,20 @@ Available tests:
  - Qualimetrix\Governance\ConsoleComposition\ErrorStreamContainerIdentityTest::itLeavesNoConsumerAbleToInventItsOwnOwner
  - Qualimetrix\Governance\ConsoleComposition\ErrorStreamSoleOwnerTest::itFindsNoSecondWriterIntoTheErrorStream
  - Qualimetrix\Governance\ConsoleComposition\ErrorStreamSoleOwnerTest::itKeepsEveryAllowedExceptionReal
+ - Qualimetrix\Governance\ConsoleComposition\HelpDocumentationPointerTest::itCarriesTheDocumentationPointerInItsHelp"baseline:cleanup"
+ - Qualimetrix\Governance\ConsoleComposition\HelpDocumentationPointerTest::itCarriesTheDocumentationPointerInItsHelp"baseline:explain"
+ - Qualimetrix\Governance\ConsoleComposition\HelpDocumentationPointerTest::itCarriesTheDocumentationPointerInItsHelp"baseline:generate"
+ - Qualimetrix\Governance\ConsoleComposition\HelpDocumentationPointerTest::itCarriesTheDocumentationPointerInItsHelp"baseline:rename-channels"
+ - Qualimetrix\Governance\ConsoleComposition\HelpDocumentationPointerTest::itCarriesTheDocumentationPointerInItsHelp"baseline:update"
+ - Qualimetrix\Governance\ConsoleComposition\HelpDocumentationPointerTest::itCarriesTheDocumentationPointerInItsHelp"check"
+ - Qualimetrix\Governance\ConsoleComposition\HelpDocumentationPointerTest::itCarriesTheDocumentationPointerInItsHelp"debug:layer-assignment"
+ - Qualimetrix\Governance\ConsoleComposition\HelpDocumentationPointerTest::itCarriesTheDocumentationPointerInItsHelp"directives"
+ - Qualimetrix\Governance\ConsoleComposition\HelpDocumentationPointerTest::itCarriesTheDocumentationPointerInItsHelp"graph:export"
+ - Qualimetrix\Governance\ConsoleComposition\HelpDocumentationPointerTest::itCarriesTheDocumentationPointerInItsHelp"hook:install"
+ - Qualimetrix\Governance\ConsoleComposition\HelpDocumentationPointerTest::itCarriesTheDocumentationPointerInItsHelp"hook:status"
+ - Qualimetrix\Governance\ConsoleComposition\HelpDocumentationPointerTest::itCarriesTheDocumentationPointerInItsHelp"hook:uninstall"
+ - Qualimetrix\Governance\ConsoleComposition\HelpDocumentationPointerTest::itCarriesTheDocumentationPointerInItsHelp"rules"
+ - Qualimetrix\Governance\ConsoleComposition\HelpDocumentationPointerTest::itRefusesWhenTheCommandSweepDisagreesWithTheBinaryMapCount
  - Qualimetrix\Governance\ConsoleComposition\MachineReadableFormatsRegistryTest::itAccountsForEveryVisibleFormatExactlyOnce
  - Qualimetrix\Governance\ConsoleComposition\MachineReadableFormatsRegistryTest::itClassifiesEveryVisiblyRegisteredFormat
  - Qualimetrix\Governance\ConsoleComposition\MachineReadableFormatsRegistryTest::itKnowsOnlyFormatsTheRegistryActuallyHas
@@ -428,6 +442,12 @@ Available tests:
  - Qualimetrix\Governance\DistributedPackage\ScratchTreeRefusesWhatItCannotRemoveTest::itNamesTheDirectoryItCannotReadInsteadOfCirclingOnIt
  - Qualimetrix\Governance\DistributedPackage\ScratchTreeRefusesWhatItCannotRemoveTest::itRefusesAPathItCannotCreate
  - Qualimetrix\Governance\DistributedPackage\ScratchTreeRefusesWhatItCannotRemoveTest::itReturnsAPathThatIsAlreadyResolved
+ - Qualimetrix\Governance\DocumentationCensus\DocumentationAddressSingleSourceTest::itSpellsTheDocumentationHostOnlyInProductIdentity
+ - Qualimetrix\Governance\DocumentationCensus\DocumentationAddressSingleSourceTest::itWalksANonEmptyPopulationForEveryRoot
+ - Qualimetrix\Governance\DocumentationCensus\LlmsIndexRegisteredSurfaceTest::itNamesEveryConfigurationRootKey
+ - Qualimetrix\Governance\DocumentationCensus\LlmsIndexRegisteredSurfaceTest::itNamesEveryPresetFormatAndDirective
+ - Qualimetrix\Governance\DocumentationCensus\LlmsIndexRegisteredSurfaceTest::itNamesEveryRegisteredCommand
+ - Qualimetrix\Governance\DocumentationCensus\LlmsIndexRegisteredSurfaceTest::itRefusesWhenCommandSweepDisagreesWithTheBinaryMap
  - Qualimetrix\Governance\DocumentationCensus\RegisteredFormatterDocumentationTest::itUsesRegisteredFormattersInHealthScoreDocumentation
  - Qualimetrix\Governance\FindingVocabulary\FindingFieldCensusTest::itCopiesEveryOtherFieldWhenItReportsItselfAsABreach
  - Qualimetrix\Governance\FindingVocabulary\FindingFilterStageMembershipCensusTest::itCoversEveryStageInTheMembershipTable
@@ -464,6 +484,7 @@ Available tests:
  - Qualimetrix\Governance\FormatOptionKeys\OutputFormatSchemaConsistencyTest::itRejectsDocumentationOnlySchemaDrift
  - Qualimetrix\Governance\FormatOptionKeys\OutputFormatSchemaConsistencyTest::itRejectsProductOnlySchemaDrift
  - Qualimetrix\Governance\FrameworkClassification\FrameworkClassificationSiteCountTest::itPinsTheNumberOfClassificationSitesTheUniverseMirrors
+ - Qualimetrix\Governance\GeneratedArtifactFreshness\HtmlBundleFreshnessTest::itMatchesAFreshBuildOfHtmlReportSrc
  - Qualimetrix\Governance\GeneratedArtifactFreshness\SuppressionSnapshotFreshnessTest::itMatchesAFreshSelfAnalysisOfSrc
  - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itDefinesEveryDefaultAtClassNamespaceAndProjectLevel
  - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itExpectedKeys
@@ -6539,6 +6560,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itAcceptsTheConfigurationThatDefinesTheSet"explain"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itAcceptsTheConfigurationThatDefinesTheSet"generate"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itAcceptsTheConfigurationThatDefinesTheSet"update"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itAdvertisesTheDocsAddressInItsHelp"cleanup"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itAdvertisesTheDocsAddressInItsHelp"explain"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itAdvertisesTheDocsAddressInItsHelp"generate"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itAdvertisesTheDocsAddressInItsHelp"rename-channels"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itAdvertisesTheDocsAddressInItsHelp"update"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itDeclaresNoExclusionOrSuppressionOption"cleanup"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itDeclaresNoExclusionOrSuppressionOption"explain"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itDeclaresNoExclusionOrSuppressionOption"generate"
@@ -6557,6 +6583,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itStillResolvesAChannelWhoseOptionsHoldOneBoundary
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineGenerateCommandTest::itNamesTheGroupsItCouldNotCapture
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineGenerateCommandTest::itOverwritesAnExistingBaselineUnderForce
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineGenerateCommandTest::itPrintsTheDocsPointerAfterWritingTheBaseline
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineGenerateCommandTest::itRefusesADanglingSymlinkWithoutForceAndLeavesItUntouched
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineGenerateCommandTest::itRefusesToForceOverADanglingSymlinkWithoutAnUnsafeFallback
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineGenerateCommandTest::itRefusesToForceOverAFileRewrittenDuringTheAnalysis
@@ -6592,6 +6619,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itCarriesAndReportsInJson
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itIsRegisteredAsAPublicServiceAndOfferedByTheBinary
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itOffersNoMeasuredRunInput
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itPrintsTheDocsPointerInTextOutputButNotInJson
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRunBeforeLoadTest::itLeavesAConfiguredComputedEntryAloneInCleanup
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRunBeforeLoadTest::itReportsAConfiguredComputedEntryInExplain
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRunBeforeLoadTest::itStillRefusesAnEntryOnAChannelNothingDeclares"cleanup"
@@ -6921,6 +6949,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itRefusesAMagnitudeEntryWhoseMeasuredGroupReportsNoFiniteNumber
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itRefusesAnEntryOnAChannelNoRuleDeclares
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itRefusesAnEntryWhoseShapeDisagreesWithItsChannel
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itReportsNoChangeWhenAnUpdatedEntryWritesBackTheSamePayload
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itReportsNoChangeWhenEveryEntryIsSkipped
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itStampsTheResultFromTheInjectedClock
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itStillNamesAnOrdinaryEntrysRefusalAWorsening
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itClassifiesCurrentBaselineOnlyAndUnknownSymbolsExplicitly
@@ -7797,6 +7827,13 @@ Available tests:
  - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itRefusesAnOverBudgetValue"regex"
  - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itRefusesAnOverBudgetValue"subtree"
  - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itRefusesAnUnknownKind
+ - Qualimetrix\Tests\Core\Unit\ProductIdentityTest::itAddressesADocumentationPageByItsCleanUrl
+ - Qualimetrix\Tests\Core\Unit\ProductIdentityTest::itCarriesNoConsoleMarkupInThePointerText
+ - Qualimetrix\Tests\Core\Unit\ProductIdentityTest::itReturnsExactlyTheDesignedPointerLine
+ - Qualimetrix\Tests\Core\Unit\ProductIdentityTest::itReturnsIdentityFieldsConsistentWithTheirOwnAccessors
+ - Qualimetrix\Tests\Core\Unit\ProductIdentityTest::itReturnsIdentityWithExactlyTheDesignedKeys
+ - Qualimetrix\Tests\Core\Unit\ProductIdentityTest::itReturnsTheDocsUrl
+ - Qualimetrix\Tests\Core\Unit\ProductIdentityTest::itReturnsTheLlmsTxtUrlUnderTheDocsUrl
  - Qualimetrix\Tests\Core\Unit\VersionTest::itReportsTheVersionOfTheQualimetrixPackage
  - Qualimetrix\Tests\Core\Unit\VersionTest::itReturnsANonEmptyVersionString
  - Qualimetrix\Tests\Infrastructure\Ast\Unit\CachedFileParserTest::itCachesAstFromTheSameSnapshotUsedForKeyGeneration
@@ -7968,7 +8005,9 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itAcceptsSymlinkedPath
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itRejectsNonExistentPath
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProjectScopedGateTest::itFailsAndReportsThroughAReportNarrowedToAnEmptyGitScope
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProjectScopedGateTest::itFailsAndReportsWithTheLayerViolationRuleSwitchedOff
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProjectScopedGateTest::itStillDropsAFileScopedFindingFromTheSameRun
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandTest::itAdvertisesTheDocsAddressInItsHelp
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandTest::itAnalyzesSimplePhpFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandTest::itAppliesSymbolHealthSuppressionWithoutHidingSiblingDimensions
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandTest::itDetectsComplexityFindings
@@ -8011,6 +8050,9 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itNamesTheShadowThatHoldsWhateverAnUnansweredExcludeAnswers
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itNamesUndecidedLayersInJsonToo
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itNormalisesALeadingBackslashInTheFqnArgument
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itOmitsTheDocsPointerFromJsonOutput
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itPrintsTheDocsPointerAfterATextReportForAMatchedClass
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itPrintsTheDocsPointerAfterATextReportForAnUnmatchedClass
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itPublishesAnUndecidedLayerBesideAnAssignmentThatStands
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itRefusesAnUnanalysedFqnIdenticallyWithAndWithoutALeadingBackslash
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itRefusesAnUnanalysedFqnWhileStillReportingNoLayerForAnAnalysedOne
@@ -8027,28 +8069,34 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itSeparatesAnUndecidedMembershipFromAnAnsweredNonMatch
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itShowsAnAssignmentWhoseExcludeCannotBeAnsweredWithItsDoubt
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itValidatesDynamicComputedSelectorsFromYamlBeforeResolvingAssignment
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itAdvertisesTheDocsAddressInItsHelp
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itDoesNotSpendTheBackupSlotOnItsOwnHook
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itFailsWhenHookExistsWithoutForceFlag
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itFailsWhenNotInGitRepository
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itInstallsPreCommitHookAsAnExecutableFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itInstallsWhereCoreHooksPathPoints
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itOverwritesExistingHookWithForceFlag
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itPrintsTheDocsPointerAfterInstalling
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itReadsNoScriptAndLeavesNoneBehind
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itRefusesADanglingSymlinkWithoutForce
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itRefusesWhenTheRunningBinaryCannotBeNamed
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itReplacesADanglingSymlinkInsteadOfWritingThroughIt
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itWritesAHookThatNamesTheBinaryThatInstalledIt
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itFailsWhenNotInGitRepository
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itPrintsTheDocsPointerAfterTheReport
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itReportsADanglingSymlinkRatherThanCallingItAbsent
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itReportsBackupExists
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itReportsHookNotInstalled
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itReportsInstalledHookAsAFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itReportsInstalledHookAsSymlink
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itSuppressesTheDocsPointerUnderQuiet
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itWarnsAboutNonExecutableHook
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itWarnsAboutThirdPartyHook
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookUninstallCommandTest::itAdvertisesTheDocsAddressInItsHelp
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookUninstallCommandTest::itFailsWhenNotInGitRepository
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookUninstallCommandTest::itInformsAboutBackupWithoutRestoringIt
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookUninstallCommandTest::itLeavesADanglingSymlinkAloneAndSaysWhy
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookUninstallCommandTest::itPrintsTheDocsPointerAfterRemovingTheHook
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookUninstallCommandTest::itRefusesToRemoveThirdPartyHook
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookUninstallCommandTest::itRemovesInstalledHook
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookUninstallCommandTest::itReportsNoBackupToRestore
@@ -8078,6 +8126,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesTheBannedChannelInsideEveryStageAfterSuppression
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itNoLongerLetsAFormWithoutARuleFilterSilenceTheBannedChannel
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itNoLongerLetsTheNonPrimaryCopyProduceAnUnusedDirectiveInstead
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itOmitsTheDocsPointerFromJsonOutput
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itPrintsTheDocsPointerInTextOutput
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itPrintsTheErrorEnvelopeInJson
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itPrintsTheSweepScopeInBothFormats
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesANonExistentPath
@@ -8133,6 +8183,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FormatOptionKeyRefusalTest::itNamesEveryKnownKeyInTheRefusal
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FormatOptionKeyRefusalTest::itRefusesAFormatOptKeyNoFormatterReads
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FormatOptionKeyRefusalTest::itStillAppliesAKeyTheSelectedFormatterReads
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itAdvertisesTheDocsAddressOnlyInHelpNeverInStdout
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsDependencyGraphAsJsonToFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsDependencyGraphAsJsonToStdout
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsDependencyGraphToDotFormat
@@ -8157,6 +8208,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itSupportsDirectionOption
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itSupportsNamespaceFiltering
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itSupportsNoClustersOption
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\JsonDocumentMetaParityTest::itCarriesTheJsonFormatsMetaKeyForKey"baseline:rename-channels"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\JsonDocumentMetaParityTest::itCarriesTheJsonFormatsMetaKeyForKey"debug:layer-assignment"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\JsonDocumentMetaParityTest::itCarriesTheJsonFormatsMetaKeyForKey"directives"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\JsonDocumentMetaParityTest::itPublishesTheDocumentationAddressesInTheJsonFormatsMeta
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleExclusionStatsWiringTest::itKeysThePerRuleBreakdownByTheProducerOfTheFindingNotTheRuleThatRan
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleExclusionStatsWiringTest::itOmitsPerRuleExclusionDetailsWithoutShowSuppressed
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleExclusionStatsWiringTest::itSurfacesPerRuleExclusionStatsFromARealRunThroughTheContainer
@@ -8318,10 +8373,13 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itRestoresStaticOnlyChannelsBeforeAnyConfigurationResolution
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itRestoresThePreviousErrorHandlerAfterApplyFailure
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itRestoresThePreviousErrorHandlerAfterResetFailure
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itAppendsTheDocumentationPointerToGetHelp
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itAppendsTheDocumentationPointerToTheListCommandsOwnHelp
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itChangesTheWorkingDirectoryWhenWorkingDirIsGiven
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itDemotesSilentVerbosityToQuiet
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itFoldsTheMessageIntoAnOutputWithNoErrorChannelRatherThanDroppingIt
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itIgnoresTheCaughtThrowablesOwnCode
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itLeavesGetLongVersionFreeOfTheDocumentationPointer
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itLeavesTheRefusalSentenceReadableAboveALiveProgressFrame
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itLeavesTheWorkingDirectoryUnchangedWhenWorkingDirIsOmitted
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itReturnsInternalErrorExitCodeForAConsoleLogicException
@@ -8367,9 +8425,11 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliSelectorDecoderTest::itRefusesMalformedCliSelectorScalars"empty value"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliSelectorDecoderTest::itRefusesMalformedCliSelectorScalars"invalid pcre"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliSelectorDecoderTest::itRefusesMalformedCliSelectorScalars"unknown kind"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\HookStatusCommandTest::itAdvertisesTheDocsAddressInItsHelp
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\HookStatusCommandTest::itDefinesNoArguments
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\HookStatusCommandTest::itDefinesNoCustomOptions
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\HookStatusCommandTest::itIsAddressedAsHookStatus
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itAdvertisesTheDocsAddressInItsHelp
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itConfiguresTheGroupOption
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itDisplaysCliAliases
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itDisplaysNoRulesMessageWhenNoRulesAreRegistered
@@ -8382,6 +8442,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itListsRulesUnderGroupHeaders
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itNamesTheFrameworkKeysOnceInTheFooterRatherThanInEveryRuleBody
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itPrintsNoOptionsLineForARuleWhoseDeclarationAcceptsNothing
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itPrintsTheDocsPointerInsideTheUsageBlock
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itPrintsTheMetricsAChannelDeclaresItJudges
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itSaysNothingAboutAChannelThatJudgesNoMetric
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itSetsTheCommandNameAndDescription
@@ -8495,6 +8556,11 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAFallbackRefusalWithTheCaughtMessageUnframed
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAnInternalErrorAsAnEnvelopeUnderAJsonFormat
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAnInternalErrorWithTheInternalHeaderAndCodeOne
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAppendsTheDocumentationPointerOnAConfigurationRefusal
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAppendsTheDocumentationPointerOnAFallbackRefusal
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAppendsTheDocumentationPointerOnAnInternalError
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheDocumentationPointerOutOfTheJsonEnvelope
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheDocumentationPointerVisibleUnderQuiet
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheEnvelopeParseableForAMessageCarryingConsoleMarkup
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheEnvelopeParseableForAMessageContainingInvalidUtf8
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheEnvelopeVisibleUnderQuiet
@@ -8994,6 +9060,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itUsesShortLabels
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itUsesShortLabelsInClusterMode
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itAggregatesEdges
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itCarriesTheDocumentationAddresses
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itExportsValidJson
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itFiltersEdgesWhenNodesAreFiltered
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itFiltersExcludeNamespaces
@@ -9303,6 +9370,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\GithubActionsFormatterTest::itReturnsNoneAsDefaultGroupBy
  - Qualimetrix\Tests\Reporting\Unit\Formatter\GithubActionsFormatterTest::itUsesCodeAsTitle
  - Qualimetrix\Tests\Reporting\Unit\Formatter\GithubActionsFormatterTest::itUsesNoticeCommandForInfoFinding
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itCarriesTheDocumentationPointerWhenHealthDataIsPresent
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itDoesNotShowContributorsInNarrowTerminal
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itFormatsOnNarrowTerminal
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itFormatsWithAllDimensions
@@ -9346,6 +9414,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itProducesEmptyFileWhenAttachingLocationNone
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itSkipsFileFindingDuringPartition
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itSkipsUnknownNodePathsOnAttach
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itCarriesTheFooterElementTheFooterScriptLooksUp
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itEmbedsCssInline
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itEmbedsHintsData
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itEmbedsJsInline
@@ -9384,6 +9453,8 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itIncludesHealthScoresInSummary
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itIncludesOnlyHealthComputedMetricDefinitions
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itIncludesProjectMetadataWithScopedReporting
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itIncludesTheDocumentationAddressesInProjectMetadata
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itKeepsMainJsFooterKeysInAgreementWithProjectMetadata
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itNullsNanAndInfMetricValues
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itNullsNanMetricValueInFinding
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itOmitsChildrenFromArrayWhenEmpty
@@ -9491,6 +9562,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\MetricsJsonFormatterTest::itFormatsWithNullMetrics
  - Qualimetrix\Tests\Reporting\Unit\Formatter\MetricsJsonFormatterTest::itProducesValidJson
  - Qualimetrix\Tests\Reporting\Unit\Formatter\MetricsJsonFormatterTest::itPublishesTheDeclarationKindAndKeepsTheBucketOrder
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\MetricsJsonFormatterTest::itPublishesTheDocumentationAddressesWithoutDisplacingEitherVersion
  - Qualimetrix\Tests\Reporting\Unit\Formatter\MetricsJsonFormatterTest::itReturnsDefaultGroupByNone
  - Qualimetrix\Tests\Reporting\Unit\Formatter\MetricsJsonFormatterTest::itReturnsMetricsName
  - Qualimetrix\Tests\Reporting\Unit\Formatter\MetricsJsonFormatterTest::itSkipsEmptyMetrics
@@ -9537,6 +9609,8 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifSchemaValidationTest::itConformsToTheSarifSchemaForAReportWithRelatedLocations
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifSchemaValidationTest::itConformsToTheSarifSchemaForAnEmptyReport
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifSchemaValidationTest::itConformsToTheSarifSchemaWhenAReportCarriesAMeasuredBreach
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifSchemaValidationTest::itConformsToTheSarifSchemaWithTheDocumentationAddressesOnTheDriver
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifSchemaValidationTest::itRefusesTheLlmsTxtAddressOutsideThePropertiesBag
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itCalculatesScopedDebt
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itColorsSummaryBoldForErrors
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itColorsSummaryBoldForInfoOnly
@@ -9579,6 +9653,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HealthBarRendererTest::itRendersScaleExplanationWhenDifferentThresholds
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HealthBarRendererTest::itRendersUnicodeBar
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HealthBarRendererTest::itSaysOneSharedCoverageStatementOnce
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HintRendererTest::itAddsTheDocumentationPointerAsItsOwnLineBelowHints
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HintRendererTest::itAlwaysShowsHtmlFormatHint
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HintRendererTest::itEscapesBackslashesInNamespaceHint
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HintRendererTest::itHidesHintDetailInDetailMode
@@ -9652,8 +9727,11 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itCountsEachSuppressedEntryUnderItsOwnMechanism
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itNamesItselfSuppressedAndDefaultsToNoGrouping
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itPublishesNeverMatchedSuppressorsSeparatelyFromSuppressedFindings
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itPublishesTheDocumentationAddressesInItsMeta
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itPublishesTheMultisetNoteSoCountsAreNotMisreadAsFindings
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itTreatsAMissingCompositionAsEmptyRatherThanFailing
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itCarriesTheDocumentationPointerInDetailMode
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itCarriesTheDocumentationPointerInFlatMode
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itColorsSummaryGreenForNoFindings
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itColorsSummaryRedForErrors
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itFormatsClassLevelFinding
@@ -9683,6 +9761,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itFormatsGroupedByFile
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itFormatsGroupedByRule
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itFormatsGroupedBySeverity
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itInheritsTheDocumentationPointerFromTextFormatter
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itOutputsDebtBreakdown
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itReturnsDefaultGroupByFile
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itReturnsTextVerboseName

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter;
 
 use LogicException;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -94,11 +95,18 @@ final class MetricsJsonFormatter implements FormatterInterface
             }
         }
 
+        $identity = ProductIdentity::identity();
+
         $data = [
             'version' => self::VERSION,
             'toolVersion' => Version::get(),
             'package' => self::PACKAGE,
             'timestamp' => gmdate('c'),
+            // Only the two keys this root does not already carry: its own
+            // `version` is the export-format version, so merging the product
+            // identity block wholesale would overwrite it with the tool's.
+            'docs' => $identity['docs'],
+            'llmsTxt' => $identity['llmsTxt'],
             'symbols' => $symbols,
             'coverage' => $report->coverage?->toArray(),
             'summary' => [

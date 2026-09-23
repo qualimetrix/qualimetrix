@@ -39,7 +39,7 @@ Baseline/
 ├── RunScope.php                 # VO: a run's analysed paths in the portable form the file records, plus the coverage predicate the scope guard reads
 │
 ├── BaselineUpdater.php          # `baseline:update`: direction-aware monotonic tightening
-├── BaselineUpdateResult.php     # VO: the updated baseline plus one outcome per entry
+├── BaselineUpdateResult.php     # VO: the updated baseline, one outcome per entry, and whether anything actually changed
 ├── BaselineEntryUpdateOutcome.php # VO: what update did to one entry, and why
 ├── BaselineUpdateDisposition.php  # Enum: updated / refused / skipped
 ├── BaselineUpdateRefusalReason.php # Enum: why update refused to tighten an entry
@@ -287,6 +287,16 @@ comparison: a `mode: suppress` entry is tested like any other — otherwise
 ceiling never compares that entry's numbers at `check` time. `mode` and
 `Baseline::$inertEntries` are carried forward verbatim; `update` does not read
 either to decide anything.
+
+**`BaselineUpdateResult::$changed`** answers "does the file need rewriting",
+which is a narrower question than `$outcomes` alone can answer: an entry
+whose measured group reports exactly what it already recorded still carries
+the `Updated` disposition, so counting dispositions would rewrite (and move
+`generated` on) a file nothing actually moved in. `update()` computes it by
+comparing each written entry's serialized form against the loaded one as it
+builds the result, so the command that decides whether to call
+`BaselineWriter` reads one field instead of re-deriving the comparison from
+`$baseline->entries` and an ordering invariant of this class.
 
 **The recorded `scope` is not overwritten by a narrower run.** `update` writes
 the run's own scope only when it covers what the file already records, and

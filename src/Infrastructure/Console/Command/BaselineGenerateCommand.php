@@ -84,13 +84,13 @@ final class BaselineGenerateCommand extends BaselineCommand
                 InputOption::VALUE_NONE,
                 'Overwrite an existing baseline file, discarding the acceptances it records',
             )
-            ->setHelp(
+            ->setHelp(self::withDocsPointer(
                 'Captures every finding the configured analysis reports — the same set'
                 . "\n" . '`qmx check` measures — and records the level each group is accepted at.' . "\n\n"
                 . 'Exclusions and `@qmx-ignore` come from qmx.yaml and from the source itself,'
                 . "\n" . 'never from this command: a set a flag could move is a set this command'
                 . "\n" . 'and `qmx check` could disagree about.',
-            );
+            ));
     }
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int

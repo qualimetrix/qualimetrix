@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Unit\Command;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
 use Qualimetrix\Infrastructure\Console\RunningBinaryLocator;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
@@ -47,5 +48,18 @@ final class HookStatusCommandTest extends TestCase
         $definition = $command->getDefinition();
 
         self::assertSame([], $definition->getArguments());
+    }
+
+    /**
+     * `hook:status` never overrides `configure()`, so this pins that it
+     * inherits {@see \Qualimetrix\Infrastructure\Console\Command\AbstractHookCommand}'s
+     * own `--help` rather than silently losing it to a future override.
+     */
+    #[Test]
+    public function itAdvertisesTheDocsAddressInItsHelp(): void
+    {
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+
+        self::assertStringContainsString('Docs: ' . ProductIdentity::llmsTxtUrl(), $command->getHelp());
     }
 }

@@ -78,6 +78,7 @@ Top issues by impact
 82 violations (19 errors, 63 warnings) | Tech debt: 6h 20min (54.3 min/kLOC to fix)
 
 Hints: --detail to see violations (top 200) | --namespace='subtree:App\Billing\Invoice' to drill down | --format=html -o report.html for full report
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 Флаг, управляющий числом записей в `Top issues by impact`, описан на странице [CLI Options](cli-options.md).
@@ -119,11 +120,16 @@ bin/qmx check src/ --detail=50
 **Пример вывода:**
 
 ```
-src/Service/UserService.php:42: warning[code-smell.error-suppression]: Error suppression (@) on find() - handle errors explicitly
-src/Service/UserService.php: warning[complexity.ccn]: Cyclomatic complexity is 15, exceeds threshold of 10. Consider extracting methods or simplifying conditions (UserService::calculate)
-src/Repository/OrderRepository.php: warning[coupling.class-rank]: ClassRank is 0.041, exceeds threshold of 0.037 (scaled for 45 classes). This class is a critical hub — changes have wide impact (OrderRepository)
+src/Repository/OrderRepository.php: error[coupling.class-rank]: ClassRank is 0.5000, exceeds threshold of 0.3536 (scaled for 2 classes). This class is a critical hub — changes have wide impact (OrderRepository)
+src/Service/UserService.php: error[coupling.class-rank]: ClassRank is 0.5000, exceeds threshold of 0.3536 (scaled for 2 classes). This class is a critical hub — changes have wide impact (UserService)
+src/Repository/OrderRepository.php: warning[complexity.ccn]: Cyclomatic complexity is 10, exceeds threshold of 10. Consider extracting methods or simplifying conditions (OrderRepository::findByCriteria)
+src/Service/UserService.php:9: warning[code-smell.error-suppression]: Error suppression (@) on file_get_contents() - handle errors explicitly
+src/Service/UserService.php: warning[complexity.ccn]: Cyclomatic complexity is 14, exceeds threshold of 10. Consider extracting methods or simplifying conditions (UserService::calculate)
 
-0 error(s), 3 warning(s) in 45 file(s)
+Qualimetrix 0.26.0: 2 error(s), 3 warning(s) in 2 file(s)
+Analysis complete: 2 analyzed, 0 generated file(s) excluded.
+Technical debt: 2h 10min
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 **Формат строки:** есть три формы строк — в зависимости от того, к чему относится находка.
@@ -159,6 +165,8 @@ src/Repository/OrderRepository.php: warning[coupling.class-rank]: ClassRank is 0
 
 **Ключи верхнего уровня:** `meta`, `summary`, `coverage`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, плюс `violationGroups`, когда передан `--group-by` — без него ключа нет вовсе, это не пустой объект.
 
+`meta` называет инструмент, записавший документ: `version`, `package`, `timestamp` и два адреса документации — `docs`, сайт документации, и `llmsTxt`, индекс для ИИ-агентов. Оба адреса есть в каждом JSON-отчёте, у которого есть объект-конверт; см. исключения в [Адреса документации в JSON-отчётах](#documentation-addresses).
+
 <!-- llms:skip-begin -->
 **Пример вывода:**
 
@@ -167,7 +175,9 @@ src/Repository/OrderRepository.php: warning[coupling.class-rank]: ClassRank is 0
     "meta": {
         "version": "1.0.0",
         "package": "qmx",
-        "timestamp": "2025-01-15T10:30:00+00:00"
+        "timestamp": "2025-01-15T10:30:00+00:00",
+        "docs": "https://qualimetrix.dev",
+        "llmsTxt": "https://qualimetrix.dev/llms.txt"
     },
     "summary": {
         "filesAnalyzed": 45,
@@ -385,7 +395,7 @@ bin/qmx check src/ --format=json --no-progress > report.json
 
 **Когда использовать:** Пользовательские дашборды, анализ трендов, пайплайны data science или создание собственных критериев качества на основе сырых метрик.
 
-**Ключи верхнего уровня:** `version`, `toolVersion`, `package`, `timestamp`, `symbols[]` (каждый с `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`. Типа `callable` не существует; одна запись `project` агрегирует статистические метрики по всему проекту (min/max/avg/p95 по всем символам) и имеет `line` равным `null`.
+**Ключи верхнего уровня:** `version`, `toolVersion`, `package`, `timestamp`, `docs`, `llmsTxt`, `symbols[]` (каждый с `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`. Типа `callable` не существует; одна запись `project` агрегирует статистические метрики по всему проекту (min/max/avg/p95 по всем символам) и имеет `line` равным `null`. Здесь `version` — версия формата этой выгрузки, а `toolVersion` — версия Qualimetrix; `docs` и `llmsTxt` — те же адреса документации, что `json` публикует в `meta`.
 
 <!-- llms:skip-begin -->
 **Пример вывода (сокращённо):**
@@ -396,6 +406,8 @@ bin/qmx check src/ --format=json --no-progress > report.json
     "toolVersion": "0.26.0",
     "package": "qmx",
     "timestamp": "2025-01-15T10:30:00+00:00",
+    "docs": "https://qualimetrix.dev",
+    "llmsTxt": "https://qualimetrix.dev/llms.txt",
     "symbols": [
         {
             "type": "file",
@@ -511,8 +523,11 @@ SARIF 2.1.0: `runs[].results[]` с `ruleId`, `ruleIndex` (позиция пра�
 `runs[].invocations[0]` сообщает `executionSuccessful` (см. таблицу coverage ниже), а `runs[].originalUriBaseIds` объявляет базу `%SRCROOT%`, на которую ссылается каждый `artifactLocation.uriBaseId`, разрешая её в корень анализируемого проекта как `file://`-URI.
 
 `runs[].tool.driver` описывает сам инструмент: `name`, `version`,
-`informationUri` и каталог `rules[]`, в который указывает `ruleIndex` каждой
-записи. Каждая запись каталога —
+`informationUri` (сайт документации, `https://qualimetrix.dev`), мешок
+`properties`, в котором `properties.llmsTxt` — индекс для ИИ-агентов, и каталог
+`rules[]`, в который указывает `ruleIndex` каждой записи. Адрес лежит в
+`properties`, потому что SARIF закрывает `driver` для ключей, которых не
+определяет сам, а `properties` — его точка расширения. Каждая запись каталога —
 `{"id": "...", "name": "...", "shortDescription": {"text": "..."}, "fullDescription": {"text": "..."}, "helpUri": "...", "defaultConfiguration": {"level": "..."}}`.
 
 Каждая запись `runs[].invocations[]` —
@@ -541,6 +556,10 @@ SARIF 2.1.0: `runs[].results[]` с `ruleId`, `ruleIndex` (позиция пра�
                 "driver": {
                     "name": "Qualimetrix",
                     "version": "0.26.0",
+                    "informationUri": "https://qualimetrix.dev",
+                    "properties": {
+                        "llmsTxt": "https://qualimetrix.dev/llms.txt"
+                    },
                     "rules": [...]
                 }
             },
@@ -786,6 +805,8 @@ xdg-open report.html  # Linux
 указывающую на удалённый файл, невозможно отличить от записи, которую вообще
 никогда не писали.
 
+`meta` — тот же блок, что у `json`, включая `docs` и `llmsTxt`.
+
 **Ключи верхнего уровня:** `meta`, `note`, `mechanisms` (все семь, всегда
 присутствуют), `byMechanism` (счётчик на каждый механизм, включая нулевые),
 `suppressed` (само мультимножество), `neverMatched`.
@@ -798,7 +819,9 @@ xdg-open report.html  # Linux
     "meta": {
         "version": "dev-main",
         "package": "qmx",
-        "timestamp": "2026-08-29T09:14:02+00:00"
+        "timestamp": "2026-08-29T09:14:02+00:00",
+        "docs": "https://qualimetrix.dev",
+        "llmsTxt": "https://qualimetrix.dev/llms.txt"
     },
     "note": "suppressed is a multiset of mechanism x finding, not a set of findings: one finding can appear under more than one mechanism, so byMechanism counts do not sum to the number of distinct findings suppressed.",
     "mechanisms": [
@@ -866,6 +889,36 @@ bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
 ```
 
 ---
+
+## Адреса документации в JSON-отчётах {#documentation-addresses}
+
+Каждый JSON-отчёт из таблицы ниже называет, где лежит документация, чтобы
+скрипт или ИИ-агент, у которого есть только вывод, нашёл остальное: `docs` —
+сайт документации, `llmsTxt` — индекс для ИИ-агентов.
+
+| Документ                                 | Где адреса                                                                             |
+| ---------------------------------------- | -------------------------------------------------------------------------------------- |
+| `check --format=json`                    | `meta.docs`, `meta.llmsTxt`                                                            |
+| `check --format=suppressed`              | `meta.docs`, `meta.llmsTxt`                                                            |
+| `check --format=metrics`                 | `docs`, `llmsTxt` верхнего уровня, рядом с `version` (формат выгрузки) и `toolVersion` |
+| `check --format=sarif`                   | `runs[].tool.driver.informationUri` и `runs[].tool.driver.properties.llmsTxt`          |
+| `directives --format=json`               | `meta.docs`, `meta.llmsTxt`                                                            |
+| `baseline:rename-channels --format=json` | `meta.docs`, `meta.llmsTxt`                                                            |
+| `debug:layer-assignment --format=json`   | `meta.docs`, `meta.llmsTxt`                                                            |
+| `graph:export --format=json`             | `meta.docs`, `meta.llmsTxt`, рядом со своим `meta.version` (формат графа)              |
+
+Три команды вне `check` начинают документ с того же объекта `meta`, что и
+`json`, — `version`, `package`, `timestamp`, `docs`, `llmsTxt` — перед своими
+собственными ключами. `graph:export --format=json` дополняет тот же блок
+`meta`, который уже был в его конверте, сохраняя свой `version` (формат графа,
+а не версию инструмента) — так же, как `metrics` сохраняет свой.
+
+Адреса есть не в каждом JSON-выводе. `gitlab` — голый массив, в нём нет объекта
+для них; у DOT-вывода `graph:export` нет конверта вовсе; отказ — это всегда
+ровно `{"error": ..., "exit_code": ...}`; а baseline-файл — который пишут
+`baseline:generate`, `update`, `cleanup` и переписывает на месте
+`baseline:rename-channels` — это версионированный входной артефакт, который
+инструмент читает обратно, со своей схемой, а не отчёт.
 
 ## Покрытие анализа во всех форматах
 

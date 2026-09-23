@@ -30,7 +30,7 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
  * shadows every later one whatever those clauses answer, even when it is not
  * the assigned layer itself.
  *
- * @internal Consumed by {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerEvidenceCollector}
+ * @internal Consumed by {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector}
  *           and {@see \Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy::inspect()}.
  */
 final class LayerShadowing

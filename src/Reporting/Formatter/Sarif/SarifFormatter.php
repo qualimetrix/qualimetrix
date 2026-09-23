@@ -6,6 +6,7 @@ namespace Qualimetrix\Reporting\Formatter\Sarif;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\Formatter\AcceptedLevelNarrator;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
@@ -41,7 +42,12 @@ final class SarifFormatter implements FormatterInterface
                 'driver' => [
                     'name' => 'Qualimetrix',
                     'version' => Version::get(),
-                    'informationUri' => SarifRuleCollector::INFORMATION_URI,
+                    'informationUri' => ProductIdentity::docsUrl(),
+                    // `properties` is SARIF's extension point: a bare key on
+                    // `driver` would be refused by schema-strict consumers.
+                    'properties' => [
+                        'llmsTxt' => ProductIdentity::llmsTxtUrl(),
+                    ],
                     'rules' => $rules,
                 ],
             ],

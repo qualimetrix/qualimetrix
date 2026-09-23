@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Tests\Infrastructure\Console\Support\SplitStreamConsoleOutput;
@@ -244,6 +245,86 @@ final class RefusalPresenterTest extends TestCase
         $decoded = json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertSame(3, $decoded['exit_code']);
         self::assertSame($message, $decoded['error']);
+    }
+
+    /**
+     * The free-text stderr shape gains the documentation pointer; the JSON
+     * envelope stays closed at `{error, exit_code}` (covered separately
+     * below).
+     */
+    #[Test]
+    public function itAppendsTheDocumentationPointerOnAConfigurationRefusal(): void
+    {
+        $output = self::terminalOutput();
+        $refusal = ConfigurationRefusal::aboutInput(
+            ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--group'),
+            'unknown group "bogus"',
+        );
+
+        $this->presenter()->refusal($output, null, $refusal);
+
+        self::assertStringContainsString(ProductIdentity::pointerText(), $output->errorOutputContent());
+    }
+
+    #[Test]
+    public function itAppendsTheDocumentationPointerOnAFallbackRefusal(): void
+    {
+        $output = self::terminalOutput();
+
+        $this->presenter()->fallbackRefusal($output, null, new RuntimeException('bad value'));
+
+        self::assertStringContainsString(ProductIdentity::pointerText(), $output->errorOutputContent());
+    }
+
+    #[Test]
+    public function itAppendsTheDocumentationPointerOnAnInternalError(): void
+    {
+        $output = self::terminalOutput();
+
+        $this->presenter()->internalError($output, null, new RuntimeException('boom'));
+
+        self::assertStringContainsString(ProductIdentity::pointerText(), $output->errorOutputContent());
+    }
+
+    /**
+     * {@see self::itKeepsTheRefusalSentenceVisibleUnderQuiet()}'s sibling for
+     * the pointer specifically: `--quiet` does not apply to a refusal, and
+     * that includes the pointer riding along with it.
+     */
+    #[Test]
+    public function itKeepsTheDocumentationPointerVisibleUnderQuiet(): void
+    {
+        $output = self::terminalOutput(OutputInterface::VERBOSITY_QUIET);
+        $refusal = ConfigurationRefusal::aboutInput(
+            ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--group'),
+            'unknown group "bogus"',
+        );
+
+        $this->presenter()->refusal($output, null, $refusal);
+
+        self::assertStringContainsString(ProductIdentity::pointerText(), $output->errorOutputContent());
+    }
+
+    /**
+     * The JSON envelope stays closed at two keys: `present()` never appends
+     * the pointer to `writeEnvelope()`'s output.
+     */
+    #[Test]
+    public function itKeepsTheDocumentationPointerOutOfTheJsonEnvelope(): void
+    {
+        $output = self::terminalOutput();
+        $refusal = ConfigurationRefusal::aboutInput(
+            ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--group'),
+            'unknown group "bogus"',
+        );
+
+        $this->presenter()->refusal($output, 'json', $refusal);
+
+        self::assertSame(
+            ['error', 'exit_code'],
+            array_keys(json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR)),
+        );
+        self::assertStringNotContainsString('qualimetrix.dev', $output->standardOutputContent());
     }
 
     #[Test]

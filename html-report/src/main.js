@@ -820,7 +820,7 @@ function renderActiveView(node) {
 // Footer
 // ---------------------------------------------------------------------------
 
-function renderFooter(project) {
+export function renderFooter(project) {
   const footer = document.getElementById('report-footer');
   if (!footer) return;
 
@@ -830,7 +830,23 @@ function renderFooter(project) {
     hour: '2-digit', minute: '2-digit',
   });
 
-  footer.textContent = `Generated ${formatted} | Qualimetrix ${project.qmxVersion}`;
+  footer.textContent = '';
+  footer.append(`Generated ${formatted} | Qualimetrix ${project.qmxVersion}`);
+
+  // Absent in older/partial report-data — degrade to the plain line above
+  // rather than throwing.
+  if (project.docs && project.llmsTxt) {
+    footer.append(' · Docs: ', createFooterLink(project.docs), ' · AI agents: ', createFooterLink(project.llmsTxt));
+  }
+}
+
+function createFooterLink(url) {
+  const link = document.createElement('a');
+  link.href = url;
+  link.textContent = url;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  return link;
 }
 
 // Auto-init when DOM is ready

@@ -28,7 +28,7 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
     private const string LAYER_ASSIGNMENT_COMMAND = 'Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand';
     private const string LAYER_ASSIGNMENT_RESOLVER = 'Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver';
     private const string LAYER_DECLARATION_VALIDATOR = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerDeclarationValidator';
-    private const string LAYER_EVIDENCE_COLLECTOR = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerEvidenceCollector';
+    private const string LAYER_EVIDENCE_COLLECTOR = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\LayerEvidenceCollector';
     private const string LAYER_VIOLATION_RULE = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule';
     private const string UNASSIGNED_CLASS_RULE = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\UnassignedClassRule';
 
@@ -104,8 +104,14 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
         $options = new Reference(RuleOptionsCompilerPass::optionsServiceIdForRule(self::LAYER_VIOLATION_RULE));
         $unassignedClassOptions = new Reference(RuleOptionsCompilerPass::optionsServiceIdForRule(self::UNASSIGNED_CLASS_RULE));
 
+        // Named, because both gates share one parameter type and a swap would
+        // still type-check while silencing `architecture.unassigned-class`.
         $container->register(self::LAYER_EVIDENCE_COLLECTOR)
-            ->setArguments([$options, $unassignedClassOptions, new Reference(self::ARCHITECTURE_POLICY)]);
+            ->setArguments([
+                '$layerViolation' => $options,
+                '$unassignedClass' => $unassignedClassOptions,
+                '$processor' => new Reference(self::ARCHITECTURE_POLICY),
+            ]);
 
         $container->register(self::LAYER_DECLARATION_VALIDATOR)
             ->setArguments([new Reference(self::LAYER_EVIDENCE_COLLECTOR), $options])

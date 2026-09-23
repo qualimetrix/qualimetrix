@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Formatter\Detail\DetailedFindingRenderer;
 use Qualimetrix\Reporting\Formatter\TextFormatter;
@@ -86,7 +87,7 @@ final class TextFormatterTest extends TestCase
 
         $lines = explode("\n", rtrim($output, "\n"));
 
-        self::assertCount(4, $lines);
+        self::assertCount(5, $lines);
         self::assertSame(
             'src/Service/UserService.php: error[cyclomatic-complexity]: Cyclomatic complexity of 25 exceeds threshold (UserService::calculateDiscount)',
             $lines[0],
@@ -94,6 +95,7 @@ final class TextFormatterTest extends TestCase
         self::assertSame('', $lines[1]);
         self::assertStringContainsString('1 error(s), 0 warning(s) in 1 file(s)', $lines[2]);
         self::assertStringStartsWith('Technical debt:', $lines[3]);
+        self::assertStringStartsWith('Docs:', $lines[4]);
         self::assertStringEndsWith("\n", $output);
     }
 
@@ -184,12 +186,13 @@ final class TextFormatterTest extends TestCase
 
         $lines = explode("\n", rtrim($output, "\n"));
 
-        self::assertCount(5, $lines);
+        self::assertCount(6, $lines);
         self::assertStringStartsWith('src/Service/UserService.php: error[cyclomatic-complexity]:', $lines[0]);
         self::assertStringStartsWith('src/Service/UserService.php: warning[cyclomatic-complexity]:', $lines[1]);
         self::assertSame('', $lines[2]);
         self::assertStringContainsString('1 error(s), 1 warning(s) in 1 file(s)', $lines[3]);
         self::assertStringStartsWith('Technical debt:', $lines[4]);
+        self::assertStringStartsWith('Docs:', $lines[5]);
         self::assertStringEndsWith("\n", $output);
     }
 
@@ -603,6 +606,39 @@ final class TextFormatterTest extends TestCase
         self::assertStringContainsString('complexity.ccn', $output);
         self::assertStringContainsString('cohesion.lcom', $output);
         self::assertStringContainsString('... and 2 more', $output);
+    }
+
+    /**
+     * Regression pin for the flat/--detail split: the pointer must reach both
+     * of `format()`'s branches, not just the one a naive edit happens to touch.
+     */
+    #[Test]
+    public function itCarriesTheDocumentationPointerInFlatMode(): void
+    {
+        $report = ReportBuilder::create()
+            ->filesAnalyzed(5)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, $this->plainContext);
+
+        self::assertStringContainsString(ProductIdentity::pointerText(), $output);
+    }
+
+    #[Test]
+    public function itCarriesTheDocumentationPointerInDetailMode(): void
+    {
+        $report = ReportBuilder::create()
+            ->filesAnalyzed(5)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $detailContext = new FormatterContext(useColor: false, detailLimit: 0);
+        $output = $this->formatter->format($report, $detailContext);
+
+        self::assertStringContainsString(ProductIdentity::pointerText(), $output);
     }
 
     /** @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations */

@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
+namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation;
 
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowing;
 use Qualimetrix\Core\Symbol\SymbolLevel;
-use Qualimetrix\Core\Symbol\SymbolPath;
 use WeakMap;
 
 /**
@@ -39,6 +39,8 @@ use WeakMap;
  * — the policy not prepared at all — is deliberately not one of them: it
  * throws, because memoising its emptiness would silence both verdicts for the
  * whole run.
+ *
+ * @qmx-threshold coupling.instability warning=0.82 -- Ca=3, Ce=13 (I=0.8125): three verdicts read this collector, and it names what the shared walk reads (run context, prepared policy, layer-matching primitives, the options contract both consumers' gates answer through) and the typed values it emits. Four of those edges are the value objects that replaced positional tuples and array shapes: `ClassWalkEvidence` and `EdgeWalkEvidence` are new, while `ForbiddenEdge` and `ShadowedClass` now carry, as counted edges of their own, the `Dependency` and `MatchedCriterion` the shapes named only in PHPDoc. The threshold is inclusive: 0.82 keeps today's 0.8125 silent and reports the next efferent edge, which takes Ce to 14 and instability to 0.824.
  */
 final class LayerEvidenceCollector
 {
@@ -51,10 +53,14 @@ final class LayerEvidenceCollector
      * `architecture.unassigned-class` became a producer of its own, and this
      * collector is where the disjunction between them belongs — it is the one
      * place that knows both.
+     *
+     * Typed as the generic options contract because each one's gate is all
+     * the walk reads of it: naming the two classes would point this directory
+     * back at the verdicts that read it.
      */
     public function __construct(
-        private readonly LayerViolationOptions $options,
-        private readonly UnassignedClassOptions $unassignedClass,
+        private readonly RuleOptionsInterface $layerViolation,
+        private readonly RuleOptionsInterface $unassignedClass,
         private readonly ArchitecturePolicy $processor,
     ) {
         $this->memo = new WeakMap();
@@ -90,7 +96,7 @@ final class LayerEvidenceCollector
         // the exact coupling the split exists to remove. Publication stays
         // each consumer's own decision: the rule, the validator and the
         // unassigned-class rule each check their own gate before emitting.
-        if (!$this->options->isEnabled() && !$this->unassignedClass->isEnabled()) {
+        if (!$this->layerViolation->isEnabled() && !$this->unassignedClass->isEnabled()) {
             return null;
         }
 
@@ -119,39 +125,37 @@ final class LayerEvidenceCollector
         // Graph binding already happened inside ArchitecturePolicy::prepare()
         // per ADR 0008 §2. The registry's ClassContextFactory therefore sees
         // the current run's graph; no rebind needed here.
-        [$assignedHits, $symbolSets, $shadowEvidence, $uncoveredClasses, $analysedDeclarations, $undecidableClasses, $doubtedClasses] = $this->collectClassEvidence(
-            $architecture,
-            $context,
-        );
+        $classWalk = $this->collectClassEvidence($architecture, $context);
+        $edgeWalk = $this->collectEdgeEvidence($architecture, $context);
 
-        [$forbiddenEdges, $coverageState, $edgeAssignedHits, $edgeSymbolSets] = $this->collectEdgeEvidence($architecture, $context);
-        $coverageState['classes'] += $uncoveredClasses;
+        $coverageState = $edgeWalk->coverageState;
+        $coverageState['classes'] += $classWalk->uncoveredClasses;
         // The class walk books every analysed class that is undecided or in
         // doubt, whatever the coverage mode, so an edge end it did not book
         // was not analysed. Taken before the merges below, which are what
         // erase the difference.
-        $coverageState['undecidableOutsidePaths'] = array_diff_key($coverageState['undecidable'], $undecidableClasses);
-        $coverageState['undecidable'] += $undecidableClasses;
-        $coverageState['doubtedOutsidePaths'] = array_diff_key($coverageState['doubted'], $doubtedClasses);
-        $coverageState['doubted'] += $doubtedClasses;
+        $coverageState['undecidableOutsidePaths'] = array_diff_key($coverageState['undecidable'], $classWalk->undecidableClasses);
+        $coverageState['undecidable'] += $classWalk->undecidableClasses;
+        $coverageState['doubtedOutsidePaths'] = array_diff_key($coverageState['doubted'], $classWalk->doubtedClasses);
+        $coverageState['doubted'] += $classWalk->doubtedClasses;
 
         // A layer matched only as one end of a dependency edge (e.g. a vendor
         // namespace outside `paths:`, never a class in the analysed set) is
         // still "reached" — merge edge-side hits into the class-side hit maps
         // so `architecture.unreachable-layer` doesn't contradict
         // `architecture.layer-violation` about the very same layer.
-        $assignedHits = self::mergeHits($assignedHits, $edgeAssignedHits);
+        $symbolSets = $classWalk->symbolSets;
         foreach ($symbolSets as $column => $sets) {
-            $symbolSets[$column] = self::mergeMatchedSymbols($sets, $edgeSymbolSets[$column]);
+            $symbolSets[$column] = self::mergeMatchedSymbols($sets, $edgeWalk->symbolSets[$column]);
         }
 
         return new LayerEvidence(
             architecture: $architecture,
-            forbiddenEdges: $forbiddenEdges,
-            assignedHits: $assignedHits,
+            forbiddenEdges: $edgeWalk->forbiddenEdges,
+            assignedHits: self::mergeHits($classWalk->assignedHits, $edgeWalk->assignedHits),
             symbolSets: $symbolSets,
-            shadowEvidence: $shadowEvidence,
-            unassigned: ['classes' => $uncoveredClasses, 'analysed' => $analysedDeclarations],
+            shadowEvidence: $classWalk->shadowEvidence,
+            unassigned: ['classes' => $classWalk->uncoveredClasses, 'analysed' => $classWalk->analysedDeclarations],
             coverageState: $coverageState,
         );
     }
@@ -187,46 +191,50 @@ final class LayerEvidenceCollector
     }
 
     /**
-     * Walks `metrics->all(SymbolLevel::Class_)` once and collects four local
-     * structures:
+     * Walks `metrics->all(SymbolLevel::Class_)` once into a
+     * {@see ClassWalkEvidence}; what its fields feed and why they have the
+     * shape they do:
      *
      * 1. `assignedHits` — per-layer count of classes that ended up in that
-     *    layer (feeds `architecture.unreachable-layer`), and `matchedSymbols`
-     *    — per-layer set of the distinct classes whose criteria the layer
+     *    layer (feeds `architecture.unreachable-layer`), and the `matched`
+     *    column of `symbolSets` — per-layer set of the distinct classes whose criteria the layer
      *    matched at all, winning or not (feeds
      *    `architecture.pending-layer-matched`, which is silent exactly where
      *    a layer matched nothing — see
-     *    {@see DeclaredLayerReachability::pendingLayersMatched()}).
-     * 2. `shadowEvidence` — per (assigned, shadowed) pair, list of evidence
+     *    {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DeclaredLayerReachability::pendingLayersMatched()}).
+     * 2. The `excluded` column of `symbolSets` — per-layer set of the distinct classes the
+     *    layer's `exclude:` clause removed (feeds
+     *    `architecture.unmatched-exclude`).
+     * 3. `shadowEvidence` — per (assigned, shadowed) pair, list of evidence
      *    entries carrying the class FQN plus the specific criterion descriptors
      *    that matched on each side (feeds `architecture.potential-shadow`
      *    without re-walking the layer list at emission time). Descriptors
      *    carry the criterion kind (pattern / suffix / attribute / implements
      *    / extends) so the message can name the actual cause of the shadow.
-     * 3. `uncoveredClasses` — canonical logical class key to display FQN for
+     * 4. `uncoveredClasses` — canonical logical class key to display FQN for
      *    every analysed class outside all declared layers. Canonical keys make
      *    the later merge with dependency-edge coverage deterministic and
      *    deduplicate a class observed through both repository and graph views.
      *    Materialised only when {@see materializesUncovered()} says a
      *    consumer exists, because the map is the size of the unclassified
      *    codebase.
-     * 4. `analysedDeclarations` — how many class-like declarations the walk
+     * 5. `analysedDeclarations` — how many class-like declarations the walk
      *    saw, the denominator `architecture.unassigned-class` reports its
      *    percentage against.
-     * 5. `undecidableClasses` — the subset of `uncoveredClasses` that is
+     * 6. `undecidableClasses` — the subset of `uncoveredClasses` that is
      *    outside every layer only because the run could not answer some
      *    layer's criteria about it: a chain that left the analysed set, or a
      *    symbol whose own declaration the run never read. Kept apart because
      *    the two gaps ask different things of the reader — one is closed by
      *    declaring a layer, the other is not closed by anything the author
      *    writes in `layers:`.
-     * 6. `doubtedClasses` — analysed classes that ARE assigned while a layer
+     * 7. `doubtedClasses` — analysed classes that ARE assigned while a layer
      *    bearing on the assignment could not be answered
      *    ({@see \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry::undecidedLayers()}
      *    decides which do): the assignment stands and the doubt is published
      *    beside it.
      *
-     * 5 and 6 are booked whatever the coverage mode, unlike 3: they are the
+     * 6 and 7 are booked whatever the coverage mode, unlike 4: they are the
      * size of the doubt rather than of the unclassified codebase, and
      * `architecture.doubted-assignment` reads them in every mode.
      *
@@ -244,13 +252,11 @@ final class LayerEvidenceCollector
      * traits and enums included. The blind spot is therefore a declaration no
      * collector recorded any class-level metric for: it is absent here and
      * counts as assigned.
-     *
-     * @return array{0: array<string, int>, 1: array{matched: array<string, array<string, true>>, excluded: array<string, array<string, true>>, unanswered: array<string, array<string, true>>, undecided: array<string, array<string, true>>, contended: array<string, array<string, true>>, ownsIfExcluded: array<string, array<string, true>>}, 2: array<string, array<string, list<array{fqn: string, assignedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion}>>>, 3: array<string, string>, 4: int, 5: array<string, string>, 6: array<string, string>}
      */
     private function collectClassEvidence(
         ArchitectureConfiguration $architecture,
         AnalysisContext $context,
-    ): array {
+    ): ClassWalkEvidence {
         $registry = $architecture->registry();
         $materializeUncovered = $this->materializesUncovered($architecture);
 
@@ -268,7 +274,7 @@ final class LayerEvidenceCollector
             $unansweredSymbols[$layerName] = [];
         }
 
-        /** @var array<string, array<string, list<array{fqn: string, assignedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion}>>> $shadowEvidence */
+        /** @var array<string, array<string, list<ShadowedClass>>> $shadowEvidence */
         $shadowEvidence = [];
         $uncoveredClasses = [];
         $undecidableClasses = [];
@@ -306,13 +312,13 @@ final class LayerEvidenceCollector
                 if ($materializeUncovered) {
                     $uncoveredClasses[$classSymbol->symbolPath->toCanonical()] = $classSymbol->symbolPath->toString();
                 }
-                $undecidableClasses = self::tallyUnansweredEnd($undecidableClasses, $undecidedLayers, $classSymbol->symbolPath);
+                $undecidableClasses = self::tallyUnansweredEnd($undecidableClasses, $undecidedLayers, $classSymbol->symbolPath->toCanonical(), $classSymbol->symbolPath->toString());
 
                 continue;
             }
 
             $assigned = $matches[0];
-            $doubtedClasses = self::tallyUnansweredEnd($doubtedClasses, $undecidedLayers, $classSymbol->symbolPath);
+            $doubtedClasses = self::tallyUnansweredEnd($doubtedClasses, $undecidedLayers, $classSymbol->symbolPath->toCanonical(), $classSymbol->symbolPath->toString());
             $assignedHits[$assigned->layerName] = ($assignedHits[$assigned->layerName] ?? 0) + 1;
             $matchedSymbols = self::tallyMatchedEnd($matchedSymbols, $matches, $classSymbol->symbolPath->toCanonical());
 
@@ -329,17 +335,17 @@ final class LayerEvidenceCollector
             }
             $classFqn = $classSymbol->symbolPath->toString();
             foreach (LayerShadowing::reportableShadows($established) as $shadowed) {
-                $shadowEvidence[$shadowing->layerName][$shadowed->layerName][] = [
-                    'fqn' => $classFqn,
-                    'assignedCriterion' => $shadowing->primaryCriterion(),
-                    'shadowedCriterion' => $shadowed->primaryCriterion(),
-                ];
+                $shadowEvidence[$shadowing->layerName][$shadowed->layerName][] = new ShadowedClass(
+                    $classFqn,
+                    $shadowing->primaryCriterion(),
+                    $shadowed->primaryCriterion(),
+                );
             }
         }
 
-        return [
-            $assignedHits,
-            [
+        return new ClassWalkEvidence(
+            assignedHits: $assignedHits,
+            symbolSets: [
                 'matched' => $matchedSymbols,
                 'excluded' => $excludedSymbols,
                 'unanswered' => $unansweredSymbols,
@@ -347,12 +353,12 @@ final class LayerEvidenceCollector
                 'contended' => $contendedSymbols,
                 'ownsIfExcluded' => $ownsIfExcludedSymbols,
             ],
-            $shadowEvidence,
-            $uncoveredClasses,
-            $analysedDeclarations,
-            $undecidableClasses,
-            $doubtedClasses,
-        ];
+            shadowEvidence: $shadowEvidence,
+            uncoveredClasses: $uncoveredClasses,
+            analysedDeclarations: $analysedDeclarations,
+            undecidableClasses: $undecidableClasses,
+            doubtedClasses: $doubtedClasses,
+        );
     }
 
     /**
@@ -395,21 +401,22 @@ final class LayerEvidenceCollector
      *
      * @return array<string, string>
      */
-    private static function tallyUnansweredEnd(array $map, array $undecidedLayers, SymbolPath $symbol): array
+    private static function tallyUnansweredEnd(array $map, array $undecidedLayers, string $canonical, string $display): array
     {
         if ($undecidedLayers !== []) {
-            $map[$symbol->toCanonical()] = $symbol->toString();
+            $map[$canonical] = $display;
         }
 
         return $map;
     }
 
     /**
-     * Walks the dependency graph and records the edges the allow-list rejects,
-     * the coverage-state struct used by `architecture.coverage-gap` (counts of
-     * unmatched ends + the set of unclassified class FQNs), a per-layer
-     * assignment count, and a per-layer set of the distinct symbols matched at
-     * either end of an edge.
+     * Walks the dependency graph into an {@see EdgeWalkEvidence}: the edges the
+     * allow-list rejects, the coverage-state struct used by
+     * `architecture.coverage-gap` (counts of unmatched ends + the set of
+     * unclassified class FQNs, and the undecidable and doubted ends), a
+     * per-layer assignment count, and the same six per-layer symbol-set
+     * columns the class walk fills, at either end of an edge.
      *
      * The hit map exists because {@see collectClassEvidence()} only walks
      * `metrics->all(SymbolLevel::Class_)` — classes in the analysed path set.
@@ -425,10 +432,8 @@ final class LayerEvidenceCollector
      * fills: {@see LayerEvidence::reachedCounts()} decides which of it counts,
      * because a criterion goes unanswered about a symbol the run never reads
      * in every run, typo or not.
-     *
-     * @return array{0: list<array{dependency: \Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency, fromMatch: LayerMatch, toMatch: LayerMatch}>, 1: array{sourceEdges: int, targetEdges: int, classes: array<string, string>, undecidable: array<string, string>, doubted: array<string, string>}, 2: array<string, int>, 3: array{matched: array<string, array<string, true>>, excluded: array<string, array<string, true>>, unanswered: array<string, array<string, true>>, undecided: array<string, array<string, true>>, contended: array<string, array<string, true>>, ownsIfExcluded: array<string, array<string, true>>}}
      */
-    private function collectEdgeEvidence(ArchitectureConfiguration $architecture, AnalysisContext $context): array
+    private function collectEdgeEvidence(ArchitectureConfiguration $architecture, AnalysisContext $context): EdgeWalkEvidence
     {
         $forbidden = [];
         $sourceEdges = 0;
@@ -446,12 +451,12 @@ final class LayerEvidenceCollector
 
         $graph = $context->dependencyGraph;
         if ($graph === null) {
-            return [
-                $forbidden,
-                ['sourceEdges' => 0, 'targetEdges' => 0, 'classes' => [], 'undecidable' => [], 'doubted' => []],
-                $assignedHits,
-                ['matched' => [], 'excluded' => [], 'unanswered' => [], 'undecided' => [], 'contended' => [], 'ownsIfExcluded' => []],
-            ];
+            return new EdgeWalkEvidence(
+                forbiddenEdges: $forbidden,
+                coverageState: ['sourceEdges' => 0, 'targetEdges' => 0, 'classes' => [], 'undecidable' => [], 'doubted' => []],
+                assignedHits: $assignedHits,
+                symbolSets: ['matched' => [], 'excluded' => [], 'unanswered' => [], 'undecided' => [], 'contended' => [], 'ownsIfExcluded' => []],
+            );
         }
 
         $registry = $architecture->registry();
@@ -480,9 +485,9 @@ final class LayerEvidenceCollector
                 $undecidedSymbols = self::tallyExcludedEnd($undecidedSymbols, $undecidedLayers, $end->toCanonical());
                 $contendedSymbols = self::tallyExcludedEnd($contendedSymbols, $registry->contenders($end), $end->toCanonical());
                 if ($match === null) {
-                    $undecidable = self::tallyUnansweredEnd($undecidable, $undecidedLayers, $end);
+                    $undecidable = self::tallyUnansweredEnd($undecidable, $undecidedLayers, $end->toCanonical(), $end->toString());
                 } else {
-                    $doubted = self::tallyUnansweredEnd($doubted, $undecidedLayers, $end);
+                    $doubted = self::tallyUnansweredEnd($doubted, $undecidedLayers, $end->toCanonical(), $end->toString());
                     $ownsIfExcludedSymbols = self::tallyOwnerIfExcluded(
                         $ownsIfExcludedSymbols,
                         $match,
@@ -500,14 +505,14 @@ final class LayerEvidenceCollector
                 continue;
             }
 
-            $forbidden[] = ['dependency' => $dependency, 'fromMatch' => $fromMatch, 'toMatch' => $toMatch];
+            $forbidden[] = new ForbiddenEdge($dependency, $fromMatch, $toMatch);
         }
 
-        return [
-            $forbidden,
-            ['sourceEdges' => $sourceEdges, 'targetEdges' => $targetEdges, 'classes' => $classes, 'undecidable' => $undecidable, 'doubted' => $doubted],
-            $assignedHits,
-            [
+        return new EdgeWalkEvidence(
+            forbiddenEdges: $forbidden,
+            coverageState: ['sourceEdges' => $sourceEdges, 'targetEdges' => $targetEdges, 'classes' => $classes, 'undecidable' => $undecidable, 'doubted' => $doubted],
+            assignedHits: $assignedHits,
+            symbolSets: [
                 'matched' => $matchedSymbols,
                 'excluded' => $excludedSymbols,
                 'unanswered' => $unansweredSymbols,
@@ -515,7 +520,7 @@ final class LayerEvidenceCollector
                 'contended' => $contendedSymbols,
                 'ownsIfExcluded' => $ownsIfExcludedSymbols,
             ],
-        ];
+        );
     }
 
     /**

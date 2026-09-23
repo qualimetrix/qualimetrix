@@ -65,8 +65,8 @@ rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Find
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Policy/Architecture/Layer/AnalysedDeclarations.php	Qualimetrix\Analysis\Policy\Architecture\Layer	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Pattern/CompiledSelector.php	Qualimetrix\Core\Pattern	error	1
+rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/ProductIdentity.php	Qualimetrix\Core	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Symbol/CallableKind.php	Qualimetrix\Core\Symbol	error	1
-rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Version.php	Qualimetrix\Core	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Infrastructure/Serializer/IgbinarySerializer.php	Qualimetrix\Infrastructure\Serializer	error	1
 rule-namespace-suppression	coupling.instability	coupling.instability	src/Analysis/Evidence/Coupling/AbstractnessCollector.php	Qualimetrix\Analysis\Evidence\Coupling	warning	1
 rule-namespace-suppression	health.cohesion	health.cohesion	(no file)	Qualimetrix\Analysis\Configuration\Contract\Refusal	error	1
@@ -206,12 +206,11 @@ rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Finding/S
 rule-path-suppression	health.cohesion	health.cohesion	src/Analysis/Configuration/Contract/Refusal/ConfigurationOrigin.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	warning	1
 rule-path-suppression	health.cohesion	health.cohesion	src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	warning	1
 rule-path-suppression	health.cohesion	health.cohesion	src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	warning	1
-rule-path-suppression	health.cohesion	health.cohesion	src/Infrastructure/Console/Application.php	Qualimetrix\Infrastructure\Console\Application	error	1
+rule-path-suppression	health.cohesion	health.cohesion	src/Infrastructure/Console/Application.php	Qualimetrix\Infrastructure\Console\Application	warning	1
 rule-path-suppression	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/BaselineCleanupCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand	warning	1
 rule-path-suppression	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/BaselineExplainCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand	warning	1
 rule-path-suppression	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/BaselineGenerateCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand	warning	1
 rule-path-suppression	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/BaselineRenameChannelsCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineRenameChannelsCommand	warning	1
-rule-path-suppression	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/BaselineUpdateCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	warning	1
 rule-path-suppression	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php	Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand	warning	1
 rule-path-suppression	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/GraphExportCommand.php	Qualimetrix\Infrastructure\Console\Command\GraphExportCommand	warning	1
 rule-path-suppression	size.property-count	size.property-count	src/Analysis/Evidence/Size/MethodCountMetrics.php	Qualimetrix\Analysis\Evidence\Size\MethodCountMetrics	error	1
@@ -222,5 +221,7 @@ suppression	src/Analysis/Evidence/Prioritization/Impact/ClassRankIndex.php	healt
 suppression	src/Analysis/Policy/Architecture/Configuration/LayerCriterionNormalizer.php	health.cohesion	src/Analysis/Policy/Architecture/Configuration/LayerCriterionNormalizer.php	Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerCriterionNormalizer	error	1
 suppression	src/Analysis/Policy/Inline/Directive/Audit/AuthoredDirectiveGroup.php	health.cohesion	src/Analysis/Policy/Inline/Directive/Audit/AuthoredDirectiveGroup.php	Qualimetrix\Analysis\Policy\Inline\Directive\Audit\AuthoredDirectiveGroup	warning	1
 suppression	src/Infrastructure/Ast/CachedFileParser.php	code-smell.empty-catch	src/Infrastructure/Ast/CachedFileParser.php	src/Infrastructure/Ast/CachedFileParser.php	error	1
+suppression	src/Infrastructure/Console/Command/AbstractHookCommand.php	health.cohesion	src/Infrastructure/Console/Command/AbstractHookCommand.php	Qualimetrix\Infrastructure\Console\Command\AbstractHookCommand	warning	1
+suppression	src/Infrastructure/Console/Command/BaselineCommand.php	health.cohesion	src/Infrastructure/Console/Command/BaselineCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineCommand	warning	1
 suppression	src/Infrastructure/Console/RunningBinaryLocator.php	code-smell.superglobals	src/Infrastructure/Console/RunningBinaryLocator.php	src/Infrastructure/Console/RunningBinaryLocator.php	warning	2
 suppression	src/Reporting/FindingProjection/FindingProjector.php	coupling.instability	src/Reporting/FindingProjection/FindingProjector.php	Qualimetrix\Reporting\FindingProjection\FindingProjector	warning	1

@@ -130,6 +130,7 @@
         "enumeration:directives:check": "php scripts/enumerate-inline-directives.php src --check",
         "suppression-snapshot": "php scripts/generate-suppression-snapshot.php",
         "suppression-snapshot:check": "php scripts/generate-suppression-snapshot.php --check",
+        "html-bundle:check": "php scripts/check-html-bundle-freshness.php",
         "input-doors:grid": "php scripts/generate-input-door-table.php",
         "input-doors:grid:check": "php scripts/generate-input-door-table.php --check",
         "input-doors": [
@@ -231,6 +232,7 @@
             "@enumeration:runtime-channels:check",
             "@enumeration:directives:check",
             "@suppression-snapshot:check",
+            "@html-bundle:check",
             "@input-doors:grid:check",
             "@promise-effect:p1-set:check",
             "@promise-effect:grid:check"
@@ -268,6 +270,7 @@
         "enumeration:renames:check": "Fail if enumeration-renames.tsv is stale against a fresh measurement, without writing",
         "suppression-snapshot": "Regenerate docs/internal/generated/suppression/{composition,inert}.tsv from a self-analysis of src/",
         "suppression-snapshot:check": "Fail if the suppression snapshot is stale against a fresh self-analysis, without writing",
+        "html-bundle:check": "Fail if html-report/dist/report.min.js was not built from the current html-report/src/, without writing",
         "selfcheck": "Validate modular-architecture governance, then run Qualimetrix on its own source code",
         "selfcheck:analysis": "Run Qualimetrix on its own source code after governance freshness has already been checked",
         "check": "Everything below, in the order a failure is cheapest to read",

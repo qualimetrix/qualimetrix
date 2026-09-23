@@ -907,6 +907,13 @@ bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
 
 ```json
 {
+  "meta": {
+    "version": "0.26.0",
+    "package": "qmx",
+    "timestamp": "2026-01-15T10:30:00+00:00",
+    "docs": "https://qualimetrix.dev",
+    "llmsTxt": "https://qualimetrix.dev/llms.txt"
+  },
   "fqn": "App\\Service\\Foo",
   "assigned": { "layer": "any-foo", "criteria": ["pattern \"App\\**\\Foo\""] },
   "contendingMatches": [],
@@ -921,6 +928,7 @@ bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
 }
 ```
 
+- `meta` is the same block `check --format=json` opens with: the tool's `version`, `package`, the run's `timestamp`, and the documentation addresses `docs` and `llmsTxt` (see [Documentation addresses in JSON reports](output-formats.md#documentation-addresses)).
 - `assigned` is `null` when no layer matched; then `contendingMatches` and `shadowed` are empty too.
 - `shadowed` lists the matches after `shadowedBy`, the first match the run established, in declaration order. Each loses the class whichever way the layers the run could not answer answer, and `reported` says whether `architecture.potential-shadow` reports it. `shadowedBy` is `null` when `shadowed` is empty, and is not `assigned` when a match whose `exclude:` went unanswered stands in front of it.
 - `contendingMatches` lists, in the same form, every other match after `assigned`: the matches whose `exclude:` went unanswered and, when one stands in front of it, `shadowedBy`. Which of them owns the class depends on those clauses, so `reported` is always `false`. Together with `shadowed` it is every match the text report lists after the assignment.
@@ -1089,6 +1097,8 @@ Every rule also takes: suppress-namespace-channels, suppress-namespaces, suppres
 
 Usage: bin/qmx check --disable-rule=<name> | --only-rule=<name>
         bin/qmx check --rule-opt=<name>:<option>=<value>
+
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 Rules are grouped by category. `options:` names what the rule accepts in its

@@ -2357,6 +2357,10 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerRoutingGuidance"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\ForbiddenEdge"
         }
       ]
     },
@@ -7369,7 +7373,7 @@
         },
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerEvidenceCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\LayerEvidenceCollector"
         },
         {
           "owner": "Analysis.Policy.Architecture",
@@ -8870,6 +8874,10 @@
         },
         {
           "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\LayerEvidenceCollector"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\UnassignedClassOptions"
         },
         {
@@ -10241,20 +10249,6 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerEvidence": {
-      "path": "src/Analysis/Policy/Architecture/LayerViolation/LayerEvidence.php",
-      "kind": "class",
-      "owner": "Analysis.Policy.Architecture",
-      "visibility": "internal",
-      "consumers": []
-    },
-    "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerEvidenceCollector": {
-      "path": "src/Analysis/Policy/Architecture/LayerViolation/LayerEvidenceCollector.php",
-      "kind": "class",
-      "owner": "Analysis.Policy.Architecture",
-      "visibility": "internal",
-      "consumers": []
-    },
     "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerRoutingGuidance": {
       "path": "src/Analysis/Policy/Architecture/LayerViolation/LayerRoutingGuidance.php",
       "kind": "class",
@@ -10278,6 +10272,48 @@
     },
     "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule": {
       "path": "src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\ClassWalkEvidence": {
+      "path": "src/Analysis/Policy/Architecture/LayerViolation/Observation/ClassWalkEvidence.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\EdgeWalkEvidence": {
+      "path": "src/Analysis/Policy/Architecture/LayerViolation/Observation/EdgeWalkEvidence.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\ForbiddenEdge": {
+      "path": "src/Analysis/Policy/Architecture/LayerViolation/Observation/ForbiddenEdge.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\LayerEvidence": {
+      "path": "src/Analysis/Policy/Architecture/LayerViolation/Observation/LayerEvidence.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\LayerEvidenceCollector": {
+      "path": "src/Analysis/Policy/Architecture/LayerViolation/Observation/LayerEvidenceCollector.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\ShadowedClass": {
+      "path": "src/Analysis/Policy/Architecture/LayerViolation/Observation/ShadowedClass.php",
       "kind": "class",
       "owner": "Analysis.Policy.Architecture",
       "visibility": "internal",
@@ -10530,7 +10566,7 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineUpdateCommand"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\LoadedBaselineRun"
         }
       ]
     },
@@ -10747,6 +10783,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCleanupCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCommand"
         },
         {
           "owner": "Infrastructure.Console",
@@ -14433,7 +14473,7 @@
         },
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerEvidenceCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\LayerEvidenceCollector"
         },
         {
           "owner": "Analysis.Policy.Architecture",
@@ -14745,10 +14785,6 @@
         },
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerEvidenceCollector"
-        },
-        {
-          "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\OwnedLayerTargets"
         },
         {
@@ -15042,10 +15078,6 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Json\\JsonFormatter"
-        },
-        {
-          "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\MetricsJsonFormatter"
         },
         {
@@ -15059,10 +15091,102 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\TextFormatter"
+        }
+      ]
+    },
+    "Qualimetrix\\Core\\ProductIdentity": {
+      "path": "src/Core/ProductIdentity.php",
+      "kind": "class",
+      "owner": "Core.Neutral",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Application"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\AbstractHookCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\ChannelRenameReporter"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\DirectivesCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleListingPresenter"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Health\\HealthTextFormatter"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Json\\JsonFormatter"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\MetricsJsonFormatter"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Sarif\\SarifFormatter"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Sarif\\SarifRuleCollector"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Summary\\HintRenderer"
         },
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Suppressed\\SuppressedFormatter"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\TextFormatter"
+        },
+        {
+          "owner": "Reporting.GraphProjection",
+          "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\JsonGraphExporter"
         }
       ]
     },
@@ -15772,6 +15896,13 @@
           ]
         }
       ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\Command\\LoadedBaselineRun": {
+      "path": "src/Infrastructure/Console/Command/LoadedBaselineRun.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": []
     },
     "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand": {
       "path": "src/Infrastructure/Console/Command/RulesCommand.php",

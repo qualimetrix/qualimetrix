@@ -7,10 +7,12 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Functional\Command;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
 use Qualimetrix\Infrastructure\Console\RunningBinaryLocator;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Tester\CommandTester;
 
 #[CoversClass(HookStatusCommand::class)]
@@ -65,6 +67,31 @@ final class HookStatusCommandTest extends TestCase
         $output = $commandTester->getDisplay();
         self::assertStringContainsString('NOT INSTALLED', $output);
         self::assertStringContainsString('To install the hook', $output);
+    }
+
+    /**
+     * The pointer comes from the shared `AbstractHookCommand::execute()`
+     * wrapper, so it reaches this "not installed" exit exactly as it reaches
+     * the "installed" ones exercised by the tests below.
+     */
+    #[Test]
+    public function itPrintsTheDocsPointerAfterTheReport(): void
+    {
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $commandTester = new CommandTester($command);
+        $commandTester->execute([]);
+
+        self::assertStringContainsString('Docs: ' . ProductIdentity::docsUrl(), $commandTester->getDisplay());
+    }
+
+    #[Test]
+    public function itSuppressesTheDocsPointerUnderQuiet(): void
+    {
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $commandTester = new CommandTester($command);
+        $commandTester->execute([], ['verbosity' => OutputInterface::VERBOSITY_QUIET]);
+
+        self::assertStringNotContainsString('Docs:', $commandTester->getDisplay());
     }
 
     #[Test]
