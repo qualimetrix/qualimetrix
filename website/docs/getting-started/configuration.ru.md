@@ -400,7 +400,8 @@ CLI-эквиваленты, `suppress_namespace_channels` и семейство 
 отвергается:
 
 ```
-Rule selector "complexity" does not match any registered producer, group, or channel.
+Configuration error: Rule selector "complexity" does not match any registered producer, group, or channel.
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 `X.*`, у которого нет потомков, отвергается по той же причине. Большинство правил публикуют
@@ -789,8 +790,8 @@ Qualimetrix валидирует конфигурационный файл и с
 Любой нераспознанный ключ — на верхнем уровне или внутри секции — вызывает ошибку с подсказкой:
 
 ```
-Invalid configuration in qmx.yaml:
-  Unknown key "workes" in "parallel" section. Did you mean "workers"?
+Configuration error: Unknown key in "parallel" section: "workes" (did you mean "workers"?). Allowed keys: workers
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 ### Ошибки типов
@@ -798,7 +799,8 @@ Invalid configuration in qmx.yaml:
 Если значение имеет неверный тип, вы получите понятное сообщение вместо молчаливого отката на значение по умолчанию:
 
 ```
-Invalid value for "cache.enabled": expected boolean, got string
+Configuration error: Invalid value for "cache.enabled": expected boolean, got string
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 ### Неизвестные имена правил
@@ -806,7 +808,8 @@ Invalid value for "cache.enabled": expected boolean, got string
 Опечатки в именах правил в секции `rules:` отклоняются:
 
 ```
-Unknown rule "complexty.cyclomatic" in qmx.yaml. Did you mean "complexity.ccn"?
+Configuration error: Unknown rule "complexty.ccn" in qmx.yaml. Did you mean "complexity.ccn"?
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 ### Неизвестные ключи опций правила
@@ -816,6 +819,7 @@ Unknown rule "complexty.cyclomatic" in qmx.yaml. Did you mean "complexity.ccn"?
 
 ```
 Configuration error: Option "warningThreshold" is not an option of rule "complexity.ccn". Options here: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 Внутри слота уровня сообщение называет слот, потому что множество допустимых
@@ -823,6 +827,7 @@ Configuration error: Option "warningThreshold" is not an option of rule "complex
 
 ```
 Configuration error: Option "warning" is not an option of rule "complexity.ccn" at level "class". Options at that level: enabled, max-error, max-warning, threshold. Other levels of this rule take different options.
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 То же верно для `--rule-opt` в командной строке — тот же код и то же сообщение.
@@ -853,6 +858,13 @@ Configuration error: Option "warning" of rule "complexity.ccn" at level "callabl
 Configuration error: Invalid value for "only_rules": expected a list of entries, got a map.
 Configuration error: Invalid value for "cache": expected a section of named keys (dir, enabled), got a list.
 ```
+
+Это три отдельных прогона, по одной ошибке на каждый, — реальный прогон
+останавливается на своей первой же ошибке. stderr каждого из них заканчивается
+той же строкой-указателем на документацию, что и по всей этой странице
+(например, `Docs: https://qualimetrix.dev · AI agents:
+https://qualimetrix.dev/llms.txt`); здесь она опущена, чтобы три сообщения
+можно было сравнить рядом друг с другом.
 
 Формы, которые может запросить ключ, в тех словах, которыми их называет отказ:
 
