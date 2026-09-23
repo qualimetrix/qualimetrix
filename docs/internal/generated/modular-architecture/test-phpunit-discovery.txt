@@ -680,6 +680,9 @@ Available tests:
  - Qualimetrix\Governance\SubprocessDrain\SubprocessReadsAreDrainedConcurrentlyTest::itScansAPopulationThatReachesEveryKindOfPhpFile
  - Qualimetrix\Governance\SubprocessDrain\SubprocessReadsAreDrainedConcurrentlyTest::itSeesANameWhateverCaseItIsWrittenIn
  - Qualimetrix\Governance\SuppressionOptionKeys\SuppressionOptionKeyReaderCensusTest::itIsTheOnlyPlaceInSourceThatReadsASuppressionOptionKey
+ - Qualimetrix\Governance\SymbolVocabulary\PhpBuiltinClassHierarchyCensusTest::itAgreesWithThisPhpOnEveryNameItDeclares
+ - Qualimetrix\Governance\SymbolVocabulary\PhpBuiltinClassHierarchyCensusTest::itKeysEveryMapByRegisteredNamesOnly
+ - Qualimetrix\Governance\SymbolVocabulary\PhpBuiltinClassHierarchyCensusTest::itNamesOnlyRegisteredTypesAboveAnyName
  - Qualimetrix\Governance\SymbolVocabulary\PhpBuiltinClassRegistryCensusTest::itAgreesWithEveryLoadedExtensionOnWhatItDeclares
  - Qualimetrix\Governance\SymbolVocabulary\PhpBuiltinClassRegistryCensusTest::itAttributesEveryRegisteredNameToExactlyOneExtension
  - Qualimetrix\Governance\SymbolVocabulary\PhpBuiltinClassRegistryCensusTest::itKeepsEveryDispositionInsideTheDeclaredScope
@@ -2671,6 +2674,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itComputesAnIndependentMetricValuePerClass
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itComputesTheDefaultHealthScoresAtClassLevel
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itComputesTheDefaultHealthScoresAtNamespaceLevel
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itDoesNotRefuseAKeyNoSymbolCarriesWhereOnlyABranchReadsIt
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itDoesNotStoreANanFormulaResult
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itDoesNotStoreAnInfiniteFormulaResult
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itDoesNothingForZeroAnalyzedFiles
@@ -2679,11 +2683,18 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itEvaluatesTheBuiltInMathFunctionsInFormulas
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itFallsBackToInputOrderWithoutCrashingOnACircularDependency
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itFallsBackToTheNamespaceFormulaAtProjectLevel
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itJudgesTheRightSideOfAndByWhetherTheEvaluationReachedIt
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itLeavesTheRepositoryUntouchedWhenGivenNoDefinitions
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itLetsAnEnclosingFallbackCatchTheNullOfTheTakenBranch
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itListsAllUnknownMetricsReferencedByAFormula
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itNamesTheKeyANestedTernaryReadsOnEveryPath
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itNeverRunsTheBranchItEntersWithAnAbsentKey
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itOwnsTheComputedProfilerSpan
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itPenalizesNamespaceCouplingHealthForHighEfferentBreadth
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itPublishesNoValueForASymbolMissingAnUnguardedMetric
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itPublishesNoValueWhereTheConditionReadsAnAbsentKey
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itPublishesNoValueWhereTheTakenBranchReadsAnAbsentKey
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itPublishesTheBranchATernaryTakesWithoutTheKeyOnlyTheOtherBranchReads
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itPublishesTheLeftSideOfAFallbackBetweenMetricsWhereOnlyTheLeftIsPresent
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itReadsOneImmutableDefinitionSnapshotPerEvaluation
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itRefusesAFallbackChainWhereNoSymbolAtTheLevelCarriesAnyLink
@@ -2698,6 +2709,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itUsesTheNullCoalescingFallbackForAMissingMetric
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itAcceptsALiteralIndexHoweverItIsSpaced
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesAKeyThatIsGuardedInOnePlaceAndBareInAnother
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"a bare read in the condition"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"a bare read of a present key"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"a bare read of an absent key"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"a chain ending in a literal needs nothing"
@@ -2709,11 +2721,23 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"a fallback inside arithmetic, both absent"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"a fallback inside arithmetic, left present"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"a function argument"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"a guarded read in the condition"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"a guarded read with a literal fallback needs nothing"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"a key a nested ternary reads in both of its branches"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"a key both branches hand to an enclosing ??"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"a key both branches read"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"a key one branch consumes and the other hands to ??"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"a key only one branch reads"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"a key only the else branch reads"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"a parenthesised chain guarded to its last link"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"a read inside arithmetic under ??"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"an undecidable left side reads the right side"
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"both branches of a ternary"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"both sides of xor"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"the condition of an elvis"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"the fallback of an elvis"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"the left side of and"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"the right side of and"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"the right side of ||"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"two bare reads, one absent"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itReadsNoKeyOutOfAnIndexOnSomethingOtherThanTheLookup
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itReadsOnlyComputedMetricReferences
@@ -2761,6 +2785,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itUsesNoneLocationForNamespaceLevel
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itUsesNoneLocationForProjectLevel
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itUsesTheUniqueExactClassDeclarationAsTheLogicalClassPresentationLocation
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itAcceptsACrossLevelReadOnlyATernaryBranchMakes
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itAcceptsACrossLevelReadThatIsGuardedOrNeverReached
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itAcceptsAFormulaReferencingAKnownCatalogKey
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itAcceptsAKnownAggregationSuffixOnACatalogKey
@@ -2782,6 +2807,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itOverridesHealthFormulasPerLevel
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itOverridesHealthThresholdOnly
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itPositionsAnUnknownHealthDimensionAtTheShortName
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesACrossLevelReadInATernaryCondition
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesAMapWhereLevelsExpectsAListInsteadOfCrashing
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesANonBooleanEnabled
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesANonBooleanInverted
@@ -3302,6 +3328,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itFlagsAnAnonymousClassExtendingAPhpBuiltinClassAsANestedAnonymousDeclaration
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itFlagsAnAttributeOnAnAnonymousClassHeaderAsADeclarationFactOfTheAnonymousClassNotTheEnclosingClass
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itFlagsAnonymousClassExtendsAndImplementsAsDeclarationFactsOfTheAnonymousClassNotTheEnclosingClass
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itFlagsTheStringableAnAnonymousClassGetsAsItsOwnDeclarationFact
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itIgnoresAReturnTypeReferencingTheEnclosingClassItself
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itIgnoresAnAnonymousClassWithoutAnEnclosingNamedClass
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itIgnoresBuiltinScalarAndArrayTypes
@@ -3327,6 +3354,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAnExtendsDependencyForAnInterface
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAnImplementsDependencyForAnEnum
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAnInstanceofDependency
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsTheInterfacesPhpGivesAClassLikeUnwritten"backed enum"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsTheInterfacesPhpGivesAClassLikeUnwritten"class declaring __toString"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsTheInterfacesPhpGivesAClassLikeUnwritten"class without __toString"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsTheInterfacesPhpGivesAClassLikeUnwritten"enum"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsTheInterfacesPhpGivesAClassLikeUnwritten"interface declaring __toString"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsTheInterfacesPhpGivesAClassLikeUnwritten"method name in another case"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsTheInterfacesPhpGivesAClassLikeUnwritten"trait declaring __toString"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itResetsDependenciesAndImportsWhenReusedForAnotherFile
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itReturnsDependencyModelOwnedLocationsForExtractedDependencies
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itStillDetectsInstantiationInsideClosureBody
@@ -5572,6 +5606,18 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itUsesTheDefaultErrorWhenOnlyWarningIsConfigured
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itUsesTheDefaultWarningWhenOnlyTheErrorKeyIsConfigured
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itUsesTheThresholdKeyForBothWarningAndError
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"PHP class of a newer PHP than the analysing one"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"PHP class of an extension the analysing PHP may not load"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"PHP interface above the one an interface extends"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"backed enum"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"class declaring __toString"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"class implementing an interface that declares __toString"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"class writing implements Stringable"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"enum"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"interface above the one a backed enum gets"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"interface declaring __toString"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"interface two steps above the PHP interface an interface extends"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis"the same chain written by the project"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionNamingAPhpAncestor"direct parent"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionNamingAPhpAncestor"grandparent"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionNamingAPhpAncestor"interface of a PHP parent"
@@ -5579,6 +5625,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionNamingAPhpTypeTheClassDeclaresItself"PHP attribute on the class"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionNamingAPhpTypeTheClassDeclaresItself"PHP interface implemented directly"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersACriterionNamingAPhpTypeTheClassDeclaresItself"interface above a PHP interface implemented directly"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itAnswersAnAttributeCriterionForAPhpClassMetAsTheFarEndOfAnEdge
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itDoesNotMoveTheHostOfAnAnonymousClassDeclaringAPhpType"PHP attribute"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itDoesNotMoveTheHostOfAnAnonymousClassDeclaringAPhpType"PHP interface"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itDoesNotReportATemplateInstanceUnreachableBecauseItsClassExtendsAPhpClass
@@ -5587,6 +5634,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itKeepsTheClassInItsLayerWhenAnExcludeByParentCanBeAnswered"extends a PHP class"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itKeepsTheClassInItsLayerWhenAnExcludeByParentCanBeAnswered"implements a PHP interface"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itKeepsTheClassInItsLayerWhenAnExcludeByParentCanBeAnswered"implements a vendor interface"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itStillDecidesANonMatchNextToWhatPhpDeclares"a class without __toString"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itStillDecidesANonMatchNextToWhatPhpDeclares"a pure enum is not backed"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AncestryBorderIntegrationTest::itStillDecidesANonMatchNextToWhatPhpDeclares"an interface off the chain of the one an interface extends"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AnonymousClassInheritanceIntegrationTest::itDoesNotAssignTheEnclosingClassByItsNestedAnonymousClassesAttribute
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AnonymousClassInheritanceIntegrationTest::itDoesNotAssignTheEnclosingClassByItsNestedAnonymousClassesDirectExtends
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\AnonymousClassInheritanceIntegrationTest::itDoesNotAssignTheEnclosingClassByItsNestedAnonymousClassesImplements
@@ -6368,12 +6418,20 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itRefusesAnEnabledThatWouldLie#1
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itRefusesAnEnabledThatWouldLie#2
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itRejectsAnUnknownMode
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itAdvisesANamespaceLayerForADoubtedSymbolOutsideThePaths
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itCountsADoubtedEdgeEndWhoseOtherEndIsInNoLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itDoesNotDoubtAnAssignmentOverALayerDeclaredAfterIt
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itGivesOnlyTheAnalysedClassAdviceWhenEveryUndecidedSymbolWasAnalysed
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itGivesOnlyTheOutsideAdviceWhenEveryUndecidedSymbolIsOutsideThePaths
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itKeepsTheExcludeClauseThatCouldNotAnswerOutOfTheInertReport
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itLeavesAFullyCoveredRunWithoutAGapWhenOnlyAssignmentsAreInDoubt
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itLeavesTheSentenceAloneWhenTheWholeGapWasDecided
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itNamesAnAssignmentAnUnanswerableExcludeLeftInDoubt
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itNamesTheUndecidedShareOfTheGap
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itReportsADoubtedAssignmentWhenNothingIsOutsideEveryLayer
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itPublishesNoDoubtWhileCoverageAccountingIsOff
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itPublishesTheDoubtAsInformationWhenNothingIsOutsideEveryLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itSaysWhatALaterLayerDoesWithTheUndecidedShare
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itStillReportsAnExcludeClauseThatAnsweredNoEverywhere
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itAnswersDecisivelyWhenNoAnalysedUniverseWasBound
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itCannotDecideAttributesForASymbolTheRunNeverAnalysed
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itCannotDecideExtendsWhenAMidChainLinkIsOutsideTheAnalysedSet
@@ -6384,6 +6442,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itDecidesACriterionAboutAPhpClassSeenOnlyAsAnEdgeEnd"extends, hit"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itDecidesACriterionAboutAPhpClassSeenOnlyAsAnEdgeEnd"extends, miss"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itDecidesACriterionAboutAPhpClassSeenOnlyAsAnEdgeEnd"implements, hit"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itDecidesAboutAPhpClassWhetherOrNotThisRuntimeLoadsIt"named PHP ancestor"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itDecidesAboutAPhpClassWhetherOrNotThisRuntimeLoadsIt"unrelated base"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itDecidesAgainstAPhpClassThatIsNotInTheChain
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itDecidesEveryFqnAnsweredKindAndOnlyDoubtsTheFactAnsweredOnes"attributes"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itDecidesEveryFqnAnsweredKindAndOnlyDoubtsTheFactAnsweredOnes"extends"
@@ -6400,6 +6460,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itDecidesExtendsWhenTheParentChainIsKnown"vendor interface, match all"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itDecidesExtendsWhenTheParentChainIsKnown"vendor interface, positive criterion"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itDecidesTheSameChainOnceEveryLinkIsAnalysed
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itDoesNotNameALayerDeclaredAfterTheAssignedOneAsUndecided
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itDoesNotWithdrawALaterLayersMatchBecauseAnEarlierOneIsUndecidable
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itDoubtsBothKindsWhenTheParentChainLeavesTheAnalysedSet
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itKeepsAHitFoundOnATruncatedChain
@@ -6411,6 +6472,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itMatchesACriterionNamingAPhpAncestor"PHP grandparent"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itMatchesACriterionNamingAPhpAncestor"direct PHP parent"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itMatchesACriterionNamingAPhpAncestor"interface of a PHP parent"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itNamesAnUnansweredExcludeWhateverLayerWonTheClass
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itNamesWhereTheChainStopsOnlyBesideAnUnansweredLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itObservesNoTupleWhenTheTemplatesCriterionIsDecidedAgainst
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itObservesNoTupleWhenTheTemplatesExcludeIsDecidedToFire
@@ -6421,7 +6483,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itStillDoubtsImplementsWhenAnInterfaceLeavesTheAnalysedSet
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itStillObservesATupleWhenTheTemplatesCriterionCannotBeDecided
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itStillObservesATupleWhenTheTemplatesExcludeCannotBeDecided
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itTreatsAPhpClassThisRuntimeDoesNotLoadAsACut
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itAllowsARunWiderThanTheRecordedScope
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itDoesNotOfferAnEntryTheRunStillReports
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itRefusesARunThatDoesNotCoverTheRecordedScope
@@ -7102,6 +7163,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DuplicateClassControlBindingTest::itBindsEachClassDeclarationToItsOwnMethods
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itAnswersForADirectiveWrittenAfterAnAttribute"a directive"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itAnswersForADirectiveWrittenAfterAnAttribute"a misspelled tag"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itAppliesADocblockThresholdToTheAnonymousFunctionItStandsOn"arrow function as an argument"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itAppliesADocblockThresholdToTheAnonymousFunctionItStandsOn"arrow function as an array element"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itAppliesADocblockThresholdToTheAnonymousFunctionItStandsOn"closure as an argument"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itAppliesADocblockThresholdToTheAnonymousFunctionItStandsOn"closure as an expression statement"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itCollapsesOneRefusalBoundToEveryDeclarationOfAClass
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itExtractsSourceControlsWithoutRunDeclarationBindings
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itKeepsDistinctControlScopesWhileCollapsingTrueDuplicates
@@ -7141,8 +7206,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesAThresholdThatNamesNoRule"docblock on one line"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesAThresholdWrittenOutsideADocblock"block comment"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesAThresholdWrittenOutsideADocblock"line comment"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesBothDeclarationFormsBeforeTheKeyOfAnArrayElement"ignore"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesBothDeclarationFormsBeforeTheKeyOfAnArrayElement"threshold"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRejectsSourceControlBindingWhenTwoOrdinalsClaimOnePhysicalPosition
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itStillAppliesADocblockThresholdOverAMeasuredMethod
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itStillBindsAnIgnoreToTheAnonymousFunctionItStandsOn"arrow function as an argument"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itStillBindsAnIgnoreToTheAnonymousFunctionItStandsOn"arrow function as an array element"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itStillBindsAnIgnoreToTheAnonymousFunctionItStandsOn"closure as an argument"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itStillBindsAnIgnoreToTheAnonymousFunctionItStandsOn"closure as an expression statement"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itStillRefusesAThresholdOverAStatementThatOnlyContainsAClosure
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\IndependentAxisValidatorTest::itAcceptsArbitraryOrdering
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\IndependentAxisValidatorTest::itAcceptsNullsAsNoOpHalves
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\IndependentAxisValidatorTest::itIgnoresErrorWasExplicitFlag
@@ -7636,6 +7708,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itSkipsCircularDependencyPreparationWhenItsOwnOptionsSwitchTheRuleOff#1
  - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itSkipsFileSetInspectionWhenTheParticipantsOwnOptionsSwitchTheProducerOff
  - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itStillPreparesArchitecturePolicyWhenOnlyTheLayerViolationRuleIsSwitchedOff
+ - Qualimetrix\Tests\Core\Symbol\Unit\PhpBuiltinClassHierarchyTest::itAnswersForANameWhoseExtensionThisRuntimeMayNotLoad
+ - Qualimetrix\Tests\Core\Symbol\Unit\PhpBuiltinClassHierarchyTest::itCarriesTheAttributesOnPhpsOwnDeclaration
+ - Qualimetrix\Tests\Core\Symbol\Unit\PhpBuiltinClassHierarchyTest::itDoesNotAnswerForANamePhpDoesNotDeclare
+ - Qualimetrix\Tests\Core\Symbol\Unit\PhpBuiltinClassHierarchyTest::itFollowsAClassToItsParent
+ - Qualimetrix\Tests\Core\Symbol\Unit\PhpBuiltinClassHierarchyTest::itFollowsAnInterfaceToTheInterfacesItExtends
  - Qualimetrix\Tests\Core\Symbol\Unit\SymbolLevelProjectionTest::itProjectsEveryDeclarationKindOntoItsAggregationLevel"a class"
  - Qualimetrix\Tests\Core\Symbol\Unit\SymbolLevelProjectionTest::itProjectsEveryDeclarationKindOntoItsAggregationLevel"a file"
  - Qualimetrix\Tests\Core\Symbol\Unit\SymbolLevelProjectionTest::itProjectsEveryDeclarationKindOntoItsAggregationLevel"a function is the same callable level"
@@ -7880,6 +7957,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itAgreesWithTheRuntimeLayerRegistryOnAnOverlappingAssignment
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itAppliesTheConfiguredMemoryLimitBeforeCollectionRuns
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itCoversEveryFactTheTextReportPrintsInTheJsonPayload
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itDoesNotDoubtAnAssignmentOverALayerDeclaredAfterIt
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itExcludesConfiguredAndGeneratedFilesFromDiscoveryBeforeAssignment
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itExitsFailureForANonExistentConfigPath
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itExitsInvalidForAWhitespaceOnlyFqn

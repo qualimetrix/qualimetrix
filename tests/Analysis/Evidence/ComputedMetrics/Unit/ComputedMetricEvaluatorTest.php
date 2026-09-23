@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricBranchTrace;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
@@ -24,6 +25,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Stringable;
 
 #[CoversClass(ComputedMetricEvaluator::class)]
+#[CoversClass(ComputedMetricBranchTrace::class)]
 final class ComputedMetricEvaluatorTest extends TestCase
 {
     #[Test]
@@ -344,6 +346,212 @@ final class ComputedMetricEvaluatorTest extends TestCase
         self::assertSame(1.0, $repo->get($bare)->get('computed.probe'));
         self::assertSame(1.7, $repo->get($rich)->get('computed.probe'));
         self::assertSame([], $logger->records);
+    }
+
+    /**
+     * A key only the branch not taken reads is never read. Requiring it
+     * skipped a class with one method, which publishes no TCC, although the
+     * formula takes the literal branch there — and where no class at the
+     * level carried the key, the whole run was refused.
+     */
+    #[Test]
+    public function itPublishesTheBranchATernaryTakesWithoutTheKeyOnlyTheOtherBranchReads(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $single = SymbolPath::forClass('App', 'Single');
+        $empty = SymbolPath::forClass('App', 'Empty');
+        $repo->add($single, MetricBag::fromArray(['size.method-count' => 1]), RelativePath::fromString('src/Single.php'), 1);
+        $repo->add($empty, MetricBag::fromArray(['size.method-count' => 0, 'cohesion.tcc' => 0.25]), RelativePath::fromString('src/Empty.php'), 1);
+
+        $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
+            name: 'computed.probe',
+            formulas: ['class' => 'm["size.method-count"] > 0 ? 7 : m["cohesion.tcc"]'],
+            description: 'Test metric',
+            levels: [SymbolLevel::Class_],
+        )]);
+
+        self::assertSame(7.0, $repo->get($single)->get('computed.probe'));
+        self::assertSame(0.25, $repo->get($empty)->get('computed.probe'));
+        self::assertSame([], $logger->records);
+    }
+
+    #[Test]
+    public function itDoesNotRefuseAKeyNoSymbolCarriesWhereOnlyABranchReadsIt(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $single = SymbolPath::forClass('App', 'Single');
+        $repo->add($single, MetricBag::fromArray(['size.method-count' => 1]), RelativePath::fromString('src/Single.php'), 1);
+
+        $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
+            name: 'computed.probe',
+            formulas: ['class' => 'm["size.method-count"] > 0 ? 7 : m["cohesion.tcc"]'],
+            description: 'Test metric',
+            levels: [SymbolLevel::Class_],
+        )]);
+
+        self::assertSame(7.0, $repo->get($single)->get('computed.probe'));
+        self::assertSame([], $logger->records);
+    }
+
+    /**
+     * The branch the evaluation took reads an absent key: its `null` reached
+     * the arithmetic and the result is not a measurement. Judged by the branch
+     * the evaluation actually ran, so the level carrying the key nowhere is a
+     * per-symbol skip with its warning, not a refusal.
+     */
+    #[Test]
+    public function itPublishesNoValueWhereTheTakenBranchReadsAnAbsentKey(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $guarded = SymbolPath::forClass('App', 'Guarded');
+        $reached = SymbolPath::forClass('App', 'Reached');
+        $repo->add($guarded, MetricBag::fromArray(['size.method-count' => 0]), RelativePath::fromString('src/Guarded.php'), 1);
+        $repo->add($reached, MetricBag::fromArray(['size.method-count' => 4]), RelativePath::fromString('src/Reached.php'), 1);
+
+        $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
+            name: 'computed.probe',
+            formulas: ['class' => 'm["size.method-count"] > 0 ? m["cohesion.tcc"] / m["size.method-count"] : 0'],
+            description: 'Test metric',
+            levels: [SymbolLevel::Class_],
+        )]);
+
+        self::assertSame(0.0, $repo->get($guarded)->get('computed.probe'));
+        self::assertNull($repo->get($reached)->get('computed.probe'));
+        self::assertCount(1, $logger->records);
+        self::assertSame(1, $logger->records[0]['context']['skipped']);
+        self::assertSame('App\\Reached', $logger->records[0]['context']['symbols']);
+        self::assertSame('cohesion.tcc', $logger->records[0]['context']['missing']);
+    }
+
+    /**
+     * The same judgement for the right side of `and`: it runs only where the
+     * left is true.
+     */
+    #[Test]
+    public function itJudgesTheRightSideOfAndByWhetherTheEvaluationReachedIt(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $shortCircuited = SymbolPath::forClass('App', 'ShortCircuited');
+        $reached = SymbolPath::forClass('App', 'Reached');
+        $repo->add($shortCircuited, MetricBag::fromArray(['size.method-count' => 0]), RelativePath::fromString('src/ShortCircuited.php'), 1);
+        $repo->add($reached, MetricBag::fromArray(['size.method-count' => 4]), RelativePath::fromString('src/Reached.php'), 1);
+
+        $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
+            name: 'computed.probe',
+            formulas: ['class' => '(m["size.method-count"] > 0 and m["cohesion.tcc"] < 0.5) ? 1 : 0'],
+            description: 'Test metric',
+            levels: [SymbolLevel::Class_],
+        )]);
+
+        self::assertSame(0.0, $repo->get($shortCircuited)->get('computed.probe'));
+        self::assertNull($repo->get($reached)->get('computed.probe'));
+        self::assertCount(1, $logger->records);
+        self::assertSame('App\\Reached', $logger->records[0]['context']['symbols']);
+    }
+
+    /**
+     * The condition always runs: `null > 0` is false, so an absent key there
+     * would choose a branch on nothing.
+     */
+    #[Test]
+    public function itPublishesNoValueWhereTheConditionReadsAnAbsentKey(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $rich = SymbolPath::forClass('App', 'Rich');
+        $bare = SymbolPath::forClass('App', 'Bare');
+        $repo->add($rich, MetricBag::fromArray(['cohesion.tcc' => 0.75]), RelativePath::fromString('src/Rich.php'), 1);
+        $repo->add($bare, MetricBag::fromArray(['size.loc' => 3]), RelativePath::fromString('src/Bare.php'), 1);
+
+        $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
+            name: 'computed.probe',
+            formulas: ['class' => 'm["cohesion.tcc"] > 0.5 ? 1 : 0'],
+            description: 'Test metric',
+            levels: [SymbolLevel::Class_],
+        )]);
+
+        self::assertSame(1.0, $repo->get($rich)->get('computed.probe'));
+        self::assertNull($repo->get($bare)->get('computed.probe'));
+        self::assertSame('cohesion.tcc', $logger->records[0]['context']['missing']);
+    }
+
+    /**
+     * A `null` the taken branch hands to an enclosing `??` is caught there,
+     * the same as a read on the left of `??`.
+     */
+    #[Test]
+    public function itLetsAnEnclosingFallbackCatchTheNullOfTheTakenBranch(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $bare = SymbolPath::forClass('App', 'Bare');
+        $repo->add($bare, MetricBag::fromArray(['size.method-count' => 4]), RelativePath::fromString('src/Bare.php'), 1);
+
+        $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
+            name: 'computed.probe',
+            formulas: ['class' => '(m["size.method-count"] > 0 ? m["cohesion.tcc"] : 1) ?? 5'],
+            description: 'Test metric',
+            levels: [SymbolLevel::Class_],
+        )]);
+
+        self::assertSame(5.0, $repo->get($bare)->get('computed.probe'));
+        self::assertSame([], $logger->records);
+    }
+
+    /**
+     * The branch is judged when the evaluation enters it, before it runs: a
+     * `null` handed to a PHP function there is a deprecation printed into the
+     * report's own output, and a result nobody may publish.
+     */
+    #[Test]
+    public function itNeverRunsTheBranchItEntersWithAnAbsentKey(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $reached = SymbolPath::forClass('App', 'Reached');
+        $repo->add($reached, MetricBag::fromArray(['size.method-count' => 4]), RelativePath::fromString('src/Reached.php'), 1);
+
+        $raised = [];
+        set_error_handler(static function (int $severity, string $message) use (&$raised): bool {
+            $raised[] = $message;
+
+            return true;
+        });
+
+        try {
+            $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
+                name: 'computed.probe',
+                formulas: ['class' => 'm["size.method-count"] > 0 ? sqrt(m["cohesion.tcc"]) : 0'],
+                description: 'Test metric',
+                levels: [SymbolLevel::Class_],
+            )]);
+        } finally {
+            restore_error_handler();
+        }
+
+        self::assertSame([], $raised);
+        self::assertNull($repo->get($reached)->get('computed.probe'));
+        self::assertSame('cohesion.tcc', $logger->records[0]['context']['missing']);
+    }
+
+    /**
+     * A ternary inside the entered branch whose every branch reads the absent
+     * key stops the evaluation at the outer entry; the key is still named.
+     */
+    #[Test]
+    public function itNamesTheKeyANestedTernaryReadsOnEveryPath(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $reached = SymbolPath::forClass('App', 'Reached');
+        $repo->add($reached, MetricBag::fromArray(['size.method-count' => 4, 'size.loc' => 10]), RelativePath::fromString('src/Reached.php'), 1);
+
+        $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
+            name: 'computed.probe',
+            formulas: ['class' => 'm["size.method-count"] > 0 ? (m["size.loc"] > 5 ? m["cohesion.tcc"] * 2 : m["cohesion.tcc"] * 3) : 0'],
+            description: 'Test metric',
+            levels: [SymbolLevel::Class_],
+        )]);
+
+        self::assertNull($repo->get($reached)->get('computed.probe'));
+        self::assertCount(1, $logger->records);
+        self::assertSame('cohesion.tcc', $logger->records[0]['context']['missing']);
     }
 
     #[Test]

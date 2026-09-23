@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
@@ -427,9 +428,67 @@ enum Status: string implements SomeInterface {
 PHP;
         $deps = $this->analyze($code);
 
-        self::assertCount(1, $deps);
+        self::assertCount(3, $deps);
         self::assertSame('Vendor\\SomeInterface', $deps[0]->targetLogical()->toString());
         self::assertSame(DependencyType::Implements, $deps[0]->type);
+    }
+
+    /**
+     * @return iterable<string, array{0: string, 1: list<string>}>
+     */
+    public static function provideClassLikesPhpGivesAnInterfaceUnwritten(): iterable
+    {
+        yield 'enum' => ['enum Phase { case Open; }', ['UnitEnum']];
+        yield 'backed enum' => ["enum Phase: string { case Open = 'open'; }", ['UnitEnum', 'BackedEnum']];
+        yield 'class declaring __toString' => ["class Label { public function __toString(): string { return ''; } }", ['Stringable']];
+        yield 'method name in another case' => ["class Label { public function __TOSTRING(): string { return ''; } }", ['Stringable']];
+        yield 'interface declaring __toString' => ['interface Named { public function __toString(): string; }', ['Stringable']];
+        // PHP makes the class using the trait Stringable, not the trait itself.
+        yield 'trait declaring __toString' => ["trait Printable { public function __toString(): string { return ''; } }", []];
+        yield 'class without __toString' => ['class Silent {}', []];
+    }
+
+    /**
+     * @param list<string> $expected
+     */
+    #[Test]
+    #[DataProvider('provideClassLikesPhpGivesAnInterfaceUnwritten')]
+    public function itRecordsTheInterfacesPhpGivesAClassLikeUnwritten(string $declaration, array $expected): void
+    {
+        $deps = $this->analyze("<?php\nnamespace App;\n" . $declaration . "\n");
+
+        self::assertSame($expected, array_map(
+            static fn($dependency): string => $dependency->targetLogical()->toString(),
+            $deps,
+        ));
+        foreach ($deps as $dependency) {
+            self::assertSame(DependencyType::Implements, $dependency->type);
+        }
+    }
+
+    #[Test]
+    public function itFlagsTheStringableAnAnonymousClassGetsAsItsOwnDeclarationFact(): void
+    {
+        $deps = $this->analyze(<<<'PHP'
+<?php
+namespace App;
+final class Host
+{
+    public function make(): object
+    {
+        return new class {
+            public function __toString(): string { return ''; }
+        };
+    }
+}
+PHP);
+
+        $stringable = array_values(array_filter(
+            $deps,
+            static fn($dependency): bool => $dependency->targetLogical()->toString() === 'Stringable',
+        ));
+        self::assertCount(1, $stringable);
+        self::assertTrue($stringable[0]->describesNestedAnonymousClass);
     }
 
     #[Test]

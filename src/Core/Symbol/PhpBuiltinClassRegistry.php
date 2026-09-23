@@ -29,7 +29,8 @@ namespace Qualimetrix\Core\Symbol;
  * unknown.
  *
  * Update when adding support for new PHP versions; the control names what is
- * missing, and its attribution table is the second edit each name needs.
+ * missing, its attribution table is the second edit each name needs, and its
+ * entries in {@see PhpBuiltinClassHierarchy} the third.
  */
 final class PhpBuiltinClassRegistry
 {

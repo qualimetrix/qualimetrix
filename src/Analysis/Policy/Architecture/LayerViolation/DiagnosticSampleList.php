@@ -8,12 +8,13 @@ namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
  * Formats a bounded, deterministic sample of FQNs for a diagnostic message
  * that lists examples out of a set larger than a message should print whole.
  *
- * Shared by {@see DeclaredLayerReachability::coverage()} and
- * {@see UnassignedClassSummary::unassignedClasses()}: both build a
- * `sprintf`-style recommendation naming a few offending classes, and both are
- * gated separately (one by {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode},
- * the other by {@see UnassignedClassMode}), so neither owns the formatting for
- * the other.
+ * Shared by {@see DeclaredLayerReachability::coverage()},
+ * {@see DeclaredLayerReachability::doubtedAssignments()} and
+ * {@see UnassignedClassSummary::unassignedClasses()}: each builds a
+ * `sprintf`-style text naming a few classes out of a larger set, and each is
+ * gated separately (by {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode}
+ * or by {@see UnassignedClassMode}), so none owns the formatting for the
+ * others.
  *
  * Sorted before slicing so CI diffs stay stable: `metrics->all()` iteration
  * order is not stable under parallel collection.

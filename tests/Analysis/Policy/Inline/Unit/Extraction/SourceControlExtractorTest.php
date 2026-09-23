@@ -340,9 +340,10 @@ final class SourceControlExtractorTest extends TestCase
 
     /**
      * The same docblock that retunes a method retunes nothing above a
-     * statement or on a property without hooks, and neither place was
-     * reported: the threshold reader never visits a statement, and on a
-     * property it kept the diagnostics and dropped the override itself.
+     * statement that begins with no measured callable, or on a property
+     * without hooks, and neither place used to be reported: the threshold
+     * reader found no declaration on the statement, and on a property it
+     * kept the diagnostics and dropped the override itself.
      *
      * @param non-empty-string $member
      */
@@ -640,6 +641,103 @@ final class SourceControlExtractorTest extends TestCase
     }
 
     /**
+     * php-parser gives a docblock written before a closure or an arrow
+     * function to the node that begins where the function begins — the
+     * argument, the array item, the expression statement — and not to the
+     * function. The function is measured all the same, and a threshold there
+     * retunes it, as an ignore there silences it.
+     *
+     * @param non-empty-string $body
+     */
+    #[Test]
+    #[DataProvider('provideAnonymousFunctionsWhoseDocblockAnOuterNodeCarries')]
+    public function itAppliesADocblockThresholdToTheAnonymousFunctionItStandsOn(string $body): void
+    {
+        $controls = self::measuredControls(self::methodBody(str_replace('@qmx-X', '@qmx-threshold complexity.ccn warning=50 error=60', $body)));
+
+        self::assertSame([], $controls->suppressions);
+        self::assertSame([], $controls->thresholdDiagnostics);
+        self::assertCount(1, $controls->thresholdOverrides);
+        self::assertSame(50, $controls->thresholdOverrides[0]->warning);
+        self::assertSame(60, $controls->thresholdOverrides[0]->error);
+        self::assertSame(ControlScope::Callable, $controls->thresholdOverrides[0]->controlScope);
+        self::assertStringContainsString('{closure#1}', $controls->thresholdOverrides[0]->subject->toCanonical());
+    }
+
+    /**
+     * The ignore that already bound there binds as it did.
+     *
+     * @param non-empty-string $body
+     */
+    #[Test]
+    #[DataProvider('provideAnonymousFunctionsWhoseDocblockAnOuterNodeCarries')]
+    public function itStillBindsAnIgnoreToTheAnonymousFunctionItStandsOn(string $body): void
+    {
+        $read = self::readable(self::measuredControls(self::methodBody(str_replace('@qmx-X', '@qmx-ignore complexity.ccn generated', $body))));
+
+        self::assertCount(1, $read);
+        self::assertStringStartsWith('symbol|complexity.ccn|', $read[0]);
+        self::assertStringContainsString('{closure#1}', $read[0]);
+    }
+
+    /** @return iterable<string, array{non-empty-string}> */
+    public static function provideAnonymousFunctionsWhoseDocblockAnOuterNodeCarries(): iterable
+    {
+        yield 'arrow function as an argument' => ["        return array_map(/** @qmx-X */ fn(int \$x): int => \$x, \$a);"];
+        yield 'closure as an argument' => ["        return array_map(/** @qmx-X */ function (int \$x): int { return \$x; }, \$a);"];
+        yield 'arrow function as an array element' => ["        return [/** @qmx-X */ fn(int \$x): int => \$x];"];
+        yield 'closure as an expression statement' => ["        /** @qmx-X */\n        static function (): int { return 1; };\n        return \$a;"];
+    }
+
+    /**
+     * A statement that holds a closure but does not begin with it is not the
+     * closure's declaration, so a threshold over it still has nothing to
+     * retune.
+     */
+    #[Test]
+    public function itStillRefusesAThresholdOverAStatementThatOnlyContainsAClosure(): void
+    {
+        $controls = self::measuredControls(self::methodBody("        /** @qmx-threshold complexity.ccn 5 */\n        \$b = array_map(fn(int \$x): int => \$x, \$a);\n        return \$b;"));
+
+        self::assertSame([], $controls->thresholdOverrides);
+        self::assertSame(['symbol|complexity.ccn|refused:no-declaration-to-bind'], self::readable($controls));
+    }
+
+    /**
+     * Before the key of an array element the docblock belongs to the element,
+     * which begins at the key, not at the function; both declaration forms
+     * are refused there alike rather than one binding and the other not.
+     *
+     * @param non-empty-string $tag
+     */
+    #[Test]
+    #[DataProvider('provideDeclarationFormsBeforeAnArrayKey')]
+    public function itRefusesBothDeclarationFormsBeforeTheKeyOfAnArrayElement(string $tag): void
+    {
+        $controls = self::measuredControls(self::methodBody("        return ['k' => \$a, /** {$tag} */ 'f' => fn(int \$x): int => \$x];"));
+
+        self::assertSame([], $controls->thresholdOverrides);
+        self::assertSame(['symbol|complexity.ccn|refused:no-declaration-to-bind'], self::readable($controls));
+    }
+
+    /** @return iterable<string, array{non-empty-string}> */
+    public static function provideDeclarationFormsBeforeAnArrayKey(): iterable
+    {
+        yield 'threshold' => ['@qmx-threshold complexity.ccn 5'];
+        yield 'ignore' => ['@qmx-ignore complexity.ccn generated'];
+    }
+
+    /**
+     * @param non-empty-string $body
+     *
+     * @return non-empty-string
+     */
+    private static function methodBody(string $body): string
+    {
+        return "<?php\nnamespace App;\nclass Named\n{\n    public function run(array \$a): array\n    {\n{$body}\n    }\n}\n";
+    }
+
+    /**
      * What a directive was read as, without the line it was written on: the
      * form, the channel, and either the declaration it binds or the reason it
      * was refused. Threshold overrides and diagnostics are listed by rule and
@@ -674,7 +772,8 @@ final class SourceControlExtractorTest extends TestCase
     }
 
     /**
-     * Extracts with every named class and every method in the source measured.
+     * Extracts with every named class, every method and every closure or
+     * arrow function inside a class measured.
      *
      * @param non-empty-string $source
      */
@@ -705,6 +804,19 @@ final class SourceControlExtractorTest extends TestCase
                     null,
                     $classDeclaration,
                     new LogicalClassPath(SymbolPath::forClass('App', $className)),
+                    new MetricBag(),
+                );
+            }
+
+            $anonymous = $nodes->find($class->stmts, static fn(Node $node): bool => $node instanceof Node\Expr\Closure || $node instanceof Node\Expr\ArrowFunction);
+            foreach ($anonymous as $ordinal => $function) {
+                $callables[] = new CallableWithMetrics(
+                    DeclarationPath::of(SymbolPath::forGlobalFunction('App', '{closure#' . ($ordinal + 1) . '}'), $file, DeclarationOrdinal::fromRank(0)),
+                    $function->getStartFilePos(),
+                    CallableKind::AnonymousCallable,
+                    $function instanceof Node\Expr\Closure ? 'closure' : 'arrow',
+                    $classDeclaration,
+                    null,
                     new MetricBag(),
                 );
             }

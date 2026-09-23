@@ -16,12 +16,12 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigura
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\PhpClassHierarchy;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 
@@ -42,7 +42,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
  * that silently left it does not.
  */
 #[CoversClass(ClassContextFactory::class)]
-#[CoversClass(PhpClassHierarchy::class)]
+#[CoversClass(PhpBuiltinClassHierarchy::class)]
 #[Group('integration')]
 final class AncestryBorderIntegrationTest extends TestCase
 {
@@ -198,6 +198,77 @@ final class AncestryBorderIntegrationTest extends TestCase
                 self::assertStringNotContainsString('→ ' . $phpType, $message);
             }
         }
+    }
+
+    /**
+     * @return iterable<string, array{0: string, 1: string, 2: string}>
+     */
+    public static function provideCriteriaAnsweredFromWhatPhpDeclares(): iterable
+    {
+        yield 'interface two steps above the PHP interface an interface extends' => ['extends', '\\Traversable', 'Bag'];
+        yield 'the same chain written by the project' => ['extends', self::NS . '\\Library\\Root', 'Leaf'];
+        yield 'PHP interface above the one an interface extends' => ['implements', '\\Traversable', 'Bag'];
+        yield 'enum' => ['implements', '\\UnitEnum', 'Phase'];
+        yield 'backed enum' => ['implements', '\\BackedEnum', 'Status'];
+        yield 'interface above the one a backed enum gets' => ['implements', '\\UnitEnum', 'Status'];
+        yield 'class declaring __toString' => ['implements', '\\Stringable', 'Label'];
+        yield 'interface declaring __toString' => ['implements', '\\Stringable', 'Named'];
+        yield 'class implementing an interface that declares __toString' => ['implements', '\\Stringable', 'Draft'];
+        yield 'class writing implements Stringable' => ['implements', '\\Stringable', 'Explicit'];
+        // Neither answer may depend on the PHP that runs the analysis: no local
+        // PHP here loads pdo_firebird, and `uri` exists only from 8.5.
+        yield 'PHP class of an extension the analysing PHP may not load' => ['extends', '\\PDO', 'FirebirdLink'];
+        yield 'PHP class of a newer PHP than the analysing one' => ['implements', '\\Throwable', 'BadUri'];
+    }
+
+    #[Test]
+    #[DataProvider('provideCriteriaAnsweredFromWhatPhpDeclares')]
+    public function itAnswersACriterionFromWhatPhpDeclaresWhateverPhpRunsTheAnalysis(string $kind, string $fqn, string $class): void
+    {
+        [$policy, $findings] = $this->analyse(self::markedByConfig($kind, $fqn));
+        $subject = SymbolPath::forClass(self::NS . '\\Library', $class);
+
+        self::assertSame('marked', $policy->registry()->resolveLayer($subject));
+        self::assertSame([], $policy->registry()->undecidedLayers($subject));
+
+        // What PHP adds unwritten is a declaration fact only: no edge to it
+        // reaches the allow-list, which claims PHP's classes under `**`.
+        foreach (self::violationMessages($findings) as $message) {
+            foreach (['UnitEnum', 'BackedEnum', 'Stringable'] as $phpType) {
+                self::assertStringNotContainsString('→ ' . $phpType, $message);
+            }
+        }
+    }
+
+    /**
+     * @return iterable<string, array{0: string, 1: string, 2: string}>
+     */
+    public static function provideCriteriaTheClassDecidedlyDoesNotMeet(): iterable
+    {
+        yield 'a pure enum is not backed' => ['implements', '\\BackedEnum', 'Phase'];
+        yield 'a class without __toString' => ['implements', '\\Stringable', 'Silent'];
+        yield 'an interface off the chain of the one an interface extends' => ['extends', '\\Countable', 'Bag'];
+    }
+
+    #[Test]
+    #[DataProvider('provideCriteriaTheClassDecidedlyDoesNotMeet')]
+    public function itStillDecidesANonMatchNextToWhatPhpDeclares(string $kind, string $fqn, string $class): void
+    {
+        [$policy] = $this->analyse(self::markedByConfig($kind, $fqn));
+        $subject = SymbolPath::forClass(self::NS . '\\Library', $class);
+
+        self::assertSame('rest', $policy->registry()->resolveLayer($subject));
+        self::assertSame([], $policy->registry()->undecidedLayers($subject));
+    }
+
+    #[Test]
+    public function itAnswersAnAttributeCriterionForAPhpClassMetAsTheFarEndOfAnEdge(): void
+    {
+        // `Loose extends \stdClass` keeps its edge, so stdClass is classified,
+        // and PHP declares it `#[\AllowDynamicProperties]`.
+        [$policy] = $this->analyse(self::markedByConfig('attributes', '\\AllowDynamicProperties'));
+
+        self::assertSame('marked', $policy->registry()->resolveLayer(SymbolPath::fromClassFqn('stdClass')));
     }
 
     /**

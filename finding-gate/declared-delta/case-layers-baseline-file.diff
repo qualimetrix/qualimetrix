@@ -1,0 +1,13 @@
+--- candidate
++++ reference (mapped)
+@@ -30,4 +30,0 @@
+-                "channel": "architecture.doubted-assignment",
+-                "count": 1
+-            },
+-            {
+@@ -42,0 +38,5 @@
++                "count": 1
++            },
++            {
++                "channel": "architecture.unmatched-exclude",
++                "occurrence": "eec2223e5a9bbe2f",

@@ -15,7 +15,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
  * Builds the five diagnostics that compare the declared layer policy against
- * what the run actually reached.
+ * what the run actually reached, and the informational count of assignments
+ * the run could not fully decide.
  *
  * They share one question — "does the declaration still describe the code?" —
  * and one answer shape: a project-subject finding that reports a mistake in
@@ -41,12 +42,28 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * - `architecture.empty-template` — a template that expanded to no layers at
  *   all.
  *
+ * Beside them, {@see doubtedAssignments()} builds
+ * `architecture.doubted-assignment` for {@see LayerViolationRule}: not a
+ * configuration error, but the same coverage accounting `coverage()` reads,
+ * over the population whose sentence `coverage()` prints — which is why the
+ * two texts live together.
+ *
  * Extracted from {@see LayerViolationRule}: the rule carries seven channels,
  * and the per-edge policy decision is the only one that needs the rule's own
  * options and collaborators. Keeping the declaration diagnostics here is what
  * lets it stay within its coupling ceiling.
  *
- * @internal Consumed by {@see LayerDeclarationValidator}.
+ * @internal Consumed by {@see LayerDeclarationValidator} and, for
+ *           {@see doubtedAssignments()} only, {@see LayerViolationRule}.
+ *
+ * @qmx-threshold coupling.instability warning=0.81 -- A finding-text builder is efferent by
+ * construction: it names the finding vocabulary and the layer declaration, and only its two
+ * publishers name it back. Ca=2, Ce=8 puts it at exactly 0.800 against an inclusive 0.800 ceiling;
+ * with the single publisher it had before the doubt count moved here it computed 0.889 and was not
+ * judged at all, because `min_afferent: 2` filters it out, so the second consumer is what makes it
+ * reportable, not a new outgoing edge. The alternative placement, a builder class of its own, puts
+ * the `LayerViolation` namespace at its class-count ceiling instead. 0.81 still reports the next
+ * efferent edge, which takes instability to 0.818.
  */
 final class DeclaredLayerReachability
 {
@@ -74,7 +91,18 @@ final class DeclaredLayerReachability
      * The clause appears only when such a class exists, so a project with none
      * reads exactly the sentence it always did.
      *
-     * @param array{sourceEdges: int, targetEdges: int, classes: array<string, string>, undecidable: array<string, string>, doubted: array<string, string>} $state
+     * **Why an assignment in doubt names itself here but never causes the
+     * finding.** A class that stands assigned while a layer bearing on its
+     * assignment went unanswered is not a hole in the declaration: it is in a
+     * layer, its edges are judged, and no `layers:` entry is missing. This
+     * channel is a configuration error that fails the run whatever its
+     * severity, so letting a doubt raise it failed every fully covered project
+     * whose earlier `extends`/`implements` layer met a vendor class at the far
+     * end of an edge. The doubt is counted in the text when the gap exists for
+     * its own reasons, and is published on its own, at a severity that never
+     * gates, by {@see doubtedAssignments()}.
+     *
+     * @param array{sourceEdges: int, targetEdges: int, classes: array<string, string>, undecidable: array<string, string>, undecidableOutsidePaths: array<string, string>, doubted: array<string, string>, doubtedOutsidePaths: array<string, string>} $state
      *
      * @return list<Finding>
      */
@@ -86,7 +114,7 @@ final class DeclaredLayerReachability
 
         $unmatched = array_values($state['classes']);
         $doubted = array_values($state['doubted']);
-        if ($state['sourceEdges'] + $state['targetEdges'] === 0 && $unmatched === [] && $doubted === []) {
+        if ($state['sourceEdges'] + $state['targetEdges'] === 0 && $unmatched === []) {
             return [];
         }
 
@@ -95,7 +123,6 @@ final class DeclaredLayerReachability
             CoverageMode::Error => Severity::Error,
         };
 
-        $sampleList = DiagnosticSampleList::format($unmatched);
         $undecidable = array_values($state['undecidable']);
 
         return [new Finding(
@@ -112,14 +139,115 @@ final class DeclaredLayerReachability
                 self::undecidableClause($undecidable) . self::doubtedClause($doubted),
             ),
             severity: $severity,
-            recommendation: ($sampleList === null
-                ? 'Declare layers covering the remaining classes or accept the gap by leaving coverage-gap on "ignore".'
-                : 'Examples of unclassified classes: ' . $sampleList . '. Declare layers covering these classes or accept the gap by leaving coverage-gap on "ignore".')
-                . self::undecidableRecommendation($undecidable)
-                . ($doubted === [] ? '' : ' An assignment in doubt stands, and its edges are judged against that layer\'s'
-                    . ' allow-list; "qmx debug:layer-assignment <class>" names the unanswered layer and where the chain'
-                    . ' stops, and analysing that declaration settles it.'),
+            recommendation: self::decidedRecommendation(array_values(array_diff_key($state['classes'], $state['undecidable'])))
+                . self::undecidableRecommendation(\count($undecidable), \count($state['undecidableOutsidePaths']))
+                . ($doubted === [] ? '' : ' The assignments in doubt are not part of the gap and do not fail the run:'
+                    . ' each stands and its edges are judged against its layer\'s allow-list;'
+                    . ' architecture.doubted-assignment names them and what settles each.'),
         )];
+    }
+
+    /**
+     * The recommendation for the classes every declared criterion answered
+     * "no" about — the only share of the gap that declaring a layer closes
+     * outright. When there are none, the sentence says only how to accept the
+     * gap, because advising a layer "covering these classes" would be advice
+     * for a case the reader does not have.
+     *
+     * @param list<string> $decided
+     */
+    private static function decidedRecommendation(array $decided): string
+    {
+        $sampleList = DiagnosticSampleList::format($decided);
+
+        return $sampleList === null
+            ? 'Leaving coverage-gap on "ignore" accepts the gap.'
+            : 'Examples of unclassified classes: ' . $sampleList . '. Declare layers covering these classes or accept the gap by leaving coverage-gap on "ignore".';
+    }
+
+    /**
+     * `architecture.doubted-assignment`: how many symbols stand assigned to a
+     * layer while a layer bearing on that assignment could not be answered.
+     *
+     * An unanswered layer never withdraws a match, so such a symbol is in a
+     * layer and its edges are judged; what the run cannot say is whether a
+     * layer it could not answer would have changed that. It is information
+     * about how far the verdict can be trusted, not a hole in the declaration,
+     * so it is {@see Severity::Info} — reported, never gating — and a channel
+     * of the rule rather than of the configuration validator.
+     *
+     * Published only while the coverage mode is not `ignore`: the count is
+     * part of the coverage accounting that mode turns on, and a project that
+     * declined it does not receive it uninvited. `debug:layer-assignment`
+     * answers the same question per class whatever the mode.
+     *
+     * @param array{sourceEdges: int, targetEdges: int, classes: array<string, string>, undecidable: array<string, string>, undecidableOutsidePaths: array<string, string>, doubted: array<string, string>, doubtedOutsidePaths: array<string, string>} $state
+     *
+     * @return list<Finding>
+     */
+    public static function doubtedAssignments(CoverageMode $mode, array $state, string $channelName): array
+    {
+        $doubted = $state['doubted'];
+        if ($mode === CoverageMode::Ignore || $doubted === []) {
+            return [];
+        }
+
+        $outside = \count($state['doubtedOutsidePaths']);
+        $analysed = \count($doubted) - $outside;
+
+        return [new Finding(
+            location: Location::none(),
+            subject: MetricSubject::aggregate(SymbolPath::forProject()),
+            symbolPath: SymbolPath::forProject(),
+            ruleName: $channelName,
+            code: $channelName,
+            message: \sprintf(
+                '%d assigned symbol(s) rest on a layer the run could not fully decide (%s) — for example %s.'
+                . ' Each assignment stands and its edges are judged against its layer\'s allow-list;'
+                . ' whether a layer the run could not answer — an earlier one, or the assigned layer\'s own "exclude" —'
+                . ' would change it is unknown.',
+                \count($doubted),
+                self::doubtBreakdown($analysed, $outside),
+                DiagnosticSampleList::format(array_values($doubted)),
+            ),
+            severity: Severity::Info,
+            recommendation: self::doubtRecommendation($analysed, $outside),
+        )];
+    }
+
+    private static function doubtBreakdown(int $analysed, int $outside): string
+    {
+        $parts = [];
+        if ($analysed > 0) {
+            $parts[] = \sprintf('%d analysed class(es)', $analysed);
+        }
+        if ($outside > 0) {
+            $parts[] = \sprintf('%d outside the analysed paths', $outside);
+        }
+
+        return implode(', ', $parts);
+    }
+
+    /**
+     * One sentence per kind of symbol present, because what settles the doubt
+     * differs: an analysed class can be inspected and its chain completed,
+     * while a symbol outside the paths cannot be inspected at all —
+     * `debug:layer-assignment` refuses a class the run did not analyse — and
+     * is settled only by a layer that decides it from its name.
+     */
+    private static function doubtRecommendation(int $analysed, int $outside): string
+    {
+        $sentences = [];
+        if ($analysed > 0) {
+            $sentences[] = 'For an analysed class, "qmx debug:layer-assignment <class>" names the unanswered layer and'
+                . ' where its inheritance chain stops; widening paths to include that declaration settles it.';
+        }
+        if ($outside > 0) {
+            $sentences[] = 'For a symbol outside the analysed paths, a patterns layer for its namespace declared before'
+                . ' the layer that could not answer settles it.';
+        }
+
+        return implode(' ', $sentences);
     }
 
     /**
@@ -148,7 +276,8 @@ final class DeclaredLayerReachability
     /**
      * The sentence appended when an assignment stands on a layer the run could
      * not fully answer — an earlier layer that went unanswered, or the
-     * assigned layer's own `exclude:` — and the empty string otherwise.
+     * assigned layer's own `exclude:` — and the empty string otherwise. It
+     * reports, and never decides whether the finding exists.
      *
      * @param list<string> $doubted
      */
@@ -171,21 +300,31 @@ final class DeclaredLayerReachability
      * What each edit does to the undecided share. A later layer is named
      * because it does cover these classes — an unanswered layer does not
      * withdraw a later match — and because what it covers them with is a
-     * guess the reader has to know about.
-     *
-     * @param list<string> $undecidable
+     * guess the reader has to know about. What decides them differs by kind,
+     * so each kind present gets its own sentence and an absent kind gets
+     * none: an analysed class is decided by completing its chain, which
+     * `debug:layer-assignment` locates, while a symbol outside the paths
+     * cannot be inspected there at all — the command refuses a class the run
+     * did not analyse — and is decided only by a layer reading its name.
      */
-    private static function undecidableRecommendation(array $undecidable): string
+    private static function undecidableRecommendation(int $undecidable, int $outside): string
     {
-        if ($undecidable === []) {
+        if ($undecidable === 0) {
             return '';
         }
 
-        return ' For the undecided ones, a layer declared after the one that could not answer (a catch-all included)'
-            . ' covers them, but as a guess: each may belong to the unanswered layer. Widening paths to include'
-            . ' the declarations where their chains stop decides them — "qmx debug:layer-assignment <class>" names'
-            . ' those declarations for an analysed class; a vendor type that is itself undecided is decided by a'
-            . ' patterns layer for its namespace declared before the layer that could not answer.';
+        $recommendation = ' For the undecided ones, a layer declared after the one that could not answer (a catch-all'
+            . ' included) covers them, but as a guess: each may belong to the unanswered layer.';
+        if ($undecidable > $outside) {
+            $recommendation .= ' For an analysed class, widening paths to include the declaration where its chain stops'
+                . ' decides it — "qmx debug:layer-assignment <class>" names that declaration.';
+        }
+        if ($outside > 0) {
+            $recommendation .= ' A symbol outside the analysed paths is decided by a patterns layer for its namespace'
+                . ' declared before the layer that could not answer.';
+        }
+
+        return $recommendation;
     }
 
     /**

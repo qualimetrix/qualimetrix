@@ -91,6 +91,14 @@ A docblock `@qmx-threshold` needs a measured declaration just the same. Above a 
 Threshold "@qmx-threshold complexity.ccn" is written where no declaration it can retune is measured, so it retunes nothing. Move it into the docblock of the class, method or function it is about.
 ```
 
+A closure or an arrow function is measured, so a docblock written directly before it retunes it wherever it stands — assigned, passed as an argument, written as an array element or as a statement of its own — just as `@qmx-ignore` in the same place silences it:
+
+```php
+return array_map(/** @qmx-threshold complexity.ccn warning=15 error=25 */ fn(Row $row): bool => $row->isComplete(), $rows);
+```
+
+Written before the key of an array element (`['key' => fn ...]`) or the name of a named argument (`callback: fn ...`), the docblock belongs to the element or the argument rather than to the function, and both declaration forms are refused there; write it after the key or the name, directly before the function.
+
 The physical forms — `@qmx-ignore-next-line` and `@qmx-ignore-file` — are bound to a line and to a file rather than to a declaration, so where they are written is not restricted this way.
 
 A directive may stand above a declaration's attributes or between them and the declaration — `#[Attr]`, then the docblock, then `public function` — and it means the same either way, just as PHP itself treats that docblock as the declaration's own. A comment written where no statement or declaration begins — after the last argument of a call, after the last element of an array — is read as one written above a statement: the physical forms work there, and the declaration forms are refused. Two places are refused even on a declaration: between two attribute groups, and between `function` and the name. Write the directive above the attributes or directly below them instead.

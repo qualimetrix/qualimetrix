@@ -311,6 +311,8 @@ This is not an exhaustive list — any metric collected by Qualimetrix can be re
 
     `m["a"] ?? m["b"]` reads `b` only where `a` is absent, so a symbol is skipped only when it carries neither. End the chain with a literal — `m["a"] ?? m["b"] ?? 0` — to give every symbol a value.
 
+    A ternary reads only the branch it takes. `m["size.method-count"] > 0 ? 7 : m["cohesion.tcc"]` reads `cohesion.tcc` only on a class without methods, so a key only one branch reads is never a configuration error: each symbol is judged by the branch its own values select, and a symbol whose branch reads a key it lacks is skipped with the same warning. The right side of `and` / `or` is judged the same way. The condition always runs, so a bare read there counts like one in arithmetic — an absent metric would pick the branch on nothing (`null > 0` is false); guard it with `??` as well. A key both branches read counts as read.
+
 ### Available Functions
 
 | Function                 | Description                                          |

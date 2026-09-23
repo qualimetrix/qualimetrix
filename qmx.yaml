@@ -195,8 +195,10 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricBranchTrace'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricReads'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\MetricLookup'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\ComputedMetricFindingBuilder'
@@ -636,7 +638,6 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipResult'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\PatternScope'
-        - 'Qualimetrix\Analysis\Policy\Architecture\Layer\PhpClassHierarchy'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition'
     - name: analysis-policy-baseline
       patterns:
@@ -834,6 +835,7 @@ architecture:
         - 'Qualimetrix\Core\Symbol\LogicalClassPath'
         - 'Qualimetrix\Core\Symbol\MetricSubject'
         - 'Qualimetrix\Core\Symbol\MetricSubjectCodec'
+        - 'Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy'
         - 'Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry'
         - 'Qualimetrix\Core\Symbol\SymbolInfo'
         - 'Qualimetrix\Core\Symbol\SymbolLevel'

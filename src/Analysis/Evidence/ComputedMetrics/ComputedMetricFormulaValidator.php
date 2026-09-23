@@ -212,7 +212,10 @@ final class ComputedMetricFormulaValidator
      * finds it on no symbol and the reading metric is published nowhere. Each
      * level is judged by the formula it actually runs — `project` inherits the
      * `namespace` formula — and a read behind `??` counts only where the
-     * fallback is reached. A measured key counts as present here: which levels
+     * fallback is reached. A read only one ternary branch or the right side of
+     * `and`/`or` makes is not refused: which branch runs is known per symbol,
+     * and the evaluator skips a symbol that reaches it. A measured key counts
+     * as present here: which levels
      * carry it is known only once a run has measured, and the evaluator
      * refuses it then.
      *

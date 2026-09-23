@@ -1,0 +1,16 @@
+--- candidate
++++ reference (mapped)
+@@ -2,1 +2,1 @@
+-[project]: error[architecture.coverage-gap]: Architecture coverage-gap: 1 edge(s) with unmatched source layer, 4 edge(s) with unmatched target layer, 4 class(es) outside all declared layers. 3 assigned class(es) rest on a layer the run could not fully decide — for example Corpus\Layers\Doubt\Gateway, Corpus\Outside\Vendorish\Base, Corpus\Outside\Vendorish\Port.
++[project]: error[architecture.coverage-gap]: Architecture coverage-gap: 1 edge(s) with unmatched source layer, 4 edge(s) with unmatched target layer, 4 class(es) outside all declared layers.
+@@ -10,5 +10,5 @@
+-src/AnonMember/ExtendsHost.php: warning[architecture.layer-violation]: Layer "anon-member" must not depend on layer "repository" (Corpus\Layers\AnonMember\ExtendsHost → Corpus\Layers\Repository\UserRepository, uses as type hint) (ExtendsHost)
+-src/Controller/UserController.php: warning[architecture.layer-violation]: Layer "controller" must not depend on layer "repository" (Corpus\Layers\Controller\UserController → Corpus\Layers\Repository\UserRepository, uses as type hint) (UserController)
+-[project]: info[architecture.doubted-assignment]: 3 assigned symbol(s) rest on a layer the run could not fully decide (1 analysed class(es), 2 outside the analysed paths) — for example Corpus\Layers\Doubt\Gateway, Corpus\Outside\Vendorish\Base, Corpus\Outside\Vendorish\Port. Each assignment stands and its edges are judged against its layer's allow-list; whether a layer the run could not answer — an earlier one, or the assigned layer's own "exclude" — would change it is unknown.
+-
+-Qualimetrix dev-main: 8 error(s), 3 warning(s), 1 info in 12 file(s)
++[project]: warning[architecture.unmatched-exclude]: The "exclude" clause of layer "doubt" (implements: "Corpus\Layers\GraphBase\Marker") removed no class from it, while the layer's own criteria (patterns: "Corpus\Layers\Doubt\**") matched 1 symbol(s). The layer is therefore wider than the declaration asks for, and every verdict about it is drawn from that wider set.
++src/AnonMember/ExtendsHost.php: warning[architecture.layer-violation]: Layer "anon-member" must not depend on layer "repository" (Corpus\Layers\AnonMember\ExtendsHost → Corpus\Layers\Repository\UserRepository, uses as type hint) (ExtendsHost)
++src/Controller/UserController.php: warning[architecture.layer-violation]: Layer "controller" must not depend on layer "repository" (Corpus\Layers\Controller\UserController → Corpus\Layers\Repository\UserRepository, uses as type hint) (UserController)
++
++Qualimetrix dev-main: 8 error(s), 4 warning(s) in 12 file(s)

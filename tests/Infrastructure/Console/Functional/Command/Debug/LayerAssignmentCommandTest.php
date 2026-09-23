@@ -1063,6 +1063,46 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     #[Test]
+    public function itDoesNotDoubtAnAssignmentOverALayerDeclaredAfterIt(): void
+    {
+        // First match wins: a layer the run could not answer, declared after
+        // the one that assigned the class, cannot change the assignment, so
+        // "it can change" would be false here. `architecture.coverage-gap`
+        // and `architecture.doubted-assignment` do not count such a class
+        // either, and the two readers of one fact must agree.
+        $sourcePath = $this->sourcePath();
+        $configPath = $this->tempDir . '/qmx-' . bin2hex(random_bytes(6)) . '.yaml';
+        file_put_contents($configPath, "paths: ['{$sourcePath}']\narchitecture:\n  layers:\n"
+            . "    - name: app\n      patterns: ['App\\**']\n"
+            . "    - name: vendorish\n      extends: ['Vendor\\Lib\\Base']\n"
+            . "  allow:\n    app: []\n    vendorish: []\n");
+        $this->declareClassExtending('App\\Web\\OrderController', 'Vendor\\Lib\\Middle');
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'App\\Web\\OrderController',
+            '--config' => $configPath,
+        ]);
+
+        self::assertSame(Command::SUCCESS, $exit);
+        $output = $tester->getDisplay();
+        self::assertStringContainsString('Assigned to: app', $output);
+        self::assertStringNotContainsString('Could not be decided', $output);
+        self::assertStringNotContainsString('it can change', $output);
+
+        $json = $this->newTester();
+        $json->execute([
+            'fqn' => 'App\\Web\\OrderController',
+            '--config' => $configPath,
+            '--format' => 'json',
+        ]);
+        $decoded = json_decode($json->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($decoded);
+        self::assertSame([], $decoded['undecided']);
+        self::assertSame([], $decoded['chainStopsAt']);
+    }
+
+    #[Test]
     public function itShowsAnAssignmentWhoseExcludeCannotBeAnsweredWithItsDoubt(): void
     {
         // The positive pattern caught the class and the `exclude:` clause

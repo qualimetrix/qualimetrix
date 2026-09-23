@@ -64,7 +64,7 @@ one method, so a mode rule cannot hold on one side of the slice and not the
 other. `LayerCriteriaMatcher::evaluate()` and `LayerDefinition::excludeOutcome()`
 are the shared entry points; the duplicate predicate in `TupleExtractor` is gone.
 
-Four sub-decisions carry the weight, and each had a cheaper alternative.
+The sub-decisions below carry the weight, and each had a cheaper alternative.
 
 **A chain is complete per criterion kind, and PHP's own classes end it.** The
 walk records where the parent-class chain was cut and, separately, which
@@ -73,14 +73,18 @@ chain is complete; `implements` when the parent chain and the interfaces above
 it are. An unread parent class may extend and implement anything, so it reaches
 both kinds; an unread interface can hide only interfaces, since no interface
 declares a parent class. A class or interface PHP declares is followed through
-the running PHP's reflection — gated by `PhpBuiltinClassRegistry`, autoloading
-off, so no analysed or vendor file is loaded — and so `extends: ['\Exception']`
-and `implements: ['\Throwable']` are answered for a class extending
-`\RuntimeException`, both ways. The same holds when a PHP class is itself the
-subject, met only as the far end of an edge: its supertypes and attributes are
-read the same way rather than reported as missing. A registered name the analysing PHP does not
-provide (a bundled extension not loaded there) is reported as a cut rather than
-read as a root. A criterion FQN is stored without its leading `\`, because that
+`PhpBuiltinClassHierarchy`, a static table beside `PhpBuiltinClassRegistry`
+(see [ADR 0075](0075-the-builtin-class-list-is-compared-never-generated.md)),
+and so `extends: ['\Exception']` and `implements: ['\Throwable']` are answered
+for a class extending `\RuntimeException`, both ways. The same holds when a PHP
+class is itself the subject, met only as the far end of an edge: its supertypes
+and class-level attributes are read the same way rather than reported as
+missing. For an interface, the `extends` walk follows the interfaces it
+extends. The interfaces PHP adds without their being written — `UnitEnum` and
+`BackedEnum` on an enum, `Stringable` on a class or interface declaring
+`__toString()` — are recorded as declaration edges, because a confident "no"
+from `implements: ['\UnitEnum']` about an enum is the wrong answer this decision
+exists to remove. A criterion FQN is stored without its leading `\`, because that
 separator is the only way to write a global-namespace class and the run records
 no name with it.
 
@@ -118,20 +122,68 @@ for both, for one reason: withdrawing the match leaves the class in no layer,
 no allow-list judges its edges, and real violations stop being reported. It
 trades a wrong answer for a missing one, which is the worse of the two, and
 under the default `coverage-gap: ignore` nothing said the answer had gone
-missing. The match stands and the doubt is published beside it through one
-channel: the unanswered layer — the earlier one, or the matched layer itself —
-is named by `LayerRegistry::undecidedLayers()`, a third exit of the same cached
-walk. `debug:layer-assignment` prints it beside the assignment with where the
-chain stops, and `architecture.coverage-gap` counts every assignment that stands
-on a layer declared no later than the assigned one which went unanswered. A
-layer declared after the assigned one is not a doubt: first match wins, so it
-could not have owned the class.
+missing.
 
 The alternative for `exclude:` was to keep withdrawing the membership and make
 the loss visible regardless of the coverage mode. It was rejected because it
 repairs the report and not the verdict: the class would still leave the layer,
 its edges would still go unjudged, and every configuration with such a clause
 would gain a mandatory diagnostic in place of the violations it lost.
+
+**Which unanswered layer is a doubt is decided once, in the walk.** A layer
+declared after the assigned one is not a doubt: first match wins, so it could
+not have owned the class whatever it answered. `LayerRegistry::undecidedLayers()`
+applies that rule while it walks the layers in declaration order — every
+unanswered layer for a class nothing matched, only those declared no later than
+the assigned layer otherwise — and every reader takes the list as it comes:
+`debug:layer-assignment`, whose "it can change" is then true of every layer it
+names, and the evidence walk that counts doubted assignments. The first version
+left the list unordered and let one reader filter it; the other printed
+"it can change" for a layer that could not change anything, and the two
+disagreed about the same class. A separate exit of the same walk,
+`unansweredExcludeLayers()`, names every matching layer whose `exclude:` went
+unanswered, winning or not, because the reader that asks — the inert-clause
+check below — asks about the clause, not about the assignment.
+
+**A doubt is information, not a gap.** An assignment in doubt is in a layer,
+its edges are judged, and no `layers:` entry is missing, so it does not raise
+`architecture.coverage-gap`. That channel is a configuration error: it fails
+the run at any severity, and letting a doubt raise it failed every fully
+covered project whose `extends`/`implements` layer, declared before its
+`patterns` layers, met a vendor class at the far end of an edge — the
+vendor class is never analysed, so the earlier layer cannot be answered about
+it. Measured on 2026-09-23 with such a layout and complete coverage, doubted
+assignments numbered 159 on doctrine/orm, 101 on composer/composer and 410 on
+laravel/framework, of which 122, 93 and 364 were symbols outside the analysed
+paths; every run exited 2 with no other error, where the previous revision
+exited 0. The doubt is published instead by `architecture.doubted-assignment`,
+a channel of `architecture.layer-violation` reported at `info`, so it never
+gates: one finding per run, only while the coverage mode is not `ignore`, with
+the count split into analysed classes and symbols outside the analysed paths
+and a recommendation for each kind present. `architecture.coverage-gap` still
+names the count in its text when it fires for its own reasons, and points
+there. The same three runs now exit 0 with the doubt count unchanged. Declaring
+the vendor `patterns` layers first removes the outside-the-paths share (to 37,
+26 and 47 on the three projects); declaring the `extends:` layer last, with its
+population carved out of the earlier layers by a decidable `exclude:`, removes
+the doubt entirely.
+
+The alternative was to keep the doubt inside `architecture.coverage-gap` and
+lower the finding to `info` when the doubt is all there is. It was rejected
+because a configuration-error channel refuses to report below `warning` —
+a configuration error printed as `info` would display a weight it does not
+have — and because a severity that depends on which sentences the message
+carries makes one channel two. `debug:layer-assignment` alone was not enough
+either: it refuses a class the run did not analyse, and most doubts are exactly
+such classes.
+
+**An exclude clause that could not answer is not inert.**
+`architecture.unmatched-exclude` asks whether a clause ever made a difference.
+A clause that could not be answered for a class its layer caught has not been
+shown to make none — the class may be exactly the one it was written for — so
+it is not reported, and dropping it is never advised. The first version counted
+only matches and removals, read a doubted match as "removed nothing", and told
+the author to delete the clause.
 
 **Template observation falls toward existence.** A class whose non-pattern
 criterion or whose substituted `exclude:` clause cannot be decided still
@@ -171,10 +223,15 @@ global net if that is really what was wanted.
   declared after the unanswered one closes the second as well, but by guessing,
   and the recommendation says so; what decides it is analysing the declaration
   where the chain stops or, for a vendor type that is itself the undecided
-  symbol, a `patterns` layer for its namespace declared first. A third sentence
-  counts assignments that stand in doubt, and the diagnostic is emitted for
-  them even when nothing is outside every layer. `debug:layer-assignment` names
-  where the chain stops (`chainStopsAt` in JSON).
+  symbol, a `patterns` layer for its namespace declared first. Each of the two
+  is advised only when a symbol of its kind is among the undecided, because
+  `debug:layer-assignment`, which locates the first, refuses the second. A third sentence
+  counts assignments in doubt when the gap is reported; they never raise it.
+  `debug:layer-assignment` names where the chain stops (`chainStopsAt` in
+  JSON).
+- `architecture.doubted-assignment` is a new, never-gating channel of
+  `architecture.layer-violation`, published while `coverage-gap` is `warn` or
+  `error`.
 - Membership is now a function of what the run analysed. Widening `paths:`
   can turn an undecidable layer into a decided one, in either direction. A
   criterion that names a class's direct parent or interface keeps matching, and
@@ -202,9 +259,10 @@ global net if that is really what was wanted.
   non-match: `excluded()` and `undecided()`, which are non-members, and
   `doubtedMatch()`, a member whose `exclude:` went unanswered. Every consumer
   reading the `matched` flag sees membership exactly as before; the
-  distinctions exist only so `architecture.unmatched-exclude`,
-  `architecture.coverage-gap` and `debug:layer-assignment` can answer their own
-  questions.
+  distinctions exist only so `architecture.unmatched-exclude` (did the clause
+  remove something, remove nothing, or fail to answer),
+  `architecture.coverage-gap`, `architecture.doubted-assignment` and
+  `debug:layer-assignment` can answer their own questions.
 - Template observation is deliberately narrower than runtime matching in one
   shape: a non-capturing pattern is an AND-filter during observation, while on
   the expanded layer both pattern spellings sit in the single `patterns` kind
@@ -216,3 +274,13 @@ global net if that is really what was wanted.
   a registry built without it decides exactly what it decided before. Folding
   that state into an empty set would make every criterion undecidable for every
   such caller.
+- Two forms of the `Stringable` PHP adds unwritten still answer "no": a class
+  whose `__toString()` comes from a trait, and `extends: ['\Stringable']` for
+  an interface declaring `__toString()`. The trait's body is another
+  declaration, and a used trait could be made a cut only for every `implements:`
+  criterion at once, which would leave every class using a vendor trait
+  undecided. Both are named on the website rather than left to be found.
+- The attributes of PHP's own classes are the class-level ones. Which members
+  carry `#[\Deprecated]` or `#[\NoDiscard]` differs between PHP 8.4 and 8.5, so
+  a PHP class met as the far end of an edge (`extends \PDO`) answers "no" to an
+  `attributes:` criterion naming an attribute only its members carry.

@@ -10,7 +10,6 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDependencyGraphC
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
@@ -80,29 +79,8 @@ class ComputedMetricEvaluator
         $missingKeys = [];
 
         foreach ($symbols as [$symbolPath, $file, $line]) {
-            $metricBag = $repo->get($symbolPath);
-            // `get()` answers null exactly where `MetricLookup` would hand the
-            // formula null: a bag holds only `int|float`.
-            $missing = $this->expression->missingKeysOf(
-                $formula,
-                static fn(string $key): bool => $metricBag->get($key) !== null,
-            );
-
-            if ($missing !== []) {
-                // The level carries the key somewhere; this symbol does not.
-                // Evaluating would hand `null` to the arithmetic, which PHP
-                // coerces to 0 — a fabricated measurement that scores the
-                // symbol and can raise a finding. The honest answer is no value.
-                $skipped[] = $symbolPath->toString();
-                $missingKeys = [...$missingKeys, ...$missing];
-
-                continue;
-            }
-
-            $variables = $this->buildVariableMap($metricBag);
-
             try {
-                $result = $this->expression->evaluate($formula, $variables);
+                [$missing, $result] = $this->expression->evaluateOn($formula, new MetricLookup($repo->get($symbolPath)->all()));
             } catch (Throwable $e) {
                 $this->logger->warning('Computed metric evaluation failed', [
                     'metric' => $definition->name,
@@ -110,6 +88,18 @@ class ComputedMetricEvaluator
                     'level' => $level->value,
                     'error' => $e->getMessage(),
                 ]);
+
+                continue;
+            }
+
+            if ($missing !== []) {
+                // The level carries the key somewhere, or only a branch reads
+                // it; this symbol's evaluation reached it without it. Its
+                // `null` would reach the arithmetic, which PHP coerces to 0 —
+                // a fabricated measurement that scores the symbol and can
+                // raise a finding. The honest answer is no value.
+                $skipped[] = $symbolPath->toString();
+                $missingKeys = [...$missingKeys, ...$missing];
 
                 continue;
             }
@@ -181,7 +171,9 @@ class ComputedMetricEvaluator
      *
      * Presence is the union over the level's symbols, so a key some symbol
      * carries is left to the per-symbol skip. A read behind `??` counts only
-     * where the fallback is reached. A reference to another computed metric is
+     * where the fallback is reached, and a read only one ternary branch or the
+     * right side of `and`/`or` makes is left to the per-symbol run, which
+     * knows the branch. A reference to another computed metric is
      * judged by the same union: evaluation runs in dependency order, so it is
      * already published wherever it will be. Configuration has refused a bare
      * one read at a level it does not declare; what remains is a chain such as
@@ -285,13 +277,4 @@ class ComputedMetricEvaluator
             SymbolLevel::Callable, SymbolLevel::File => [],
         };
     }
-
-    /**
-     * @return array{m: MetricLookup}
-     */
-    private function buildVariableMap(MetricBag $bag): array
-    {
-        return ['m' => new MetricLookup($bag->all())];
-    }
-
 }

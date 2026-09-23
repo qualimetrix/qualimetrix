@@ -108,6 +108,8 @@ ComputedMetrics/
 │   ├── Configuration/                # runtime configuration and Health exclusion promises
 │   ├── Definition/                   # definitions, dimensions, and immutable resolved snapshot
 │   ├── Evaluation/                   # concrete evaluation service consumed by Run
+│   │   ├── ComputedMetricReads.php       # which absent keys a formula reads where it cannot use null
+│   │   └── ComputedMetricBranchTrace.php # the conditional operands one evaluation entered
 │   └── Finding/                      # computed finding channel family
 ├── Configuration/
 │   ├── ComputedMetricContributionReader.php
@@ -160,8 +162,20 @@ sets. `ComputedMetricFormulaValidator` asks it with every referenced computed
 metric present only at its own `levels:`, so a bare cross-level read is a
 configuration refusal before the run. The evaluator asks it with the union of
 keys the level carries (a miss is the same refusal, after measurement) and then
-per symbol (a miss publishes no value, counted in one warning per metric and
-level). The right side of `??` counts only where its left side is absent.
+per symbol through `evaluateOn()` (a miss publishes no value, counted in one
+warning per metric and level). The right side of `??` counts only where its
+left side is absent.
+
+A ternary branch and the right side of `and`/`or` run only on a value the
+symbol carries, so before a run only a key every path reads counts; the
+condition always runs and counts in full. Per symbol, `ComputedMetricBranchTrace`
+runs the formula as a copy whose conditional operands report their entry, and
+the operands the evaluation entered decide. Entering one that would read an
+absent key where no enclosing `??` catches it stops the run before the `null`
+reaches the arithmetic or a PHP function. Which branch runs is taken from the
+evaluation itself and never computed beside it; the trace relies only on
+Expression Language evaluating one branch of `?:` and short-circuiting
+`and`/`or`, not on how it marks the left side of `??`.
 
 ## Public contracts and named consumers
 

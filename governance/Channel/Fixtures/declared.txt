@@ -34,11 +34,13 @@
 # a baseline on any path, and it fails the run without consulting `fail_on`.
 # Eight channels carry it today: the five layer-policy diagnostics, and the
 # three inline-directive diagnostics that report a directive which can never
-# do what it says. The seven channels that sit beside them and deliberately do
+# do what it says. The eight channels that sit beside them and deliberately do
 # not are architecture.layer-violation (a forbidden dependency edge is real
 # code debt), architecture.unmatched-exclude (an inert exclude clause leaves
 # the run's conclusions wider than asked for, which is debt a project may
-# accept and pay down), discovery.unmatched-exclude (the same for an exclusion
+# accept and pay down), architecture.doubted-assignment (an assignment the run
+# could not fully decide is information, reported at info and never gating),
+# discovery.unmatched-exclude (the same for an exclusion
 # that removed no directory: a shared configuration may legitimately name a
 # path one repository does not have), the three suppression.unmatched-*
 # channels (the same again for a suppression value that names nothing this run
@@ -81,6 +83,7 @@ annotation.unsupported-threshold - file config-error
 annotation.unused-directive - file
 architecture.circular-dependency higher project
 architecture.coverage-gap - project config-error
+architecture.doubted-assignment - project
 architecture.empty-template - project config-error
 architecture.layer-violation - class
 architecture.pending-layer-matched - project config-error

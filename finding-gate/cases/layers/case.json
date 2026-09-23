@@ -1,6 +1,6 @@
 {
     "id": "layers",
-    "description": "A layer policy with a forbidden edge, an unreachable layer, a shadowing pair, a matched pending layer, an empty template, a class outside every layer, an exclude clause that removes nothing, and a graph-based extends criterion (plus its exclude form) that must key off an anonymous class's own header, not off the class enclosing it. The corpus also carries an implements- and an attribute-bearing anonymous class, but no declared layer reads implements: or attributes:, so those two fixtures cover only that the shape parses without moving any finding -- not membership behavior for those criteria.",
+    "description": "A layer policy with a forbidden edge, an unreachable layer, a shadowing pair, a matched pending layer, an empty template, a class outside every layer, an exclude clause that removes nothing, three assignments left in doubt (one analysed class whose own layer's exclude: reads an interface outside the corpus, two symbols outside the paths an extends criterion cannot answer; against a reference older than architecture.doubted-assignment that fixture fires architecture.unmatched-exclude on the doubt layer's exclude: instead, while the candidate withdraws that finding and fires architecture.doubted-assignment), and a graph-based extends criterion (plus its exclude form) that must key off an anonymous class's own header, not off the class enclosing it. The corpus also carries an implements- and an attribute-bearing anonymous class, but no layer that reaches them reads implements: or attributes: (the doubt layer's exclude: reads implements: only for its own namespace), so those two fixtures cover only that the shape parses without moving any finding -- not membership behavior for those criteria.",
     "paths": [
         "src"
     ],
@@ -14,6 +14,7 @@
     ],
     "channels": [
         "architecture.coverage-gap@project",
+        "architecture.doubted-assignment@project",
         "architecture.empty-template@project",
         "architecture.layer-violation@class",
         "architecture.pending-layer-matched@project",

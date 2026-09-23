@@ -62,6 +62,7 @@ suppression.unmatched-namespace
 suppression.unmatched-rule-ledger
 architecture.layer-violation
 architecture.unmatched-exclude
+architecture.doubted-assignment
 architecture.coverage-gap
 architecture.unreachable-layer
 architecture.potential-shadow

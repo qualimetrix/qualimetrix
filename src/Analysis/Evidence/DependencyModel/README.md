@@ -68,6 +68,13 @@ the coupling view, a class declaring `implements \JsonSerializable` is
 indistinguishable from one that does not. Adding an edge to this view moves no
 coupling metric; adding one to the coupling view does.
 
+`ClassLikeHandler` also records the interfaces PHP gives a declaration without
+their being written: `UnitEnum` on every enum, `BackedEnum` on a backed one,
+and `Stringable` on a class or interface declaring `__toString()` in its own
+body. They are `implements` edges to PHP's own interfaces, so they reach the
+declaration view and never the coupling view. A `__toString()` a class takes
+from a trait is not recorded: the trait's body is another declaration.
+
 ### The two namespace coupling scopes
 
 A namespace that both declares classes and contains sub-namespaces is two things

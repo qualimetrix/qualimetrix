@@ -6,13 +6,11 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation;
 
 use Symfony\Component\ExpressionLanguage\ExpressionFunction;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
-use Symfony\Component\ExpressionLanguage\Node\ConstantNode;
-use Symfony\Component\ExpressionLanguage\Node\GetAttrNode;
 use Symfony\Component\ExpressionLanguage\Node\NameNode;
 use Symfony\Component\ExpressionLanguage\Node\Node;
-use Symfony\Component\ExpressionLanguage\Node\NullCoalesceNode;
 use Symfony\Component\ExpressionLanguage\ParsedExpression;
 use Symfony\Component\ExpressionLanguage\SyntaxError;
+use Throwable;
 
 /**
  * The one place that parses a computed metric's formula and reads what it names.
@@ -34,14 +32,22 @@ use Symfony\Component\ExpressionLanguage\SyntaxError;
  *
  * Reading the tree also settles what a regular expression could only approximate:
  * whether a formula needs a key is a fact about where each read sits relative to
- * `??`, and about which other keys are present — never about the name alone.
+ * `??` and to the operands only a runtime value lets run, and about which other
+ * keys are present — never about the name alone.
  */
 final class ComputedMetricExpression
 {
     /** The single variable a formula sees. */
-    private const string VARIABLE = 'm';
+    private const string VARIABLE = ComputedMetricReads::VARIABLE;
 
     private readonly ExpressionLanguage $expressionLanguage;
+
+    /**
+     * Per formula, its branch trace, or null where every operand always runs.
+     *
+     * @var array<string, ?ComputedMetricBranchTrace>
+     */
+    private array $traces = [];
 
     public function __construct()
     {
@@ -128,21 +134,7 @@ final class ComputedMetricExpression
      */
     public static function keyReadFrom(?Node $node): ?string
     {
-        if (!$node instanceof GetAttrNode || $node->attributes['type'] !== GetAttrNode::ARRAY_CALL) {
-            return null;
-        }
-
-        $base = $node->nodes['node'] ?? null;
-
-        if (!$base instanceof NameNode || $base->attributes['name'] !== self::VARIABLE) {
-            return null;
-        }
-
-        $attribute = $node->nodes['attribute'] ?? null;
-
-        return $attribute instanceof ConstantNode && \is_string($attribute->attributes['value'])
-            ? $attribute->attributes['value']
-            : null;
+        return ComputedMetricReads::keyOf($node);
     }
 
     /** Whether a key names another computed metric rather than a measured one. */
@@ -168,14 +160,22 @@ final class ComputedMetricExpression
     }
 
     /**
-     * The absent keys this formula would read as `null` where it cannot use
-     * one: in arithmetic, a function argument, or as the formula's own value.
-     * Empty means the formula is computable from what is present.
+     * The absent keys this formula reads as `null` where it cannot use one —
+     * in arithmetic, a function argument, a condition, or as the formula's own
+     * value — on every path its evaluation can take. Empty means nothing
+     * certainly fails; {@see evaluateOn()} judges the rest on one symbol.
      *
      * Not a fixed list of "required" keys: `m["a"] ?? m["b"]` needs one of the
      * two, and which one depends on what is present — `b` is read only where
      * `a` is absent. A flat list either demands `b` where `a` answers, or
      * demands neither and lets two absent keys reach the arithmetic as 0.
+     *
+     * Where this stops: a ternary branch, and the right side of `and`/`or`,
+     * run only on a value the symbol carries, and which one runs is not
+     * decided here. A key only one branch reads is not counted; a key both
+     * branches read is, and so is every bare read in a condition. The right
+     * side of `??` behind a left side other than a read or another `??` is
+     * counted as read. {@see ComputedMetricReads} has the full rule.
      *
      * @param callable(string): bool $isPresent
      *
@@ -189,68 +189,59 @@ final class ComputedMetricExpression
             return [];
         }
 
-        [$consumed, $value] = self::absentReads($root, $isPresent);
-
-        return array_values(array_unique([...$consumed, ...$value]));
+        return ComputedMetricReads::missingOf($root, $isPresent);
     }
 
     /**
-     * Absent reads under a node, split by where their `null` goes.
+     * Evaluates the formula on one symbol's metrics, or names the absent keys
+     * that keep its value from being a measurement.
      *
-     * The second list holds the reads whose `null` becomes the node's own
-     * value, which an enclosing `??` can still catch; the first holds those
-     * already consumed by an operator or a function, which nothing can.
+     * A read only a branch makes is judged by the branch the evaluation
+     * enters, as it enters it: before that operand runs, so a `null` it would
+     * read never reaches the arithmetic or a PHP function. Whether a condition
+     * holds is computed only by the evaluation itself.
      *
-     * @param callable(string): bool $isPresent
+     * @throws Throwable when the evaluation fails and no absent key explains it
      *
-     * @return array{0: list<string>, 1: list<string>}
+     * @return array{list<string>, mixed} the missing keys, and the value when there are none
      */
-    private static function absentReads(Node $node, callable $isPresent): array
+    public function evaluateOn(string $formula, MetricLookup $metrics): array
     {
-        $key = self::keyReadFrom($node);
+        $isPresent = static fn(string $key): bool => isset($metrics[$key]);
 
-        if ($key !== null) {
-            return [[], $isPresent($key) ? [] : [$key]];
+        $missing = $this->missingKeysOf($formula, $isPresent);
+        if ($missing !== []) {
+            return [$missing, null];
         }
 
-        if ($node instanceof NullCoalesceNode) {
-            return self::absentReadsOfFallback($node, $isPresent);
+        $variables = [self::VARIABLE => $metrics];
+        $trace = $this->traceOf($formula);
+        if ($trace === null) {
+            return [[], $this->evaluate($formula, $variables)];
         }
 
-        $consumed = [];
+        $trace->start($isPresent);
 
-        foreach ($node->nodes as $child) {
-            if ($child instanceof Node) {
-                [$childConsumed, $childValue] = self::absentReads($child, $isPresent);
-                $consumed = [...$consumed, ...$childConsumed, ...$childValue];
-            }
+        try {
+            $value = $this->expressionLanguage->evaluate(new ParsedExpression($formula, $trace->traced), $variables);
+        } catch (Throwable $failure) {
+            $missing = $trace->missingInRun();
+
+            return $missing !== [] ? [$missing, null] : throw $failure;
         }
 
-        return [$consumed, []];
+        $missing = $trace->missingInRun();
+
+        return $missing !== [] ? [$missing, null] : [[], $value];
     }
 
-    /**
-     * @param callable(string): bool $isPresent
-     *
-     * @return array{0: list<string>, 1: list<string>}
-     */
-    private static function absentReadsOfFallback(NullCoalesceNode $node, callable $isPresent): array
+    private function traceOf(string $formula): ?ComputedMetricBranchTrace
     {
-        $left = $node->nodes['expr1'];
-        [$consumed, $value] = self::absentReads($left, $isPresent);
-
-        // Only a read or another `??` says here whether it is null. Any
-        // other left side might be — a ternary, `max()` of two nulls — so
-        // the right side is taken as read: it cannot be decided, and
-        // demanding a key is the side that fabricates nothing.
-        if ($value === [] && (self::keyReadFrom($left) !== null || $left instanceof NullCoalesceNode)) {
-            return [$consumed, []];
+        if (!\array_key_exists($formula, $this->traces)) {
+            $this->traces[$formula] = ComputedMetricBranchTrace::of($this->parse($formula)->getNodes());
         }
 
-        [$rightConsumed, $rightValue] = self::absentReads($node->nodes['expr2'], $isPresent);
-
-        // Null only when both sides are; then both sides' keys are why.
-        return [[...$consumed, ...$rightConsumed], $rightValue === [] ? [] : [...$value, ...$rightValue]];
+        return $this->traces[$formula];
     }
 
     /**

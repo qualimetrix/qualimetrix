@@ -330,6 +330,55 @@ final class UndecidableMembershipTest extends TestCase
     }
 
     #[Test]
+    public function itDoesNotNameALayerDeclaredAfterTheAssignedOneAsUndecided(): void
+    {
+        // First match wins, so a layer declared after the assigned one could
+        // not have owned the class whatever it answered. Naming it would tell
+        // every reader of this list that the assignment can change when it
+        // cannot.
+        $registry = new LayerRegistry(
+            [
+                new LayerDefinition('web', new MembershipSpec(patterns: [self::CHILD_NS . '\\**'])),
+                new LayerDefinition('vendorish', new MembershipSpec(extends: [self::BASE])),
+            ],
+            new ClassContextFactory(),
+        );
+        $registry->bindGraph(
+            self::graphWith([[self::CHILD, self::MIDDLE, DependencyType::Extends]]),
+            [$this->child()],
+        );
+
+        self::assertSame('web', $registry->resolveLayer($this->child()));
+        self::assertSame([], $registry->undecidedLayers($this->child()));
+        self::assertSame([], $registry->chainStopsAt($this->child()));
+    }
+
+    #[Test]
+    public function itNamesAnUnansweredExcludeWhateverLayerWonTheClass(): void
+    {
+        // A different question from the one above: not "can the assignment
+        // change" but "did this clause ever answer". The clause on `infra`
+        // went unanswered even though `web` won the class.
+        $registry = new LayerRegistry(
+            [
+                new LayerDefinition('web', new MembershipSpec(patterns: [self::CHILD_NS . '\\**'])),
+                new LayerDefinition('infra', new MembershipSpec(
+                    patterns: ['App\\**'],
+                    exclude: new ExcludeSpec(extends: [self::BASE]),
+                )),
+            ],
+            new ClassContextFactory(),
+        );
+        $registry->bindGraph(
+            self::graphWith([[self::CHILD, self::MIDDLE, DependencyType::Extends]]),
+            [$this->child()],
+        );
+
+        self::assertSame([], $registry->undecidedLayers($this->child()));
+        self::assertSame(['infra'], $registry->unansweredExcludeLayers($this->child()));
+    }
+
+    #[Test]
     public function itKeepsANamespaceSymbolDecisive(): void
     {
         // A namespace has no parents and no attributes, and that IS the answer
@@ -726,30 +775,26 @@ final class UndecidableMembershipTest extends TestCase
         self::assertSame([], $registry->undecidedLayers($subject));
     }
 
-    #[Test]
-    public function itTreatsAPhpClassThisRuntimeDoesNotLoadAsACut(): void
+    /**
+     * @return iterable<string, array{0: MembershipSpec, 1: ?string}>
+     */
+    public static function provideCriteriaAboutAPhpClassNoLocalRuntimeLoads(): iterable
     {
-        // The builtin list is fixed and does not depend on which extensions
-        // this PHP loads; a class it names that is not loaded here has a
-        // hierarchy nobody read, and the answer says so.
-        $unloaded = null;
-        foreach (['EnchantBroker', 'GMP', 'finfo', 'Collator', 'SNMP', 'tidy', 'XSLTProcessor'] as $candidate) {
-            if (!class_exists($candidate, false) && !interface_exists($candidate, false)) {
-                $unloaded = $candidate;
+        yield 'named PHP ancestor' => [new MembershipSpec(extends: ['PDO']), 'web'];
+        yield 'unrelated base' => [new MembershipSpec(extends: [self::UNRELATED_BASE]), null];
+    }
 
-                break;
-            }
-        }
-        if ($unloaded === null) {
-            self::markTestSkipped('Every candidate PHP class is loaded in this runtime.');
-        }
+    #[Test]
+    #[DataProvider('provideCriteriaAboutAPhpClassNoLocalRuntimeLoads')]
+    public function itDecidesAboutAPhpClassWhetherOrNotThisRuntimeLoadsIt(MembershipSpec $membership, ?string $expected): void
+    {
+        // `Pdo\Firebird` needs pdo_firebird, which few runtimes load. Its
+        // hierarchy is a fact about PHP, not about the analysing machine, so
+        // the answer is the same on every one of them.
+        $registry = $this->registryFor($membership, [[self::CHILD, 'Pdo\\Firebird', DependencyType::Extends]]);
 
-        $registry = $this->registryFor(
-            new MembershipSpec(extends: [self::UNRELATED_BASE]),
-            [[self::CHILD, $unloaded, DependencyType::Extends]],
-        );
-
-        self::assertSame(['web'], $registry->undecidedLayers($this->child()));
+        self::assertSame($expected, $registry->resolveLayer($this->child()));
+        self::assertSame([], $registry->undecidedLayers($this->child()));
     }
 
     private function child(): SymbolPath

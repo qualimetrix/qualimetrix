@@ -172,9 +172,13 @@ the run analysed, so an inheritance chain that leaves `paths:` — through a
 vendor parent or interface, or a subject with no analysed declaration of its
 own — used to come back as a confident "this class does not match". Membership
 is three-valued now. PHP's own classes and interfaces end a chain on known
-ground (read from the running PHP), and a chain cut only among the interfaces
-leaves `extends:` decidable, so what stays undecided is a chain that reaches
-unanalysed vendor or project code. Two things move on an unchanged tree:
+ground: their supertypes come from a table shipped with Qualimetrix, so the
+answer does not depend on the PHP version or extensions of the machine running
+the analysis. The interfaces PHP adds unwritten count (`UnitEnum` and
+`BackedEnum` on enums, `Stringable` on a declared `__toString()`), and a chain
+cut only among the interfaces leaves `extends:` decidable. What stays
+undecided is a chain that reaches unanalysed vendor or project code. Three
+things move on an unchanged tree:
 
 - a class whose only layer is undecided is in no layer, and
   `architecture.coverage-gap` counts it separately from a class every criterion
@@ -182,12 +186,17 @@ unanalysed vendor or project code. Two things move on an unchanged tree:
   as a guess;
 - an unanswerable layer never withdraws a match: a class matched by one layer
   keeps it when an earlier layer or its own `exclude:` clause cannot be
-  answered, its edges are judged by the allow-list, and
-  `architecture.coverage-gap` counts the assignment as resting on a layer the
-  run could not fully decide.
+  answered, and its edges are judged by the allow-list. Such an assignment is
+  in doubt, not a coverage gap: it is counted on the new `info` channel
+  `architecture.doubted-assignment` (while `coverage-gap` is `warn` or
+  `error`), split into analysed classes and symbols outside the paths, and
+  never fails the run;
+- `architecture.unmatched-exclude` no longer reports an `exclude:` clause that
+  could not be answered as having removed no class.
 
 `debug:layer-assignment` names where an undecided class's chain stops (the
-`The chain stops at:` line; `chainStopsAt` in `--format=json`). See
+`The chain stops at:` line; `chainStopsAt` in `--format=json`) and lists an
+unanswered layer only where it can change the assignment. See
 [ADR 0079](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0079-a-criterion-the-run-cannot-answer-is-undecidable.md).
 
 **A layer template that declares `suffix:`, `attributes:`, `implements:` or
@@ -222,7 +231,10 @@ covers another computed metric read without `??` at a level missing from its own
 `levels:`, raised before analysis; a `project` level inheriting the `namespace`
 formula is checked at `project`. It does not cover the right side of a `??`
 whose left side the level carries: `m["a"] ?? m["b"]` is refused only when
-neither key is carried there. A chain none of whose links the level carries is
+neither key is carried there. Nor does it cover a key only one ternary branch,
+or the right side of `and`/`or`, reads — which branch runs is known only per
+symbol, and a symbol that reaches such a key gets no value and is counted in
+the warning. A key read in the condition, or by both branches, is refused. A chain none of whose links the level carries is
 refused naming every link.
 
 **Inline-directive forms that used to be silent now fail the run.** Each is
@@ -266,10 +278,10 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   share below 100% where it always read 100%.
 - The `architecture.coverage-gap` message says when a class is outside every
   layer because the run could not decide one, rather than because no layer
-  claims it, and counts assignments that rest on a layer the run could not
-  fully answer; it is emitted for those even when nothing is outside every
-  layer. The advice to widen `paths:` is given only where analysing more of the
-  project can decide the class.
+  claims it. Its advice is split by kind and given only for the kinds present:
+  declare a layer for classes every criterion answered "no" about, widen
+  `paths:` for analysed classes whose chain leaves them, and declare a
+  `patterns` layer first for symbols outside the paths.
 - `design.dit` says when it did not follow an inheritance chain to a root. A
   run writes one warning naming how many chains leaving the analysed path
   stopped early and where the walk stopped, so a depth that stopped short is no
@@ -370,7 +382,11 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   value, and the run logs one warning per metric and level with the number of
   skipped symbols, some of their names and the missing keys. The right side of
   `??` counts only where its left side is absent: `m["a"] ?? m["b"]` is computed
-  wherever either key is present. Expect a computed metric — including a health
+  wherever either key is present. A ternary branch, and the right side of
+  `and`/`or`, count only on a symbol whose evaluation enters them:
+  `m["x"] > 0 ? 7 : m["y"]` is `7` on every symbol with a positive `x`, whether
+  or not it carries `y`; a bare read in the condition counts on every symbol.
+  Expect a computed metric — including a health
   dimension — to be absent where it used to carry a value derived from nothing,
   and the findings that value produced to be gone with it. End the formula with
   a literal (`?? 0`) where a default is genuinely intended.
@@ -382,6 +398,10 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   through `implements \IteratorAggregate`) now match a class that declares it;
   they used to answer "no", and a template layer built on them was reported as
   unreachable. Coupling metrics are unchanged.
+- `@qmx-threshold` in the docblock of a closure or arrow function passed as an
+  argument, written as an array element or as a statement of its own now
+  retunes that function, as `@qmx-ignore` in the same place already silenced
+  it; it used to be refused as written where nothing is measured.
 - An inline directive written between a declaration's attributes and the
   declaration (`#[Attr]`, then `/** @qmx-ignore ... */`, then `public function`)
   now applies exactly as it does above the attributes; it used to be ignored

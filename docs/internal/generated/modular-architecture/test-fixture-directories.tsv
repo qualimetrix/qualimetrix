@@ -32,6 +32,7 @@ tests/Analysis/Policy/Architecture/Fixtures	Analysis/Policy/Architecture	"Retain
 tests/Analysis/Policy/Architecture/Fixtures/AncestryBorderSample	Analysis/Policy/Architecture	"Retain at the materialized subject-owned path."
 tests/Analysis/Policy/Architecture/Fixtures/AncestryBorderSample/Domain	Analysis/Policy/Architecture	"Retain at the materialized subject-owned path."
 tests/Analysis/Policy/Architecture/Fixtures/AncestryBorderSample/Infra	Analysis/Policy/Architecture	"Retain at the materialized subject-owned path."
+tests/Analysis/Policy/Architecture/Fixtures/AncestryBorderSample/Library	Analysis/Policy/Architecture	"Retain at the materialized subject-owned path."
 tests/Analysis/Policy/Architecture/Fixtures/AncestryBorderSample/Module	Analysis/Policy/Architecture	"Retain at the materialized subject-owned path."
 tests/Analysis/Policy/Architecture/Fixtures/AncestryBorderSample/Module/Billing	Analysis/Policy/Architecture	"Retain at the materialized subject-owned path."
 tests/Analysis/Policy/Architecture/Fixtures/AncestryBorderSample/Module/Ledger	Analysis/Policy/Architecture	"Retain at the materialized subject-owned path."

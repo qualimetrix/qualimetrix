@@ -1,6 +1,6 @@
 {
   "version": 13,
-  "generated": "2026-09-23T08:00:55+00:00",
+  "generated": "2026-09-23T10:29:27+00:00",
   "scope": ["src"],
   "entries": {
     "declaration:callable:Qualimetrix\\Analysis\\Configuration\\Contract\\Discovery\\ComposerAutoloadPathReaderInterface::extractAutoloadPaths@src/Analysis/Configuration/Contract/Discovery/ComposerAutoloadPathReaderInterface.php": [
@@ -431,9 +431,6 @@
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Complexity": [
       {"channel":"size.class-count","magnitudes":[21]}
-    ],
-    "ns:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation": [
-      {"channel":"health.cohesion","magnitudes":[42.5]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Finding": [
       {"channel":"health.maintainability","magnitudes":[43.7]}

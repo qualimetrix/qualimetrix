@@ -16,8 +16,9 @@ External owners use only the contracts in `Contract/`:
 - `LayerPolicyPreparationInterface` is the Run-owned sequential preparation
   boundary. Disabling the rule clears state and does no class-universe or
   template-expansion work. It also carries the literal names of the diagnostic
-  channels the producer emits under rule names other than its own — two from
-  the rule, five from its configuration validator — and the project-scoped
+  channels the producer emits under rule names other than its own — three from
+  the rules (`unassigned-class`, `unmatched-exclude`, `doubted-assignment`),
+  five from its configuration validator — and the project-scoped
   subset of them.
 - `LayerAssignmentInspectorInterface`, `LayerAssignment`, and
   `LayerAssignmentMatch` form the Console debug projection.
@@ -92,13 +93,19 @@ subject's own declaration was read, and `ClassContext::$ancestryCuts` names
 where the parent-class chain was cut and, separately, every interface the walk
 reached without facts of its own.
 
-A class or interface PHP declares is not a cut. `PhpClassHierarchy` reads its
-supertypes from the running PHP by reflection, gated by
-`PhpBuiltinClassRegistry` and with autoloading off, so no analysed or vendor
-file is ever loaded; a listed name the runtime does not provide (an extension
-not loaded here) is reported as a cut. It lives here rather than beside the
-registry in `Core` because this slice is its only reader; a second reader is
-what would move it.
+A class or interface PHP declares is not a cut. Its parent, interfaces and
+class-level attributes come from `Core\Symbol\PhpBuiltinClassHierarchy`, a
+static table over `PhpBuiltinClassRegistry`'s names, so membership is the same
+whichever PHP runs the analysis and whichever extensions it loads. Nothing in
+this slice reads reflection. For an interface, `extends` follows the
+interfaces it extends, as PHP's own keyword does.
+
+The interfaces PHP adds unwritten — `UnitEnum` and `BackedEnum` on an enum,
+`Stringable` on a class or interface declaring `__toString()` — arrive as
+declaration edges from `ClassLikeHandler`. The interface walk also follows an
+interface's own `implements` edge, since that edge can only be the `Stringable`
+PHP gave it. A `__toString()` a class takes from a trait is not seen, and
+`extends: ['\Stringable']` does not see the one an interface gets.
 Criterion FQNs are stored without a leading `\`, which is how a class in the
 global namespace is written (`\Throwable`) and how the run records none of
 them.
@@ -140,7 +147,11 @@ view, so no edge to a PHP type is ever judged against a layer.
 `MembershipResult::undecided()` carries an unanswered positive criterion out of
 the layer, `LayerRegistry::undecidedLayers()` is the third exit of the one
 cached walk, and `LayerRegistry::chainStopsAt()` names where the chain stopped,
-which `debug:layer-assignment` prints. `architecture.coverage-gap` names the
+which `debug:layer-assignment` prints. `undecidedLayers()` is also the one place
+that decides which unanswered layers bear on an assignment: all of them for a
+symbol nothing matched, only those declared no later than the assigned layer
+otherwise. Every reader of the doubt takes that list as it comes rather than
+re-deriving the rule from the declaration order. `architecture.coverage-gap` names the
 count and a sample of undecided symbols outside every layer — only when such a
 symbol exists, so an all-decided project reads the sentence it always read —
 and says what a later layer does with them: it assigns them, as a guess.
@@ -150,11 +161,16 @@ declared before one that matched nor an undecidable `exclude:` on the matching
 layer itself removes the class: withdrawing it would leave the class in no
 layer, no allow-list would judge its edges, and real violations would stop being
 reported. The layer whose `exclude:` went unanswered answers
-`MembershipResult::doubtedMatch()` and is named in both the match list and
-`undecidedLayers()`. `LayerEvidenceCollector` counts every assignment that
-stands on a layer declared no later than the assigned one which went unanswered,
-and `architecture.coverage-gap` reports that count too, even when nothing is
-outside every layer.
+`MembershipResult::doubtedMatch()`; when it is the assigned layer it is named in
+both the match list and `undecidedLayers()`, and whichever layer won it is named
+by `unansweredExcludeLayers()`, the fourth exit of the walk.
+`LayerEvidenceCollector` counts every symbol that stands assigned with a
+non-empty `undecidedLayers()` — analysed classes and dependency-edge ends
+alike, each end on its own — and keeps apart those the run did not analyse.
+That count is information, not a gap: `architecture.coverage-gap` names it only
+when it fires for unassigned or undecidable symbols, and never fires for it.
+`architecture.doubted-assignment` publishes it at `info` while the coverage mode
+is not `ignore`.
 
 Four declarations that used to be accepted are now refused at config load,
 because there is no correct silent reading of any of them. A template layer may
@@ -210,7 +226,11 @@ it is the rule's channel at a fixed `warning` and not the validator's. The
 "caught something" half of the predicate is what keeps it from restating
 `architecture.unreachable-layer`: the clause is evaluated only after the
 positive criteria succeed, so a layer that matched nothing never offered it
-anything to remove.
+anything to remove. A clause that could not be answered for some symbol its
+layer caught is not reported: "removed nothing" has not been shown for it.
+The rule's third channel, `architecture.doubted-assignment`, is built by
+`DeclaredLayerReachability::doubtedAssignments()` beside the coverage text that
+names the same population.
 `UnassignedClassRule` emits the magnitude channel
 `architecture.unassigned-class`, gated by its own single `mode` option and built
 by `UnassignedClassSummary`; both are ordinary debt a baseline may accept. Being

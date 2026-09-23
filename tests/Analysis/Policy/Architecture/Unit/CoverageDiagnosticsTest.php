@@ -336,7 +336,7 @@ final class CoverageDiagnosticsTest extends TestCase
         );
 
         $collectClassEvidence = new ReflectionMethod($collector, 'collectClassEvidence');
-        [$assignedHits, $matchedSymbols, , $shadowEvidence, $uncoveredClasses] = $collectClassEvidence->invoke(
+        [$assignedHits, $symbolSets, $shadowEvidence, $uncoveredClasses] = $collectClassEvidence->invoke(
             $collector,
             $arch,
             $context,
@@ -348,7 +348,7 @@ final class CoverageDiagnosticsTest extends TestCase
                 'broad' => ['class:App\\Controller\\OwnedClass' => true],
                 'narrow' => ['class:App\\Controller\\OwnedClass' => true],
             ],
-            $matchedSymbols,
+            $symbolSets['matched'],
             'The shadowed layer matched the class it lost — the two tallies must not collapse into one.',
         );
         self::assertArrayHasKey('broad', $shadowEvidence);

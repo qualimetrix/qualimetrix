@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepositor
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
@@ -25,6 +26,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DeclaredLayerReachability;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -97,6 +99,46 @@ final class UndecidableCoverageGapTest extends TestCase
     }
 
     #[Test]
+    public function itGivesOnlyTheAnalysedClassAdviceWhenEveryUndecidedSymbolWasAnalysed(): void
+    {
+        // The child is analysed and undecided; its vendor parent is decided by
+        // the later patterns layer. Advice about a symbol outside the analysed
+        // paths applies to nothing here, so it must not be given.
+        $finding = $this->coverageFindingFor(
+            [
+                new LayerDefinition('web', new MembershipSpec(extends: ['Vendor\\Lib\\Base'])),
+                new LayerDefinition('vendor', new MembershipSpec(patterns: ['Vendor\\**'])),
+            ],
+            'Vendor\\Lib\\Middle',
+        );
+
+        self::assertNotNull($finding);
+        self::assertStringContainsString('1 of them could not be decided', $finding->message);
+        $recommendation = (string) $finding->recommendation;
+        self::assertStringContainsString('debug:layer-assignment', $recommendation);
+        self::assertStringNotContainsString('patterns layer for its namespace', $recommendation);
+    }
+
+    #[Test]
+    public function itGivesOnlyTheOutsideAdviceWhenEveryUndecidedSymbolIsOutsideThePaths(): void
+    {
+        // The child matches through its direct parent; only that parent, never
+        // analysed, is undecided. `debug:layer-assignment` refuses a class the
+        // run did not analyse, so pointing there would be advice nobody can
+        // follow.
+        $finding = $this->coverageFindingFor(
+            [new LayerDefinition('web', new MembershipSpec(extends: ['Vendor\\Lib\\Middle']))],
+            'Vendor\\Lib\\Middle',
+        );
+
+        self::assertNotNull($finding);
+        self::assertStringContainsString('1 of them could not be decided', $finding->message);
+        $recommendation = (string) $finding->recommendation;
+        self::assertStringContainsString('patterns layer for its namespace', $recommendation);
+        self::assertStringNotContainsString('debug:layer-assignment', $recommendation);
+    }
+
+    #[Test]
     public function itLeavesTheSentenceAloneWhenTheWholeGapWasDecided(): void
     {
         // Control, and the reason the clause is conditional: a project whose
@@ -130,15 +172,19 @@ final class UndecidableCoverageGapTest extends TestCase
         self::assertNotNull($finding, 'A doubted assignment is reported even when nothing is outside every layer.');
         self::assertStringContainsString('1 assigned class(es) rest on a layer the run could not fully decide', $finding->message);
         self::assertStringContainsString('App\\Web\\OrderController', $finding->message);
-        self::assertStringContainsString('debug:layer-assignment', (string) $finding->recommendation);
+        // The doubt is counted here and published on its own channel; the gap
+        // recommendation points there instead of restating its advice.
+        self::assertStringContainsString('architecture.doubted-assignment', (string) $finding->recommendation);
     }
 
     #[Test]
-    public function itReportsADoubtedAssignmentWhenNothingIsOutsideEveryLayer(): void
+    public function itLeavesAFullyCoveredRunWithoutAGapWhenOnlyAssignmentsAreInDoubt(): void
     {
-        // Every end is assigned, so the only thing to say is the doubt. A gap
-        // report that spoke only about unassigned symbols would stay silent.
-        $finding = $this->coverageFindingFor(
+        // Every end is assigned. A doubt is a statement about how sure the run
+        // is of an assignment, not a hole in the declaration, so it must not
+        // fail the run through a configuration-error channel — the published
+        // shape that turned fully covered projects red on every vendor edge.
+        $findings = $this->findingsFor(
             [
                 new LayerDefinition('web', new MembershipSpec(
                     patterns: ['App\\Web\\**'],
@@ -149,9 +195,144 @@ final class UndecidableCoverageGapTest extends TestCase
             'Vendor\\Lib\\Middle',
         );
 
-        self::assertNotNull($finding);
-        self::assertStringContainsString('0 class(es) outside all declared layers.', $finding->message);
-        self::assertStringContainsString('1 assigned class(es) rest on a layer the run could not fully decide', $finding->message);
+        self::assertNull(self::findingOn($findings, LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME));
+    }
+
+    #[Test]
+    public function itPublishesTheDoubtAsInformationWhenNothingIsOutsideEveryLayer(): void
+    {
+        // The half that keeps the cure from being silence: the count still
+        // reaches the report, at a severity that never gates.
+        $findings = $this->findingsFor(
+            [
+                new LayerDefinition('web', new MembershipSpec(
+                    patterns: ['App\\Web\\**'],
+                    exclude: new ExcludeSpec(extends: ['Vendor\\Lib\\Base']),
+                )),
+                new LayerDefinition('vendor', new MembershipSpec(patterns: ['Vendor\\**'])),
+            ],
+            'Vendor\\Lib\\Middle',
+        );
+
+        $doubt = self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME);
+        self::assertNotNull($doubt);
+        self::assertSame(Severity::Info, $doubt->severity);
+        self::assertStringContainsString('1 assigned symbol(s) rest on a layer the run could not fully decide', $doubt->message);
+        self::assertStringContainsString('App\\Web\\OrderController', $doubt->message);
+        $recommendation = (string) $doubt->recommendation;
+        self::assertStringContainsString('debug:layer-assignment', $recommendation);
+        // Only analysed classes are in doubt here, so the advice for a symbol
+        // outside the analysed paths does not apply and is not given.
+        self::assertStringNotContainsString('outside the analysed paths', $recommendation);
+        self::assertStringNotContainsString('Declare layers covering', $recommendation);
+    }
+
+    #[Test]
+    public function itAdvisesANamespaceLayerForADoubtedSymbolOutsideThePaths(): void
+    {
+        // A vendor end is in doubt because an earlier `extends` layer cannot
+        // be answered about it. `debug:layer-assignment` refuses a class the
+        // run did not analyse, so pointing there would be advice nobody can
+        // follow; a patterns layer declared first is what settles it.
+        $findings = $this->findingsFor(
+            [
+                new LayerDefinition('controllers', new MembershipSpec(extends: ['Vendor\\Lib\\Middle'])),
+                new LayerDefinition('vendor', new MembershipSpec(patterns: ['Vendor\\**'])),
+            ],
+            'Vendor\\Lib\\Middle',
+        );
+
+        $doubt = self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME);
+        self::assertNotNull($doubt);
+        self::assertStringContainsString('Vendor\\Lib\\Middle', $doubt->message);
+        self::assertStringContainsString('1 outside the analysed paths', $doubt->message);
+        $recommendation = (string) $doubt->recommendation;
+        self::assertStringContainsString('patterns layer for its namespace declared before', $recommendation);
+        self::assertStringNotContainsString('debug:layer-assignment', $recommendation);
+    }
+
+    #[Test]
+    public function itPublishesNoDoubtWhileCoverageAccountingIsOff(): void
+    {
+        // `coverage-gap: ignore` is the project declining coverage accounting;
+        // the doubt count is part of it and must not appear uninvited.
+        $findings = $this->findingsFor(
+            [
+                new LayerDefinition('web', new MembershipSpec(
+                    patterns: ['App\\Web\\**'],
+                    exclude: new ExcludeSpec(extends: ['Vendor\\Lib\\Base']),
+                )),
+                new LayerDefinition('vendor', new MembershipSpec(patterns: ['Vendor\\**'])),
+            ],
+            'Vendor\\Lib\\Middle',
+            CoverageMode::Ignore,
+        );
+
+        self::assertNull(self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME));
+    }
+
+    #[Test]
+    public function itCountsADoubtedEdgeEndWhoseOtherEndIsInNoLayer(): void
+    {
+        // The vendor end is assigned under an `exclude:` the run cannot answer
+        // about it, and the only edge reaching it starts at a class no layer
+        // claims. The doubt is a fact about the vendor end alone, so the other
+        // end being unassigned must not hide it.
+        $findings = $this->findingsFor(
+            [
+                new LayerDefinition('vendor', new MembershipSpec(
+                    patterns: ['Vendor\\**'],
+                    exclude: new ExcludeSpec(extends: ['Some\\Other\\Base']),
+                )),
+            ],
+            'Vendor\\Lib\\Middle',
+        );
+
+        $gap = self::findingOn($findings, LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
+        self::assertNotNull($gap, 'The source class is outside every layer.');
+        self::assertStringContainsString('1 assigned class(es) rest on a layer the run could not fully decide', $gap->message);
+        self::assertStringContainsString('Vendor\\Lib\\Middle', $gap->message);
+    }
+
+    #[Test]
+    public function itKeepsTheExcludeClauseThatCouldNotAnswerOutOfTheInertReport(): void
+    {
+        // The clause was never evaluated to an answer for the one class the
+        // layer caught. "Removed no class — drop it" is a conclusion the run
+        // did not reach, and the class it may have been written for is exactly
+        // this one.
+        $findings = $this->findingsFor(
+            [
+                new LayerDefinition('web', new MembershipSpec(
+                    patterns: ['App\\Web\\**'],
+                    exclude: new ExcludeSpec(implements: ['App\\Testing\\Marker']),
+                )),
+                new LayerDefinition('vendor', new MembershipSpec(patterns: ['Vendor\\**'])),
+            ],
+            'Vendor\\Lib\\Middle',
+        );
+
+        self::assertNull(self::findingOn($findings, LayerViolationRule::UNMATCHED_EXCLUDE_NAME));
+    }
+
+    #[Test]
+    public function itStillReportsAnExcludeClauseThatAnsweredNoEverywhere(): void
+    {
+        // Control: the same clause over a class whose chain is known to its
+        // root. Every evaluation answered "no", so the clause is inert.
+        $findings = $this->findingsFor(
+            [
+                new LayerDefinition('web', new MembershipSpec(
+                    patterns: ['App\\Web\\**'],
+                    exclude: new ExcludeSpec(implements: ['App\\Testing\\Marker']),
+                )),
+            ],
+            null,
+        );
+
+        $inert = self::findingOn($findings, LayerViolationRule::UNMATCHED_EXCLUDE_NAME);
+        self::assertNotNull($inert);
+        self::assertStringContainsString('removed no class', $inert->message);
     }
 
     #[Test]
@@ -195,6 +376,30 @@ final class UndecidableCoverageGapTest extends TestCase
      */
     private function coverageFindingFor(array $layers, ?string $parent): ?Finding
     {
+        return self::findingOn($this->findingsFor($layers, $parent), LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
+    }
+
+    /**
+     * @param list<Finding> $findings
+     */
+    private static function findingOn(array $findings, string $channel): ?Finding
+    {
+        foreach ($findings as $finding) {
+            if ($finding->ruleName === $channel) {
+                return $finding;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param list<LayerDefinition> $layers
+     *
+     * @return list<Finding>
+     */
+    private function findingsFor(array $layers, ?string $parent, CoverageMode $mode = CoverageMode::Error): array
+    {
         $child = SymbolPath::forClass('App\\Web', 'OrderController');
 
         $allow = [];
@@ -205,7 +410,7 @@ final class UndecidableCoverageGapTest extends TestCase
         $architecture = new ArchitectureConfiguration(
             new LayerRegistry($layers),
             AllowListBuilder::policyFromExactMap($allow),
-            CoverageMode::Error,
+            $mode,
         );
 
         $edges = $parent === null ? [] : [new Dependency(
@@ -224,17 +429,9 @@ final class UndecidableCoverageGapTest extends TestCase
 
         ProcessorBuilder::prepared($architecture, $graph, $repository, $this->processor);
 
-        $findings = (new LayerVerdicts(new LayerViolationOptions(), $this->processor))->analyze(new AnalysisContext(
+        return (new LayerVerdicts(new LayerViolationOptions(), $this->processor))->analyze(new AnalysisContext(
             metrics: $repository,
             dependencyGraph: $graph,
         ));
-
-        foreach ($findings as $finding) {
-            if ($finding->ruleName === LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME) {
-                return $finding;
-            }
-        }
-
-        return null;
     }
 }

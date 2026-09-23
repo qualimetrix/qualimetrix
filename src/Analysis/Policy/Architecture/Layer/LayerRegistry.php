@@ -27,10 +27,15 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  *   second exit of the very same walk, not a second walk, and it changes
  *   nothing about assignment.
  * - {@see undecidedLayers()} returns the layers the run could not answer for
- *   the class. Third exit of the same walk, and it changes nothing about
- *   assignment either — see its own note for why that is deliberate.
+ *   the class that bear on its assignment. Third exit of the same walk, and
+ *   it changes nothing about assignment either — see its own note for why
+ *   that is deliberate, and for which unanswered layers bear on it.
+ * - {@see unansweredExcludeLayers()} returns the layers whose positive
+ *   criteria matched and whose `exclude:` clause could not be answered,
+ *   winning or not. Fourth exit, for the one reader asking about a clause
+ *   rather than about the class.
  *
- * All four lookups share a single cache keyed by
+ * All five lookups share a single cache keyed by
  * {@see SymbolPath::toCanonical()}: both outputs of the walk are computed once
  * and stored together, and {@see resolveLayer()} reads the first entry off the
  * match list. A class queried by every method therefore walks the criteria at
@@ -75,13 +80,15 @@ final class LayerRegistry
      * order (empty means the class matches no layer), `excluded`, the
      * names of the layers whose positive criteria matched but whose
      * `exclude:` clause then removed the class, `undecided`, the names of
-     * the layers the run could not answer either way, and `chainStopsAt`, where
-     * the inheritance chain stopped when any layer went unanswered. One entry rather than
+     * the layers the run could not answer either way that bear on the
+     * assignment, `unansweredExcludes`, the matching layers whose `exclude:`
+     * went unanswered, and `chainStopsAt`, where the inheritance chain stopped
+     * when a layer bearing on the assignment went unanswered. One entry rather than
      * parallel arrays because separate caches drift apart at every early return
      * and at {@see clearCache()}: a lookup that found one populated and the
      * others not would report an exclusion that never happened.
      *
-     * @var array<string, array{matches: list<LayerMatch>, excluded: list<string>, undecided: list<string>, chainStopsAt: list<string>}>
+     * @var array<string, array{matches: list<LayerMatch>, excluded: list<string>, undecided: list<string>, unansweredExcludes: list<string>, chainStopsAt: list<string>}>
      */
     private array $matchCache = [];
 
@@ -204,12 +211,23 @@ final class LayerRegistry
     }
 
     /**
-     * Returns the names of every layer whose membership the run could not
-     * decide for this symbol, in declaration order.
+     * Returns the names of the layers the run could not decide for this symbol
+     * and that bear on its assignment, in declaration order.
+     *
+     * **Which unanswered layers bear on it** is decided here and nowhere else:
+     * for a symbol no layer matched, every one of them; for an assigned
+     * symbol, those declared no later than the assigned layer — an earlier
+     * layer that might have owned it, or the assigned layer's own `exclude:`.
+     * A layer declared after the assigned one is left out, because first
+     * match wins and it could not have owned the symbol whatever it answered.
+     * So a non-empty list beside a match means exactly "this assignment can
+     * change once the chain is analysed", and every reader of the doubt —
+     * `architecture.coverage-gap`, `architecture.doubted-assignment`,
+     * `debug:layer-assignment` — reads that one statement instead of
+     * re-deriving it from the declaration order.
      *
      * The third exit of the same cached walk, for the same reason
-     * {@see excludedLayers()} is the second. `architecture.coverage-gap` and
-     * `debug:layer-assignment` are the consumers: a symbol in nobody's layer
+     * {@see excludedLayers()} is the second. A symbol in nobody's layer
      * because the run answered every criterion is a hole the author closes by
      * writing a layer, a symbol in nobody's layer because its inheritance
      * chain left the analysed set is not, and an assignment that stands on a
@@ -222,13 +240,32 @@ final class LayerRegistry
      * would leave the class in no layer, so no allow-list would judge its edges
      * and real violations would stop being reported — trading a wrong answer
      * for a missing one. The match stands and the doubt is published beside
-     * it; a layer whose exclude went unanswered is named in both lists.
+     * it; an assigned layer whose own exclude went unanswered is named both in
+     * the match list and here.
      *
      * @return list<string> layer names
      */
     public function undecidedLayers(SymbolPath $class): array
     {
         return $this->walk($class)['undecided'];
+    }
+
+    /**
+     * Returns the names of every layer whose positive criteria matched the
+     * symbol and whose `exclude:` clause could not be answered about it, in
+     * declaration order, whichever layer won the symbol.
+     *
+     * Not a subset of {@see undecidedLayers()}: the question is about the
+     * clause, not the assignment. `architecture.unmatched-exclude` asks
+     * whether a clause ever made a difference, and a clause that could not
+     * answer for a symbol the layer caught — shadowed or not — has not been
+     * shown to make none.
+     *
+     * @return list<string> layer names
+     */
+    public function unansweredExcludeLayers(SymbolPath $class): array
+    {
+        return $this->walk($class)['unansweredExcludes'];
     }
 
     /**
@@ -247,7 +284,7 @@ final class LayerRegistry
     }
 
     /**
-     * @return array{matches: list<LayerMatch>, excluded: list<string>, undecided: list<string>, chainStopsAt: list<string>}
+     * @return array{matches: list<LayerMatch>, excluded: list<string>, undecided: list<string>, unansweredExcludes: list<string>, chainStopsAt: list<string>}
      */
     private function walk(SymbolPath $class): array
     {
@@ -258,12 +295,27 @@ final class LayerRegistry
 
         $context = $this->contextFactory->build($class);
         if ($context->fqn === '') {
-            return $this->matchCache[$cacheKey] = ['matches' => [], 'excluded' => [], 'undecided' => [], 'chainStopsAt' => []];
+            return $this->matchCache[$cacheKey] = ['matches' => [], 'excluded' => [], 'undecided' => [], 'unansweredExcludes' => [], 'chainStopsAt' => []];
         }
 
+        $outcome = $this->walkLayers($context);
+
+        return $this->matchCache[$cacheKey] = $outcome + [
+            'chainStopsAt' => $outcome['undecided'] === [] ? [] : $context->chainStopsAt(),
+        ];
+    }
+
+    /**
+     * The walk proper: every layer asked once, in declaration order.
+     *
+     * @return array{matches: list<LayerMatch>, excluded: list<string>, undecided: list<string>, unansweredExcludes: list<string>}
+     */
+    private function walkLayers(ClassContext $context): array
+    {
         $matches = [];
         $excluded = [];
         $undecided = [];
+        $unansweredExcludes = [];
         foreach ($this->layers as $layer) {
             $result = $layer->matches($context);
             if ($result->isExcluded()) {
@@ -271,21 +323,25 @@ final class LayerRegistry
 
                 continue;
             }
-            // A doubted match lands in both lists: the class is a member and
-            // the run could not fully establish it.
-            if ($result->undecided) {
+            // Read before this layer's own match is recorded, so the assigned
+            // layer's unanswered `exclude:` bears on the assignment and every
+            // layer after it does not.
+            if ($result->undecided && $matches === []) {
                 $undecided[] = $layer->name();
+            }
+            if ($result->matched && $result->undecided) {
+                $unansweredExcludes[] = $layer->name();
             }
             if ($result->matched) {
                 $matches[] = new LayerMatch($layer->name(), $result->matchedCriteria);
             }
         }
 
-        return $this->matchCache[$cacheKey] = [
+        return [
             'matches' => $matches,
             'excluded' => $excluded,
             'undecided' => $undecided,
-            'chainStopsAt' => $undecided === [] ? [] : $context->chainStopsAt(),
+            'unansweredExcludes' => $unansweredExcludes,
         ];
     }
 

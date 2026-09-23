@@ -564,6 +564,40 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         }
     }
 
+    /**
+     * A read only a ternary branch makes may never run: which branch does is a
+     * fact about each symbol's values, judged when the formula is evaluated.
+     * The condition always runs, so a bare cross-level read there is refused.
+     */
+    #[Test]
+    public function itAcceptsACrossLevelReadOnlyATernaryBranchMakes(): void
+    {
+        $result = $this->resolver->resolve([
+            'computed.cls-only' => ['formula' => 'm["size.method-count"] + 1', 'levels' => ['class']],
+            'computed.branch' => [
+                'formula' => 'm["size.loc"] > 0 ? 1 : m["computed.cls-only"]',
+                'levels' => ['project'],
+            ],
+        ]);
+
+        self::assertNotNull($this->findByName($result, 'computed.branch'));
+    }
+
+    #[Test]
+    public function itRefusesACrossLevelReadInATernaryCondition(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('reads "computed.cls-only" at level "project", where it is not published (published at: class)');
+
+        $this->resolver->resolve([
+            'computed.cls-only' => ['formula' => 'm["size.method-count"] + 1', 'levels' => ['class']],
+            'computed.condition' => [
+                'formula' => 'm["computed.cls-only"] > 0 ? 1 : 0',
+                'levels' => ['project'],
+            ],
+        ]);
+    }
+
     #[Test]
     public function itAcceptsAKnownAggregationSuffixOnACatalogKey(): void
     {

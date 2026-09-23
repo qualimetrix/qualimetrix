@@ -44,7 +44,7 @@ final readonly class DeclarationControlBindings
     /**
      * @param array<int, list<MetricSubject>> $byStart
      * @param list<array{start: int, subject: MetricSubject, lexicalClassContext: ?string}> $callableStarts
-     * @param list<array{start: int, end: int, subject: MetricSubject}> $classRanges
+     * @param list<array{start: int, end: int, subject: MetricSubject, scope: ControlScope}> $classRanges
      * @param list<array{start: int, end: int, subject: MetricSubject, scope: ControlScope}> $callableRanges
      */
     private function __construct(
@@ -165,20 +165,37 @@ final readonly class DeclarationControlBindings
         }
 
         if ($node->getType() === 'Stmt_EnumCase' || $node->getType() === 'Stmt_ClassConst') {
-            return $this->containingBinding($this->classRanges, $start, ControlScope::Class_);
+            return $this->containingBinding($this->classRanges, $start);
         }
 
-        if ($start >= 0) {
-            return array_map(
-                static fn(MetricSubject $subject): array => [
-                    'subject' => $subject,
-                    'scope' => $node->getType() === 'PropertyHook' ? ControlScope::Hook : ControlScope::Callable,
-                ],
-                $this->subjectsAtStart($start, ...self::CALLABLE_SUBJECT_TYPES),
-            );
+        return $this->callablesBeginningWith($node);
+    }
+
+    /**
+     * The measured callables that begin where the node begins.
+     *
+     * php-parser gives a comment to the outermost node that starts at the
+     * next token, so the docblock of a closure passed as an argument, written
+     * as an array element or as a statement of its own reaches the argument,
+     * the item or the statement — never the closure. Beginning at the same
+     * token is what makes that comment the closure's.
+     *
+     * @return list<array{subject: MetricSubject, scope: ControlScope}>
+     */
+    public function callablesBeginningWith(Node $node): array
+    {
+        $start = $node->getStartFilePos();
+        if ($start < 0) {
+            return [];
         }
 
-        return [];
+        return array_map(
+            static fn(MetricSubject $subject): array => [
+                'subject' => $subject,
+                'scope' => $node->getType() === 'PropertyHook' ? ControlScope::Hook : ControlScope::Callable,
+            ],
+            $this->subjectsAtStart($start, ...self::CALLABLE_SUBJECT_TYPES),
+        );
     }
 
     /**
@@ -186,7 +203,7 @@ final readonly class DeclarationControlBindings
      */
     public function fallbackBindingsForProperty(Node $property): array
     {
-        $binding = $this->containingBinding($this->classRanges, $property->getStartFilePos(), ControlScope::Class_);
+        $binding = $this->containingBinding($this->classRanges, $property->getStartFilePos());
 
         return $binding !== [] ? $binding : [['subject' => $this->file, 'scope' => ControlScope::Class_]];
     }
@@ -195,7 +212,7 @@ final readonly class DeclarationControlBindings
      * @param array<Node> $ast
      * @param array<int, list<MetricSubject>> $byStart
      *
-     * @return list<array{start: int, end: int, subject: MetricSubject}>
+     * @return list<array{start: int, end: int, subject: MetricSubject, scope: ControlScope}>
      */
     private static function classRanges(NodeFinder $finder, array $ast, array $byStart): array
     {
@@ -205,7 +222,7 @@ final readonly class DeclarationControlBindings
             $end = $classLike->getEndFilePos();
             if ($start >= 0 && $end >= $start) {
                 foreach (self::subjectsAt($byStart, $start, ...self::CLASS_SUBJECT_TYPES) as $subject) {
-                    $ranges[] = ['start' => $start, 'end' => $end, 'subject' => $subject];
+                    $ranges[] = ['start' => $start, 'end' => $end, 'subject' => $subject, 'scope' => ControlScope::Class_];
                 }
             }
         }
@@ -287,11 +304,11 @@ final readonly class DeclarationControlBindings
     }
 
     /**
-     * @param list<array{start: int, end: int, subject: MetricSubject, scope?: ControlScope}> $ranges
+     * @param list<array{start: int, end: int, subject: MetricSubject, scope: ControlScope}> $ranges
      *
      * @return list<array{subject: MetricSubject, scope: ControlScope}>
      */
-    private function containingBinding(array $ranges, int $start, ?ControlScope $defaultScope = null): array
+    private function containingBinding(array $ranges, int $start): array
     {
         $bestSpan = null;
         $bindings = [];
@@ -309,7 +326,7 @@ final readonly class DeclarationControlBindings
             if ($span === $bestSpan) {
                 $bindings[] = [
                     'subject' => $range['subject'],
-                    'scope' => $range['scope'] ?? $defaultScope ?? ControlScope::Callable,
+                    'scope' => $range['scope'],
                 ];
             }
         }

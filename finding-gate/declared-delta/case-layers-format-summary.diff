@@ -1,0 +1,13 @@
+--- candidate
++++ reference (mapped)
+@@ -12,1 +12,1 @@
+-         architecture.coverage-gap: Examples of unclassified classes: Corpus\Layers\GraphBase\Marker, Corpus\Layers\GraphBase\MarkerAttribute, Corpus\Layers\GraphBase\MarkerContract, Corpus\Layers\Orphan\Loner. Declare layers covering these classes or accept the gap by leaving coverage-gap on "ignore". The assignments in doubt are not part of the gap and do not fail the run: each stands and its edges are judged against its layer's allow-list; architecture.doubted-assignment names them and what settles each.
++         architecture.coverage-gap: Examples of unclassified classes: Corpus\Layers\GraphBase\Marker, Corpus\Layers\GraphBase\MarkerAttribute, Corpus\Layers\GraphBase\MarkerContract, Corpus\Layers\Orphan\Loner. Declare layers covering these classes or accept the gap by leaving coverage-gap on "ignore".
+@@ -27,4 +27,3 @@
+-  10. [WRN] 0.88  src/AnonMember/ExtendsHost.php  [15min]
+-          architecture.layer-violation: Layer "anon-member" is not allowed to depend on any other declared layer.
+-Dep data: {"fromLayer":"anon-member","toLayer":"repository","source":"Corpus\\Layers\\AnonMember\\ExtendsHost","target":"Corpus\\Layers\\Repository\\UserRepository","type":"type_hint"}
+-12 violations (8 errors, 3 warnings, 1 info) | Tech debt: 3h (973.0 min/kLOC to fix)
++  10. [WRN] 0.88  [project]  [15min]
++          architecture.unmatched-exclude: Check the exclude criteria against the classes layer "doubt" actually holds — "qmx debug:layer-assignment <class>" shows what a given class matched. Correct the criteria, or drop the "exclude" clause if the classes it was written for are gone.
++12 violations (8 errors, 4 warnings) | Tech debt: 3h (973.0 min/kLOC to fix)

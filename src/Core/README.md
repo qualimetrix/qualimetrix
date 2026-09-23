@@ -46,6 +46,9 @@ Core/
 │   ├── LogicalClassPath.php               # Validated class-level logical identity
 │   ├── MetricSubject.php                  # Declaration, class, or aggregate metric subject
 │   ├── MetricSubjectCodec.php             # Scalar wire codec for metric subjects
+│   ├── PhpBuiltinClassHierarchy.php       # Parent, interfaces and attributes of each registered
+│   │                                      # name (static; PhpBuiltinClassHierarchyCensusTest
+│   │                                      #  compares every name the running PHP declares)
 │   ├── PhpBuiltinClassRegistry.php        # Single source of truth for PHP built-in classes
 │   │                                      # (hand-written; PhpBuiltinClassRegistryCensusTest
 │   │                                      #  compares it against the loaded extensions)

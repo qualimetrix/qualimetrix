@@ -82,13 +82,14 @@ final class LayerViolationRuleTest extends TestCase
             'layer-violation' => 'enabled',
             'layer-violation-severity' => 'severity',
         ], CliAliasReader::read(LayerViolationRule::class));
-        // Two channels, and the second one is the rule's rather than the
-        // configuration validator's on purpose: an `exclude:` clause that
+        // Three channels, and the second and third are the rule's rather than
+        // the configuration validator's on purpose: an `exclude:` clause that
         // removed nothing leaves the run's conclusions wider than asked for,
-        // which is debt a project may accept — not a declaration that cannot
-        // be honoured.
+        // which is debt a project may accept, and an assignment in doubt is
+        // information that must never gate — neither is a declaration that
+        // cannot be honoured.
         self::assertSame(
-            ['architecture.layer-violation', 'architecture.unmatched-exclude'],
+            ['architecture.layer-violation', 'architecture.unmatched-exclude', 'architecture.doubted-assignment'],
             array_keys(LayerViolationRule::channelDeclarations()),
         );
         self::assertStringContainsString('layer', strtolower($rule->getDescription()));

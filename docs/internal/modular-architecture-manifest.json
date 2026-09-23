@@ -1595,6 +1595,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricBranchTrace": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricBranchTrace.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.ComputedMetrics",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricDefaults": {
       "path": "src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php",
       "kind": "class",
@@ -1625,6 +1632,13 @@
     },
     "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricProducerOptions": {
       "path": "src/Analysis/Evidence/ComputedMetrics/ComputedMetricProducerOptions.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.ComputedMetrics",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricReads": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricReads.php",
       "kind": "class",
       "owner": "Analysis.Evidence.ComputedMetrics",
       "visibility": "internal",
@@ -3889,10 +3903,6 @@
         {
           "owner": "Analysis.Evidence.Complexity",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityVisitor"
-        },
-        {
-          "owner": "Analysis.Evidence.ComputedMetrics",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator"
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
@@ -10486,13 +10496,6 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\PhpClassHierarchy": {
-      "path": "src/Analysis/Policy/Architecture/Layer/PhpClassHierarchy.php",
-      "kind": "class",
-      "owner": "Analysis.Policy.Architecture",
-      "visibility": "internal",
-      "consumers": []
-    },
     "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\TemplateLayerDefinition": {
       "path": "src/Analysis/Policy/Architecture/Layer/TemplateLayerDefinition.php",
       "kind": "class",
@@ -13863,6 +13866,18 @@
         }
       ]
     },
+    "Qualimetrix\\Core\\Symbol\\PhpBuiltinClassHierarchy": {
+      "path": "src/Core/Symbol/PhpBuiltinClassHierarchy.php",
+      "kind": "class",
+      "owner": "Core.Symbol",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContextFactory"
+        }
+      ]
+    },
     "Qualimetrix\\Core\\Symbol\\PhpBuiltinClassRegistry": {
       "path": "src/Core/Symbol/PhpBuiltinClassRegistry.php",
       "kind": "class",
@@ -13884,10 +13899,6 @@
         {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthResolver"
-        },
-        {
-          "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\PhpClassHierarchy"
         }
       ]
     },

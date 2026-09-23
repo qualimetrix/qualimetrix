@@ -146,6 +146,21 @@ cannot disagree about a tag and leave it to neither. A property without hooks is
 read for its diagnostics only: nothing measures it, so its override is not
 carried and is refused instead of vanishing.
 
+**A threshold on a closure binds by position, as an ignore does.** php-parser
+gives a docblock to the outermost node starting at the next token, so the
+docblock of a closure or arrow function passed as an argument, written as an
+array element or as a statement of its own lands on the `Arg`, the `ArrayItem`
+or the `Stmt_Expression`, never on the function. Suppressions always bound such
+a comment to the callable beginning at the same position; the threshold reader
+visited only declaration node types, missed it, and the sweep refused the tag as
+written where nothing is measured — about a function that is measured, and that
+an `@qmx-ignore` in the same place did silence. The reader now visits the same
+nodes the sweep does, and a node that is not itself a declaration binds through
+`DeclarationControlBindings::callablesBeginningWith()` — the position half of
+the suppression binding only: the containment bindings a suppression also has
+(a parameter to its function, a constant to its class) are not followed, so a
+threshold there is still refused.
+
 The declaration form on an unbound node used to throw instead, and the throw was
 not contained: the file failed to process, so one misplaced annotation cost every
 metric and every finding in it, and the run reported a coverage failure rather

@@ -188,11 +188,16 @@ final readonly class SourceControlExtractor implements SourceControlExtractorInt
         $overrides = [];
         $diagnostics = [];
         $carriedTags = [];
-        $nodes = (new NodeFinder())->find($ast, static fn(Node $node): bool => isset(self::THRESHOLD_NODE_TYPES[$node->getType()]));
+        $nodes = (new NodeFinder())->find(
+            $ast,
+            static fn(Node $node): bool => isset(self::THRESHOLD_NODE_TYPES[$node->getType()])
+                || $unattached->owns($node)
+                || self::canCarrySuppression($node),
+        );
 
         foreach ($nodes as $found) {
             $node = $unattached->withOwnedComments($found);
-            $nodeBindings = $bindings->bindingsFor($node);
+            $nodeBindings = self::thresholdBindingsFor($node, $bindings);
             if ($nodeBindings === [] && $node->getType() === 'Stmt_Property') {
                 foreach ($bindings->fallbackBindingsForProperty($node) as $fallback) {
                     $result = $extractor->extractWithDiagnostics($node, $fallback['subject'], $fallback['scope']);
@@ -211,6 +216,24 @@ final readonly class SourceControlExtractor implements SourceControlExtractorInt
         }
 
         return [$overrides, $diagnostics, $carriedTags];
+    }
+
+    /**
+     * The declarations a threshold written on this node retunes.
+     *
+     * A declaration node binds as it always did. Any other node binds only to
+     * a callable beginning where it begins, whose docblock php-parser handed
+     * to it; the containment bindings a suppression also has — a parameter to
+     * its function, a constant to its class — are deliberately not followed,
+     * because a threshold is written on the declaration it retunes.
+     *
+     * @return list<array{subject: MetricSubject, scope: ControlScope}>
+     */
+    private static function thresholdBindingsFor(Node $node, DeclarationControlBindings $bindings): array
+    {
+        return isset(self::THRESHOLD_NODE_TYPES[$node->getType()])
+            ? $bindings->bindingsFor($node)
+            : $bindings->callablesBeginningWith($node);
     }
 
     /**

@@ -281,6 +281,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
         $names[] = LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME;
         $names[] = LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME;
         $names[] = LayerViolationRule::UNMATCHED_EXCLUDE_NAME;
+        $names[] = LayerViolationRule::DOUBTED_ASSIGNMENT_NAME;
 
         $names[] = UnboundSuppressionOptions::UNMATCHED_PATH;
         $names[] = UnboundSuppressionOptions::UNMATCHED_NAMESPACE;

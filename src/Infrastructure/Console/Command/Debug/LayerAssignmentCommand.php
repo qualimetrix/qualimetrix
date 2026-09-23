@@ -284,11 +284,10 @@ final class LayerAssignmentCommand extends Command
         if ($undecided !== []) {
             // The assignment is not withdrawn by an unanswered layer — see
             // `LayerRegistry::undecidedLayers()` for why — but printing it
-            // alone would hide that a layer declared before it might have
-            // owned the class. Whether one of these is declared earlier is
-            // deliberately not asserted here: the resolution carries two
-            // declaration-ordered lists and not the single order that would
-            // settle it.
+            // alone would hide that the layers named here might change it.
+            // The list already holds only the layers bearing on the
+            // assignment (declared no later than the assigned one), so "it
+            // can change" is true of every one of them.
             $output->writeln(\sprintf('    Could not be decided: <comment>%s</comment>', implode(', ', $undecided)));
             $output->writeln(\sprintf('    The chain stops at: <comment>%s</comment>', implode(', ', $chainStopsAt)));
             $output->writeln('    The assignment above is what the answered layers give; it can change');
@@ -382,7 +381,9 @@ final class LayerAssignmentCommand extends Command
      * checking `shadowed === []`.
      *
      * `undecided` is always present and names the layers this run could not
-     * answer for the class. A null `assigned` with a non-empty `undecided` is
+     * answer for the class that bear on its assignment — every one when
+     * nothing assigned it, only those declared no later than the assigned
+     * layer otherwise. A null `assigned` with a non-empty `undecided` is
      * not "no layer claims this class" — it is "the run could not tell" — so a
      * consumer branching on `assigned` alone must read this key too.
      *

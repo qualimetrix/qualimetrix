@@ -32,6 +32,12 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * being this rule's channel rather than {@see LayerDeclarationValidator}'s
  * lives.
  *
+ * A third, `architecture.doubted-assignment`, counts the symbols that stand
+ * assigned while a layer bearing on the assignment could not be answered. It
+ * is information, reported at `info` and never gating, and
+ * {@see DeclaredLayerReachability::doubtedAssignments()} says why it is not
+ * the coverage gap.
+ *
  * How much of the analysed code no layer claims is a fact about the run
  * rather than about one edge, and belongs to {@see UnassignedClassRule}. It
  * reads the same {@see LayerEvidenceCollector}, so the two rules still share
@@ -60,6 +66,8 @@ final class LayerViolationRule extends AbstractRule
     public const string DOCS_PAGE = 'rules/architecture.md';
 
     public const string UNMATCHED_EXCLUDE_NAME = LayerPolicyPreparationInterface::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME;
+
+    public const string DOUBTED_ASSIGNMENT_NAME = LayerPolicyPreparationInterface::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME;
 
     public const int REMEDIATION_MINUTES = 15;
 
@@ -111,6 +119,7 @@ final class LayerViolationRule extends AbstractRule
         return [
             self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Class_),
             self::UNMATCHED_EXCLUDE_NAME => ChannelDeclaration::occurrence(SymbolLevel::Project),
+            self::DOUBTED_ASSIGNMENT_NAME => ChannelDeclaration::occurrence(SymbolLevel::Project),
         ];
     }
 
@@ -148,6 +157,14 @@ final class LayerViolationRule extends AbstractRule
             ...($context->coversProjectScope
                 ? UnmatchedExcludeDiagnostic::forInertClauses($evidence, self::UNMATCHED_EXCLUDE_NAME)
                 : []),
+            // Not scope-gated: the count is about the symbols this run looked
+            // at, and a narrower run reports fewer of them rather than a
+            // conclusion it cannot reach.
+            ...DeclaredLayerReachability::doubtedAssignments(
+                $evidence->architecture->coverage(),
+                $evidence->coverageState,
+                self::DOUBTED_ASSIGNMENT_NAME,
+            ),
         ];
     }
 

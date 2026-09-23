@@ -1,0 +1,5 @@
+--- candidate
++++ reference (mapped)
+@@ -8,1 +8,1 @@
+-  Channel: architecture.doubted-assignment
++  Channel: architecture.unmatched-exclude

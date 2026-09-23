@@ -956,6 +956,86 @@ more than one level needs a fixture *and* a claim line **per declared level**:
 coverage counts pairs, so a level with no fixture anywhere is a shortfall even
 while the channel fires.
 
+### Named gap: a step that withdraws one finding and introduces another
+
+The paragraph above holds for a channel whose findings the reference also
+publishes. It does not hold for a channel **new in the step**, and the gate has
+no form that declares one against the step's own parent.
+
+Such a step must carry the fixture anyway. Two consumers hold it to that, and
+neither is the gate's comparison:
+
+- **coverage**, whose declared side is derived from the candidate: both
+  witnesses carry the new channel, so without a fixture the run is
+  `coverage-shortfall` on its pair, and only `--incomplete-corpus` — a `PARTIAL`
+  run — downgrades it;
+- **`governance/Channel/ChannelLevelDeclarationDriftTest.php`**, inside
+  `composer check`, whose oracle `governance/Channel/Fixtures/observed-levels.tsv`
+  lists the channel: it runs the product over every case here and fails when a
+  listed channel fires nothing.
+
+With the fixture, the reference cannot fire the channel, so the candidate
+publishes a record the reference does not. Where that record lands on a diff
+line the other side fills with nothing, or with a record of another shape, the
+line publishes a different *number* of values of a compared field, and
+`Gate::overreachingLines()` refuses it outright — before a split or a
+`declared-field-moves.tsv` row is consulted. On the identity-ordered surfaces
+(`format:json`, the baseline file) the new record also shifts its neighbours, so
+positional pairing reports moves of `rule`, `file` and `line` between records
+that did not move at all. Only where the withdrawn and the introduced record
+happen to share a line, as on `format:checkstyle` and `format:gitlab`, is the
+refusal a value move a `declared-field-moves.tsv` row could name. When the
+record count differs as well, `finding-count-mismatch` is reported beside them.
+
+So the step that introduces a channel is red against its parent, and only on
+the fixture case: `delta-overreach` on that case's surfaces, which carry
+declared deltas derived as usual. It lasts one step. The next step's reference
+already publishes the channel, the fixture fires on both sides, the fixture
+case's deltas become `delta-stale` and are removed, and that step can be
+`GREEN`. A step in this position cites the red run with each failure attributed
+to the fixture case; it does not cite `GREEN`, and it does not cite a `PARTIAL`
+run in its place.
+
+The shape the stage-B review met is this gap with one more feature, and the
+feature is what makes it look expressible. `architecture.doubted-assignment`
+reports an assignment that stands while a layer could not answer about it, and
+the same step stopped `architecture.unmatched-exclude` from reporting an
+`exclude:` clause that could not answer. The `layers` fixture — a layer whose
+own `exclude:` reads an interface outside the corpus — therefore takes one
+finding away from the older channel and gives one to the new channel, and the
+count stays equal. Measured against the stage-A reference: 60 `delta-overreach`
+failures across the baseline file, `format:json`, `format:sarif`,
+`format:checkstyle` and `format:gitlab` of `case:layers`, and nothing anywhere
+else. 40 of them are refused on value counts (34 on `format:json`, 3 on the
+baseline file, 3 on `format:sarif`) and could not be licensed by anything; the
+other 20 are value moves (8 on `format:json`, 4 on each of the other three), and
+most of those are the neighbour shift above. Without the fixture the same run
+was `coverage-shortfall` on exactly one pair,
+`architecture.doubted-assignment@project`.
+
+It is **not** a split, and no map row states it:
+
+- the two findings are different identities. The reference's carries an
+  `occurrence` (the clause it named); the new channel's finding carries none and
+  names three symbols, two of which no `exclude:` clause produced. A split is
+  explained record by record through `(subject, occurrence, edge)`
+  (`ChannelSplit::identity()`), so even a declarable split would be
+  `split-unmapped` here;
+- the older channel keeps firing in the same case for another clause, so a
+  whole-name row `architecture.unmatched-exclude -> architecture.doubted-assignment`
+  would translate a finding that did not move;
+- the identity branch that would keep it — a second row from the same name to
+  itself — is refused when the map loads by either of two checks: a row that
+  renames nothing, and two rows renaming one name (`RenameMaps::validate()`).
+
+The form the gate lacks is a declaration that **one record is withdrawn and
+another is introduced**: the reference record by its full identity, the
+candidate record by its full identity, and a reason — judged against the
+measured findings, so that an unmatched declaration is stale like every other
+row, and so that the `format:json` finding set rather than a diff line decides
+it. With that form, the step introducing a channel could be `GREEN` against its
+own parent.
+
 ## The controls
 
 `composer gate:controls` runs twenty-three controls, each on its own hardlink

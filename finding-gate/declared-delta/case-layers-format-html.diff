@@ -1,12 +1,12 @@
 --- candidate
 +++ reference (mapped)
 @@ -182,1 +182,0 @@
--            "size.symbol-declaring-namespace-count": 6,
+-            "size.symbol-declaring-namespace-count": 7,
 @@ -214,2 +213,2 @@
--            "coupling.distance-own.avg": 0.4444444444444445,
--            "coupling.distance-own.count": 6
-+            "coupling.distance.avg": 0.4444444444444445,
-+            "coupling.distance.count": 6
+-            "coupling.distance-own.avg": 0.380952380952381,
+-            "coupling.distance-own.count": 7
++            "coupling.distance.avg": 0.380952380952381,
++            "coupling.distance.count": 7
 @@ -402,3 +401,0 @@
 -                    "coupling.ca-own": 0,
 -                    "coupling.ce-own": 0,
@@ -36,44 +36,53 @@
 @@ -1792,1 +1775,0 @@
 -                                    "coupling.abstractness-own": 0,
 @@ -1797,5 +1779,1 @@
+-                                    "coupling.ca-own": 0,
+-                                    "coupling.ce-own": 2,
+-                                    "coupling.instability-own": 1,
+-                                    "coupling.distance": 0,
+-                                    "coupling.distance-own": 0,
++                                    "coupling.distance": 0,
+@@ -2123,1 +2101,0 @@
+-                                    "coupling.abstractness-own": 0,
+@@ -2128,5 +2105,1 @@
 -                                    "coupling.ca-own": 1,
 -                                    "coupling.ce-own": 0,
 -                                    "coupling.instability-own": 0,
 -                                    "coupling.distance": 1,
 -                                    "coupling.distance-own": 1,
 +                                    "coupling.distance": 1,
-@@ -2079,1 +2057,0 @@
+@@ -2410,1 +2383,0 @@
 -                                    "coupling.abstractness-own": 0.3333333333333333,
-@@ -2084,5 +2061,1 @@
+@@ -2415,5 +2387,1 @@
 -                                    "coupling.ca-own": 4,
 -                                    "coupling.ce-own": 0,
 -                                    "coupling.instability-own": 0,
 -                                    "coupling.distance": 0.6666666666666667,
 -                                    "coupling.distance-own": 0.6666666666666667,
 +                                    "coupling.distance": 0.6666666666666667,
-@@ -2470,1 +2443,0 @@
+@@ -2801,1 +2769,0 @@
 -                                    "coupling.abstractness-own": 0,
-@@ -2475,5 +2447,1 @@
+@@ -2806,5 +2773,1 @@
 -                                    "coupling.ca-own": 0,
 -                                    "coupling.ce-own": 1,
 -                                    "coupling.instability-own": 1,
 -                                    "coupling.distance": 0,
 -                                    "coupling.distance-own": 0,
 +                                    "coupling.distance": 0,
-@@ -2802,1 +2770,0 @@
+@@ -3133,1 +3096,0 @@
 -                                    "coupling.abstractness-own": 0,
-@@ -2807,5 +2774,1 @@
+@@ -3138,5 +3100,1 @@
 -                                    "coupling.ca-own": 2,
 -                                    "coupling.ce-own": 0,
 -                                    "coupling.instability-own": 0,
 -                                    "coupling.distance": 1,
 -                                    "coupling.distance-own": 1,
 +                                    "coupling.distance": 1,
-@@ -2956,2 +2919,1 @@
+@@ -3287,2 +3245,1 @@
 -        "healthScores": {},
 -        "healthCoverage": {}
 +        "healthScores": {}
-@@ -3392,66 +3354,0 @@
+@@ -3723,66 +3680,0 @@
 -            "coupling.instability-own": {
 -                "label": "Instability (own)",
 -                "ranges": [
@@ -140,6 +149,6 @@
 -                ],
 -                "formatTemplate": null
 -            },
-@@ -3875,1 +3771,1 @@
+@@ -4206,1 +4097,1 @@
 -                            "key": "coupling.distance-own.avg",
 +                            "key": "coupling.distance.avg",

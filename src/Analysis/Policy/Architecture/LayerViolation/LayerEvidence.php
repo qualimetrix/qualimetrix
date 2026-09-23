@@ -34,27 +34,31 @@ final readonly class LayerEvidence
      *                                            guidance — stays with the rule.
      * @param array<string, int> $assignedHits Layer name => number of classes and dependency-edge
      *                                         ends assigned to it.
-     * @param array{matched: array<string, array<string, true>>, excluded: array<string, array<string, true>>} $symbolSets
-     *                                                                                                                     The two per-layer symbol sets the walk records, as one field: `matched` is every canonical
-     *                                                                                                                     symbol the layer's criteria matched at all, winning or not; `excluded` is every one its
-     *                                                                                                                     `exclude:` clause removed after those criteria had already succeeded. One field rather than
-     *                                                                                                                     two adjacent parameters of the same type because they are two columns of a single
-     *                                                                                                                     observation — filled by the same tally helper, merged by the same merge, and disjoint by
-     *                                                                                                                     construction, since an excluded symbol is not a member. Read through {@see matchedCounts()}
-     *                                                                                                                     and {@see excludedCounts()}.
+     * @param array{matched: array<string, array<string, true>>, excluded: array<string, array<string, true>>, unanswered: array<string, array<string, true>>} $symbolSets
+     *                                                                                                                                                                     The per-layer symbol sets the walk records, as one field: `matched` is every canonical symbol
+     *                                                                                                                                                                     the layer's criteria matched at all, winning or not; `excluded` is every one its `exclude:`
+     *                                                                                                                                                                     clause removed after those criteria had already succeeded; `unanswered` is every one the
+     *                                                                                                                                                                     criteria matched while the clause could not be answered about it. One field rather than
+     *                                                                                                                                                                     adjacent parameters of the same type because they are columns of a single observation —
+     *                                                                                                                                                                     filled by the same tally helper and merged by the same merge. `excluded` is disjoint from
+     *                                                                                                                                                                     the other two, since an excluded symbol is not a member; `unanswered` is a subset of
+     *                                                                                                                                                                     `matched`. Read through {@see matchedCounts()}, {@see excludedCounts()} and
+     *                                                                                                                                                                     {@see unansweredExcludeCounts()}.
      * @param array<string, array<string, list<ShadowEntry>>> $shadowEvidence (assigned, shadowed) => evidence.
      * @param array{classes: array<string, string>, analysed: int} $unassigned What the analysed set left
      *                                                                         outside every declared layer, and how many class-like declarations the walk saw — the
      *                                                                         numerator and denominator `architecture.unassigned-class` reports. `classes` is empty
      *                                                                         when {@see LayerEvidenceCollector::materializesUncovered()} found no consumer for
      *                                                                         it. One field rather than two because neither half answers anything alone.
-     * @param array{sourceEdges: int, targetEdges: int, classes: array<string, string>, undecidable: array<string, string>, doubted: array<string, string>} $coverageState
-     *                                                                                                                                                                     `undecidable` is the subset of `classes` that no layer claims because some layer's
-     *                                                                                                                                                                     criteria could not be answered about it at all — a chain that left the analysed set, or
-     *                                                                                                                                                                     a symbol seen only as the far end of an edge. It travels beside the count rather than
-     *                                                                                                                                                                     inside it, because subtracting it would hide the gap and folding it in would hide that a
-     *                                                                                                                                                                     layer declared for it only guesses. `doubted` is disjoint from `classes`: symbols
-     *                                                                                                                                                                     that ARE assigned while a layer declared no later than their own went unanswered.
+     * @param array{sourceEdges: int, targetEdges: int, classes: array<string, string>, undecidable: array<string, string>, undecidableOutsidePaths: array<string, string>, doubted: array<string, string>, doubtedOutsidePaths: array<string, string>} $coverageState
+     *                                                                                                                                                                                                                                                                 `undecidable` is the subset of `classes` that no layer claims because some layer's criteria
+     *                                                                                                                                                                                                                                                                 could not be answered about it at all — a chain that left the analysed set, or a symbol seen
+     *                                                                                                                                                                                                                                                                 only as the far end of an edge. It travels beside the count rather than inside it, because
+     *                                                                                                                                                                                                                                                                 subtracting it would hide the gap and folding it in would hide that a layer declared for it
+     *                                                                                                                                                                                                                                                                 only guesses. `doubted` is disjoint from `classes`: symbols that ARE assigned while a layer
+     *                                                                                                                                                                                                                                                                 bearing on the assignment went unanswered. `undecidableOutsidePaths` and `doubtedOutsidePaths` are the subsets of `undecidable` and `doubted`
+     *                                                                                                                                                                                                                                                                 the run did not analyse — dependency-edge ends — kept apart because what settles the doubt
+     *                                                                                                                                                                                                                                                                 differs for them.
      */
     public function __construct(
         public ArchitectureConfiguration $architecture,
@@ -97,5 +101,15 @@ final readonly class LayerEvidence
     public function excludedCounts(): array
     {
         return array_map(\count(...), $this->symbolSets['excluded']);
+    }
+
+    /**
+     * @return array<string, int> layer name => number of DISTINCT symbols the
+     *                            layer's criteria matched while its `exclude:`
+     *                            clause could not be answered about them
+     */
+    public function unansweredExcludeCounts(): array
+    {
+        return array_map(\count(...), $this->symbolSets['unanswered']);
     }
 }

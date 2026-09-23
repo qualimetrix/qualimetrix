@@ -113,3 +113,44 @@ enumerate it.
   php-src: the GitHub runner preinstalls eleven the developer boxes here do not.
   Each costs one row with a reason, and an unknown one reds rather than being
   assumed PECL — the assumption that would have let `uri` through in 8.5.
+
+## Amendment, 2026-09-23: what is above a PHP class is a static fact too
+
+Layer membership ([ADR 0079](0079-a-criterion-the-run-cannot-answer-is-undecidable.md))
+needs more than whether a name is PHP's: it follows a class extending
+`\RuntimeException` up to `\Throwable`. That walk first read the supertypes by
+reflection of the running PHP, which reintroduced the dependency this ADR
+exists to remove. `class BadUri extends \Uri\InvalidUriException` under
+`implements: ['\Throwable']` produced two layer violations on PHP 8.5 and, on
+PHP 8.4 without `uri`, no violation, an `architecture.unreachable-layer` error
+and a coverage gap advising to widen `paths:`.
+
+**`PhpBuiltinClassHierarchy` holds the parent, the transitive interfaces and the
+class-level attributes of every registered name, and
+`PhpBuiltinClassHierarchyCensusTest` compares it the way this ADR's control
+compares the list.** Which names it answers for is the registry's list itself,
+not a copy: four homogeneous maps (interface names, parents, interfaces,
+attributes) hold only the names with something to say, so an absent entry
+means "none". A name is compared wherever the running PHP declares it; a name
+no reachable witness loads (`Pdo\Firebird`, `EnchantBroker`,
+`EnchantDictionary` on the developer machines) was written from php-src's
+stubs and is verified where a runner loads the extension. Every map key must be
+registered, every supertype named must itself be registered so a walk never
+leaves the table, and a floor refuses a run that compared too few names.
+
+The table carries no version cells. Measured on PHP 8.4.24 and 8.5.9, every
+name both declare has the same parent, interfaces and class-level attributes;
+the entries for 8.5-only names are 8.5's, which is the registry's own rule — a
+name present in source implies the PHP that declares it. Member-level attributes
+are left out on the same measurement: which members carry `#[\Deprecated]`
+differs between the two versions, and no single table could state it.
+
+Adding a name now costs up to three edits: the registry, the attribution, and
+its entries in the hierarchy maps. A missing entry reads as "none", so it is
+the hierarchy census's comparison with a PHP that declares the name, not a key
+check, that names it.
+
+The alternative was to keep reading the running PHP and report "registered but
+not loaded" as a distinct reason in every reader. It was rejected because it
+repairs the message and not the verdict: the same source would still be
+assigned differently on two machines.

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
-
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\ClassLikeHandler;
+use Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
@@ -58,7 +58,12 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * {@see CriterionOutcome}'s job; producing it is this class's.
  *
  * A class or interface PHP itself declares is not such a link: its supertypes
- * are PHP's own, answered by {@see PhpClassHierarchy}.
+ * are PHP's own, answered by {@see PhpBuiltinClassHierarchy} — a static table,
+ * so the answer does not depend on which PHP runs the analysis.
+ *
+ * An interface's `implements` edge is one PHP added: `Stringable` for an
+ * interface declaring `__toString()`. The interface walk follows it; the
+ * parent walk does not, so `extends: ['\Stringable']` does not see it.
  *
  * **No-graph mode.** Before {@see bindGraph()} is called (config load, and any
  * caller that builds its own registry without a run behind it), {@see build()}
@@ -201,9 +206,9 @@ final class ClassContextFactory
         // is answered from PHP, as it is anywhere else on a chain.
         $parentCuts = [];
         $interfaceCuts = [];
-        $parentOf = PhpClassHierarchy::parentOf(...);
+        $parentOf = PhpBuiltinClassHierarchy::extendsOf(...);
 
-        $attributes = $this->attributesMap[$fqn] ?? PhpClassHierarchy::attributesOf($fqn) ?? [];
+        $attributes = $this->attributesMap[$fqn] ?? PhpBuiltinClassHierarchy::attributesOf($fqn) ?? [];
         $parents = $this->bfsClosure($this->supertypesOf($fqn, $parentCuts, $parentOf), $parentCuts, $parentOf);
         $interfaces = $this->collectTransitiveInterfaces($fqn, $parents, $interfaceCuts);
 
@@ -283,9 +288,9 @@ final class ClassContextFactory
         \assert($this->implementsMap !== null);
         \assert($this->extendsMap !== null);
 
-        $seedQueue = $this->implementsMap[$fqn] ?? PhpClassHierarchy::interfacesOf($fqn) ?? [];
+        $seedQueue = $this->implementsMap[$fqn] ?? PhpBuiltinClassHierarchy::interfacesOf($fqn) ?? [];
         foreach ($parentClasses as $parent) {
-            $declared = $this->implementsMap[$parent] ?? PhpClassHierarchy::interfacesOf($parent) ?? [];
+            $declared = $this->implementsMap[$parent] ?? PhpBuiltinClassHierarchy::interfacesOf($parent) ?? [];
             foreach ($declared as $iface) {
                 $seedQueue[] = $iface;
             }
@@ -293,8 +298,9 @@ final class ClassContextFactory
 
         // Interfaces extending other interfaces produce DependencyType::Extends
         // edges (see ClassLikeHandler::handleInterface). The shared extendsMap
-        // is therefore the canonical source for interface inheritance too.
-        return $this->bfsClosure($seedQueue, $unresolved, PhpClassHierarchy::interfacesOf(...));
+        // is therefore the canonical source for interface inheritance too; the
+        // implements map adds the one edge PHP gives an interface unwritten.
+        return $this->bfsClosure($seedQueue, $unresolved, PhpBuiltinClassHierarchy::interfacesOf(...), $this->implementsMap);
     }
 
     /**
@@ -311,10 +317,16 @@ final class ClassContextFactory
      * @param list<string> $seedQueue
      * @param array<string, true> $unresolved
      * @param callable(string): (list<string>|null) $phpAbove
+     * @param array<string, list<string>> $alsoAbove Edges that lead up besides
+     *                                               the extends map — on the
+     *                                               interface walk, the implements
+     *                                               map, whose only edge out of an
+     *                                               interface is the `Stringable`
+     *                                               PHP adds
      *
      * @return list<string>
      */
-    private function bfsClosure(array $seedQueue, array &$unresolved, callable $phpAbove): array
+    private function bfsClosure(array $seedQueue, array &$unresolved, callable $phpAbove, array $alsoAbove = []): array
     {
         $result = [];
         $seen = [];
@@ -333,7 +345,7 @@ final class ClassContextFactory
             $seen[$next] = true;
             $result[] = $next;
 
-            foreach ($this->supertypesOf($next, $unresolved, $phpAbove) as $neighbour) {
+            foreach ($this->supertypesOf($next, $unresolved, $phpAbove, $alsoAbove) as $neighbour) {
                 if (!isset($seen[$neighbour])) {
                     $queue[] = $neighbour;
                     $tail++;
@@ -350,16 +362,23 @@ final class ClassContextFactory
      *
      * @param array<string, true> $unresolved
      * @param callable(string): (list<string>|null) $phpAbove
+     * @param array<string, list<string>> $alsoAbove
      *
      * @return list<string>
      */
-    private function supertypesOf(string $fqn, array &$unresolved, callable $phpAbove): array
+    private function supertypesOf(string $fqn, array &$unresolved, callable $phpAbove, array $alsoAbove = []): array
     {
         \assert($this->extendsMap !== null);
 
+        $also = $alsoAbove[$fqn] ?? [];
         $above = $this->extendsMap[$fqn] ?? $phpAbove($fqn);
         if ($above !== null) {
-            return $above;
+            return [...$above, ...$also];
+        }
+
+        // An edge out of the node was recorded, so the run read it.
+        if ($also !== []) {
+            return $also;
         }
 
         if (!$this->analysed->contains($fqn)) {
