@@ -66,16 +66,8 @@ final class ChannelRenameReporter
 
     private static function reportAsJson(ChannelRenameReport $report, OutputInterface $output): void
     {
-        $identity = ProductIdentity::identity();
-
         $output->writeln(json_encode([
-            'meta' => [
-                'version' => $identity['version'],
-                'package' => $identity['package'],
-                'timestamp' => gmdate('c'),
-                'docs' => $identity['docs'],
-                'llmsTxt' => $identity['llmsTxt'],
-            ],
+            'meta' => ProductIdentity::meta(gmdate('c')),
             'written' => $report->written,
             'entries' => $report->totalEntries,
             'renamed' => $report->renamedEntries,

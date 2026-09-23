@@ -116,8 +116,9 @@ remove a link it cannot identify rather than deleting someone else's hook.
 
 ### Changed
 
-- Every JSON report Qualimetrix writes now names the documentation site
-  (`docs`) and the index written for AI agents (`llmsTxt`): in `meta` for
+- Every JSON report that has an envelope object now names the documentation
+  site (`docs`) and the index written for AI agents (`llmsTxt`) — `gitlab`'s
+  bare array has no object to hold them, so it is unaffected: in `meta` for
   `--format=json` and `--format=suppressed`, at the top level of
   `--format=metrics` beside its existing fields, and in
   `runs[].tool.driver.properties.llmsTxt` for `--format=sarif`. The JSON output
@@ -163,6 +164,11 @@ remove a link it cannot identify rather than deleting someone else's hook.
 
 ### Fixed
 
+- `graph:export --format=json`'s `meta.timestamp` is now `gmdate('c')` (UTC),
+  matching every other JSON channel's `meta` block; it previously used
+  `date('c')`, the PHP process's local zone, so a consumer comparing
+  timestamps across documents could see different offsets on a machine whose
+  default zone was not UTC.
 - Generated pre-commit hooks now fail closed when staged-file enumeration fails
   and preserve the actual `qmx` exit status.
 - `design.dit` now resolves `$baseDir` entries in Composer classmaps when the

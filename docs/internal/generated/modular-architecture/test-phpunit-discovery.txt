@@ -8947,6 +8947,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itIncludesOnlyHealthComputedMetricDefinitions
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itIncludesProjectMetadataWithScopedReporting
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itIncludesTheDocumentationAddressesInProjectMetadata
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itKeepsMainJsFooterKeysInAgreementWithProjectMetadata
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itNullsNanAndInfMetricValues
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itNullsNanMetricValueInFinding
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itOmitsChildrenFromArrayWhenEmpty

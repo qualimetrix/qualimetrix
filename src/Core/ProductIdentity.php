@@ -88,4 +88,23 @@ final class ProductIdentity
             'llmsTxt' => self::llmsTxtUrl(),
         ];
     }
+
+    /**
+     * The published `meta` object, keys in published order. The timestamp is
+     * a fact about the run, not the product, so the caller supplies it.
+     *
+     * @return array{version: string, package: string, timestamp: string, docs: string, llmsTxt: string}
+     */
+    public static function meta(string $timestamp): array
+    {
+        $identity = self::identity();
+
+        return [
+            'version' => $identity['version'],
+            'package' => $identity['package'],
+            'timestamp' => $timestamp,
+            'docs' => $identity['docs'],
+            'llmsTxt' => $identity['llmsTxt'],
+        ];
+    }
 }

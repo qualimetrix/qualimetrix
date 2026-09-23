@@ -95,13 +95,15 @@ final class JsonGraphExporter
         $identity = ProductIdentity::identity();
 
         $result = [
+            // Not ProductIdentity::meta(): this envelope's `version` is the
+            // graph format version and `package` is its own literal, not the
+            // tool's identity — the same treatment MetricsJsonFormatter gives
+            // its own `version`. Only the two keys this envelope does not
+            // already carry come from ProductIdentity.
             'meta' => [
                 'version' => '1.0.0',
                 'package' => 'qmx',
-                'timestamp' => date('c'),
-                // Only the two keys this envelope does not already carry: its
-                // own `version` is the graph format version, the same
-                // treatment MetricsJsonFormatter gives its own `version`.
+                'timestamp' => gmdate('c'),
                 'docs' => $identity['docs'],
                 'llmsTxt' => $identity['llmsTxt'],
             ],

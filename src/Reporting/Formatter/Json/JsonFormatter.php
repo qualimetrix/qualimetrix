@@ -47,16 +47,8 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
         // When drill-down is active, compute summary from filtered findings
         $isDrillDown = $context->namespace !== null || $context->class !== null;
 
-        $identity = ProductIdentity::identity();
-
         $data = [
-            'meta' => [
-                'version' => $identity['version'],
-                'package' => $identity['package'],
-                'timestamp' => gmdate('c'),
-                'docs' => $identity['docs'],
-                'llmsTxt' => $identity['llmsTxt'],
-            ],
+            'meta' => ProductIdentity::meta(gmdate('c')),
             'summary' => $this->buildSummary($report, $filteredFindings, $isDrillDown),
             'coverage' => $report->coverage?->toArray(),
             'health' => $this->healthSection->format($report, $context),

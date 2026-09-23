@@ -122,19 +122,19 @@ the guard asserts over, not about which channels carry the pointer.
 
 **Excluded, with cause:**
 
-| Channel                                                                    | Why not                                                                                        |
-| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `checkstyle`                                                               | Fixed XML schema, no field for free text outside a violation                                   |
-| `gitlab`                                                                   | Payload is a bare JSON array, no wrapper object                                                |
-| `github`                                                                   | Command stream with no header or footer; any line renders as an annotation                     |
-| `graph:export` stdout (DOT)                                                | The output *is* the artifact, a DOT graph with no envelope to extend                           |
-| `--version`                                                                | Unix convention: name and version only. `getHelp()` reaches the header without touching it     |
-| `text-verbose`                                                             | Deprecated. It delegates to `text` and inherits whatever `text` prints                         |
-| JSON refusal envelope                                                      | `{error, exit_code}` is deliberately closed at two keys                                        |
-| HTML `#node-summary`, coverage banner                                      | Per-selection and conditional                                                                  |
-| `Infrastructure\Profiler\Export\JsonExporter`, `...\ChromeTracingExporter` | The output *is* the artifact (a profiling trace), not a report                                 |
-| `Infrastructure\Logging\FileLogger` JSON lines                             | A log stream, not a report                                                                     |
-| `Analysis\Policy\Baseline\BaselineDocumentLayout` (the baseline file)      | A versioned input artifact (format v13) the tool reads back, with its own schema; not a report |
+| Channel                                                                                                                                                                 | Why not                                                                                        |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `checkstyle`                                                                                                                                                            | Fixed XML schema, no field for free text outside a violation                                   |
+| `gitlab`                                                                                                                                                                | Payload is a bare JSON array, no wrapper object                                                |
+| `github`                                                                                                                                                                | Command stream with no header or footer; any line renders as an annotation                     |
+| `graph:export` stdout (DOT)                                                                                                                                             | The output *is* the artifact, a DOT graph with no envelope to extend                           |
+| `--version`                                                                                                                                                             | Unix convention: name and version only. `getHelp()` reaches the header without touching it     |
+| `text-verbose`                                                                                                                                                          | Deprecated. It delegates to `text` and inherits whatever `text` prints                         |
+| JSON refusal envelope                                                                                                                                                   | `{error, exit_code}` is deliberately closed at two keys                                        |
+| HTML `#node-summary`, coverage banner                                                                                                                                   | Per-selection and conditional                                                                  |
+| `Infrastructure\Profiler\Export\JsonExporter`, `...\ChromeTracingExporter`                                                                                              | The output *is* the artifact (a profiling trace), not a report                                 |
+| `Infrastructure\Logging\FileLogger` JSON lines                                                                                                                          | A log stream, not a report                                                                     |
+| `Analysis\Policy\Baseline\BaselineDocumentLayout` (the baseline file, written by `baseline:generate`, `update`, `cleanup`, and rewritten in place by `rename-channels`) | A versioned input artifact (format v13) the tool reads back, with its own schema; not a report |
 
 ## Stage map
 
@@ -142,7 +142,7 @@ the guard asserts over, not about which channels carry the pointer.
 | -------------------------------------- | ------------------------------------------------------------------------------------- | ---------- |
 | [01](01-llms-index-and-guard.md)       | `llms.txt` rewritten to the measured surface, plus its guard                          | —          |
 | [02](02-pointer-and-human-channels.md) | The canonical value and every human-readable channel, with their docs and gate delta  | 01         |
-| [03](03-machine-metadata-fields.md)    | The seven JSON-bearing channels, with `output-formats` EN and RU and their gate delta | 02         |
+| [03](03-machine-metadata-fields.md)    | The eight JSON-bearing channels, with `output-formats` EN and RU and their gate delta | 02         |
 | [04](04-html-footer.md)                | HTML: the gate's bundle normalization first, then the footer                          | 02         |
 
 ## Cross-cutting requirements

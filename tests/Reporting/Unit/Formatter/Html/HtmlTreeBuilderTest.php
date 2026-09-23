@@ -579,6 +579,60 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertSame(ProductIdentity::llmsTxtUrl(), $project['llmsTxt']);
     }
 
+    /**
+     * `html-report/src/main.js`'s `renderFooter(project)` reads the
+     * documentation addresses off the `project` object by literal key name
+     * (`project.docs`, `project.llmsTxt`); nothing checks the two sides agree
+     * on the spelling. A key renamed on either side — in this builder's
+     * output or in the JS that reads it — would leave both this file's own
+     * assertions and `main.js`'s tests green while the footer quietly stops
+     * carrying the address, the same way {@see itIncludesTheDocumentationAddressesInProjectMetadata()}
+     * cannot see a rename that updates its own literal along with the code.
+     * This test reads `renderFooter`'s actual body instead of asserting a
+     * literal, so a one-sided rename on either side shows up as a missing
+     * key.
+     */
+    #[Test]
+    public function itKeepsMainJsFooterKeysInAgreementWithProjectMetadata(): void
+    {
+        $report = ReportBuilder::create()
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $result = $this->builder->build($report, new FormatterContext());
+        $project = $result['project'];
+
+        $mainJsPath = \dirname(__DIR__, 5) . '/html-report/src/main.js';
+        $mainJs = file_get_contents($mainJsPath);
+        self::assertIsString($mainJs, $mainJsPath . ' must be readable');
+
+        $matched = preg_match('/function\s+renderFooter\(project\)\s*\{(.*?)\n\}/s', $mainJs, $functionMatch);
+        self::assertSame(1, $matched, 'main.js must declare renderFooter(project)');
+        self::assertArrayHasKey(1, $functionMatch);
+        $body = $functionMatch[1];
+
+        preg_match_all('/\bproject\.([A-Za-z_][A-Za-z0-9_]*)\b/', $body, $keyMatches);
+        $keysReadByJs = array_unique($keyMatches[1]);
+
+        self::assertContains('docs', $keysReadByJs, 'renderFooter(project) must still read `project.docs`');
+        self::assertContains('llmsTxt', $keysReadByJs, 'renderFooter(project) must still read `project.llmsTxt`');
+
+        foreach ($keysReadByJs as $key) {
+            self::assertArrayHasKey(
+                $key,
+                $project,
+                \sprintf(
+                    'main.js\'s renderFooter(project) reads `project.%s`, which %s does not emit — the two sides'
+                    . ' disagree on the key name',
+                    $key,
+                    HtmlTreeBuilder::class,
+                ),
+            );
+        }
+    }
+
     #[Test]
     public function itSetsScopedReportingFalseByDefault(): void
     {

@@ -113,13 +113,25 @@ describe('renderFooter', () => {
 //
 // renderFooter() itself is exercised above against a fake DOM; that proves the
 // function renders correctly, not that init() still calls it. Driving init()
-// live would need a real report-data payload, D3 and a DOM environment this
-// suite does not have (see the file header above) — the cheapest thing that
-// can still fail when a future edit drops or rewires the call site is a
-// structural check over init()'s own AST: a `renderFooter(DATA.project)` call
-// expression, directly in init()'s body. `rollup` and `estree-walker` are
-// already devDependencies (rollup builds the bundle; estree-walker is one of
-// rollup's own dependencies), so this adds no new package.
+// live is not the cheap option here: init() also builds the D3 treemap,
+// wires hash navigation, search and resize listeners, and reads a dozen other
+// element ids, so a fake DOM covering it would be a large surface built only
+// for this one assertion, not the small one renderFooter() itself needed. The
+// cheapest thing that can still fail when a future edit drops or rewires the
+// call site stays a structural check over init()'s own AST: a
+// `renderFooter(DATA.project)` call expression (or the equivalent
+// `const { project } = DATA; renderFooter(project)` form) somewhere in
+// init()'s body. `rollup` and `estree-walker` are already devDependencies
+// (rollup builds the bundle; estree-walker is one of rollup's own
+// dependencies), so this adds no new package.
+//
+// What this cannot see: the walk does not check reachability, so a call
+// sitting in a nested function that is never invoked, or behind a condition
+// that is always false, still counts as "found" — the same blind spot any
+// non-execution structural check has for dead code. It also does not resolve
+// destructuring through more than one assignment, or through renaming
+// (`const { project: p } = DATA`). It closes the gap that matters for an
+// ordinary refactor of the call site, not the gap that matters for dead code.
 
 describe('init() calls renderFooter(DATA.project)', () => {
   it('carries a renderFooter(DATA.project) call in its own body', () => {
@@ -133,6 +145,41 @@ describe('init() calls renderFooter(DATA.project)', () => {
 
     expect(initFunction, 'src/main.js must export a top-level function init()').toBeDefined();
 
+    // Local names bound to DATA.project via `const { project } = DATA`
+    // (shorthand only — a rename to `{ project: p }` is not tracked).
+    const projectAliases = new Set();
+
+    const isDataProjectMember = (node) => (
+      node?.type === 'MemberExpression'
+      && node.computed === false
+      && node.object.type === 'Identifier'
+      && node.object.name === 'DATA'
+      && node.property.type === 'Identifier'
+      && node.property.name === 'project'
+    );
+
+    walk(initFunction.body, {
+      enter(node) {
+        if (
+          node.type === 'VariableDeclarator'
+          && node.id.type === 'ObjectPattern'
+          && node.init?.type === 'Identifier'
+          && node.init.name === 'DATA'
+        ) {
+          for (const property of node.id.properties) {
+            if (
+              property.type === 'Property'
+              && property.key.type === 'Identifier'
+              && property.key.name === 'project'
+              && property.value.type === 'Identifier'
+            ) {
+              projectAliases.add(property.value.name);
+            }
+          }
+        }
+      },
+    });
+
     let found = false;
 
     walk(initFunction.body, {
@@ -142,17 +189,19 @@ describe('init() calls renderFooter(DATA.project)', () => {
           && node.callee.type === 'Identifier'
           && node.callee.name === 'renderFooter'
           && node.arguments.length === 1
-          && node.arguments[0].type === 'MemberExpression'
-          && node.arguments[0].object.type === 'Identifier'
-          && node.arguments[0].object.name === 'DATA'
-          && node.arguments[0].property.type === 'Identifier'
-          && node.arguments[0].property.name === 'project'
+          && (
+            isDataProjectMember(node.arguments[0])
+            || (node.arguments[0].type === 'Identifier' && projectAliases.has(node.arguments[0].name))
+          )
         ) {
           found = true;
         }
       },
     });
 
-    expect(found, 'init() must call renderFooter(DATA.project)').toBe(true);
+    expect(
+      found,
+      'init() must call renderFooter(DATA.project), directly or via a `const { project } = DATA` alias',
+    ).toBe(true);
   });
 });

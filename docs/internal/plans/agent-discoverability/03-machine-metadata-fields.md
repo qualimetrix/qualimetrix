@@ -18,9 +18,10 @@ rather than being overwritten by the tool's, and `sarif` has no `package` field
 at all. `graph:export --format=json` also takes only `docs` and `llmsTxt`,
 appended to the `meta` block its envelope already carried (`version`, `package`,
 `timestamp`), the same treatment `metrics` gets for its own `version`. Split
-across executors these keys acquire seven spellings — `llmsTxt`, `llms_txt`,
-`llms`, `docsUrl` — and the divergence is invisible until a consumer hits it.
-One executor, one spelling.
+across executors these keys acquire a spelling per executor — `llmsTxt`,
+`llms_txt`, `llms`, `docsUrl` are the ones a careless split would produce —
+and the divergence is invisible until a consumer hits it. One executor, one
+spelling.
 
 `identity()`'s `package` is `qmx` — the name every JSON document already
 publishes in its `meta`, not the Composer package `qualimetrix/qualimetrix`.
