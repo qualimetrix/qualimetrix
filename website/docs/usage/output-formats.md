@@ -160,6 +160,8 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
 
 **Top-level keys:** `meta`, `summary`, `coverage`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, plus `violationGroups` when `--group-by` is passed — without it, the key is absent entirely, not an empty object.
 
+`meta` identifies the tool that wrote the document: `version`, `package`, `timestamp`, and two documentation addresses — `docs`, the documentation site, and `llmsTxt`, the index written for AI agents. Every JSON document Qualimetrix emits carries the same two addresses; see [Documentation addresses in every JSON document](#documentation-addresses).
+
 <!-- llms:skip-begin -->
 **Example output:**
 
@@ -168,7 +170,9 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
     "meta": {
         "version": "1.0.0",
         "package": "qmx",
-        "timestamp": "2025-01-15T10:30:00+00:00"
+        "timestamp": "2025-01-15T10:30:00+00:00",
+        "docs": "https://qualimetrix.dev",
+        "llmsTxt": "https://qualimetrix.dev/llms.txt"
     },
     "summary": {
         "filesAnalyzed": 45,
@@ -387,7 +391,7 @@ Raw metric values for every symbol (file, class, namespace, method, function, pr
 
 **When to use:** Custom dashboards, trend analysis, data science pipelines, or building your own quality gates on raw metrics.
 
-**Top-level keys:** `version`, `toolVersion`, `package`, `timestamp`, `symbols[]` (each with `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`. There is no `callable` type; a single `project` entry aggregates project-wide statistical metrics (min/max/avg/p95 across all symbols) and has a `null` `line`.
+**Top-level keys:** `version`, `toolVersion`, `package`, `timestamp`, `docs`, `llmsTxt`, `symbols[]` (each with `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`. There is no `callable` type; a single `project` entry aggregates project-wide statistical metrics (min/max/avg/p95 across all symbols) and has a `null` `line`. Here `version` is the version of this export format and `toolVersion` the version of Qualimetrix; `docs` and `llmsTxt` are the documentation addresses `json` carries in its `meta`.
 
 <!-- llms:skip-begin -->
 **Example output (abbreviated):**
@@ -398,6 +402,8 @@ Raw metric values for every symbol (file, class, namespace, method, function, pr
     "toolVersion": "0.26.0",
     "package": "qmx",
     "timestamp": "2025-01-15T10:30:00+00:00",
+    "docs": "https://qualimetrix.dev",
+    "llmsTxt": "https://qualimetrix.dev/llms.txt",
     "symbols": [
         {
             "type": "file",
@@ -510,8 +516,11 @@ SARIF 2.1.0 spec — `runs[].results[]` entries with `ruleId`, `ruleIndex` (posi
 `runs[].invocations[0]` reports `executionSuccessful` (see the coverage table below), and `runs[].originalUriBaseIds` declares the `%SRCROOT%` base referenced by every `artifactLocation.uriBaseId`, resolving it to the analyzed project root as a `file://` URI.
 
 `runs[].tool.driver` describes the tool itself: `name`, `version`,
-`informationUri`, and a `rules[]` catalogue that every result's `ruleIndex`
-points into. Each rules entry is
+`informationUri` (the documentation site, `https://qualimetrix.dev`), a
+`properties` bag whose `properties.llmsTxt` is the index written for AI agents,
+and a `rules[]` catalogue that every result's `ruleIndex` points into. The
+address rides in `properties` because SARIF closes `driver` to keys it does not
+define, and `properties` is its extension point. Each rules entry is
 `{"id": "...", "name": "...", "shortDescription": {"text": "..."}, "fullDescription": {"text": "..."}, "helpUri": "...", "defaultConfiguration": {"level": "..."}}`.
 
 Each `runs[].invocations[]` entry is
@@ -539,6 +548,10 @@ fingerprint is stable between runs.
                 "driver": {
                     "name": "Qualimetrix",
                     "version": "0.26.0",
+                    "informationUri": "https://qualimetrix.dev",
+                    "properties": {
+                        "llmsTxt": "https://qualimetrix.dev/llms.txt"
+                    },
                     "rules": [...]
                 }
             },
@@ -780,6 +793,8 @@ A separate `neverMatched` list reports configured suppressors that excluded
 nothing this run: without it, a stale `suppress_paths` entry pointing at a
 deleted file is indistinguishable from one that was never written.
 
+`meta` is the same block `json` carries, including `docs` and `llmsTxt`.
+
 **Top-level keys:** `meta`, `note`, `mechanisms` (all seven, always present),
 `byMechanism` (count per mechanism, including zero), `suppressed` (the
 multiset), `neverMatched`.
@@ -792,7 +807,9 @@ multiset), `neverMatched`.
     "meta": {
         "version": "dev-main",
         "package": "qmx",
-        "timestamp": "2026-08-29T09:14:02+00:00"
+        "timestamp": "2026-08-29T09:14:02+00:00",
+        "docs": "https://qualimetrix.dev",
+        "llmsTxt": "https://qualimetrix.dev/llms.txt"
     },
     "note": "suppressed is a multiset of mechanism x finding, not a set of findings: one finding can appear under more than one mechanism, so byMechanism counts do not sum to the number of distinct findings suppressed.",
     "mechanisms": [
@@ -861,6 +878,31 @@ bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
 ```
 
 ---
+
+## Documentation addresses in every JSON document {#documentation-addresses}
+
+Each JSON document Qualimetrix writes names where its documentation lives, so a
+script or an AI agent that has only the output can find the rest: `docs` is the
+documentation site and `llmsTxt` is the index written for AI agents.
+
+| Document                                 | Where the addresses are                                                             |
+| ---------------------------------------- | ----------------------------------------------------------------------------------- |
+| `check --format=json`                    | `meta.docs`, `meta.llmsTxt`                                                         |
+| `check --format=suppressed`              | `meta.docs`, `meta.llmsTxt`                                                         |
+| `check --format=metrics`                 | Top-level `docs`, `llmsTxt`, beside `version` (the export format) and `toolVersion` |
+| `check --format=sarif`                   | `runs[].tool.driver.informationUri` and `runs[].tool.driver.properties.llmsTxt`     |
+| `directives --format=json`               | `meta.docs`, `meta.llmsTxt`                                                         |
+| `baseline:rename-channels --format=json` | `meta.docs`, `meta.llmsTxt`                                                         |
+| `debug:layer-assignment --format=json`   | `meta.docs`, `meta.llmsTxt`                                                         |
+
+The three commands outside `check` open their document with the same `meta`
+object `json` does — `version`, `package`, `timestamp`, `docs`, `llmsTxt` — ahead
+of the keys that are their own.
+
+Not every JSON output carries the addresses. `gitlab` is a bare array with no
+object to hold them; `graph:export --format=json` writes the graph document a
+consumer feeds to another tool; and a refusal is always exactly
+`{"error": ..., "exit_code": ...}`.
 
 ## Analysis coverage in every format
 

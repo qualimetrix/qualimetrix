@@ -160,6 +160,8 @@ src/Repository/OrderRepository.php: warning[coupling.class-rank]: ClassRank is 0
 
 **Ключи верхнего уровня:** `meta`, `summary`, `coverage`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, плюс `violationGroups`, когда передан `--group-by` — без него ключа нет вовсе, это не пустой объект.
 
+`meta` называет инструмент, записавший документ: `version`, `package`, `timestamp` и два адреса документации — `docs`, сайт документации, и `llmsTxt`, индекс для ИИ-агентов. Оба адреса есть в каждом JSON-документе Qualimetrix; см. [Адреса документации в каждом JSON-документе](#documentation-addresses).
+
 <!-- llms:skip-begin -->
 **Пример вывода:**
 
@@ -168,7 +170,9 @@ src/Repository/OrderRepository.php: warning[coupling.class-rank]: ClassRank is 0
     "meta": {
         "version": "1.0.0",
         "package": "qmx",
-        "timestamp": "2025-01-15T10:30:00+00:00"
+        "timestamp": "2025-01-15T10:30:00+00:00",
+        "docs": "https://qualimetrix.dev",
+        "llmsTxt": "https://qualimetrix.dev/llms.txt"
     },
     "summary": {
         "filesAnalyzed": 45,
@@ -386,7 +390,7 @@ bin/qmx check src/ --format=json --no-progress > report.json
 
 **Когда использовать:** Пользовательские дашборды, анализ трендов, пайплайны data science или создание собственных критериев качества на основе сырых метрик.
 
-**Ключи верхнего уровня:** `version`, `toolVersion`, `package`, `timestamp`, `symbols[]` (каждый с `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`. Типа `callable` не существует; одна запись `project` агрегирует статистические метрики по всему проекту (min/max/avg/p95 по всем символам) и имеет `line` равным `null`.
+**Ключи верхнего уровня:** `version`, `toolVersion`, `package`, `timestamp`, `docs`, `llmsTxt`, `symbols[]` (каждый с `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`. Типа `callable` не существует; одна запись `project` агрегирует статистические метрики по всему проекту (min/max/avg/p95 по всем символам) и имеет `line` равным `null`. Здесь `version` — версия формата этой выгрузки, а `toolVersion` — версия Qualimetrix; `docs` и `llmsTxt` — те же адреса документации, что `json` публикует в `meta`.
 
 <!-- llms:skip-begin -->
 **Пример вывода (сокращённо):**
@@ -397,6 +401,8 @@ bin/qmx check src/ --format=json --no-progress > report.json
     "toolVersion": "0.26.0",
     "package": "qmx",
     "timestamp": "2025-01-15T10:30:00+00:00",
+    "docs": "https://qualimetrix.dev",
+    "llmsTxt": "https://qualimetrix.dev/llms.txt",
     "symbols": [
         {
             "type": "file",
@@ -509,8 +515,11 @@ SARIF 2.1.0: `runs[].results[]` с `ruleId`, `ruleIndex` (позиция пра�
 `runs[].invocations[0]` сообщает `executionSuccessful` (см. таблицу coverage ниже), а `runs[].originalUriBaseIds` объявляет базу `%SRCROOT%`, на которую ссылается каждый `artifactLocation.uriBaseId`, разрешая её в корень анализируемого проекта как `file://`-URI.
 
 `runs[].tool.driver` описывает сам инструмент: `name`, `version`,
-`informationUri` и каталог `rules[]`, в который указывает `ruleIndex` каждой
-записи. Каждая запись каталога —
+`informationUri` (сайт документации, `https://qualimetrix.dev`), мешок
+`properties`, в котором `properties.llmsTxt` — индекс для ИИ-агентов, и каталог
+`rules[]`, в который указывает `ruleIndex` каждой записи. Адрес лежит в
+`properties`, потому что SARIF закрывает `driver` для ключей, которых не
+определяет сам, а `properties` — его точка расширения. Каждая запись каталога —
 `{"id": "...", "name": "...", "shortDescription": {"text": "..."}, "fullDescription": {"text": "..."}, "helpUri": "...", "defaultConfiguration": {"level": "..."}}`.
 
 Каждая запись `runs[].invocations[]` —
@@ -539,6 +548,10 @@ SARIF 2.1.0: `runs[].results[]` с `ruleId`, `ruleIndex` (позиция пра�
                 "driver": {
                     "name": "Qualimetrix",
                     "version": "0.26.0",
+                    "informationUri": "https://qualimetrix.dev",
+                    "properties": {
+                        "llmsTxt": "https://qualimetrix.dev/llms.txt"
+                    },
                     "rules": [...]
                 }
             },
@@ -782,6 +795,8 @@ xdg-open report.html  # Linux
 указывающую на удалённый файл, невозможно отличить от записи, которую вообще
 никогда не писали.
 
+`meta` — тот же блок, что у `json`, включая `docs` и `llmsTxt`.
+
 **Ключи верхнего уровня:** `meta`, `note`, `mechanisms` (все семь, всегда
 присутствуют), `byMechanism` (счётчик на каждый механизм, включая нулевые),
 `suppressed` (само мультимножество), `neverMatched`.
@@ -794,7 +809,9 @@ xdg-open report.html  # Linux
     "meta": {
         "version": "dev-main",
         "package": "qmx",
-        "timestamp": "2026-08-29T09:14:02+00:00"
+        "timestamp": "2026-08-29T09:14:02+00:00",
+        "docs": "https://qualimetrix.dev",
+        "llmsTxt": "https://qualimetrix.dev/llms.txt"
     },
     "note": "suppressed is a multiset of mechanism x finding, not a set of findings: one finding can appear under more than one mechanism, so byMechanism counts do not sum to the number of distinct findings suppressed.",
     "mechanisms": [
@@ -862,6 +879,31 @@ bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
 ```
 
 ---
+
+## Адреса документации в каждом JSON-документе {#documentation-addresses}
+
+Каждый JSON-документ, который пишет Qualimetrix, называет, где лежит
+документация, чтобы скрипт или ИИ-агент, у которого есть только вывод, нашёл
+остальное: `docs` — сайт документации, `llmsTxt` — индекс для ИИ-агентов.
+
+| Документ                                 | Где адреса                                                                             |
+| ---------------------------------------- | -------------------------------------------------------------------------------------- |
+| `check --format=json`                    | `meta.docs`, `meta.llmsTxt`                                                            |
+| `check --format=suppressed`              | `meta.docs`, `meta.llmsTxt`                                                            |
+| `check --format=metrics`                 | `docs`, `llmsTxt` верхнего уровня, рядом с `version` (формат выгрузки) и `toolVersion` |
+| `check --format=sarif`                   | `runs[].tool.driver.informationUri` и `runs[].tool.driver.properties.llmsTxt`          |
+| `directives --format=json`               | `meta.docs`, `meta.llmsTxt`                                                            |
+| `baseline:rename-channels --format=json` | `meta.docs`, `meta.llmsTxt`                                                            |
+| `debug:layer-assignment --format=json`   | `meta.docs`, `meta.llmsTxt`                                                            |
+
+Три команды вне `check` начинают документ с того же объекта `meta`, что и
+`json`, — `version`, `package`, `timestamp`, `docs`, `llmsTxt` — перед своими
+собственными ключами.
+
+Адреса есть не в каждом JSON-выводе. `gitlab` — голый массив, в нём нет объекта
+для них; `graph:export --format=json` пишет сам документ графа, который
+потребитель передаёт другому инструменту; а отказ — это всегда ровно
+`{"error": ..., "exit_code": ...}`.
 
 ## Покрытие анализа во всех форматах
 

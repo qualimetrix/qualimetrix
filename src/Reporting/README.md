@@ -450,7 +450,7 @@ Summary-oriented JSON for AI agents, CI/CD, and programmatic consumption. Includ
 
 ```json
 {
-  "meta": { "version": "1.0.0", "package": "qmx", "timestamp": "..." },
+  "meta": { "version": "1.0.0", "package": "qmx", "timestamp": "...", "docs": "https://qualimetrix.dev", "llmsTxt": "https://qualimetrix.dev/llms.txt" },
   "summary": { "filesAnalyzed": 342, "violationCount": 47, "errorCount": 12, "warningCount": 35, "techDebtMinutes": 270, "debtPer1kLoc": 5.4 },
   "health": { "complexity": { "score": 65, "label": "Fair", "threshold": { "warning": 50, "error": 25 }, "coverage": { "state": "measured", "measured": 2263, "eligible": 2263, "ratio": 1.0, "unit": "callables", "basis": "complexity.ccn.count", "reason": null }, "decomposition": [...] } },
   "worstNamespaces": [{ "symbolPath": "App\\Payment", "healthOverall": 31, "reason": "low cohesion, high complexity" }],
@@ -458,6 +458,11 @@ Summary-oriented JSON for AI agents, CI/CD, and programmatic consumption. Includ
   "violations": [{ "file": "src/...", "line": 42, "symbol": "...", "namespace": "App\\Service", "rule": "complexity.ccn", "code": "complexity.ccn", "severity": "error", "message": "...", "metricValue": 15, "threshold": 10, "acceptedLevel": null }]
 }
 ```
+
+**`meta`:** `docs` and `llmsTxt` come from `Core\ProductIdentity`; no formatter
+spells a documentation address itself. `suppressed` publishes the same block,
+and three commands outside `check` (`directives`,
+`baseline:rename-channels`, `debug:layer-assignment`) open their JSON with it.
 
 **Options:** `--format-opt=violations=all|0|N` (default: 50), `--format-opt=top=N` (default: 10 offenders). `--detail` shows findings (default limit: 200, `--detail=all` for unlimited). `--namespace`/`--class` filters findings and worst offenders. `coverage` always states whether the result is complete; policy and health results from an incomplete run are not authoritative.
 
@@ -523,7 +528,18 @@ channel to its producing rule's own description
 computed metric whose own description is blank — falls back to a humanised
 rendering of the code and the repository URL rather than throwing. This
 replaces hand-kept `match` and category-prefix tables, which had drifted from
-the rules they duplicated.
+the rules they duplicated. A presented channel's `helpUri` is
+`ProductIdentity::docsPageUrl()` of its declared page;
+`SarifRuleCollector::FALLBACK_HELP_URI` is the repository URL used for the
+fallback, and is deliberately not the tool's `informationUri`.
+
+### Tool Descriptor
+
+`tool.driver.informationUri` is the documentation site
+(`ProductIdentity::docsUrl()`), and `tool.driver.properties.llmsTxt` is the
+agent-facing index. The index address sits in the `properties` bag because the
+SARIF schema closes `toolComponent` to keys it does not define;
+`SarifSchemaValidationTest` holds both halves of that.
 
 ### GitHub Actions Integration
 
@@ -582,8 +598,11 @@ Exports raw metric values for all symbols (methods, classes, namespaces, files) 
 ```json
 {
   "version": "1.0.0",
+  "toolVersion": "0.26.0",
   "package": "qmx",
   "timestamp": "2025-01-15T10:30:00+00:00",
+  "docs": "https://qualimetrix.dev",
+  "llmsTxt": "https://qualimetrix.dev/llms.txt",
   "symbols": [
     {
       "type": "method",
@@ -608,6 +627,11 @@ Exports raw metric values for all symbols (methods, classes, namespaces, files) 
   }
 }
 ```
+
+The root plays the role `json`'s `meta` plays, but `version` here is the export
+format's own version and `toolVersion` the tool's. So only `docs` and `llmsTxt`
+are added from `ProductIdentity`; merging its identity block wholesale would
+overwrite `version` with the tool version.
 
 ### Usage
 

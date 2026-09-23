@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Suppressed;
 
-use Qualimetrix\Core\Version;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Reporting\FindingProjection\InertSuppressor;
 use Qualimetrix\Reporting\FindingProjection\SuppressedFinding;
 use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
@@ -49,11 +49,15 @@ final class SuppressedFormatter implements FormatterInterface
             $composition->neverMatched,
         );
 
+        $identity = ProductIdentity::identity();
+
         $data = [
             'meta' => [
-                'version' => Version::get(),
-                'package' => 'qmx',
+                'version' => $identity['version'],
+                'package' => $identity['package'],
                 'timestamp' => gmdate('c'),
+                'docs' => $identity['docs'],
+                'llmsTxt' => $identity['llmsTxt'],
             ],
             'note' => 'suppressed is a multiset of mechanism x finding, not a set of findings: one finding '
                 . 'can appear under more than one mechanism, so byMechanism counts do not sum to the number '

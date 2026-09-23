@@ -40,11 +40,11 @@ use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
 final class SarifRuleDescriptorCoverageTest extends TestCase
 {
     /**
-     * Mirrors {@see SarifRuleCollector}'s own private `DOCS_BASE_URI` — kept
-     * as a literal here rather than exposed, the same trade the collector's
-     * own {@see SarifRuleCollector::INFORMATION_URI} constant avoids by being
-     * public; this one is duplicated on purpose so the test asserts the
-     * collector's actual output against an independently stated expectation.
+     * The site root {@see \Qualimetrix\Core\ProductIdentity::docsPageUrl()}
+     * builds every page address under — duplicated here as a literal on
+     * purpose, so the test asserts the collector's actual output against an
+     * independently stated expectation rather than against the accessor it
+     * calls.
      */
     private const string DOCS_BASE_URI = 'https://qualimetrix.dev/';
 

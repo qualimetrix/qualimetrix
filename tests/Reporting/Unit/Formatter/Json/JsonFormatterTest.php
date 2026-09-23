@@ -24,6 +24,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
 use Qualimetrix\Reporting\Formatter\Json\JsonFindingSection;
@@ -104,6 +105,10 @@ final class JsonFormatterTest extends TestCase
         self::assertIsString($data['meta']['version']);
         self::assertSame('qmx', $data['meta']['package']);
         self::assertArrayHasKey('timestamp', $data['meta']);
+        self::assertIsArray($data['meta']);
+        self::assertSame(['version', 'package', 'timestamp', 'docs', 'llmsTxt'], array_keys($data['meta']));
+        self::assertSame(ProductIdentity::docsUrl(), $data['meta']['docs']);
+        self::assertSame(ProductIdentity::llmsTxtUrl(), $data['meta']['llmsTxt']);
 
         // Summary
         self::assertSame(42, $data['summary']['filesAnalyzed']);

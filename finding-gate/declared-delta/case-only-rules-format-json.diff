@@ -1,0 +1,7 @@
+--- candidate
++++ reference (mapped)
+@@ -5,3 +5,1 @@
+-        "timestamp": "<normalized>",
+-        "docs": "https://qualimetrix.dev",
+-        "llmsTxt": "https://qualimetrix.dev/llms.txt"
++        "timestamp": "<normalized>"

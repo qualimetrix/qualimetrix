@@ -7,7 +7,7 @@ namespace Qualimetrix\Reporting\Formatter\Json;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Version;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\Ordering\FindingSorter;
@@ -23,7 +23,6 @@ use Qualimetrix\Reporting\Report;
  */
 final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterface
 {
-    private const PACKAGE = 'qmx';
     private const ?int DEFAULT_VIOLATION_LIMIT = null;
     private const DEFAULT_TOP_OFFENDERS = 10;
 
@@ -48,11 +47,15 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
         // When drill-down is active, compute summary from filtered findings
         $isDrillDown = $context->namespace !== null || $context->class !== null;
 
+        $identity = ProductIdentity::identity();
+
         $data = [
             'meta' => [
-                'version' => Version::get(),
-                'package' => self::PACKAGE,
+                'version' => $identity['version'],
+                'package' => $identity['package'],
                 'timestamp' => gmdate('c'),
+                'docs' => $identity['docs'],
+                'llmsTxt' => $identity['llmsTxt'],
             ],
             'summary' => $this->buildSummary($report, $filteredFindings, $isDrillDown),
             'coverage' => $report->coverage?->toArray(),

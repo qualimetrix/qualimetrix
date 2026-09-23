@@ -440,6 +440,7 @@ Available tests:
  - Qualimetrix\Governance\DistributedPackage\ScratchTreeRefusesWhatItCannotRemoveTest::itNamesTheDirectoryItCannotReadInsteadOfCirclingOnIt
  - Qualimetrix\Governance\DistributedPackage\ScratchTreeRefusesWhatItCannotRemoveTest::itRefusesAPathItCannotCreate
  - Qualimetrix\Governance\DistributedPackage\ScratchTreeRefusesWhatItCannotRemoveTest::itReturnsAPathThatIsAlreadyResolved
+ - Qualimetrix\Governance\DocumentationCensus\DocumentationAddressSingleSourceTest::itSpellsTheDocumentationHostOnlyInProductIdentity
  - Qualimetrix\Governance\DocumentationCensus\LlmsIndexRegisteredSurfaceTest::itNamesEveryConfigurationRootKey
  - Qualimetrix\Governance\DocumentationCensus\LlmsIndexRegisteredSurfaceTest::itNamesEveryPresetFormatAndDirective
  - Qualimetrix\Governance\DocumentationCensus\LlmsIndexRegisteredSurfaceTest::itNamesEveryRegisteredCommand
@@ -7397,6 +7398,7 @@ Available tests:
  - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itRefusesAnOverBudgetValue"regex"
  - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itRefusesAnOverBudgetValue"subtree"
  - Qualimetrix\Tests\Core\Unit\Pattern\SelectorDefinitionTest::itRefusesAnUnknownKind
+ - Qualimetrix\Tests\Core\Unit\ProductIdentityTest::itAddressesADocumentationPageByItsCleanUrl
  - Qualimetrix\Tests\Core\Unit\ProductIdentityTest::itCarriesNoConsoleMarkupInThePointerText
  - Qualimetrix\Tests\Core\Unit\ProductIdentityTest::itReturnsExactlyTheDesignedPointerLine
  - Qualimetrix\Tests\Core\Unit\ProductIdentityTest::itReturnsIdentityFieldsConsistentWithTheirOwnAccessors
@@ -7745,6 +7747,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itSupportsDirectionOption
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itSupportsNamespaceFiltering
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itSupportsNoClustersOption
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\JsonDocumentMetaParityTest::itCarriesTheJsonFormatsMetaKeyForKey"baseline:rename-channels"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\JsonDocumentMetaParityTest::itCarriesTheJsonFormatsMetaKeyForKey"debug:layer-assignment"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\JsonDocumentMetaParityTest::itCarriesTheJsonFormatsMetaKeyForKey"directives"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\JsonDocumentMetaParityTest::itPublishesTheDocumentationAddressesInTheJsonFormatsMeta
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleExclusionStatsWiringTest::itKeysThePerRuleBreakdownByTheProducerOfTheFindingNotTheRuleThatRan
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleExclusionStatsWiringTest::itOmitsPerRuleExclusionDetailsWithoutShowSuppressed
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleExclusionStatsWiringTest::itSurfacesPerRuleExclusionStatsFromARealRunThroughTheContainer
@@ -9042,6 +9048,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\MetricsJsonFormatterTest::itFormatsWithNullMetrics
  - Qualimetrix\Tests\Reporting\Unit\Formatter\MetricsJsonFormatterTest::itProducesValidJson
  - Qualimetrix\Tests\Reporting\Unit\Formatter\MetricsJsonFormatterTest::itPublishesTheDeclarationKindAndKeepsTheBucketOrder
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\MetricsJsonFormatterTest::itPublishesTheDocumentationAddressesWithoutDisplacingEitherVersion
  - Qualimetrix\Tests\Reporting\Unit\Formatter\MetricsJsonFormatterTest::itReturnsDefaultGroupByNone
  - Qualimetrix\Tests\Reporting\Unit\Formatter\MetricsJsonFormatterTest::itReturnsMetricsName
  - Qualimetrix\Tests\Reporting\Unit\Formatter\MetricsJsonFormatterTest::itSkipsEmptyMetrics
@@ -9088,6 +9095,8 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifSchemaValidationTest::itConformsToTheSarifSchemaForAReportWithRelatedLocations
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifSchemaValidationTest::itConformsToTheSarifSchemaForAnEmptyReport
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifSchemaValidationTest::itConformsToTheSarifSchemaWhenAReportCarriesAMeasuredBreach
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifSchemaValidationTest::itConformsToTheSarifSchemaWithTheDocumentationAddressesOnTheDriver
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifSchemaValidationTest::itRefusesTheLlmsTxtAddressOutsideThePropertiesBag
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itCalculatesScopedDebt
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itColorsSummaryBoldForErrors
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\FindingSummaryRendererTest::itColorsSummaryBoldForInfoOnly
@@ -9202,6 +9211,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itCountsEachSuppressedEntryUnderItsOwnMechanism
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itNamesItselfSuppressedAndDefaultsToNoGrouping
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itPublishesNeverMatchedSuppressorsSeparatelyFromSuppressedFindings
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itPublishesTheDocumentationAddressesInItsMeta
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itPublishesTheMultisetNoteSoCountsAreNotMisreadAsFindings
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itTreatsAMissingCompositionAsEmptyRatherThanFailing
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itCarriesTheDocumentationPointerInDetailMode

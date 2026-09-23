@@ -803,6 +803,9 @@ final class LayerAssignmentCommandTest extends TestCase
 
         self::assertSame(Command::SUCCESS, $exit);
         $decoded = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        // `meta` carries a run timestamp, so it is compared on its own.
+        self::assertIsArray($decoded['meta'] ?? null);
+        unset($decoded['meta']);
 
         self::assertSame([
             'fqn' => 'App\\Service\\Foo',
@@ -879,6 +882,9 @@ final class LayerAssignmentCommandTest extends TestCase
 
         self::assertSame(Command::SUCCESS, $exit);
         $decoded = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        // `meta` carries a run timestamp, so it is compared on its own.
+        self::assertIsArray($decoded['meta'] ?? null);
+        unset($decoded['meta']);
 
         self::assertSame([
             'fqn' => 'Other\\Place\\Thing',

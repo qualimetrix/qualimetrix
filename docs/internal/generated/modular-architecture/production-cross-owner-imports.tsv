@@ -1915,6 +1915,7 @@ Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.
 Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineWriter	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\ChannelRenameReporter	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\ChannelRenameReport	Analysis.Policy.Baseline	contract
+Qualimetrix\Infrastructure\Console\Command\ChannelRenameReporter	Infrastructure.Console	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
 Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions	Analysis.Configuration	contract
 Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	contract
@@ -1965,6 +1966,7 @@ Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter	Infrastructure.Consol
 Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter	Infrastructure.Console	Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason	Analysis.Policy.Inline	contract
 Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter	Infrastructure.Console	Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict	Analysis.Policy.Inline	contract
 Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport	Analysis.Run	contract
+Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter	Infrastructure.Console	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Infrastructure\Console\DirectiveVerdictTally	Infrastructure.Console	Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect	Analysis.Policy.Inline	contract
 Qualimetrix\Infrastructure\Console\DirectiveVerdictTally	Infrastructure.Console	Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict	Analysis.Policy.Inline	contract
 Qualimetrix\Infrastructure\Console\ExitCodeResolver	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface	Analysis.Finding	contract
@@ -2498,7 +2500,7 @@ Qualimetrix\Reporting\Formatter\Json\JsonFindingSection	Reporting	Qualimetrix\An
 Qualimetrix\Reporting\Formatter\Json\JsonFindingSection	Reporting	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
 Qualimetrix\Reporting\Formatter\Json\JsonFormatter	Reporting	Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator	Analysis.Evidence.Prioritization	contract
 Qualimetrix\Reporting\Formatter\Json\JsonFormatter	Reporting	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
-Qualimetrix\Reporting\Formatter\Json\JsonFormatter	Reporting	Qualimetrix\Core\Version	Core.Neutral	contract
+Qualimetrix\Reporting\Formatter\Json\JsonFormatter	Reporting	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Reporting\Formatter\Json\JsonHealthSection	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension	Analysis.Evidence.ComputedMetrics	contract
 Qualimetrix\Reporting\Formatter\Json\JsonHealthSection	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem	Analysis.Evidence.ComputedMetrics.Health	contract
 Qualimetrix\Reporting\Formatter\Json\JsonHealthSection	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor	Analysis.Evidence.ComputedMetrics.Health	contract
@@ -2507,6 +2509,7 @@ Qualimetrix\Reporting\Formatter\Json\JsonHealthSection	Reporting	Qualimetrix\Cor
 Qualimetrix\Reporting\Formatter\Json\JsonHealthSection	Reporting	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
 Qualimetrix\Reporting\Formatter\Json\JsonOffenderSection	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown	Analysis.Evidence.ComputedMetrics.Health	contract
 Qualimetrix\Reporting\Formatter\Json\JsonOffenderSection	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender	Analysis.Evidence.ComputedMetrics.Health	contract
+Qualimetrix\Reporting\Formatter\MetricsJsonFormatter	Reporting	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Reporting\Formatter\MetricsJsonFormatter	Reporting	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Reporting\Formatter\MetricsJsonFormatter	Reporting	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract
 Qualimetrix\Reporting\Formatter\MetricsJsonFormatter	Reporting	Qualimetrix\Core\Version	Core.Neutral	contract
@@ -2514,10 +2517,12 @@ Qualimetrix\Reporting\Formatter\Ordering\FindingSorter	Reporting	Qualimetrix\Ana
 Qualimetrix\Reporting\Formatter\Ordering\FindingSorter	Reporting	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
 Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter	Reporting	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
 Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter	Reporting	Qualimetrix\Analysis\Finding\Contract\Location	Analysis.Finding	contract
+Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter	Reporting	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter	Reporting	Qualimetrix\Core\Version	Core.Neutral	contract
 Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector	Reporting	Qualimetrix\Analysis\Finding\Contract\ChannelPresentation	Analysis.Finding	contract
 Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector	Reporting	Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface	Analysis.Finding	contract
 Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector	Reporting	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
+Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector	Reporting	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Reporting\Formatter\Summary\FindingSummaryRenderer	Reporting	Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtSummary	Analysis.Evidence.Prioritization	contract
 Qualimetrix\Reporting\Formatter\Summary\FindingSummaryRenderer	Reporting	Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry	Analysis.Evidence.Prioritization	contract
 Qualimetrix\Reporting\Formatter\Summary\FindingSummaryRenderer	Reporting	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
@@ -2535,7 +2540,7 @@ Qualimetrix\Reporting\Formatter\Summary\TopIssuesRenderer	Reporting	Qualimetrix\
 Qualimetrix\Reporting\Formatter\Summary\TopIssuesRenderer	Reporting	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
 Qualimetrix\Reporting\Formatter\Summary\TopIssuesRenderer	Reporting	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
 Qualimetrix\Reporting\Formatter\Summary\TopIssuesRenderer	Reporting	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract
-Qualimetrix\Reporting\Formatter\Suppressed\SuppressedFormatter	Reporting	Qualimetrix\Core\Version	Core.Neutral	contract
+Qualimetrix\Reporting\Formatter\Suppressed\SuppressedFormatter	Reporting	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Reporting\Formatter\TextFormatter	Reporting	Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator	Analysis.Evidence.Prioritization	contract
 Qualimetrix\Reporting\Formatter\TextFormatter	Reporting	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
 Qualimetrix\Reporting\Formatter\TextFormatter	Reporting	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract

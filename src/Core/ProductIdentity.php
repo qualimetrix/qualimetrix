@@ -13,10 +13,18 @@ namespace Qualimetrix\Core;
  * capability, so no capability owns it. Kept separate from {@see Version}
  * rather than merged into it: a version number and a documentation address are
  * two facts from two sources, not one fact with two fields.
+ *
+ * @qmx-threshold coupling.cbo 22 -- Every output channel reads its documentation address from here
+ *                instead of spelling it, so each channel that points at the documentation is one
+ *                more inbound edge by design. The class has no dependency of its own beyond
+ *                Version. Raw CBO 21 gets one-edge headroom from the inclusive threshold of 22.
  */
 final class ProductIdentity
 {
-    private const PACKAGE = 'qualimetrix/qualimetrix';
+    // Every published document already names the tool 'qmx', not the Composer
+    // package 'qualimetrix/qualimetrix' — this states the fact the documents
+    // publish, not the installable unit.
+    private const PACKAGE = 'qmx';
 
     private const DOCS_URL = 'https://qualimetrix.dev';
 
@@ -30,6 +38,20 @@ final class ProductIdentity
     public static function llmsTxtUrl(): string
     {
         return self::DOCS_URL . self::LLMS_TXT_PATH;
+    }
+
+    /**
+     * The published address of one documentation page, given its source path
+     * under `website/docs/` (`rules/complexity.md`).
+     *
+     * The `.md` suffix becomes a trailing slash because the site serves clean
+     * URLs. That routing is a property of the site at this address, so it
+     * lives beside the address: a move to a host with different routing
+     * changes both in one place.
+     */
+    public static function docsPageUrl(string $docsPage): string
+    {
+        return self::DOCS_URL . '/' . preg_replace('/\.md$/', '/', $docsPage);
     }
 
     /**

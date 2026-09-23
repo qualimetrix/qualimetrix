@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
+use Qualimetrix\Core\ProductIdentity;
 
 /**
  * The two projections of one directive audit.
@@ -107,8 +108,16 @@ final readonly class DirectiveAuditPresenter
     public function json(int $exitCode): string
     {
         $report = $this->report;
+        $identity = ProductIdentity::identity();
 
         return self::encode([
+            'meta' => [
+                'version' => $identity['version'],
+                'package' => $identity['package'],
+                'timestamp' => gmdate('c'),
+                'docs' => $identity['docs'],
+                'llmsTxt' => $identity['llmsTxt'],
+            ],
             'scope' => [
                 'analyzed_files' => $report->coverage->analyzedFilesCount(),
                 'generated_excluded_files' => $report->coverage->generatedExcludedFilesCount(),

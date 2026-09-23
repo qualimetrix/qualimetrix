@@ -338,8 +338,16 @@ final class LayerAssignmentCommand extends Command
     ): void {
         $assigned = $matches[0] ?? null;
         $shadowed = $matches === [] ? [] : \array_slice($matches, 1);
+        $identity = ProductIdentity::identity();
 
         OutputHelper::write($output, $this->encodeJson([
+            'meta' => [
+                'version' => $identity['version'],
+                'package' => $identity['package'],
+                'timestamp' => gmdate('c'),
+                'docs' => $identity['docs'],
+                'llmsTxt' => $identity['llmsTxt'],
+            ],
             'fqn' => $fqn,
             'assigned' => $assigned === null ? null : self::matchToArray($assigned),
             'shadowed' => array_map(self::matchToArray(...), $shadowed),

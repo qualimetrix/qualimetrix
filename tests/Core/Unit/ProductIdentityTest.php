@@ -25,6 +25,20 @@ final class ProductIdentityTest extends TestCase
         self::assertSame('https://qualimetrix.dev/llms.txt', ProductIdentity::llmsTxtUrl());
     }
 
+    /**
+     * The site serves clean URLs, so a page's `.md` source becomes a trailing
+     * slash; a path outside `rules/` is addressed from the same root.
+     */
+    #[Test]
+    public function itAddressesADocumentationPageByItsCleanUrl(): void
+    {
+        self::assertSame('https://qualimetrix.dev/rules/complexity/', ProductIdentity::docsPageUrl('rules/complexity.md'));
+        self::assertSame(
+            'https://qualimetrix.dev/reference/health-scores/',
+            ProductIdentity::docsPageUrl('reference/health-scores.md'),
+        );
+    }
+
     #[Test]
     public function itReturnsExactlyTheDesignedPointerLine(): void
     {
@@ -65,7 +79,7 @@ final class ProductIdentityTest extends TestCase
         $identity = ProductIdentity::identity();
 
         self::assertSame(Version::get(), $identity['version']);
-        self::assertSame('qualimetrix/qualimetrix', $identity['package']);
+        self::assertSame('qmx', $identity['package']);
         self::assertSame(ProductIdentity::docsUrl(), $identity['docs']);
         self::assertSame(ProductIdentity::llmsTxtUrl(), $identity['llmsTxt']);
     }

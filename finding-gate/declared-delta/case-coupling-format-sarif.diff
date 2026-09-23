@@ -1,0 +1,8 @@
+--- candidate
++++ reference (mapped)
+@@ -10,4 +10,1 @@
+-                    "informationUri": "https://qualimetrix.dev",
+-                    "properties": {
+-                        "llmsTxt": "https://qualimetrix.dev/llms.txt"
+-                    },
++                    "informationUri": "https://github.com/qualimetrix/qualimetrix",
