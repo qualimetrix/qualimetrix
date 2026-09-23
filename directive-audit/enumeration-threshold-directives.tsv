@@ -85,7 +85,7 @@ src/Analysis/Evidence/Coupling/NamespaceCboOptions.php	24	coupling.instability	w
 src/Analysis/Evidence/Design/DataClass/DataClassOptions.php	27	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/Design/GodClass/GodClassOptions.php	35	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	26	coupling.instability	warning=0.95 error=0.95 -- A composition root depends outward on everything it assembles and is depended on by one trait; instability near one is its shape, not its defect.
-src/Analysis/Policy/Architecture/LayerViolation/DeclaredLayerReachability.php	60	coupling.instability	warning=0.81 -- A finding-text builder is efferent by
+src/Analysis/Policy/Architecture/LayerViolation/DeclaredLayerReachability.php	61	coupling.instability	warning=0.81 -- A finding-text builder is efferent by
 src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassOptions.php	32	coupling.instability	warning=0.81 -- Three necessary edges carry the typed
 src/Analysis/Policy/Baseline/BaselineChannelRenamer.php	66	coupling.instability	warning=0.82 error=0.95 -- Measured Ca=2, Ce=9
 src/Analysis/Policy/Inline/Directive/DirectiveAddressability.php	34	coupling.instability	warning=0.85 error=0.85 -- Ca=2, Ce=10: this class answers for the whole directive vocabulary, so it depends outward on every part of it and is depended on by the two halves that ask. The measured 0.83 moved by one dependency when the ban arrived and stays structural; the second dependent is what made an always-structural value reportable at all, since the class rule needs min_afferent=2. Same shape as VisitorMethodContext's composition root.

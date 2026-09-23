@@ -1,5 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -30,1 +30,1 @@
--    For an analysed class, "qmx debug:layer-assignment <class>" names the unanswered layer and where its inheritance chain stops; widening paths to include that declaration settles it. For a symbol outside the analysed paths, what settles it depends on whose code it is: your own code is settled by analysing it — widening paths to include it, or running over the whole project rather than part of it; a dependency's class by a patterns layer for its namespace declared before the layer that could not answer.  [architecture.doubted-assignment]
-+    For an analysed class, "qmx debug:layer-assignment <class>" names the unanswered layer and where its inheritance chain stops; widening paths to include that declaration settles it. For a symbol outside the analysed paths, a patterns layer for its namespace declared before the layer that could not answer settles it.  [architecture.doubted-assignment]

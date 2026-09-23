@@ -148,6 +148,10 @@ unanswered, winning or not, because the reader that asks — the inert-clause
 check below — asks about the clause, not about the assignment. A third,
 `contenders()`, names the layers that could own the class once the unanswered
 ones are answered, for the verdicts below that conclude something from who won.
+A fourth, `establishedMatches()`, lists the matches whose `exclude:` was
+answered, for the verdicts that conclude something from who lost: the first of
+them is where `contenders()` stops, and every later one loses the class
+whatever the unanswered clauses in front of it answer.
 
 **A doubt is information, not a gap.** An assignment in doubt is in a layer,
 its edges are judged, and no `layers:` entry is missing, so it does not raise
@@ -195,14 +199,48 @@ not answer for any class, and `architecture.potential-shadow` built a shadow
 from a winner whose `exclude:` the run could not evaluate — together they told
 the author of a carve-out that did not answer to reorder or delete the layer it
 was written for. Both are configuration errors that fail the run, so neither
-may rest on a conclusion the run did not reach: a layer that could still own a
-symbol whose assignment is in doubt (one of its `contenders()`) is not
-unreachable, and a shadow is drawn only between matches the run established.
-The doubt is visible in `architecture.doubted-assignment`, `coverage-gap` and
-`debug:layer-assignment` instead. A layer the run could not answer about a
-symbol that an established match declared earlier already owns is still
+may rest on a conclusion the run did not reach: a layer that could still own an
+analysed class whose assignment is in doubt (one of its `contenders()`) is not
+unreachable, and a shadow is drawn only between matches the run established
+(`establishedMatches()`). The first established match shadows every later one
+even when an unanswered `exclude:` in front of it holds the class: in the
+Doctrine carve-out, `legacy` declared after `repos` loses the class to `app`
+or to `repos` whichever way the clause answers, so `repos` → `legacy` is
+reported, while `app` → `repos` depends on the answer and is not. The first
+version dropped every shadow of a class whose assigned layer stood on such a
+clause, and with it that real misordering. A layer the run could not answer
+about a symbol that an established match declared earlier already owns is still
 unreachable if it owns nothing else: it could not have won that symbol, and
 "shadowed" is then the right reading of the finding.
+
+**Only an analysed class keeps a layer out of `unreachable-layer`.** The run
+never reads a symbol outside the analysed paths, so an `implements:`,
+`extends:` or `attributes:` criterion goes unanswered about it in every run,
+mistyped or not. The first version let any symbol in doubt count, and one edge
+into vendor code then kept a layer whose criterion names a class that does not
+exist from ever being reported: every analysed class answered "no" about
+`implements: ['App\Contracts\Handlr']`, the vendor type at the end of a
+type-hint edge could not be answered, and the configuration error became an
+`info` line — on any project without a vendor `patterns` layer, whatever the
+declaration order. A contest for an analysed class is different: completing its
+chain settles it, so the layer may really own it. The finding counts the
+symbols outside the paths the layer might own, so the doubt it leaves out is
+said rather than dropped. The cost is a layer written for vendor types alone —
+a narrower vendor `patterns` layer behind a vendor carve-out whose `exclude:`
+cannot be answered, say — which is reported as unreachable while it may own a
+vendor type; that is what the run could say about it before the doubt was
+tracked at all, and `architecture.doubted-assignment` names it beside the
+error.
+
+Every layer a contest keeps out of `unreachable-layer` is named in
+`architecture.doubted-assignment`: a layer that could not answer among the
+layers that could not answer, and a layer that would own a symbol if an
+unanswered `exclude:` in front of it removed it in a list of its own. The
+first version named only the first kind, and a layer kept out by someone
+else's clause was named by nothing in `check`. `debug:layer-assignment` names
+both for an analysed class (`contenders` in JSON), and its shadow hint and
+`shadowed` follow `establishedMatches()`, so it never points at a
+`potential-shadow` that `check` does not report.
 
 The alternative for `unreachable-layer` was a separate sentence naming the
 undecided symbols, as `coverage-gap` has. It was rejected because the finding
@@ -279,9 +317,11 @@ global net if that is really what was wanted.
   each layer that could not answer, with how many assignments it left in doubt
   and how many symbols in no layer.
 - `architecture.unreachable-layer` and `architecture.potential-shadow` no longer
-  fire on an answer the run did not reach: a layer that could still own a
-  symbol in doubt is not unreachable, and a match whose `exclude:` went
-  unanswered neither shadows nor is shadowed.
+  fire on an answer the run did not reach: a layer that could still own an
+  analysed class in doubt is not unreachable, and a match whose `exclude:` went
+  unanswered neither shadows nor is shadowed. A symbol outside the analysed
+  paths keeps no layer from being unreachable; the finding counts those it
+  might own.
 - Membership is now a function of what the run analysed. Widening `paths:`
   can turn an undecidable layer into a decided one, in either direction. A
   criterion that names a class's direct parent or interface keeps matching, and

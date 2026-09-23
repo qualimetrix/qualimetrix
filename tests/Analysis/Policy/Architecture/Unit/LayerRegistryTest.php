@@ -149,9 +149,11 @@ final class LayerRegistryTest extends TestCase
         // list, the layers an `exclude:` clause removed the class from, the
         // layers the run could not answer that bear on its assignment, the
         // matching layers whose `exclude:` could not answer, the layers that
-        // could still own it, and where its chain stopped.
+        // could still own it, the matches the run established, and where its
+        // chain stopped.
         $entry = $cache[$symbol->toCanonical()];
-        self::assertSame(['matches', 'excluded', 'undecided', 'unansweredExcludes', 'contenders', 'chainStopsAt'], array_keys($entry));
+        self::assertSame(['matches', 'excluded', 'undecided', 'unansweredExcludes', 'contenders', 'established', 'chainStopsAt'], array_keys($entry));
+        self::assertSame($entry['matches'], $entry['established']);
         self::assertCount(1, $entry['matches']);
         self::assertSame('service', $entry['matches'][0]->layerName);
         self::assertSame([], $entry['excluded']);

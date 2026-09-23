@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\TupleExtractor;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerCriteriaMatcher;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterionKind;
@@ -406,6 +407,12 @@ final class UndecidableMembershipTest extends TestCase
         self::assertSame('app', $registry->resolveLayer($this->child()));
         self::assertSame(['app', 'vendorish'], $registry->undecidedLayers($this->child()));
         self::assertSame(['app', 'vendorish', 'web'], $registry->contenders($this->child()));
+        // The first established match is where the contest stops, and every
+        // match behind it loses the class whatever `app`'s clause answers.
+        self::assertSame(['web', 'rest'], array_map(
+            static fn(LayerMatch $match): string => $match->layerName,
+            $registry->establishedMatches($this->child()),
+        ));
     }
 
     #[Test]

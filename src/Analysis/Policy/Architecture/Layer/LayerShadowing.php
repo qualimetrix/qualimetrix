@@ -22,39 +22,38 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
  * stays reported, since a false alarm costs a configuration review while a
  * missed shadow costs a layer that silently owns nothing.
  *
- * A match whose `exclude:` clause the run could not answer is not an
- * established one, and a shadow is a conclusion about who won: a winner
- * whose clause may still remove the class shadows nothing, and a layer whose
- * match stands on such a clause is not shadowed. That is a doubt about the
- * assignment rather than a mistake in the declaration, and
- * `architecture.doubted-assignment` publishes it.
+ * A shadow is drawn only between the matches the run established, which
+ * {@see LayerRegistry::establishedMatches()} decides: a match whose
+ * `exclude:` went unanswered may still lose the class, so it neither shadows
+ * nor is shadowed — that is a doubt about the assignment, and
+ * `architecture.doubted-assignment` publishes it. The first established match
+ * shadows every later one whatever those clauses answer, even when it is not
+ * the assigned layer itself.
  *
- * @internal Consumed by {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule}.
+ * @internal Consumed by {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerEvidenceCollector}
+ *           and {@see \Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy::inspect()}.
  */
 final class LayerShadowing
 {
     /**
-     * @param list<LayerMatch> $matches As returned by {@see LayerRegistry::resolveAll()}:
-     *                                  declaration order, first entry assigned.
-     * @param list<string> $unansweredExcludes As returned by {@see LayerRegistry::unansweredExcludeLayers()}
-     *                                         for the same class: the matches that are not established.
+     * @param list<LayerMatch> $established As returned by {@see LayerRegistry::establishedMatches()}:
+     *                                      declaration order, the first entry shadowing the rest.
      *
      * @return list<LayerMatch> The shadowed matches that indicate a declaration
      *                          defect, in declaration order.
      */
-    public static function reportableShadows(array $matches, array $unansweredExcludes): array
+    public static function reportableShadows(array $established): array
     {
-        $assigned = array_shift($matches);
-        if ($assigned === null || \in_array($assigned->layerName, $unansweredExcludes, true)) {
+        $shadowing = array_shift($established);
+        if ($shadowing === null) {
             return [];
         }
 
-        $assignedCriterion = $assigned->primaryCriterion();
+        $shadowingCriterion = $shadowing->primaryCriterion();
 
         return array_values(array_filter(
-            $matches,
-            static fn(LayerMatch $shadowed): bool => !\in_array($shadowed->layerName, $unansweredExcludes, true)
-                && !self::isStrictlyMoreSpecific($assignedCriterion, $shadowed->primaryCriterion()),
+            $established,
+            static fn(LayerMatch $shadowed): bool => !self::isStrictlyMoreSpecific($shadowingCriterion, $shadowed->primaryCriterion()),
         ));
     }
 

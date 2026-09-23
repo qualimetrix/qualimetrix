@@ -61,6 +61,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  * envelope replaces the report on stdout rather than the human `<error>`
  * line — an agent parsing `--format=json` output must always find valid
  * JSON there.
+ *
+ * @phpstan-type Resolution array{matches: list<LayerAssignmentMatch>, hasLayers: bool, undecided: list<string>, chainStopsAt: list<string>, contenders: list<string>, firstEstablished: string|null, reportedShadows: list<string>}
  */
 #[AsCommand(
     name: 'debug:layer-assignment',
@@ -183,9 +185,9 @@ final class LayerAssignmentCommand extends Command
         }
 
         if ($format === 'json') {
-            $this->renderJson($output, $normalized, $resolution['matches'], $resolution['hasLayers'], $resolution['undecided'], $resolution['chainStopsAt']);
+            $this->renderJson($output, $normalized, $resolution);
         } else {
-            $this->renderReport($output, $normalized, $resolution['matches'], $resolution['hasLayers'], $resolution['undecided'], $resolution['chainStopsAt']);
+            $this->renderReport($output, $normalized, $resolution);
         }
 
         return self::SUCCESS;
@@ -242,23 +244,18 @@ final class LayerAssignmentCommand extends Command
     }
 
     /**
-     * @param list<LayerAssignmentMatch> $matches
-     * @param list<string> $undecided
-     * @param list<string> $chainStopsAt
+     * @param Resolution $resolution
      */
-    private function renderReport(
-        OutputInterface $output,
-        string $fqn,
-        array $matches,
-        bool $hasLayers,
-        array $undecided,
-        array $chainStopsAt,
-    ): void {
+    private function renderReport(OutputInterface $output, string $fqn, array $resolution): void
+    {
+        $matches = $resolution['matches'];
+        $undecided = $resolution['undecided'];
+
         $output->writeln(\sprintf('Class: <info>%s</info>', $fqn));
         $output->writeln('');
 
         if ($matches === [] && $undecided !== []) {
-            $this->renderUndecided($output, $undecided, $chainStopsAt);
+            $this->renderUndecided($output, $undecided, $resolution['chainStopsAt']);
 
             return;
         }
@@ -266,7 +263,7 @@ final class LayerAssignmentCommand extends Command
         if ($matches === []) {
             $output->writeln('  Assigned to: <comment>(no layer)</comment>');
             $output->writeln('');
-            if (!$hasLayers) {
+            if (!$resolution['hasLayers']) {
                 $output->writeln('  Suggestion: no layers are declared in the configuration. Add an');
                 $output->writeln('  <comment>architecture.layers</comment> section to qmx.yaml to start enforcing');
                 $output->writeln('  layer boundaries.');
@@ -286,19 +283,20 @@ final class LayerAssignmentCommand extends Command
             // `LayerRegistry::undecidedLayers()` for why — but printing it
             // alone would hide that the layers named here might change it.
             // The list already holds only the layers bearing on the
-            // assignment (declared no later than the assigned one), so "it
-            // can change" is true of every one of them.
+            // assignment (those declared before the first match the run
+            // established), so "it can change" is true of every one of them.
             $output->writeln(\sprintf('    Could not be decided: <comment>%s</comment>', implode(', ', $undecided)));
-            $output->writeln(\sprintf('    The chain stops at: <comment>%s</comment>', implode(', ', $chainStopsAt)));
+            $output->writeln(\sprintf('    Could be owned by: <comment>%s</comment>', implode(', ', $resolution['contenders'])));
+            $output->writeln(\sprintf('    The chain stops at: <comment>%s</comment>', implode(', ', $resolution['chainStopsAt'])));
             $output->writeln('    The assignment above is what the answered layers give; it can change');
             $output->writeln('    once every link of this class\'s inheritance chain is analysed.');
         }
         $output->writeln('');
 
-        $shadowed = \array_slice($matches, 1);
+        $alsoMatching = \array_slice($matches, 1);
 
         $output->writeln('  Would also match (in declaration order):');
-        if ($shadowed === []) {
+        if ($alsoMatching === []) {
             $output->writeln('    <comment>(none — the assignment is unique)</comment>');
 
             return;
@@ -306,10 +304,10 @@ final class LayerAssignmentCommand extends Command
 
         $maxLayerNameWidth = max(array_map(
             static fn(LayerAssignmentMatch $entry): int => \strlen($entry->layerName),
-            $shadowed,
+            $alsoMatching,
         ));
 
-        foreach ($shadowed as $entry) {
+        foreach ($alsoMatching as $entry) {
             $output->writeln(\sprintf(
                 "    - %-{$maxLayerNameWidth}s (matched by: '<comment>%s</comment>')",
                 $entry->layerName,
@@ -317,13 +315,44 @@ final class LayerAssignmentCommand extends Command
             ));
         }
 
+        $this->renderShadowHint($output, $resolution);
+    }
+
+    /**
+     * The hint follows the rule `architecture.potential-shadow` draws its
+     * pairs by, so the command never sends the reader to a diagnostic that
+     * says nothing about this class: a match whose `exclude:` went unanswered
+     * neither shadows nor is shadowed, and a layer broader than the one it
+     * loses to is the narrow-before-broad idiom rather than a defect.
+     *
+     * @param Resolution $resolution
+     */
+    private function renderShadowHint(OutputInterface $output, array $resolution): void
+    {
+        $shadowedBy = $resolution['firstEstablished'];
+        if ($shadowedBy === null || self::matchesAfter($resolution['matches'], $shadowedBy) === []) {
+            return;
+        }
+
         $output->writeln('');
         $output->writeln('  Diagnostic hint:');
-        $firstShadowed = $shadowed[0]->layerName;
+        $reported = $resolution['reportedShadows'];
+        if ($reported === []) {
+            $output->writeln(\sprintf(
+                "    The later matches lose the class to '<info>%s</info>', and no diagnostic reports",
+                $shadowedBy,
+            ));
+            $output->writeln('    them as a shadow: a broader layer after a narrower one is how declaration');
+            $output->writeln('    order is meant to be used, and a match whose exclude: went unanswered may');
+            $output->writeln('    not match at all.');
+
+            return;
+        }
+
         $output->writeln(\sprintf(
             "    Class is shadowed: would have matched '<info>%s</info>' if '<info>%s</info>' was declared later.",
-            $firstShadowed,
-            $assigned->layerName,
+            $reported[0],
+            $shadowedBy,
         ));
         $output->writeln('    See <comment>architecture.potential-shadow</comment> diagnostic for the broader picture.');
     }
@@ -380,40 +409,67 @@ final class LayerAssignmentCommand extends Command
      * than an omitted key, so a consumer can branch on presence without also
      * checking `shadowed === []`.
      *
+     * `shadowed` lists every match after `shadowedBy`, the first match the
+     * run established: each loses the class whatever the unanswered layers
+     * answer, and is flagged `reported` when `architecture.potential-shadow`
+     * reports it — never for a match whose own `exclude:` went unanswered,
+     * since it may not match at all. `shadowedBy` is not `assigned` when an
+     * unanswered `exclude:` stands in front of it, and is `null` when
+     * `shadowed` is empty. Every match the text report lists is named here:
+     * one before `shadowedBy` is among `contenders`.
+     *
      * `undecided` is always present and names the layers this run could not
      * answer for the class that bear on its assignment — every one when
-     * nothing assigned it, only those declared no later than the assigned
-     * layer otherwise. A null `assigned` with a non-empty `undecided` is
-     * not "no layer claims this class" — it is "the run could not tell" — so a
+     * nothing assigned it, otherwise those declared before the first match
+     * the run established. A null `assigned` with a non-empty `undecided` is
+     * not "no layer claims this class" — it is "the run could not tell", so a
      * consumer branching on `assigned` alone must read this key too.
+     * `contenders` names the layers that could own the class once those are
+     * answered, and is empty whenever `undecided` is.
      *
      * `chainStopsAt` is always present and names where the class's
      * inheritance chain stopped at a declaration the run did not read; it is
      * empty whenever `undecided` is.
      *
-     * @param list<LayerAssignmentMatch> $matches
-     * @param list<string> $undecided
-     * @param list<string> $chainStopsAt
+     * @param Resolution $resolution
      */
-    private function renderJson(
-        OutputInterface $output,
-        string $fqn,
-        array $matches,
-        bool $hasLayers,
-        array $undecided,
-        array $chainStopsAt,
-    ): void {
-        $assigned = $matches[0] ?? null;
-        $shadowed = $matches === [] ? [] : \array_slice($matches, 1);
+    private function renderJson(OutputInterface $output, string $fqn, array $resolution): void
+    {
+        $assigned = $resolution['matches'][0] ?? null;
+        $reported = $resolution['reportedShadows'];
+        $shadowedBy = $resolution['firstEstablished'];
+        $shadowed = $shadowedBy === null ? [] : self::matchesAfter($resolution['matches'], $shadowedBy);
 
         OutputHelper::write($output, $this->encodeJson([
             'fqn' => $fqn,
             'assigned' => $assigned === null ? null : self::matchToArray($assigned),
-            'shadowed' => array_map(self::matchToArray(...), $shadowed),
-            'undecided' => $undecided,
-            'chainStopsAt' => $chainStopsAt,
-            'hasLayers' => $hasLayers,
+            'shadowed' => array_map(
+                static fn(LayerAssignmentMatch $match): array => self::matchToArray($match)
+                    + ['reported' => \in_array($match->layerName, $reported, true)],
+                $shadowed,
+            ),
+            'shadowedBy' => $shadowed === [] ? null : $shadowedBy,
+            'undecided' => $resolution['undecided'],
+            'contenders' => $resolution['contenders'],
+            'chainStopsAt' => $resolution['chainStopsAt'],
+            'hasLayers' => $resolution['hasLayers'],
         ]));
+    }
+
+    /**
+     * @param list<LayerAssignmentMatch> $matches
+     *
+     * @return list<LayerAssignmentMatch> the matches declared after `$layerName`
+     */
+    private static function matchesAfter(array $matches, string $layerName): array
+    {
+        foreach ($matches as $position => $match) {
+            if ($match->layerName === $layerName) {
+                return \array_slice($matches, $position + 1);
+            }
+        }
+
+        return [];
     }
 
     /** @return array{layer: string, criteria: non-empty-list<string>} */

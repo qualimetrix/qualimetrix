@@ -20,7 +20,9 @@ use ReflectionClass;
  * policy {@see PhpBuiltinClassRegistryCensusTest} already applies to the
  * names. A name no developer machine loads — `Pdo\Firebird`, `EnchantBroker`
  * and `EnchantDictionary` — is verified by the CI job, which pins `enchant` and
- * `pdo_firebird`.
+ * `pdo_firebird`; {@see PhpBuiltinClassRegistryCensusTest} refuses a CI run in
+ * which a pinned extension did not load, because this comparison would skip
+ * its names without a red.
  *
  * No version cells: on every name PHP 8.4 and 8.5 both declare, their parent,
  * interfaces and class-level attributes were measured identical. A later PHP

@@ -1,5 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -39,1 +39,1 @@
--        "description": "3 assigned symbol(s) rest on a layer the run could not fully decide (1 analysed class(es), 2 outside the analysed paths). Layers that could not answer: \"graph-extends\" (2 assigned in doubt), \"doubt\" (1 assigned in doubt). Examples, at most 10 of each kind by name — analysed: Corpus\\Layers\\Doubt\\Gateway; outside the analysed paths: Corpus\\Outside\\Vendorish\\Base, Corpus\\Outside\\Vendorish\\Port. Each assignment stands and its edges are judged against its layer's allow-list; whether a layer the run could not answer — an earlier one, or the assigned layer's own \"exclude\" — would change it is unknown.",
-+        "description": "3 assigned symbol(s) rest on a layer the run could not fully decide (1 analysed class(es), 2 outside the analysed paths) — for example Corpus\\Layers\\Doubt\\Gateway, Corpus\\Outside\\Vendorish\\Base, Corpus\\Outside\\Vendorish\\Port. Each assignment stands and its edges are judged against its layer's allow-list; whether a layer the run could not answer — an earlier one, or the assigned layer's own \"exclude\" — would change it is unknown.",

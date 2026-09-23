@@ -21,7 +21,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
  *
  * @phpstan-type ShadowEntry array{fqn: string, assignedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion}
  * @phpstan-type ForbiddenEdge array{dependency: Dependency, fromMatch: LayerMatch, toMatch: LayerMatch}
- * @phpstan-type SymbolSets array{matched: array<string, array<string, true>>, excluded: array<string, array<string, true>>, unanswered: array<string, array<string, true>>, undecided: array<string, array<string, true>>, contended: array<string, array<string, true>>}
+ * @phpstan-type SymbolSets array{matched: array<string, array<string, true>>, excluded: array<string, array<string, true>>, unanswered: array<string, array<string, true>>, undecided: array<string, array<string, true>>, contended: array<string, array<string, true>>, ownsIfExcluded: array<string, array<string, true>>}
  */
 final readonly class LayerEvidence
 {
@@ -45,9 +45,12 @@ final readonly class LayerEvidence
      *                               the other two, since an excluded symbol is not a member; `unanswered` is a subset of
      *                               `matched`. `undecided` is every symbol the layer could not answer about while it bore on
      *                               the symbol's assignment, and `contended` every symbol the layer could still own once the
-     *                               run answers that — both straight from the registry's walk, never re-derived here. Read
-     *                               through {@see matchedCounts()}, {@see excludedCounts()}, {@see unansweredExcludeCounts()},
-     *                               {@see undecidedSymbolsByLayer()} and {@see reachedCounts()}.
+     *                               run answers that — both straight from the registry's walk, never re-derived here.
+     *                               `ownsIfExcluded` is every symbol the layer would own if the unanswered `exclude:` of a
+     *                               match in front of it removed it. Read through {@see matchedCounts()},
+     *                               {@see excludedCounts()}, {@see unansweredExcludeCounts()}, {@see undecidedSymbolsByLayer()},
+     *                               {@see ownsIfExcludedSymbolsByLayer()}, {@see reachedCounts()} and
+     *                               {@see contendedOutsidePathsCounts()}.
      * @param array<string, array<string, list<ShadowEntry>>> $shadowEvidence (assigned, shadowed) => evidence.
      * @param array{classes: array<string, string>, analysed: int} $unassigned What the analysed set left
      *                                                                         outside every declared layer, and how many class-like declarations the walk saw — the
@@ -126,32 +129,93 @@ final readonly class LayerEvidence
      */
     public function undecidedSymbolsByLayer(): array
     {
-        $byLayer = [];
-        foreach ($this->architecture->registry()->layerNames() as $layerName) {
-            $symbols = $this->symbolSets['undecided'][$layerName] ?? [];
-            if ($symbols !== []) {
-                $byLayer[$layerName] = $symbols;
-            }
-        }
+        return $this->byLayer('undecided');
+    }
 
-        return $byLayer;
+    /**
+     * @return array<string, array<string, true>> layer name => the canonical
+     *                                            symbols it would own if an
+     *                                            unanswered `exclude:` in front
+     *                                            of it removed them, in
+     *                                            declaration order, only layers
+     *                                            with any
+     */
+    public function ownsIfExcludedSymbolsByLayer(): array
+    {
+        return $this->byLayer('ownsIfExcluded');
     }
 
     /**
      * What `architecture.unreachable-layer` asks of a layer: how many
      * assignments it received — class and dependency-edge end alike — plus how
-     * many symbols it could still own once the run answers what it could not
-     * about them. Zero is the only value that says the layer owns nothing.
+     * many analysed classes it could still own once the run answers what it
+     * could not about them. Zero is the only value that says the layer owns
+     * nothing the run read.
+     *
+     * A symbol outside the analysed paths does not count towards it. The run
+     * never reads such a symbol, so an `implements:`, `extends:` or
+     * `attributes:` criterion goes unanswered about it in every run — a
+     * mistyped name included — and one edge into vendor code would otherwise
+     * keep a layer that matches none of the analysed code from ever being
+     * reported. {@see contendedOutsidePathsCounts()} carries that share for
+     * the finding's text.
      *
      * @return array<string, int> layer name => count
      */
     public function reachedCounts(): array
     {
         $counts = $this->assignedHits;
+        $outside = $this->outsidePathsKeys();
         foreach ($this->symbolSets['contended'] as $layerName => $symbols) {
-            $counts[$layerName] = ($counts[$layerName] ?? 0) + \count($symbols);
+            $counts[$layerName] = ($counts[$layerName] ?? 0) + \count(array_diff_key($symbols, $outside));
         }
 
         return $counts;
+    }
+
+    /**
+     * @return array<string, int> layer name => number of symbols outside the
+     *                            analysed paths it could still own once the run
+     *                            answered them, which {@see reachedCounts()}
+     *                            leaves out
+     */
+    public function contendedOutsidePathsCounts(): array
+    {
+        $outside = $this->outsidePathsKeys();
+
+        return array_filter(
+            array_map(static fn(array $symbols): int => \count(array_intersect_key($symbols, $outside)), $this->symbolSets['contended']),
+            static fn(int $count): bool => $count > 0,
+        );
+    }
+
+    /**
+     * Every symbol a layer can contend for is in doubt or undecidable, because
+     * a contest exists only where some layer went unanswered; the outside
+     * share of both is booked apart by the collector.
+     *
+     * @return array<string, string>
+     */
+    private function outsidePathsKeys(): array
+    {
+        return $this->coverageState['doubtedOutsidePaths'] + $this->coverageState['undecidableOutsidePaths'];
+    }
+
+    /**
+     * @param 'undecided'|'ownsIfExcluded' $column
+     *
+     * @return array<string, array<string, true>>
+     */
+    private function byLayer(string $column): array
+    {
+        $byLayer = [];
+        foreach ($this->architecture->registry()->layerNames() as $layerName) {
+            $symbols = $this->symbolSets[$column][$layerName] ?? [];
+            if ($symbols !== []) {
+                $byLayer[$layerName] = $symbols;
+            }
+        }
+
+        return $byLayer;
     }
 }

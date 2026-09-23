@@ -736,6 +736,8 @@ stands and its edges are judged against its layer's allow-list; whether a layer 
 — an earlier one, or the assigned layer's own "exclude" — would change it is unknown.
 ```
 
+When an unanswered `exclude:` holds a symbol that a later layer would own once the clause removed it, that layer is named as well, in a list of its own — `Layers that would own some of them if an unanswered "exclude" removed them: "repos" (1 assigned in doubt).` Together the two lists name every layer that [`architecture.unreachable-layer`](#unreachable-layer-diagnostic) leaves out because of a doubt.
+
 The recommendation names only what applies to the kinds present:
 
 - For an analysed class, `debug:layer-assignment` names the unanswered layer and where the chain stops; widening `paths` to include that declaration settles it.
@@ -806,7 +808,7 @@ Unassigned declarations: App\Legacy\Bar, App\Legacy\Baz, App\Legacy\Foo. ...
 
 ### Unreachable-layer diagnostic
 
-`architecture.unreachable-layer` fires once per declared layer — or per concrete instance produced by a template — whose patterns matched zero classes **and** zero dependency-edge ends during analysis, **and** that could not own any symbol whose assignment the run left in doubt. A layer the run could not answer is not reported as matching nothing — that is not a conclusion the run reached — and neither is a layer that would own a symbol if an earlier layer's unanswered `exclude:` removed it; both are named by [`architecture.doubted-assignment`](#doubted-assignment) instead. It is a configuration diagnostic (see the note under [Coverage modes](#coverage-modes)): it fails the run unconditionally whenever it fires, and it is not configurable, baselineable, or suppressible with `@qmx-ignore`. Three possible causes:
+`architecture.unreachable-layer` fires once per declared layer — or per concrete instance produced by a template — whose patterns matched zero classes **and** zero dependency-edge ends during analysis, **and** that could not own any analysed class whose assignment the run left in doubt. A layer the run could not answer about an analysed class is not reported as matching nothing — that is not a conclusion the run reached — and neither is a layer that would own an analysed class if an earlier layer's unanswered `exclude:` removed it; both are named by [`architecture.doubted-assignment`](#doubted-assignment) instead. A symbol outside the analysed paths keeps no layer out of this diagnostic: the run never reads it, so an `implements` / `extends` / `attributes` criterion goes unanswered about it in every run — a mistyped one included — and one edge into vendor code would otherwise hide such a typo for good. The finding says instead how many symbols outside the analysed paths the layer might own. It is a configuration diagnostic (see the note under [Coverage modes](#coverage-modes)): it fails the run unconditionally whenever it fires, and it is not configurable, baselineable, or suppressible with `@qmx-ignore`. Three possible causes:
 
 1. **Shadowed by a broader layer earlier in the order.** A pattern like `'**'` or `'App\**'` declared before a narrower one captures every class first.
 2. **Pattern matches no class in the analysed codebase and is never seen as a dependency-edge end either.** The layer is declared for a namespace that doesn't exist yet — or the namespace was renamed.
@@ -861,7 +863,7 @@ Detection is **evidence-based**. The rule walks every analysed class, collects a
 
 "More specific" is decided only for namespace subtrees: a pattern that is a plain prefix (`App\Http`) or a prefix plus a trailing wildcard (`App\Http\**`, `App\Http\*`), plus the catch-all `**`. Everything else is **not comparable** and keeps the diagnostic — mid-pattern wildcards (`App\**\Foo`), partial-segment globs (`**\*Service`), character classes, unexpanded capture templates, and every non-pattern criterion kind (`suffix`, `attributes`, `implements`, `extends`), including a mix of two different kinds. A false alarm costs a config review; a missed shadow costs a layer that silently owns nothing.
 
-A shadow is drawn only between matches the run established. A layer whose `exclude:` could not be answered about a class may still lose it, so it neither shadows a later layer for that class nor is shadowed there; the doubt is published by [`architecture.doubted-assignment`](#doubted-assignment).
+A shadow is drawn only between matches the run established. A layer whose `exclude:` could not be answered about a class may still lose it, so it neither shadows a later layer for that class nor is shadowed there; the doubt is published by [`architecture.doubted-assignment`](#doubted-assignment). The first match the run established still shadows every later one, even when such a layer holds the class in front of it: the later ones lose the class whichever way the clause answers. With `app` carving `App\Repository\**` out by an unanswerable `exclude:`, then `repos` and a narrower `legacy`, the diagnostic reports `repos` → `legacy` and not `app` → `repos`.
 
 This still catches every shape of real shadow — prefix overlap declared broad-first, suffix theft (`**\*Service` shadowing `App\Domain\**`), or any other intersection. A layer that ends up owning no class at all is additionally reported by [`architecture.unreachable-layer`](#unreachable-layer-diagnostic), which is what fires when, for example, an `exclude:` block empties a layer that this diagnostic considered legitimately narrower.
 
@@ -933,16 +935,22 @@ Class: App\Web\OrderController
   criterion answered "no" about.
 ```
 
-`(undecided)` and `(no layer)` are two different facts and never share a form: the first means the run could not answer, the second that every declared criterion answered "no". When a later layer does match, or the layer matched but its `exclude:` could not be answered, the assignment is reported as usual and the unanswered layer is named beside it on a `Could not be decided:` line, followed by `The chain stops at:`. In the second case the line names the assigned layer itself. A layer the run could not answer that is declared *after* the assigned one is not named: first match wins, so it cannot change the assignment, and [`architecture.doubted-assignment`](#doubted-assignment) does not count the class either. The exception is an assigned layer whose own `exclude:` went unanswered: the clause may remove the class, so a later unanswered layer, up to the first match the run established, is named too.
+`(undecided)` and `(no layer)` are two different facts and never share a form: the first means the run could not answer, the second that every declared criterion answered "no". When a later layer does match, or the layer matched but its `exclude:` could not be answered, the assignment is reported as usual and the unanswered layer is named beside it on a `Could not be decided:` line, followed by `The chain stops at:`. In the second case the line names the assigned layer itself. A layer the run could not answer that is declared *after* the assigned one is not named: first match wins, so it cannot change the assignment, and [`architecture.doubted-assignment`](#doubted-assignment) does not count the class either. The exception is an assigned layer whose own `exclude:` went unanswered: the clause may remove the class, so a later unanswered layer, up to the first match the run established, is named too. A `Could be owned by:` line beside it names every layer that could own the class once those are answered.
 
-`--format=json` carries the same three states. `undecided` is always present and lists the layers this run could not answer that bear on the assignment — every one of them when no layer matched, only those declared no later than the assigned layer otherwise; a `null` `assigned` alongside a non-empty `undecided` is "could not tell", not "no layer claims this class", so a consumer branching on `assigned` alone must read `undecided` too. `chainStopsAt` is always present too: the declarations the run did not read where the class's inheritance chain stopped, empty whenever `undecided` is.
+The diagnostic hint follows the rule [`architecture.potential-shadow`](#potential-shadow-diagnostic) draws its pairs by, so it never points at a shadow `check` does not report. It is drawn only between matches the run established, and names the layer the class loses to — the first of them, which is not the assigned layer when an unanswered `exclude:` stands in front of it. A later layer broader than that one is the narrow-before-broad idiom, and a later match whose own `exclude:` went unanswered may not match at all: the hint says so instead of pointing at the diagnostic.
+
+`--format=json` carries the same three states. `undecided` is always present and lists the layers this run could not answer that bear on the assignment — every one of them when no layer matched, otherwise those declared before the first match the run established; a `null` `assigned` alongside a non-empty `undecided` is "could not tell", not "no layer claims this class", so a consumer branching on `assigned` alone must read `undecided` too. `contenders` lists the layers that could own the class once those are answered, and is empty whenever `undecided` is. `chainStopsAt` is always present too: the declarations the run did not read where the class's inheritance chain stopped, empty whenever `undecided` is. `shadowed` lists every match after `shadowedBy`, the first match the run established: each loses the class whichever way the unanswered layers answer, and carries `reported: true` when `architecture.potential-shadow` reports it — never for a match whose own `exclude:` went unanswered, which may not match at all. `shadowedBy` is not `assigned` when an unanswered `exclude:` stands in front of it, and is `null` when `shadowed` is empty; a match declared before it is among `contenders`.
 
 ```json
 {
     "fqn": "App\\Web\\OrderController",
     "assigned": null,
     "shadowed": [],
+    "shadowedBy": null,
     "undecided": [
+        "web"
+    ],
+    "contenders": [
         "web"
     ],
     "chainStopsAt": [

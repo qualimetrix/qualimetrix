@@ -154,7 +154,9 @@ established — a match whose own `exclude:` went unanswered is not established.
 Every reader of the doubt takes that list as it comes rather than
 re-deriving the rule from the declaration order. `LayerRegistry::contenders()`,
 the fifth exit, names the layers that could own the symbol once those are
-answered. `architecture.coverage-gap` names the
+answered, and `LayerRegistry::establishedMatches()`, the sixth, the matches
+whose `exclude:` was answered — the first of them is where the contest stops.
+`architecture.coverage-gap` names the
 count and a sample of undecided symbols outside every layer — only when such a
 symbol exists, so an all-decided project reads the sentence it always read —
 and says what a later layer does with them: it assigns them, as a guess.
@@ -177,11 +179,19 @@ together with the symbols in no layer only because a layer could not answer,
 and names each such layer with its counts — the per-layer `undecided` column of
 the walk's symbol sets.
 
-The two declaration verdicts that conclude something from who won read the
-walk's `contended` column and `unansweredExcludeLayers()` instead of the bare
-match list: a layer that could still own a symbol in doubt is not
-`architecture.unreachable-layer`, and `LayerShadowing` draws a shadow only
-between matches the run established.
+The two declaration verdicts that conclude something from who won or lost read
+the walk instead of the bare match list. A layer that could still own an
+analysed class in doubt — the analysed share of the `contended` column — is not
+`architecture.unreachable-layer`; a symbol outside the analysed paths does not
+count, because a criterion goes unanswered about a symbol the run never reads
+in every run, a mistyped one included, and the finding says how many such
+symbols the layer might own instead. `LayerShadowing` draws a shadow only
+between `establishedMatches()`, the first of them shadowing the rest, and
+`debug:layer-assignment` reports its `shadowed` list and hint by the same rule.
+`architecture.doubted-assignment` names every layer a contest keeps out of
+`unreachable-layer`: those that could not answer, and — from the walk's
+`ownsIfExcluded` column — those that would own a symbol if an unanswered
+`exclude:` in front of them removed it.
 
 Four declarations that used to be accepted are now refused at config load,
 because there is no correct silent reading of any of them. A template layer may

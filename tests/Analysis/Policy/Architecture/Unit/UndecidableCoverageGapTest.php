@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
@@ -481,6 +482,124 @@ final class UndecidableCoverageGapTest extends TestCase
     }
 
     /**
+     * @return iterable<string, array{0: list<LayerDefinition>}>
+     */
+    public static function provideLayoutsWithAMistypedInterfaceLayer(): iterable
+    {
+        $mistyped = new LayerDefinition('handlers', new MembershipSpec(implements: ['App\\Contracts\\Handlr']));
+        $app = new LayerDefinition('app', new MembershipSpec(patterns: ['App\\**']));
+
+        yield 'declared before the vendor patterns layer' => [[
+            $mistyped,
+            $app,
+            new LayerDefinition('vendor', new MembershipSpec(patterns: ['Vendor\\**'])),
+        ]];
+        yield 'no vendor layer, declared first' => [[$mistyped, $app]];
+        yield 'no vendor layer, declared last' => [[$app, $mistyped]];
+    }
+
+    /**
+     * @param list<LayerDefinition> $layers
+     */
+    #[Test]
+    #[DataProvider('provideLayoutsWithAMistypedInterfaceLayer')]
+    public function itStillCallsAMistypedLayerUnreachableWhenOnlySymbolsOutsideThePathsWentUnanswered(array $layers): void
+    {
+        // The analysed class has no parent, so every criterion about it is
+        // answered, and the mistyped interface answers "no". The vendor type
+        // at the far end of a usage edge is never read, so the layer cannot be
+        // answered about it in any run — that says nothing about the typo,
+        // and must not hide it.
+        $findings = $this->findingsFor($layers, 'Vendor\\Lib\\Logger', CoverageMode::Ignore, DependencyType::TypeHint);
+
+        $unreachable = self::findingsOn($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
+        self::assertCount(1, $unreachable);
+        self::assertStringContainsString('Layer "handlers"', $unreachable[0]->message);
+        self::assertStringContainsString('1 symbol(s) outside the analysed paths', $unreachable[0]->message);
+    }
+
+    #[Test]
+    public function itNamesTheLayerThatWouldOwnASymbolIfAnUnansweredExcludeRemovedIt(): void
+    {
+        // `repos` is kept from unreachable-layer by the analysed class alone:
+        // it owns the class if `app`'s clause answers "yes". The only other
+        // place the run could name it is gone with the verdict, so the doubt
+        // has to.
+        $findings = $this->findingsFor(
+            [
+                new LayerDefinition('app', new MembershipSpec(
+                    patterns: ['App\\**'],
+                    exclude: new ExcludeSpec(extends: ['Vendor\\Lib\\Base']),
+                )),
+                new LayerDefinition('repos', new MembershipSpec(patterns: ['App\\Web\\**'])),
+            ],
+            'Vendor\\Lib\\Middle',
+        );
+
+        self::assertNull(self::findingOn($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
+        $doubt = self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME);
+        self::assertNotNull($doubt);
+        self::assertStringContainsString(
+            'Layers that would own some of them if an unanswered "exclude" removed them: "repos" (1 assigned in doubt)',
+            $doubt->message,
+        );
+    }
+
+    #[Test]
+    public function itNamesALayerContendedOnlyOutsideThePathsInBothFindings(): void
+    {
+        // `vendspecial` could own the vendor type only if `vend`'s clause
+        // removed it, and that clause is about a symbol no run reads. It is
+        // unreachable as far as the analysed code goes, and the doubt about
+        // the vendor type still names it.
+        $findings = $this->findingsFor(
+            [
+                new LayerDefinition('vend', new MembershipSpec(
+                    patterns: ['Vendor\\**'],
+                    exclude: new ExcludeSpec(implements: ['Vendor\\Marker']),
+                )),
+                new LayerDefinition('vendspecial', new MembershipSpec(patterns: ['Vendor\\Lib\\**'])),
+                new LayerDefinition('app', new MembershipSpec(patterns: ['App\\**'])),
+            ],
+            'Vendor\\Lib\\Logger',
+            CoverageMode::Ignore,
+            DependencyType::TypeHint,
+        );
+
+        $unreachable = self::findingsOn($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
+        self::assertCount(1, $unreachable);
+        self::assertStringContainsString('Layer "vendspecial"', $unreachable[0]->message);
+        self::assertStringContainsString('1 symbol(s) outside the analysed paths', $unreachable[0]->message);
+        $doubt = self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME);
+        self::assertNotNull($doubt);
+        self::assertStringContainsString('removed them: "vendspecial" (1 assigned in doubt)', $doubt->message);
+    }
+
+    #[Test]
+    public function itStillReportsAShadowBetweenMatchesEstablishedBehindAnUnansweredExclude(): void
+    {
+        // Whatever `app`'s clause answers, `legacy` loses the class: to `app`
+        // on "no", to `repos` on "yes". `app` → `repos` depends on the answer
+        // and is not drawn; `repos` → `legacy` is a misordering either way.
+        $findings = $this->findingsFor(
+            [
+                new LayerDefinition('app', new MembershipSpec(
+                    patterns: ['App\\**'],
+                    exclude: new ExcludeSpec(extends: ['Vendor\\Lib\\Base']),
+                )),
+                new LayerDefinition('repos', new MembershipSpec(patterns: ['App\\Web\\**'])),
+                new LayerDefinition('legacy', new MembershipSpec(patterns: ['App\\Web\\OrderController'])),
+            ],
+            'Vendor\\Lib\\Middle',
+        );
+
+        $shadows = self::findingsOn($findings, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        self::assertCount(1, $shadows);
+        self::assertStringContainsString('Layer "repos"', $shadows[0]->message);
+        self::assertStringContainsString('shadows layer "legacy"', $shadows[0]->message);
+    }
+
+    /**
      * Builds a one-class run whose single layer is declared through `extends`,
      * and returns the coverage-gap finding it produces.
      *
@@ -536,8 +655,12 @@ final class UndecidableCoverageGapTest extends TestCase
      *
      * @return list<Finding>
      */
-    private function findingsFor(array $layers, ?string $parent, CoverageMode $mode = CoverageMode::Error): array
-    {
+    private function findingsFor(
+        array $layers,
+        ?string $parent,
+        CoverageMode $mode = CoverageMode::Error,
+        DependencyType $edgeType = DependencyType::Extends,
+    ): array {
         $child = SymbolPath::forClass('App\\Web', 'OrderController');
 
         $allow = [];
@@ -554,7 +677,7 @@ final class UndecidableCoverageGapTest extends TestCase
         $edges = $parent === null ? [] : [new Dependency(
             source: DeclarationPath::of($child, RelativePath::fromString('src/dummy.php'), DeclarationOrdinal::fromRank(0)),
             target: new LogicalClassPath(SymbolPath::fromClassFqn($parent)),
-            type: DependencyType::Extends,
+            type: $edgeType,
             location: new Location(RelativePath::fromString('src/dummy.php'), 1),
         )];
 

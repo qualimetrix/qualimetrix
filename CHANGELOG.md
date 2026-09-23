@@ -191,17 +191,26 @@ things move on an unchanged tree:
   `architecture.doubted-assignment` in every `coverage-gap` mode, together
   with the symbols left in no layer only because a layer could not answer
   about them, split into analysed classes and symbols outside the paths, with
-  each unanswered layer named and counted, and never fails the run;
-- `architecture.unreachable-layer` no longer calls a layer the run could not
-  answer one whose criteria "match no class", and `architecture.potential-shadow`
-  no longer builds a shadow from a match whose `exclude:` could not be
-  answered — both used to fail the run on a conclusion it had not reached;
+  each unanswered layer named and counted, and each layer that would own a
+  symbol if an unanswered `exclude:` in front of it removed it named in a list
+  of its own; it never fails the run;
+- `architecture.unreachable-layer` no longer calls a layer "matches no class"
+  while an analysed class could still belong to it — because the run could not
+  answer the layer about it, or because an earlier layer's `exclude:` that
+  could not be answered holds it. A symbol outside the analysed paths does not
+  count: the run never reads it, so a criterion is unanswered about it in every
+  run, a mistyped one included, and the finding says how many such symbols the
+  layer might own. `architecture.potential-shadow` no longer builds a shadow
+  from a match whose `exclude:` could not be answered, but still reports the
+  misordering between the matches behind it;
 - `architecture.unmatched-exclude` no longer reports an `exclude:` clause that
   could not be answered as having removed no class.
 
 `debug:layer-assignment` names where an undecided class's chain stops (the
 `The chain stops at:` line; `chainStopsAt` in `--format=json`) and lists an
-unanswered layer only where it can change the assignment. See
+unanswered layer only where it can change the assignment. It names the layers
+that could own a class in doubt (`Could be owned by:`), and its shadow hint
+follows the rule `architecture.potential-shadow` reports by. See
 [ADR 0079](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0079-a-criterion-the-run-cannot-answer-is-undecidable.md).
 
 **A layer template that declares `suffix:`, `attributes:`, `implements:` or
@@ -225,6 +234,13 @@ and the run reported none of them — so the strictest setting of the option was
 silent one. The state is reachable without a typo, because `layers:` is replaced
 rather than merged across configuration contributions. Declare the layers the
 mode is meant to enforce, or leave `coverage-gap: ignore`.
+
+**`debug:layer-assignment --format=json` reports shadowing by the rule
+`architecture.potential-shadow` uses.** `shadowed` lists the matches after
+`shadowedBy` — the first match the run established, which is not `assigned`
+when an unanswered `exclude:` stands in front of it — and each entry carries
+`reported`; the new key `contenders` holds the matches before `shadowedBy`,
+which used to be listed under `shadowed`.
 
 **A computed-metric formula naming a metric no symbol at its level carries is
 refused with exit 3.** It used to surface as `Internal error` with exit 1 — the

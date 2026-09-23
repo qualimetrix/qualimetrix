@@ -37,8 +37,11 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * - {@see contenders()} returns the layers that could own the class once
  *   every unanswered layer bearing on it is answered. Fifth exit, for the
  *   readers that must not draw a conclusion from an assignment in doubt.
+ * - {@see establishedMatches()} returns the matches the run established
+ *   whatever the unanswered layers answer. Sixth exit, for the readers that
+ *   conclude something from which layer loses the class.
  *
- * All six lookups share a single cache keyed by
+ * All seven lookups share a single cache keyed by
  * {@see SymbolPath::toCanonical()}: both outputs of the walk are computed once
  * and stored together, and {@see resolveLayer()} reads the first entry off the
  * match list. A class queried by every method therefore walks the criteria at
@@ -86,13 +89,14 @@ final class LayerRegistry
      * the layers the run could not answer either way that bear on the
      * assignment, `unansweredExcludes`, the matching layers whose `exclude:`
      * went unanswered, `contenders`, the layers that could own the class once
-     * those are answered, and `chainStopsAt`, where the inheritance chain stopped
+     * those are answered, `established`, the matches whose `exclude:` was
+     * answered, and `chainStopsAt`, where the inheritance chain stopped
      * when a layer bearing on the assignment went unanswered. One entry rather than
      * parallel arrays because separate caches drift apart at every early return
      * and at {@see clearCache()}: a lookup that found one populated and the
      * others not would report an exclusion that never happened.
      *
-     * @var array<string, array{matches: list<LayerMatch>, excluded: list<string>, undecided: list<string>, unansweredExcludes: list<string>, contenders: list<string>, chainStopsAt: list<string>}>
+     * @var array<string, array{matches: list<LayerMatch>, excluded: list<string>, undecided: list<string>, unansweredExcludes: list<string>, contenders: list<string>, established: list<LayerMatch>, chainStopsAt: list<string>}>
      */
     private array $matchCache = [];
 
@@ -282,16 +286,39 @@ final class LayerRegistry
      * nothing bears on the assignment — then the assignment is the only
      * outcome and there is no contest.
      *
-     * The readers are the verdicts that conclude something from who won:
+     * The readers are the ones that conclude something from who won:
      * `architecture.unreachable-layer` may not call a layer that could still
-     * own a symbol one that owns nothing, and `architecture.potential-shadow`
-     * may not call a match that could still lose its symbol a shadow.
+     * own an analysed class one that owns nothing,
+     * `architecture.doubted-assignment` names the layer that would own a
+     * symbol if a clause in front of it removed it, and
+     * `debug:layer-assignment` prints the list.
      *
      * @return list<string> layer names
      */
     public function contenders(SymbolPath $class): array
     {
         return $this->walk($class)['contenders'];
+    }
+
+    /**
+     * Returns the matches the run established for the symbol, in declaration
+     * order: every match but those whose `exclude:` went unanswered. The
+     * first is the first match the run established — where
+     * {@see contenders()} stops — so every later one loses the symbol
+     * whatever the unanswered layers answer, while the first may still lose
+     * it to a contender in front of it.
+     *
+     * The reader is the verdict about who loses rather than who wins:
+     * `architecture.potential-shadow` and the shadow `debug:layer-assignment`
+     * reports. A match whose clause may still remove the symbol neither
+     * shadows nor is shadowed, and a match behind the first established one
+     * is shadowed however the clauses in front of it answer.
+     *
+     * @return list<LayerMatch>
+     */
+    public function establishedMatches(SymbolPath $class): array
+    {
+        return $this->walk($class)['established'];
     }
 
     /**
@@ -310,7 +337,7 @@ final class LayerRegistry
     }
 
     /**
-     * @return array{matches: list<LayerMatch>, excluded: list<string>, undecided: list<string>, unansweredExcludes: list<string>, contenders: list<string>, chainStopsAt: list<string>}
+     * @return array{matches: list<LayerMatch>, excluded: list<string>, undecided: list<string>, unansweredExcludes: list<string>, contenders: list<string>, established: list<LayerMatch>, chainStopsAt: list<string>}
      */
     private function walk(SymbolPath $class): array
     {
@@ -321,7 +348,7 @@ final class LayerRegistry
 
         $context = $this->contextFactory->build($class);
         if ($context->fqn === '') {
-            return $this->matchCache[$cacheKey] = ['matches' => [], 'excluded' => [], 'undecided' => [], 'unansweredExcludes' => [], 'contenders' => [], 'chainStopsAt' => []];
+            return $this->matchCache[$cacheKey] = ['matches' => [], 'excluded' => [], 'undecided' => [], 'unansweredExcludes' => [], 'contenders' => [], 'established' => [], 'chainStopsAt' => []];
         }
 
         $outcome = $this->walkLayers($context);
@@ -334,13 +361,14 @@ final class LayerRegistry
     /**
      * The walk proper: every layer asked once, in declaration order.
      *
-     * @return array{matches: list<LayerMatch>, excluded: list<string>, undecided: list<string>, unansweredExcludes: list<string>, contenders: list<string>}
+     * @return array{matches: list<LayerMatch>, excluded: list<string>, undecided: list<string>, unansweredExcludes: list<string>, contenders: list<string>, established: list<LayerMatch>}
      */
     private function walkLayers(ClassContext $context): array
     {
         $matches = [];
         $excluded = [];
         $unansweredExcludes = [];
+        $established = [];
         $answers = [];
         foreach ($this->layers as $layer) {
             $result = $layer->matches($context);
@@ -350,11 +378,15 @@ final class LayerRegistry
                 continue;
             }
             $answers[] = [$layer->name(), $result];
-            if ($result->matched) {
-                $matches[] = new LayerMatch($layer->name(), $result->matchedCriteria);
+            if (!$result->matched) {
+                continue;
             }
-            if ($result->matched && $result->undecided) {
+            $match = new LayerMatch($layer->name(), $result->matchedCriteria);
+            $matches[] = $match;
+            if ($result->undecided) {
                 $unansweredExcludes[] = $layer->name();
+            } else {
+                $established[] = $match;
             }
         }
 
@@ -366,6 +398,7 @@ final class LayerRegistry
             'undecided' => $open['undecided'],
             'unansweredExcludes' => $unansweredExcludes,
             'contenders' => $open['contenders'],
+            'established' => $established,
         ];
     }
 

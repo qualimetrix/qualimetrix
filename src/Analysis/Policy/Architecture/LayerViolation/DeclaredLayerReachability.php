@@ -33,7 +33,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  *   in {@see UnassignedClassSummary} for the narrower one.
  * - `architecture.unreachable-layer` — a declared layer that was ASSIGNED
  *   nothing and could not have been: no class and no dependency-edge end
- *   landed in it, and none would once the run answered what it could not.
+ *   landed in it, and no analysed class would once the run answered what it
+ *   could not.
  * - `architecture.pending-layer-matched` — the opposite reading of the same
  *   evidence for a layer declared `pending: true`. Its predicate is MATCHED,
  *   not assigned, and {@see pendingLayersMatched()} explains why the
@@ -190,23 +191,32 @@ final class DeclaredLayerReachability
      *
      * Published whatever the coverage mode. It says whether membership is
      * right rather than how much of the code a layer covers, and it is where
-     * a layer `architecture.unreachable-layer` may no longer call empty —
-     * because the run could not answer it — stays visible: under the default
-     * `ignore` nothing else in `check` names it.
+     * every layer `architecture.unreachable-layer` may no longer call empty
+     * stays visible — under the default `ignore` nothing else in `check` names
+     * it. Such a layer either could not answer, and is named with the layers
+     * that could not, or would own a symbol if an unanswered `exclude:` in
+     * front of it removed the symbol, and is named in a list of its own.
      *
-     * The unanswered layers are named with their counts because a symbol
-     * outside the analysed paths has no other surface: `debug:layer-assignment`
-     * refuses a class the run did not analyse.
+     * The layers are named with their counts because a symbol outside the
+     * analysed paths has no other surface: `debug:layer-assignment` refuses a
+     * class the run did not analyse.
      *
      * @param array{sourceEdges: int, targetEdges: int, classes: array<string, string>, undecidable: array<string, string>, undecidableOutsidePaths: array<string, string>, doubted: array<string, string>, doubtedOutsidePaths: array<string, string>} $state
      * @param array<string, array<string, true>> $undecidedByLayer Layer name => the canonical symbols it could not answer
      *                                                             about while it bore on their assignment, in
      *                                                             declaration order.
+     * @param array<string, array<string, true>> $ownsIfExcludedByLayer Layer name => the canonical symbols it would own
+     *                                                                  if an unanswered `exclude:` in front of it
+     *                                                                  removed them, in declaration order.
      *
      * @return list<Finding>
      */
-    public static function doubtedAssignments(array $state, array $undecidedByLayer, string $channelName): array
-    {
+    public static function doubtedAssignments(
+        array $state,
+        array $undecidedByLayer,
+        array $ownsIfExcludedByLayer,
+        string $channelName,
+    ): array {
         $outsideKeys = $state['doubtedOutsidePaths'] + $state['undecidableOutsidePaths'];
         $all = $state['doubted'] + $state['undecidable'];
         $analysed = array_diff_key($all, $outsideKeys);
@@ -240,7 +250,9 @@ final class DeclaredLayerReachability
             ruleName: $channelName,
             code: $channelName,
             message: implode('; ', $statements)
-                . '. Layers that could not answer: ' . self::unansweredLayerList($undecidedByLayer, $state) . '.'
+                . '. Layers that could not answer: ' . self::layerList($undecidedByLayer, $state) . '.'
+                . ($ownsIfExcludedByLayer === [] ? '' : ' Layers that would own some of them if an unanswered "exclude"'
+                    . ' removed them: ' . self::layerList($ownsIfExcludedByLayer, $state) . '.')
                 . self::doubtExamples($analysed, $outside)
                 . $consequences,
             severity: Severity::Info,
@@ -274,24 +286,24 @@ final class DeclaredLayerReachability
     }
 
     /**
-     * Each unanswered layer with how many of the assigned and of the
-     * unassigned symbols it left undecided. Every symbol a layer bore on
-     * unanswered is in one of the two, so no entry is empty.
+     * Each named layer with how many of the assigned and of the unassigned
+     * symbols in doubt it bears on. Every symbol a layer could not answer
+     * about, and every symbol a layer would own once an unanswered `exclude:`
+     * removed it, is in one of the two, so no entry is empty.
      *
-     * @param array<string, array<string, true>> $undecidedByLayer
+     * @param array<string, array<string, true>> $symbolsByLayer
      * @param array{doubted: array<string, string>, undecidable: array<string, string>} $state
      */
-    private static function unansweredLayerList(array $undecidedByLayer, array $state): string
+    private static function layerList(array $symbolsByLayer, array $state): string
     {
-        $entries = [];
-        foreach ($undecidedByLayer as $layerName => $symbols) {
-            $entries[] = \sprintf('"%s" (%s)', $layerName, self::presentCounts([
+        return implode(', ', array_map(
+            static fn(int|string $layerName, array $symbols): string => \sprintf('"%s" (%s)', $layerName, self::presentCounts([
                 'assigned in doubt' => \count(array_intersect_key($symbols, $state['doubted'])),
                 'in no layer' => \count(array_intersect_key($symbols, $state['undecidable'])),
-            ]));
-        }
-
-        return implode(', ', $entries);
+            ])),
+            array_keys($symbolsByLayer),
+            $symbolsByLayer,
+        ));
     }
 
     /**
@@ -423,22 +435,32 @@ final class DeclaredLayerReachability
      * not a mistake. {@see pendingLayersMatched()} is the counterpart that
      * keeps that declaration honest.
      *
-     * So is a layer that could still own a symbol whose assignment the run
-     * could not decide — one it could not answer about, or one a match with
-     * an unanswered `exclude:` stands in front of. "Matches no class" and
-     * "shadowed" are conclusions the run did not reach there, and this
-     * channel fails the run; the doubt is published instead by
-     * `architecture.doubted-assignment`, which names the layer that could
-     * not answer.
+     * So is a layer that could still own an analysed class whose assignment
+     * the run could not decide — one it could not answer about, or one a
+     * match with an unanswered `exclude:` stands in front of. "Matches no
+     * class" and "shadowed" are conclusions the run did not reach there, and
+     * this channel fails the run; `architecture.doubted-assignment` names the
+     * layer instead.
+     *
+     * A symbol outside the analysed paths keeps no layer out of this channel.
+     * The run never reads it, so a criterion about its supertypes goes
+     * unanswered in every run, whether the layer is right or mistyped; letting
+     * it count would make one edge into vendor code enough to hide a typo in
+     * an `implements:`, `extends:` or `attributes:` layer for good. The
+     * finding says how many such symbols the layer might own, so the doubt it
+     * leaves out is not hidden.
      *
      * @param list<LayerDefinition> $definitions In declaration order.
      * @param array<string, int> $reachedCounts Layer name → number of symbols assigned to the
-     *                                          layer or that it could still own, from
-     *                                          {@see LayerEvidence::reachedCounts()}.
+     *                                          layer or analysed classes it could still own,
+     *                                          from {@see LayerEvidence::reachedCounts()}.
+     * @param array<string, int> $contendedOutsidePaths Layer name → number of symbols outside the
+     *                                                  analysed paths it could still own, from
+     *                                                  {@see LayerEvidence::contendedOutsidePathsCounts()}.
      *
      * @return list<Finding>
      */
-    public static function unreachableLayers(array $definitions, array $reachedCounts): array
+    public static function unreachableLayers(array $definitions, array $reachedCounts, array $contendedOutsidePaths): array
     {
         $findings = [];
 
@@ -451,9 +473,15 @@ final class DeclaredLayerReachability
             $findings[] = self::projectDiagnostic(
                 LayerPolicyPreparationInterface::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
                 \sprintf(
-                    'Layer "%s" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the declared criteria (%s) match no class in the analysed codebase. Run "qmx debug:layer-assignment <class>" to inspect specific classes.',
+                    'Layer "%s" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the declared criteria (%s) match no class in the analysed codebase.%s Run "qmx debug:layer-assignment <class>" to inspect specific classes.',
                     $layerName,
                     $definition->membership()->describe(),
+                    ($contendedOutsidePaths[$layerName] ?? 0) === 0 ? '' : \sprintf(
+                        ' The run could not decide %d symbol(s) outside the analysed paths that it might own'
+                        . ' (architecture.doubted-assignment names them); the run never reads such a symbol, so that'
+                        . ' doubt stays in every run and does not show that the criteria match anything.',
+                        $contendedOutsidePaths[$layerName],
+                    ),
                 ),
                 'Move the layer above any broader layer that captures its classes, remove the layer if its pattern intentionally covers no class, or declare "pending: true" if the code it describes has not been written yet.',
             );

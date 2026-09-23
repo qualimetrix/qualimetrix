@@ -167,6 +167,7 @@ final class LayerViolationRule extends AbstractRule
             ...DeclaredLayerReachability::doubtedAssignments(
                 $evidence->coverageState,
                 $evidence->undecidedSymbolsByLayer(),
+                $evidence->ownsIfExcludedSymbolsByLayer(),
                 self::DOUBTED_ASSIGNMENT_NAME,
             ),
         ];

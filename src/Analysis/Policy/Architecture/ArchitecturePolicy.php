@@ -17,6 +17,8 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInte
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowing;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /** Instance-owned declared-layer policy configuration and prepared state. */
@@ -102,26 +104,34 @@ final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterfac
         $configuration = $this->prepared
             ?? throw new LogicException('ArchitecturePolicy::inspect() reached an unprepared policy after prepare() returned.');
 
-        $matches = $configuration->registry()->resolveAll($subject);
-        return new LayerAssignment(
-            array_map(
-                static function ($match): LayerAssignmentMatch {
-                    $criteria = array_map(
-                        static fn($criterion): string => $criterion->describe(),
-                        $match->matchedCriteria,
-                    );
-                    if ($criteria === []) {
-                        throw new LogicException('A layer assignment match requires at least one criterion.');
-                    }
+        $registry = $configuration->registry();
+        $established = $registry->establishedMatches($subject);
 
-                    return new LayerAssignmentMatch($match->layerName, $criteria);
-                },
-                $matches,
-            ),
+        return new LayerAssignment(
+            array_map(self::assignmentMatch(...), $registry->resolveAll($subject)),
             !$configuration->isEmpty(),
-            $configuration->registry()->undecidedLayers($subject),
-            $configuration->registry()->chainStopsAt($subject),
+            $registry->undecidedLayers($subject),
+            $registry->chainStopsAt($subject),
+            $registry->contenders($subject),
+            ($established[0] ?? null)?->layerName,
+            array_map(
+                static fn(LayerMatch $match): string => $match->layerName,
+                LayerShadowing::reportableShadows($established),
+            ),
         );
+    }
+
+    private static function assignmentMatch(LayerMatch $match): LayerAssignmentMatch
+    {
+        $criteria = array_map(
+            static fn($criterion): string => $criterion->describe(),
+            $match->matchedCriteria,
+        );
+        if ($criteria === []) {
+            throw new LogicException('A layer assignment match requires at least one criterion.');
+        }
+
+        return new LayerAssignmentMatch($match->layerName, $criteria);
     }
 
     /**

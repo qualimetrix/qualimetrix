@@ -97,7 +97,9 @@ enumerate it.
   attribution. Both are loud.
 - How much of the list CI verifies is now a property of this repository rather
   than of `shivammathur/setup-php`'s defaults: the extensions the control needs
-  are pinned in the workflow, for the same reason `igbinary` already was.
+  are pinned in the workflow, for the same reason `igbinary` already was, and a
+  pinned extension that does not load reddens the CI run instead of quietly
+  narrowing what it compared.
 - The control cannot see one class of defect. PHP class names are
   case-insensitive and `isBuiltin()` is an exact-key lookup, so
   `class X extends \exception` is still measured as extending a project class.
@@ -135,7 +137,12 @@ means "none". A name is compared wherever the running PHP declares it; a name
 no developer machine loads (`Pdo\Firebird`, `EnchantBroker`,
 `EnchantDictionary`) was written from php-src's stubs and is verified by the CI
 job that pins `enchant` and `pdo_firebird` in its extension list, so the
-comparison does not depend on what the runner image happens to preinstall. Every map key must be
+comparison does not depend on what the runner image happens to preinstall.
+Both censuses skip an extension that is not loaded, so a pin that failed to
+load would take those names out of the comparison with the run still green;
+`PhpBuiltinClassRegistryCensusTest` therefore reads the pinned list from the
+workflow and, where GitHub Actions runs (`GITHUB_ACTIONS=true`), refuses a PHP
+that does not load every extension on it. Every map key must be
 registered, every supertype named must itself be registered so a walk never
 leaves the table, and a floor refuses a run that compared too few names.
 
