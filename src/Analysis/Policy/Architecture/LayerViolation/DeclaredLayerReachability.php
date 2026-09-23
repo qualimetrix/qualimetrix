@@ -436,31 +436,31 @@ final class DeclaredLayerReachability
      * keeps that declaration honest.
      *
      * So is a layer that could still own an analysed class whose assignment
-     * the run could not decide — one it could not answer about, or one a
-     * match with an unanswered `exclude:` stands in front of. "Matches no
-     * class" and "shadowed" are conclusions the run did not reach there, and
-     * this channel fails the run; `architecture.doubted-assignment` names the
-     * layer instead.
+     * the run could not decide — one a match with an unanswered `exclude:`
+     * stands in front of, or one it could not answer about while a type its
+     * criteria name is one the run met. "Matches no class" and "shadowed" are
+     * conclusions the run did not reach there, and this channel fails the
+     * run; `architecture.doubted-assignment` names the layer instead.
+     * {@see LayerEvidence::reachedCounts()} decides which contests count.
      *
-     * A symbol outside the analysed paths keeps no layer out of this channel.
-     * The run never reads it, so a criterion about its supertypes goes
-     * unanswered in every run, whether the layer is right or mistyped; letting
-     * it count would make one edge into vendor code enough to hide a typo in
-     * an `implements:`, `extends:` or `attributes:` layer for good. The
-     * finding says how many such symbols the layer might own, so the doubt it
-     * leaves out is not hidden.
+     * A contest that does not count is said in the finding rather than
+     * dropped, in the words that are true of it: a layer that could not
+     * answer is told which of the types it names the run never met — a typo,
+     * or a type reachable only through unanalysed code — and a layer whose
+     * criteria matched symbols outside the paths is told that an earlier
+     * layer holds them through an `exclude:` no run can answer.
      *
      * @param list<LayerDefinition> $definitions In declaration order.
      * @param array<string, int> $reachedCounts Layer name → number of symbols assigned to the
      *                                          layer or analysed classes it could still own,
      *                                          from {@see LayerEvidence::reachedCounts()}.
-     * @param array<string, int> $contendedOutsidePaths Layer name → number of symbols outside the
-     *                                                  analysed paths it could still own, from
-     *                                                  {@see LayerEvidence::contendedOutsidePathsCounts()}.
+     * @param array<string, array{matchedAnalysed: int, matchedOutside: int, unansweredAnalysed: int, unansweredOutside: int, unmetTypes: list<string>}> $contests
+     *                                                                                                                                                             Every declared layer → what it could still own, from
+     *                                                                                                                                                             {@see LayerEvidence::contests()}.
      *
      * @return list<Finding>
      */
-    public static function unreachableLayers(array $definitions, array $reachedCounts, array $contendedOutsidePaths): array
+    public static function unreachableLayers(array $definitions, array $reachedCounts, array $contests): array
     {
         $findings = [];
 
@@ -476,18 +476,50 @@ final class DeclaredLayerReachability
                     'Layer "%s" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the declared criteria (%s) match no class in the analysed codebase.%s Run "qmx debug:layer-assignment <class>" to inspect specific classes.',
                     $layerName,
                     $definition->membership()->describe(),
-                    ($contendedOutsidePaths[$layerName] ?? 0) === 0 ? '' : \sprintf(
-                        ' The run could not decide %d symbol(s) outside the analysed paths that it might own'
-                        . ' (architecture.doubted-assignment names them); the run never reads such a symbol, so that'
-                        . ' doubt stays in every run and does not show that the criteria match anything.',
-                        $contendedOutsidePaths[$layerName],
-                    ),
+                    self::uncountedContest($contests[$layerName]),
                 ),
                 'Move the layer above any broader layer that captures its classes, remove the layer if its pattern intentionally covers no class, or declare "pending: true" if the code it describes has not been written yet.',
             );
         }
 
         return $findings;
+    }
+
+    /**
+     * What an unreachable layer could still own, which did not keep it out of
+     * the channel, said in the words that hold for each share.
+     *
+     * @param array{matchedAnalysed: int, matchedOutside: int, unansweredAnalysed: int, unansweredOutside: int, unmetTypes: list<string>} $contest
+     */
+    private static function uncountedContest(array $contest): string
+    {
+        $text = '';
+        if ($contest['unansweredAnalysed'] + $contest['unansweredOutside'] > 0) {
+            $text .= \sprintf(
+                ' The run could not answer the criteria about %s (architecture.doubted-assignment names them), and a'
+                . ' doubt does not show that they match anything.',
+                self::presentCounts([
+                    'analysed class(es)' => $contest['unansweredAnalysed'],
+                    'symbol(s) outside the analysed paths' => $contest['unansweredOutside'],
+                ]),
+            );
+        }
+        $text .= self::sampledSentence(
+            ' None of the %d type(s) the criteria name (%s) is declared in the analysed paths, built into PHP or met at'
+            . ' either end of a dependency edge: either a name is mistyped, or the type is reachable only through code'
+            . ' the run did not analyse, and widening paths to include that code decides it.',
+            $contest['unmetTypes'],
+        );
+        if ($contest['matchedOutside'] > 0) {
+            $text .= \sprintf(
+                ' Its criteria match %d symbol(s) outside the analysed paths, which an earlier layer holds through an'
+                . ' "exclude" the run cannot answer about them (architecture.doubted-assignment names them); the run'
+                . ' never reads such a symbol, so that clause stays unanswered in every run.',
+                $contest['matchedOutside'],
+            );
+        }
+
+        return $text;
     }
 
     /**

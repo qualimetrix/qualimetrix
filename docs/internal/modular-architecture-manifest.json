@@ -2476,6 +2476,10 @@
         },
         {
           "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\KnownTypes"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\LayerRegistry"
         },
         {
@@ -10405,6 +10409,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\KnownTypes": {
+      "path": "src/Analysis/Policy/Architecture/Layer/KnownTypes.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\LayerCriteriaMatcher": {
       "path": "src/Analysis/Policy/Architecture/Layer/LayerCriteriaMatcher.php",
       "kind": "class",
@@ -13875,6 +13886,10 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContextFactory"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\KnownTypes"
         }
       ]
     },
@@ -14755,6 +14770,10 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassSet"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\KnownTypes"
         },
         {
           "owner": "Analysis.Policy.Architecture",

@@ -6431,11 +6431,19 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itRejectsAnUnknownMode
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itAdvisesANamespaceLayerForADoubtedSymbolOutsideThePaths
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itBuildsNoShadowFromAMatchWhoseExcludeCouldNotBeAnswered
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itCallsALayerUnreachableWhenNoTypeItNamesWasMetEvenIfAnAnalysedClassHasAnUnreadParent"a type only a vendor chain reaches"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itCallsALayerUnreachableWhenNoTypeItNamesWasMetEvenIfAnAnalysedClassHasAnUnreadParent"mistyped interface"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itCallsALayerUnreachableWhenNoTypeItNamesWasMetEvenIfAnAnalysedClassHasAnUnreadParent"mistyped parent class"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itCallsALayerUnreachableWhenNoTypeItNamesWasMetEvenIfAnAnalysedClassHasAnUnreadParent"template instance under match: all"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itCountsADoubtedEdgeEndWhoseOtherEndIsInNoLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itDoesNotCallALayerUnreachableWhileTheRunCouldNotAnswerIt
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itDoesNotDoubtAnAssignmentOverALayerDeclaredAfterIt
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itGivesOnlyTheAnalysedClassAdviceWhenEveryUndecidedSymbolWasAnalysed
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itGivesOnlyTheOutsideAdviceWhenEveryUndecidedSymbolIsOutsideThePaths
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itKeepsALayerContendingForAnAnalysedClassWhenItNamesATypeTheRunMet"a class PHP declares"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itKeepsALayerContendingForAnAnalysedClassWhenItNamesATypeTheRunMet"an analysed declaration"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itKeepsALayerContendingForAnAnalysedClassWhenItNamesATypeTheRunMet"template instance under match: all"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itKeepsALayerContendingForAnAnalysedClassWhenItNamesATypeTheRunMet"the vendor parent at the end of an edge"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itKeepsALayerThatCouldNotAnswerVisibleWhenItLeftSymbolsInNoLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itKeepsTheExcludeClauseThatCouldNotAnswerOutOfTheInertReport
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableCoverageGapTest::itLeavesAFullyCoveredRunWithoutAGapWhenOnlyAssignmentsAreInDoubt
@@ -7997,6 +8005,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itKeepsTheEmptyFqnRefusalVisibleUnderQuiet
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itKeepsTheUnanalysedFqnRefusalVisibleUnderQuiet
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itKeepsTheUnknownFormatRefusalVisibleUnderQuiet
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itListsEveryMatchInFrontOfTheShadowWithItsCriteriaInJson
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itMatchesExplicitTextFormatWhenTheFormatOptionIsOmitted
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itNamesALaterMatchWhoseExcludeWentUnansweredInBothProjections
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itNamesTheShadowThatHoldsWhateverAnUnansweredExcludeAnswers

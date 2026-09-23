@@ -84,6 +84,7 @@ final class ArchitectureInternalTopologyTest extends TestCase
         'Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerInstantiator',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\TupleExtractor',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\InvalidLayerDefinitionException',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\KnownTypes',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerCriteriaMatcher',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle',

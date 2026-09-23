@@ -50,7 +50,7 @@ final readonly class LayerEvidence
      *                               match in front of it removed it. Read through {@see matchedCounts()},
      *                               {@see excludedCounts()}, {@see unansweredExcludeCounts()}, {@see undecidedSymbolsByLayer()},
      *                               {@see ownsIfExcludedSymbolsByLayer()}, {@see reachedCounts()} and
-     *                               {@see contendedOutsidePathsCounts()}.
+     *                               {@see contests()}.
      * @param array<string, array<string, list<ShadowEntry>>> $shadowEvidence (assigned, shadowed) => evidence.
      * @param array{classes: array<string, string>, analysed: int} $unassigned What the analysed set left
      *                                                                         outside every declared layer, and how many class-like declarations the walk saw — the
@@ -152,41 +152,72 @@ final readonly class LayerEvidence
      * could not about them. Zero is the only value that says the layer owns
      * nothing the run read.
      *
-     * A symbol outside the analysed paths does not count towards it. The run
-     * never reads such a symbol, so an `implements:`, `extends:` or
-     * `attributes:` criterion goes unanswered about it in every run — a
-     * mistyped name included — and one edge into vendor code would otherwise
-     * keep a layer that matches none of the analysed code from ever being
-     * reported. {@see contendedOutsidePathsCounts()} carries that share for
-     * the finding's text.
+     * A contest counts only where the run could tell it from a mistake in the
+     * declaration, which is what {@see contests()} splits apart:
+     *
+     * - A symbol outside the analysed paths counts for no layer. The run never
+     *   reads it, so an `implements:`, `extends:` or `attributes:` criterion
+     *   goes unanswered about it in every run, a mistyped name included.
+     * - An analysed class the layer's own criteria matched counts: they
+     *   matched, and only an unanswered `exclude:` in front decides the owner.
+     * - An analysed class the layer could not answer about counts only while
+     *   some type its criteria name is one the run met. A class with an unread
+     *   parent leaves every such criterion unanswered, so on any project where
+     *   an analysed class extends vendor code a name the run never met would
+     *   otherwise be doubted for good instead of reported.
      *
      * @return array<string, int> layer name => count
      */
     public function reachedCounts(): array
     {
         $counts = $this->assignedHits;
-        $outside = $this->outsidePathsKeys();
-        foreach ($this->symbolSets['contended'] as $layerName => $symbols) {
-            $counts[$layerName] = ($counts[$layerName] ?? 0) + \count(array_diff_key($symbols, $outside));
+        foreach ($this->contests() as $layerName => $contest) {
+            $counts[$layerName] = ($counts[$layerName] ?? 0)
+                + $contest['matchedAnalysed']
+                + ($contest['unmetTypes'] === [] ? $contest['unansweredAnalysed'] : 0);
         }
 
         return $counts;
     }
 
     /**
-     * @return array<string, int> layer name => number of symbols outside the
-     *                            analysed paths it could still own once the run
-     *                            answered them, which {@see reachedCounts()}
-     *                            leaves out
+     * For every declared layer, the symbols it could still own once the run
+     * answers what it could not, split by what {@see reachedCounts()} does
+     * with them: whether the layer's own criteria matched the symbol or could
+     * not answer about it, and whether the run analysed the symbol.
+     * `unmetTypes` lists the types the layer's `attributes:`, `implements:`
+     * and `extends:` criteria name when the run met none of them, and is
+     * empty when it met any — see
+     * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\KnownTypes}.
+     *
+     * @return array<string, array{matchedAnalysed: int, matchedOutside: int, unansweredAnalysed: int, unansweredOutside: int, unmetTypes: list<string>}>
      */
-    public function contendedOutsidePathsCounts(): array
+    public function contests(): array
     {
         $outside = $this->outsidePathsKeys();
+        $namedByLayer = [];
+        foreach ($this->architecture->registry()->definitions() as $definition) {
+            $membership = $definition->membership();
+            $namedByLayer[$definition->name()] = array_values(array_unique([...$membership->attributes, ...$membership->implements, ...$membership->extends]));
+        }
+        $known = $this->architecture->registry()->contextFactory()->knownTypes()->among(array_values(array_unique(array_merge([], ...array_values($namedByLayer)))));
 
-        return array_filter(
-            array_map(static fn(array $symbols): int => \count(array_intersect_key($symbols, $outside)), $this->symbolSets['contended']),
-            static fn(int $count): bool => $count > 0,
-        );
+        $contests = [];
+        foreach ($namedByLayer as $layerName => $named) {
+            $symbols = $this->symbolSets['contended'][$layerName] ?? [];
+            $matched = array_intersect_key($symbols, $this->symbolSets['matched'][$layerName] ?? []);
+            $unanswered = array_diff_key($symbols, $matched);
+
+            $contests[$layerName] = [
+                'matchedAnalysed' => \count(array_diff_key($matched, $outside)),
+                'matchedOutside' => \count(array_intersect_key($matched, $outside)),
+                'unansweredAnalysed' => \count(array_diff_key($unanswered, $outside)),
+                'unansweredOutside' => \count(array_intersect_key($unanswered, $outside)),
+                'unmetTypes' => array_intersect_key(array_flip($named), $known) === [] ? $named : [],
+            ];
+        }
+
+        return $contests;
     }
 
     /**

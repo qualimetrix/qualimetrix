@@ -23,6 +23,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DeclaredLayerReachability;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
@@ -317,9 +318,10 @@ final class UndecidableCoverageGapTest extends TestCase
         // No later layer catches the class, so the doubt is not about an
         // assignment but about the absence of one. `architecture.unreachable-layer`
         // may no longer say "matches no class" about this layer, and under the
-        // default `coverage-gap: ignore` nothing else would name it.
+        // default `coverage-gap: ignore` nothing else would name it. The layer
+        // names a class PHP declares, so the run knows the type.
         $findings = $this->findingsFor(
-            [new LayerDefinition('controllers', new MembershipSpec(extends: ['Vendor\\Lib\\Base']))],
+            [new LayerDefinition('controllers', new MembershipSpec(extends: ['RuntimeException']))],
             'Vendor\\Lib\\Middle',
             CoverageMode::Ignore,
         );
@@ -337,12 +339,13 @@ final class UndecidableCoverageGapTest extends TestCase
     {
         // `controllers` matched nothing because the run could not answer it,
         // not because its criteria match no class — the finding said the
-        // latter, as a configuration error that fails the run. `ghost` is the
-        // control: its criteria really match nothing, and that is still
-        // reported.
+        // latter, as a configuration error that fails the run. The type it
+        // names is one PHP declares, so the unread parent may extend it.
+        // `ghost` is the control: its criteria really match nothing, and that
+        // is still reported.
         $findings = $this->findingsFor(
             [
-                new LayerDefinition('controllers', new MembershipSpec(extends: ['Vendor\\Lib\\Base'])),
+                new LayerDefinition('controllers', new MembershipSpec(extends: ['RuntimeException'])),
                 new LayerDefinition('app', new MembershipSpec(patterns: ['App\\**'])),
                 new LayerDefinition('ghost', new MembershipSpec(patterns: ['Nowhere\\**'])),
             ],
@@ -352,6 +355,87 @@ final class UndecidableCoverageGapTest extends TestCase
         $unreachable = self::findingsOn($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
         self::assertCount(1, $unreachable);
         self::assertStringContainsString('Layer "ghost"', $unreachable[0]->message);
+    }
+
+    /**
+     * @return iterable<string, array{0: MembershipSpec, 1: string}>
+     */
+    public static function provideLayersNamingOnlyTypesTheRunNeverMet(): iterable
+    {
+        yield 'mistyped interface' => [new MembershipSpec(implements: ['App\\Contracts\\Handlr']), 'App\\Contracts\\Handlr'];
+        yield 'mistyped parent class' => [new MembershipSpec(extends: ['App\\Base\\Controllr']), 'App\\Base\\Controllr'];
+        yield 'template instance under match: all' => [
+            new MembershipSpec(patterns: ['App\\Web\\**'], extends: ['App\\Base\\Entty'], mode: MatchMode::All),
+            'App\\Base\\Entty',
+        ];
+        yield 'a type only a vendor chain reaches' => [new MembershipSpec(extends: ['Vendor\\Lib\\Base']), 'Vendor\\Lib\\Base'];
+    }
+
+    #[Test]
+    #[DataProvider('provideLayersNamingOnlyTypesTheRunNeverMet')]
+    public function itCallsALayerUnreachableWhenNoTypeItNamesWasMetEvenIfAnAnalysedClassHasAnUnreadParent(
+        MembershipSpec $membership,
+        string $typeName,
+    ): void {
+        // The analysed class extends a vendor class the run never reads, so
+        // every `implements:`/`extends:` criterion goes unanswered about it —
+        // a mistyped name included. A contest may keep a layer out of the
+        // channel only while a type it names is one the run met; otherwise
+        // the typo and a type reachable only through unanalysed code look
+        // the same, and the finding says both.
+        $findings = $this->findingsFor(
+            [
+                new LayerDefinition('handlers', $membership),
+                new LayerDefinition('app', new MembershipSpec(patterns: ['App\\**'])),
+                new LayerDefinition('vendor', new MembershipSpec(patterns: ['Vendor\\**'])),
+            ],
+            'Vendor\\Lib\\Middle',
+            CoverageMode::Ignore,
+        );
+
+        $unreachable = self::findingsOn($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
+        self::assertCount(1, $unreachable);
+        self::assertStringContainsString('Layer "handlers"', $unreachable[0]->message);
+        self::assertStringContainsString('could not answer the criteria about 1 analysed class(es)', $unreachable[0]->message);
+        self::assertStringContainsString('None of the 1 type(s) the criteria name (' . $typeName . ')', $unreachable[0]->message);
+        self::assertStringContainsString('either a name is mistyped, or the type is reachable only through code', $unreachable[0]->message);
+        self::assertNotNull(self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME));
+    }
+
+    /**
+     * @return iterable<string, array{0: MembershipSpec}>
+     */
+    public static function provideLayersNamingATypeTheRunMet(): iterable
+    {
+        yield 'a class PHP declares' => [new MembershipSpec(implements: ['Countable'])];
+        yield 'the vendor parent at the end of an edge' => [new MembershipSpec(implements: ['Vendor\\Lib\\Middle'])];
+        yield 'an analysed declaration' => [new MembershipSpec(extends: ['App\\Web\\OrderController'])];
+        yield 'template instance under match: all' => [
+            new MembershipSpec(patterns: ['App\\Web\\**'], implements: ['Countable'], mode: MatchMode::All),
+        ];
+    }
+
+    #[Test]
+    #[DataProvider('provideLayersNamingATypeTheRunMet')]
+    public function itKeepsALayerContendingForAnAnalysedClassWhenItNamesATypeTheRunMet(MembershipSpec $membership): void
+    {
+        // The unread parent may implement or extend what the layer names, so
+        // the layer may own the class once its chain is analysed: not a
+        // conclusion `unreachable-layer` may draw.
+        $findings = $this->findingsFor(
+            [
+                new LayerDefinition('handlers', $membership),
+                new LayerDefinition('app', new MembershipSpec(patterns: ['App\\**'])),
+                new LayerDefinition('vendor', new MembershipSpec(patterns: ['Vendor\\**'])),
+            ],
+            'Vendor\\Lib\\Middle',
+            CoverageMode::Ignore,
+        );
+
+        self::assertNull(self::findingOn($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
+        $doubt = self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME);
+        self::assertNotNull($doubt);
+        self::assertStringContainsString('"handlers"', $doubt->message);
     }
 
     #[Test]
@@ -569,7 +653,13 @@ final class UndecidableCoverageGapTest extends TestCase
         $unreachable = self::findingsOn($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
         self::assertCount(1, $unreachable);
         self::assertStringContainsString('Layer "vendspecial"', $unreachable[0]->message);
-        self::assertStringContainsString('1 symbol(s) outside the analysed paths', $unreachable[0]->message);
+        // Its pattern matched the vendor type for certain; what holds the type
+        // is the clause in front, and the text must not say otherwise.
+        self::assertStringContainsString(
+            'Its criteria match 1 symbol(s) outside the analysed paths, which an earlier layer holds through an "exclude"',
+            $unreachable[0]->message,
+        );
+        self::assertStringNotContainsString('could not answer the criteria', $unreachable[0]->message);
         $doubt = self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME);
         self::assertNotNull($doubt);
         self::assertStringContainsString('removed them: "vendspecial" (1 assigned in doubt)', $doubt->message);

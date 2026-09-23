@@ -195,14 +195,23 @@ things move on an unchanged tree:
   symbol if an unanswered `exclude:` in front of it removed it named in a list
   of its own; it never fails the run;
 - `architecture.unreachable-layer` no longer calls a layer "matches no class"
-  while an analysed class could still belong to it — because the run could not
-  answer the layer about it, or because an earlier layer's `exclude:` that
-  could not be answered holds it. A symbol outside the analysed paths does not
-  count: the run never reads it, so a criterion is unanswered about it in every
-  run, a mistyped one included, and the finding says how many such symbols the
-  layer might own. `architecture.potential-shadow` no longer builds a shadow
-  from a match whose `exclude:` could not be answered, but still reports the
-  misordering between the matches behind it;
+  while an analysed class could still belong to it: because an earlier layer's
+  `exclude:` that could not be answered holds a class the layer matched, or
+  because the run could not answer the layer about the class while some type
+  its `attributes:`/`implements:`/`extends:` criteria name is one the run met —
+  declared in the analysed paths, declared by PHP, or at an end of a dependency
+  edge. A layer naming only types the run never met is still reported, even
+  when an analysed class extends vendor code, and the finding names those types
+  and both readings: a typo, or a type reachable only through code the run did
+  not analyse (widen `paths:`). A criterion naming a type only a vendor chain
+  reaches — `implements: [Doctrine\Persistence\ObjectRepository]` over
+  repositories extending `ServiceEntityRepository` — is therefore reported, as it
+  was before doubt was tracked. A symbol outside the analysed paths keeps no
+  layer out; when a layer's criteria matched such symbols while an earlier
+  unanswered `exclude:` holds them, the finding says so instead of claiming the
+  criteria match nothing. `architecture.potential-shadow` no longer builds a
+  shadow from a match whose `exclude:` could not be answered, but still reports
+  the misordering between the matches behind it;
 - `architecture.unmatched-exclude` no longer reports an `exclude:` clause that
   could not be answered as having removed no class.
 
@@ -239,8 +248,12 @@ mode is meant to enforce, or leave `coverage-gap: ignore`.
 `architecture.potential-shadow` uses.** `shadowed` lists the matches after
 `shadowedBy` — the first match the run established, which is not `assigned`
 when an unanswered `exclude:` stands in front of it — and each entry carries
-`reported`; the new key `contenders` holds the matches before `shadowedBy`,
-which used to be listed under `shadowed`.
+`reported`. The other matches after `assigned`, which used to be listed under
+`shadowed`, move to the new key `contendingMatches` in the same
+`{layer, criteria, reported}` form, with `reported` always `false`: each match
+whose `exclude:` went unanswered and, when one stands in front of it,
+`shadowedBy` itself. The new key `contenders` names every layer that could own
+the class once the unanswered layers are answered, matching or not.
 
 **A computed-metric formula naming a metric no symbol at its level carries is
 refused with exit 3.** It used to surface as `Internal error` with exit 1 — the

@@ -237,6 +237,15 @@ final class ClassContextFactory
         );
     }
 
+    /**
+     * The types this run met, read from the graph and the declarations bound
+     * here — see {@see KnownTypes}.
+     */
+    public function knownTypes(): KnownTypes
+    {
+        return new KnownTypes($this->graph, $this->analysed);
+    }
+
     private function ensureMapsBuilt(): void
     {
         if ($this->extendsMap !== null) {

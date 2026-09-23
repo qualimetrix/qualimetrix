@@ -415,8 +415,15 @@ final class LayerAssignmentCommand extends Command
      * reports it — never for a match whose own `exclude:` went unanswered,
      * since it may not match at all. `shadowedBy` is not `assigned` when an
      * unanswered `exclude:` stands in front of it, and is `null` when
-     * `shadowed` is empty. Every match the text report lists is named here:
-     * one before `shadowedBy` is among `contenders`.
+     * `shadowed` is empty.
+     *
+     * `contendingMatches` lists, in the same form, every other match after
+     * `assigned`: the matches whose `exclude:` went unanswered and, when one
+     * stands in front of it, the first match the run established. Which of
+     * them owns the class depends on the unanswered clauses, so none shadows
+     * or is shadowed and `reported` is always false. `contendingMatches` and
+     * `shadowed` together are every match the text report lists after the
+     * assignment.
      *
      * `undecided` is always present and names the layers this run could not
      * answer for the class that bear on its assignment — every one when
@@ -439,15 +446,15 @@ final class LayerAssignmentCommand extends Command
         $reported = $resolution['reportedShadows'];
         $shadowedBy = $resolution['firstEstablished'];
         $shadowed = $shadowedBy === null ? [] : self::matchesAfter($resolution['matches'], $shadowedBy);
+        $contending = \array_slice($resolution['matches'], 1, max(0, \count($resolution['matches']) - 1 - \count($shadowed)));
+        $toEntry = static fn(LayerAssignmentMatch $match): array => self::matchToArray($match)
+            + ['reported' => \in_array($match->layerName, $reported, true)];
 
         OutputHelper::write($output, $this->encodeJson([
             'fqn' => $fqn,
             'assigned' => $assigned === null ? null : self::matchToArray($assigned),
-            'shadowed' => array_map(
-                static fn(LayerAssignmentMatch $match): array => self::matchToArray($match)
-                    + ['reported' => \in_array($match->layerName, $reported, true)],
-                $shadowed,
-            ),
+            'contendingMatches' => array_map($toEntry, $contending),
+            'shadowed' => array_map($toEntry, $shadowed),
             'shadowedBy' => $shadowed === [] ? null : $shadowedBy,
             'undecided' => $resolution['undecided'],
             'contenders' => $resolution['contenders'],

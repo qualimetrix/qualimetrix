@@ -809,6 +809,7 @@ final class LayerAssignmentCommandTest extends TestCase
                 'layer' => 'any-foo',
                 'criteria' => ['pattern "App\\**\\Foo"'],
             ],
+            'contendingMatches' => [],
             'shadowed' => [
                 [
                     'layer' => 'service',
@@ -887,6 +888,7 @@ final class LayerAssignmentCommandTest extends TestCase
         self::assertSame([
             'fqn' => 'Other\\Place\\Thing',
             'assigned' => null,
+            'contendingMatches' => [],
             'shadowed' => [],
             'shadowedBy' => null,
             'undecided' => [],
@@ -1213,6 +1215,45 @@ final class LayerAssignmentCommandTest extends TestCase
         self::assertSame('web', $decoded['shadowedBy']);
         self::assertSame([['layer' => 'infra', 'criteria' => ['pattern "App\\**"'], 'reported' => false]], $decoded['shadowed']);
         self::assertSame([], $decoded['contenders']);
+    }
+
+    #[Test]
+    public function itListsEveryMatchInFrontOfTheShadowWithItsCriteriaInJson(): void
+    {
+        // `repo2` matched the class under an `exclude:` the run cannot answer,
+        // exactly as `app` did, and `repos` owns it if both clauses answer
+        // "yes". The text lists both with the criterion that matched; a JSON
+        // consumer must be able to tell them from `hand`, which did not match.
+        $sourcePath = $this->sourcePath();
+        $configPath = $this->tempDir . '/qmx-' . bin2hex(random_bytes(6)) . '.yaml';
+        file_put_contents($configPath, "paths: ['{$sourcePath}']\narchitecture:\n  layers:\n"
+            . "    - name: hand\n      implements: ['App\\Contracts\\Handler']\n"
+            . "    - name: app\n      patterns: ['App\\**']\n      exclude:\n        extends: ['Vendor\\Lib\\Base']\n"
+            . "    - name: repo2\n      patterns: ['App\\Web\\OrderController']\n      exclude:\n        implements: ['Some\\Iface']\n"
+            . "    - name: repos\n      patterns: ['App\\Web\\**']\n"
+            . "    - name: legacy\n      patterns: ['App\\Web\\Order*']\n"
+            . "  allow:\n    hand: []\n    app: []\n    repo2: []\n    repos: []\n    legacy: []\n  coverage-gap: ignore\n");
+        $this->declareClassExtending('App\\Web\\OrderController', 'Vendor\\Lib\\Middle');
+
+        $text = $this->newTester();
+        $text->execute(['fqn' => 'App\\Web\\OrderController', '--config' => $configPath]);
+        self::assertStringContainsString("- repo2  (matched by: 'pattern \"App\\Web\\OrderController\"')", $text->getDisplay());
+
+        $json = $this->newTester();
+        $json->execute(['fqn' => 'App\\Web\\OrderController', '--config' => $configPath, '--format' => 'json']);
+        $decoded = json_decode($json->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($decoded);
+        self::assertSame('app', $decoded['assigned']['layer']);
+        self::assertSame([
+            ['layer' => 'repo2', 'criteria' => ['pattern "App\\Web\\OrderController"'], 'reported' => false],
+            ['layer' => 'repos', 'criteria' => ['pattern "App\\Web\\**"'], 'reported' => false],
+        ], $decoded['contendingMatches']);
+        self::assertSame('repos', $decoded['shadowedBy']);
+        self::assertSame(
+            [['layer' => 'legacy', 'criteria' => ['pattern "App\\Web\\Order*"'], 'reported' => true]],
+            $decoded['shadowed'],
+        );
+        self::assertSame(['hand', 'app', 'repo2', 'repos'], $decoded['contenders']);
     }
 
     #[Test]

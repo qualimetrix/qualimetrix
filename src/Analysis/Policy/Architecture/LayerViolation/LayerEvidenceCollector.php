@@ -422,9 +422,9 @@ final class LayerEvidenceCollector
      * fixes that without weakening unreachable-layer's typo-detection case:
      * a layer matching neither a class nor an edge end still gets zero hits.
      * The same holds for the `contended` column, which the edge walk also
-     * fills: {@see LayerEvidence::reachedCounts()} counts only its analysed
-     * share, because a criterion goes unanswered about a symbol the run never
-     * reads in every run, typo or not.
+     * fills: {@see LayerEvidence::reachedCounts()} decides which of it counts,
+     * because a criterion goes unanswered about a symbol the run never reads
+     * in every run, typo or not.
      *
      * @return array{0: list<array{dependency: \Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency, fromMatch: LayerMatch, toMatch: LayerMatch}>, 1: array{sourceEdges: int, targetEdges: int, classes: array<string, string>, undecidable: array<string, string>, doubted: array<string, string>}, 2: array<string, int>, 3: array{matched: array<string, array<string, true>>, excluded: array<string, array<string, true>>, unanswered: array<string, array<string, true>>, undecided: array<string, array<string, true>>, contended: array<string, array<string, true>>, ownsIfExcluded: array<string, array<string, true>>}}
      */

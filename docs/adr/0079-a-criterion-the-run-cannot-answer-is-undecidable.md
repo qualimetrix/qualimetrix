@@ -201,8 +201,8 @@ the author of a carve-out that did not answer to reorder or delete the layer it
 was written for. Both are configuration errors that fail the run, so neither
 may rest on a conclusion the run did not reach: a layer that could still own an
 analysed class whose assignment is in doubt (one of its `contenders()`) is not
-unreachable, and a shadow is drawn only between matches the run established
-(`establishedMatches()`). The first established match shadows every later one
+unreachable — within the limits the next section sets — and a shadow is drawn
+only between matches the run established (`establishedMatches()`). The first established match shadows every later one
 even when an unanswered `exclude:` in front of it holds the class: in the
 Doctrine carve-out, `legacy` declared after `repos` loses the class to `app`
 or to `repos` whichever way the clause answers, so `repos` → `legacy` is
@@ -213,24 +213,54 @@ about a symbol that an established match declared earlier already owns is still
 unreachable if it owns nothing else: it could not have won that symbol, and
 "shadowed" is then the right reading of the finding.
 
-**Only an analysed class keeps a layer out of `unreachable-layer`.** The run
-never reads a symbol outside the analysed paths, so an `implements:`,
-`extends:` or `attributes:` criterion goes unanswered about it in every run,
-mistyped or not. The first version let any symbol in doubt count, and one edge
-into vendor code then kept a layer whose criterion names a class that does not
-exist from ever being reported: every analysed class answered "no" about
-`implements: ['App\Contracts\Handlr']`, the vendor type at the end of a
-type-hint edge could not be answered, and the configuration error became an
-`info` line — on any project without a vendor `patterns` layer, whatever the
-declaration order. A contest for an analysed class is different: completing its
-chain settles it, so the layer may really own it. The finding counts the
-symbols outside the paths the layer might own, so the doubt it leaves out is
-said rather than dropped. The cost is a layer written for vendor types alone —
-a narrower vendor `patterns` layer behind a vendor carve-out whose `exclude:`
-cannot be answered, say — which is reported as unreachable while it may own a
-vendor type; that is what the run could say about it before the doubt was
-tracked at all, and `architecture.doubted-assignment` names it beside the
+**Which contests keep a layer out of `unreachable-layer`.** Doubt is not
+evidence that a criterion is right: a criterion naming a type that does not
+exist goes unanswered about every class whose chain the run cannot follow, so
+counting every contest turned the typo the channel exists to catch into an
+`info` line. Two versions failed that way. The first counted every symbol in
+doubt, and one type-hint edge into vendor code kept
+`implements: ['App\Contracts\Handlr']` from ever being reported. The second
+counted analysed classes only, and one analysed class extending an unread vendor
+parent — a controller, a repository, a command: most framework projects have
+one — did the same for every `implements:` and `extends:` layer declared before
+the layer that owns it, whatever the declaration order, template instances under
+`match: all` included. `LayerEvidence::reachedCounts()` now decides it in one
+place, by what the contest rests on:
+
+- An analysed class the layer's own criteria matched counts. The criteria are
+  right about it; only an unanswered `exclude:` in front decides the owner.
+- An analysed class the layer could not answer about counts only while some
+  type its `attributes:`, `implements:` or `extends:` criteria name is one the
+  run met: declared in the analysed paths, declared by PHP, or at either end of
+  an edge in the declaration or the coupling view. The unread parent may reach
+  a type the run met; a type the run never met is indistinguishable from a
+  typo.
+- A symbol outside the analysed paths never counts. The run never reads it, so
+  every such criterion goes unanswered about it in every run.
+
+A contest that does not count is said in the finding, in the words true of it.
+A layer that could not answer is told how many symbols it could not answer
+about and, when no named type is one the run met, which types those are and
+both readings — a mistyped name, or a type reachable only through code the run
+did not analyse, which widening `paths:` decides. A layer whose criteria matched
+symbols outside the paths is told that an earlier layer holds them through an
+`exclude:` no run can answer, rather than that its criteria match nothing.
+
+The costs are named. A criterion naming a type only a vendor chain reaches —
+`implements: ['Doctrine\Persistence\ObjectRepository']` over repositories
+that extend `ServiceEntityRepository`, with no analysed code naming the
+interface — is reported as unreachable again, as before any doubt was tracked;
+the finding says why, and naming the type anywhere in analysed code, or widening
+`paths:` to the vendor package, keeps the layer. A layer written for vendor
+types alone — a narrower vendor `patterns` layer behind a vendor carve-out whose
+`exclude:` cannot be answered, say — is reported as unreachable while it may
+own a vendor type. `architecture.doubted-assignment` names both beside the
 error.
+
+The rejected alternative was to keep counting every analysed contest and record
+the gap as a limitation. It leaves the channel unable to catch a mistyped
+`implements:` or `extends:` on any project where an analysed class extends
+vendor code, which is the common case rather than the edge one.
 
 Every layer a contest keeps out of `unreachable-layer` is named in
 `architecture.doubted-assignment`: a layer that could not answer among the
@@ -275,9 +305,11 @@ instance created through an unanswerable `exclude:` is reached at runtime,
 since that clause no longer withdraws the match. One created through an
 unanswerable *positive* criterion (`match: all` with `extends:`) is not
 reached. Where no match the run established is declared before it, it could
-still own the class, so `architecture.unreachable-layer` does not call it empty
-and `architecture.doubted-assignment` names it; where one is, it is shadowed
-there whatever it would have answered.
+still own the class. While the type its criterion names is one the run met,
+`architecture.unreachable-layer` does not call it empty and
+`architecture.doubted-assignment` names it; a type the run never met is
+reported, as for any layer. Where an established match is declared before it,
+it is shadowed there whatever it would have answered.
 
 **A template declaring a non-pattern criterion under `match: any` is refused at
 configuration time.** Only `patterns` carry capture variables, so `suffix`,
@@ -318,10 +350,13 @@ global net if that is really what was wanted.
   and how many symbols in no layer.
 - `architecture.unreachable-layer` and `architecture.potential-shadow` no longer
   fire on an answer the run did not reach: a layer that could still own an
-  analysed class in doubt is not unreachable, and a match whose `exclude:` went
-  unanswered neither shadows nor is shadowed. A symbol outside the analysed
-  paths keeps no layer from being unreachable; the finding counts those it
-  might own.
+  analysed class in doubt is not unreachable while a type its criteria name is
+  one the run met, and a match whose `exclude:` went unanswered neither shadows
+  nor is shadowed. A symbol outside the analysed paths keeps no layer from being
+  unreachable. The finding says what it left out: the unanswered symbols and
+  the named types the run never met, or the outside symbols an earlier
+  unanswered `exclude:` holds. A criterion naming a type only a vendor chain
+  reaches is reported as unreachable, as it was before the doubt was tracked.
 - Membership is now a function of what the run analysed. Widening `paths:`
   can turn an undecidable layer into a decided one, in either direction. A
   criterion that names a class's direct parent or interface keeps matching, and

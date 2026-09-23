@@ -123,7 +123,7 @@ final class LayerDeclarationValidator implements ConfigurationValidatorInterface
             ...DeclaredLayerReachability::unreachableLayers(
                 $definitions,
                 $evidence->reachedCounts(),
-                $evidence->contendedOutsidePathsCounts(),
+                $evidence->contests(),
             ),
             ...DeclaredLayerReachability::pendingLayersMatched($definitions, $evidence->matchedCounts()),
             ...DeclaredLayerReachability::potentialShadows($evidence->shadowEvidence),

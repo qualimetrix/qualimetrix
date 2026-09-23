@@ -913,15 +913,22 @@ bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
 {
   "fqn": "App\\Service\\Foo",
   "assigned": { "layer": "any-foo", "criteria": ["pattern \"App\\**\\Foo\""] },
+  "contendingMatches": [],
   "shadowed": [
-    { "layer": "service", "criteria": ["pattern \"App\\Service\\**\""] }
+    { "layer": "service", "criteria": ["pattern \"App\\Service\\**\""], "reported": true }
   ],
+  "shadowedBy": "any-foo",
+  "undecided": [],
+  "contenders": [],
+  "chainStopsAt": [],
   "hasLayers": true
 }
 ```
 
-- `assigned` — `null`, если ни один слой не совпал (в этом случае `shadowed` пуст).
-- `shadowed` перечисляет все остальные совпавшие слои в порядке объявления — каждый из них получил бы класс, будь он объявлен раньше `assigned`.
+- `assigned` — `null`, если ни один слой не совпал; тогда пусты и `contendingMatches`, и `shadowed`.
+- `shadowed` перечисляет совпадения после `shadowedBy` — первого совпадения, которое прогон установил, — в порядке объявления. Каждое проигрывает класс, как бы ни ответили слои, на которые прогон не смог ответить, а `reported` говорит, сообщает ли о нём `architecture.potential-shadow`. `shadowedBy` равен `null`, когда `shadowed` пуст, и не совпадает с `assigned`, когда перед ним стоит совпадение с неразрешённым `exclude:`.
+- `contendingMatches` в той же форме перечисляет все остальные совпадения после `assigned`: совпадения, чей `exclude:` остался без ответа, и — если такое стоит перед ним — `shadowedBy`. Кому из них достанется класс, зависит от этих клауз, поэтому `reported` всегда `false`. Вместе с `shadowed` это все совпадения, которые текстовый отчёт перечисляет после назначения.
+- `undecided` называет слои, на которые прогон не смог ответить и от которых зависит назначение, `contenders` — слои, которые могли бы владеть классом, когда на них будет получен ответ, а `chainStopsAt` — где цепочка наследования класса вышла за анализируемые пути; все три пусты, когда прогон ответил на все слои. `assigned: null` при непустом `undecided` означает «не смог сказать», а не «класс не заявлен ни одним слоем». Полные правила — в разделе [Инспекция назначения слоя для одного класса](../rules/architecture.md#debug-layer-assignment).
 - `hasLayers` различает «слои не объявлены» (`false`) и «слои объявлены, но ни один не совпал с этим классом» (`true` при `assigned: null`).
 - При ошибке `--format=json` печатает в stdout `{"error": "...", "exit_code": N}` вместо человекочитаемой строки `<error>`; неизвестное значение `--format` завершается кодом 3 независимо от формата.
 

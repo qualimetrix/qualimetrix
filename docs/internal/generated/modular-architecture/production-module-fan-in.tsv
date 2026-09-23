@@ -41,7 +41,7 @@ Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSumm
 Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface	Analysis.Evidence.Coupling	3	2
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency	Analysis.Evidence.DependencyModel	2	1
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface	Analysis.Evidence.DependencyModel	6	3
-Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	27	8
+Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	28	8
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyLocationInterface	Analysis.Evidence.DependencyModel	1	1
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface	Analysis.Evidence.DependencyModel	7	4
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType	Analysis.Evidence.DependencyModel	7	4
@@ -249,12 +249,12 @@ Qualimetrix\Core\Symbol\FileDeclarationIndex	Core.Symbol	11	2
 Qualimetrix\Core\Symbol\LogicalClassPath	Core.Symbol	7	3
 Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	47	16
 Qualimetrix\Core\Symbol\MetricSubjectCodec	Core.Symbol	7	3
-Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy	Core.Symbol	1	1
+Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy	Core.Symbol	2	1
 Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	4	2
 Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	28	9
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	114	21
 Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	6	4
-Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	76	20
+Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	77	20
 Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	31	11
 Qualimetrix\Core\Time\ClockInterface	Core.Neutral	4	2
 Qualimetrix\Core\Version	Core.Neutral	9	2

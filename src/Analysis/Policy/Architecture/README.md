@@ -180,12 +180,19 @@ and names each such layer with its counts — the per-layer `undecided` column o
 the walk's symbol sets.
 
 The two declaration verdicts that conclude something from who won or lost read
-the walk instead of the bare match list. A layer that could still own an
-analysed class in doubt — the analysed share of the `contended` column — is not
-`architecture.unreachable-layer`; a symbol outside the analysed paths does not
-count, because a criterion goes unanswered about a symbol the run never reads
-in every run, a mistyped one included, and the finding says how many such
-symbols the layer might own instead. `LayerShadowing` draws a shadow only
+the walk instead of the bare match list. `LayerEvidence::reachedCounts()` is
+the one place that decides which of the `contended` column keeps a layer out of
+`architecture.unreachable-layer`. An analysed class the layer's own criteria
+matched counts. An analysed class the layer could not answer about counts only
+while some type its `attributes:`/`implements:`/`extends:` criteria name is one
+the run met — declared in the analysed paths, built into PHP, or at an end of a
+dependency edge (`KnownTypes`): a class with an unread
+parent leaves every such criterion unanswered, a mistyped name included. A
+symbol outside the analysed paths never counts, for the same reason. The
+finding says what it left out in the words true of each share: the unanswered
+symbols and the named types the run never met — a typo, or a type only unanalysed
+code reaches — or the outside symbols the layer matched that an earlier
+unanswered `exclude:` holds. `LayerShadowing` draws a shadow only
 between `establishedMatches()`, the first of them shadowing the rest, and
 `debug:layer-assignment` reports its `shadowed` list and hint by the same rule.
 `architecture.doubted-assignment` names every layer a contest keeps out of

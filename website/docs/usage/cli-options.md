@@ -909,15 +909,22 @@ bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
 {
   "fqn": "App\\Service\\Foo",
   "assigned": { "layer": "any-foo", "criteria": ["pattern \"App\\**\\Foo\""] },
+  "contendingMatches": [],
   "shadowed": [
-    { "layer": "service", "criteria": ["pattern \"App\\Service\\**\""] }
+    { "layer": "service", "criteria": ["pattern \"App\\Service\\**\""], "reported": true }
   ],
+  "shadowedBy": "any-foo",
+  "undecided": [],
+  "contenders": [],
+  "chainStopsAt": [],
   "hasLayers": true
 }
 ```
 
-- `assigned` is `null` when no layer matched (empty `shadowed` follows).
-- `shadowed` lists every other matching layer in declaration order — each entry would have won the assignment had it been declared before `assigned`.
+- `assigned` is `null` when no layer matched; then `contendingMatches` and `shadowed` are empty too.
+- `shadowed` lists the matches after `shadowedBy`, the first match the run established, in declaration order. Each loses the class whichever way the layers the run could not answer answer, and `reported` says whether `architecture.potential-shadow` reports it. `shadowedBy` is `null` when `shadowed` is empty, and is not `assigned` when a match whose `exclude:` went unanswered stands in front of it.
+- `contendingMatches` lists, in the same form, every other match after `assigned`: the matches whose `exclude:` went unanswered and, when one stands in front of it, `shadowedBy`. Which of them owns the class depends on those clauses, so `reported` is always `false`. Together with `shadowed` it is every match the text report lists after the assignment.
+- `undecided` names the layers the run could not answer that bear on the assignment, `contenders` the layers that could own the class once they are answered, and `chainStopsAt` where the class's inheritance chain left the analysed paths; all three are empty when the run answered every layer. `assigned: null` beside a non-empty `undecided` means "could not tell", not "no layer claims this class". See [Inspecting layer assignment for a single class](../rules/architecture.md#debug-layer-assignment) for the full rules.
 - `hasLayers` distinguishes "no layers configured" (`false`) from "layers configured but none matched this class" (`true` with `assigned: null`).
 - On error, `--format=json` prints `{"error": "...", "exit_code": N}` to stdout instead of the human `<error>` line, and an unrecognized `--format` value exits with code 3 regardless of format.
 

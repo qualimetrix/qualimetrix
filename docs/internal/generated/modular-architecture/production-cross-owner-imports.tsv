@@ -1479,6 +1479,9 @@ Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage	Ana
 Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage	Analysis.Policy.Architecture	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	contract
 Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerInstantiator	Analysis.Policy.Architecture	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
 Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerInstantiator	Analysis.Policy.Architecture	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	contract
+Qualimetrix\Analysis\Policy\Architecture\Layer\KnownTypes	Analysis.Policy.Architecture	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	contract
+Qualimetrix\Analysis\Policy\Architecture\Layer\KnownTypes	Analysis.Policy.Architecture	Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy	Core.Symbol	contract
+Qualimetrix\Analysis\Policy\Architecture\Layer\KnownTypes	Analysis.Policy.Architecture	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
 Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy	Analysis.Policy.Architecture	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType	Analysis.Evidence.DependencyModel	contract
 Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry	Analysis.Policy.Architecture	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	contract
 Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry	Analysis.Policy.Architecture	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
