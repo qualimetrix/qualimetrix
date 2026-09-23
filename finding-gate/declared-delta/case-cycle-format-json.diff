@@ -1,6 +1,8 @@
 --- candidate
 +++ reference (mapped)
-@@ -39,2 +39,1 @@
+@@ -20,1 +20,0 @@
+-    "outOfScope": null,
+@@ -40,2 +39,1 @@
 -            "message": "Circular dependency (3 classes): A → B → C → A",
 -            "recommendation": "Cycle path: A → B → C → A (3 classes). Break by introducing an interface to invert one dependency.\nCycle data: {\"cycle\":[\"Corpus\\\\Cycle\\\\A\",\"Corpus\\\\Cycle\\\\B\",\"Corpus\\\\Cycle\\\\C\",\"Corpus\\\\Cycle\\\\A\"],\"length\":3,\"category\":\"small\"}",
 +            "message": "Cycle path: A → B → C → A (3 classes). Break by introducing an interface to invert one dependency.\nCycle data: {\"cycle\":[\"Corpus\\\\Cycle\\\\A\",\"Corpus\\\\Cycle\\\\B\",\"Corpus\\\\Cycle\\\\C\",\"Corpus\\\\Cycle\\\\A\"],\"length\":3,\"category\":\"small\"}",

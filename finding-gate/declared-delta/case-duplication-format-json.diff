@@ -1,6 +1,8 @@
 --- candidate
 +++ reference (mapped)
-@@ -39,2 +39,1 @@
+@@ -20,1 +20,0 @@
+-    "outOfScope": null,
+@@ -40,2 +39,1 @@
 -            "message": "Duplicated code block (30 lines, 2 occurrences): \"class ReportBuilder public function summarise(array $rows, string $mode, int...\" — also at src/SummaryBuilder.php:5-34",
 -            "recommendation": "Extract duplicated code into a shared method or class.",
 +            "message": "Extract duplicated code into a shared method or class.",

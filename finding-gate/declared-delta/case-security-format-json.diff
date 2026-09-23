@@ -1,42 +1,44 @@
 --- candidate
 +++ reference (mapped)
-@@ -39,2 +39,1 @@
+@@ -20,1 +20,0 @@
+-    "outOfScope": null,
+@@ -40,2 +39,1 @@
 -            "message": "Potential SQL injection — use parameterized queries instead of direct superglobal interpolation ($_GET)",
 -            "recommendation": "Use parameterized queries or prepared statements.",
 +            "message": "Use parameterized queries or prepared statements.",
-@@ -52,2 +51,1 @@
+@@ -53,2 +51,1 @@
 -            "message": "Potential SQL injection — use parameterized queries instead of direct superglobal interpolation ($_POST)",
 -            "recommendation": "Use parameterized queries or prepared statements.",
 +            "message": "Use parameterized queries or prepared statements.",
-@@ -65,2 +63,1 @@
+@@ -66,2 +63,1 @@
 -            "message": "Potential command injection — use escapeshellarg() before passing user input to shell commands ($_GET)",
 -            "recommendation": "Use escapeshellarg() for arguments or avoid shell commands entirely.",
 +            "message": "Use escapeshellarg() for arguments or avoid shell commands entirely.",
-@@ -78,2 +75,1 @@
+@@ -79,2 +75,1 @@
 -            "message": "Potential XSS — use htmlspecialchars() or equivalent before outputting user input ($_GET)",
 -            "recommendation": "Escape output with htmlspecialchars() or use a template engine with auto-escaping.",
 +            "message": "Escape output with htmlspecialchars() or use a template engine with auto-escaping.",
-@@ -91,2 +87,1 @@
+@@ -92,2 +87,1 @@
 -            "message": "Hardcoded credential in property default — use environment variables or a secrets manager",
 -            "recommendation": "Move secrets to environment variables or a secrets manager.",
 +            "message": "Move secrets to environment variables or a secrets manager.",
-@@ -104,2 +99,1 @@
+@@ -105,2 +99,1 @@
 -            "message": "Direct superglobal access detected - use dependency injection",
 -            "recommendation": "Use dependency injection or a request object instead of direct superglobal access.",
 +            "message": "Use dependency injection or a request object instead of direct superglobal access.",
-@@ -117,2 +111,1 @@
+@@ -118,2 +111,1 @@
 -            "message": "Direct superglobal access detected - use dependency injection",
 -            "recommendation": "Use dependency injection or a request object instead of direct superglobal access.",
 +            "message": "Use dependency injection or a request object instead of direct superglobal access.",
-@@ -130,2 +123,1 @@
+@@ -131,2 +123,1 @@
 -            "message": "Direct superglobal access detected - use dependency injection",
 -            "recommendation": "Use dependency injection or a request object instead of direct superglobal access.",
 +            "message": "Use dependency injection or a request object instead of direct superglobal access.",
-@@ -143,2 +135,1 @@
+@@ -144,2 +135,1 @@
 -            "message": "Direct superglobal access detected - use dependency injection",
 -            "recommendation": "Use dependency injection or a request object instead of direct superglobal access.",
 +            "message": "Use dependency injection or a request object instead of direct superglobal access.",
-@@ -156,2 +147,1 @@
+@@ -157,2 +147,1 @@
 -            "message": "Sensitive parameter missing #[\\SensitiveParameter] attribute — add it to prevent credential leakage in stack traces",
 -            "recommendation": "Add #[\\SensitiveParameter] attribute to prevent credential leakage in stack traces.",
 +            "message": "Add #[\\SensitiveParameter] attribute to prevent credential leakage in stack traces.",

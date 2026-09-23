@@ -1,14 +1,16 @@
 --- candidate
 +++ reference (mapped)
-@@ -39,2 +39,1 @@
+@@ -20,1 +20,0 @@
+-    "outOfScope": null,
+@@ -40,2 +39,1 @@
 -            "message": "The suppress_paths pattern \"subtree:src/NoSuchDir\" matched no file analysed by this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported.",
 -            "recommendation": "Check \"subtree:src/NoSuchDir\" against the tree. The \"subtree\" selector also includes descendants across \"/\" boundaries. Drop the entry if the code it names is gone, or correct its spelling.",
 +            "message": "Check \"subtree:src/NoSuchDir\" against the tree. The \"subtree\" selector also includes descendants across \"/\" boundaries. Drop the entry if the code it names is gone, or correct its spelling.",
-@@ -52,2 +51,1 @@
+@@ -53,2 +51,1 @@
 -            "message": "The suppress_namespaces pattern \"subtree:Corpus\\Suppression\\Gone\" matched no namespace declared in this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported.",
 -            "recommendation": "Check \"subtree:Corpus\\Suppression\\Gone\" against the code. The \"subtree\" selector also includes descendants across \"\\\" boundaries. Drop the entry if the namespace is gone, or correct its spelling.",
 +            "message": "Check \"subtree:Corpus\\Suppression\\Gone\" against the code. The \"subtree\" selector also includes descendants across \"\\\" boundaries. Drop the entry if the namespace is gone, or correct its spelling.",
-@@ -65,2 +63,1 @@
+@@ -66,2 +63,1 @@
 -            "message": "The suppress_paths pattern \"subtree:src/AlsoGone\" configured under rule \"complexity.ccn\" matched nothing this run analysed, so it suppressed nothing and could not have.",
 -            "recommendation": "Check \"subtree:src/AlsoGone\" under rules.complexity.ccn.suppress_paths against the tree, and drop it if what it names is gone.",
 +            "message": "Check \"subtree:src/AlsoGone\" under rules.complexity.ccn.suppress_paths against the tree, and drop it if what it names is gone.",

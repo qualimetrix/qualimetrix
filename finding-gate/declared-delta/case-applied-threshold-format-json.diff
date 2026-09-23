@@ -1,14 +1,16 @@
 --- candidate
 +++ reference (mapped)
-@@ -39,2 +39,1 @@
+@@ -20,1 +20,0 @@
+-    "outOfScope": null,
+@@ -40,2 +39,1 @@
 -            "message": "Maximum method cognitive complexity is 3, exceeds threshold of 1. Refactor the most complex methods",
 -            "recommendation": "Max cognitive complexity: 3 (threshold: 1) — deeply nested, hard to follow",
 +            "message": "Max cognitive complexity: 3 (threshold: 1) — deeply nested, hard to follow",
-@@ -52,2 +51,1 @@
+@@ -53,2 +51,1 @@
 -            "message": "Cognitive complexity is 3, exceeds threshold of 1. Top: nested if +2 L21, foreach +1 L20. Reduce nesting and break into smaller methods",
 -            "recommendation": "Cognitive complexity: 3 (threshold: 1). Top: nested if +2 L21, foreach +1 L20 — deeply nested, hard to follow",
 +            "message": "Cognitive complexity: 3 (threshold: 1). Top: nested if +2 L21, foreach +1 L20 — deeply nested, hard to follow",
-@@ -65,2 +63,1 @@
+@@ -66,2 +63,1 @@
 -            "message": "Cyclomatic complexity is 3, exceeds threshold of 2. Consider extracting methods or simplifying conditions",
 -            "recommendation": "Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.",
 +            "message": "Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.",

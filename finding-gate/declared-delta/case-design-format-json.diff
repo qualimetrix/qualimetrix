@@ -1,42 +1,44 @@
 --- candidate
 +++ reference (mapped)
-@@ -39,2 +39,1 @@
+@@ -20,1 +20,0 @@
+-    "outOfScope": null,
+@@ -40,2 +39,1 @@
 -            "message": "Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces",
 -            "recommendation": "Classes: 7 (threshold: 6) — too many classes in namespace",
 +            "message": "Classes: 7 (threshold: 6) — too many classes in namespace",
-@@ -52,2 +51,1 @@
+@@ -53,2 +51,1 @@
 -            "message": "God Class detected (4/4 criteria): high WMC (4 >= 4), high LCOM (2 >= 1), low TCC (0.33 < 0.90), large size (27 >= 10 LOC)",
 -            "recommendation": "Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.",
 +            "message": "Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.",
-@@ -65,2 +63,1 @@
+@@ -66,2 +63,1 @@
 -            "message": "Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces",
 -            "recommendation": "Classes: 7 (threshold: 6) — too many classes in namespace",
 +            "message": "Classes: 7 (threshold: 6) — too many classes in namespace",
-@@ -78,2 +75,1 @@
+@@ -79,2 +75,1 @@
 -            "message": "NOC (Number of Children) is 3, exceeds threshold of 2. Consider using interfaces instead of inheritance",
 -            "recommendation": "NOC: 3 (threshold: 2) — too many direct subclasses",
 +            "message": "NOC: 3 (threshold: 2) — too many direct subclasses",
-@@ -91,2 +87,1 @@
+@@ -92,2 +87,1 @@
 -            "message": "Property count is 4, exceeds threshold of 4. Consider splitting the class or using composition",
 -            "recommendation": "Properties: 4 (threshold: 4) — too many properties",
 +            "message": "Properties: 4 (threshold: 4) — too many properties",
-@@ -104,2 +99,1 @@
+@@ -105,2 +99,1 @@
 -            "message": "DIT (Depth of Inheritance) is 3, exceeds threshold of 3. Prefer composition over deep inheritance",
 -            "recommendation": "DIT: 3 (threshold: 3) — deep inheritance, fragile hierarchy",
 +            "message": "DIT: 3 (threshold: 3) — deep inheritance, fragile hierarchy",
-@@ -117,2 +111,1 @@
+@@ -118,2 +111,1 @@
 -            "message": "Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces",
 -            "recommendation": "Classes: 3 (threshold: 2) — too many classes in namespace",
 +            "message": "Classes: 3 (threshold: 2) — too many classes in namespace",
-@@ -130,2 +123,1 @@
+@@ -131,2 +123,1 @@
 -            "message": "Data Class detected: only 0% of the public interface is behavior (WOC, threshold 50%) and complexity is low (WMC=8, threshold 10). Consider encapsulating behavior or using a DTO pattern",
 -            "recommendation": "Add behavior methods that operate on the data, or confirm this is intentionally a DTO.",
 +            "message": "Add behavior methods that operate on the data, or confirm this is intentionally a DTO.",
-@@ -143,2 +135,1 @@
+@@ -144,2 +135,1 @@
 -            "message": "Parameter type coverage is 0.0% (minimum: 50.0%). Add type declarations to method parameters",
 -            "recommendation": "Parameter type coverage: 0.0% (threshold: 50.0%) — missing type declarations",
 +            "message": "Parameter type coverage: 0.0% (threshold: 50.0%) — missing type declarations",
-@@ -156,2 +147,1 @@
+@@ -157,2 +147,1 @@
 -            "message": "Return type coverage is 0.0% (minimum: 50.0%). Add return type declarations to methods",
 -            "recommendation": "Return type coverage: 0.0% (threshold: 50.0%) — missing type declarations",
 +            "message": "Return type coverage: 0.0% (threshold: 50.0%) — missing type declarations",

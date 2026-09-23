@@ -1,10 +1,12 @@
 --- candidate
 +++ reference (mapped)
-@@ -39,2 +39,1 @@
+@@ -20,1 +20,0 @@
+-    "outOfScope": null,
+@@ -40,2 +39,1 @@
 -            "message": "Cyclomatic complexity is 6, exceeds threshold of 5. Consider extracting methods or simplifying conditions",
 -            "recommendation": "Cyclomatic complexity: 6 (threshold: 5) — high CCN with low cognitive complexity (5) suggests mechanical branching (switch/match). Lower refactoring priority.",
 +            "message": "Cyclomatic complexity: 6 (threshold: 5) — high CCN with low cognitive complexity (5) suggests mechanical branching (switch/match). Lower refactoring priority.",
-@@ -52,2 +51,1 @@
+@@ -53,2 +51,1 @@
 -            "message": "Cyclomatic complexity is 3, exceeds threshold of 2. Consider extracting methods or simplifying conditions",
 -            "recommendation": "Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.",
 +            "message": "Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.",

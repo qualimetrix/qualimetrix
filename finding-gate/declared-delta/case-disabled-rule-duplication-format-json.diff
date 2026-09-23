@@ -1,6 +1,8 @@
 --- candidate
 +++ reference (mapped)
-@@ -39,2 +39,1 @@
+@@ -20,1 +20,0 @@
+-    "outOfScope": null,
+@@ -40,2 +39,1 @@
 -            "message": "goto statement detected - avoid using goto",
 -            "recommendation": "Replace goto with structured control flow (loops, early returns).",
 +            "message": "Replace goto with structured control flow (loops, early returns).",
