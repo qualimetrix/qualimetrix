@@ -41,8 +41,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  *   whatever the unanswered layers answer. Sixth exit, for the readers that
  *   conclude something from which layer loses the class.
  *
- * All seven lookups share a single cache keyed by
- * {@see SymbolPath::toCanonical()}: both outputs of the walk are computed once
+ * Every lookup shares a single cache keyed by
+ * {@see SymbolPath::toCanonical()}: every output of the walk is computed once
  * and stored together, and {@see resolveLayer()} reads the first entry off the
  * match list. A class queried by every method therefore walks the criteria at
  * most once. The cache is the

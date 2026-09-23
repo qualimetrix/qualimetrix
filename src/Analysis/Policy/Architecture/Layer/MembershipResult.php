@@ -42,8 +42,10 @@ use InvalidArgumentException;
  * as a two-valued reader would. The distinctions exist because each is
  * otherwise indistinguishable from the outside, and each answers a question
  * someone asks: `architecture.unmatched-exclude` asks "did this clause ever
- * cause the difference", and `architecture.coverage-gap` and
- * `debug:layer-assignment` ask what the run could not decide.
+ * cause the difference"; `architecture.coverage-gap`,
+ * `architecture.doubted-assignment` and `debug:layer-assignment` ask what the
+ * run could not decide; `architecture.unreachable-layer` and
+ * `architecture.potential-shadow` ask which matches the run established.
  */
 final readonly class MembershipResult
 {
