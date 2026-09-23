@@ -923,7 +923,7 @@ bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
 }
 ```
 
-- `meta` is the same block `check --format=json` opens with: the tool's `version`, `package`, the run's `timestamp`, and the documentation addresses `docs` and `llmsTxt` (see [Documentation addresses in every JSON document](output-formats.md#documentation-addresses)).
+- `meta` is the same block `check --format=json` opens with: the tool's `version`, `package`, the run's `timestamp`, and the documentation addresses `docs` and `llmsTxt` (see [Documentation addresses in JSON reports](output-formats.md#documentation-addresses)).
 - `assigned` is `null` when no layer matched (empty `shadowed` follows).
 - `shadowed` lists every other matching layer in declaration order — each entry would have won the assignment had it been declared before `assigned`.
 - `hasLayers` distinguishes "no layers configured" (`false`) from "layers configured but none matched this class" (`true` with `assigned: null`).

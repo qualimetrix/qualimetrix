@@ -116,6 +116,8 @@ final class TestFilesAreExecutedTest extends TestCase
             . '::itChecksEveryGeneratedProjectionWithoutWriting',
         'Qualimetrix\Governance\GeneratedArtifactFreshness\SuppressionSnapshotFreshnessTest'
             . '::itMatchesAFreshSelfAnalysisOfSrc',
+        'Qualimetrix\Governance\GeneratedArtifactFreshness\HtmlBundleFreshnessTest'
+            . '::itMatchesAFreshBuildOfHtmlReportSrc',
     ];
 
     /** @var array<string, list<string>> */

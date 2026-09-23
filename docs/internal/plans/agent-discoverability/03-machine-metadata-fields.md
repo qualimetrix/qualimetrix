@@ -7,17 +7,20 @@ that control runs inside `composer check:code`. A format change without its
 documentation page is red. This was the strongest finding against the first
 version of this plan.
 
-## One package for the seven channels
+## One package for the eight channels
 
-Five of the seven — `json`, `suppressed`, `directives`, `baseline:rename-channels`
+Five of the eight — `json`, `suppressed`, `directives`, `baseline:rename-channels`
 and `debug:layer-assignment` — publish the same four facts in a `meta` object and
 read every one of them from `ProductIdentity::identity()`, `timestamp` merged in
 by the caller. `metrics` and `sarif` take only `docs` and `llmsTxt` from it:
 `metrics` keeps its own `version` (the export-format version) and `toolVersion`
 rather than being overwritten by the tool's, and `sarif` has no `package` field
-at all. Split across executors these keys acquire seven spellings — `llmsTxt`,
-`llms_txt`, `llms`, `docsUrl` — and the divergence is invisible until a consumer
-hits it. One executor, one spelling.
+at all. `graph:export --format=json` also takes only `docs` and `llmsTxt`,
+appended to the `meta` block its envelope already carried (`version`, `package`,
+`timestamp`), the same treatment `metrics` gets for its own `version`. Split
+across executors these keys acquire seven spellings — `llmsTxt`, `llms_txt`,
+`llms`, `docsUrl` — and the divergence is invisible until a consumer hits it.
+One executor, one spelling.
 
 `identity()`'s `package` is `qmx` — the name every JSON document already
 publishes in its `meta`, not the Composer package `qualimetrix/qualimetrix`.
@@ -32,14 +35,19 @@ style (`worstNamespaces`, `toolVersion`).
 | `metrics`                                                          | existing root fields | same role; no nesting introduced          |
 | `sarif`                                                            | `tool.driver`        | see below                                 |
 | `directives`, `baseline:rename-channels`, `debug:layer-assignment` | **new** `meta`       | no metadata today                         |
+| `graph:export --format=json`                                       | existing `meta`      | extends `version`, `package`, `timestamp` |
 
 The three new blocks carry the canonical identity plus their own `timestamp`,
 matching `json`'s shape, so an agent parsing any JSON this tool emits finds the
 same block in the same place.
 
-`graph:export --format=json` is **not** in this list and is not an oversight: its
-stdout is the graph document a consumer feeds to another tool, so it has no
-envelope to extend. The overview records it as excluded for that reason.
+`graph:export --format=json` was first excluded here on the theory that its
+stdout is the graph document a consumer feeds to another tool and therefore has
+no envelope to extend. That theory was false: `JsonGraphExporter::export()`
+opens its document with a `meta` block (`version`, `package`, `timestamp`) the
+same shape `json` has, and `docs`/`llmsTxt` slot in exactly as they do for
+`metrics`. Only `graph:export`'s DOT output has no envelope; the overview's
+exclusion table now names only that case.
 
 ## SARIF: the constant has two roles
 
@@ -67,9 +75,11 @@ the no-presentation fallback and the tool-level field change.
 
 ## DoD
 
-- All seven channels carry `docs` and `llmsTxt`, spelled identically; the five
+- All eight channels carry `docs` and `llmsTxt`, spelled identically; the five
   `meta`-object channels also carry `version` and `package` (`qmx`), all four
-  read from `ProductIdentity::identity()`.
+  read from `ProductIdentity::identity()`. `graph:export` keeps its own
+  pre-existing `version` (the graph format) and `package` literal, the same
+  treatment `metrics` gives its own `version`.
 - The SARIF document validates against the `$schema` it declares.
 - No real channel's `helpUri` changed; `SarifRuleDescriptorCoverageTest` green.
 - `metrics` gains no field colliding with its existing `version` (the export
@@ -77,7 +87,9 @@ the no-presentation fallback and the tool-level field change.
 - EN and RU `output-formats` pages updated; `OutputFormatSchemaConsistencyTest`
   green in both directions. That control sweeps the structured formats it names
   — `json`, `metrics`, `sarif`, `gitlab`, `suppressed` — so it covers four of the
-  seven channels here and **not** the three command JSON shapes. Their pages are
+  eight channels here and **not** the four channels outside `check`'s own
+  formats (`directives`, `baseline:rename-channels`, `debug:layer-assignment`,
+  `graph:export`). Their pages are
   updated because the documentation should be right, not because a control
   forces it; nothing will go red if they are missed, which is exactly why they
   are named in this DoD.

@@ -165,7 +165,7 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 
 **Ключи верхнего уровня:** `meta`, `summary`, `coverage`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, плюс `violationGroups`, когда передан `--group-by` — без него ключа нет вовсе, это не пустой объект.
 
-`meta` называет инструмент, записавший документ: `version`, `package`, `timestamp` и два адреса документации — `docs`, сайт документации, и `llmsTxt`, индекс для ИИ-агентов. Оба адреса есть в каждом JSON-документе Qualimetrix; см. [Адреса документации в каждом JSON-документе](#documentation-addresses).
+`meta` называет инструмент, записавший документ: `version`, `package`, `timestamp` и два адреса документации — `docs`, сайт документации, и `llmsTxt`, индекс для ИИ-агентов. Оба адреса есть в каждом JSON-отчёте Qualimetrix; см. [Адреса документации в JSON-отчётах](#documentation-addresses).
 
 <!-- llms:skip-begin -->
 **Пример вывода:**
@@ -885,9 +885,9 @@ bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
 
 ---
 
-## Адреса документации в каждом JSON-документе {#documentation-addresses}
+## Адреса документации в JSON-отчётах {#documentation-addresses}
 
-Каждый JSON-документ, который пишет Qualimetrix, называет, где лежит
+Каждый JSON-отчёт, который пишет Qualimetrix, называет, где лежит
 документация, чтобы скрипт или ИИ-агент, у которого есть только вывод, нашёл
 остальное: `docs` — сайт документации, `llmsTxt` — индекс для ИИ-агентов.
 
@@ -900,15 +900,19 @@ bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
 | `directives --format=json`               | `meta.docs`, `meta.llmsTxt`                                                            |
 | `baseline:rename-channels --format=json` | `meta.docs`, `meta.llmsTxt`                                                            |
 | `debug:layer-assignment --format=json`   | `meta.docs`, `meta.llmsTxt`                                                            |
+| `graph:export --format=json`             | `meta.docs`, `meta.llmsTxt`, рядом со своим `meta.version` (формат графа)              |
 
 Три команды вне `check` начинают документ с того же объекта `meta`, что и
 `json`, — `version`, `package`, `timestamp`, `docs`, `llmsTxt` — перед своими
-собственными ключами.
+собственными ключами. `graph:export --format=json` дополняет тот же блок
+`meta`, который уже был в его конверте, сохраняя свой `version` (формат графа,
+а не версию инструмента) — так же, как `metrics` сохраняет свой.
 
 Адреса есть не в каждом JSON-выводе. `gitlab` — голый массив, в нём нет объекта
-для них; `graph:export --format=json` пишет сам документ графа, который
-потребитель передаёт другому инструменту; а отказ — это всегда ровно
-`{"error": ..., "exit_code": ...}`.
+для них; у DOT-вывода `graph:export` нет конверта вовсе; отказ — это всегда
+ровно `{"error": ..., "exit_code": ...}`; а baseline-файл, который пишут
+`baseline:generate|update|cleanup`, — это версионированный входной артефакт,
+который инструмент читает обратно, со своей схемой, а не отчёт.
 
 ## Покрытие анализа во всех форматах
 

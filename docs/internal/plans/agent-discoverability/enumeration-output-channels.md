@@ -258,16 +258,23 @@ either way, so this table's verdict is not command-specific.
 
 ## §6 — HTML report (`html-report/` + `src/Reporting/Formatter/Html/`)
 
-| Element | Source | Rendered by | Pointer fits? | What rebuilding it requires |
-| --- | --- | --- | --- | --- |
-| `#report-footer` | `html-report/report.html:38` (empty `<footer>` shell) | `html-report/src/main.js:824-833` — `footer.textContent = \`Generated ${formatted} \| Qualimetrix ${project.qmxVersion}\`` | **Yes** | Edit `main.js`, then `composer build:js` (or `cd html-report && npm run build`) to regenerate `html-report/dist/report.min.js`, which `HtmlFormatter::format()` reads verbatim and inlines via the `__APP_JS__` placeholder — a PHP-only change would not touch the shipped report at all |
-| `#node-summary` / detail sidebar | `html-report/report.html:30` | Populated per-node by JS during interaction, not a static "about" area | **No** (wrong slot) | N/A — this is per-selection data, not a place for a constant, run-independent string |
-| Coverage-incomplete banner | `HtmlFormatter::format()`, PHP-side `str_replace('<body>', '<body>' . $banner, ...)` | PHP, not JS — the one part of the HTML report actually assembled server-side | **No** (wrong slot; conditional, not "almost every output") | Only appears when `!$report->coverage->isComplete()`, i.e. exactly the opposite of "almost any output" |
+| Element                          | Source                                                                               | Rendered by                                                                                                                                                                                  | Pointer fits?                                               | What rebuilding it requires                                                                                                                                                                                                                                                               |
+| -------------------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `#report-footer`                 | `html-report/report.html:38` (empty `<footer>` shell)                                | `html-report/src/main.js:823-841` — `renderFooter()`, which sets the generated-date/version line and, when `project.docs`/`project.llmsTxt` are present, appends the two documentation links | **Yes**                                                     | Edit `main.js`, then `composer build:js` (or `cd html-report && npm run build`) to regenerate `html-report/dist/report.min.js`, which `HtmlFormatter::format()` reads verbatim and inlines via the `__APP_JS__` placeholder — a PHP-only change would not touch the shipped report at all |
+| `#node-summary` / detail sidebar | `html-report/report.html:30`                                                         | Populated per-node by JS during interaction, not a static "about" area                                                                                                                       | **No** (wrong slot)                                         | N/A — this is per-selection data, not a place for a constant, run-independent string                                                                                                                                                                                                      |
+| Coverage-incomplete banner       | `HtmlFormatter::format()`, PHP-side `str_replace('<body>', '<body>' . $banner, ...)` | PHP, not JS — the one part of the HTML report actually assembled server-side                                                                                                                 | **No** (wrong slot; conditional, not "almost every output") | Only appears when `!$report->coverage->isComplete()`, i.e. exactly the opposite of "almost any output"                                                                                                                                                                                    |
 
-No JS test in `html-report/tests/` currently asserts footer text (confirmed
-by `grep -rln "report-footer\|footer" html-report/tests/`, zero matches), so
-there is no existing test contract for the exact wording — but that also
-means no regression guard would catch an accidental change to it either.
+This enumeration predates the stage-04 package that closed this gap. As
+measured after that package landed: `html-report/tests/main.test.js` now
+asserts `renderFooter()`'s output against a fake DOM (`describe('renderFooter'
+...)`, five cases) and, separately, that `init()` still calls
+`renderFooter(DATA.project)` (an AST-structural check, since driving `init()`
+live needs a DOM environment this suite does not have). Neither exercises the
+*shipped* `html-report/dist/report.min.js` `HtmlFormatter` actually inlines —
+that is `scripts/check-html-bundle-freshness.php`'s job
+(`governance/GeneratedArtifactFreshness/HtmlBundleFreshnessTest.php`,
+`composer html-bundle:check`), which rebuilds the bundle and fails if it
+disagrees with the committed one, byte for byte.
 
 ## Assumptions made
 

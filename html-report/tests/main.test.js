@@ -1,4 +1,9 @@
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { parseAst } from 'rollup/parseAst';
+import { walk } from 'estree-walker';
 
 import { renderFooter } from '../src/main.js';
 
@@ -99,5 +104,55 @@ describe('renderFooter', () => {
     globalThis.document.getElementById = () => null;
 
     expect(() => renderFooter(PROJECT)).not.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// init() -> renderFooter(DATA.project) wiring
+// ---------------------------------------------------------------------------
+//
+// renderFooter() itself is exercised above against a fake DOM; that proves the
+// function renders correctly, not that init() still calls it. Driving init()
+// live would need a real report-data payload, D3 and a DOM environment this
+// suite does not have (see the file header above) — the cheapest thing that
+// can still fail when a future edit drops or rewires the call site is a
+// structural check over init()'s own AST: a `renderFooter(DATA.project)` call
+// expression, directly in init()'s body. `rollup` and `estree-walker` are
+// already devDependencies (rollup builds the bundle; estree-walker is one of
+// rollup's own dependencies), so this adds no new package.
+
+describe('init() calls renderFooter(DATA.project)', () => {
+  it('carries a renderFooter(DATA.project) call in its own body', () => {
+    const mainJsPath = fileURLToPath(new URL('../src/main.js', import.meta.url));
+    const source = readFileSync(mainJsPath, 'utf8');
+    const ast = parseAst(source);
+
+    const initFunction = ast.body
+      .map((node) => (node.type === 'ExportNamedDeclaration' ? node.declaration : node))
+      .find((node) => node?.type === 'FunctionDeclaration' && node.id?.name === 'init');
+
+    expect(initFunction, 'src/main.js must export a top-level function init()').toBeDefined();
+
+    let found = false;
+
+    walk(initFunction.body, {
+      enter(node) {
+        if (
+          node.type === 'CallExpression'
+          && node.callee.type === 'Identifier'
+          && node.callee.name === 'renderFooter'
+          && node.arguments.length === 1
+          && node.arguments[0].type === 'MemberExpression'
+          && node.arguments[0].object.type === 'Identifier'
+          && node.arguments[0].object.name === 'DATA'
+          && node.arguments[0].property.type === 'Identifier'
+          && node.arguments[0].property.name === 'project'
+        ) {
+          found = true;
+        }
+      },
+    });
+
+    expect(found, 'init() must call renderFooter(DATA.project)').toBe(true);
   });
 });

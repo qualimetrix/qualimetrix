@@ -52,10 +52,11 @@ writes the first one, and the first assertion over that element at all.
   file, `finding-gate/declared-delta.tsv` and its diffs, `CHANGELOG.md`.
 - Adding a test file changes the test inventories, which are byte-compared;
   regenerate rather than predict. `DistributedPackage/HtmlReportShipsOnlyWhatItReadsTest`
-  carries a re-derived count of the files under `html-report/` (34 at its last two
-  measurements) and its docblock says to re-derive it, so a new test file there
-  moves it. That coupling is expressed as a number, which is why a sweep by path
-  and name cannot find it.
+  carries a re-derived count of the files under `html-report/` (30, measured
+  by `git ls-files html-report | wc -l` after this stage landed) and its
+  docblock says to re-derive it, so a new test file there moves it. That
+  coupling is expressed as a number, which is why a sweep by path and name
+  cannot find it.
 - The gate declaration covers whatever the gate reports, not a forecast.
 
 ## Test plan

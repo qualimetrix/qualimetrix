@@ -116,14 +116,16 @@ remove a link it cannot identify rather than deleting someone else's hook.
 
 ### Changed
 
-- Every JSON document Qualimetrix writes now names the documentation site
+- Every JSON report Qualimetrix writes now names the documentation site
   (`docs`) and the index written for AI agents (`llmsTxt`): in `meta` for
   `--format=json` and `--format=suppressed`, at the top level of
   `--format=metrics` beside its existing fields, and in
   `runs[].tool.driver.properties.llmsTxt` for `--format=sarif`. The JSON output
   of `directives`, `baseline:rename-channels` and `debug:layer-assignment` now
   opens with the same `meta` object as `--format=json` (`version`, `package`,
-  `timestamp`, `docs`, `llmsTxt`). Existing keys keep their values.
+  `timestamp`, `docs`, `llmsTxt`), and `graph:export --format=json` extends the
+  `meta` block its envelope already had with the same two addresses. Existing
+  keys keep their values.
 - Every human-readable output channel now points to the documentation: the
   `summary`, `text`, and `health` tails, the free-text refusal on stderr, the
   header of bare `qmx`/`qmx list`, the `Help:` section of every command, the

@@ -441,6 +441,7 @@ Available tests:
  - Qualimetrix\Governance\DistributedPackage\ScratchTreeRefusesWhatItCannotRemoveTest::itRefusesAPathItCannotCreate
  - Qualimetrix\Governance\DistributedPackage\ScratchTreeRefusesWhatItCannotRemoveTest::itReturnsAPathThatIsAlreadyResolved
  - Qualimetrix\Governance\DocumentationCensus\DocumentationAddressSingleSourceTest::itSpellsTheDocumentationHostOnlyInProductIdentity
+ - Qualimetrix\Governance\DocumentationCensus\DocumentationAddressSingleSourceTest::itWalksANonEmptyPopulationForEveryRoot
  - Qualimetrix\Governance\DocumentationCensus\LlmsIndexRegisteredSurfaceTest::itNamesEveryConfigurationRootKey
  - Qualimetrix\Governance\DocumentationCensus\LlmsIndexRegisteredSurfaceTest::itNamesEveryPresetFormatAndDirective
  - Qualimetrix\Governance\DocumentationCensus\LlmsIndexRegisteredSurfaceTest::itNamesEveryRegisteredCommand
@@ -481,6 +482,7 @@ Available tests:
  - Qualimetrix\Governance\FormatOptionKeys\OutputFormatSchemaConsistencyTest::itRejectsDocumentationOnlySchemaDrift
  - Qualimetrix\Governance\FormatOptionKeys\OutputFormatSchemaConsistencyTest::itRejectsProductOnlySchemaDrift
  - Qualimetrix\Governance\FrameworkClassification\FrameworkClassificationSiteCountTest::itPinsTheNumberOfClassificationSitesTheUniverseMirrors
+ - Qualimetrix\Governance\GeneratedArtifactFreshness\HtmlBundleFreshnessTest::itMatchesAFreshBuildOfHtmlReportSrc
  - Qualimetrix\Governance\GeneratedArtifactFreshness\SuppressionSnapshotFreshnessTest::itMatchesAFreshSelfAnalysisOfSrc
  - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itDefinesEveryDefaultAtClassNamespaceAndProjectLevel
  - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itExpectedKeys
@@ -8554,6 +8556,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itUsesShortLabels
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itUsesShortLabelsInClusterMode
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itAggregatesEdges
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itCarriesTheDocumentationAddresses
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itExportsValidJson
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itFiltersEdgesWhenNodesAreFiltered
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itFiltersExcludeNamespaces
@@ -8905,6 +8908,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itProducesEmptyFileWhenAttachingLocationNone
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itSkipsFileFindingDuringPartition
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itSkipsUnknownNodePathsOnAttach
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itCarriesTheFooterElementTheFooterScriptLooksUp
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itEmbedsCssInline
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itEmbedsHintsData
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itEmbedsJsInline

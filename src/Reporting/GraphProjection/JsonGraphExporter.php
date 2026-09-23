@@ -6,6 +6,7 @@ namespace Qualimetrix\Reporting\GraphProjection;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\ProductIdentity;
 
 /**
  * Exports dependency graphs to JSON format.
@@ -91,11 +92,18 @@ final class JsonGraphExporter
 
         usort($edges, static fn(array $a, array $b): int => ($a['from'] <=> $b['from']) !== 0 ? ($a['from'] <=> $b['from']) : ($a['to'] <=> $b['to']));
 
+        $identity = ProductIdentity::identity();
+
         $result = [
             'meta' => [
                 'version' => '1.0.0',
                 'package' => 'qmx',
                 'timestamp' => date('c'),
+                // Only the two keys this envelope does not already carry: its
+                // own `version` is the graph format version, the same
+                // treatment MetricsJsonFormatter gives its own `version`.
+                'docs' => $identity['docs'],
+                'llmsTxt' => $identity['llmsTxt'],
             ],
             'statistics' => [
                 'nodeCount' => \count($nodes),

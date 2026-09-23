@@ -1999,6 +1999,7 @@ Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Reporting\Formatter\Sa
 Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Reporting\Formatter\Summary\HintRenderer	Reporting	src/Reporting/Formatter/Summary/HintRenderer.php	ast-name
 Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Reporting\Formatter\Suppressed\SuppressedFormatter	Reporting	src/Reporting/Formatter/Suppressed/SuppressedFormatter.php	ast-name
 Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Reporting\Formatter\TextFormatter	Reporting	src/Reporting/Formatter/TextFormatter.php	ast-name
+Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Reporting\GraphProjection\JsonGraphExporter	Reporting.GraphProjection	src/Reporting/GraphProjection/JsonGraphExporter.php	ast-name
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule	Analysis.Evidence.ComputedMetrics	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	ast-name
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator	Analysis.Evidence.ComputedMetrics	src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricEvaluator.php	ast-name
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	Qualimetrix\Analysis\Evidence\Measurement\Aggregation\CallableToClassAggregator	Analysis.Evidence.Measurement	src/Analysis/Evidence/Measurement/Aggregation/CallableToClassAggregator.php	ast-name

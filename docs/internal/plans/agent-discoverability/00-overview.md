@@ -98,11 +98,12 @@ the tails of `baseline:generate|update|cleanup|explain`, the text branch of
 `hook:install|uninstall|status`, the free-text refusal on stderr, and the HTML
 report footer.
 
-**Carries structured fields (7):** `json` and `suppressed` extend their existing
+**Carries structured fields (8):** `json` and `suppressed` extend their existing
 `meta`; `metrics` extends its root fields, which play the same role; `sarif`
 repoints the tool-level `informationUri` and puts `llmsTxt` in a `properties`
-bag; and `directives`, `baseline:rename-channels` and `debug:layer-assignment`
-gain a `meta` object, having none today.
+bag; `directives`, `baseline:rename-channels` and `debug:layer-assignment`
+gain a `meta` object, having none today; and `graph:export --format=json`
+extends the `meta` block its envelope already had.
 
 **Carries the short form:** the `Help:` section of every command. Five commands
 have none today and get one.
@@ -121,18 +122,19 @@ the guard asserts over, not about which channels carry the pointer.
 
 **Excluded, with cause:**
 
-| Channel                                                                    | Why not                                                                                    |
-| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `checkstyle`                                                               | Fixed XML schema, no field for free text outside a violation                               |
-| `gitlab`                                                                   | Payload is a bare JSON array, no wrapper object                                            |
-| `github`                                                                   | Command stream with no header or footer; any line renders as an annotation                 |
-| `graph:export` stdout                                                      | The output *is* the artifact (DOT or JSON)                                                 |
-| `--version`                                                                | Unix convention: name and version only. `getHelp()` reaches the header without touching it |
-| `text-verbose`                                                             | Deprecated. It delegates to `text` and inherits whatever `text` prints                     |
-| JSON refusal envelope                                                      | `{error, exit_code}` is deliberately closed at two keys                                    |
-| HTML `#node-summary`, coverage banner                                      | Per-selection and conditional                                                              |
-| `Infrastructure\Profiler\Export\JsonExporter`, `...\ChromeTracingExporter` | Like `graph:export`, the output *is* the artifact (a profiling trace), not a report        |
-| `Infrastructure\Logging\FileLogger` JSON lines                             | A log stream, not a report                                                                 |
+| Channel                                                                    | Why not                                                                                        |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `checkstyle`                                                               | Fixed XML schema, no field for free text outside a violation                                   |
+| `gitlab`                                                                   | Payload is a bare JSON array, no wrapper object                                                |
+| `github`                                                                   | Command stream with no header or footer; any line renders as an annotation                     |
+| `graph:export` stdout (DOT)                                                | The output *is* the artifact, a DOT graph with no envelope to extend                           |
+| `--version`                                                                | Unix convention: name and version only. `getHelp()` reaches the header without touching it     |
+| `text-verbose`                                                             | Deprecated. It delegates to `text` and inherits whatever `text` prints                         |
+| JSON refusal envelope                                                      | `{error, exit_code}` is deliberately closed at two keys                                        |
+| HTML `#node-summary`, coverage banner                                      | Per-selection and conditional                                                                  |
+| `Infrastructure\Profiler\Export\JsonExporter`, `...\ChromeTracingExporter` | The output *is* the artifact (a profiling trace), not a report                                 |
+| `Infrastructure\Logging\FileLogger` JSON lines                             | A log stream, not a report                                                                     |
+| `Analysis\Policy\Baseline\BaselineDocumentLayout` (the baseline file)      | A versioned input artifact (format v13) the tool reads back, with its own schema; not a report |
 
 ## Stage map
 

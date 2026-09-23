@@ -927,7 +927,7 @@ bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
 }
 ```
 
-- `meta` — тот же блок, с которого начинается `check --format=json`: `version` и `package` инструмента, `timestamp` прогона и адреса документации `docs` и `llmsTxt` (см. [Адреса документации в каждом JSON-документе](output-formats.md#documentation-addresses)).
+- `meta` — тот же блок, с которого начинается `check --format=json`: `version` и `package` инструмента, `timestamp` прогона и адреса документации `docs` и `llmsTxt` (см. [Адреса документации в JSON-отчётах](output-formats.md#documentation-addresses)).
 - `assigned` — `null`, если ни один слой не совпал (в этом случае `shadowed` пуст).
 - `shadowed` перечисляет все остальные совпавшие слои в порядке объявления — каждый из них получил бы класс, будь он объявлен раньше `assigned`.
 - `hasLayers` различает «слои не объявлены» (`false`) и «слои объявлены, но ни один не совпал с этим классом» (`true` при `assigned: null`).

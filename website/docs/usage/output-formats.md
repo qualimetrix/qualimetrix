@@ -165,7 +165,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
 
 **Top-level keys:** `meta`, `summary`, `coverage`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, plus `violationGroups` when `--group-by` is passed — without it, the key is absent entirely, not an empty object.
 
-`meta` identifies the tool that wrote the document: `version`, `package`, `timestamp`, and two documentation addresses — `docs`, the documentation site, and `llmsTxt`, the index written for AI agents. Every JSON document Qualimetrix emits carries the same two addresses; see [Documentation addresses in every JSON document](#documentation-addresses).
+`meta` identifies the tool that wrote the document: `version`, `package`, `timestamp`, and two documentation addresses — `docs`, the documentation site, and `llmsTxt`, the index written for AI agents. Every JSON report Qualimetrix emits carries the same two addresses; see [Documentation addresses in JSON reports](#documentation-addresses).
 
 <!-- llms:skip-begin -->
 **Example output:**
@@ -884,9 +884,9 @@ bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
 
 ---
 
-## Documentation addresses in every JSON document {#documentation-addresses}
+## Documentation addresses in JSON reports {#documentation-addresses}
 
-Each JSON document Qualimetrix writes names where its documentation lives, so a
+Each JSON report Qualimetrix writes names where its documentation lives, so a
 script or an AI agent that has only the output can find the rest: `docs` is the
 documentation site and `llmsTxt` is the index written for AI agents.
 
@@ -899,15 +899,19 @@ documentation site and `llmsTxt` is the index written for AI agents.
 | `directives --format=json`               | `meta.docs`, `meta.llmsTxt`                                                         |
 | `baseline:rename-channels --format=json` | `meta.docs`, `meta.llmsTxt`                                                         |
 | `debug:layer-assignment --format=json`   | `meta.docs`, `meta.llmsTxt`                                                         |
+| `graph:export --format=json`             | `meta.docs`, `meta.llmsTxt`, beside its own `meta.version` (the graph format)       |
 
 The three commands outside `check` open their document with the same `meta`
 object `json` does — `version`, `package`, `timestamp`, `docs`, `llmsTxt` — ahead
-of the keys that are their own.
+of the keys that are their own. `graph:export --format=json` extends the same
+`meta` block its envelope already carried, keeping its own `version` (the graph
+format, not the tool's) the way `metrics` keeps its own.
 
 Not every JSON output carries the addresses. `gitlab` is a bare array with no
-object to hold them; `graph:export --format=json` writes the graph document a
-consumer feeds to another tool; and a refusal is always exactly
-`{"error": ..., "exit_code": ...}`.
+object to hold them; `graph:export`'s DOT output has no envelope at all; a
+refusal is always exactly `{"error": ..., "exit_code": ...}`; and the baseline
+file written by `baseline:generate|update|cleanup` is a versioned input
+artifact the tool reads back, with its own schema, not a report.
 
 ## Analysis coverage in every format
 
