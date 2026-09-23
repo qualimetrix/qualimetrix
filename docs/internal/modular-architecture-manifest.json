@@ -14896,6 +14896,10 @@
         },
         {
           "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder"
+        },
+        {
+          "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Json\\JsonFormatter"
         },
         {

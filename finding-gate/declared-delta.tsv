@@ -1,6 +1,7 @@
 surface	file	reason
 case:annotations|explain:file:src/Directives.php	declared-delta/case-annotations-explain-file-src-Directives-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:annotations|format:health	declared-delta/case-annotations-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:annotations|format:html	declared-delta/case-annotations-format-html.diff	check now carries the docs and llmsTxt addresses in the html report data project metadata, for the footer
 case:annotations|format:json	declared-delta/case-annotations-format-json.diff	check now publishes the docs and llmsTxt addresses in the json format meta block
 case:annotations|format:metrics	declared-delta/case-annotations-format-metrics.diff	check now publishes the docs and llmsTxt addresses among the metrics format root fields
 case:annotations|format:sarif	declared-delta/case-annotations-format-sarif.diff	check now points tool.driver.informationUri at the documentation site and publishes llmsTxt in driver properties
@@ -14,6 +15,7 @@ case:applied-threshold|explain:declaration:callable:Corpus\AppliedThreshold\Clas
 case:applied-threshold|explain:declaration:callable:Corpus\AppliedThreshold\Neighbour::classify@src/Neighbour.php	declared-delta/case-applied-threshold-explain-declaration-callable-Corpus-AppliedThreshold-Neighbour-classify-src-Neighbour-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:applied-threshold|explain:declaration:callable:Corpus\AppliedThreshold\Retuned::classify@src/Retuned.php	declared-delta/case-applied-threshold-explain-declaration-callable-Corpus-AppliedThreshold-Retuned-classify-src-Retuned-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:applied-threshold|format:health	declared-delta/case-applied-threshold-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:applied-threshold|format:html	declared-delta/case-applied-threshold-format-html.diff	check now carries the docs and llmsTxt addresses in the html report data project metadata, for the footer
 case:applied-threshold|format:json	declared-delta/case-applied-threshold-format-json.diff	check now publishes the docs and llmsTxt addresses in the json format meta block
 case:applied-threshold|format:metrics	declared-delta/case-applied-threshold-format-metrics.diff	check now publishes the docs and llmsTxt addresses among the metrics format root fields
 case:applied-threshold|format:sarif	declared-delta/case-applied-threshold-format-sarif.diff	check now points tool.driver.informationUri at the documentation site and publishes llmsTxt in driver properties
@@ -25,6 +27,7 @@ case:applied-threshold|show-suppressed	declared-delta/case-applied-threshold-sho
 case:complexity|explain:declaration:callable:Corpus\Complexity\Router::route@src/Router.php	declared-delta/case-complexity-explain-declaration-callable-Corpus-Complexity-Router-route-src-Router-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:complexity|explain:declaration:class:Corpus\Complexity\Router@src/Router.php	declared-delta/case-complexity-explain-declaration-class-Corpus-Complexity-Router-src-Router-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:complexity|format:health	declared-delta/case-complexity-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:complexity|format:html	declared-delta/case-complexity-format-html.diff	check now carries the docs and llmsTxt addresses in the html report data project metadata, for the footer
 case:complexity|format:json	declared-delta/case-complexity-format-json.diff	check now publishes the docs and llmsTxt addresses in the json format meta block
 case:complexity|format:metrics	declared-delta/case-complexity-format-metrics.diff	check now publishes the docs and llmsTxt addresses among the metrics format root fields
 case:complexity|format:sarif	declared-delta/case-complexity-format-sarif.diff	check now points tool.driver.informationUri at the documentation site and publishes llmsTxt in driver properties
@@ -36,6 +39,7 @@ case:complexity|show-suppressed	declared-delta/case-complexity-show-suppressed.d
 case:coupling|explain:declaration:class:Corpus\Coupling\Service\CacheService@src/Service/CacheService.php	declared-delta/case-coupling-explain-declaration-class-Corpus-Coupling-Service-CacheService-src-Service-CacheService-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:coupling|explain:declaration:class:Corpus\Coupling\Service\ReportService@src/Service/ReportService.php	declared-delta/case-coupling-explain-declaration-class-Corpus-Coupling-Service-ReportService-src-Service-ReportService-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:coupling|format:health	declared-delta/case-coupling-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:coupling|format:html	declared-delta/case-coupling-format-html.diff	check now carries the docs and llmsTxt addresses in the html report data project metadata, for the footer
 case:coupling|format:json	declared-delta/case-coupling-format-json.diff	check now publishes the docs and llmsTxt addresses in the json format meta block
 case:coupling|format:metrics	declared-delta/case-coupling-format-metrics.diff	check now publishes the docs and llmsTxt addresses among the metrics format root fields
 case:coupling|format:sarif	declared-delta/case-coupling-format-sarif.diff	check now points tool.driver.informationUri at the documentation site and publishes llmsTxt in driver properties
@@ -46,6 +50,7 @@ case:coupling|format:text-verbose	declared-delta/case-coupling-format-text-verbo
 case:coupling|show-suppressed	declared-delta/case-coupling-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
 case:cycle|explain:project:	declared-delta/case-cycle-explain-project.diff	baseline:explain now appends the documentation pointer line to its output
 case:cycle|format:health	declared-delta/case-cycle-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:cycle|format:html	declared-delta/case-cycle-format-html.diff	check now carries the docs and llmsTxt addresses in the html report data project metadata, for the footer
 case:cycle|format:json	declared-delta/case-cycle-format-json.diff	check now publishes the docs and llmsTxt addresses in the json format meta block
 case:cycle|format:metrics	declared-delta/case-cycle-format-metrics.diff	check now publishes the docs and llmsTxt addresses among the metrics format root fields
 case:cycle|format:sarif	declared-delta/case-cycle-format-sarif.diff	check now points tool.driver.informationUri at the documentation site and publishes llmsTxt in driver properties
@@ -57,6 +62,7 @@ case:cycle|show-suppressed	declared-delta/case-cycle-show-suppressed.diff	check 
 case:design|explain:declaration:class:Corpus\Design\Model\Order@src/Model/Order.php	declared-delta/case-design-explain-declaration-class-Corpus-Design-Model-Order-src-Model-Order-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:design|explain:declaration:class:Corpus\Design\Model\Untyped@src/Model/Untyped.php	declared-delta/case-design-explain-declaration-class-Corpus-Design-Model-Untyped-src-Model-Untyped-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:design|format:health	declared-delta/case-design-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:design|format:html	declared-delta/case-design-format-html.diff	check now carries the docs and llmsTxt addresses in the html report data project metadata, for the footer
 case:design|format:json	declared-delta/case-design-format-json.diff	check now publishes the docs and llmsTxt addresses in the json format meta block
 case:design|format:metrics	declared-delta/case-design-format-metrics.diff	check now publishes the docs and llmsTxt addresses among the metrics format root fields
 case:design|format:sarif	declared-delta/case-design-format-sarif.diff	check now points tool.driver.informationUri at the documentation site and publishes llmsTxt in driver properties
@@ -67,6 +73,7 @@ case:design|format:text-verbose	declared-delta/case-design-format-text-verbose.d
 case:design|show-suppressed	declared-delta/case-design-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
 case:disabled-rule-duplication|explain:declaration:callable:Corpus\DisabledRuleDuplication\Statements::run@src/Statements.php	declared-delta/case-disabled-rule-duplication-explain-declaration-callable-Corpus-DisabledRuleDuplication-Statements-run-src-Statements-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:disabled-rule-duplication|format:health	declared-delta/case-disabled-rule-duplication-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:disabled-rule-duplication|format:html	declared-delta/case-disabled-rule-duplication-format-html.diff	check now carries the docs and llmsTxt addresses in the html report data project metadata, for the footer
 case:disabled-rule-duplication|format:json	declared-delta/case-disabled-rule-duplication-format-json.diff	check now publishes the docs and llmsTxt addresses in the json format meta block
 case:disabled-rule-duplication|format:metrics	declared-delta/case-disabled-rule-duplication-format-metrics.diff	check now publishes the docs and llmsTxt addresses among the metrics format root fields
 case:disabled-rule-duplication|format:sarif	declared-delta/case-disabled-rule-duplication-format-sarif.diff	check now points tool.driver.informationUri at the documentation site and publishes llmsTxt in driver properties
@@ -77,6 +84,7 @@ case:disabled-rule-duplication|format:text-verbose	declared-delta/case-disabled-
 case:disabled-rule-duplication|show-suppressed	declared-delta/case-disabled-rule-duplication-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
 case:disabled-rule|explain:declaration:callable:Corpus\DisabledRule\Statements::run@src/Statements.php	declared-delta/case-disabled-rule-explain-declaration-callable-Corpus-DisabledRule-Statements-run-src-Statements-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:disabled-rule|format:health	declared-delta/case-disabled-rule-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:disabled-rule|format:html	declared-delta/case-disabled-rule-format-html.diff	check now carries the docs and llmsTxt addresses in the html report data project metadata, for the footer
 case:disabled-rule|format:json	declared-delta/case-disabled-rule-format-json.diff	check now publishes the docs and llmsTxt addresses in the json format meta block
 case:disabled-rule|format:metrics	declared-delta/case-disabled-rule-format-metrics.diff	check now publishes the docs and llmsTxt addresses among the metrics format root fields
 case:disabled-rule|format:sarif	declared-delta/case-disabled-rule-format-sarif.diff	check now points tool.driver.informationUri at the documentation site and publishes llmsTxt in driver properties
@@ -87,6 +95,7 @@ case:disabled-rule|format:text-verbose	declared-delta/case-disabled-rule-format-
 case:disabled-rule|show-suppressed	declared-delta/case-disabled-rule-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
 case:discovery|explain:project:	declared-delta/case-discovery-explain-project.diff	baseline:explain now appends the documentation pointer line to its output
 case:discovery|format:health	declared-delta/case-discovery-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:discovery|format:html	declared-delta/case-discovery-format-html.diff	check now carries the docs and llmsTxt addresses in the html report data project metadata, for the footer
 case:discovery|format:json	declared-delta/case-discovery-format-json.diff	check now publishes the docs and llmsTxt addresses in the json format meta block
 case:discovery|format:metrics	declared-delta/case-discovery-format-metrics.diff	check now publishes the docs and llmsTxt addresses among the metrics format root fields
 case:discovery|format:sarif	declared-delta/case-discovery-format-sarif.diff	check now points tool.driver.informationUri at the documentation site and publishes llmsTxt in driver properties
@@ -98,6 +107,7 @@ case:discovery|show-suppressed	declared-delta/case-discovery-show-suppressed.dif
 case:duplicate-declaration|explain:declaration:class:Corpus\DuplicateDeclaration\Shim@src/ShimNative.php	declared-delta/case-duplicate-declaration-explain-declaration-class-Corpus-DuplicateDeclaration-Shim-src-ShimNative-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:duplicate-declaration|explain:declaration:class:Corpus\DuplicateDeclaration\Shim@src/ShimPolyfill.php	declared-delta/case-duplicate-declaration-explain-declaration-class-Corpus-DuplicateDeclaration-Shim-src-ShimPolyfill-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:duplicate-declaration|format:health	declared-delta/case-duplicate-declaration-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:duplicate-declaration|format:html	declared-delta/case-duplicate-declaration-format-html.diff	check now carries the docs and llmsTxt addresses in the html report data project metadata, for the footer
 case:duplicate-declaration|format:json	declared-delta/case-duplicate-declaration-format-json.diff	check now publishes the docs and llmsTxt addresses in the json format meta block
 case:duplicate-declaration|format:metrics	declared-delta/case-duplicate-declaration-format-metrics.diff	check now publishes the docs and llmsTxt addresses among the metrics format root fields
 case:duplicate-declaration|format:sarif	declared-delta/case-duplicate-declaration-format-sarif.diff	check now points tool.driver.informationUri at the documentation site and publishes llmsTxt in driver properties
@@ -108,6 +118,7 @@ case:duplicate-declaration|format:text-verbose	declared-delta/case-duplicate-dec
 case:duplicate-declaration|show-suppressed	declared-delta/case-duplicate-declaration-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
 case:duplication|explain:project:	declared-delta/case-duplication-explain-project.diff	baseline:explain now appends the documentation pointer line to its output
 case:duplication|format:health	declared-delta/case-duplication-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:duplication|format:html	declared-delta/case-duplication-format-html.diff	check now carries the docs and llmsTxt addresses in the html report data project metadata, for the footer
 case:duplication|format:json	declared-delta/case-duplication-format-json.diff	check now publishes the docs and llmsTxt addresses in the json format meta block
 case:duplication|format:metrics	declared-delta/case-duplication-format-metrics.diff	check now publishes the docs and llmsTxt addresses among the metrics format root fields
 case:duplication|format:sarif	declared-delta/case-duplication-format-sarif.diff	check now points tool.driver.informationUri at the documentation site and publishes llmsTxt in driver properties
@@ -118,6 +129,7 @@ case:duplication|format:text-verbose	declared-delta/case-duplication-format-text
 case:duplication|show-suppressed	declared-delta/case-duplication-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
 case:excluded-path|explain:declaration:callable:Corpus\ExcludedPath\Reported::run@src/Reported.php	declared-delta/case-excluded-path-explain-declaration-callable-Corpus-ExcludedPath-Reported-run-src-Reported-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:excluded-path|format:health	declared-delta/case-excluded-path-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:excluded-path|format:html	declared-delta/case-excluded-path-format-html.diff	check now carries the docs and llmsTxt addresses in the html report data project metadata, for the footer
 case:excluded-path|format:json	declared-delta/case-excluded-path-format-json.diff	check now publishes the docs and llmsTxt addresses in the json format meta block
 case:excluded-path|format:metrics	declared-delta/case-excluded-path-format-metrics.diff	check now publishes the docs and llmsTxt addresses among the metrics format root fields
 case:excluded-path|format:sarif	declared-delta/case-excluded-path-format-sarif.diff	check now points tool.driver.informationUri at the documentation site and publishes llmsTxt in driver properties
@@ -128,6 +140,7 @@ case:excluded-path|format:text-verbose	declared-delta/case-excluded-path-format-
 case:excluded-path|show-suppressed	declared-delta/case-excluded-path-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
 case:external-parent|explain:declaration:class:Corpus\ExternalParent\LocalWidget@src/LocalWidget.php	declared-delta/case-external-parent-explain-declaration-class-Corpus-ExternalParent-LocalWidget-src-LocalWidget-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:external-parent|format:health	declared-delta/case-external-parent-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:external-parent|format:html	declared-delta/case-external-parent-format-html.diff	check now carries the docs and llmsTxt addresses in the html report data project metadata, for the footer
 case:external-parent|format:json	declared-delta/case-external-parent-format-json.diff	check now publishes the docs and llmsTxt addresses in the json format meta block
 case:external-parent|format:metrics	declared-delta/case-external-parent-format-metrics.diff	check now publishes the docs and llmsTxt addresses among the metrics format root fields
 case:external-parent|format:sarif	declared-delta/case-external-parent-format-sarif.diff	check now points tool.driver.informationUri at the documentation site and publishes llmsTxt in driver properties
@@ -139,6 +152,7 @@ case:external-parent|show-suppressed	declared-delta/case-external-parent-show-su
 case:health|explain:declaration:class:Corpus\Health\Engine\Pipeline@src/Engine/Pipeline.php	declared-delta/case-health-explain-declaration-class-Corpus-Health-Engine-Pipeline-src-Engine-Pipeline-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:health|explain:ns:Corpus\Health\Engine	declared-delta/case-health-explain-ns-Corpus-Health-Engine.diff	baseline:explain now appends the documentation pointer line to its output
 case:health|format:health	declared-delta/case-health-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:health|format:html	declared-delta/case-health-format-html.diff	check now carries the docs and llmsTxt addresses in the html report data project metadata, for the footer
 case:health|format:json	declared-delta/case-health-format-json.diff	check now publishes the docs and llmsTxt addresses in the json format meta block
 case:health|format:metrics	declared-delta/case-health-format-metrics.diff	check now publishes the docs and llmsTxt addresses among the metrics format root fields
 case:health|format:sarif	declared-delta/case-health-format-sarif.diff	check now points tool.driver.informationUri at the documentation site and publishes llmsTxt in driver properties
@@ -149,6 +163,7 @@ case:health|format:text-verbose	declared-delta/case-health-format-text-verbose.d
 case:health|show-suppressed	declared-delta/case-health-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
 case:layered-threshold|explain:declaration:callable:Corpus\LayeredThreshold\Tangled::score@src/Tangled.php	declared-delta/case-layered-threshold-explain-declaration-callable-Corpus-LayeredThreshold-Tangled-score-src-Tangled-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:layered-threshold|format:health	declared-delta/case-layered-threshold-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:layered-threshold|format:html	declared-delta/case-layered-threshold-format-html.diff	check now carries the docs and llmsTxt addresses in the html report data project metadata, for the footer
 case:layered-threshold|format:json	declared-delta/case-layered-threshold-format-json.diff	check now publishes the docs and llmsTxt addresses in the json format meta block
 case:layered-threshold|format:metrics	declared-delta/case-layered-threshold-format-metrics.diff	check now publishes the docs and llmsTxt addresses among the metrics format root fields
 case:layered-threshold|format:sarif	declared-delta/case-layered-threshold-format-sarif.diff	check now points tool.driver.informationUri at the documentation site and publishes llmsTxt in driver properties
@@ -160,6 +175,7 @@ case:layered-threshold|show-suppressed	declared-delta/case-layered-threshold-sho
 case:layers|explain:declaration:class:Corpus\Layers\Repository\UserRepository@src/Repository/UserRepository.php	declared-delta/case-layers-explain-declaration-class-Corpus-Layers-Repository-UserRepository-src-Repository-UserRepository-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:layers|explain:project:	declared-delta/case-layers-explain-project.diff	baseline:explain now appends the documentation pointer line to its output
 case:layers|format:health	declared-delta/case-layers-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:layers|format:html	declared-delta/case-layers-format-html.diff	check now carries the docs and llmsTxt addresses in the html report data project metadata, for the footer
 case:layers|format:json	declared-delta/case-layers-format-json.diff	check now publishes the docs and llmsTxt addresses in the json format meta block
 case:layers|format:metrics	declared-delta/case-layers-format-metrics.diff	check now publishes the docs and llmsTxt addresses among the metrics format root fields
 case:layers|format:sarif	declared-delta/case-layers-format-sarif.diff	check now points tool.driver.informationUri at the documentation site and publishes llmsTxt in driver properties
@@ -170,6 +186,7 @@ case:layers|format:text-verbose	declared-delta/case-layers-format-text-verbose.d
 case:layers|show-suppressed	declared-delta/case-layers-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
 case:only-rules|explain:declaration:callable:Corpus\OnlyRules\Statements::run@src/Statements.php	declared-delta/case-only-rules-explain-declaration-callable-Corpus-OnlyRules-Statements-run-src-Statements-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:only-rules|format:health	declared-delta/case-only-rules-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:only-rules|format:html	declared-delta/case-only-rules-format-html.diff	check now carries the docs and llmsTxt addresses in the html report data project metadata, for the footer
 case:only-rules|format:json	declared-delta/case-only-rules-format-json.diff	check now publishes the docs and llmsTxt addresses in the json format meta block
 case:only-rules|format:metrics	declared-delta/case-only-rules-format-metrics.diff	check now publishes the docs and llmsTxt addresses among the metrics format root fields
 case:only-rules|format:sarif	declared-delta/case-only-rules-format-sarif.diff	check now points tool.driver.informationUri at the documentation site and publishes llmsTxt in driver properties
@@ -180,6 +197,7 @@ case:only-rules|format:text-verbose	declared-delta/case-only-rules-format-text-v
 case:only-rules|show-suppressed	declared-delta/case-only-rules-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
 case:rule-exclusion-ledger|explain:declaration:callable:Corpus\RuleExclusionLedger\Reported::run@src/Reported.php	declared-delta/case-rule-exclusion-ledger-explain-declaration-callable-Corpus-RuleExclusionLedger-Reported-run-src-Reported-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:rule-exclusion-ledger|format:health	declared-delta/case-rule-exclusion-ledger-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:rule-exclusion-ledger|format:html	declared-delta/case-rule-exclusion-ledger-format-html.diff	check now carries the docs and llmsTxt addresses in the html report data project metadata, for the footer
 case:rule-exclusion-ledger|format:json	declared-delta/case-rule-exclusion-ledger-format-json.diff	check now publishes the docs and llmsTxt addresses in the json format meta block
 case:rule-exclusion-ledger|format:metrics	declared-delta/case-rule-exclusion-ledger-format-metrics.diff	check now publishes the docs and llmsTxt addresses among the metrics format root fields
 case:rule-exclusion-ledger|format:sarif	declared-delta/case-rule-exclusion-ledger-format-sarif.diff	check now points tool.driver.informationUri at the documentation site and publishes llmsTxt in driver properties
@@ -191,6 +209,7 @@ case:rule-exclusion-ledger|show-suppressed	declared-delta/case-rule-exclusion-le
 case:security|explain:declaration:callable:Corpus\Security\Login::authenticate@src/Login.php	declared-delta/case-security-explain-declaration-callable-Corpus-Security-Login-authenticate-src-Login-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:security|explain:declaration:callable:Corpus\Security\Output::greet@src/Output.php	declared-delta/case-security-explain-declaration-callable-Corpus-Security-Output-greet-src-Output-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:security|format:health	declared-delta/case-security-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:security|format:html	declared-delta/case-security-format-html.diff	check now carries the docs and llmsTxt addresses in the html report data project metadata, for the footer
 case:security|format:json	declared-delta/case-security-format-json.diff	check now publishes the docs and llmsTxt addresses in the json format meta block
 case:security|format:metrics	declared-delta/case-security-format-metrics.diff	check now publishes the docs and llmsTxt addresses among the metrics format root fields
 case:security|format:sarif	declared-delta/case-security-format-sarif.diff	check now points tool.driver.informationUri at the documentation site and publishes llmsTxt in driver properties
@@ -202,6 +221,7 @@ case:security|show-suppressed	declared-delta/case-security-show-suppressed.diff	
 case:smells|explain:declaration:callable:Corpus\Smells\Smells::report@src/Smells.php	declared-delta/case-smells-explain-declaration-callable-Corpus-Smells-Smells-report-src-Smells-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:smells|explain:declaration:class:Corpus\Smells\Injection@src/Injection.php	declared-delta/case-smells-explain-declaration-class-Corpus-Smells-Injection-src-Injection-php.diff	baseline:explain now appends the documentation pointer line to its output
 case:smells|format:health	declared-delta/case-smells-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:smells|format:html	declared-delta/case-smells-format-html.diff	check now carries the docs and llmsTxt addresses in the html report data project metadata, for the footer
 case:smells|format:json	declared-delta/case-smells-format-json.diff	check now publishes the docs and llmsTxt addresses in the json format meta block
 case:smells|format:metrics	declared-delta/case-smells-format-metrics.diff	check now publishes the docs and llmsTxt addresses among the metrics format root fields
 case:smells|format:sarif	declared-delta/case-smells-format-sarif.diff	check now points tool.driver.informationUri at the documentation site and publishes llmsTxt in driver properties
@@ -212,6 +232,7 @@ case:smells|format:text-verbose	declared-delta/case-smells-format-text-verbose.d
 case:smells|show-suppressed	declared-delta/case-smells-show-suppressed.diff	check --show-suppressed now appends the documentation pointer line to its stderr report
 case:suppression|explain:project:	declared-delta/case-suppression-explain-project.diff	baseline:explain now appends the documentation pointer line to its output
 case:suppression|format:health	declared-delta/case-suppression-format-health.diff	check now appends the documentation pointer line to the health format's tail
+case:suppression|format:html	declared-delta/case-suppression-format-html.diff	check now carries the docs and llmsTxt addresses in the html report data project metadata, for the footer
 case:suppression|format:json	declared-delta/case-suppression-format-json.diff	check now publishes the docs and llmsTxt addresses in the json format meta block
 case:suppression|format:metrics	declared-delta/case-suppression-format-metrics.diff	check now publishes the docs and llmsTxt addresses among the metrics format root fields
 case:suppression|format:sarif	declared-delta/case-suppression-format-sarif.diff	check now points tool.driver.informationUri at the documentation site and publishes llmsTxt in driver properties

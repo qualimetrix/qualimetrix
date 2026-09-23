@@ -2493,6 +2493,7 @@ Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder	Reporting	Qualimetrix\Analy
 Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder	Reporting	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract
 Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder	Reporting	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder	Reporting	Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator	Analysis.Evidence.Prioritization	contract
+Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder	Reporting	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder	Reporting	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder	Reporting	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
 Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder	Reporting	Qualimetrix\Core\Version	Core.Neutral	contract

@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder;
@@ -560,6 +561,22 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertArrayHasKey('generatedAt', $project);
         self::assertArrayHasKey('qmxVersion', $project);
         self::assertTrue($project['scopedReporting']);
+    }
+
+    #[Test]
+    public function itIncludesTheDocumentationAddressesInProjectMetadata(): void
+    {
+        $report = ReportBuilder::create()
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $result = $this->builder->build($report, new FormatterContext());
+
+        $project = $result['project'];
+        self::assertSame(ProductIdentity::docsUrl(), $project['docs']);
+        self::assertSame(ProductIdentity::llmsTxtUrl(), $project['llmsTxt']);
     }
 
     #[Test]

@@ -17,13 +17,12 @@ require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
  *
  * The report is an npm project living at the repository root, outside the
  * PSR-4 tree, so without the `export-ignore` rows beside it the dist package
- * would carry every one of its entries: the eight vitest files, the sources
+ * would carry every one of its entries: the nine vitest files, the sources
  * they test, the lockfile, the vite config and the directory's own README. A
- * consumer needs none of them and cannot tell they arrived. Measured at 34 on
- * the tree that closed the relocation, also 34 on the tree that closed stage
- * 01 (the relocation both deleted a file and added a README, so the total
- * held); the count moves whenever the viewer gains or loses a file, so
- * re-derive it rather than quoting this line.
+ * consumer needs none of them and cannot tell they arrived. Measured at 30 on
+ * the tree that added the footer test, by counting every tracked file under
+ * the tree outside `node_modules`; the count moves whenever the viewer gains
+ * or loses a file, so re-derive it rather than quoting this line.
  *
  * The expectation is not a list. It is read out of
  * {@see \Qualimetrix\Reporting\Formatter\Html\HtmlFormatter}, which names the

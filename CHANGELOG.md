@@ -132,6 +132,8 @@ remove a link it cannot identify rather than deleting someone else's hook.
   agent or reader who lands on any one of these now has a way to reach the
   full documentation and the agent-facing index without already knowing the
   project.
+- The HTML report's footer now links to the documentation site and the
+  agent-facing index, alongside the existing generated-date and version line.
 - `design.dit` says when it did not follow an inheritance chain to a root. A
   run writes one warning naming how many chains leaving the analysed path
   stopped early and where the walk stopped, so a depth that stopped short is no

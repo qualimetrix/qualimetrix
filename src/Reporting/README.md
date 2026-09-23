@@ -836,6 +836,14 @@ build and test toolchain, outside the PSR-4 autoload root by
 `report.css`, `dist/report.min.js` and `dist/d3.min.js`. See
 [html-report/README.md](../../html-report/README.md) for its structure.
 
+**Project metadata and footer:** `HtmlTreeBuilder` assembles the `project` key
+of the report data (`name`, `generatedAt`, `qmxVersion`, `scopedReporting`,
+plus `docs` and `llmsTxt` from `Core\ProductIdentity`). The browser program's
+footer reads this object and renders `docs` and `llmsTxt` as links beside the
+existing generated-date and version line, so the same values that reach every
+other output channel also reach the HTML report — JavaScript cannot read a PHP
+constant, so this is the only path.
+
 ### JS Build Pipeline
 
 ```bash

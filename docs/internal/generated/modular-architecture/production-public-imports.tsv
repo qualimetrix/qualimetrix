@@ -1991,6 +1991,7 @@ Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Infrastructure\Console
 Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter	Infrastructure.Console	src/Infrastructure/Console/Refusal/RefusalPresenter.php	ast-name
 Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Infrastructure\Console\RuleListingPresenter	Infrastructure.Console	src/Infrastructure/Console/RuleListingPresenter.php	ast-name
 Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter	Reporting	src/Reporting/Formatter/Health/HealthTextFormatter.php	ast-name
+Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder	Reporting	src/Reporting/Formatter/Html/HtmlTreeBuilder.php	ast-name
 Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Reporting\Formatter\Json\JsonFormatter	Reporting	src/Reporting/Formatter/Json/JsonFormatter.php	ast-name
 Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Reporting\Formatter\MetricsJsonFormatter	Reporting	src/Reporting/Formatter/MetricsJsonFormatter.php	ast-name
 Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter	Reporting	src/Reporting/Formatter/Sarif/SarifFormatter.php	ast-name
