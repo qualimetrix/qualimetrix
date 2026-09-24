@@ -10,35 +10,38 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
  * A file an option names for a command to write its artifact to — the
  * `check` report, the profile export, the exported graph.
  *
- * The write turns on one question, whether the target exists, and never on
- * what kind of thing it is. An existing target is opened by the path as
- * written and written in place, as `>` in a shell does, so whatever stands
- * there — a file, a hard link, a file mounted on its own, a device, a named
- * pipe, the file a symbolic link names — stays the same object with the same
- * owner. The price is that a write failing midway leaves that file partly
- * written; nothing promises a reader the old artifact or the new one whole.
- * A name nothing stands at yet is created: a chain of symbolic links is
- * followed to the name it ends at, and the file is written beside that name
- * and renamed onto it, so a failed write leaves no file behind.
+ * The write is `>` in a shell as nearly as PHP allows, and the kernel, not
+ * this class, decides what a path leads to. A target the kernel reaches is
+ * opened by the path as written and written in place, so a file, a hard
+ * link, a file mounted on its own, a device, a named pipe or the file a link
+ * names stays the same object. A name the kernel reaches nothing at is
+ * created by `touch()`, whose open the kernel resolves: a dangling link
+ * creates the file it names, and a link the kernel refuses to follow
+ * (`fs.protected_symlinks`) is refused. Every other PHP open resolves links
+ * itself, beyond that rule's reach. A write that fails midway removes a
+ * file it created and leaves an existing one partly written.
  *
- * The one exception is closed: `/dev/stdout`, `/dev/stderr`, `/dev/fd/N` and
- * `/proc/self/fd/N`, written or reached through a link, are written through
- * the descriptor itself. On Linux PHP opens them by resolving the path, which
- * fails when the descriptor is a pipe and reopens, truncating, the file it is
- * redirected to.
+ * `/dev/stdout`, `/dev/stderr`, `/dev/fd/N` and `/proc/self/fd/N`, spelled
+ * exactly so, are written through the descriptor: PHP on Linux cannot open
+ * a pipe by its path and reopens, truncating, a file the stream is
+ * redirected to. Another spelling of the same stream is opened by its path.
  *
- * The precheck asks what the write needs and nothing else: an existing target
- * that is writable and not a directory, or a new name whose directory can be
- * written, or a descriptor the process holds.
+ * The precheck asks the kernel what it can without writing: not a directory,
+ * a reachable target writable, a new name's directory writable and
+ * searchable, a descriptor held and, where the system publishes it, open for
+ * writing. A link the kernel does not follow to a file is left to the write,
+ * which is the final judge.
  */
 final readonly class ArtifactFile
 {
-    /** More links than this in one chain is a loop, as the kernel's own limit treats it. */
-    private const int MAX_LINKS = 40;
-
-    private const string DESCRIPTOR = '~^(?:/dev/fd|/proc/self/fd)/(\d+)$~';
+    private const string DESCRIPTOR = '~^/(?:dev/fd|proc/self/fd)/(\d+)$~';
 
     private const array STANDARD_STREAMS = ['/dev/stdout' => 1, '/dev/stderr' => 2];
+
+    private const string STREAM_SPELLINGS = '/dev/stdout, /dev/stderr, /dev/fd/N or /proc/self/fd/N';
+
+    /** The access-mode bits of a descriptor's open flags; zero is read-only. */
+    private const int ACCESS_MODE = 0b11;
 
     /**
      * @param string $option the option that named the file, as refusals quote it (`--output`)
@@ -49,64 +52,23 @@ final readonly class ArtifactFile
     ) {}
 
     /**
-     * Refuses, before any work, a target {@see self::write()} cannot write: a
-     * directory or a name ending in `/`, an existing target that cannot be
-     * written, a new name in a directory that does not exist or cannot be
-     * written, or a descriptor the process does not hold. A fast precheck,
-     * not a guarantee — writability can change before the write, which
-     * `write()` refuses on its own.
+     * Refuses, before any work, a target the kernel already says the write
+     * cannot take: a directory or a name ending in `/`, an existing target
+     * that cannot be written, a new name in a directory that does not exist
+     * or cannot be written and searched, or a descriptor the process does not
+     * hold or holds only for reading. A best-effort precheck, not a guarantee:
+     * {@see self::write()} refuses what it could not see.
      */
     public function refuseUnwritable(): void
     {
-        $this->destination();
-    }
-
-    /**
-     * @throws ConfigurationRefusal when the artifact cannot be written whole
-     */
-    public function write(string $content): void
-    {
-        [$destination, $create] = $this->destination();
-
-        if (!$create) {
-            if (@file_put_contents($destination, $content) !== \strlen($content)) {
-                throw $this->refusal(\sprintf('Failed to write the %s file %s', $this->option, $this->path));
-            }
-
-            return;
-        }
-
-        $temporary = $destination . '.tmp.' . getmypid();
-
-        if (@file_put_contents($temporary, $content) !== \strlen($content)) {
-            $this->discard($temporary);
-
-            throw $this->refusal(\sprintf('Failed to write the %s file to temporary file %s', $this->option, $temporary));
-        }
-
-        if (!@rename($temporary, $destination)) {
-            $this->discard($temporary);
-
-            throw $this->refusal(\sprintf('Failed to rename the %s file %s to %s', $this->option, $temporary, $destination));
-        }
-    }
-
-    /**
-     * Where the artifact is written, and whether it is created there.
-     *
-     * @return array{string, bool}
-     */
-    private function destination(): array
-    {
         clearstatcache();
-
-        if (str_ends_with($this->path, '/') || is_dir($this->path)) {
-            throw $this->directory($this->path);
-        }
+        $this->refuseDirectory();
 
         $descriptor = $this->descriptor();
         if ($descriptor !== null) {
-            return [$this->heldStream($descriptor), false];
+            $this->refuseUnwritableDescriptor($descriptor);
+
+            return;
         }
 
         if (file_exists($this->path)) {
@@ -114,17 +76,89 @@ final readonly class ArtifactFile
                 throw $this->refusal(\sprintf('Option %s names "%s", which exists and is not writable.', $this->option, $this->path));
             }
 
-            return [$this->path, false];
+            return;
         }
 
-        return [$this->nameToCreate(), true];
+        if (is_link($this->path)) {
+            return;
+        }
+
+        $directory = \dirname($this->path);
+        if (!is_dir($directory) || !is_writable($directory) || !is_executable($directory)) {
+            throw $this->refusal(\sprintf(
+                'Option %s names "%s", whose directory "%s" does not exist or does not allow creating a file.',
+                $this->option,
+                $this->path,
+                $directory,
+            ));
+        }
     }
 
-    /** The stream of a descriptor this process holds open. */
-    private function heldStream(int $descriptor): string
+    /**
+     * @throws ConfigurationRefusal when the artifact cannot be written whole
+     */
+    public function write(string $content): void
     {
-        $stream = 'php://fd/' . $descriptor;
-        $handle = @fopen($stream, 'w');
+        clearstatcache();
+        $this->refuseDirectory();
+
+        $descriptor = $this->descriptor();
+        if ($descriptor !== null) {
+            $this->put('php://fd/' . $descriptor, $content);
+
+            return;
+        }
+
+        if (file_exists($this->path)) {
+            $this->put($this->path, $content);
+
+            return;
+        }
+
+        [$created, $reason] = self::attempt(fn(): bool => touch($this->path));
+        if (!$created) {
+            throw $this->unopenable('create', $reason);
+        }
+
+        try {
+            $this->put($this->path, $content);
+        } catch (ConfigurationRefusal $refusal) {
+            // Through a link the created file is the link's target, which only the kernel names.
+            if (!is_link($this->path)) {
+                @unlink($this->path);
+            }
+
+            throw $refusal;
+        }
+    }
+
+    private function put(string $stream, string $content): void
+    {
+        [$handle, $reason] = self::attempt(static fn() => fopen($stream, 'w'));
+        if ($handle === false) {
+            throw $this->unopenable('open', $reason);
+        }
+
+        // A descriptor shares non-blocking mode with every copy of it, the one a parent handed over included.
+        stream_set_blocking($handle, true);
+        [$written] = self::attempt(static fn() => fwrite($handle, $content));
+        [$closed] = self::attempt(static fn(): bool => fclose($handle));
+
+        if ($written !== \strlen($content) || !$closed) {
+            throw $this->refusal(\sprintf('Failed to write the %s file %s', $this->option, $this->path));
+        }
+    }
+
+    private function refuseDirectory(): void
+    {
+        if (str_ends_with($this->path, '/') || is_dir($this->path)) {
+            throw $this->refusal(\sprintf('Option %s names "%s", which is a directory. Name a file to write to.', $this->option, $this->path));
+        }
+    }
+
+    private function refuseUnwritableDescriptor(int $descriptor): void
+    {
+        $handle = @fopen('php://fd/' . $descriptor, 'w');
         if ($handle === false) {
             throw $this->refusal(\sprintf(
                 'Option %s names "%s", descriptor %d, which this process does not hold open.',
@@ -135,91 +169,81 @@ final readonly class ArtifactFile
         }
         fclose($handle);
 
-        return $stream;
-    }
-
-    /** The name a new artifact is created at, in a directory that can be written. */
-    private function nameToCreate(): string
-    {
-        $target = $this->linkTarget();
-        if (str_ends_with($target, '/')) {
-            throw $this->directory($target);
-        }
-
-        $directory = \dirname($target);
-        if (!is_dir($directory) || !is_writable($directory)) {
+        $flags = self::openFlags($descriptor);
+        if ($flags !== null && ($flags & self::ACCESS_MODE) === 0) {
             throw $this->refusal(\sprintf(
-                'Option %s names "%s", whose directory "%s" does not exist or is not writable.',
+                'Option %s names "%s", descriptor %d, which this process holds open only for reading.',
                 $this->option,
                 $this->path,
-                $directory,
+                $descriptor,
             ));
         }
-
-        return $target;
     }
 
-    /** The descriptor the path names, written or at any link of its chain. */
+    /** The descriptor one of the supported spellings names, exactly as written. */
     private function descriptor(): ?int
     {
-        $path = $this->path;
-        for ($links = 0; $links <= self::MAX_LINKS; ++$links) {
-            if (isset(self::STANDARD_STREAMS[$path])) {
-                return self::STANDARD_STREAMS[$path];
-            }
-
-            if (preg_match(self::DESCRIPTOR, $path, $match) === 1) {
-                return (int) $match[1];
-            }
-
-            $link = is_link($path) ? readlink($path) : false;
-            if ($link === false) {
-                return null;
-            }
-
-            $path = str_starts_with($link, '/') ? $link : \dirname($path) . '/' . $link;
+        if (isset(self::STANDARD_STREAMS[$this->path])) {
+            return self::STANDARD_STREAMS[$this->path];
         }
 
-        return null;
+        return preg_match(self::DESCRIPTOR, $this->path, $match) === 1 ? (int) $match[1] : null;
     }
 
-    /** The name a chain of symbolic links ends at, which need not exist yet. */
-    private function linkTarget(): string
+    /** A descriptor's open flags where the system publishes them (Linux), or null. */
+    private static function openFlags(int $descriptor): ?int
     {
-        $path = $this->path;
-        for ($links = 0; is_link($path); ++$links) {
-            $link = readlink($path);
-            if ($link === false || $links === self::MAX_LINKS) {
-                throw $this->refusal(\sprintf(
-                    'Option %s names "%s", a symbolic link that does not resolve to a file name.',
-                    $this->option,
-                    $this->path,
-                ));
-            }
-
-            $path = str_starts_with($link, '/') ? $link : \dirname($path) . '/' . $link;
+        $info = @file_get_contents('/proc/self/fdinfo/' . $descriptor);
+        if ($info === false || preg_match('~^flags:\s+([0-7]+)$~m', $info, $match) !== 1) {
+            return null;
         }
 
-        return $path;
+        return (int) octdec($match[1]);
     }
 
-    private function directory(string $name): ConfigurationRefusal
+    /**
+     * Runs a filesystem call and keeps the system's reason for a failure, as
+     * PHP words it in the warning, instead of letting the warning out.
+     *
+     * @template T
+     *
+     * @param callable(): T $operation
+     *
+     * @return array{T, string}
+     */
+    private static function attempt(callable $operation): array
     {
-        return $this->refusal($name === $this->path
-            ? \sprintf('Option %s names "%s", which is a directory. Name a file to write to.', $this->option, $name)
-            : \sprintf(
-                'Option %s names "%s", a symbolic link to the directory name "%s". Name a file to write to.',
-                $this->option,
-                $this->path,
-                $name,
-            ));
-    }
+        $reason = 'unknown reason';
+        set_error_handler(static function (int $level, string $message) use (&$reason): bool {
+            $reason = preg_match('~^.*(?: because |: )(.+)$~s', $message, $match) === 1 ? $match[1] : $message;
 
-    private function discard(string $temporary): void
-    {
-        if (file_exists($temporary) && !is_dir($temporary)) {
-            unlink($temporary);
+            return true;
+        });
+
+        try {
+            $result = $operation();
+        } finally {
+            restore_error_handler();
         }
+
+        return [$result, $reason];
+    }
+
+    /**
+     * Names the supported spellings of a stream, since another spelling of
+     * one fails exactly here — whatever the reason, which the class does not
+     * sort.
+     */
+    private function unopenable(string $verb, string $reason): ConfigurationRefusal
+    {
+        return $this->refusal(\sprintf(
+            'Failed to %s the %s file %s: %s. To write to a stream of this process, name it %s.',
+            $verb,
+            $this->option,
+            $this->path,
+            $reason,
+            self::STREAM_SPELLINGS,
+        ));
     }
 
     private function refusal(string $summary): ConfigurationRefusal

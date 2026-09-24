@@ -100,13 +100,13 @@ final class CheckCommandProfileExportTest extends TestCase
      * two documents: the report stays the only one, and the refusal is a line
      * on stderr with exit code 3.
      *
-     * The failure is planted where no precheck can see it: the temporary file
-     * a new export is written to first is taken by a directory of the same name.
+     * The failure is planted where no precheck can see it: a link that leads
+     * to itself, which only the write's own open learns it cannot follow.
      */
     #[Test]
     public function itKeepsTheReportTheOnlyStdoutDocumentWhenTheExportFailsAfterIt(): void
     {
-        mkdir($this->directory . '/p.json.tmp.' . getmypid());
+        symlink('p.json', $this->directory . '/p.json');
 
         $tester = $this->runCheck(['--profile' => '{dir}/p.json']);
 
