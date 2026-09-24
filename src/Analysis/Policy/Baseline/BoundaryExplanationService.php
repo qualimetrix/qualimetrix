@@ -147,7 +147,11 @@ final readonly class BoundaryExplanationService
         array $configuredThresholds,
         ?array $repositoryRecord,
     ): EffectiveBoundary {
-        $baselineSource = self::baselineSourceFor($identity, $baseline, $measuredFindings);
+        $group = array_values(array_filter(
+            $measuredFindings,
+            static fn(Finding $finding): bool => BaselineIdentity::forFinding($finding)->key() === $identity->key(),
+        ));
+        $baselineSource = self::baselineSourceFor($identity, $baseline, $group);
         if ($baselineSource !== null && $this->ruleCoverage->unmeasured([$identity]) !== []) {
             $baselineSource = $baselineSource->unmeasured();
         }
@@ -161,7 +165,16 @@ final readonly class BoundaryExplanationService
             ? $this->annotationFor($identity->channel, $thresholdOverridesByFile, $subject)
             : null;
 
-        return new EffectiveBoundary($identity, $baselineSource, $configuredThreshold, $annotation);
+        return new EffectiveBoundary(
+            $identity,
+            $baselineSource,
+            $configuredThreshold,
+            $annotation,
+            array_values(array_map(
+                static fn(Finding $finding): string => $finding->location->toString(),
+                array_filter($group, static fn(Finding $finding): bool => !$finding->location->isNone()),
+            )),
+        );
     }
 
     /**
@@ -186,22 +199,15 @@ final readonly class BoundaryExplanationService
     }
 
     /**
-     * @param list<Finding> $measuredFindings
+     * @param list<Finding> $group the measured findings sharing `$identity`
      */
     private static function baselineSourceFor(
         BaselineIdentity $identity,
         ?Baseline $baseline,
-        array $measuredFindings,
+        array $group,
     ): ?EffectiveBoundaryBaselineSource {
         if ($baseline === null) {
             return null;
-        }
-
-        $group = [];
-        foreach ($measuredFindings as $finding) {
-            if (BaselineIdentity::forFinding($finding)->key() === $identity->key()) {
-                $group[] = $finding;
-            }
         }
 
         $entry = $baseline->findByIdentity($identity);

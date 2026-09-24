@@ -28,11 +28,17 @@ final readonly class EffectiveBoundary
      *                                            `null` when it could not be resolved
      * @param ?ThresholdOverride $annotation the `@qmx-threshold` override in scope for this
      *                                       symbol and rule, `null` when none applies
+     * @param list<string> $currentLocations `file:line` of each finding the run reports under
+     *                                       this identity, in report order. Several identities of
+     *                                       one channel and subject differ only in an occurrence
+     *                                       hash — each copy of a duplicate block does — and where
+     *                                       their findings sit is what tells them apart
      */
     public function __construct(
         public BaselineIdentity $identity,
         public ?EffectiveBoundaryBaselineSource $baseline,
         public int|float|null $configuredThreshold,
         public ?ThresholdOverride $annotation,
+        public array $currentLocations = [],
     ) {}
 }

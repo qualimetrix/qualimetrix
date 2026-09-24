@@ -1,0 +1,163 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional;
+
+use FilesystemIterator;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
+use Qualimetrix\Subprocess\ChildProcess;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
+
+require_once \dirname(__DIR__, 5) . '/scripts/subprocess/ChildProcess.php';
+
+/**
+ * A baseline compares each accepted copy with the value that copy reports
+ * now. Comments and blank lines are no tokens, so a copy spanning more lines
+ * is still the same block — and it must not raise the value, and with it the
+ * severity, of copies in files nobody touched.
+ */
+#[CoversClass(CodeDuplicationRule::class)]
+final class DuplicationCopyBaselineProcessTest extends TestCase
+{
+    private string $tmpDir;
+
+    protected function setUp(): void
+    {
+        $this->tmpDir = sys_get_temp_dir() . '/qmx-duplication-copy-baseline-' . bin2hex(random_bytes(6));
+        mkdir($this->tmpDir . '/src', 0o755, true);
+        file_put_contents($this->tmpDir . '/src/Alpha.php', self::copiedClass('Alpha'));
+        file_put_contents($this->tmpDir . '/src/Beta.php', self::copiedClass('Beta'));
+        file_put_contents($this->tmpDir . '/qmx.yaml', "onlyRules: ['duplication.clone']\n");
+    }
+
+    protected function tearDown(): void
+    {
+        $this->removeDirectory($this->tmpDir);
+    }
+
+    #[Test]
+    public function itKeepsTheAcceptedCopiesAcceptedWhenANewCopySpansMoreLines(): void
+    {
+        $generated = $this->qmx('baseline:generate', 'baseline.json', 'src', '--config=qmx.yaml', '--no-progress');
+        self::assertSame(0, $generated['exitCode'], $generated['stderr'] . "\n" . $generated['stdout']);
+
+        file_put_contents(
+            $this->tmpDir . '/src/Gamma.php',
+            str_replace("        \$out = [];\n", "        \$out = [];\n        // one more line, no more tokens\n", self::copiedClass('Gamma')),
+        );
+
+        $checked = $this->qmx('check', 'src', '--config=qmx.yaml', '--baseline=baseline.json', '--format=json', '--no-progress', '--no-cache', '--workers=0');
+        self::assertSame(0, $checked['exitCode'], $checked['stderr'] . "\n" . $checked['stdout']);
+
+        /** @var array{violations: list<array{file: string, severity: string, metricValue: int|float|null, acceptedLevel: mixed}>} $report */
+        $report = json_decode($checked['stdout'], true, flags: \JSON_THROW_ON_ERROR);
+        self::assertCount(1, $report['violations'], $checked['stdout']);
+        [$newCopy] = $report['violations'];
+        self::assertSame('src/Gamma.php', $newCopy['file']);
+        self::assertSame('warning', $newCopy['severity']);
+        self::assertSame(20, $newCopy['metricValue'], 'the new copy spans one line more than the accepted ones');
+        self::assertNull($newCopy['acceptedLevel']);
+    }
+
+    /**
+     * Every copy is a boundary of its own under the one project subject, so
+     * `baseline:explain` prints a section per copy; without the copy's
+     * occurrence and file the sections read the same.
+     */
+    #[Test]
+    public function itTellsTheExplainedCopiesApartByOccurrenceAndFile(): void
+    {
+        $generated = $this->qmx('baseline:generate', 'baseline.json', 'src', '--config=qmx.yaml', '--no-progress');
+        self::assertSame(0, $generated['exitCode'], $generated['stderr'] . "\n" . $generated['stdout']);
+        file_put_contents($this->tmpDir . '/src/Gamma.php', self::copiedClass('Gamma'));
+
+        $explained = $this->qmx('baseline:explain', 'project:', 'src', '--config=qmx.yaml', '--baseline=baseline.json', '--no-progress');
+        self::assertSame(0, $explained['exitCode'], $explained['stderr'] . "\n" . $explained['stdout']);
+
+        preg_match_all('/Occurrence: ([0-9a-f]{16})\n    Reported at: (\S+)\n    baseline: +(.+)\n/', $explained['stdout'], $sections, \PREG_SET_ORDER);
+        $baselineByFile = [];
+        foreach ($sections as [, , $at, $baseline]) {
+            $baselineByFile[$at] = $baseline;
+        }
+        ksort($baselineByFile);
+
+        self::assertSame(
+            ['src/Alpha.php:4' => 'accepted 19; now 19', 'src/Beta.php:4' => 'accepted 19; now 19', 'src/Gamma.php:4' => '(none)'],
+            $baselineByFile,
+            $explained['stdout'],
+        );
+        self::assertCount(3, array_unique(array_column($sections, 1)));
+    }
+
+    /**
+     * @return array{exitCode: int, stdout: string, stderr: string}
+     */
+    private function qmx(string ...$arguments): array
+    {
+        return ChildProcess::run([
+            \PHP_BINARY,
+            '-d',
+            'xdebug.mode=off',
+            \dirname(__DIR__, 5) . '/bin/qmx',
+            ...array_values($arguments),
+        ], $this->tmpDir);
+    }
+
+    private static function copiedClass(string $className): string
+    {
+        return <<<PHP
+            <?php
+
+            final class {$className}
+            {
+                public function run(array \$rows, int \$limit): array
+                {
+                    \$out = [];
+                    foreach (\$rows as \$key => \$row) {
+                        if (\$row['status'] === 'active' && \$row['score'] > \$limit) {
+                            \$out[\$key] = [
+                                'name' => strtoupper(\$row['name']),
+                                'score' => \$row['score'] * 2 + \$limit,
+                                'tags' => array_values(array_filter(\$row['tags'])),
+                            ];
+                        } elseif (\$row['status'] === 'pending') {
+                            \$out[\$key] = null;
+                        }
+                    }
+                    ksort(\$out);
+                    return array_filter(\$out, static fn (\$v) => \$v !== null);
+                }
+            }
+
+            PHP;
+    }
+
+    private function removeDirectory(string $directory): void
+    {
+        if (!is_dir($directory)) {
+            return;
+        }
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
+        );
+
+        foreach ($iterator as $item) {
+            /** @var SplFileInfo $item */
+            if ($item->isDir() && !$item->isLink()) {
+                rmdir($item->getPathname());
+            } else {
+                unlink($item->getPathname());
+            }
+        }
+
+        rmdir($directory);
+    }
+}

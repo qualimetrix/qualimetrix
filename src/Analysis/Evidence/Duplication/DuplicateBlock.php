@@ -10,7 +10,9 @@ use InvalidArgumentException;
  * Represents a group of identical or near-identical code blocks found in multiple locations.
  *
  * Each DuplicateBlock contains 2+ locations where the same code appears.
- * The block is characterized by its size (lines and tokens).
+ * The block is characterized by its size (lines and tokens). Comments and
+ * blank lines are no tokens, so copies of one block can span different
+ * numbers of lines: each copy's own span is its location's line count.
  */
 final readonly class DuplicateBlock
 {
@@ -19,7 +21,7 @@ final readonly class DuplicateBlock
 
     /**
      * @param list<DuplicateLocation> $locations At least 2 locations (sorted deterministically)
-     * @param int $lines Number of lines in the duplicated block
+     * @param int $lines Lines spanned by the block's longest copy — what `min_lines` admits a block by
      * @param int $tokens Number of tokens in the duplicated block
      * @param string $contentHash Full SHA-256 of the normalized matched token sequence and token count
      * @param string|null $hint Short content preview (~80 chars) of the duplicated code

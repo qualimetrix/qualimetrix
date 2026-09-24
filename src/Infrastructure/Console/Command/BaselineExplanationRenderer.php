@@ -56,9 +56,30 @@ final class BaselineExplanationRenderer
                 $output->writeln(\sprintf('    Edge: %s', $boundary->identity->edge->target));
             }
 
+            self::renderOccurrence($boundary, $output);
+
             $output->writeln(\sprintf('    baseline:      %s', self::describeBaseline($boundary->baseline)));
             $output->writeln(\sprintf('    qmx.yaml:      %s', self::describeConfigured($boundary)));
             $output->writeln(\sprintf('    annotation:    %s', self::describeAnnotation($boundary->annotation)));
+        }
+    }
+
+    /**
+     * The occurrence, and where its findings sit now, for an identity that
+     * carries one: sections of one channel and subject then differ in more
+     * than their numbers. A boundary nothing reports now has no location to
+     * print, and its occurrence is the only handle left on it.
+     */
+    private static function renderOccurrence(EffectiveBoundary $boundary, OutputInterface $output): void
+    {
+        if ($boundary->identity->occurrenceKey === null) {
+            return;
+        }
+
+        $output->writeln(\sprintf('    Occurrence: %s', $boundary->identity->occurrenceKey));
+
+        if ($boundary->currentLocations !== []) {
+            $output->writeln(\sprintf('    Reported at: %s', implode(', ', $boundary->currentLocations)));
         }
     }
 

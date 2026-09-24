@@ -32,14 +32,25 @@ copy would carry a fingerprint the target branch already had.
 its own:** the block's content hash, the project-relative path of the file
 holding the copy, and the copy's place among the block's copies in that file,
 counted in line order. The subject stays the project. No line number enters
-the identity, so code added or removed around a copy re-keys nothing.
+the identity, so lines added or removed outside the matched tokens re-key
+nothing.
 
-A new copy is then the only new identity. A baseline reports it as a new
-finding, on the new copy alone, and keeps every copy it accepted accepted; a
-GitLab merge request and a SARIF consumer see one new fingerprint. A deleted
-copy leaves its entry stale, as any repaired finding does. The git scope keeps
-a finding by its location, so a new copy is reported in the file it was
-pasted into.
+The identity holds while the detector finds the same block, and the block is
+defined by all of its copies at once: it is the longest token run they all
+agree on, and the match takes in whatever context the copies share around the
+copied code. A new copy that agrees with the whole block is then the only new
+identity. A baseline reports it as a new finding, on the new copy alone, and
+keeps every copy it accepted accepted; a GitLab merge request and a SARIF
+consumer see one new fingerprint. A deleted copy leaves its entry stale, as
+any repaired finding does. The git scope keeps a finding by its location, so a
+new copy is reported in the file it was pasted into.
+
+**A copy's value is the lines that copy spans**, not the span of the block's
+longest copy. Comments and blank lines are no tokens, so one copy can span
+more lines than another without changing the block. A value shared by every
+copy would let a comment written in one file raise the value of copies in
+files nobody touched, and a baseline would promote those accepted copies to
+Error while the new copy, a new finding, stayed a warning.
 
 A finding names at most ten other copies, in its message and as its related
 locations, and counts the rest. Every copy is reported by a finding of its
@@ -68,6 +79,24 @@ block and names the silenced one.
 - A block of N copies is N findings, where v0.27.0 reported N − 1 pairs, so
   the violation count and the technical debt grow by one finding and one
   remediation time per block — twice the debt for a block of two copies.
+- A copy that agrees with only part of an accepted block, an edit inside one
+  of its copies, or code inserted between a copy and the context its copies
+  share changes the blocks the detector finds. Each copy of a new block is a
+  new finding, in files the change never touched too, and an entry whose
+  block is gone goes stale. `--fail-on=warning` then fails on files outside
+  the change, and a GitLab merge request shows new fingerprints there; the
+  git scope, which keeps a finding by its location, reports only the changed
+  files. Measured: a copy of the first eight lines of a method accepted in
+  two files, ending in a `return` of its own, adds a block over all three
+  copies, so both untouched copies gain a new finding while their accepted
+  one stays accepted; a method inserted between a class's property and the
+  copied method narrows the match in both copies and re-keys the copy in the
+  untouched file.
+- The baseline's ceiling on this channel compares a copy's own line span with
+  the span it accepted. A copy that is reformatted, or given a comment or a
+  blank line, breaches its own entry and no other copy's. A duplicate that
+  grows in every copy changes its tokens and so its identity: it reads as new
+  findings and stale entries, never as a breach.
 - `suppress_paths`, global or per rule, silences only the copies inside its
   paths. The block's other copies are still reported; silencing a block means
   listing every file it has a copy in.
@@ -103,3 +132,6 @@ block and names the silenced one.
   blocks: the old baseline would accept the new copy silently.
 - **A finding per copy with every other copy as a related location.** N²
   related locations; measured above.
+- **The span of the block's longest copy as every copy's value.** A comment
+  or a blank line in one copy raises every copy's value, and a baseline
+  promotes accepted copies in untouched files to Error.

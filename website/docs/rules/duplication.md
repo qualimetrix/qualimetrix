@@ -35,6 +35,8 @@ Minimum block size (configurable):
 | ------------ | ------- | -------------------------------------------------- |
 | `min_lines`  | 5       | Minimum number of lines for a block to be checked  |
 | `min_tokens` | 70      | Minimum number of tokens for a block to be flagged |
+
+Each copy's finding reports the lines **that copy** spans, and its severity follows from that number. Comments and blank lines are not tokens, so the copies of one block can span different numbers of lines: a comment added inside one copy changes that copy's value and no other's. A block is checked when its longest copy spans at least `min_lines` lines.
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
@@ -128,13 +130,21 @@ this ownership change does not alter the rule id, options, algorithm or output.
     that digest, the project-relative path of the file holding the copy, and
     the copy's place among the block's copies in that file, counted in line
     order. The project is the finding subject. No line number enters the
-    identity, so code added or removed around a copy re-keys nothing, and a
-    new copy is the only new identity: a new finding to a baseline, and a new
-    fingerprint to GitLab Code Quality and SARIF consumers, which tell
-    findings apart by it. A copy moved to another file, or every copy in a
-    renamed file, is a new copy and leaves a stale baseline entry behind. A
-    copy pasted above another copy of the same block in the same file takes
-    the lower place, so the copy it displaced is the one reported as new.
+    identity, so lines added or removed outside the matched tokens re-key
+    nothing while the detector finds the same block. The block is the longest
+    token run all of its copies agree on, and the match takes in whatever
+    context the copies share around the copied code, so a block is defined by
+    all of its copies at once. A copy that agrees with only part of the block,
+    an edit inside one copy, or code inserted between a copy and that shared
+    context — a new method above a copied one, for example — changes the
+    blocks the detector finds: each copy of a new block is a new finding, in
+    files the change never touched too, and a new fingerprint to GitLab Code
+    Quality and SARIF consumers, which tell findings apart by it; the baseline
+    entries of a block that is gone go stale. A copy moved to another file,
+    or every copy in a renamed file, is a new copy and leaves a stale baseline
+    entry behind. A copy pasted above another copy of the same block in the
+    same file takes the lower place, so the copy it displaced is the one
+    reported as new.
 
 !!! warning "Inline `@qmx-ignore` cannot suppress this channel"
     Every copy of a block is the same project-level debt, so no inline
@@ -154,7 +164,7 @@ this ownership change does not alter the rule id, options, algorithm or output.
     A duplicate block that lies **entirely** inside a `const` declaration or a static/instance property's array-literal initializer is never reported. Rows of a lookup table (e.g. `'key' => ['a' => ..., 'b' => ...]` repeated with different values) normalize to identical token sequences, but "extract a shared method" is not actionable advice for a data table — repeating the same field shape across rows is the normal, correct form of that table. A block spanning both a data declaration and executable code (or lying entirely in a method body) is still reported. This suppression is unconditional and cannot be turned off.
 
 !!! info "Every copy of a block is a finding of its own"
-    Each copy of a duplicated block is reported by a finding located on that copy, however many copies there are — there is no upper limit on the number of copies. The message states the number of occurrences and names up to ten other copies, followed by `and N more` when there are more; the finding's related locations are the copies its message names. Each copy has an identity of its own, so a new copy of an accepted block is a new finding — reported on the new copy alone, at its own severity, while the copies the baseline accepted stay accepted — and `--report=git:*` reports it in the file it was pasted into. A block of N copies is N findings, each carrying the rule's remediation time. When copies agree over different lengths, each longest agreeing set is reported: two copies that match for 40 lines and a third that matches them only for the first 10 give a finding on each of the two 40-line copies and one on each of the three copies over 10 lines.
+    Each copy of a duplicated block is reported by a finding located on that copy, however many copies there are — there is no upper limit on the number of copies. The message states the number of occurrences and names up to ten other copies, followed by `and N more` when there are more; the finding's related locations are the copies its message names. Each copy has an identity of its own, so a new copy that agrees with the whole of an accepted block is a new finding — reported on the new copy alone, at its own severity, while the copies the baseline accepted stay accepted — and `--report=git:*` reports it in the file it was pasted into. A block of N copies is N findings, each carrying the rule's remediation time. When copies agree over different lengths, each longest agreeing set is reported: two copies that match for 40 lines and a third that matches them only for the first 10 give a finding on each of the two 40-line copies and one on each of the three copies over 10 lines. That is also why a copy agreeing with only part of an accepted block is not new on its own: the shorter block it forms is new on every copy.
 
 !!! info "Copies within one file"
     Two occurrences in the same file that share a line are one repetitive structure matching itself at a shifted position, not two copies, and only the first is kept. Occurrences that merely touch — one ends on the line before the other starts — are two copies and are reported.

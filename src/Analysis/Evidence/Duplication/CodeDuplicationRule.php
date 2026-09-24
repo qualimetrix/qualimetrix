@@ -23,9 +23,10 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  *
  * Generates one finding per copy of a duplicated block, located on that copy
  * and naming the other copies as its related locations. Each copy has an
- * identity of its own — see {@see copyOccurrenceKey()} — so a new copy is a
- * new finding to a baseline, to a fingerprint-matching consumer and to a git
- * scope alike.
+ * identity of its own — see {@see copyOccurrenceKey()} — so a new copy of a
+ * block the detector still finds is a new finding to a baseline, to a
+ * fingerprint-matching consumer and to a git scope alike, and the copies
+ * already there keep theirs.
  */
 final class CodeDuplicationRule extends AbstractRule
 {
@@ -91,18 +92,14 @@ final class CodeDuplicationRule extends AbstractRule
     }
 
     /**
-     * `duplication.clone` reports the duplicated block's line
-     * count (`$block->lines` — see the emission above) as `metricValue`,
-     * judged worse the higher it goes:
-     * {@see CodeDuplicationOptions::getSeverity()}'s `$value >=
-     * $this->error` (line 58) / `$value >= $this->warning` (line 62).
-     * Emission itself is unconditional — every copy of every `DuplicateBlock`
-     * produces a `Finding` regardless of size (`$severity ?? Severity::Warning` at
-     * line 102 is only ever a fallback) — but that does not change the
-     * direction question: the threshold comparison genuinely gates
-     * *severity*, and severity is monotone in `$block->lines`, so `higher`
-     * is a real fact about the code, not an inference from the channel's
-     * unconditional trigger.
+     * `duplication.clone` reports the lines one copy spans as its
+     * `metricValue`, judged worse the higher it goes:
+     * {@see CodeDuplicationOptions::getSeverity()} compares that number with
+     * `warning` and `error`. Emission itself is unconditional — every copy of
+     * every `DuplicateBlock` produces a `Finding` whatever its size, with
+     * `Severity::Warning` as the fallback below `warning` — but the threshold
+     * comparison genuinely gates *severity*, and severity is monotone in the
+     * copy's line span, so `higher` is a real fact about the code.
      *
      * @return array<string, ChannelDeclaration>
      */
@@ -117,13 +114,18 @@ final class CodeDuplicationRule extends AbstractRule
      * The block's copies are turned into locations once and every finding
      * shares them rather than building its own.
      *
+     * A copy's value is the lines that copy spans, not the block's longest
+     * copy: comments and blank lines are no tokens, so one copy can widen
+     * without changing the block, and a value shared by every copy would move
+     * copies in files nobody touched — a baseline would then promote them
+     * past what it accepted.
+     *
      * @return list<Finding>
      */
     private function copyFindings(AnalysisContext $context, DuplicateBlock $block): array
     {
         $projectPath = SymbolPath::forProject();
         $subject = MetricSubject::aggregate($projectPath);
-        $severity = $this->getEffectiveSeverity($context, $this->options, $subject, $block->lines) ?? Severity::Warning;
         $hintPart = $block->hint !== null ? \sprintf(': "%s"', $block->hint) : '';
 
         $locations = array_map(
@@ -135,7 +137,9 @@ final class CodeDuplicationRule extends AbstractRule
         $copiesInFile = [];
 
         foreach ($locations as $index => $location) {
-            $file = $block->locations[$index]->pathString();
+            $copy = $block->locations[$index];
+            $file = $copy->pathString();
+            $lines = $copy->lineCount();
             $copyInFile = $copiesInFile[$file] = ($copiesInFile[$file] ?? -1) + 1;
             $named = self::namedOthers($block->occurrences(), $index);
             $unnamed = $block->occurrences() - 1 - \count($named);
@@ -148,14 +152,14 @@ final class CodeDuplicationRule extends AbstractRule
                 code: $this->getName(),
                 message: \sprintf(
                     'Duplicated code block (%d lines, %d occurrences)%s — also at %s%s',
-                    $block->lines,
+                    $lines,
                     $block->occurrences(),
                     $hintPart,
                     implode(', ', array_map(static fn(int $other): string => $block->locations[$other]->toString(), $named)),
                     $unnamed > 0 ? \sprintf(' and %d more', $unnamed) : '',
                 ),
-                severity: $severity,
-                metricValue: $block->lines,
+                severity: $this->getEffectiveSeverity($context, $this->options, $subject, $lines) ?? Severity::Warning,
+                metricValue: $lines,
                 relatedLocations: array_map(static fn(int $other): Location => $locations[$other], $named),
                 recommendation: 'Extract duplicated code into a shared method or class.',
                 occurrenceKey: self::copyOccurrenceKey($block->contentHash, $file, $copyInFile),
@@ -168,11 +172,21 @@ final class CodeDuplicationRule extends AbstractRule
     /**
      * A copy is the block's content, the file holding the copy and the
      * copy's place among the block's copies in that file, counted in line
-     * order. No line number enters it, so code added or removed around a copy
-     * does not re-key it. A copy moved to another file, or a file renamed, is
-     * a new copy and leaves a stale one behind; a copy pasted above another
-     * in the same file takes the lower place, and the one it displaced reads
-     * as the new copy — the count of new copies stays right.
+     * order. No line number enters it, so lines added or removed outside the
+     * matched tokens re-key nothing while the detector finds the same block.
+     *
+     * The block is the longest token run all of its copies agree on, and the
+     * match takes in whatever context the copies share around the copied
+     * code. A copy that agrees with only part of the block, an edit inside
+     * one copy, or code inserted between a copy and that shared context
+     * changes the blocks the detector finds: each copy of a new block is a
+     * new finding, in untouched files too, and an entry whose block is gone
+     * goes stale.
+     *
+     * A copy moved to another file, or a file renamed, is a new copy and
+     * leaves a stale one behind; a copy pasted above another in the same file
+     * takes the lower place, and the one it displaced reads as the new copy —
+     * the count of new copies stays right.
      */
     private static function copyOccurrenceKey(string $contentHash, string $file, int $copyInFile): OccurrenceKey
     {

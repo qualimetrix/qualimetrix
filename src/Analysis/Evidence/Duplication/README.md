@@ -23,6 +23,7 @@ Duplication/
 ├── ContentHintExtractor.php
 ├── DataDeclarationTagger.php
 ├── DuplicateBlockFinder.php
+├── DuplicateMatchCandidates.php
 ├── DuplicateSearchRequest.php
 ├── HashIndexBuildResult.php
 ├── HashIndexBuilder.php
@@ -82,32 +83,39 @@ completion log through its implementation.
 The module owns test classes at three levels, and the level is decided by what
 the body does rather than by where the class started out.
 
-Seven Unit classes under `tests/Analysis/Evidence/Duplication/Unit/`, all of
+Eight Unit classes under `tests/Analysis/Evidence/Duplication/Unit/`, all of
 them in memory:
 
 - `ContentHintExtractorTest`
 - `DataDeclarationTaggerTest`
 - `DuplicateBlockFinderTest`
+- `DuplicateMatchCandidatesTest`
 - `SaturatingCandidateFilterTest`
 - `TokenNormalizerTest`
 - `DuplicateBlockIdentityTest`
 - `CodeDuplicationRuleTest`
 
-One Integration class under `tests/Analysis/Evidence/Duplication/Integration/`:
-`DuplicationDetectorTest`, which writes real files into a temporary directory
-and runs the detector's whole pipeline over them.
+Two Integration classes under `tests/Analysis/Evidence/Duplication/Integration/`,
+both writing real files into a temporary directory:
+`DuplicationDetectorTest` runs the detector's whole pipeline over them, and
+`DuplicateCopyIdentityTest` runs the detector and the rule before and after an
+edit, pinning which edits keep the block and every copy's identity and which
+re-key untouched copies, and that each copy reports its own line span.
 
-Three Functional classes under `tests/Analysis/Evidence/Duplication/Functional/`:
+Four Functional classes under `tests/Analysis/Evidence/Duplication/Functional/`:
 `DuplicationMemoryLimitProcessTest`, which builds a temporary project and runs
 `bin/qmx` in a real PHP subprocess under a `memory_limit`. It protects the
 bounded-memory candidate index, the report of every copy of a block copied
-around a hundred times under a 128M limit, and the real CLI path, and it is the
-reason the module has a Functional level at all. `DuplicationGitScopeProcessTest`
+around a hundred times under a 128M limit, runs of one repeated statement
+under a 64M limit, and the real CLI path, and it is the reason the module has
+a Functional level at all. `DuplicationGitScopeProcessTest`
 runs `--report=git:staged` over a git repository in which only a new copy is
 staged, and pins that the copy is reported in its own file.
 `DuplicationCopyFingerprintProcessTest` runs `--format=gitlab` and
 `--format=sarif` over two copies and pins that each carries its own
-fingerprint.
+fingerprint. `DuplicationCopyBaselineProcessTest` accepts two copies into a
+baseline, adds a third spanning one line more, and pins that only the new copy
+is reported.
 
 Run the complete owned suite with:
 
@@ -118,13 +126,23 @@ vendor/bin/phpunit --no-coverage tests/Analysis/Evidence/Duplication
 ## Extension registration
 
 `CodeDuplicationRule` emits one finding per copy of each `DuplicateBlock`,
-located on that copy. Each copy has an identity of its own — the content hash,
-the copy's file and its place among the block's copies in that file, never a
-line number — so a new copy is a new finding to a baseline and a new
-fingerprint to GitLab and SARIF (ADR 0085). Each finding names at most ten other copies, in its message
-and as related locations, and counts the rest: the copies' `Location` objects
-are built once per block and shared, and a bound is what keeps a block of N
-copies from carrying N² related locations into SARIF.
+located on that copy, with the lines that copy spans as its value. Each copy
+has an identity of its own — the content hash, the copy's file and its place
+among the block's copies in that file, never a line number — so a new copy of
+a block the detector still finds is a new finding to a baseline and a new
+fingerprint to GitLab and SARIF. A change to what the copies agree on — a
+partial copy, an edit inside one copy, code inserted next to a copy — changes
+the block and re-keys its copies in untouched files too (ADR 0085). Each
+finding names at most ten other copies, in its message and as related
+locations, and counts the rest: the copies' `Location` objects are built once
+per block and shared, and a bound is what keeps a block of N copies from
+carrying N² related locations into SARIF.
+
+`DuplicateBlockFinder` holds each match in `DuplicateMatchCandidates` — its
+length and its copies' packed positions — until the matches whose copies all
+lie inside a longer one are dropped, and builds `DuplicateBlock`s from the
+survivors only: highly repetitive input yields a match at every point where
+copies stop agreeing, and nearly all of them are dropped.
 
 `CodeDuplicationRule` is a `qmx.rule` implementation. Registration is delegated
 to the infrastructure `DuplicationConfigurator`; compiler passes inject its

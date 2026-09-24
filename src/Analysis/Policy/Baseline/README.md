@@ -383,6 +383,16 @@ rather than left for the reader to infer from an absence:
   such a group instead of comparing it. The members that do measure are still
   listed — this is a report, not a re-judgement of acceptance.
 
+**An identity with an occurrence names it, and where its findings sit now.**
+Several identities of one channel and subject can differ only in an
+occurrence hash — every copy of a duplicate block is one under the project
+subject — and their sections would otherwise read the same.
+`EffectiveBoundary::$currentLocations` carries the `file:line` of each current
+finding in the identity's group, and `baseline:explain` prints it beside the
+occurrence. An entry nothing reports any more has no current location: its
+occurrence hash is all the baseline stores, so `baseline:explain`,
+`baseline:cleanup` and the stale-entry list can name no file for it.
+
 ## Entry Identity
 
 An entry is about an **identity**: the symbol, the channel (its own name),

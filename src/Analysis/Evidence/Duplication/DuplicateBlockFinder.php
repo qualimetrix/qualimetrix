@@ -27,6 +27,10 @@ use Qualimetrix\Core\Path\RelativePath;
  * bucket of that preceding window holds the same members one token
  * earlier and yields a block that contains this one.
  *
+ * A match is held in {@see DuplicateMatchCandidates} until every match
+ * whose copies all lie inside a longer one is dropped; only the survivors
+ * become {@see DuplicateBlock}s.
+ *
  * {@see find()} holds the current request/scratch state as instance
  * properties for the duration of one call so the nested helpers below
  * don't have to thread unchanging values through every signature — the
@@ -48,6 +52,8 @@ final class DuplicateBlockFinder
     private DuplicateSearchRequest $request;
     private ContentHintExtractor $hintExtractor;
 
+    private DuplicateMatchCandidates $candidates;
+
     /**
      * @return list<DuplicateBlock>
      */
@@ -57,15 +63,16 @@ final class DuplicateBlockFinder
         $this->hintExtractor = new ContentHintExtractor();
 
         try {
-            $blocks = [];
+            $this->candidates = new DuplicateMatchCandidates();
 
             foreach ($request->hashIndex as $positions) {
-                foreach ($this->evaluateBucket($positions) as $block) {
-                    $blocks[] = $block;
-                }
+                $this->evaluateBucket($positions);
             }
 
-            return $blocks;
+            return array_map(
+                fn(array $match): DuplicateBlock => $this->buildBlock(...$match),
+                $this->candidates->withoutSubsumed($this->span(...)),
+            );
         } finally {
             // Release scratch state — see class docblock for why this
             // matters. Must run even if evaluateBucket() throws: otherwise
@@ -73,30 +80,20 @@ final class DuplicateBlockFinder
             // stay reachable via this long-lived instance for the rest of
             // the process (see the "Measured impact" note in the class
             // docblock).
-            unset($this->request, $this->hintExtractor);
+            unset($this->request, $this->hintExtractor, $this->candidates);
         }
     }
 
     /**
      * @param list<int> $positions
-     *
-     * @return list<DuplicateBlock>
      */
-    private function evaluateBucket(array $positions): array
+    private function evaluateBucket(array $positions): void
     {
-        $blocks = [];
-
         foreach ($this->groupByWindow($positions) as $group) {
-            if (\count($group) < 2 || $this->continuesAnEarlierMatch($group)) {
-                continue;
-            }
-
-            foreach ($this->extendGroup($group) as $block) {
-                $blocks[] = $block;
+            if (\count($group) >= 2 && !$this->continuesAnEarlierMatch($group)) {
+                $this->extendGroup($group);
             }
         }
-
-        return $blocks;
     }
 
     /**
@@ -172,12 +169,9 @@ final class DuplicateBlockFinder
      * copy that diverges early never shortens the match of the others.
      *
      * @param list<int> $group members that agree on the first minTokens tokens
-     *
-     * @return list<DuplicateBlock>
      */
-    private function extendGroup(array $group): array
+    private function extendGroup(array $group): void
     {
-        $blocks = [];
         $pending = [[$group, $this->request->minTokens]];
 
         while ($pending !== []) {
@@ -192,9 +186,9 @@ final class DuplicateBlockFinder
                 $length++;
             }
 
-            $block = $this->buildBlock($members, $length);
-            if ($block !== null) {
-                $blocks[] = $block;
+            $copies = $this->reportableCopies($members, $length);
+            if ($copies !== null) {
+                $this->candidates->add($length, $copies);
             }
 
             foreach ($next as $subgroup) {
@@ -203,8 +197,6 @@ final class DuplicateBlockFinder
                 }
             }
         }
-
-        return $blocks;
     }
 
     /**
@@ -230,30 +222,59 @@ final class DuplicateBlockFinder
     }
 
     /**
+     * The copies a match of `$length` tokens reports, or `null` when it
+     * reports none: a data table at every copy, fewer than two distinct
+     * copies, or no copy reaching `minLines`.
+     *
      * @param list<int> $members
+     *
+     * @return ?list<int>
      */
-    private function buildBlock(array $members, int $length): ?DuplicateBlock
+    private function reportableCopies(array $members, int $length): ?array
     {
         if ($this->isSuppressedAsData($members, $length)) {
             return null;
         }
 
-        $locations = $this->distinctLocations($members, $length);
-        if (\count($locations) < 2) {
+        $copies = $this->distinctCopies($members, $length);
+        if (\count($copies) < 2) {
             return null;
         }
 
-        $lineCount = max(array_map(static fn(DuplicateLocation $location): int => $location->lineCount(), $locations));
-        if ($lineCount < $this->request->minLines) {
-            return null;
+        $longest = max(array_map(function (int $copy) use ($length): int {
+            [, $start, $end] = $this->span($copy, $length);
+
+            return $end - $start + 1;
+        }, $copies));
+
+        return $longest < $this->request->minLines ? null : $copies;
+    }
+
+    /**
+     * @param list<int> $copies
+     */
+    private function buildBlock(int $length, array $copies): DuplicateBlock
+    {
+        $locations = array_map(
+            function (int $copy) use ($length): DuplicateLocation {
+                [$file, $start, $end] = $this->span($copy, $length);
+
+                return new DuplicateLocation(RelativePath::fromString($file), $start, $end);
+            },
+            $copies,
+        );
+
+        $lines = 0;
+        foreach ($locations as $location) {
+            $lines = max($lines, $location->lineCount());
         }
 
-        $first = $members[0];
+        $first = $copies[0];
         $source = $this->request->retokenized->sources[PackedPosition::fileIndex($first)] ?? null;
 
         return new DuplicateBlock(
             locations: $locations,
-            lines: $lineCount,
+            lines: $lines,
             tokens: $length,
             contentHash: $this->contentHash($this->tokensAt($first), PackedPosition::offset($first), $length),
             hint: $source !== null ? $this->hintExtractor->extract($source, $locations[0]->startLine, $locations[0]->endLine) : null,
@@ -270,30 +291,45 @@ final class DuplicateBlockFinder
      *
      * @param list<int> $members
      *
-     * @return list<DuplicateLocation>
+     * @return list<int>
      */
-    private function distinctLocations(array $members, int $length): array
+    private function distinctCopies(array $members, int $length): array
     {
-        $locations = [];
+        $copies = [];
         /** @var array<int, int> $lastEndLineByFile */
         $lastEndLineByFile = [];
 
         foreach ($members as $packed) {
             $fileIdx = PackedPosition::fileIndex($packed);
-            $offset = PackedPosition::offset($packed);
-            $tokens = $this->tokensAt($packed);
-            $startLine = $tokens[$offset]->line;
-            $endLine = $tokens[$offset + $length - 1]->line;
 
-            if (isset($lastEndLineByFile[$fileIdx]) && $startLine <= $lastEndLineByFile[$fileIdx]) {
+            [, $start, $end] = $this->span($packed, $length);
+
+            if (isset($lastEndLineByFile[$fileIdx]) && $start <= $lastEndLineByFile[$fileIdx]) {
                 continue;
             }
 
-            $lastEndLineByFile[$fileIdx] = $endLine;
-            $locations[] = new DuplicateLocation(RelativePath::fromString($this->request->filePaths[$fileIdx]), $startLine, $endLine);
+            $lastEndLineByFile[$fileIdx] = $end;
+            $copies[] = $packed;
         }
 
-        return $locations;
+        return $copies;
+    }
+
+    /**
+     * The file a copy of `$length` tokens is in, and its first and last line.
+     *
+     * @return array{string, int, int}
+     */
+    private function span(int $packed, int $length): array
+    {
+        $tokens = $this->tokensAt($packed);
+        $offset = PackedPosition::offset($packed);
+
+        return [
+            $this->request->filePaths[PackedPosition::fileIndex($packed)],
+            $tokens[$offset]->line,
+            $tokens[$offset + $length - 1]->line,
+        ];
     }
 
     /**

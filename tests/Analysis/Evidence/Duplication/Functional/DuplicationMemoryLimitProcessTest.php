@@ -123,6 +123,44 @@ YAML);
         }
     }
 
+    /**
+     * Runs of one repeated statement, each of its own length, match one
+     * another at every offset, and the matches stop agreeing at every run's
+     * end: 20 files of ten runs yield 13 788 matches with 167 510 copies, of
+     * which 214 blocks with 2 141 copies survive. Holding every match as a
+     * block until the longer ones were known exhausted a 64M limit; the same
+     * 2 141 copies must now be reported within it.
+     */
+    #[Test]
+    public function itReportsRunsOfARepeatedStatementUnderALowMemoryLimit(): void
+    {
+        for ($file = 0; $file < 20; $file++) {
+            $methods = [];
+            for ($run = 0; $run < 10; $run++) {
+                $statements = implode("\n", array_map(
+                    static fn(int $statement): string => "        echo {$statement};",
+                    range(0, $file * 10 + $run),
+                ));
+                $methods[] = "    public function run{$run}(): void\n    {\n{$statements}\n    }\n";
+            }
+            file_put_contents(
+                $this->tmpDir . \sprintf('/src/Runs%02d.php', $file),
+                \sprintf("<?php\n\nfinal class Runs%02d\n{\n%s}\n", $file, implode("\n", $methods)),
+            );
+        }
+        $configPath = $this->tmpDir . '/qmx.yaml';
+        file_put_contents($configPath, "onlyRules: ['duplication.clone']\nfailOn: none\n");
+
+        [$exitCode, $stdout, $stderr] = $this->runQmx($configPath, '64M');
+
+        self::assertSame(0, $exitCode, $stderr . "\n" . $stdout);
+
+        /** @var array{coverage?: array{complete?: bool}, violations?: list<array{rule?: string}>} $report */
+        $report = json_decode($stdout, true, flags: \JSON_THROW_ON_ERROR);
+        self::assertTrue($report['coverage']['complete'] ?? false, $stdout);
+        self::assertCount(2141, $report['violations'] ?? []);
+    }
+
     private function copiedClass(string $className): string
     {
         return <<<PHP
