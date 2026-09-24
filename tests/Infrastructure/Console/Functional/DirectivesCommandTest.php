@@ -649,7 +649,7 @@ final class DirectivesCommandTest extends TestCase
 
     /**
      * `duplication.clone` reports one finding on each copy of a duplicate
-     * block, every copy under one project-level identity
+     * block, each copy under a project-level identity of its own
      * ({@see \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule::channelDeclarations()}
      * declares {@see \Qualimetrix\Core\Symbol\SymbolLevel::Project} and
      * nothing else). A symbol directive binds to the declaration it
@@ -694,6 +694,7 @@ final class DirectivesCommandTest extends TestCase
         }
 
         self::assertArrayHasKey('annotation.unresolved-directive', $byChannel);
+        sort($copies);
         self::assertSame(['DupA.php', 'DupB.php'], $copies);
         self::assertSame($line, $byChannel['annotation.unresolved-directive']['line']);
         self::assertStringContainsString(

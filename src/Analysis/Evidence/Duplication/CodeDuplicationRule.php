@@ -22,10 +22,10 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * Detects duplicated code blocks across files.
  *
  * Generates one finding per copy of a duplicated block, located on that copy
- * and naming the other copies as its related locations. Every copy of a block
- * shares one identity — the project and the block's content — so a baseline
- * entry bounds how many copies there are, and a new copy is both a breach of
- * it and a finding in the file it was pasted into.
+ * and naming the other copies as its related locations. Each copy has an
+ * identity of its own — see {@see copyOccurrenceKey()} — so a new copy is a
+ * new finding to a baseline, to a fingerprint-matching consumer and to a git
+ * scope alike.
  */
 final class CodeDuplicationRule extends AbstractRule
 {
@@ -124,7 +124,6 @@ final class CodeDuplicationRule extends AbstractRule
         $projectPath = SymbolPath::forProject();
         $subject = MetricSubject::aggregate($projectPath);
         $severity = $this->getEffectiveSeverity($context, $this->options, $subject, $block->lines) ?? Severity::Warning;
-        $occurrenceKey = OccurrenceKey::semantic(self::OCCURRENCE_KIND, ['contentHash' => $block->contentHash]);
         $hintPart = $block->hint !== null ? \sprintf(': "%s"', $block->hint) : '';
 
         $locations = array_map(
@@ -133,8 +132,11 @@ final class CodeDuplicationRule extends AbstractRule
         );
 
         $findings = [];
+        $copiesInFile = [];
 
         foreach ($locations as $index => $location) {
+            $file = $block->locations[$index]->pathString();
+            $copyInFile = $copiesInFile[$file] = ($copiesInFile[$file] ?? -1) + 1;
             $named = self::namedOthers($block->occurrences(), $index);
             $unnamed = $block->occurrences() - 1 - \count($named);
 
@@ -156,11 +158,29 @@ final class CodeDuplicationRule extends AbstractRule
                 metricValue: $block->lines,
                 relatedLocations: array_map(static fn(int $other): Location => $locations[$other], $named),
                 recommendation: 'Extract duplicated code into a shared method or class.',
-                occurrenceKey: $occurrenceKey,
+                occurrenceKey: self::copyOccurrenceKey($block->contentHash, $file, $copyInFile),
             );
         }
 
         return $findings;
+    }
+
+    /**
+     * A copy is the block's content, the file holding the copy and the
+     * copy's place among the block's copies in that file, counted in line
+     * order. No line number enters it, so code added or removed around a copy
+     * does not re-key it. A copy moved to another file, or a file renamed, is
+     * a new copy and leaves a stale one behind; a copy pasted above another
+     * in the same file takes the lower place, and the one it displaced reads
+     * as the new copy — the count of new copies stays right.
+     */
+    private static function copyOccurrenceKey(string $contentHash, string $file, int $copyInFile): OccurrenceKey
+    {
+        return OccurrenceKey::semantic(self::OCCURRENCE_KIND, [
+            'contentHash' => $contentHash,
+            'file' => $file,
+            'copyInFile' => $copyInFile,
+        ]);
     }
 
     /**

@@ -71,8 +71,11 @@ Coupling metrics measure dependencies between components. All collectors in this
 > count over the classes it declares itself, where a sub-namespace is a
 > namespace like any other (`CoupledNamespaces::ownCountFor()`). The subtree
 > value grows with the subtree, and its region depends on which sub-namespaces
-> the run holds, so a narrowed run and a whole one would judge the same code
-> differently; the own scope does not move with that. It is published only on a
+> the run holds, so a narrowed run and a whole one would judge different code;
+> the own scope's boundary does not move with that. Its count does, like every
+> coupling count: an edge is read from the class it starts at, so a dependent
+> the run did not analyse is not counted, and a narrowed run can judge a lower
+> value. It is published only on a
 > namespace declaring a type the run analysed, which is the population of the
 > project fold (ADR 0080), and `min_class_count` counts that namespace's own
 > classes. The finding's direction reads `coupling.ca-own`/`coupling.ce-own`.

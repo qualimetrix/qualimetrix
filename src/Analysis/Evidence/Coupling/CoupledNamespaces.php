@@ -22,9 +22,12 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
  *
  * The own scope is the same count over the declarations of exactly one
  * namespace, where a sub-namespace is outside like any other: the scope the
- * graph's own Ca and Ce are counted over. It does not depend on which other
- * namespaces the run holds, which the subtree does — a namespace's region
- * shrinks to itself when its sub-namespaces are left out of the run.
+ * graph's own Ca and Ce are counted over. Its boundary does not depend on
+ * which other namespaces the run holds, which the subtree's does — a
+ * namespace's region shrinks to itself when its sub-namespaces are left out
+ * of the run. Its count does, as every coupling count here does: an edge is
+ * read from the class it starts at, so a dependent the run did not analyse,
+ * sub-namespace or not, is not counted, and a narrowed run can count fewer.
  */
 final readonly class CoupledNamespaces
 {

@@ -194,7 +194,11 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
      * `coupling.cbo` of a namespace is taken over its whole subtree, grows with
      * it, and is not judged — nor is its region, which is the namespace alone
      * or its subtree depending on which sub-namespaces the run holds. The own
-     * scope does not move with that, so neither does the verdict.
+     * scope's boundary does not move with that, so which namespaces are judged
+     * does not depend on the run's paths. The value judged does, as Ca,
+     * instability and class rank do: it counts the dependencies of the code
+     * analysed, so a run that leaves out a dependent — reported as a narrowed
+     * project scope — can judge a lower value.
      * `min_class_count` counts the namespace's own classes, for the same
      * reason.
      *

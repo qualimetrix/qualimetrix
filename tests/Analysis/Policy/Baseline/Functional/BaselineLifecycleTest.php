@@ -42,8 +42,12 @@ final class BaselineLifecycleTest extends TestCase
         }
     }
 
+    /**
+     * Each copy of a block is an entry of its own, so repairing one copy
+     * leaves its entry stale and the other copies accepted.
+     */
     #[Test]
-    public function itKeepsADuplicateAcceptedWhenThePrimaryCopyChanges(): void
+    public function itReportsARepairedCopyAsStaleAndKeepsTheOtherCopiesAccepted(): void
     {
         $project = BaselineCliFixture::from('duplication');
 
@@ -71,7 +75,7 @@ final class BaselineLifecycleTest extends TestCase
 
             $checked = $project->checkWithSeparatedDiagnostics($paths, ['--baseline' => $project->baselinePath]);
             self::assertSame(Command::SUCCESS, $checked->getStatusCode(), $checked->getDisplay());
-            self::assertStringNotContainsString('baseline entries did not appear in this run', $checked->getDisplay());
+            self::assertStringContainsString('1 baseline entries did not appear in this run', $checked->getErrorOutput());
             self::assertStringContainsString('No violations found', $checked->getDisplay());
         } finally {
             $project->remove();
@@ -80,8 +84,8 @@ final class BaselineLifecycleTest extends TestCase
 
     /**
      * The block's identity is its whole matched token sequence, so an edit
-     * that lengthens the match in every copy is a new block: the accepted
-     * entry goes stale and each copy reports afresh.
+     * that lengthens the match in every copy is a new block: every accepted
+     * copy's entry goes stale and each copy reports afresh.
      */
     #[Test]
     public function itReKeysADuplicateWhoseMatchedTokensChangeInEveryCopy(): void
@@ -107,7 +111,7 @@ final class BaselineLifecycleTest extends TestCase
 
             $checked = $project->checkWithSeparatedDiagnostics($paths, ['--baseline' => $project->baselinePath]);
             self::assertStringContainsString('3 violations (3 warnings)', $checked->getDisplay());
-            self::assertStringContainsString('1 baseline entries did not appear in this run', $checked->getErrorOutput());
+            self::assertStringContainsString('3 baseline entries did not appear in this run', $checked->getErrorOutput());
         } finally {
             $project->remove();
         }
@@ -115,8 +119,10 @@ final class BaselineLifecycleTest extends TestCase
 
     /**
      * A copy-paste of an accepted block is more of the same debt, and the
-     * ceiling has to see it: an accepted block of three copies that gains a
-     * fourth is a breach naming the new copy, not an acceptance.
+     * baseline has to see it: each copy is a finding of its own, so a fourth
+     * copy of a block accepted with three is a new finding, reported on the
+     * new copy alone and at the copy's own severity, while the three accepted
+     * copies stay accepted.
      */
     #[Test]
     public function itReportsANewCopyOfAnAcceptedDuplicateBlock(): void
@@ -136,25 +142,30 @@ final class BaselineLifecycleTest extends TestCase
             $checked = $project->checkWithSeparatedDiagnostics($paths, [
                 '--baseline' => $project->baselinePath,
                 '--format' => 'json',
+                '--fail-on' => 'warning',
             ]);
-            self::assertSame(2, $checked->getStatusCode(), $checked->getDisplay());
+            self::assertSame(1, $checked->getStatusCode(), $checked->getDisplay());
 
-            /** @var array{violations: list<array{rule: string, file: string, severity: string, message: string}>} $report */
+            /** @var array{summary: array{errorCount: int, warningCount: int}, violations: list<array{rule: string, file: string, severity: string, message: string, acceptedLevel: mixed}>} $report */
             $report = json_decode($checked->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
-            $files = array_column($report['violations'], 'file');
-            sort($files);
-            self::assertSame(['A.php', 'B.php', 'C.php', 'D.php'], array_map('basename', $files));
-            self::assertSame(['duplication.clone'], array_values(array_unique(array_column($report['violations'], 'rule'))));
-            self::assertSame(['error'], array_values(array_unique(array_column($report['violations'], 'severity'))));
-            self::assertStringContainsString('4 occurrences', $report['violations'][0]['message']);
+            self::assertSame([0, 1], [$report['summary']['errorCount'], $report['summary']['warningCount']], 'exit 1 is the warning');
+            self::assertCount(1, $report['violations'], $checked->getDisplay());
+            [$newCopy] = $report['violations'];
+            self::assertSame('D.php', basename($newCopy['file']));
+            self::assertSame('duplication.clone', $newCopy['rule']);
+            self::assertSame('warning', $newCopy['severity']);
+            self::assertNull($newCopy['acceptedLevel']);
+            self::assertStringContainsString('4 occurrences', $newCopy['message']);
+            self::assertStringNotContainsString('baseline entries did not appear in this run', $checked->getErrorOutput());
         } finally {
             $project->remove();
         }
     }
 
     /**
-     * A normal repair removes one of two copies. It must not turn a clean
-     * baseline run red merely because a group became smaller.
+     * A normal repair removes one of two copies, which leaves the other one
+     * no duplicate either. It must not turn a clean baseline run red; the
+     * entries of the repaired block's two copies are reported stale.
      */
     #[Test]
     public function itKeepsTheBuildGreenAfterDeletingOneOfTwoBaselinedDuplicateBlocks(): void
@@ -179,9 +190,9 @@ final class BaselineLifecycleTest extends TestCase
             self::assertSame(2, $survivor['count']);
             self::assertSame([15, 15], $survivor['magnitudes']);
 
-            $checked = $project->check($paths, ['--baseline' => $project->baselinePath]);
+            $checked = $project->checkWithSeparatedDiagnostics($paths, ['--baseline' => $project->baselinePath]);
             self::assertSame(Command::SUCCESS, $checked->getStatusCode(), $checked->getDisplay());
-            self::assertStringNotContainsString('baseline entries did not appear in this run', $checked->getDisplay());
+            self::assertStringContainsString('2 baseline entries did not appear in this run', $checked->getErrorOutput());
             self::assertStringContainsString('No violations found', $checked->getDisplay());
         } finally {
             $project->remove();

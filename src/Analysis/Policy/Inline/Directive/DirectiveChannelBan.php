@@ -21,17 +21,18 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
  * refused where it is written.
  *
  * `duplication.clone` reports one finding on each copy of a duplicate block,
- * and every copy shares one project-level identity — the project and the
- * block's content ({@see \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule::channelDeclarations()}
+ * and each copy has a project-level identity of its own — the block's
+ * content, the copy's file and its place among the block's copies there
+ * ({@see \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule::channelDeclarations()}
  * declares {@see \Qualimetrix\Core\Symbol\SymbolLevel::Project} and nothing
  * else). A symbol directive binds to the declaration it is written on, and the
  * project is never that declaration, so it would silence nothing. A file or
  * next-line directive does reach the copy it is written beside, and that is
- * the reason it is refused rather than allowed: it silences one member of a
- * group whose members are the same debt, while every other copy still
- * reports the block and names the silenced one. The baseline would then
- * count fewer copies than exist, and a copy pasted together with such a
- * directive would pass the ceiling unseen.
+ * the reason it is refused rather than allowed: it silences one copy of a
+ * block whose copies are the same debt, while every other copy still reports
+ * the block and names the silenced one. The silenced copy never reaches a
+ * baseline, so a copy pasted together with such a directive would pass it
+ * unseen.
  *
  * **Two questions, one list, and that is why they live together.** Can this
  * target be addressed at all ({@see problemWith()}, read by the two halves that

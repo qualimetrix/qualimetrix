@@ -13,17 +13,19 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
- * The verdict of `coupling.cbo` on a namespace must not depend on what else
- * the run holds. `App\Svc` declares three classes coupled to fifteen
+ * Which namespaces `coupling.cbo` judges must not depend on what else the run
+ * holds; the value judged, like any coupling measure, counts the dependencies
+ * the run analysed. `App\Svc` declares three classes coupled to fifteen
  * namespaces and has one sub-namespace, `App\Svc\Exception`, holding a single
  * class. Whether the sub-namespace is in the run decides whether `App\Svc` is
  * a region of one namespace or of two; the coupling of the classes `App\Svc`
- * declares is the same either way, and so is the finding.
+ * declares is the same either way, and so is the finding. A class outside the
+ * run that depends on `App\Svc` is a dependency the run never read.
  */
 #[CoversClass(CboRule::class)]
 final class NamespaceCboScopeIntegrationTest extends TestCase
 {
-    private const array FILES = ['Svc/S1.php', 'Svc/S2.php', 'Svc/S3.php', 'Svc/Exception/Oops.php'];
+    private const array FILES = ['Svc/S1.php', 'Svc/S2.php', 'Svc/S3.php', 'Svc/Exception/Oops.php', 'Svc/Handler/H.php'];
 
     private string $fixture = '';
 
@@ -60,7 +62,7 @@ final class NamespaceCboScopeIntegrationTest extends TestCase
         }
         @unlink($this->fixture . '/composer.json');
 
-        foreach (['/src/Svc/Exception', '/src/Svc', '/src', ''] as $dir) {
+        foreach (['/src/Svc/Exception', '/src/Svc/Handler', '/src/Svc', '/src', ''] as $dir) {
             @rmdir($this->fixture . $dir);
         }
     }
@@ -68,24 +70,47 @@ final class NamespaceCboScopeIntegrationTest extends TestCase
     #[Test]
     public function itJudgesANamespaceWithASubNamespaceOnItsOwnClasses(): void
     {
-        self::assertSame(['App\Svc' => 16.0], $this->namespaceFindings(['src']));
+        self::assertSame(['App\Svc' => 16.0], self::namespaceFindings($this->check(['src'])));
     }
 
     #[Test]
     public function itReachesTheSameVerdictWhenTheSubNamespaceIsLeftOutOfTheRun(): void
     {
         self::assertSame(
-            $this->namespaceFindings(['src']),
-            $this->namespaceFindings(['src/Svc/S1.php', 'src/Svc/S2.php', 'src/Svc/S3.php']),
+            self::namespaceFindings($this->check(['src'])),
+            self::namespaceFindings($this->check(['src/Svc/S1.php', 'src/Svc/S2.php', 'src/Svc/S3.php'])),
         );
+    }
+
+    /**
+     * `App\Svc\Handler\H` extends a class of `App\Svc` that does not know
+     * it. Left out of the run, its dependency is never read: `App\Svc` is
+     * still judged, on one namespace fewer, and the run says it was narrowed.
+     */
+    #[Test]
+    public function itJudgesTheSameNamespaceOnFewerCouplingsWhenADependentIsLeftOutOfTheRun(): void
+    {
+        mkdir($this->fixture . '/src/Svc/Handler');
+        file_put_contents(
+            $this->fixture . '/src/Svc/Handler/H.php',
+            "<?php\n\nnamespace App\\Svc\\Handler;\n\nclass H extends \\App\\Svc\\S1 {}\n",
+        );
+
+        $whole = $this->check(['src']);
+        $narrowed = $this->check(['src/Svc/S1.php', 'src/Svc/S2.php', 'src/Svc/S3.php', 'src/Svc/Exception/Oops.php']);
+
+        self::assertSame(['App\Svc' => 17.0], self::namespaceFindings($whole));
+        self::assertSame(['App\Svc' => 16.0], self::namespaceFindings($narrowed));
+        self::assertSame('covered', $whole['projectScope']['state'] ?? null);
+        self::assertSame('narrowed', $narrowed['projectScope']['state'] ?? null);
     }
 
     /**
      * @param list<string> $paths
      *
-     * @return array<string, float> the namespace-level findings, by namespace, with the value judged
+     * @return array<mixed> the JSON report
      */
-    private function namespaceFindings(array $paths): array
+    private function check(array $paths): array
     {
         $command = (new ContainerFactory())->create()->get(CheckCommand::class);
         self::assertInstanceOf(CheckCommand::class, $command);
@@ -114,6 +139,18 @@ final class NamespaceCboScopeIntegrationTest extends TestCase
         $payload = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertIsArray($payload);
         self::assertIsList($payload['violations'] ?? null, $tester->getDisplay() . $tester->getErrorOutput());
+
+        return $payload;
+    }
+
+    /**
+     * @param array<mixed> $payload
+     *
+     * @return array<string, float> the namespace-level findings, by namespace, with the value judged
+     */
+    private static function namespaceFindings(array $payload): array
+    {
+        self::assertIsList($payload['violations'] ?? null);
 
         $findings = [];
         foreach ($payload['violations'] as $violation) {

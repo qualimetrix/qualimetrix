@@ -19,7 +19,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * toward more permissive (ADR 0017).
  *
  * The rule is direction-aware and stated over the whole group, not per
- * position: a stored `[40, 100]` whose 40-line duplicate has been deleted is
+ * position: a stored `[40, 100]` whose member at 40 has been repaired is
  * *accepted* as `[100]`, because no level of severity holds more members than
  * before. An element-wise comparison would read rank 0 growing from 40 to 100
  * and decline, leaving a user no way to record an improvement short of

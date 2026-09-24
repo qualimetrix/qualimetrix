@@ -104,8 +104,8 @@ published Ca and Ce are counted over, and the rule then judged leaf namespaces
 only, because the thresholds do not describe a number that grows with the
 subtree. Which namespace is a leaf is a fact about the run, not the code: a
 namespace whose only sub-namespace holds one exception class was never judged
-on a whole run, and was judged on a run that left the sub-namespace out. The
-same code got a finding or none depending on the paths given.
+on a whole run, and was judged on a run that left the sub-namespace out. Which
+namespaces were judged depended on the paths given.
 
 **The rule judges every namespace on the coupling of its own declarations** —
 the population this record folds, and for the same reason: each declaration
@@ -118,10 +118,30 @@ analysed gets no `coupling.cbo-own`, as it gets no `coupling.abstractness-own`.
 reads `coupling.ca-own` / `coupling.ce-own`, so a finding never pairs an own CBO
 with a subtree Ca or Ce.
 
+What this makes independent of the run's paths is the population: which
+namespaces are judged, and over which declarations. It does not make the value
+independent of them, and nothing about a coupling count can. A dependency is
+read from the class it starts at, so a class the run did not analyse
+contributes no edge — to `coupling.cbo-own` as to Ca, instability and class
+rank. A namespace whose classes are extended or used by classes left out of
+the run, a sub-namespace's among them, is judged on fewer coupled namespaces
+than a whole run finds, and can drop below its threshold. Measured on a
+namespace of three classes coupled to thirteen namespaces, plus one class in a
+sub-namespace extending one of them: 14 on the whole run, a finding at the
+default threshold; 13 with the sub-namespace left out, none. The run says so:
+a run whose paths leave production autoload targets out publishes
+`projectScope.state: narrowed` (ADR 0084).
+
 The rejected alternatives were to stop treating as a parent a namespace whose
-children are all below `min_class_count`, which still left the verdict a
+children are all below `min_class_count`, which still left the population a
 function of the run's paths, and to judge the subtree value at the leaves and
-name the cost, which kept it one.
+name the cost, which kept it one. Two alternatives for the value were rejected
+as well. Declaring `coupling.cbo` unjudged on a narrowed run would silence the
+class level too, and every coupling measure has the same dependence, so
+singling this one out is disproportionate. Counting outbound dependencies only
+would make the value independent of the run, but it is a different metric —
+efferent coupling, not CBO — and would have to be renamed under the Metrics
+Policy.
 
 Measured on this repository with default thresholds: the namespace-level
 findings go from 16 to 30. The 14 added are all parents with classes of their

@@ -123,13 +123,18 @@ orchestration triggers the capability through a narrow reset/inspect contract;
 this ownership change does not alter the rule id, options, algorithm or output.
 
 !!! info "Deviation from original spec"
-    A duplicate group uses the full SHA-256 of the complete normalized matched
-    token sequence plus token count as its semantic occurrence. The project is
-    the finding subject, and every copy of a block shares that identity; source
-    lines, discovery order and related-copy order are presentation only. Adding
-    a lexically earlier copy therefore does not re-key an existing baseline
-    entry or formatter fingerprint: it adds one member to the group the entry
-    bounds.
+    A duplicate block is identified by the full SHA-256 of its complete
+    normalized matched token sequence plus token count, and each copy of it by
+    that digest, the project-relative path of the file holding the copy, and
+    the copy's place among the block's copies in that file, counted in line
+    order. The project is the finding subject. No line number enters the
+    identity, so code added or removed around a copy re-keys nothing, and a
+    new copy is the only new identity: a new finding to a baseline, and a new
+    fingerprint to GitLab Code Quality and SARIF consumers, which tell
+    findings apart by it. A copy moved to another file, or every copy in a
+    renamed file, is a new copy and leaves a stale baseline entry behind. A
+    copy pasted above another copy of the same block in the same file takes
+    the lower place, so the copy it displaced is the one reported as new.
 
 !!! warning "Inline `@qmx-ignore` cannot suppress this channel"
     Every copy of a block is the same project-level debt, so no inline
@@ -141,13 +146,15 @@ this ownership change does not alter the rule id, options, algorithm or output.
     forms are refused (`annotation.unresolved-directive`) wherever they are
     written. Disable the rule instead — `disabled_rules: [duplication.clone]`
     in the configuration, or `--disable-rule=duplication.clone` — or accept
-    the block, all of its copies, into the baseline.
+    the block, all of its copies, into the baseline. `suppress_paths` silences
+    only the copies inside its paths: the block's other copies are still
+    reported, so silencing a block means listing every file it has a copy in.
 
 !!! info "Constant and property arrays are always excluded"
     A duplicate block that lies **entirely** inside a `const` declaration or a static/instance property's array-literal initializer is never reported. Rows of a lookup table (e.g. `'key' => ['a' => ..., 'b' => ...]` repeated with different values) normalize to identical token sequences, but "extract a shared method" is not actionable advice for a data table — repeating the same field shape across rows is the normal, correct form of that table. A block spanning both a data declaration and executable code (or lying entirely in a method body) is still reported. This suppression is unconditional and cannot be turned off.
 
 !!! info "Every copy of a block is a finding of its own"
-    Each copy of a duplicated block is reported by a finding located on that copy, however many copies there are — there is no upper limit on the number of copies. The message states the number of occurrences and names up to ten other copies, followed by `and N more` when there are more; the finding's related locations are the copies its message names. All copies of a block share one identity, so a baseline entry bounds how many copies there are: a new copy of an accepted block is a breach, and `--report=git:*` reports it in the file it was pasted into. When copies agree over different lengths, each longest agreeing set is reported: two copies that match for 40 lines and a third that matches them only for the first 10 give a finding on each of the two 40-line copies and one on each of the three copies over 10 lines.
+    Each copy of a duplicated block is reported by a finding located on that copy, however many copies there are — there is no upper limit on the number of copies. The message states the number of occurrences and names up to ten other copies, followed by `and N more` when there are more; the finding's related locations are the copies its message names. Each copy has an identity of its own, so a new copy of an accepted block is a new finding — reported on the new copy alone, at its own severity, while the copies the baseline accepted stay accepted — and `--report=git:*` reports it in the file it was pasted into. A block of N copies is N findings, each carrying the rule's remediation time. When copies agree over different lengths, each longest agreeing set is reported: two copies that match for 40 lines and a third that matches them only for the first 10 give a finding on each of the two 40-line copies and one on each of the three copies over 10 lines.
 
 !!! info "Copies within one file"
     Two occurrences in the same file that share a line are one repetitive structure matching itself at a shifted position, not two copies, and only the first is kept. Occurrences that merely touch — one ends on the line before the other starts — are two copies and are reported.

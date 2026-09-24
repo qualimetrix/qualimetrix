@@ -152,11 +152,11 @@ bad as `t` is no greater than the number of stored members at least as bad as `t
 `>=` on a `higher` channel, `<=` on a `lower` one. On an `occurrence` channel there are
 no magnitudes and one level: the group holds no more members than `count`.
 
-Counting rather than pairing is what makes a repair safe. With `[40, 100]` stored and
-the 40-line duplicate deleted, a rank comparison from the best end would measure the
-surviving `100` against the vacated `40` and fail the build on code nobody touched. The
-price of counting is recorded rather than hidden: a survivor may grow into a slot a
-repair vacated, bounded above by the worst magnitude already accepted.
+Counting rather than pairing is what makes a repair safe. With `[40, 100]` stored for a
+group of two and the member at `40` repaired, a rank comparison from the best end would
+measure the surviving `100` against the vacated `40` and fail the build on code nobody
+touched. The price of counting is recorded rather than hidden: a survivor may grow into a
+slot a repair vacated, bounded above by the worst magnitude already accepted.
 
 **The shape decides, not the value.** A `marker` channel emits a fixed `1.0` and
 `coupling.class-rank` emits a real PageRank score; both are declared `occurrence`, and
@@ -423,8 +423,8 @@ owns.
     "declaration:callable:App\\OrderService::calculate@src/OrderService.php": [
       {"channel":"complexity.ccn","occurrence":"bd41b8a3f6cad9e1","magnitudes":[25]}
     ],
-    "file:src/Legacy/dup.php": [
-      {"channel":"duplication.clone","magnitudes":[40,100]}
+    "declaration:class:App\\Widget@src/Widget.php": [
+      {"channel":"code-smell.unused-private","magnitudes":[3,3,3]}
     ],
     "class:App\\Web\\Controller": [
       {"channel":"architecture.layer-violation","edge":{"target":"class:App\\Db\\Connection","type":"new"},"count":1}

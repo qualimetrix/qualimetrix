@@ -15,7 +15,7 @@ Think of coupling like wires connecting boxes. The more wires between two boxes,
 
 **Rule ID:** `coupling.cbo`
 
-**Judged metrics:** `coupling.cbo`, `coupling.cbo-app`
+**Judged metrics:** `coupling.cbo`, `coupling.cbo-app`, `coupling.cbo-own`
 
 <!-- llms:skip-begin -->
 ### What it measures
@@ -42,7 +42,7 @@ For example, if `UserService` uses `UserRepository`, `Logger`, `Validator`, and 
 
 The other side is named by the namespace that declares the class, so the number depends on how finely the code around the namespace is split: dividing a neighbouring directory into sub-namespaces raises this namespace's CBO while its Ca and Ce stay the same. A parent namespace near the root of a project is coupled to many such namespaces and usually has the highest CBO of all. The namespace thresholds below reuse the class-level numbers; they were not calibrated for this quantity separately.
 
-**A namespace is judged on its own classes.** The rule reads `coupling.cbo-own`: the same count taken over the classes declared directly in the namespace, where a sub-namespace is a namespace like any other. A namespace without sub-namespaces has one scope, so the two keys are equal there. On a parent they differ, and the subtree value is not judged: it grows with the subtree, and its region depends on which sub-namespaces the run holds, so a narrowed run and a whole one would disagree about the same code. The own scope does not move with that, and neither does the verdict. The finding's inbound and outbound counts are the own scope's too (`coupling.ca-own`, `coupling.ce-own`). A namespace that declares no type of its own publishes no `coupling.cbo-own` and is not judged; the subtree `coupling.cbo` is published on every namespace (`--format=metrics`).
+**A namespace is judged on its own classes.** The rule reads `coupling.cbo-own`: the same count taken over the classes declared directly in the namespace, where a sub-namespace is a namespace like any other. A namespace without sub-namespaces has one scope, so the two keys are equal there. On a parent they differ, and the subtree value is not judged: it grows with the subtree, and its region depends on which sub-namespaces the run holds, so a narrowed run and a whole one would disagree about which code is judged. The own scope's boundary does not move with that, so which namespaces are judged does not depend on the run's paths. The value does, as it does for every coupling measure (`coupling.ca`, `coupling.instability`, `coupling.class-rank`): a dependency is read from the class it starts at, so a class the run did not analyse — a sub-namespace's included — is not counted, and a narrowed run (`projectScope.state: narrowed` in the JSON report) can judge a namespace on a lower value than a whole one. The finding's inbound and outbound counts are the own scope's too (`coupling.ca-own`, `coupling.ce-own`). A namespace that declares no type of its own publishes no `coupling.cbo-own` and is not judged; the subtree `coupling.cbo` is published on every namespace (`--format=metrics`).
 
 <!-- llms:skip-end -->
 

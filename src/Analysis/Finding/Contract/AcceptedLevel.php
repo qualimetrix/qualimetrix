@@ -23,8 +23,9 @@ use InvalidArgumentException;
  * a special case of the other:
  *
  * - a `magnitude` channel accepted a *vector* — one number per member of the
- *   group, because a group of two duplicate blocks was accepted at both of
- *   their lengths and at neither alone;
+ *   group: a class with three unused private members is three findings each
+ *   reporting the class total, accepted as `[3, 3, 3]` — one number per
+ *   member, whose length is what `count` derives from;
  * - an `occurrence` channel accepted a *count* and nothing else. Its findings
  *   do report a number (a fixed marker, or a real one that is not a boundary
  *   in any later run's units), and it is deliberately not stored here: doing

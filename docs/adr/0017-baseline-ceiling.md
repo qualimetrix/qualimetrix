@@ -117,7 +117,7 @@ rejected boundary.
 5. **A magnitude scale can change without a channel change.** CBO scope and computed formulas or direction may change what a stored value means, risking over-acceptance; project-normalized `coupling.class-rank` is deliberately an occurrence channel instead.
 6. **`complexity.npath.*` saturates at 10^9.** An entry at saturation cannot breach.
 7. **Renames strand entries.** The renamed finding reports as new and the old identity becomes stale.
-8. **A duplicate block re-keys when its matched tokens change.** The identity is the whole normalized token sequence, so a copy that moves or disappears keeps the entry; a match that grows or shrinks in every copy yields one stale entry and a fresh finding on each copy.
+8. **A duplicate copy re-keys when its matched tokens change or it moves.** A copy's identity is the block's whole normalized token sequence, its file and its place among the block's copies there; a match that grows or shrinks in every copy, or a copy moved to another file, yields a stale entry and a fresh finding for each copy affected.
 9. **Symbol keys are not unique per declaration.** Same-FQN declarations and trait consumers can share an identity.
 10. **Aggregate magnitudes can move after another file changes.** A class CBO boundary can breach without an edit to that class.
 11. **Three project-keyed architecture channels form multi-member groups.** `architecture.unreachable-layer`, `architecture.potential-shadow`, and `architecture.empty-template` have occurrence ceilings with no member-position information; single-result `architecture.coverage` is unaffected.
@@ -149,12 +149,16 @@ the old one once that review is done. Machine migration was dropped because it
 is needed only where the analysed source is unavailable, while a regeneration
 on the same commit is always possible.
 
-## Amendment, 2026-09-24: a duplicate re-keys on its tokens, not on its first copy
+## Amendment, 2026-09-24: a duplicate copy re-keys on its tokens and its file, not on its first copy
 
 Residual limitation 8 used to say that a duplicate block re-keys after its
-first copy moves. That stopped being true when the block's identity became the
-project plus the hash of its whole matched token sequence, independent of
-where any copy sits: no copy is first, so moving or deleting one keeps the
-entry. ADR 0085 keeps that identity for the finding it now reports on each
-copy. The limitation that remains is the one the hash implies, and item 8 now
-states it.
+first copy moves. No copy is first any more: ADR 0085 reports a finding on
+each copy and keys each one by the block's whole normalized token sequence,
+the project-relative path of the file holding the copy and the copy's place
+among the block's copies in that file. No line number enters the key, so code
+added or removed around a copy keeps its entry, and a deleted copy leaves its
+own entry stale, as any repaired finding does. What still re-keys is what the
+key names: a match that grows or shrinks re-keys every copy, and a copy moved
+to another file, or every copy in a renamed file, is a stale entry and a new
+finding, as a renamed symbol is (limitation 7). Item 8 now states that
+limitation.
