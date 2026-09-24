@@ -374,24 +374,31 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   git repository, an existing hook without `--force`, a hook that is not
   Qualimetrix's, a dangling symlink, an unnameable binary, a failed write.
 - **An output file that cannot be written is a refusal.** `--profile`,
-  `check --output` and `graph:export --output` judge a target by the write they
-  make, so a directory or a name ending in `/` (or a symbolic link to one), an
-  existing file that is not writable, a new name in a directory that does not
-  exist or cannot be written, or a descriptor the process does not hold exits
-  `3` before the analysis instead of failing after it. An existing target is
+  `check --output` and `graph:export --output` check what they can before the
+  analysis: a directory or a name ending in `/`, an existing file that is not
+  writable, a new name in a directory that does not exist or does not allow
+  creating a file, a descriptor the process does not hold, and on Linux one it
+  holds only for reading, exit `3` before the analysis instead of failing after
+  it. The write itself is the final judge: a symbolic link that leads to no file
+  that can be created, or any write that still fails, exits `3` after the run,
+  with the reason on stderr so stdout keeps the report as its only document (a
+  profile write used to keep the analysis exit code). An existing target is
   written in place, as `>` in a shell does: a regular file keeps its inode,
   owner, permissions and hard links, a file mounted into a container on its own
   is written instead of refused after the run, and a writable file in a
   directory that cannot be written is accepted. `check --output` and
   `--profile` used to replace an existing file with a renamed temporary file;
-  now a write that fails midway leaves that file partly written. A new name is
-  still written beside its target and renamed onto it, so a failed write leaves
-  no file. `/dev/stdout`, `/dev/stderr`, `/dev/fd/N` and `/proc/self/fd/N`
-  are written through the stream itself, so on Linux a piped `--output=/dev/stdout`
-  and a process substitution work (they exited `3`) and a stdout redirected to
-  a file is no longer truncated. A profile write that still fails after the run
-  exits `3` instead of keeping the analysis exit code, with the reason on
-  stderr so stdout keeps the report as its only document.
+  now a write that fails midway leaves that file partly written, and a new file
+  the write created is removed. The kernel decides which symbolic links are
+  followed, so on Linux with `fs.protected_symlinks` a link another user left
+  in `/tmp` is refused, as `>` refuses it, instead of having the file it names
+  overwritten. `/dev/stdout`, `/dev/stderr`, `/dev/fd/N` and `/proc/self/fd/N`,
+  spelled exactly so, are written through the stream itself, in blocking mode,
+  so on Linux a piped `--output=/dev/stdout` and a process substitution work
+  (they exited `3`), a stdout redirected to a file is no longer truncated, and a
+  parent that hands over a non-blocking stdout gets the whole artifact. Another
+  spelling of a stream, including a symbolic link to `/dev/stdout`, is opened
+  by its path and on Linux exits `3` for a pipe, naming the four spellings.
 - **`--namespace`/`--class` with `--format=gitlab` or `--format=checkstyle`
   exits `3` before the analysis**, whether the format comes from the command
   line or from `qmx.yaml`. Every entry of those formats is a finding to its
@@ -406,6 +413,68 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   each with the value quoted; and a `computed_metrics` entry written as
   `name: ~`, now read as `name: {}`, so an invalid or unknown name or a user
   metric without a formula is refused instead of silently dropped.
+
+- **`complexity.cognitive` follows the SonarSource whitepaper (v1.7) where it
+  did not.** A ternary gets the nesting increment and nests its branches; a
+  closure or arrow function no longer adds +1 (plus nesting) to the enclosing
+  callable, and its own value continues the nesting level it is written at; a
+  method that calls itself adds +1 once rather than once per call; conditions
+  no longer count as nested inside the structure they control; `??` and `??=`
+  add nothing (the whitepaper ignores null-coalescing as shorthand). Values
+  move in both directions: re-check `complexity.cognitive` thresholds and
+  regenerate baselines. The breakdown no longer lists `closure`, `??` or `??=`
+  increments and labels `nested ternary`. `complexity.ccn` still counts `??`.
+- **`duplication.clone` reports a duplicated block once, with every copy.** A
+  block with three or more copies is one finding (`N occurrences`, up to ten
+  other copies named in the message, all in related locations) instead of one
+  finding per pair, and there is no upper limit on copies any more. Baselines
+  holding the pairwise findings need regenerating.
+- **`size.loc` counts lines as `wc -l` does:** a file's final line break no
+  longer adds a line, so `size.loc` (and `size.loc.sum`/`.avg`) is one lower
+  per file that ends with a newline.
+- **The whole-project channels read the run's scope in three states.**
+  `architecture.unreachable-layer` and `architecture.empty-template` are no
+  longer judged on a run whose paths leave out part of the `composer.json`
+  autoload (`qmx check src/Web` used to fail on every layer or template whose
+  code lies elsewhere), like `architecture.unmatched-exclude` already was. A
+  project whose `composer.json` is missing, does not parse or declares no
+  readable production autoload is now judged by all of them —
+  `architecture.unreachable-layer`, `architecture.empty-template`,
+  `architecture.unmatched-exclude`, `coupling.unmatched-framework-namespace`,
+  `discovery.unmatched-exclude` and the three `suppression.unmatched-*`
+  channels — with the analysed paths taken as the whole project; the six that
+  follow the two above were never judged on such a project. Namespace values
+  of `suppress_namespaces` and of per-rule `suppress_namespaces` /
+  `suppress_namespace_channels` stay unjudged there, because without a
+  declared autoload a namespace has no location; path values are judged. Run
+  such a project over all of its code, or give it a `composer.json` with
+  `autoload`. See
+  [ADR 0084](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0084-a-project-scope-has-three-states-and-the-report-names-it.md).
+- **A negative threshold or count under `rules:` is refused with exit `3`**
+  instead of silently inverting the rule (`warning: -1`, `threshold: -1`,
+  `--rule-opt=size.method-count:threshold=-1`, `--max-cycle-size=-1`,
+  `min_methods: -3`, …); the refusal names the value (`got -1`) and the key as
+  written, and numeric refusals read "a non-negative whole number" / "a
+  non-negative number". Computed-metric `warning`/`error`/`threshold` still
+  accept either sign. See
+  [ADR 0083](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0083-a-number-option-declares-its-range-in-its-form.md).
+- **A directory you name as a path and your own `exclude:` removes stops the
+  run with exit `3`** instead of a successful run over zero files. This holds
+  for a path on the command line of `check`, `directives` and the
+  `baseline:*` commands, and under `paths:`; `graph:export` reads no
+  `exclude:` from `qmx.yaml`. A composer-detected path you exclude is still
+  skipped silently, and a file you name inside an excluded directory is still
+  analysed.
+- **A project-level finding's `namespace` field, and its
+  `--group-by=namespace` key, is `(project)` instead of `__PROJECT__`.**
+  `(project)` cannot be a PHP namespace, so the key no longer collides with a
+  real namespace named `__PROJECT__`; in text output grouped by namespace the
+  project group now sorts first. See
+  [ADR 0082](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0082-the-project-aggregate-is-typed-not-spelled.md).
+- **The `--profile=<file>` JSON export is always `{"spans": [...]}`** (was
+  `[]`, a bare span object or a list, depending on the number of root spans);
+  each span gains `stopped` and loses `peak_memory_delta_bytes`, which was not
+  a peak (memory is sampled only at span boundaries).
 
 ### Changed
 
@@ -529,6 +598,58 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
 - `baseline:rename-channels` says when the map declares no rename at all,
   reports `declared_rows` in JSON, and always publishes `rows` and `unreadable`
   as JSON objects (an empty one was `[]`).
+
+- Every report says how the run's paths stood against the project's
+  `composer.json` autoload: `json`, `metrics` and `suppressed` carry a
+  top-level `projectScope` object in every document (`state`: `covered`,
+  `narrowed` or `unknown`; `uncoveredAutoloadTargets`; `unjudgedChannels`),
+  `sarif` a `QMX-RUN-PROJECT-SCOPE` notification, `github` a
+  `run.project-scope` notice, `html` a banner and the text formats a
+  `Project scope …` line, so a run no longer passes off the channels it did
+  not judge as having nothing to report; `gitlab` and `checkstyle` are
+  unchanged.
+- `architecture.unreachable-layer` no longer calls a layer empty when a type
+  its `implements:`/`extends:`/`attributes:` criteria name is declared by the
+  analysed project's composer install (read from
+  `vendor/composer/installed.json` and the files it maps, never loaded); a
+  layer over a vendor-only chain is named by `architecture.doubted-assignment`
+  instead, and a mistyped name the install does not place is still an error
+  whose text says the install was asked.
+- `code-smell.unreachable-code` checks every nested statement list (if/else,
+  loops, try/catch/finally, switch cases, blocks), not only the top level of
+  a callable; a `break` after `return` in a switch case is now reported.
+- `code-smell.empty-catch` exempts only the foreach chain-of-attempts shape (a
+  direct `try` of the loop body whose success path ends the iteration); a
+  `continue` that skips nothing, or a `try` nested deeper or inside a closure,
+  is now reported, and the recommendation no longer suggests a comment, which
+  never cleared the finding.
+- `code-smell.identical-subexpression` follows an if chain through
+  `else if` / `else { if }`.
+- `security.xss`, `security.sql-injection` and `security.command-injection`
+  find a superglobal behind `??`, `?:`, `(string)`, `@`, `match` arms and
+  assignment, and `security.command-injection` also checks backtick commands;
+  one SQL expression is one violation however its query is nested (a query
+  function, `sprintf()` or concatenation around it reports the read once), and
+  a concatenated query behind another call inside one of them is now reported.
+- `security.hardcoded-credentials` checks property, static-property and
+  string-keyed array-element assignments (also `??=`) and recognises fused and
+  digit-suffixed names (`$apikey`, `DBPASSWORD`, `$apiKey1`), as
+  `security.sensitive-parameter` does; hyphen-, slash-, plus- or
+  dot-separated values (UUID, AWS-style, base64, JWT) are no longer taken for
+  messages or identifiers, and a dotted key whose segments join words with a
+  hyphen (`auth.password-reset`) is not taken for a credential.
+- Namespace-level `coupling.cbo` messages name their unit (`CBO: 12
+  namespaces`), since namespace CBO counts namespaces while Ca/Ce count
+  classes; the health breakdown explains a high `coupling.class-rank` as "much
+  of the dependency graph leads here" instead of "many depend on this".
+- `--log-level` sets the log file's level and, with `-v` or more, the
+  console's; without `-v` it can only make the console quieter than warnings,
+  so `--log-level=debug --log-file=…` keeps the terminal at warnings. Not
+  given, the console follows verbosity (warnings, `-v` info, `-vv` debug) and
+  `--log-file` records info.
+- The `--profile` summary marks spans that never stopped themselves (`| N
+  never stopped, not timed`) and keeps their borrowed time out of the totals;
+  Chrome tracing marks such spans' end events with `args.stopped: false`.
 
 ### Fixed
 
@@ -860,6 +981,86 @@ directions. See
   `Internal error: The worker crashed` when the next task reaches it.
 - `hook:install --working-dir <repo>` works when the binary was started by a
   relative path.
+- `??=` counts as a decision point in `complexity.ccn` (+1), like `??`;
+  `complexity.wmc` and `maintainability.mi` follow.
+- `maintainability.mi` no longer scores a callable as CCN 1 when its
+  cyclomatic complexity is missing; the run stops with an internal error
+  instead of publishing a flattering index.
+- The Cognitive Complexity page lists its deviations from the whitepaper
+  (lambdas measured as separate units, indirect recursion not detected) and
+  no longer claims to follow it where it did not.
+- Namespace-level `coupling.cbo` of a parent namespace is counted over its
+  whole subtree, the region its `coupling.ca`/`coupling.ce` cover; it was 0
+  for every namespace with sub-namespaces, and a class declared in the parent
+  counted its own sub-namespace as coupled. The value is published and not
+  judged: `coupling.cbo` reports leaf namespaces only, because the namespace
+  thresholds do not model a number that grows with the subtree.
+- `extends` of a PHP built-in class no longer counts toward `coupling.ce`,
+  `coupling.ca`, `coupling.cbo`, `coupling.cbo-app` or
+  `coupling.ce-packages`, matching `implements` and type hints of built-ins;
+  a built-in written in another letter case (`\countable`,
+  `extends \exception`) is recognised as one, for coupling and for the DIT
+  "inheritance chain(s) … not followed to a root" warning.
+- `design.noc` is published on classes only, as `design.dit` is, and
+  `interface B extends A` no longer counts `B` as a child of `A`.
+- `coupling.distance` no longer reports a namespace with no dependencies in
+  either direction as a zone of pain, and a namespace declaring only functions
+  gets no distance instead of `1.0`.
+- `coupling.class-rank` no longer reports a class nothing depends on as a hub,
+  and its recommendation names the measured number of dependents.
+- Circular-dependency detection no longer recurses per chain link, so deep
+  chains no longer abort the run under Xdebug's nesting limit, and the cycle
+  path search is linear on long cycles.
+- `duplication.clone` no longer exhausts a 128M memory limit on a block copied
+  around a hundred times, reports the lines a duplicate occupies (a block
+  starting or ending with a brace on its own line was shifted one line up),
+  and reports two identical blocks in one file that touch without sharing a
+  line.
+- A first-class callable of a command or SQL function (`exec(...)`) no longer
+  makes its file fail analysis.
+- `code-smell.unused-private`: a public or protected `__call`/`__callStatic`/
+  `__get`/`__set`, or a magic method in another letter case, switches the
+  magic-access protection on; method names match case-insensitively; an
+  anonymous class no longer breaks `new self()` receiver tracking; a private
+  method only called by itself is reported.
+- `code-smell.debug-code` flags `var_dump($x, true)`, `dd($x, true)` and
+  `dump($x, true)`: positional return mode applies only to `print_r()` and
+  `var_export()`.
+- `code-smell.exit` and `code-smell.unreachable-code` recognize the PHP 8.4
+  fully qualified `\exit()` / `\die()`; `code-smell.constructor-overinjection`
+  and `code-smell.long-parameter-list` recognize a constructor spelled
+  `__Construct`.
+- A namespace literally named `__PROJECT__` is analysed as a namespace: it was
+  merged into the project aggregate, its declarations lost their namespace in
+  `symbol` and `subject`, and its namespace findings were reported as project
+  findings.
+- A carve-out written as two layers with one pattern — the first with an
+  `exclude:`, the second receiving what it removes — loads instead of being
+  refused as unreachable; the refusal that remains names the carve-out.
+- `baseline:cleanup` lists an entry whose rule `--only-rule`, `--disable-rule`
+  or `enabled: false` kept out of the run as `not measured` instead of
+  `nothing reported for this identity`, and `baseline:explain` prints
+  `now not measured (…)` for it.
+- `baseline:explain` shows an entry the file holds but cannot apply as
+  `present but not applied (<reason> — <detail>)` instead of
+  `baseline: (none)`, lists an unreadable line as `Unreadable baseline entry`,
+  shows `mode: suppress`, and says when a member without a finite value makes
+  `check` report the group.
+- A missing or unreadable baseline file (`check --baseline`,
+  `baseline:explain --baseline`, `baseline:update`, `baseline:cleanup`) is
+  refused with exit 3 before the analysis runs, not after it.
+- A baseline file the `baseline:*` commands cannot write is refused with exit
+  3 and the system's reason (was a PHP warning on stdout and exit 1), and
+  `hook:install`/`hook:uninstall` name the system's reason when they cannot
+  write, back up, restore or remove the hook, without a PHP warning on stdout.
+- An unwritable `--log-file` is refused as input with exit 3 instead of a PHP
+  warning in stdout and an internal error; a log record whose context holds
+  bytes that are not UTF-8 is no longer written as an empty line; a message
+  containing console markup such as `<info>` is printed as written;
+  `--log-level=debug -v` prints debug lines (they waited for `-vv`).
+- A refusal under `--format=health` is written to stderr as a sentence instead
+  of a JSON envelope on stdout, where the health table is expected; the five
+  JSON formats keep the envelope.
 
 ## [0.27.0] - 2026-09-18
 

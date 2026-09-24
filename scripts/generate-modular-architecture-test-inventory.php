@@ -25,7 +25,7 @@ const TEST_LEVELS = ['Unit', 'Integration', 'Functional'];
 // not because the set changed: no file entered or left the tree, and the count
 // is the same on both sides of the move. Re-hash only against a diff of the
 // path list; a digest refreshed to make the generator run again asserts nothing.
-const P6_C_BASELINE_PATHS_SHA256 = 'c8620ffa4e9199f0acd82954a306942839a9e5c3ada3e51daa878b2d347867b8';
+const P6_C_BASELINE_PATHS_SHA256 = '4d415ffabda4442aebb9a583cd9a5d125a61578a47ce3abb06ca0e75e63fb109';
 
 $arguments = $_SERVER['argv'] ?? [];
 $check = in_array('--check', $arguments, true);
@@ -1213,6 +1213,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Reporting/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Path/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Symbol/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Core/Symbol/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Core/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Policy/Architecture/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Policy/Baseline/Integration/', 'suite' => 'Integration'],

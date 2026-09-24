@@ -38,16 +38,18 @@ use Symfony\Component\Console\Tester\CommandTester;
  * **The pair is the proof.** One fixture, several `composer.json` files. On a
  * run whose paths cover everything the manifest declares production — through
  * `psr-4`, `classmap` or `files` alike — the product can judge and every one
- * of the six channels speaks; on the same tree and the same configuration
- * under a manifest declaring a production target the run never looked at, or
- * under one declaring no production autoload at all, every one of the six must
- * be silent. Without the speaking half, silence would not distinguish a
+ * of the six channels speaks, and so does every one but the namespace-valued
+ * suppression channel under a manifest declaring no production autoload at
+ * all, where the run's paths are the project (ADR 0084);
+ * on the same tree and the same configuration under a manifest declaring a
+ * production target the run never looked at, every one of the six must be
+ * silent. Without the speaking half, silence would not distinguish a
  * working gate from a fixture that cannot produce the channel at all; without
  * the silent half, a channel with no gate passes.
  *
  * Production targets declared through `classmap`, `psr-0` or `files` are
  * judged like PSR-4 targets. Silence is earned only by a target outside the
- * run or by a manifest that declares no readable production autoload.
+ * run.
  */
 final class ScopeConditionedChannelGuardTest extends TestCase
 {
@@ -64,6 +66,9 @@ final class ScopeConditionedChannelGuardTest extends TestCase
         'suppression.unmatched-path',
         'suppression.unmatched-rule-ledger',
     ];
+
+    /** The one channel whose every value here is a namespace, which a project without a declared autoload cannot place. */
+    private const string UNLOCATED_WITHOUT_AUTOLOAD = 'suppression.unmatched-namespace';
 
     private string $fixture = '';
 
@@ -267,20 +272,35 @@ final class ScopeConditionedChannelGuardTest extends TestCase
     }
 
     /**
-     * The silent half, second shape and the only remaining "cannot judge":
-     * the manifest declares no production autoload this product can read at
-     * all. There is no denominator, so there is no coverage verdict, so no
-     * channel may accuse anyone.
+     * The speaking half, second shape: the manifest declares no production
+     * autoload this product can read at all. There is no project beyond the
+     * paths the run names, so the paths are the whole project and the channels
+     * judge them (ADR 0084) — all but the namespace values of suppressions,
+     * which nothing locates without a declared autoload. That one channel is
+     * silent, and the report names it rather than leaving the silence to read
+     * as "nothing stale".
      *
      * @param ?string $manifest raw `composer.json` content, or null for no manifest at all
      */
     #[Test]
     #[DataProvider('provideManifestsThatDeclareNoProductionAutoload')]
-    public function itStaysSilentOnEveryScopeConditionedChannelWhenNothingDeclaresProduction(?string $manifest): void
+    public function itSpeaksOnEveryScopeConditionedChannelWhenNothingDeclaresProduction(?string $manifest): void
     {
-        $spoke = $this->channelsOf($this->checkWithRawManifest($manifest));
+        $tester = $this->checkWithRawManifest($manifest);
 
-        self::assertSame([], $spoke, 'A run with nothing to measure coverage against may judge no configured value.');
+        self::assertSame(
+            array_values(array_diff(self::SCOPE_CONDITIONED, [self::UNLOCATED_WITHOUT_AUTOLOAD])),
+            $this->channelsOf($tester),
+            'A run whose paths are the project judges every configured value a location can be found for.',
+        );
+
+        $payload = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($payload);
+        $scope = $payload['projectScope'] ?? null;
+        self::assertIsArray($scope);
+        self::assertSame('unknown', $scope['state'] ?? null);
+        self::assertIsList($scope['unjudgedChannels'] ?? null);
+        self::assertContains(self::UNLOCATED_WITHOUT_AUTOLOAD, $scope['unjudgedChannels']);
     }
 
     /** @return iterable<string, array{?string}> */

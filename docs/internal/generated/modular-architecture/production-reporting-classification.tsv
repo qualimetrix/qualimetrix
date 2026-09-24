@@ -83,3 +83,4 @@ src/Reporting/Health/SummaryEnricher.php	Qualimetrix\Reporting\Health\SummaryEnr
 src/Reporting/Report.php	Qualimetrix\Reporting\Report	"output projection"	Reporting
 src/Reporting/ReportBuilder.php	Qualimetrix\Reporting\ReportBuilder	"output projection"	Reporting
 src/Reporting/ReportCoverage.php	Qualimetrix\Reporting\ReportCoverage	"output projection"	Reporting
+src/Reporting/ReportProjectScope.php	Qualimetrix\Reporting\ReportProjectScope	"output projection"	Reporting

@@ -1,6 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -1210,2 +1210,1 @@
--    },
--    "outOfScope": null
-+    }

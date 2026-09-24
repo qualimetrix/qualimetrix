@@ -40,17 +40,17 @@ The verb is kebab-case. It is normally a single word (`export`, `install`,
 be ambiguous or would overstate what the command touches:
 
 ```
-bin/qmx baseline:migrate-plan       # phase qualifier: produce the disposition plan
-bin/qmx baseline:migrate-apply      # phase qualifier: apply a reviewed plan
-bin/qmx baseline:rebase-contracts   # sub-object qualifier: rewrites contract metadata only
+bin/qmx baseline:rename-channels    # sub-object qualifier: rewrites channel keys only
+bin/qmx debug:layer-assignment      # sub-object qualifier: one question about layers
 ```
 
 Two rules govern the qualifier:
 
-1. **It names a phase or the sub-object actually affected.** `migrate-plan` and
-   `migrate-apply` are the two phases of one migration; `rebase-contracts`
-   rewrites the contract manifest, not the whole file, and the bare
-   `baseline:rebase` would read as "rebase the baseline".
+1. **It names a phase or the sub-object actually affected.** `rename-channels`
+   rewrites the channel keys of accepted entries, not the whole file, and the
+   bare `baseline:rename` would read as "rename the baseline file". Two phases
+   of one operation that must be reviewed between each other take one
+   qualifier each (`<verb>-plan`, `<verb>-apply`).
 2. **It never restates the namespace noun.** The noun segment already scopes the
    command: ~~`baseline:cleanup-baseline`~~, ~~`hook:install-hook`~~.
 

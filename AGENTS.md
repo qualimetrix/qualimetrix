@@ -229,10 +229,10 @@ the command into the Architecture slice would force the slice to depend on
 ## Key Features
 
 ### Metrics and Rules
-- **Complexity**: Cyclomatic (CCN), Cognitive Complexity, NPATH Complexity
+- **Complexity**: Cyclomatic (CCN), Cognitive Complexity, NPATH Complexity, WMC (Weighted Methods per Class)
 - **Maintainability**: Halstead, Maintainability Index
 - **Coupling**: CBO (Coupling Between Objects), Distance from Main Sequence, Instability, Abstractness, ClassRank (PageRank)
-- **Cohesion**: TCC/LCC (Tight/Loose Class Cohesion), LCOM4, WMC (Weighted Methods per Class)
+- **Cohesion**: TCC/LCC (Tight/Loose Class Cohesion), LCOM4
 - **Size**: LOC, Class Count, Namespace Size, Property Count, Method Count
 - **Design**: DIT (Depth of Inheritance Tree), NOC (Number of Children), Type Coverage
 - **Architecture**: Layer Policy Enforcement (multi-criterion membership, template layers, `exclude:`, `relations:` whitelist — deptrac replacement), Circular Dependency Detection, Dependency Graph Export (DOT)
@@ -309,8 +309,10 @@ When documenting deviations: use `!!! info "Deviation from original spec"` block
 
 - **Leaf capabilities** depend only on declared public contracts; sibling
   internals and taxonomy parents are not approved targets for new imports.
-- **Core** contains neutral primitives only and has no project dependencies
-  (PHP and php-parser types are allowed).
+- **Core** contains neutral primitives only and imports nothing from the
+  project outside `Core`; its only external types are `PhpParser\Node` and
+  `Composer\InstalledVersions`. No control enforces that list — a new external
+  import in Core is a review decision (see `src/Core/README.md`).
 - **Analysis\Run phase ports** are limited to the FileSet inspection
   participant. Graph preparation and metric derivation remain unapproved ports.
 - **Infrastructure** may depend on capabilities for delivery/composition;

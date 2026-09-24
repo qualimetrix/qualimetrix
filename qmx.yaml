@@ -98,6 +98,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellVisitor'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionOptions'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionRule'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\ControlFlow\ChainOfAttempts'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\ControlFlow\ControlFlowSmells'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\CountInLoopRule'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\DebugCodeRule'
@@ -118,6 +119,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionCollector'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionFinding'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionVisitor'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IfChain'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\RepeatedConditions'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\RepeatedExpressions'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\SuperglobalsRule'
@@ -231,6 +233,7 @@ architecture:
     - name: analysis-evidence-coupling
       patterns:
         - 'Qualimetrix\Analysis\Evidence\Coupling\AbstractnessCollector'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\CboFindingText'
         - 'Qualimetrix\Analysis\Evidence\Coupling\CboOptions'
         - 'Qualimetrix\Analysis\Evidence\Coupling\CboRule'
         - 'Qualimetrix\Analysis\Evidence\Coupling\ClassCboOptions'
@@ -240,6 +243,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule'
         - 'Qualimetrix\Analysis\Evidence\Coupling\ClassRfcData'
         - 'Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\CoupledNamespaces'
         - 'Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis'
         - 'Qualimetrix\Analysis\Evidence\Coupling\CouplingCollector'
         - 'Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector'
@@ -264,7 +268,6 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder'
-        - 'Qualimetrix\Analysis\Evidence\DependencyModel\EmptyDependencyGraph'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyLocation'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor'
@@ -418,6 +421,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Security\CommandInjectionRule'
         - 'Qualimetrix\Analysis\Evidence\Security\Credential\CredentialLiterals'
         - 'Qualimetrix\Analysis\Evidence\Security\Credential\CredentialLocation'
+        - 'Qualimetrix\Analysis\Evidence\Security\Credential\CredentialValue'
         - 'Qualimetrix\Analysis\Evidence\Security\Credential\HardcodedCredentialsCollector'
         - 'Qualimetrix\Analysis\Evidence\Security\Credential\HardcodedCredentialsVisitor'
         - 'Qualimetrix\Analysis\Evidence\Security\HardcodedCredentialsOptions'
@@ -597,6 +601,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DeclaredLayerReachability'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DiagnosticSampleList'
+        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DoubtedAssignmentDiagnostic'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerRoutingGuidance'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFinding'
@@ -609,6 +614,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\ShadowedClass'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\OwnedLayerTargets'
+        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\PotentialShadowDiagnostic'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassMode'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule'
@@ -669,8 +675,6 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineLoader'
-        - 'Qualimetrix\Analysis\Policy\Baseline\BaselineMigrator'
-        - 'Qualimetrix\Analysis\Policy\Baseline\BaselineMigratorResult'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateDisposition'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateRefusalReason'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateResult'
@@ -693,15 +697,10 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Baseline\GroupAcceptance'
         - 'Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry'
         - 'Qualimetrix\Analysis\Policy\Baseline\InertEntryReason'
-        - 'Qualimetrix\Analysis\Policy\Baseline\MigrationReport'
-        - 'Qualimetrix\Analysis\Policy\Baseline\MigrationReportDroppedEntry'
+        - 'Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage'
         - 'Qualimetrix\Analysis\Policy\Baseline\RunScope'
         - 'Qualimetrix\Analysis\Policy\Baseline\UncapturedGroup'
         - 'Qualimetrix\Analysis\Policy\Baseline\UncapturedReason'
-        - 'Qualimetrix\Analysis\Policy\Baseline\V5Baseline'
-        - 'Qualimetrix\Analysis\Policy\Baseline\V5BaselineReader'
-        - 'Qualimetrix\Analysis\Policy\Baseline\V5Entry'
-        - 'Qualimetrix\Analysis\Policy\Baseline\V5UnreadableRecord'
     - name: analysis-policy-inline
       patterns:
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface'
@@ -755,6 +754,7 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Collection\FileProcessor'
         - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage'
         - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeMeasurement'
+        - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeState'
         - 'Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput'
@@ -898,6 +898,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineCommandDefinition'
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds'
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand'
+        - 'Qualimetrix\Infrastructure\Console\Command\BaselineExplanationRenderer'
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineRenameChannelsCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineRun'
@@ -1002,6 +1003,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Git\GitScopeRefusedException'
         - 'Qualimetrix\Infrastructure\Git\GitScopeResolution'
         - 'Qualimetrix\Infrastructure\Git\GitScopeResolver'
+        - 'Qualimetrix\Infrastructure\Git\NameStatusListing'
         - 'Qualimetrix\Infrastructure\Git\NameStatusRecord'
         - 'Qualimetrix\Infrastructure\Git\NotAGitRepositoryException'
         - 'Qualimetrix\Infrastructure\Git\ReportingGitScopeQuery'
@@ -1009,6 +1011,7 @@ architecture:
     - name: infrastructure-logging
       patterns:
         - 'Qualimetrix\Infrastructure\Logging\ConsoleLogger'
+        - 'Qualimetrix\Infrastructure\Logging\Contract\LogFileUnavailable'
         - 'Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface'
         - 'Qualimetrix\Infrastructure\Logging\DelegatingLogger'
         - 'Qualimetrix\Infrastructure\Logging\FileLogger'
@@ -1136,6 +1139,7 @@ architecture:
         - 'Qualimetrix\Reporting\Report'
         - 'Qualimetrix\Reporting\ReportBuilder'
         - 'Qualimetrix\Reporting\ReportCoverage'
+        - 'Qualimetrix\Reporting\ReportProjectScope'
     - name: reporting-graphprojection
       patterns:
         - 'Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface'
@@ -1271,6 +1275,7 @@ architecture:
     analysis-policy-architecture:
       - analysis-configuration
       - analysis-evidence-dependencymodel
+      - analysis-evidence-design
       - analysis-finding
       - core-neutral
       - core-symbol
@@ -1493,15 +1498,6 @@ rules:
       - subtree: Qualimetrix\Core\Path
     suppress_namespace_channels:
       coupling.cbo:namespace:
-        # This exact public-contract namespace replaces four broad historical
-        # consumer namespaces with five mandatory ADR 0022 named capability
-        # consumers. Namespace-union granularity raises CBO by one although
-        # executable importer count falls; declaration-level class CBO remains active.
-        - exact: 'Qualimetrix\Analysis\Configuration\Contract'
-        # Raw 18 is the required union of eight inbound and twelve outbound
-        # Inline contract dependencies. Exact channel scope keeps declaration
-        # CBO, children, and every other coupling channel active.
-        - exact: 'Qualimetrix\Analysis\Policy\Inline\Contract'
         # Shared exact/subtree/regex primitives intentionally form one neutral
         # vocabulary used by configuration, analysis, reporting, and console
         # adapters. The namespace union is 21 after the bound selector contract
@@ -1513,63 +1509,6 @@ rules:
         # union is 16 after FormatterContext gained the bound selector; class
         # CBO and every other coupling channel remain active.
         - exact: 'Qualimetrix\Reporting\Formatter\Summary'
-        # The Reporting vocabulary root, 16 against an inclusive 16. This is
-        # the same namespace-granularity artefact the
-        # `Analysis\Configuration\Contract` entry in this list records, and
-        # here the run says so outright: `coupling.cbo` moves 15 -> 16
-        # while `coupling.ca` (12) and `coupling.ce` (57) do not move at all.
-        # No class gained or lost an edge; only the number of namespaces those
-        # same edges are spread over changed. Measured with
-        # `bin/qmx check src/ --format=metrics`, both sides, on the commit this
-        # change starts from and on the result.
-        #
-        # The cause is retiring the `Formatter\Support` bucket, which replaced
-        # one importing namespace with two: `Formatter\Detail\FindingDetailRenderer`
-        # and `Formatter\Ordering\FindingSorter` named `GroupBy` and
-        # `FormatterContext` from inside `Support` before and name the same two
-        # types from their own subjects now. That part is counted from imports
-        # rather than read off the graph, so it is offered as the explanation
-        # of a delta the tool reports, not as a reconstruction of the metric.
-        #
-        # The counterfactual of removing this entry is putting the bucket back,
-        # so no refactoring is offered. Moving `GroupBy` down into `Ordering`
-        # was rejected on a count rather than a run: eleven namespaces name
-        # that enum, so it would turn a leaf into a hub and add an edge from
-        # this root besides. Exact channel scope keeps declaration-level class
-        # CBO, every child namespace, and every other coupling channel active.
-        - exact: 'Qualimetrix\Reporting'
-        # The configuration hub, union 16 against an inclusive 16. The one edge
-        # that moved it from 15 is afferent, and it is X18's own cure:
-        # `Evidence\Coupling\CouplingAnalysis` stopped throwing a bare
-        # `InvalidArgumentException` and now names `ConfigSchema` and
-        # `ConfigurationRefusal` so a bad coupling option is refused under the
-        # `Configuration error:` framing. Measured, not assumed: the afferent
-        # namespace set goes 14 -> 15 and the single new member is
-        # `Analysis\Evidence\Coupling`; drop that one import and the union is
-        # back at 15, under the ceiling. The counterfactual of removing it is
-        # therefore exactly "undo the cure", which is why no refactoring is
-        # offered here. A point `@qmx-threshold` does not address this: the
-        # subject is `ns:Qualimetrix\Analysis\Configuration`, and a tag on the
-        # file the finding is attributed to was probed on this tree -- the
-        # violation stood and `bin/qmx directives` reported the directive inert.
-        # Exact channel scope keeps declaration-level class CBO, every child
-        # namespace and every other coupling channel measured.
-        - exact: 'Qualimetrix\Analysis\Configuration'
-        # The formatter namespace, union 16 against an inclusive 16, and the
-        # same shape: the edge that moved it from 15 is afferent, from
-        # `Reporting\Configuration\OutputFormatResolver`, which now names
-        # `FormatterRegistryInterface` to judge an output format against the
-        # registered formatters; at 72f18239 it wrapped whatever string it was
-        # given in an `OutputFormat` and checked nothing. Measured: the
-        # efferent namespace set is unchanged at 6 and the afferent set goes
-        # 9 -> 10 with that one new member, so 6 + 10 = 16. Note this corrects
-        # the efferent reading the rule's message suggests -- the breach is on
-        # the inbound half. Point thresholds do not reach a namespace subject
-        # (probed as above), and removing the edge means undoing X18's cure:
-        # the resolver was given the registry so an unknown output format is
-        # refused under the `Configuration error:` framing. No refactoring is
-        # offered here for the same reason as the entry above.
-        - exact: 'Qualimetrix\Reporting\Formatter'
         # The Measurement contract namespace, whose union is 47 against a
         # threshold of 25 — measured 2026-09-21, and the number is a dated
         # measurement rather than a ceiling, because this channel is suppressed
@@ -1865,7 +1804,8 @@ rules:
       - regex: 'src/Analysis/Evidence/Coupling/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Design/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Maintainability/.*Visitor\.php'
-      - regex: 'src/Analysis/Evidence/Security/.*Visitor\.php'
+      # No Security root: no visitor there branches on node types past the bound,
+      # and an entry that suppresses nothing would hide the first one that does.
       - regex: 'src/Analysis/Evidence/Size/.*Visitor\.php'
       - exact: src/Analysis/Evidence/CodeSmell/UsageTrackingTrait.php
       - exact: src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php

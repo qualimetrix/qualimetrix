@@ -71,6 +71,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
         mkdir($this->tempDir . '/src/Controller', 0777, true);
         mkdir($this->tempDir . '/src/Repository', 0777, true);
         mkdir($this->tempDir . '/src/Orphan', 0777, true);
+        file_put_contents($this->tempDir . '/composer.json', json_encode(['autoload' => ['psr-4' => ['Silencing\\' => 'src/']]], \JSON_THROW_ON_ERROR));
 
         // A class outside every layer feeds `architecture.coverage-gap`.
         file_put_contents($this->tempDir . '/src/Orphan/Loner.php', <<<'PHP'
@@ -395,16 +396,25 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
         $application->addCommand($command);
         $tester = new CommandTester($command);
 
-        $tester->execute([
-            'paths' => [$this->tempDir . '/src'],
-            '--config' => $this->tempDir . '/qmx.yaml',
-            '--format' => 'json',
-            '--workers' => 0,
-            '--no-cache' => true,
-            '--no-progress' => true,
-            '--fail-on' => 'none',
-            ...$extraOptions,
-        ]);
+        // The project root is read from the working directory; the fixture's
+        // own composer.json makes this run cover its project.
+        $previous = (string) getcwd();
+        chdir($this->tempDir);
+
+        try {
+            $tester->execute([
+                'paths' => [$this->tempDir . '/src'],
+                '--config' => $this->tempDir . '/qmx.yaml',
+                '--format' => 'json',
+                '--workers' => 0,
+                '--no-cache' => true,
+                '--no-progress' => true,
+                '--fail-on' => 'none',
+                ...$extraOptions,
+            ]);
+        } finally {
+            chdir($previous);
+        }
 
         $report = json_decode(self::extractJsonObject($tester->getDisplay()), true, 512, \JSON_THROW_ON_ERROR);
         self::assertIsArray($report);

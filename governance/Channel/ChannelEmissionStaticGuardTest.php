@@ -421,9 +421,14 @@ final class ChannelEmissionStaticGuardTest extends TestCase
                 'LayerViolationRule delegates its second channel here, and the channel name arrives as an'
                 . ' argument rather than a constant on this class, so the resolver has nothing to read even'
                 . ' if it followed the call.',
+            'src/Analysis/Policy/Architecture/LayerViolation/DoubtedAssignmentDiagnostic.php' =>
+                'LayerViolationRule delegates architecture.doubted-assignment here, the same shape as'
+                . ' UnmatchedExcludeDiagnostic above.',
             'src/Analysis/Policy/Architecture/LayerViolation/DeclaredLayerReachability.php' =>
                 'Reached from LayerDeclarationValidator, a configuration validator rather than a rule, so no'
                 . ' rule class chain leads here at all.',
+            'src/Analysis/Policy/Architecture/LayerViolation/PotentialShadowDiagnostic.php' =>
+                'Reached from LayerDeclarationValidator, like DeclaredLayerReachability above.',
             'src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php' =>
                 'A configuration validator, like the one above.',
             'src/Analysis/Run/ExcludeBinding/UnmatchedExcludeAudit.php' =>
