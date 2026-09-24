@@ -320,7 +320,9 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   instead of one silently winning, each pair judged as written before `--all`
   or a later pair could replace it: one key written twice
   (`--format-opt=violations=bad --format-opt=violations=1`), `violations`
-  beside `limit`, and `limit` or an empty `violations=` beside `--all`. A
+  beside `limit`, `limit` or an empty `violations=` beside `--all`, and `--all`
+  beside `--detail` or `--detail=N` (was: `--all` silently lifted the cap;
+  `--detail=all` and `--detail=0` beside `--all` stay accepted). A
   malformed `--suppress-path`, `--suppress-namespace` or `--baseline` is
   refused before the analysis instead of after it.
 - **A run with no paths analyses every production autoload target of
@@ -338,7 +340,25 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   `baseline:generate`, `baseline:update`, `baseline:cleanup` and
   `baseline:explain` now accept `--include-autoload-dev` and
   `--include-generated`, so a baseline covers the same project `check`
-  measures with them.
+  measures with them. An autoload entry that is, or lies inside, a `vendor`,
+  `node_modules` or `.git` directory (`files: ["vendor/acme/helpers.php"]`,
+  `classmap: ["lib/vendor"]`) is neither analysed by default nor counted as
+  project scope, and `check` names it in a warning on stderr; it used to be
+  analysed as project code or, for a directory itself named `vendor`, counted
+  as covered while never analysed. A manifest whose every entry is such is
+  treated like one with no autoload: the run analyses the working directory.
+  To analyse vendored code, name a file or a directory inside it explicitly
+  (`bin/qmx check vendor/acme/helpers.php`).
+- **A path you name that is itself a `vendor`, `node_modules` or `.git`
+  directory exits `3` before the analysis** — on the command line
+  (`bin/qmx check lib/vendor`) or in `paths:` in `qmx.yaml`, for `check`,
+  `baseline:generate`, `graph:export` and `directives`. Discovery never walks
+  into such a directory, so the run used to analyse nothing and report it as a
+  clean result: `check` exited `0` over zero files, `baseline:generate` wrote
+  an empty baseline, `graph:export` exited `1` with "No files found to
+  analyze", `directives` refused without saying why. Name a file or a directory
+  inside it instead (`bin/qmx check vendor/acme/`); a `vendor` directory inside
+  a path you name is still skipped, without a refusal.
 - **The JSON refusal envelope is `{error, exit_code, position}`** (was
   `{error, exit_code}`): `position` is `{path, written, accepted, closed}` when
   the refusal was raised at a place in a configuration document, and `null`
@@ -355,12 +375,23 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   Qualimetrix's, a dangling symlink, an unnameable binary, a failed write.
 - **An output file that cannot be written is a refusal.** `--profile`,
   `check --output` and `graph:export --output` judge a target by the write they
-  make — a temporary file beside it renamed over it — so a directory, a target
-  in a directory that cannot be written, or an unwritable file exits `3` before
-  the analysis instead of failing after it; `graph:export --output` now writes
-  that way too instead of overwriting in place. A profile write that still
-  fails after the run exits `3` instead of keeping the analysis exit code, with
-  the reason on stderr so stdout keeps the report as its only document.
+  make, so a directory or a name ending in `/`, a target in a directory that
+  cannot be written, or an unwritable file exits `3` before the analysis
+  instead of failing after it. A regular file or a new name is written to a
+  temporary file beside it and renamed over it, keeping a replaced file's
+  permissions; a symbolic link is followed and stays a link; `/dev/stdout`,
+  `/dev/null`, a named pipe or a process substitution is written in place.
+  `graph:export --output` now writes regular files that way too instead of
+  overwriting them in place. A profile write that still fails after the run
+  exits `3` instead of keeping the analysis exit code, with the reason on
+  stderr so stdout keeps the report as its only document.
+- **`--namespace`/`--class` with `--format=gitlab` or `--format=checkstyle`
+  exits `3` before the analysis**, whether the format comes from the command
+  line or from `qmx.yaml`. Every entry of those formats is a finding to its
+  consumer, so an entry saying what the selection left out would count as one
+  more issue (gitlab) or error (checkstyle). Drop the selector, or use `json`,
+  `sarif` or `github`, which say what the selection left out. Without a
+  selection both formats are unchanged.
 - **Configuration values that used to be tolerated are refused with exit `3`:**
   two spellings of one key in one mapping (`suppress_paths` beside
   `suppressPaths`) instead of the later silently winning; `memory_limit: 0`, a
@@ -772,9 +803,10 @@ directions. See
   `summary.debtPer1kLoc` (as `null`) instead of dropping the key. Every
   structured format says the same: `json` and `metrics` carry a top-level
   `outOfScope` object (always present, `null` without a selection), and
-  `sarif`, `gitlab`, `checkstyle`, `github` and `html` add one
-  `drill-down.out-of-scope` entry when findings lie outside the selection; the
-  JSON `summary` judges whether a selection ran by the same fact.
+  `sarif`, `github` and `html` add one `drill-down.out-of-scope` entry when
+  findings lie outside the selection (`gitlab` and `checkstyle` refuse a
+  selection, see Breaking); the JSON `summary` judges whether a selection ran
+  by the same fact.
 - `--format=html` lists every finding the report counts: project-level and
   file-level findings and findings on global functions no longer disappear
   from the tree while `summary.totalViolations` counted them, and a fileless

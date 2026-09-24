@@ -22,7 +22,7 @@ final readonly class CheckScopeResolver
         InputInterface $input,
         RunConfiguration $configuration,
     ): ResolvedCheckScope {
-        $scope = $this->gitScopeResolver->resolve($input, $configuration);
+        $scope = $this->gitScopeResolver->resolve(CommandLineSpelling::option($input, 'report'), $configuration);
 
         // Taken once, for the resolved paths rather than the configured ones:
         // `--report=git:...` narrows the run after the configuration was
@@ -38,7 +38,7 @@ final readonly class CheckScopeResolver
 
         return new ResolvedCheckScope(
             $scope,
-            $this->scopeWarningChecker->describe($measurement->uncoveredRoots),
+            $this->scopeWarningChecker->describe($measurement->uncoveredRoots, $measurement->prunedTargets),
             $measurement->covers(),
         );
     }

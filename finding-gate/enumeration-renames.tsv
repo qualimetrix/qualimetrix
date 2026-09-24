@@ -7,7 +7,7 @@ architecture.circular-dependency	channel	?		14	44	0	2	0	39	0	8	1	1	0	0
 architecture.coverage-gap	channel	?		30	80	0	0	0	46	0	5	0	0	0	0
 architecture.doubted-assignment	channel	?		20	11	0	0	0	23	0	14	0	0	0	0
 architecture.empty-template	channel	?		9	14	0	0	0	28	0	5	0	0	0	0
-architecture.layer-violation	channel	?		32	132	0	3	0	82	0	11	1	1	0	0
+architecture.layer-violation	channel	?		32	133	0	3	0	82	0	11	1	1	0	0
 architecture.pending-layer-matched	channel	?		8	14	0	0	0	25	0	5	0	0	0	0
 architecture.potential-shadow	channel	?		19	17	0	0	0	41	0	7	0	0	0	0
 architecture.unassigned-class	channel	?		33	32	0	0	0	24	0	8	0	0	0	0
@@ -33,7 +33,7 @@ complexity.cognitive	channel	?		22	93	2	2	25	54	0	25	0	0	0	0
 complexity.npath	channel	?		19	108	2	2	5	52	0	20	0	0	0	0
 complexity.wmc	channel	?		21	87	2	2	5	37	0	17	0	0	0	0
 coupling.cbo	channel	?		69	356	2	5	4	128	0	16	0	0	0	0
-coupling.class-rank	channel	?		22	116	0	2	2	40	0	44	0	0	0	0
+coupling.class-rank	channel	?		22	117	0	2	2	40	0	44	0	0	0	0
 coupling.distance	channel	?		33	90	2	2	1	46	0	45	0	0	0	0
 coupling.instability	channel	?		46	117	2	3	9	60	0	19	0	0	0	0
 coupling.unmatched-framework-namespace	channel	?		3	8	0	0	0	15	0	6	0	0	0	0
@@ -84,7 +84,7 @@ coupling.ce	metric-key	?		27	87	0	1	0	10	0	4	0	0	0	0
 coupling.ce-framework	metric-key	?		13	15	0	0	0	10	0	4	0	0	0	0
 coupling.ce-own	metric-key	?		3	5	0	0	0	5	0	1	0	0	0	0
 coupling.ce-packages	metric-key	?		11	9	0	0	0	4	0	2	0	0	0	0
-coupling.class-rank	metric-key	?		22	116	0	2	2	40	0	44	0	0	0	0
+coupling.class-rank	metric-key	?		22	117	0	2	2	40	0	44	0	0	0	0
 coupling.distance	metric-key	?		33	90	2	2	1	46	0	45	0	0	0	0
 coupling.distance-own	metric-key	?		7	16	0	0	0	9	0	1	0	0	0	0
 coupling.instability	metric-key	?		46	117	2	3	9	60	0	19	0	0	0	0
@@ -148,7 +148,7 @@ size.symbol-method-count	metric-key	?		12	11	0	0	0	2	0	2	0	0	0	0
 size.trait-count	metric-key	?		11	15	0	0	0	0	0	2	0	0	0	0
 annotation.directive	producer	?		8	7	0	0	0	30	0	8	0	0	0	0
 architecture.circular-dependency	producer	?		14	44	0	2	0	39	0	8	0	0	0	0
-architecture.layer-violation	producer	?		32	132	0	3	0	82	0	11	0	0	0	0
+architecture.layer-violation	producer	?		32	133	0	3	0	82	0	11	0	0	0	0
 architecture.unassigned-class	producer	?		33	32	0	0	0	24	0	8	0	0	0	0
 code-smell.boolean-argument	producer	?		4	37	1	2	26	37	0	7	0	0	0	0
 code-smell.constructor-overinjection	producer	?		15	11	2	2	5	31	0	6	0	0	0	0
@@ -169,9 +169,9 @@ complexity.ccn	producer	?		74	1218	2	3	37	231	0	30	0	0	0	0
 complexity.cognitive	producer	?		22	93	2	2	25	54	0	25	0	0	0	0
 complexity.npath	producer	?		19	108	2	2	5	52	0	20	0	0	0	0
 complexity.wmc	producer	?		21	87	2	2	5	37	0	17	0	0	0	0
-computed	producer	?		131	120	0	1	0	44	0	19	0	0	0	0
+computed	producer	?		131	121	0	1	0	44	0	19	0	0	0	0
 coupling.cbo	producer	?		69	356	2	5	4	128	0	16	0	0	0	0
-coupling.class-rank	producer	?		22	116	0	2	2	40	0	44	0	0	0	0
+coupling.class-rank	producer	?		22	117	0	2	2	40	0	44	0	0	0	0
 coupling.distance	producer	?		33	90	2	2	1	46	0	45	0	0	0	0
 coupling.instability	producer	?		46	117	2	3	9	60	0	19	0	0	0	0
 coupling.unmatched-framework-namespace	producer	?		3	8	0	0	0	15	0	6	0	0	0	0

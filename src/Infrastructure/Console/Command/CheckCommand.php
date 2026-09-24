@@ -202,6 +202,7 @@ final class CheckCommand extends Command
         $findingConfiguration = $this->ruleInputValidator->resolve($document, $input);
         $findingExclusions = $resolved->findingExclusions;
         $outputFormat = $resolved->outputFormat;
+        $this->resultPresenter->bindOutputFormat($input, $outputFormat);
         $exitPolicy = $this->configurationInputAdapter->exitPolicy($document);
 
         // Configure runtime using resolved config

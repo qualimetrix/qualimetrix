@@ -7,6 +7,7 @@ namespace Qualimetrix\Infrastructure\Console;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\FormatterContext;
@@ -45,21 +46,16 @@ final class FormatterContextFactory
         $groupBy = $explicitGroupBy ?? $formatter->getDefaultGroupBy();
 
         $options = $this->formatOptions($input);
-        $allFlag = (bool) $input->getOption('all');
 
         // Parse --namespace and --class (mutually exclusive)
         [$namespaceFilter, $classFilter] = $this->drillDownFilters($input);
+        $this->refuseSelectionUnder($formatter->getName(), $namespaceFilter, $classFilter);
 
         $detectedWidth = (new \Symfony\Component\Console\Terminal())->getWidth();
         $terminalWidth = $detectedWidth !== 0 ? $detectedWidth : 80;
         $namespacePattern ??= $this->decodeNamespaceFilter($namespaceFilter);
-        $detailLimit = $this->parseDetailOption($input, $namespaceFilter, $classFilter);
+        $detailLimit = $this->detailLimit($input, $namespaceFilter, $classFilter);
         $topIssuesLimit = $this->parseTopOption($input);
-
-        // --all implies unlimited detail
-        if ($allFlag) {
-            $detailLimit = 0;
-        }
 
         return new FormatterContext(
             useColor: $output->isDecorated(),
@@ -91,10 +87,36 @@ final class FormatterContextFactory
         [$namespaceFilter, $classFilter] = $this->drillDownFilters($input);
         $this->explicitGroupBy($input);
         $this->formatOptions($input);
-        $this->parseDetailOption($input, $namespaceFilter, $classFilter);
+        $this->detailLimit($input, $namespaceFilter, $classFilter);
         $this->parseTopOption($input);
 
         return $this->decodeNamespaceFilter($namespaceFilter);
+    }
+
+    /**
+     * Refuses, before the analysis runs, a `--namespace` or `--class`
+     * selection under a format with no place to say the report is a partial
+     * view ({@see OutOfScopeFindings::FORMATS_WITHOUT_A_PLACE}).
+     */
+    public function bindFormatBeforeAnalysis(InputInterface $input, string $format): void
+    {
+        [$namespaceFilter, $classFilter] = $this->drillDownFilters($input);
+        $this->refuseSelectionUnder($format, $namespaceFilter, $classFilter);
+    }
+
+    private function refuseSelectionUnder(string $format, ?string $namespaceFilter, ?string $classFilter): void
+    {
+        $selector = $namespaceFilter !== null ? '--namespace' : ($classFilter !== null ? '--class' : null);
+        if ($selector === null || !\in_array($format, OutOfScopeFindings::FORMATS_WITHOUT_A_PLACE, true)) {
+            return;
+        }
+
+        throw ConfigurationRefusal::aboutCommandLineInput($selector, \sprintf(
+            'Format "%s" has no place to say the report is a partial view: its consumer reads every entry as a finding. '
+            . 'Drop %s, or use a format that says what the selection left out, such as json, sarif or github.',
+            $format,
+            $selector,
+        ));
     }
 
     private function explicitGroupBy(InputInterface $input): ?GroupBy
@@ -148,6 +170,30 @@ final class FormatterContextFactory
         return $namespaceFilter !== null
             ? $this->selectorDecoder->decodeNamespace($namespaceFilter, '--namespace')
             : null;
+    }
+
+    /**
+     * The detail limit, after `--all` has written its own: `--all` is an alias
+     * for `--detail=all`, so a cap written beside it — `--detail` alone is a
+     * cap of 200 — is refused rather than silently lifted, the way
+     * {@see FormatOptionPairs::resolveUnderAllFlag()} refuses `violations=N`.
+     */
+    private function detailLimit(InputInterface $input, ?string $namespaceFilter, ?string $classFilter): ?int
+    {
+        $detailLimit = $this->parseDetailOption($input, $namespaceFilter, $classFilter);
+        if (!(bool) $input->getOption('all')) {
+            return $detailLimit;
+        }
+
+        if ($input->getOption('detail') !== false && $detailLimit !== 0) {
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--all',
+                'Conflicting options: --all cannot be combined with --detail or --detail=N, which cap the list --all shows whole. '
+                . 'Use either --all (show everything) or --detail[=N] (a capped list).',
+            );
+        }
+
+        return 0;
     }
 
     /**

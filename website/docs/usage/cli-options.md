@@ -20,7 +20,9 @@ bin/qmx check src/ lib/
 bin/qmx check src/Service/UserService.php
 ```
 
-If you omit paths, Qualimetrix auto-detects them from every path the `autoload` section of your `composer.json` declares — `psr-4` and `psr-0` roots, `classmap` entries (a `*` wildcard expanded to the directories it matches) and `files` entries alike. These are the same paths a run is judged against when Qualimetrix asks whether it covered the whole project, so a run with no paths always counts as covering it. A declared path that does not exist on disk stops the run with a configuration error. `autoload-dev` is not included: test code is analysed only when you name its path (`bin/qmx check src/ tests/`, or `paths:` in `qmx.yaml`), or when you count it as part of the project with [`--include-autoload-dev`](#--include-autoload-dev).
+A path you name that is itself a `vendor`, `node_modules` or `.git` directory (`bin/qmx check lib/vendor`) stops the run with a configuration error: Qualimetrix never walks into one, so the run would analyse nothing. Name a file or a directory inside it instead (`bin/qmx check vendor/acme/`); a `vendor` directory inside a path you name is still skipped.
+
+If you omit paths, Qualimetrix auto-detects them from every path the `autoload` section of your `composer.json` declares — `psr-4` and `psr-0` roots, `classmap` entries (a `*` wildcard expanded to the directories it matches) and `files` entries alike. These are the same paths a run is judged against when Qualimetrix asks whether it covered the whole project, so a run with no paths always counts as covering it. An entry that is, or lies inside, a `vendor`, `node_modules` or `.git` directory — which Qualimetrix never walks into — is left out of both and named in a warning instead: third-party code is not analysed as your project's. A declared path that does not exist on disk stops the run with a configuration error. `autoload-dev` is not included: test code is analysed only when you name its path (`bin/qmx check src/ tests/`, or `paths:` in `qmx.yaml`), or when you count it as part of the project with [`--include-autoload-dev`](#--include-autoload-dev).
 
 ---
 
@@ -168,11 +170,15 @@ Write the report to a file instead of stdout:
 bin/qmx check src/ --format=html --output=report.html
 ```
 
-The report is written beside the target and renamed over it, so a reader never
-sees half a report. A target that cannot be written is refused with exit code 3
-before analysis starts: a directory, a file in a directory that does not exist
-or cannot be written, or a file that is not writable. A write that still fails
-after the run also exits with code 3.
+A regular file, or a name nothing stands at yet, is written beside the target
+and renamed over it, so a reader never sees half a report; a replaced file
+keeps its permissions. A symbolic link is followed to the file it names, and
+the link stays. Anything else that exists — `/dev/stdout`, `/dev/null`, a
+named pipe, a process substitution such as `>(gzip > report.json.gz)` — is
+written in place. A target that cannot be written is refused with exit code 3
+before analysis starts: a directory or a name ending in `/`, a file in a
+directory that does not exist or cannot be written, or a file that is not
+writable. A write that still fails after the run also exits with code 3.
 
 ### `--group-by`
 
@@ -347,7 +353,7 @@ bin/qmx check src/ --format=json --all
 bin/qmx check src/ --all
 ```
 
-Cannot be combined with `--format-opt=violations=N` (numeric limit) — this produces a clear error. Combining `--all` with `--format-opt=violations=all` is allowed (they are synonyms).
+Cannot be combined with `--format-opt=violations=N` (numeric limit) or with `--detail`/`--detail=N` (a capped list; `--detail` alone is a cap of 200) — each is refused with exit 3 before the analysis, rather than one of the two silently winning. Combining `--all` with `--format-opt=violations=all`, `--detail=all` or `--detail=0` is allowed (they are synonyms).
 
 ### `--namespace`
 
@@ -369,7 +375,10 @@ refusal says how many namespaces the run did have. A pattern that does select
 something and still reports nothing prints the ordinary empty result — that is
 the half of the pair worth telling apart.
 
-Mutually exclusive with `--class`.
+Mutually exclusive with `--class`. Refused with exit 3 before the analysis
+under `--format=gitlab` or `--format=checkstyle`, including when a configuration
+file selects the format: their consumers read every entry as a finding, so
+neither can say the report is a [partial view](output-formats.md#summary-default).
 
 ### `--class`
 
@@ -384,7 +393,8 @@ Filters violations to the specified class. Auto-enables `--detail`.
 An FQCN matching no analysed class is refused with exit 3, for the same reason
 `--namespace` is: an empty report otherwise reads as a clean class.
 
-Mutually exclusive with `--namespace`.
+Mutually exclusive with `--namespace`. Refused under `gitlab` and `checkstyle`
+as [`--namespace`](#--namespace) is.
 
 ---
 
@@ -688,9 +698,9 @@ bin/qmx check src/ --profile=profile.json
 ```
 
 A target that cannot be written is refused with exit code 3 before analysis
-starts: a directory, a file in a directory that does not exist or cannot be
-written (the export is written beside the target and renamed over it), or a
-file that is not writable. An empty `--profile=` is refused the same way. A
+starts, by the same rules as [`--output`](#--output--o): a directory or a name
+ending in `/`, a file in a directory that does not exist or cannot be written,
+or a file that is not writable. An empty `--profile=` is refused the same way. A
 write that still fails after the run also exits with code 3, never reported
 beside a finished run. The report is already published by then, so the reason
 goes to stderr and stdout keeps the report as its only document, even under
@@ -1092,10 +1102,11 @@ A `--namespace` value matching no vertex is refused with exit 3 rather than
 exporting an empty graph. `--exclude-namespace` keeps its silence on purpose: a
 missed exclusion leaves the picture whole, so the viewer loses nothing.
 
-An `--output` target is judged before analysis the way `check` judges its own
-[`--output`](#--output--o): the graph is written beside the target and renamed
-over it, so a directory, a file in a directory that does not exist or cannot be
-written, and an unwritable file are refused with exit 3 before any file is read.
+An `--output` target is judged and written the way `check` treats its own
+[`--output`](#--output--o): a directory or a name ending in `/`, a file in a
+directory that does not exist or cannot be written, and an unwritable file are
+refused with exit 3 before any file is read; a symbolic link, `/dev/stdout` and
+a named pipe are written through, not replaced.
 
 If any discovered file fails parsing or processing, `graph:export` exits 4 and
 emits no partial graph. It does not create a missing output file and preserves

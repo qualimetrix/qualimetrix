@@ -57,14 +57,22 @@ same whole-manifest target lists the denominator reads (a `classmap` `*`
 expanded to its directories), and both `RunConfigurationResolver` and
 `ProjectScopeCoverage` take them through `AutoloadDevPolicy::projectTargets()`,
 so a run with no `paths` covers what it is judged against in every autoload
-form. The policy travels on `RunConfiguration::$autoloadDevPolicy`, so a run
+form. Both then keep only the targets a walk of the project reaches, through
+`ProjectScopeCoverage::reachableTargets()` and
+`DirectoryPruner::prunedAncestor()` over the built-in `vendor`,
+`node_modules` and `.git` floor — the rule discovery itself applies. A target
+under one of them is neither a default path nor in the denominator, and
+`ProjectScopeMeasurement::$prunedTargets` names it for the scope warning. The
+author's `exclude:` is not asked: written paths are never pruned there. The
+policy travels on `RunConfiguration::$autoloadDevPolicy`, so a run
 narrowed later is judged against the same project. A `classmap` or `files`
 entry may name a single file, which changes nothing: discovery analyses the
 file, and the denominator's question is containment. A declared target
 missing on disk is skipped by the denominator, and as a default path it is
 refused by the path check before analysis, as a stale PSR-4 root always was.
 `ProjectScopeMeasurement` carries both halves of one measurement — the
-uncovered targets the console warns about, and the verdict a channel reads —
+uncovered targets the console warns about, and the verdict a channel reads,
+beside the pruned targets —
 because a manifest declaring no readable production autoload at all (absent,
 unparseable, or without a production section) names no uncovered target and
 still may not be judged. The answer travels on
@@ -130,7 +138,14 @@ descent and returns the first matching selector for attribution. Explicit file
 arguments remain exact inputs and are not filtered as directories. The
 built-in `vendor`, `node_modules`, and `.git` exclusions are internal regex
 selectors that match those directory names at any depth; user selectors do not
-inherit that special basename behavior.
+inherit that special basename behavior. A directory argument that a built-in
+selector removes itself (`lib/vendor`) is refused by `FinderFileDiscovery`
+before anything is yielded, through `DirectoryPruner::builtInExclusion()`: no
+default path is ever such a directory, so it was written by hand, and the walk
+would have reported success over zero files. A directory argument inside one
+(`vendor/acme`) is walked. A root removed only by an authored `exclude:` is
+still skipped silently, because discovery cannot tell a written root from a
+composer default the author excluded on purpose.
 
 Collection is the only parallel phase. `FileProcessingResult` holds the path and
 exactly one terminal state: a `SuccessfulFileProcessing` payload, or a failure

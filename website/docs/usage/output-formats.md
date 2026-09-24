@@ -102,22 +102,24 @@ never a green `No violations found.`. `--format=text` does the same in its
 closing summary line.
 
 The structured formats list only the selection too, and each says what it left
-out in the channel it already uses for diagnostics about the document itself:
+out in the channel it already uses for diagnostics about the document itself.
+A format with no such channel refuses the selection instead:
 
 | Format       | What the selection left out                                                                                     |
 | ------------ | --------------------------------------------------------------------------------------------------------------- |
 | `json`       | Top-level `outOfScope` object: `violationCount`, `errorCount`, `warningCount`, `infoCount`                      |
 | `metrics`    | Top-level `outOfScope` object: `violations`, `errors`, `warnings`, `info`                                       |
 | `sarif`      | A `note` in `runs[0].invocations[0].toolExecutionNotifications[]` with descriptor `QMX-DRILL-DOWN-OUT-OF-SCOPE` |
-| `gitlab`     | An `info` issue with `check_name: drill-down.out-of-scope` on `_project`                                        |
-| `checkstyle` | An `info` error under the synthetic file `[drill-down]`, with source `qmx.drill-down.out-of-scope`              |
+| `gitlab`     | Refused with exit 3 before the analysis: the merge-request widget counts every entry as an issue                |
+| `checkstyle` | Refused with exit 3 before the analysis: a Checkstyle reader counts every entry as an error                     |
 | `github`     | A `::notice title=drill-down.out-of-scope::` line                                                               |
 | `html`       | A banner above the report                                                                                       |
 | `suppressed` | Nothing: its document is the run's suppression composition, which a selection does not narrow                   |
 
 `json` and `metrics` carry `outOfScope` in every document: `null` without a
-selection, and zero counts when the selection left nothing out. The other
-formats add their entry only when something lies outside the selection. The
+selection, and zero counts when the selection left nothing out. `sarif`,
+`github` and `html` add their entry only when something lies outside the
+selection. The
 exit code is resolved over the selection and `outOfScope` together, so a clean
 selection can exit 2.
 
@@ -554,6 +556,10 @@ Checkstyle XML format. Widely supported by CI tools.
 
 Checkstyle 3.0 XML: `<file name="...">` with nested `<error line="" severity="error|warning|info" message="" source="qmx.<rule>"/>`.
 
+A `--namespace`/`--class` selection is refused with this format (exit 3): every
+`<error>` is an error to its reader, so nothing could say the report lists only
+part of the run.
+
 <!-- llms:skip-begin -->
 **Example output:**
 
@@ -688,6 +694,10 @@ GitLab Code Quality JSON format. Shows violations directly in Merge Request diff
 **When to use:** GitLab CI/CD with Code Quality reports.
 
 Array of objects with `description`, `check_name`, `fingerprint`, `severity` (critical/major/info), `location.{path,lines.begin}`. Severity mapping: error → critical, warning → major, info → info.
+
+A `--namespace`/`--class` selection is refused with this format (exit 3): every
+entry is an issue in the merge-request widget, so nothing could say the report
+lists only part of the run.
 
 <!-- llms:skip-begin -->
 **Example output (abbreviated):**

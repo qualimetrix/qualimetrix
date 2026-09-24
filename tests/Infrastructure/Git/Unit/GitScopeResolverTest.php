@@ -16,9 +16,6 @@ use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Infrastructure\Git\GitScopeResolver;
-use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Input\InputDefinition;
-use Symfony\Component\Console\Input\InputOption;
 
 #[CoversClass(GitScopeResolver::class)]
 final class GitScopeResolverTest extends TestCase
@@ -37,16 +34,10 @@ final class GitScopeResolverTest extends TestCase
             authoredPathExcludes: [],
         );
 
-        $definition = new InputDefinition([
-            new InputOption('report', null, InputOption::VALUE_REQUIRED),
-        ]);
-
         // HEAD is a branch-independent scope: this wiring test must also pass
         // in detached CI checkouts where no local main branch exists.
-        $input = new ArrayInput(['--report' => 'git:HEAD'], $definition);
-
         $resolver = new GitScopeResolver(new FileDiscoveryFactory());
-        $result = $resolver->resolve($input, $resolved);
+        $result = $resolver->resolve('git:HEAD', $resolved);
 
         self::assertNotNull($result->gitClient);
 
@@ -69,14 +60,8 @@ final class GitScopeResolverTest extends TestCase
             authoredPathExcludes: [],
         );
 
-        $definition = new InputDefinition([
-            new InputOption('report', null, InputOption::VALUE_REQUIRED),
-        ]);
-
-        $input = new ArrayInput([], $definition);
-
         $resolver = new GitScopeResolver(new FileDiscoveryFactory());
-        $result = $resolver->resolve($input, $resolved);
+        $result = $resolver->resolve(null, $resolved);
 
         self::assertNull($result->gitClient);
     }
@@ -101,12 +86,7 @@ final class GitScopeResolverTest extends TestCase
         );
 
         try {
-            $definition = new InputDefinition([
-                new InputOption('report', null, InputOption::VALUE_REQUIRED),
-            ]);
-            $input = new ArrayInput([], $definition);
-
-            $result = (new GitScopeResolver(new FileDiscoveryFactory()))->resolve($input, $resolved);
+            $result = (new GitScopeResolver(new FileDiscoveryFactory()))->resolve(null, $resolved);
 
             self::assertInstanceOf(FinderFileDiscovery::class, $result->fileDiscovery);
             $files = iterator_to_array($result->fileDiscovery->discover($projectRoot), false);
@@ -133,14 +113,8 @@ final class GitScopeResolverTest extends TestCase
             authoredPathExcludes: [],
         );
 
-        $definition = new InputDefinition([
-            new InputOption('report', null, InputOption::VALUE_REQUIRED),
-        ]);
-
-        $input = new ArrayInput([], $definition);
-
         $resolver = new GitScopeResolver(new FileDiscoveryFactory());
-        $result = $resolver->resolve($input, $resolved);
+        $result = $resolver->resolve(null, $resolved);
 
         self::assertInstanceOf(FinderFileDiscovery::class, $result->fileDiscovery);
     }

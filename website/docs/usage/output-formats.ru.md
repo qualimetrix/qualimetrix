@@ -103,22 +103,22 @@ bin/qmx check src/ --class=App\\Service\\UserService
 
 Структурированные форматы тоже перечисляют только выборку, и каждый сообщает,
 что осталось вне её, в том канале, которым уже пользуется для диагностики о
-самом документе:
+самом документе. Формат без такого канала вместо этого отклоняет выборку:
 
 | Формат       | Что осталось вне выборки                                                                                                       |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------ |
 | `json`       | Объект верхнего уровня `outOfScope`: `violationCount`, `errorCount`, `warningCount`, `infoCount`                               |
 | `metrics`    | Объект верхнего уровня `outOfScope`: `violations`, `errors`, `warnings`, `info`                                                |
 | `sarif`      | Уведомление уровня `note` в `runs[0].invocations[0].toolExecutionNotifications[]` с дескриптором `QMX-DRILL-DOWN-OUT-OF-SCOPE` |
-| `gitlab`     | Запись уровня `info` с `check_name: drill-down.out-of-scope` на `_project`                                                     |
-| `checkstyle` | Ошибка уровня `info` под синтетическим файлом `[drill-down]` с source `qmx.drill-down.out-of-scope`                            |
+| `gitlab`     | Отказ с кодом 3 до анализа: виджет merge request считает каждую запись проблемой                                               |
+| `checkstyle` | Отказ с кодом 3 до анализа: читатель Checkstyle считает каждую запись ошибкой                                                  |
 | `github`     | Строка `::notice title=drill-down.out-of-scope::`                                                                              |
 | `html`       | Баннер над отчётом                                                                                                             |
 | `suppressed` | Ничего: его документ — состав подавлений всего прогона, выборка его не сужает                                                  |
 
 `json` и `metrics` несут `outOfScope` в каждом документе: `null` без выборки и
-нулевые счётчики, когда вне выборки ничего не осталось. Остальные форматы
-добавляют свою запись, только когда вне выборки что-то есть. Код возврата
+нулевые счётчики, когда вне выборки ничего не осталось. `sarif`, `github` и
+`html` добавляют свою запись, только когда вне выборки что-то есть. Код возврата
 вычисляется по выборке и `outOfScope` вместе, поэтому чистая выборка может
 завершиться с кодом 2.
 
@@ -556,6 +556,10 @@ bin/qmx check src/ --format=metrics --no-progress > metrics.json
 
 Checkstyle 3.0 XML: `<file name="...">` с вложенными `<error line="" severity="error|warning|info" message="" source="qmx.<rule>"/>`.
 
+Выборка `--namespace`/`--class` с этим форматом отклоняется (код 3): каждый
+`<error>` для его читателя — ошибка, поэтому сказать, что отчёт перечисляет
+лишь часть прогона, было бы нечем.
+
 <!-- llms:skip-begin -->
 **Пример вывода:**
 
@@ -691,6 +695,10 @@ SARIF 2.1.0: `runs[].results[]` с `ruleId`, `ruleIndex` (позиция пра�
 **Когда использовать:** GitLab CI/CD с отчётами Code Quality.
 
 Массив объектов с `description`, `check_name`, `fingerprint`, `severity` (critical/major/info), `location.{path,lines.begin}`. Маппинг: error → critical, warning → major, info → info.
+
+Выборка `--namespace`/`--class` с этим форматом отклоняется (код 3): каждая
+запись — проблема в виджете merge request, поэтому сказать, что отчёт
+перечисляет лишь часть прогона, было бы нечем.
 
 <!-- llms:skip-begin -->
 **Пример вывода (сокращённо):**

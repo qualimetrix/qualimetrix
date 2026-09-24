@@ -145,7 +145,7 @@ Infrastructure/
     ├── ExitCodeResolver.php           # Determines policy codes and incomplete-analysis exit 4
     ├── DirectiveAuditPresenter.php    # Both projections of one directive audit; the text one prints the claim, the JSON one the stable key
     ├── DirectiveVerdictTally.php      # How many directives of each verdict one audit produced, tallied over the vocabulary and rendered for both projections
-    ├── ScopeWarningChecker.php        # Renders the incomplete-scope warning from Run's ProjectScopeCoverage answer
+    ├── ScopeWarningChecker.php        # Renders the incomplete-scope and pruned-target warnings from Run's ProjectScopeCoverage answer
     ├── ProfilePresenter.php           # Handles profiling output: summary to stderr or export to file
     ├── FormatterContextFactory.php    # Creates FormatterContext from CLI input options
     ├── FormatOptionPairs.php          # The --format-opt door: every written pair judged, a repeated key and two spellings of one value refused

@@ -62,7 +62,7 @@ src/Core/Symbol/MetricSubjectCodec.php	69	complexity.npath	warning=289 error=289
 src/Analysis/Evidence/Complexity/NpathExpressionCalculator.php	30	complexity.wmc	warning=52 error=52 -- Finite php-parser expression algebra keeps exact NPath composition and saturation together (grew by one arm for the       assignment-coalesce operator).
 src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php	31	complexity.wmc	warning=62 error=62 — Publishing what a score covers cost this class one short method, and WMC charges a method's existence: the same code inline scored 60 and the extraction that made each method simpler scored 61. One-method headroom, not a licence to grow.
 src/Reporting/Formatter/Health/HealthTextFormatter.php	29	complexity.wmc	warning=60 -- average per-method complexity
-src/Analysis/Configuration/ConfigSchema.php	26	coupling.cbo	warning=23 -- Afferent by rule: every consumer names a
+src/Analysis/Configuration/ConfigSchema.php	26	coupling.cbo	warning=24 -- Afferent by rule: every consumer names a
 src/Analysis/Evidence/Coupling/CboRule.php	41	coupling.cbo	22 -- Raw CBO 21: this hierarchical rule's own dependencies plus
 src/Analysis/Evidence/Coupling/DistanceRule.php	51	coupling.cbo	21 -- Raw CBO 20: this hierarchical rule's own dependencies plus
 src/Analysis/Evidence/Measurement/Contract/AbstractCollector.php	18	coupling.cbo	27 -- Measurement collector base is a stable provider-owned extension hub; current raw CBO 26 gets one-edge headroom.
@@ -79,7 +79,7 @@ src/Analysis/Policy/Inline/Directive/Audit/ThresholdDirectiveAudit.php	80	coupli
 src/Core/ProductIdentity.php	17	coupling.cbo	24 -- Every output channel reads its documentation address from here
 src/Reporting/FormatterContext.php	15	coupling.cbo	warning=33 error=33 -- Formatter context is the immutable Reporting input boundary every formatter's                                    signature depends on.                                          also names it directly to refuse a               or           value that selects nothing, and the bound namespace selector is now part of that stable boundary. Raw CBO 32 gets one-edge headroom from the inclusive threshold of 33.
 src/Reporting/Report.php	19	coupling.cbo	warning=31 error=31 -- Report is the transport VO every formatter's
-src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php	35	coupling.class-rank	warning=0.025 -- The paragraph above is the
+src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php	35	coupling.class-rank	warning=0.03 -- The paragraph above is the
 src/Analysis/Evidence/Measurement/Contract/MetricBag.php	15	coupling.class-rank	warning=0.035 error=0.035 -- Intentional Measurement
 src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php	21	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/Complexity/ClassComplexityOptions.php	21	coupling.instability	warning=0.81 -- The eighth efferent edge is

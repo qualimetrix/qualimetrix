@@ -1733,13 +1733,6 @@ rules:
       # number and cost the reader.
       - exact: 'Qualimetrix\Analysis\Configuration\Contract'
       - exact: 'Qualimetrix\Analysis\Configuration\Contract\Refusal'
-      # Every structured format now tells its reader what a --namespace/--class
-      # selection left out, so the checkstyle, GitLab, GitHub Actions and JSON
-      # formatters name `OutOfScopeFindings`: four afferent edges, abstractness
-      # unchanged. Measured Ca=11, Ce=11, A=0, D=0.5 exactly. Reading the
-      # entry's check name off an instance instead of the class would drop the
-      # edges from the count and keep every one of them in the code.
-      - exact: 'Qualimetrix\Reporting\DrillDown'
     max_distance_warning: 0.5
     max_distance_error: 0.7
 

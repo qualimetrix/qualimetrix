@@ -78,7 +78,7 @@ final class ProfilePresenter
             return;
         }
 
-        $target->replaceWith($this->profileReport->export(self::format($input) ?? ProfileFormat::Json));
+        $target->write($this->profileReport->export(self::format($input) ?? ProfileFormat::Json));
 
         $output->writeln(
             \sprintf('<info>Profile exported to %s</info>', $target->path),

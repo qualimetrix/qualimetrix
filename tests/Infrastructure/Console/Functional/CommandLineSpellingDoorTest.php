@@ -120,6 +120,33 @@ final class CommandLineSpellingDoorTest extends TestCase
     }
 
     /**
+     * `--report` is single-valued, and its reader took any non-string as "not
+     * written": a list or a number ran the whole project unscoped, exit 0.
+     *
+     * @return iterable<string, array{mixed, string}>
+     */
+    public static function provideReportValues(): iterable
+    {
+        yield 'a list' => [['git:HEAD'], 'Invalid --report value of type array'];
+        yield 'a number, read as its digits' => [5, 'Invalid report scope: 5'];
+    }
+
+    #[Test]
+    #[DataProvider('provideReportValues')]
+    public function itRefusesAReportScopeNoCommandLineSpells(mixed $report, string $refusal): void
+    {
+        $tester = $this->application();
+        $exit = $tester->run(
+            ['command' => 'check', 'paths' => ['src'], '--no-cache' => true, '--workers' => '0', '--report' => $report],
+            ['capture_stderr_separately' => true],
+        );
+        $said = $tester->getErrorOutput() . $tester->getDisplay();
+
+        self::assertSame(3, $exit, $said);
+        self::assertStringContainsString($refusal, $said);
+    }
+
+    /**
      * The legitimate neighbour: an integer is the number a command line would
      * have typed, and a value-optional flag written through an array input as
      * `true` is the flag alone.

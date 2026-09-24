@@ -51,7 +51,10 @@ accumulates, `only_rules` is replaced). Composer discovery contributes the
 production and `autoload-dev` targets — every autoload form, `psr-4`, `psr-0`,
 `classmap` and `files`, the list the scope denominator also reads — under two
 internal keys rather than `paths`: `include_autoload_dev`, which a later
-source may write, decides which of them Run takes as the default paths.
+source may write, decides which of them Run takes as the default paths. The
+lists are the manifest as written: Run, not the reader, drops a target that
+lies inside `vendor`, `node_modules` or `.git`, because that is Run's
+discovery rule.
 
 A key is written once per document. `suppress_paths`, `suppress-paths` and
 `suppressPaths` fold into one key, so writing two of them in one mapping is

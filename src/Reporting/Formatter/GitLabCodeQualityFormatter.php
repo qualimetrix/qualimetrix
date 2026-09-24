@@ -6,7 +6,6 @@ namespace Qualimetrix\Reporting\Formatter;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
@@ -52,16 +51,6 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
                 'fingerprint' => md5('analysis|' . $failure->kind . '|' . $failure->path),
                 'severity' => 'blocker',
                 'location' => ['path' => $failure->path, 'lines' => ['begin' => 1]],
-            ];
-        }
-
-        if ($report->outOfScope !== null && $report->outOfScope->total() > 0) {
-            $issues[] = [
-                'description' => $report->outOfScope->describe(),
-                'check_name' => OutOfScopeFindings::CHECK,
-                'fingerprint' => md5(OutOfScopeFindings::CHECK),
-                'severity' => 'info',
-                'location' => ['path' => '_project', 'lines' => ['begin' => 1]],
             ];
         }
 

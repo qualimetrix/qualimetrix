@@ -85,18 +85,59 @@ final class FormatterContextFactoryTest extends TestCase
         $this->factory->create($input, $this->output, $this->formatter, $this->projectRoot());
     }
 
-    #[Test]
-    public function itLetsAllFlagOverrideAnExplicitDetailLimit(): void
+    /**
+     * `--all` writes `--detail=all`, so a cap written beside it is a second
+     * value for the same thing, and the run used to drop it without a word.
+     * Written alone, `--detail` is a cap of 200 and conflicts the same way.
+     *
+     * @return iterable<string, array{mixed}>
+     */
+    public static function provideDetailValuesAllOverrides(): iterable
     {
-        $input = $this->createInput([
-            '--all' => true,
-            '--detail' => '50',
-        ]);
+        yield 'a cap' => ['50'];
+        yield 'a cap an embedder passes as a number' => [50];
+        yield 'the flag alone' => [null];
+        yield 'the flag alone through an array input' => [true];
+    }
 
-        $context = $this->factory->create($input, $this->output, $this->formatter, $this->projectRoot());
+    #[Test]
+    #[DataProvider('provideDetailValuesAllOverrides')]
+    public function itRefusesADetailCapBesideTheAllFlagBeforeTheAnalysisStarts(mixed $detail): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('Conflicting options: --all cannot be combined with --detail');
 
-        // --all overrides --detail=50 to unlimited (0)
-        self::assertSame(0, $context->detailLimit);
+        $this->factory->bindBeforeAnalysis($this->createInput(['--all' => true, '--detail' => $detail]));
+    }
+
+    /**
+     * The context built after the analysis holds the same line as the check
+     * before it, so a caller that skipped the check still cannot publish a
+     * selection the format cannot mark.
+     */
+    #[Test]
+    public function itRefusesToBuildASelectionUnderAFormatWithoutAPlaceForIt(): void
+    {
+        $formatter = self::createStub(FormatterInterface::class);
+        $formatter->method('getName')->willReturn('checkstyle');
+        $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
+
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('Format "checkstyle" has no place to say the report is a partial view');
+
+        $this->factory->create($this->createInput(['--class' => 'App\\A']), $this->output, $formatter, $this->projectRoot());
+    }
+
+    /** The spellings of what `--all` writes itself stay accepted, as `violations=all` does. */
+    #[Test]
+    public function itAcceptsTheAllFlagBesideADetailWithNoCap(): void
+    {
+        foreach (['all', '0', 0] as $detail) {
+            $input = $this->createInput(['--all' => true, '--detail' => $detail]);
+
+            $this->factory->bindBeforeAnalysis($input);
+            self::assertSame(0, $this->factory->create($input, $this->output, $this->formatter, $this->projectRoot())->detailLimit);
+        }
     }
 
     #[Test]

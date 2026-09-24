@@ -155,6 +155,70 @@ final class ScopeWarningCheckerTest extends TestCase
         self::assertSame([], $warnings);
     }
 
+    #[Test]
+    public function itNamesAutoloadEntriesThatDiscoveryNeverEnters(): void
+    {
+        $this->writeComposerJson([
+            'autoload' => [
+                'psr-4' => ['App\\' => 'src/'],
+                'files' => ['vendor/x/helpers.php'],
+                'classmap' => ['lib/vendor'],
+            ],
+        ]);
+        mkdir($this->tempDir . '/src', 0o755, true);
+        mkdir($this->tempDir . '/vendor/x', 0o755, true);
+        mkdir($this->tempDir . '/lib/vendor', 0o755, true);
+        file_put_contents($this->tempDir . '/vendor/x/helpers.php', '<?php');
+
+        // A whole-project run: nothing is uncovered, and the pruned line still speaks.
+        $measurement = $this->coverage->measure($this->projectRoot, [$this->projectRoot], AutoloadDevPolicy::Exclude);
+
+        self::assertSame(
+            ['Autoload entries that are, or lie inside, a vendor, node_modules or .git directory are neither analyzed'
+                . ' nor counted as project scope: lib/vendor, vendor/x/helpers.php (inside vendor).'],
+            $this->checker->describe($measurement->uncoveredRoots, $measurement->prunedTargets),
+        );
+    }
+
+    #[Test]
+    public function itPrintsBothLinesWhenASliceAlsoDropsPrunedEntries(): void
+    {
+        $this->writeComposerJson([
+            'autoload' => [
+                'psr-4' => ['App\\' => 'src/', 'Lib\\' => 'lib/'],
+                'classmap' => ['node_modules/pkg'],
+            ],
+        ]);
+        mkdir($this->tempDir . '/src', 0o755, true);
+        mkdir($this->tempDir . '/lib', 0o755, true);
+        mkdir($this->tempDir . '/node_modules/pkg', 0o755, true);
+
+        $measurement = $this->coverage->measure($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude);
+
+        self::assertSame(
+            [
+                'Analyzed paths do not cover all autoload entries (missing: lib). Coupling and instability metrics may be incomplete.',
+                'Autoload entries that are, or lie inside, a vendor, node_modules or .git directory are neither analyzed'
+                    . ' nor counted as project scope: node_modules/pkg (inside node_modules).',
+            ],
+            $this->checker->describe($measurement->uncoveredRoots, $measurement->prunedTargets),
+        );
+    }
+
+    #[Test]
+    public function itPrintsNoPrunedLineForAManifestWithoutSuchEntries(): void
+    {
+        $this->writeComposerJson(['autoload' => ['psr-4' => ['App\\' => 'src/']]]);
+        mkdir($this->tempDir . '/src', 0o755, true);
+        // Present on disk but undeclared: discovery prunes it, and the manifest never promised it.
+        mkdir($this->tempDir . '/vendor/x', 0o755, true);
+
+        $measurement = $this->coverage->measure($this->projectRoot, [$this->projectRoot], AutoloadDevPolicy::Exclude);
+
+        self::assertSame([], $measurement->prunedTargets);
+        self::assertSame([], $this->checker->describe($measurement->uncoveredRoots, $measurement->prunedTargets));
+    }
+
     private function subPath(string $relative): AbsolutePath
     {
         return $this->projectRoot->joinRelative(RelativePath::fromString($relative));

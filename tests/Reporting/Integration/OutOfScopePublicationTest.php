@@ -29,7 +29,8 @@ use Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub;
  * A `--namespace`/`--class` selection narrows what a report lists, never what
  * decides the exit code. A machine consumer reading only the selection sees
  * "0 errors" from a run that exits 2 — so every structured format must say,
- * in its own diagnostic channel, what the selection left out.
+ * in its own diagnostic channel, what the selection left out, or have the
+ * selection refused because it has no such channel.
  */
 #[CoversClass(OutOfScopeFindings::class)]
 final class OutOfScopePublicationTest extends TestCase
@@ -37,7 +38,7 @@ final class OutOfScopePublicationTest extends TestCase
     /** @return iterable<string, array{string}> */
     public static function structuredFormats(): iterable
     {
-        foreach (['json', 'metrics', 'sarif', 'gitlab', 'checkstyle', 'github', 'html'] as $format) {
+        foreach (['json', 'metrics', 'sarif', 'github', 'html'] as $format) {
             yield $format => [$format];
         }
     }
@@ -45,7 +46,7 @@ final class OutOfScopePublicationTest extends TestCase
     /** @return iterable<string, array{string}> */
     public static function listFormats(): iterable
     {
-        foreach (['sarif', 'gitlab', 'checkstyle', 'github', 'html'] as $format) {
+        foreach (['sarif', 'github', 'html'] as $format) {
             yield $format => [$format];
         }
     }
@@ -71,20 +72,6 @@ final class OutOfScopePublicationTest extends TestCase
             'sarif' => self::assertSame(
                 [['level' => 'note', 'message' => ['text' => self::sentence()], 'descriptor' => ['id' => 'QMX-DRILL-DOWN-OUT-OF-SCOPE']]],
                 self::decode($output)['runs'][0]['invocations'][0]['toolExecutionNotifications'],
-            ),
-            'gitlab' => self::assertSame(
-                [[
-                    'description' => self::sentence(),
-                    'check_name' => 'drill-down.out-of-scope',
-                    'fingerprint' => md5('drill-down.out-of-scope'),
-                    'severity' => 'info',
-                    'location' => ['path' => '_project', 'lines' => ['begin' => 1]],
-                ]],
-                self::decode($output),
-            ),
-            'checkstyle' => self::assertSame(
-                ['[drill-down]', '1', 'info', self::sentence(), 'qmx.drill-down.out-of-scope'],
-                self::onlyCheckstyleEntry($output),
             ),
             'github' => self::assertSame('::notice title=drill-down.out-of-scope::' . self::sentence() . "\n", $output),
             'html' => self::assertStringContainsString(
@@ -162,6 +149,40 @@ final class OutOfScopePublicationTest extends TestCase
         }
     }
 
+    /** @return iterable<string, array{string}> */
+    public static function formatsWithoutAPlace(): iterable
+    {
+        foreach (OutOfScopeFindings::FORMATS_WITHOUT_A_PLACE as $format) {
+            yield $format => [$format];
+        }
+    }
+
+    /**
+     * Every entry of these formats is a finding to its consumer, so the
+     * selection is refused before they run and they publish no note: a clean
+     * selection stays zero issues, not one.
+     */
+    #[Test]
+    #[DataProvider('formatsWithoutAPlace')]
+    public function itPublishesNothingOfTheSelectionInAFormatWithoutAPlace(string $format): void
+    {
+        self::assertSame(
+            $this->format($format, [self::finding()], null),
+            $this->format($format, [self::finding()], new OutOfScopeFindings(7, 2, 1)),
+        );
+    }
+
+    /** A name no formatter answers to would leave the refusal guarding nothing. */
+    #[Test]
+    #[DataProvider('formatsWithoutAPlace')]
+    public function itNamesARegisteredFormat(string $format): void
+    {
+        /** @var FormatterRegistryInterface $registry */
+        $registry = (new ContainerFactory())->create()->get(FormatterRegistryInterface::class);
+
+        self::assertSame($format, $registry->get($format)->getName());
+    }
+
     private static function sentence(): string
     {
         return '10 finding(s) outside the --namespace/--class selection (7 error(s), 2 warning(s), 1 info)'
@@ -208,26 +229,6 @@ final class OutOfScopePublicationTest extends TestCase
             message: 'Class Kept is too complex',
             severity: Severity::Error,
         );
-    }
-
-    /**
-     * @return list<string> file name, then the error's line, severity, message and source
-     */
-    private static function onlyCheckstyleEntry(string $xml): array
-    {
-        $document = simplexml_load_string($xml);
-        self::assertNotFalse($document, 'the document parses as XML');
-        self::assertCount(1, $document->file);
-        self::assertCount(1, $document->file->error);
-        $error = $document->file->error;
-
-        return [
-            (string) $document->file['name'],
-            (string) $error['line'],
-            (string) $error['severity'],
-            (string) $error['message'],
-            (string) $error['source'],
-        ];
     }
 
     /** @return array<mixed> */

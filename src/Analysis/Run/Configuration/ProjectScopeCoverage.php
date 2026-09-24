@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Run\Configuration;
 use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
+use Qualimetrix\Analysis\Run\Discovery\DirectoryPruner;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
@@ -70,6 +71,17 @@ use RuntimeException;
  * gate rather than closing it. A `classmap` `*` reaches this class already
  * expanded by the reader to the directories it matches; one matching nothing
  * stays as written and is skipped like any other missing target.
+ *
+ * **A target no walk of the project reaches is not the project's.** Discovery
+ * never descends into `vendor`, `node_modules` or `.git`
+ * ({@see DirectoryPruner::builtInPatterns()}), so a `files` entry inside
+ * `vendor/` or a `classmap` entry that is itself a `vendor` directory names
+ * code the product does not treat as project code. Such a target leaves the
+ * default paths and the denominator together — both through
+ * {@see self::reachableTargets()}, asking the pruner the traversal asks — and
+ * the measurement names it rather than dropping it in silence. Only the
+ * built-in floor is asked, not the author's `exclude:`: this class does not
+ * see authored narrowing (above).
  */
 final readonly class ProjectScopeCoverage
 {
@@ -117,13 +129,18 @@ final readonly class ProjectScopeCoverage
         // neither `-q` nor the machine formats, so on such a project this
         // silence is what a CI pipeline sees — the price of not guessing
         // "whole project" for a project that never said what its code is.
-        $autoloadPaths = $this->declaredTargets($composerJsonPath->value(), $autoloadDev);
+        [$autoloadPaths, $prunedTargets] = $this->partition(
+            $projectRoot,
+            $this->declaredTargets($composerJsonPath->value(), $autoloadDev) ?? [],
+        );
 
         // `[]` is the same answer as `null` and is spelled out rather than
         // trusted away: reading an empty denominator as "covers" is precisely
-        // the defect this measurement was amended to remove.
-        if ($autoloadPaths === null || $autoloadPaths === []) {
-            return ProjectScopeMeasurement::unreadable();
+        // the defect this measurement was amended to remove. A manifest whose
+        // every target is pruned lands here too — it declares no code a walk
+        // of the project reaches.
+        if ($autoloadPaths === []) {
+            return ProjectScopeMeasurement::unreadable($prunedTargets);
         }
 
         $resolvedAnalyzed = [];
@@ -151,7 +168,49 @@ final readonly class ProjectScopeCoverage
             }
         }
 
-        return ProjectScopeMeasurement::against($uncoveredPaths);
+        return ProjectScopeMeasurement::against($uncoveredPaths, $prunedTargets);
+    }
+
+    /**
+     * The declared targets a walk from the project root reaches, in their
+     * declared order and spelling — what a run with no `paths` analyses and
+     * what this class measures a run against.
+     *
+     * @param list<string> $targets
+     *
+     * @return list<string>
+     */
+    public function reachableTargets(AbsolutePath $projectRoot, array $targets): array
+    {
+        return $this->partition($projectRoot, $targets)[0];
+    }
+
+    /**
+     * @param list<string> $targets
+     *
+     * @return array{list<string>, list<array{target: string, directory: string}>}
+     */
+    private function partition(AbsolutePath $projectRoot, array $targets): array
+    {
+        $pruner = new DirectoryPruner($projectRoot, DirectoryPruner::builtInPatterns());
+
+        $reachable = [];
+        $pruned = [];
+        foreach ($targets as $target) {
+            // The empty path is refused where paths are accepted; judging it
+            // here would only throw in a different vocabulary.
+            $directory = $target === ''
+                ? null
+                : $pruner->prunedAncestor(PathFactory::fromCliArgument($target, $projectRoot));
+
+            if ($directory === null) {
+                $reachable[] = $target;
+            } else {
+                $pruned[] = ['target' => $target, 'directory' => $directory];
+            }
+        }
+
+        return [$reachable, $pruned];
     }
 
     /**

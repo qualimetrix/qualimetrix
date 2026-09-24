@@ -21,19 +21,36 @@ namespace Qualimetrix\Infrastructure\Console;
 final class ScopeWarningChecker
 {
     /**
+     * The two lines are independent: a whole-project run covers every counted
+     * target and can still have dropped declared ones from the count.
+     *
      * @param list<string> $uncoveredAutoloadRoots Production autoload targets (roots, classmap and files entries) no analyzed path contains
+     * @param list<array{target: string, directory: string}> $prunedTargets Declared targets under a directory discovery never enters, and that directory
      *
      * @return list<string> Warning messages (empty when the scope is complete)
      */
-    public function describe(array $uncoveredAutoloadRoots): array
+    public function describe(array $uncoveredAutoloadRoots, array $prunedTargets = []): array
     {
-        if ($uncoveredAutoloadRoots === []) {
-            return [];
+        $warnings = [];
+        if ($uncoveredAutoloadRoots !== []) {
+            $warnings[] = \sprintf(
+                'Analyzed paths do not cover all autoload entries (missing: %s). Coupling and instability metrics may be incomplete.',
+                implode(', ', $uncoveredAutoloadRoots),
+            );
         }
 
-        return [\sprintf(
-            'Analyzed paths do not cover all autoload entries (missing: %s). Coupling and instability metrics may be incomplete.',
-            implode(', ', $uncoveredAutoloadRoots),
-        )];
+        if ($prunedTargets !== []) {
+            $warnings[] = \sprintf(
+                'Autoload entries that are, or lie inside, a vendor, node_modules or .git directory are neither analyzed nor counted as project scope: %s.',
+                implode(', ', array_map(
+                    static fn(array $pruned): string => $pruned['target'] === $pruned['directory']
+                        ? $pruned['target']
+                        : \sprintf('%s (inside %s)', $pruned['target'], $pruned['directory']),
+                    $prunedTargets,
+                )),
+            );
+        }
+
+        return $warnings;
     }
 }

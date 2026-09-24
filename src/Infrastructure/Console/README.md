@@ -29,7 +29,7 @@ Console/
 ├── ChannelExclusionKeyValidator.php  # Whether one suppress_namespace_channels key can exclude anything
 ├── ChannelExclusionKeyHints.php      # What to say when it cannot
 ├── ResultPresenter.php
-├── ArtifactFile.php                 # A file an option names for an artifact (--output, --profile, graph --output): the precheck and the tmp+rename write it models
+├── ArtifactFile.php                 # A file an option names for an artifact (--output, --profile, graph --output): one model of the target for the precheck and the write
 ├── CommandLineSpelling.php          # An option or argument value as argv would spell it; every valued door reads through it
 ├── FormatOptionPairs.php            # The --format-opt door: every written pair judged, a repeated key and two spellings of one value refused
 ├── CheckCommandDefinition.php
@@ -73,11 +73,15 @@ has no logger, `GitScopeResolver`, or `ScopeWarningChecker` property.
 `GitScopeResolution` first, so invalid Git references fail before warnings or a
 payload are produced, and only then asks Run's `ProjectScopeCoverage` which of
 the project's autoload targets — production, plus `autoload-dev` under
-`AutoloadDevPolicy::Include` — the resolved paths leave uncovered. That one answer
-feeds both outputs of `ResolvedCheckScope`: `ScopeWarningChecker` renders it as
-the partial-autoload warning, and its emptiness is the `coversProjectScope`
-boolean `CheckCommand` puts on the scoped `RunConfiguration`, so a rule that
-must stay quiet on a slice and the warning about that slice cannot disagree.
+`AutoloadDevPolicy::Include` — the resolved paths leave uncovered. That one
+measurement feeds both outputs of `ResolvedCheckScope`: `ScopeWarningChecker`
+renders its uncovered targets as the partial-autoload warning, and its
+`covers()` verdict is the `coversProjectScope` boolean `CheckCommand` puts on
+the scoped `RunConfiguration`, so a rule that must stay quiet on a slice and the
+warning about that slice cannot disagree. The measurement's pruned targets —
+declared entries under a `vendor`, `node_modules` or `.git` directory, which are
+neither analysed by default nor counted — get a warning line of their own,
+independent of coverage: a whole-project run can still have dropped them.
 The coverage is taken for the resolved paths, not the configured ones: a Git
 report scope narrows the run after the configuration was resolved. `CheckCommand` validates the resolved paths
 before emitting the messages through its stderr-only warning route; structured
@@ -147,15 +151,25 @@ refuses an empty value for the five doors whose owners would read it as
 its closed set and a `--profile` target the export cannot be written to, and
 `ResultPresenter::assertOutputIsWritable()` the same for `--output` — all before
 analysis. Both targets, and `graph:export --output`, are judged by
-`ArtifactFile`, which also makes the write (a temporary file beside the target,
-renamed over it), so the precheck cannot model a different write than the one
-made: a directory, a file in a directory it cannot write and an unwritable file
-are refused. A profile write that still fails after the report is published
+`ArtifactFile`, which also makes the write, so the precheck cannot model a
+different write than the one made: a directory or a name ending in `/`, a file
+in a directory it cannot write and an unwritable file are refused. A regular
+file or a new name is written to a temporary file beside it and renamed over
+it, keeping a replaced file's permissions; a symbolic link is followed and
+kept; any other existing target — a device, a named pipe, a descriptor under
+`/dev` such as `/dev/fd/1` when stdout is redirected to a file — is written in
+place. A profile write that still fails after the report is published
 ends the run with exit 3 through `RefusalPresenter::refusalAfterPublishedReport()`:
 the sentence goes to stderr whatever the format, so stdout keeps the report as
 its only document. `FormatOptionPairs` judges every written `--format-opt` pair
 before any fold by key and refuses a key written twice, and two keys that set
-one value (`violations` and `limit`, or `limit` beside `--all`).
+one value (`violations` and `limit`, or `limit` beside `--all`);
+`FormatterContextFactory` refuses `--detail` or `--detail=N` beside `--all` the
+same way, and — in `bindFormatBeforeAnalysis()`, against the resolved format,
+and again in `create()` — a `--namespace` or `--class` selection under a format
+`OutOfScopeFindings::FORMATS_WITHOUT_A_PLACE` names. `--report`
+is read here, through `CommandLineSpelling`, and handed to
+`Git\GitScopeResolver` as a string.
 Every valued option and argument is read through `CommandLineSpelling`: argv
 delivers strings, and an embedder's array input may deliver any PHP value, so an
 integer is read as its digits and any other shape is refused (exit 3) instead

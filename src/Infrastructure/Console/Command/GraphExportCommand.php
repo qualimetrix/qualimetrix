@@ -295,7 +295,7 @@ final class GraphExportCommand extends Command
     /** @throws ConfigurationRefusal */
     private static function writeToFile(OutputInterface $output, ArtifactFile $outputFile, string $content, GraphExportFormat $format): void
     {
-        $outputFile->replaceWith($content);
+        $outputFile->write($content);
 
         $output->writeln(\sprintf('<info>Graph exported to %s</info>', $outputFile->path));
 

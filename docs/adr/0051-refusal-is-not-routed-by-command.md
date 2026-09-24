@@ -234,10 +234,13 @@ is now written to stderr as the text path's sentence, whatever the format
 twin), and keeps its code: 3 for the refusal, 1 for an internal error. The
 report stays the only document on stdout.
 
-The export target is checked before the analysis against what the write
-needs — a temporary file in the target's directory, renamed over a target
-that is not a directory — so this ending is left to failures no precheck can
-see. Keeping the analysis exit code for it was rejected: the run was asked
+The export target is checked before the analysis against the same model of
+the target the write uses (`ArtifactFile`): a regular file outside `/dev`, or
+a name nothing stands at yet, is replaced whole — a temporary file beside it
+renamed over it, keeping a replaced file's permissions; a symbolic link is
+followed to the file it names and stays a link; a device, a named pipe or
+anything under `/dev` is written in place; a directory or a name ending in `/`
+is refused. So this ending is left to failures no precheck can see. Keeping the analysis exit code for it was rejected: the run was asked
 for an artifact it did not deliver, and exit 3 is how a wrapper learns that.
 Writing the profile before the report was rejected too: the profile would
 then miss the reporting phase it measures.

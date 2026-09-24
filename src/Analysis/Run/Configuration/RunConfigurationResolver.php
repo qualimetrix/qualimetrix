@@ -33,7 +33,7 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
         $autoloadDev = self::autoloadDevPolicy($document->contributions(ConfigSchema::INCLUDE_AUTOLOAD_DEV));
         $paths = self::analysedPaths(
             $document->contributions(ConfigSchema::PATHS),
-            self::discoveredPaths($document, $autoloadDev),
+            $this->discoveredPaths($document, $autoloadDev),
         );
         $pathList = array_map(
             static fn(string $path): AbsolutePath => PathFactory::fromCliArgument(
@@ -212,18 +212,22 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
 
     /**
      * The targets composer discovery contributed, taken under the run's
-     * policy through the same question {@see ProjectScopeCoverage} asks of
-     * the denominator. They are only the default — a `paths` any source
-     * wrote replaces them, flag or no flag.
+     * policy and kept to the ones a walk of the project reaches, through the
+     * same two questions {@see ProjectScopeCoverage} asks of the
+     * denominator. They are only the default — a `paths` any source wrote
+     * replaces them, flag or no flag, and is never pruned here.
      *
      * @return list<string>
      */
-    private static function discoveredPaths(ConfigurationDocument $document, AutoloadDevPolicy $autoloadDev): array
+    private function discoveredPaths(ConfigurationDocument $document, AutoloadDevPolicy $autoloadDev): array
     {
-        return $autoloadDev->projectTargets(
-            self::lastStringList($document->contributions(ConfigSchema::DISCOVERED_AUTOLOAD_PATHS)),
-            self::lastStringList($document->contributions(ConfigSchema::DISCOVERED_AUTOLOAD_DEV_PATHS)),
-        ) ?? [];
+        return $this->projectScopeCoverage->reachableTargets(
+            $document->workingDirectory(),
+            $autoloadDev->projectTargets(
+                self::lastStringList($document->contributions(ConfigSchema::DISCOVERED_AUTOLOAD_PATHS)),
+                self::lastStringList($document->contributions(ConfigSchema::DISCOVERED_AUTOLOAD_DEV_PATHS)),
+            ) ?? [],
+        );
     }
 
     /**

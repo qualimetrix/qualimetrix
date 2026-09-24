@@ -489,6 +489,44 @@ final class GraphExportCommandTest extends TestCase
         self::assertStringContainsString('is a directory', $tester->getErrorOutput());
     }
 
+    /** `build/graphs/` names a directory to put the graph in, which the write cannot become. */
+    #[Test]
+    public function itRefusesAnOutputPathEndingInASlashBeforeAnalysis(): void
+    {
+        file_put_contents($this->tempDir . '/ClassA.php', '<?php namespace Test; class ClassA {}');
+
+        $analyzer = new CountingDependencyGraphAnalyzer($this->createAnalyzer());
+        $tester = $this->createCommandTesterWithAnalyzer($analyzer);
+        $exit = $tester->execute(
+            ['paths' => [$this->tempDir], '--output' => $this->tempDir . '/nodir/'],
+            ['capture_stderr_separately' => true],
+        );
+
+        self::assertSame(3, $exit, $tester->getErrorOutput());
+        self::assertSame(0, $analyzer->calls);
+        self::assertStringContainsString('is a directory', $tester->getErrorOutput());
+    }
+
+    /** A `current.dot -> v2/graph.dot` link is how CI publishes the latest graph; the link survives the export. */
+    #[Test]
+    public function itExportsThroughASymlinkAndKeepsTheLink(): void
+    {
+        file_put_contents($this->tempDir . '/ClassA.php', '<?php namespace Test; class ClassA {}');
+        mkdir($this->tempDir . '/v2');
+        file_put_contents($this->tempDir . '/v2/graph.dot', 'old');
+        symlink('v2/graph.dot', $this->tempDir . '/current.dot');
+
+        $tester = $this->createCommandTesterWithAnalyzer(new CountingDependencyGraphAnalyzer($this->createAnalyzer()));
+        $exit = $tester->execute(
+            ['paths' => [$this->tempDir], '--output' => $this->tempDir . '/current.dot'],
+            ['capture_stderr_separately' => true],
+        );
+
+        self::assertSame(0, $exit, $tester->getErrorOutput());
+        self::assertTrue(is_link($this->tempDir . '/current.dot'), 'The link was replaced by a file.');
+        self::assertStringStartsWith('digraph', (string) file_get_contents($this->tempDir . '/v2/graph.dot'));
+    }
+
     /** @return iterable<string, array{string}> */
     public static function provideExportFormats(): iterable
     {

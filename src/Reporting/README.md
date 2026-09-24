@@ -60,7 +60,7 @@ Reporting/
 ├── DrillDown/
 │   ├── DrillDownBinding.php             # How many analyzed namespaces/classes a `--namespace` / `--class` value selects; zero is refused instead of emptying the report
 │   ├── FindingFilter.php                # What `--namespace` / `--class` selects from findings and offenders — the one copy of that rule
-│   └── OutOfScopeFindings.php           # Severity counts of the run's findings a selection left out; every renderer and structured format publishes them
+│   └── OutOfScopeFindings.php           # Severity counts of the run's findings a selection left out, and the formats with no place to publish them
 └── Formatter/
     ├── FormatterInterface.php              # Formatter contract
     ├── FormatOptionKeysInterface.php       # Opt-in: the --format-opt keys a formatter reads
@@ -488,7 +488,7 @@ and three commands outside `check` (`directives`,
 
 **`message` / `recommendation`:** the finding's message and its optional recommendation, under the same two keys in `violations` and `topIssues` (see `Formatter\PublishedFinding`).
 
-**`outOfScope`:** always present. `null` without `--namespace`/`--class`; under a selection, `{violationCount, errorCount, warningCount, infoCount}` of the run's findings the selection left out, zeroes when it left none. The exit code is resolved over `summary` and `outOfScope` together. `metrics` publishes the same key in its own vocabulary; `sarif`, `gitlab`, `checkstyle`, `github` and `html` add one diagnostic entry under `drill-down.out-of-scope` only when something lies outside (see `DrillDown\OutOfScopeFindings`). `suppressed` has none: a selection does not narrow it.
+**`outOfScope`:** always present. `null` without `--namespace`/`--class`; under a selection, `{violationCount, errorCount, warningCount, infoCount}` of the run's findings the selection left out, zeroes when it left none. The exit code is resolved over `summary` and `outOfScope` together. `metrics` publishes the same key in its own vocabulary; `sarif`, `github` and `html` add one diagnostic entry under `drill-down.out-of-scope` only when something lies outside (see `DrillDown\OutOfScopeFindings`). `gitlab` and `checkstyle` have no entry that is not a finding to their consumer, so `OutOfScopeFindings::FORMATS_WITHOUT_A_PLACE` names them and the command line refuses a selection under them. `suppressed` has none: a selection does not narrow it.
 
 **`invalidUtf8Replaced`:** present only when strings from the analysed source were not valid UTF-8; each invalid byte was replaced by U+FFFD and the key counts the strings repaired. `metrics`, `suppressed` and the HTML payload publish the same key; `sarif`, `gitlab` and `checkstyle` publish the repair in their own diagnostic channel (see `Formatter\PublishedUtf8`). SARIF repairs a path before percent-encoding it, because `%FF` is valid ASCII the encoder would never refuse.
 

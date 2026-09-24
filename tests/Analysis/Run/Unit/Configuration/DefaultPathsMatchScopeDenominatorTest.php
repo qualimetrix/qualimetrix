@@ -45,10 +45,10 @@ final class DefaultPathsMatchScopeDenominatorTest extends TestCase
     protected function setUp(): void
     {
         $this->root = sys_get_temp_dir() . '/qmx-default-paths-' . bin2hex(random_bytes(8));
-        foreach (['src', 'tests', 'helpers', 'modules/alpha/lib', 'modules/beta/lib'] as $directory) {
+        foreach (['src', 'tests', 'helpers', 'modules/alpha/lib', 'modules/beta/lib', 'vendor/acme/legacy', 'lib/vendor', 'vendors', 'src/Vendor'] as $directory) {
             mkdir($this->root . '/' . $directory, 0o777, true);
         }
-        foreach (['src/A.php', 'tests/SomeTest.php', 'tests/helpers.php', 'helpers/functions.php', 'modules/alpha/lib/Alpha.php', 'modules/beta/lib/Beta.php'] as $file) {
+        foreach (['src/A.php', 'tests/SomeTest.php', 'tests/helpers.php', 'helpers/functions.php', 'modules/alpha/lib/Alpha.php', 'modules/beta/lib/Beta.php', 'vendor/acme/helpers.php', 'vendor/acme/legacy/Legacy.php', 'lib/vendor/Bundled.php', 'vendors/Kept.php', 'src/Vendor/Client.php'] as $file) {
             file_put_contents($this->root . '/' . $file, "<?php\n");
         }
         $this->root = (string) realpath($this->root);
@@ -117,6 +117,114 @@ final class DefaultPathsMatchScopeDenominatorTest extends TestCase
             false,
             ['modules/alpha/lib', 'modules/beta/lib'],
         ];
+        yield 'production classmap whose name only resembles a pruned directory, no flag' => [
+            ['autoload' => [...$psr4, 'classmap' => ['vendors/', 'src/Vendor/']]],
+            false,
+            ['src', 'vendors', 'src/Vendor'],
+        ];
+    }
+
+    /** @return iterable<string, array{array<string, mixed>, bool, list<array{target: string, directory: string}>}> */
+    public static function provideTargetsUnderPrunedDirectories(): iterable
+    {
+        $psr4 = ['psr-4' => ['App\\' => 'src/']];
+
+        yield 'production files entry inside vendor' => [
+            ['autoload' => [...$psr4, 'files' => ['vendor/acme/helpers.php']]],
+            false,
+            [['target' => 'vendor/acme/helpers.php', 'directory' => 'vendor']],
+        ];
+        yield 'production classmap entry that is itself a vendor directory' => [
+            ['autoload' => [...$psr4, 'classmap' => ['lib/vendor']]],
+            false,
+            [['target' => 'lib/vendor', 'directory' => 'lib/vendor']],
+        ];
+        yield 'production classmap entry inside vendor' => [
+            ['autoload' => [...$psr4, 'classmap' => ['vendor/acme/legacy/']]],
+            false,
+            [['target' => 'vendor/acme/legacy', 'directory' => 'vendor']],
+        ];
+        yield 'autoload-dev classmap entry inside vendor, flag given' => [
+            ['autoload' => $psr4, 'autoload-dev' => ['classmap' => ['vendor/acme/legacy/']]],
+            true,
+            [['target' => 'vendor/acme/legacy', 'directory' => 'vendor']],
+        ];
+        yield 'autoload-dev classmap entry inside vendor, no flag' => [
+            ['autoload' => $psr4, 'autoload-dev' => ['classmap' => ['vendor/acme/legacy/']]],
+            false,
+            [],
+        ];
+    }
+
+    /**
+     * Discovery never descends into `vendor`, `node_modules` or `.git`, so a
+     * declared target under one of them is not code a walk of the project
+     * reaches. Both halves drop it together, and the measurement names it:
+     * analysing it would report a third party's code as the project's, and
+     * dropping it in silence would hide that the manifest declared it.
+     *
+     * @param array<string, mixed> $manifest
+     * @param list<array{target: string, directory: string}> $expectedPruned
+     */
+    #[Test]
+    #[DataProvider('provideTargetsUnderPrunedDirectories')]
+    public function itKeepsTargetsUnderPrunedDirectoriesOutOfBothHalvesAndNamesThem(
+        array $manifest,
+        bool $includeAutoloadDev,
+        array $expectedPruned,
+    ): void {
+        $configuration = $this->resolve($manifest, $includeAutoloadDev);
+
+        self::assertSame(['src'], $this->relativePaths($configuration));
+        self::assertTrue($configuration->coversProjectScope);
+
+        $measurement = (new ProjectScopeCoverage(new ComposerReader()))->measure(
+            $configuration->projectRoot,
+            $configuration->paths,
+            $configuration->autoloadDevPolicy,
+        );
+        self::assertSame([], $measurement->uncoveredRoots);
+        self::assertSame($expectedPruned, $measurement->prunedTargets);
+    }
+
+    /**
+     * A run whose paths the author wrote is judged against the same pruned
+     * denominator: naming `src` alone covers a project whose only other
+     * target is a vendored directory no walk would read, where it used to be
+     * told to analyse a path discovery then skips.
+     */
+    #[Test]
+    public function itDoesNotAskAWrittenRunToCoverATargetUnderAPrunedDirectory(): void
+    {
+        $configuration = $this->resolve(
+            ['autoload' => ['psr-4' => ['App\\' => 'src/'], 'classmap' => ['lib/vendor']]],
+            false,
+            ['src'],
+        );
+
+        self::assertTrue($configuration->coversProjectScope);
+    }
+
+    /**
+     * A manifest whose every target lies under a pruned directory declares no
+     * project code a walk reaches: the run falls back to the working
+     * directory, as with no autoload at all, is not judged as covering a
+     * project it has no denominator for, and still names what it dropped.
+     */
+    #[Test]
+    public function itTreatsAManifestWhoseEveryTargetIsPrunedAsDeclaringNothingAndStillNamesThem(): void
+    {
+        $configuration = $this->resolve(['autoload' => ['files' => ['vendor/acme/helpers.php']]], false);
+
+        self::assertSame([$this->root], array_map(static fn(AbsolutePath $path): string => $path->value(), $configuration->paths));
+        self::assertFalse($configuration->coversProjectScope);
+
+        $measurement = (new ProjectScopeCoverage(new ComposerReader()))->measure(
+            $configuration->projectRoot,
+            $configuration->paths,
+            $configuration->autoloadDevPolicy,
+        );
+        self::assertSame([['target' => 'vendor/acme/helpers.php', 'directory' => 'vendor']], $measurement->prunedTargets);
     }
 
     /**

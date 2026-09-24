@@ -1119,6 +1119,9 @@ Available tests:
  - Qualimetrix\PromiseEffect\Tests\PerSideMagnitudeTest::itRefusesAPerSideLiteralEqualToItsFormsCanonicalWrite
  - Qualimetrix\PromiseEffect\Tests\PerSideMagnitudeTest::itRefusesAPerSideRowNamingAFormThatDoesNotExist
  - Qualimetrix\PromiseEffect\Tests\PerSideMagnitudeTest::itWritesOneMagnitudeInEveryNumericSpelling
+ - Qualimetrix\PromiseEffect\Tests\RefusalFramingWitnessTest::itDoesNotCountTheWitnessAsAProductRun
+ - Qualimetrix\PromiseEffect\Tests\RefusalFramingWitnessTest::itReadsTheSameEnvelopeWithTheFrameAsAFramedRefusal
+ - Qualimetrix\PromiseEffect\Tests\RefusalFramingWitnessTest::itReadsTheWitnessAsAnUnframedRefusalAndTheControlHoldsOnIt
  - Qualimetrix\RenameEnumeration\Tests\RenameEnumerationRetirementTest::itLeavesAWildcardTargetInHistoryAlone
  - Qualimetrix\RenameEnumeration\Tests\RenameEnumerationRetirementTest::itRefusesAnUnknownRenameStep
  - Qualimetrix\RenameEnumeration\Tests\RenameEnumerationRetirementTest::itRefusesExecutedHistoryThatNoLongerDescribesTheMeasurement
@@ -7602,6 +7605,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\FileProcessorTest::itProcessesFileSuccessfully
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\FileProcessorTest::itReturnsFailureOnParseException
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\FileProcessorTest::itThrowsLogicExceptionWhenProcessCalledBeforeSetProjectRoot
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\DefaultPathsMatchScopeDenominatorTest::itDoesNotAskAWrittenRunToCoverATargetUnderAPrunedDirectory
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\DefaultPathsMatchScopeDenominatorTest::itJudgesARunWithNoPathsAsCoveringTheProject"autoload-dev through classmap, flag given"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\DefaultPathsMatchScopeDenominatorTest::itJudgesARunWithNoPathsAsCoveringTheProject"autoload-dev through classmap, no flag"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\DefaultPathsMatchScopeDenominatorTest::itJudgesARunWithNoPathsAsCoveringTheProject"autoload-dev through files, flag given"
@@ -7609,10 +7613,17 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\DefaultPathsMatchScopeDenominatorTest::itJudgesARunWithNoPathsAsCoveringTheProject"autoload-dev through psr-4, flag given"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\DefaultPathsMatchScopeDenominatorTest::itJudgesARunWithNoPathsAsCoveringTheProject"production classmap beside psr-4, no flag"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\DefaultPathsMatchScopeDenominatorTest::itJudgesARunWithNoPathsAsCoveringTheProject"production classmap through a wildcard, no flag"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\DefaultPathsMatchScopeDenominatorTest::itJudgesARunWithNoPathsAsCoveringTheProject"production classmap whose name only resembles a pruned directory, no flag"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\DefaultPathsMatchScopeDenominatorTest::itJudgesARunWithNoPathsAsCoveringTheProject"production files beside psr-4, no flag"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\DefaultPathsMatchScopeDenominatorTest::itJudgesARunWithNoPathsAsCoveringTheProject"production psr-0 only, no flag"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\DefaultPathsMatchScopeDenominatorTest::itKeepsAMissingDeclaredTargetInTheDefaultPaths
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\DefaultPathsMatchScopeDenominatorTest::itKeepsTargetsUnderPrunedDirectoriesOutOfBothHalvesAndNamesThem"autoload-dev classmap entry inside vendor, flag given"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\DefaultPathsMatchScopeDenominatorTest::itKeepsTargetsUnderPrunedDirectoriesOutOfBothHalvesAndNamesThem"autoload-dev classmap entry inside vendor, no flag"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\DefaultPathsMatchScopeDenominatorTest::itKeepsTargetsUnderPrunedDirectoriesOutOfBothHalvesAndNamesThem"production classmap entry inside vendor"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\DefaultPathsMatchScopeDenominatorTest::itKeepsTargetsUnderPrunedDirectoriesOutOfBothHalvesAndNamesThem"production classmap entry that is itself a vendor directory"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\DefaultPathsMatchScopeDenominatorTest::itKeepsTargetsUnderPrunedDirectoriesOutOfBothHalvesAndNamesThem"production files entry inside vendor"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\DefaultPathsMatchScopeDenominatorTest::itStillReportsANarrowedRunAsNotCoveringNonPsr4Targets
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\DefaultPathsMatchScopeDenominatorTest::itTreatsAManifestWhoseEveryTargetIsPrunedAsDeclaringNothingAndStillNamesThem
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itAcceptsAnEmptyContributionThatALaterSourceOverrides
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itRefusesAMalformedContributionThatALaterSourceOverrides
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itRefusesAPathsValueThatIsNotAList#0
@@ -7680,6 +7691,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\AnalysisFileDiscoveryTest::itUsesTheExplicitOverrideWithoutCallingTheDefaultDiscovery
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\DirectoryPrunerTest::itKeepsSiblingPrefixesSeparate
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\DirectoryPrunerTest::itMatchesProjectRelativeDirectoriesAndReturnsTheFirstAttribution
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\DirectoryPrunerTest::itNamesTheOutermostPrunedDirectoryAWalkWouldStopAt
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\DirectoryPrunerTest::itProvidesBuiltInsThatMatchReservedDirectoriesAtAnyDepth
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\DirectoryWalkTest::itHandsBackTheBranchItCouldNotEnter
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\DirectoryWalkTest::itKeepsWalkingTheSiblingsOfTheBranchItCouldNotEnter
@@ -7706,13 +7718,23 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoverySkipTest::itYieldsAnUnreadableRegularFileRatherThanRecordingIt
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryTest::itAcceptsMixedFilesAndDirectories
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryTest::itAcceptsMultiplePaths
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryTest::itAnalysesAFileNamedInsideAPrunedDirectory
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryTest::itDiscoversFilesInDirectory
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryTest::itDiscoversFilesInSubdirectories
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryTest::itDiscoversSingleFile
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryTest::itExcludesVendorDirectory
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryTest::itLeavesARootRemovedByAnAuthoredExcludeToThatExclude
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryTest::itRefusesANamedRootThatIsADirectoryItNeverWalks".git"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryTest::itRefusesANamedRootThatIsADirectoryItNeverWalks"node_modules"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryTest::itRefusesANamedRootThatIsADirectoryItNeverWalks"vendor at the root"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryTest::itRefusesANamedRootThatIsADirectoryItNeverWalks"vendor below the root"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryTest::itRefusesANamedRootThatIsADirectoryItNeverWalks"written with a trailing slash"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryTest::itRefusesBeforeYieldingAFileNamedBesideThePrunedRoot
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryTest::itReturnsEmptyForEmptyPaths
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryTest::itSkipsNonExistentPaths
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryTest::itSortsFilesByName
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryTest::itStillPrunesAVendorDirectoryBelowANamedRoot
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\FinderFileDiscoveryTest::itWalksANamedRootThatLiesInsideAPrunedDirectory
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\GeneratedFileFilterTest::itDeclaresAGeneratedFileAsGenerated
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\GeneratedFileFilterTest::itDeclaresANormalFileAsNotGenerated
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\GeneratedFileFilterTest::itDetectsGeneratedCaseInsensitively
@@ -8016,6 +8038,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ArchitectureCeilingRefusalTest::itRefusesAnExceededTemplateExpansionCeilingOnBaselineGenerate
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ArchitectureCeilingRefusalTest::itRefusesAnExceededTemplateExpansionCeilingOnCheck
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itReadsAnIntegerAsItsDigitsAndAFlagWrittenAsTrueAsTheFlag
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAReportScopeNoCommandLineSpells"a list"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAReportScopeNoCommandLineSpells"a number, read as its digits"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"baseline:cleanup --remove"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"baseline:cleanup baseline"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"baseline:explain --baseline"
@@ -8091,6 +8115,15 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigErrorExitCodeTest::itPublishesOnlyThePositionItsThrowSiteLocated
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigurationErrorGateTest::itFailsAndReportsThroughAPathExclusionCoveringTheFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigurationErrorGateTest::itFailsAndReportsThroughAnInlineSuppressionOfTheDiagnostic
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandDrillDownFormatTest::itRefusesASelectionTheFormatCannotMarkBeforeAnalysis"checkstyle --class"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandDrillDownFormatTest::itRefusesASelectionTheFormatCannotMarkBeforeAnalysis"checkstyle --namespace"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandDrillDownFormatTest::itRefusesASelectionTheFormatCannotMarkBeforeAnalysis"gitlab --class"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandDrillDownFormatTest::itRefusesASelectionTheFormatCannotMarkBeforeAnalysis"gitlab --namespace"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandDrillDownFormatTest::itRefusesTheSelectionUnderAFormatTheConfigurationSelects
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandDrillDownFormatTest::itStillRunsTheLawfulNeighbours"a selection under github, which says it in a notice"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandDrillDownFormatTest::itStillRunsTheLawfulNeighbours"a selection under sarif, which says it in a notification"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandDrillDownFormatTest::itStillRunsTheLawfulNeighbours"checkstyle without a selection"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandDrillDownFormatTest::itStillRunsTheLawfulNeighbours"gitlab without a selection"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandEmptyOptionValueTest::itRefusesAnEmptyOutputAsEmptyEvenFromAnUnwritableDirectory"nothing after "=""
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandEmptyOptionValueTest::itRefusesAnEmptyOutputAsEmptyEvenFromAnUnwritableDirectory"only whitespace after "=""
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandEmptyOptionValueTest::itRefusesAnEmptyValueByTheOptionName"--baseline"
@@ -8125,12 +8158,15 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itAcceptsDotSlashPrefixedPath
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itAcceptsRelativePath
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itAcceptsSymlinkedPath
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itAnalysesANamedRootThatContainsAVendorDirectory
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itRefusesANamedRootThatIsAVendorDirectoryBeforeAnyReport
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itRejectsNonExistentPath
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itExportsInAnAcceptedFormat"chrome-tracing"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itExportsInAnAcceptedFormat"json"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itKeepsTheReportTheOnlyStdoutDocumentWhenTheExportFailsAfterIt
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itRefusesAWritableTargetInADirectoryItCannotWriteBeforeAnalysis
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itRefusesAnImpossibleExportBeforeAnalysis"a directory as the target"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itRefusesAnImpossibleExportBeforeAnalysis"a name ending in a slash"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itRefusesAnImpossibleExportBeforeAnalysis"empty format"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itRefusesAnImpossibleExportBeforeAnalysis"empty path"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itRefusesAnImpossibleExportBeforeAnalysis"missing directory"
@@ -8335,6 +8371,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsDependencyGraphAsJsonToStdout
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsDependencyGraphToDotFormat
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsGraphToFile
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsThroughASymlinkAndKeepsTheLink
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itFailsWhenNoFilesFound
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itKeepsAMissedExcludeNamespaceSilentAndUnchanged"dot"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itKeepsAMissedExcludeNamespaceSilentAndUnchanged"json"
@@ -8350,6 +8387,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAllFailedAnalysisWithoutCreatingAnArtifact"JSON stdout"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAnIncludeNamespaceThatMatchesNoClass"dot"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAnIncludeNamespaceThatMatchesNoClass"json"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAnOutputPathEndingInASlashBeforeAnalysis
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAnUnboundNamespaceWithoutCreatingAnOutputFile"dot"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAnUnboundNamespaceWithoutCreatingAnOutputFile"json"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAnUnwritableOutputPathBeforeAnalysis
@@ -8562,10 +8600,23 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itReturnsRefusalExitCodeForAnUnknownCommandNonInteractively
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itReturnsRefusalExitCodeForAnUnreadableWorkingDirectoryWithoutChdir
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itStillDeliversARefusalMessageUnderSilent
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itCreatesANewTargetAndLeavesNoTemporaryFile
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itCreatesTheFileADanglingSymlinkNames
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itKeepsThePermissionsOfTheFileItReplaces
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesADirectoryNamingTheOptionThatNamedIt
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesAPathEndingInASlashBeforeAnyWork"a directory that does not exist"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesAPathEndingInASlashBeforeAnyWork"an existing directory"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesAPathEndingInASlashBeforeAnyWork"an existing file"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesATargetWhoseDirectoryDoesNotExist
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesAWriteThatFailsAfterThePrecheck
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itReplacesAnExistingTargetWholeAndLeavesNoTemporaryFile
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesIntoANamedPipeForItsReader
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesThroughASymlinkToTheFileItNames
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToACharacterDeviceInPlace
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStdoutWhateverItIs"/dev/fd/1 piped"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStdoutWhateverItIs"/dev/fd/1 redirected to a file"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStdoutWhateverItIs"/dev/stdout piped"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStdoutWhateverItIs"/dev/stdout redirected to a file"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ChannelExclusionKeyValidatorTest::itAcceptsAWildcardKeyWhoseOwnRuleReportsAtTheLevel
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ChannelExclusionKeyValidatorTest::itAcceptsTheNamespaceLevelAndTheLevelFreeSpelling
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ChannelExclusionKeyValidatorTest::itRefusesALevelFreeKeyNamingAnotherRulesChannel
@@ -8577,8 +8628,11 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CheckCommandDefinitionTest::itRegistersTheAllOptionAsValueNone
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CheckCommandDefinitionTest::itReturnsOnlyTheRuleSpecificOptionNames
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CheckScopeResolverTest::itDoesNotComputeWarningsWhenGitScopeResolutionFails
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\CheckScopeResolverTest::itRefusesAReportValueItCannotReadAsWritten"a list"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\CheckScopeResolverTest::itRefusesAReportValueItCannotReadAsWritten"a number, read as its digits"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CheckScopeResolverTest::itResolvesGitScopeBeforeComputingWarnings
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CheckScopeResolverTest::itReturnsTheUnchangedGitScopeWithWarnings
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\CheckScopeResolverTest::itWarnsAboutAutoloadEntriesUnderAPrunedDirectoryOnAWholeProjectRun
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itDecodesPerRuleSuppressionSelectors
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itDecodesTheDistanceNamespaceSelectorAfterRawRuleOptionParsing
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itNormalizesAliasValuesToBooleans
@@ -8675,17 +8729,21 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itAcceptsAKeyReadByAnotherFormatterThanTheOneSelected
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itAcceptsAllFlagTogetherWithAnEquivalentFormatOptViolationsAll
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itAcceptsFormatOptViolationsAllWithoutTheAllFlag
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itAcceptsTheAllFlagBesideADetailWithNoCap
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itBindsAnExplicitNamespaceSelectorOnceAtTheCliBoundary
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itJudgesEveryWrittenFormatOptPairBeforeFoldingThem"empty pair overwritten by --all"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itJudgesEveryWrittenFormatOptPairBeforeFoldingThem"one key written twice with one value"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itJudgesEveryWrittenFormatOptPairBeforeFoldingThem"one key written twice"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itJudgesEveryWrittenFormatOptPairBeforeFoldingThem"unparsable pair overwritten by a valid one"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itLeavesDefaultsUnchangedWhenAllFlagIsAbsent
- - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itLetsAllFlagOverrideAnExplicitDetailLimit
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itNamesEveryUnknownKeyAtOnce
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itReadsALoneFormatOptStringAsOnePair
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itReadsANumberAnEmbedderPassesAsANumber
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesABareNamespaceSelector
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesADetailCapBesideTheAllFlagBeforeTheAnalysisStarts"a cap an embedder passes as a number"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesADetailCapBesideTheAllFlagBeforeTheAnalysisStarts"a cap"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesADetailCapBesideTheAllFlagBeforeTheAnalysisStarts"the flag alone through an array input"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesADetailCapBesideTheAllFlagBeforeTheAnalysisStarts"the flag alone"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAFormatOptKeyNoFormatterReads
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAMistypedGroupByBeforeTheAnalysisStarts
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAnEmbedderValueOfTheWrongShapeAsInput"fractional top"
@@ -8716,6 +8774,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesTheSameValuesBeforeTheAnalysisStarts"violations word"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesTheUnknownFormatOptKeyBeforeTheAnalysisStarts
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesTheViolationsKeyTheAllFlagWritesWhenNoFormatterDeclaresIt
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesToBuildASelectionUnderAFormatWithoutAPlaceForIt
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itSetsTheDetailLimitToUnlimitedWhenAllFlagIsPassed
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itSetsTheViolationsOptionToAllWhenAllFlagIsPassed
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itStillAcceptsDistinctKeysAndTheAllFlagBesideItsSynonym
@@ -8828,6 +8887,9 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeLoggerConfiguratorTest::itPassesADeclaredLogLevelToTheFactory
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeLoggerConfiguratorTest::itRefusesALogLevelItCannotBuild
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ScopeWarningCheckerTest::itDoesNotCheckAutoloadDev
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ScopeWarningCheckerTest::itNamesAutoloadEntriesThatDiscoveryNeverEnters
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ScopeWarningCheckerTest::itPrintsBothLinesWhenASliceAlsoDropsPrunedEntries
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ScopeWarningCheckerTest::itPrintsNoPrunedLineForAManifestWithoutSuchEntries
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ScopeWarningCheckerTest::itReturnsNoWarningsForFullCoverage
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ScopeWarningCheckerTest::itReturnsNoWarningsWhenComposerJsonIsMissing
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ScopeWarningCheckerTest::itReturnsWarningForPartialCoverage
@@ -9508,22 +9570,20 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itStillRendersTheProseFormats"summary"
  - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itStillRendersTheProseFormats"text"
  - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itStillRendersTheProseFormats"text-verbose"
- - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itAddsNoEntryWhenNothingLiesOutside"checkstyle"
  - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itAddsNoEntryWhenNothingLiesOutside"github"
- - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itAddsNoEntryWhenNothingLiesOutside"gitlab"
  - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itAddsNoEntryWhenNothingLiesOutside"html"
  - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itAddsNoEntryWhenNothingLiesOutside"sarif"
- - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itKeepsTheSelectionBesideTheTrace"checkstyle"
  - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itKeepsTheSelectionBesideTheTrace"github"
- - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itKeepsTheSelectionBesideTheTrace"gitlab"
  - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itKeepsTheSelectionBesideTheTrace"html"
  - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itKeepsTheSelectionBesideTheTrace"json"
  - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itKeepsTheSelectionBesideTheTrace"metrics"
  - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itKeepsTheSelectionBesideTheTrace"sarif"
+ - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itNamesARegisteredFormat"checkstyle"
+ - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itNamesARegisteredFormat"gitlab"
+ - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itPublishesNothingOfTheSelectionInAFormatWithoutAPlace"checkstyle"
+ - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itPublishesNothingOfTheSelectionInAFormatWithoutAPlace"gitlab"
  - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itPublishesTheJsonKeyAsNullWithoutASelection
- - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itPublishesWhatACleanSelectionLeftOut"checkstyle"
  - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itPublishesWhatACleanSelectionLeftOut"github"
- - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itPublishesWhatACleanSelectionLeftOut"gitlab"
  - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itPublishesWhatACleanSelectionLeftOut"html"
  - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itPublishesWhatACleanSelectionLeftOut"json"
  - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itPublishesWhatACleanSelectionLeftOut"metrics"

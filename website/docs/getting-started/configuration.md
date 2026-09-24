@@ -58,7 +58,7 @@ By default, the code `composer.json` declares under `autoload-dev` is not part o
 include_autoload_dev: true
 ```
 
-Paths you write yourself are not widened; with `paths: [src]`, the run is reported as not covering the `autoload-dev` paths.
+Paths you write yourself are not widened; with `paths: [src]`, the run is reported as not covering the `autoload-dev` paths. In either section, an entry that is, or lies inside, a `vendor`, `node_modules` or `.git` directory is not part of the project: it is neither analysed by default nor counted, and a warning names it.
 
 Equivalent CLI: `--include-autoload-dev`
 

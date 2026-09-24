@@ -51,6 +51,7 @@ final class CheckCommandProfileExportTest extends TestCase
         yield 'missing directory' => [['--profile' => '{dir}/missing/p.json'], '--profile'];
         yield 'empty path' => [['--profile' => ''], '--profile'];
         yield 'a directory as the target' => [['--profile' => '{dir}/target-dir'], '--profile'];
+        yield 'a name ending in a slash' => [['--profile' => '{dir}/nodir/'], '--profile'];
     }
 
     /** @param array<string, string> $options */

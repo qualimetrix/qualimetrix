@@ -16,14 +16,24 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * that exits 2. These counts are what lets a renderer say the selection is
  * clean while the run is not.
  *
- * Every structured format publishes them: a document with a summary under a
- * key of its own, a list format as one diagnostic entry in the channel it
- * already uses for {@see \Qualimetrix\Reporting\Formatter\PublishedUtf8}.
+ * A structured format publishes them where it can say something about the
+ * report itself: a document under a key of its own, `sarif` as a
+ * notification, `github` as a notice, `html` as a banner. The formats in
+ * {@see self::FORMATS_WITHOUT_A_PLACE} have no such place, and a selection
+ * is refused with them.
  */
 final readonly class OutOfScopeFindings
 {
-    /** Check name / descriptor / source suffix the list formats publish the entry under. */
+    /** Check name / descriptor suffix the list formats publish the entry under. */
     public const string CHECK = 'drill-down.out-of-scope';
+
+    /**
+     * Formats whose consumer reads every entry as a finding — the GitLab
+     * merge-request widget counts an issue, a Checkstyle reader an error — so
+     * a note there would itself be counted, and no note would pass a failing
+     * run off as a clean report.
+     */
+    public const array FORMATS_WITHOUT_A_PLACE = ['gitlab', 'checkstyle'];
 
     public function __construct(
         public int $errorCount,

@@ -1710,6 +1710,8 @@ Qualimetrix\Analysis\Run\Discovery\DirectoryPruner	Analysis.Run	Qualimetrix\Core
 Qualimetrix\Analysis\Run\Discovery\DirectoryPruner	Analysis.Run	Qualimetrix\Core\Pattern\SelectorDefinition	Core.Neutral	contract
 Qualimetrix\Analysis\Run\Discovery\DirectoryPruner	Analysis.Run	Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	contract
 Qualimetrix\Analysis\Run\Discovery\FileDiscoveryFactory	Analysis.Run	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
+Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery	Analysis.Run	Qualimetrix\Analysis\Configuration\ConfigSchema	Analysis.Configuration	contract
+Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
 Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery	Analysis.Run	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeBindingProbe	Analysis.Run	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeBindingProbe	Analysis.Run	Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	contract
@@ -2031,6 +2033,7 @@ Qualimetrix\Infrastructure\Console\FormatOptionPairs	Infrastructure.Console	Qual
 Qualimetrix\Infrastructure\Console\FormatterContextFactory	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
 Qualimetrix\Infrastructure\Console\FormatterContextFactory	Infrastructure.Console	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Infrastructure\Console\FormatterContextFactory	Infrastructure.Console	Qualimetrix\Core\Pattern\NamespacePattern	Core.Neutral	contract
+Qualimetrix\Infrastructure\Console\FormatterContextFactory	Infrastructure.Console	Qualimetrix\Reporting\DrillDown\OutOfScopeFindings	Reporting	contract
 Qualimetrix\Infrastructure\Console\FormatterContextFactory	Infrastructure.Console	Qualimetrix\Reporting\FormatterContext	Reporting	contract
 Qualimetrix\Infrastructure\Console\FormatterContextFactory	Infrastructure.Console	Qualimetrix\Reporting\Formatter\FormatterInterface	Reporting	contract
 Qualimetrix\Infrastructure\Console\FormatterContextFactory	Infrastructure.Console	Qualimetrix\Reporting\Formatter\FormatterRegistryInterface	Reporting	contract

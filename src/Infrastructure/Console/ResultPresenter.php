@@ -180,6 +180,12 @@ final class ResultPresenter
         return $this->formatterContextFactory->bindBeforeAnalysis($input);
     }
 
+    /** The half of {@see self::bindOutputOptions()} that needs the resolved format a configuration may select. */
+    public function bindOutputFormat(InputInterface $input, OutputFormat $outputFormat): void
+    {
+        $this->formatterContextFactory->bindFormatBeforeAnalysis($input, $outputFormat->value);
+    }
+
     /**
      * Refuses a `--namespace` or `--class` value that selects nothing.
      *
@@ -295,13 +301,11 @@ final class ResultPresenter
     /**
      * Writes formatted output to file (--output) or stdout.
      *
-     * A write that fails here — the precheck passed but the target became
-     * unwritable in the race, or `rename()` itself failed — carries a
+     * A write that fails here, after the precheck passed, carries a
      * {@see ConfigurationRefusal} rather than reporting success with an
-     * undelivered report: the refusal beats whatever exit code the analysis
-     * findings would otherwise have produced,
-     * which is why this method throws instead of returning a status for the
-     * caller to reconcile with `ExitCodeResolver`.
+     * undelivered report: the refusal beats whatever exit code the findings
+     * would have produced, which is why this throws instead of returning a
+     * status for the caller to reconcile with `ExitCodeResolver`.
      */
     private function writeOutput(
         string $formattedOutput,
@@ -312,7 +316,7 @@ final class ResultPresenter
         $target = self::outputTarget($input);
 
         if ($target !== null) {
-            $target->replaceWith($formattedOutput);
+            $target->write($formattedOutput);
 
             $this->errorStream->write(
                 $output,
@@ -335,10 +339,6 @@ final class ResultPresenter
 
     private function isOutputTty(OutputInterface $output): bool
     {
-        if ($output instanceof \Symfony\Component\Console\Output\StreamOutput) {
-            return stream_isatty($output->getStream());
-        }
-
-        return false;
+        return $output instanceof \Symfony\Component\Console\Output\StreamOutput && stream_isatty($output->getStream());
     }
 }

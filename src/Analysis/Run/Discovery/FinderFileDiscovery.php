@@ -6,6 +6,8 @@ namespace Qualimetrix\Analysis\Run\Discovery;
 
 use FilesystemIterator;
 use Generator;
+use Qualimetrix\Analysis\Configuration\ConfigSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry;
 use Qualimetrix\Analysis\Run\Contract\Discovery\SkipReportingDiscoveryInterface;
@@ -95,7 +97,13 @@ final class FinderFileDiscovery implements FileDiscoveryInterface, SkipReporting
      * read — leaves the run either silently, because nothing was ever promised
      * about a path that does not exist, or as a recorded skip.
      *
+     * A named directory the built-in floor removes is refused instead, before
+     * anything is yielded: the walk would never enter it, and a run over it
+     * reported success over zero files.
+     *
      * @param list<AbsolutePath> $paths
+     *
+     * @throws ConfigurationRefusal when a named directory is one the walk never enters
      *
      * @return array{list<AbsolutePath>, list<AbsolutePath>} Directories to walk, then files to yield
      */
@@ -103,6 +111,7 @@ final class FinderFileDiscovery implements FileDiscoveryInterface, SkipReporting
     {
         $directories = [];
         $files = [];
+        $neverWalked = [];
 
         foreach ($paths as $path) {
             if (!$path->exists()) {
@@ -110,6 +119,10 @@ final class FinderFileDiscovery implements FileDiscoveryInterface, SkipReporting
             }
 
             if ($path->isDirectory()) {
+                $excluded = $this->directoryPruner->builtInExclusion($path);
+                if ($excluded !== null) {
+                    $neverWalked[$excluded] = true;
+                }
                 $directories[] = $path;
 
                 continue;
@@ -120,7 +133,28 @@ final class FinderFileDiscovery implements FileDiscoveryInterface, SkipReporting
             }
         }
 
+        if ($neverWalked !== []) {
+            throw self::neverWalkedRefusal(array_keys($neverWalked));
+        }
+
         return [$directories, $files];
+    }
+
+    /** @param non-empty-list<string> $directories relative to the project root */
+    private static function neverWalkedRefusal(array $directories): ConfigurationRefusal
+    {
+        $one = \count($directories) === 1;
+
+        return ConfigurationRefusal::aboutResolvedInput(
+            \sprintf(
+                '%s %s, which analysis never enters, so this run would analyse nothing there.'
+                . ' Name a file or a directory inside %s to analyse that code.',
+                implode(', ', array_map(static fn(string $directory): string => '"' . $directory . '"', $directories)),
+                $one ? 'is a vendor, node_modules or .git directory' : 'are vendor, node_modules or .git directories',
+                $one ? 'it' : 'them',
+            ),
+            ConfigSchema::PATHS,
+        );
     }
 
     /**

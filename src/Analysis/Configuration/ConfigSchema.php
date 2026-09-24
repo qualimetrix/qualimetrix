@@ -23,9 +23,9 @@ use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
  * 2. Add an entry to ENTRIES (if YAML-configurable)
  * 3. Add handling in the appropriate consumer
  *
- * @qmx-threshold coupling.cbo warning=23 -- Afferent by rule: every consumer names a
+ * @qmx-threshold coupling.cbo warning=24 -- Afferent by rule: every consumer names a
  * key through these constants instead of a literal, so CBO counts adoption, not
- * entanglement (Ce=1). Raw CBO 22 gets one-edge headroom.
+ * entanglement (Ce=1). Raw CBO 23 gets one-edge headroom.
  */
 final class ConfigSchema
 {
