@@ -5,17 +5,22 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding;
 
 use LogicException;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelPresentation;
 use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 
 /**
- * Composes {@see ChannelPresentation} from the two facts this capability
- * owns — the producing rule ({@see ChannelIdentityInterface::producerOf()})
- * and that rule's own {@see RuleMetadata} (description, and, via
- * `$docsPageByRule`, its declared documentation page) — see
+ * Composes {@see ChannelPresentation} from the facts this capability owns —
+ * the producing rule ({@see ChannelIdentityInterface::producerOf()}), the
+ * channel's own declared description
+ * ({@see \Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration::$description}),
+ * and the producing rule's own {@see RuleMetadata} (its description, used for
+ * the one channel named after it, and, via `$docsPageByRule`, its declared
+ * documentation page) — see
  * {@see ChannelPresentationInterface} for why the join lives here rather than
  * on {@see \Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface} or on the
  * Reporting-side consumer.
@@ -48,7 +53,7 @@ final class ChannelPresentationView implements ChannelPresentationInterface
      *                                              documentation page, relative to `website/docs/`
      */
     public function __construct(
-        private readonly ChannelIdentityInterface $identity,
+        private readonly ChannelIdentityInterface&ChannelDeclarationRegistryInterface $identity,
         private readonly RuleExecutionInterface $ruleExecution,
         private readonly array $docsPageByRule,
     ) {}
@@ -83,7 +88,14 @@ final class ChannelPresentationView implements ChannelPresentationInterface
                 $code,
             ));
 
-        $description = $this->descriptionsByRule()[$producerRuleName] ?? null;
+        // Registry assembly guarantees the split: every channel not named after
+        // its producer declares its own description, and the one named after
+        // it declares none. A configured computed-metric channel declares none
+        // either and gets the family's text here, which
+        // ComputedMetricChannelPresentation then replaces.
+        $description = $this->identity->declarationFor(new FindingChannel($code))->description
+            ?? $this->descriptionsByRule()[$producerRuleName]
+            ?? null;
 
         if ($description === null || $description === '') {
             return null;

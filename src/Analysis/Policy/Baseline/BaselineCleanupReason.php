@@ -16,6 +16,15 @@ enum BaselineCleanupReason: string
     /** The entry's identity did not appear in the measured set ({@see Baseline::staleEntries()}). */
     case Stale = 'stale';
 
+    /**
+     * The entry's identity did not appear because this invocation did not
+     * publish its channel at the level of its subject ({@see RunRuleCoverage}):
+     * the rule was left out, or kept running with that level or channel left
+     * out. Kept apart from {@see Stale}: nothing was measured, so nothing is
+     * known about the code.
+     */
+    case ProducerDidNotRun = 'producer-did-not-run';
+
     /** No rule declares the entry's channel any more. */
     case ChannelNotDeclared = 'channel-not-declared';
 

@@ -96,7 +96,7 @@ final class DataClassRule extends AbstractRule
         $subject = $classInfo->subject ?? throw new LogicException('Data class findings require an exact class declaration subject');
         $metrics = $context->metrics->get($subject->toSymbolPath());
 
-        // Apply @qmx-threshold overrides for this class
+        // Apply `@qmx-threshold` overrides for this class
         $effectiveOptions = $this->getEffectiveOptions(
             $context,
             $this->options,

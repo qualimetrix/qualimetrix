@@ -9,6 +9,8 @@ namespace Qualimetrix\Analysis\Evidence\Security;
  *
  * Algorithm:
  * 1. Normalize: convert camelCase/PascalCase to snake_case, then lowercase, split by `_`
+ *    and between letters and digits; a segment that fuses a qualifier onto a
+ *    sensitive word (`apikey`, `dbpassword`) is split into the two
  * 2. Check suffix-match sensitive words (password, secret, etc.)
  * 3. Check compound-only words ("key" and "token") with qualifying prefixes
  * 4. Apply suffix and prefix blacklists to eliminate non-credential contexts
@@ -17,7 +19,7 @@ final class SensitiveNameMatcher
 {
     /** @var list<string> Words that are sensitive by themselves or as the last meaningful segment */
     private const SUFFIX_SENSITIVE_WORDS = [
-        'password', 'passwd', 'pwd', 'secret', 'credential', 'credentials',
+        'password', 'passwd', 'pwd', 'secret', 'credentials', 'credential',
     ];
 
     /** @var list<string> "key" matches only when preceded by one of these */
@@ -97,9 +99,60 @@ final class SensitiveNameMatcher
 
         $lower = strtolower($snaked);
 
-        $parts = explode('_', $lower);
+        $parts = preg_split('/_|(?<=[a-z])(?=[0-9])|(?<=[0-9])(?=[a-z])/', $lower, -1, \PREG_SPLIT_NO_EMPTY);
+        $segments = [];
+        foreach ($parts === false ? [] : $parts as $part) {
+            array_push($segments, ...$this->splitFusedSegment($part));
+        }
 
-        return array_values(array_filter($parts, static fn(string $s): bool => $s !== ''));
+        return array_values(array_filter($segments, static fn(string $segment): bool => $segment !== ''));
+    }
+
+    /**
+     * Splits a segment written without a case or underscore boundary into the
+     * qualifier and the sensitive word it ends with, so blacklists and
+     * qualifying prefixes see the qualifier as its own segment: `dbpassword`
+     * becomes `db`, `password`; `hashedpassword` becomes `hashed`, `password`
+     * and is then negated. Only a sensitive word at the END is split off, and
+     * `key`/`token` only after a qualifying prefix, so `passwordless`,
+     * `secretary`, `keyword` and `monkey` stay single segments.
+     *
+     * @return list<string>
+     */
+    private function splitFusedSegment(string $segment): array
+    {
+        foreach (self::SUFFIX_SENSITIVE_WORDS as $word) {
+            if (str_ends_with($segment, $word)) {
+                return [substr($segment, 0, -\strlen($word)), $word];
+            }
+        }
+
+        foreach (['key' => self::KEY_QUALIFYING_PREFIXES, 'token' => self::TOKEN_QUALIFYING_PREFIXES] as $word => $prefixes) {
+            if (str_ends_with($segment, $word)) {
+                $qualified = $this->splitQualifiedWord(substr($segment, 0, -\strlen($word)), $prefixes);
+                if ($qualified !== null) {
+                    return [...$qualified, $word];
+                }
+            }
+        }
+
+        return [$segment];
+    }
+
+    /**
+     * @param list<string> $prefixes
+     *
+     * @return list<string>|null the head split so that its last segment is a qualifying prefix; the first may be empty
+     */
+    private function splitQualifiedWord(string $head, array $prefixes): ?array
+    {
+        foreach ($prefixes as $prefix) {
+            if (str_ends_with($head, $prefix)) {
+                return [substr($head, 0, -\strlen($prefix)), $prefix];
+            }
+        }
+
+        return null;
     }
 
     /**

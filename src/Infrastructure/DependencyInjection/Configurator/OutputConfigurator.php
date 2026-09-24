@@ -29,6 +29,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
+use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
@@ -242,7 +243,11 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->setAlias(AnnotationSuppressionInterface::class, $suppressionFilter)
             ->setPublic(true);
 
-        $container->register($gitScopeQuery);
+        // Named, not autowired: this is where `GitClient::getChangedFiles()`
+        // actually runs, and its warnings about changed files it had to drop
+        // reach a reader only through this argument.
+        $container->register($gitScopeQuery)
+            ->setArgument('$logger', new Reference(DelegatingLogger::class));
         $container->setAlias(GitScopeQueryInterface::class, $gitScopeQuery)
             ->setPublic(true);
 
@@ -370,7 +375,6 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference($findingProjector),
                 new Reference(ErrorStream::class),
                 new Reference('Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit'),
-                new Reference(ProjectScopeCoverage::class),
                 new Reference(ComposerAutoloadPathReaderInterface::class),
             ]);
 
@@ -574,6 +578,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(BaselineCleaner::class),
                 new Reference(BaselineWriter::class),
                 new Reference(ChannelDeclarationRegistryInterface::class),
+                new Reference(RunRuleCoverage::class),
             ])
             ->addMethodCall(...$refusalPresenterCall)
             ->setPublic(true);

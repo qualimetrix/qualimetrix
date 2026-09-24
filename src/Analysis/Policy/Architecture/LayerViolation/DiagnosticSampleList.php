@@ -8,21 +8,24 @@ namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
  * Formats a bounded, deterministic sample of FQNs for a diagnostic message
  * that lists examples out of a set larger than a message should print whole.
  *
- * Shared by {@see DeclaredLayerReachability::coverage()} and
- * {@see UnassignedClassSummary::unassignedClasses()}: both build a
- * `sprintf`-style recommendation naming a few offending classes, and both are
- * gated separately (one by {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode},
- * the other by {@see UnassignedClassMode}), so neither owns the formatting for
- * the other.
+ * Shared by {@see DeclaredLayerReachability::coverage()},
+ * {@see DoubtedAssignmentDiagnostic::forDoubts()} and
+ * {@see UnassignedClassSummary::unassignedClasses()}: each builds a
+ * `sprintf`-style text naming a few classes out of a larger set, and each is
+ * gated separately (by {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode}
+ * or by {@see UnassignedClassMode}), so none owns the formatting for the
+ * others.
  *
  * Sorted before slicing so CI diffs stay stable: `metrics->all()` iteration
  * order is not stable under parallel collection.
  *
- * @internal Consumed by {@see DeclaredLayerReachability} and {@see UnassignedClassSummary}.
+ * @internal Consumed by {@see DeclaredLayerReachability}, {@see DoubtedAssignmentDiagnostic} and
+ *           {@see UnassignedClassSummary}.
  */
 final class DiagnosticSampleList
 {
-    private const int LIMIT = 10;
+    /** Public because a text that samples has to say how far the sample reaches. */
+    public const int LIMIT = 10;
 
     /**
      * @param list<string> $fqns

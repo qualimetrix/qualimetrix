@@ -6,6 +6,9 @@ namespace Qualimetrix\Analysis\Run\Configuration;
 
 use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
+use Qualimetrix\Analysis\Run\Discovery\DirectoryPruner;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
@@ -14,12 +17,17 @@ use RuntimeException;
 /**
  * Whether a run looked at the whole project or at a slice of it.
  *
- * The denominator is the project's **production** autoload roots, not the
+ * The denominator is the project's **production** autoload targets, not the
  * project root: `qmx check src/` on a repository whose `composer.json`
  * autoloads `src/` is a whole-project run even though the repository holds
- * `tests/`, `scripts/` and `website/` besides. `autoload-dev` is excluded for
- * the same reason the coupling warning excludes it — test code is not part of
- * the graph the metrics are about.
+ * `tests/`, `scripts/` and `website/` besides. `autoload-dev` is excluded by
+ * default for the same reason the coupling warning excludes it — test code is
+ * not part of the graph the metrics are about — and included when the run's
+ * {@see AutoloadDevPolicy} says the author counts it. The targets and the
+ * policy are the ones a run with no `paths` analyses: the same reader answer
+ * taken through {@see AutoloadDevPolicy::projectTargets()}, so a run over
+ * the defaults covers what it is judged against whatever autoload form
+ * declared the code.
  *
  * **Why anything asks.** A statement that a configured value bound to nothing
  * is a statement about the pair (configuration, run scope), never about the
@@ -38,17 +46,27 @@ use RuntimeException;
  * is judged by the per-value question its own channel asks instead, and this answer is the
  * project-wide half of that pair.
  *
- * **Two answers, and the second is "cannot judge".** A run is measured
- * against every production path the manifest declares — `psr-4` and `psr-0`
- * roots, `classmap` entries and `files` entries alike. A `classmap` or
- * `files` entry may name a single file rather than a directory, which is no
- * obstacle: the question asked of each target is whether an analysed path
- * contains it, and containment answers the same way for a file. The other
- * answer, "cannot judge", is reached only when the manifest declares nothing
- * readable *at all* — it is absent, it does not parse, it has no `autoload`
- * section, or every production section in it is empty or malformed. Then
- * there is no denominator, the gate closes, and no scope warning is printed
- * because there is no uncovered target to name.
+ * **Three answers ({@see ProjectScopeState}).** A run is measured against
+ * every production path the manifest declares — `psr-4` and `psr-0` roots,
+ * `classmap` entries and `files` entries alike. A `classmap` or `files` entry
+ * may name a single file rather than a directory, which is no obstacle: the
+ * question asked of each target is whether an analysed path contains it, and
+ * containment answers the same way for a file. Every target contained is
+ * `Covered`; one left out is `Narrowed`. The third answer, `Unknown`, is
+ * reached only when the manifest declares nothing readable *at all* — it is
+ * absent, it does not parse, it has no `autoload` section, or every production
+ * section in it is empty or malformed. Then there is no denominator and no
+ * target to warn about, and the project is what the user named: the analysed
+ * paths cover it, and a whole-project channel judges them.
+ *
+ * `Unknown` covering is a decision, and the opposite one was in force before:
+ * a manifest-less project was never judged by any channel listed in
+ * {@see self::WHOLE_PROJECT_CHANNELS}. That cost every such project its
+ * layer-typo errors (`architecture.unreachable-layer`) for good, in exchange for
+ * not accusing an author on `qmx check src/Web` of a project that never said
+ * `src/Web` was a slice. Both errors are possible here; the first is permanent
+ * and invisible, the second is named by the report's project-scope state,
+ * which is why the report publishes it.
  *
  * `classmap`, `psr-0` and `files` are ordinary production targets. Treating a
  * manifest that declares production code through any of
@@ -61,39 +79,74 @@ use RuntimeException;
  * illegibility closes the gate.
  *
  * **A target that does not exist on disk is skipped**, and skipping opens the
- * gate rather than closing it. That covers a stale entry and a `classmap`
- * glob alike — Composer accepts `*` in a `classmap` entry, this class does not
- * expand it, and such an entry therefore contributes nothing to the
- * denominator. Measured on `benchmarks/vendor`: no manifest of the 125 uses
- * one.
+ * gate rather than closing it. A `classmap` `*` reaches this class already
+ * expanded by the reader to the directories it matches; one matching nothing
+ * stays as written and is skipped like any other missing target.
+ *
+ * **A target no walk of the project reaches is not the project's.** Discovery
+ * never descends into `vendor`, `node_modules` or `.git`
+ * ({@see DirectoryPruner::builtInPatterns()}), so a `files` entry inside
+ * `vendor/` or a `classmap` entry that is itself a `vendor` directory names
+ * code the product does not treat as project code. Such a target leaves the
+ * default paths and the denominator together — both through
+ * {@see self::reachableTargets()}, asking the pruner the traversal asks — and
+ * the measurement names it rather than dropping it in silence. Only the
+ * built-in floor is asked, not the author's `exclude:`: this class does not
+ * see authored narrowing (above).
  */
 final readonly class ProjectScopeCoverage
 {
+    /**
+     * Every channel that is silent on a `Narrowed` run because it reads
+     * {@see self::pathsCoverProjectScope()}, directly or through the answer a
+     * run configuration or rule context carries — a report names them as not
+     * judged. Only the Architecture names come from their owner's contract:
+     * the others are declared on classes internal to their capability, and
+     * importing Discovery's own would tie this namespace to the one it gates.
+     * A reader added without its channels here reddens `ProjectScopeReadersTest`.
+     *
+     * @var list<string>
+     */
+    public const array WHOLE_PROJECT_CHANNELS = [
+        LayerPolicyPreparationInterface::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+        LayerPolicyPreparationInterface::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME,
+        LayerPolicyPreparationInterface::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
+        'coupling.unmatched-framework-namespace',
+        'discovery.unmatched-exclude',
+        'suppression.unmatched-namespace',
+        'suppression.unmatched-path',
+        'suppression.unmatched-rule-ledger',
+    ];
+
     public function __construct(private ComposerAutoloadPathReaderInterface $composerReader) {}
 
-    /** @param list<AbsolutePath> $analyzedPaths */
-    public function pathsCoverProjectScope(AbsolutePath $projectRoot, array $analyzedPaths): bool
+    /**
+     * Whether a whole-project channel may judge this run: `Covered` or
+     * `Unknown`, never `Narrowed`.
+     *
+     * @param list<AbsolutePath> $analyzedPaths
+     */
+    public function pathsCoverProjectScope(AbsolutePath $projectRoot, array $analyzedPaths, AutoloadDevPolicy $autoloadDev): bool
     {
-        return $this->measure($projectRoot, $analyzedPaths)->covers();
+        return $this->measure($projectRoot, $analyzedPaths, $autoloadDev)->state()->coversProjectScope();
     }
 
     /**
-     * The production autoload targets no analysed path contains, in the
-     * spelling `composer.json` uses.
+     * The autoload targets the policy counts that no analysed path
+     * contains, in the spelling `composer.json` uses.
      *
      * Empty on a project whose production autoload this class cannot read:
-     * there is no target to name, which is why the verdict and this list are
-     * taken from one measurement — a caller reading emptiness here as "covers"
-     * would reintroduce exactly the answer {@see ProjectScopeMeasurement}
-     * separates.
+     * there is no target to name, which is why the state and this list are
+     * taken from one measurement — emptiness here is `Covered` or `Unknown`,
+     * and only {@see ProjectScopeMeasurement::state()} tells which.
      *
      * @param list<AbsolutePath> $analyzedPaths
      *
      * @return list<string>
      */
-    public function uncoveredAutoloadRoots(AbsolutePath $projectRoot, array $analyzedPaths): array
+    public function uncoveredAutoloadRoots(AbsolutePath $projectRoot, array $analyzedPaths, AutoloadDevPolicy $autoloadDev): array
     {
-        return $this->measure($projectRoot, $analyzedPaths)->uncoveredRoots;
+        return $this->measure($projectRoot, $analyzedPaths, $autoloadDev)->uncoveredRoots;
     }
 
     /**
@@ -101,25 +154,26 @@ final readonly class ProjectScopeCoverage
      *
      * @param list<AbsolutePath> $analyzedPaths
      */
-    public function measure(AbsolutePath $projectRoot, array $analyzedPaths): ProjectScopeMeasurement
+    public function measure(AbsolutePath $projectRoot, array $analyzedPaths, AutoloadDevPolicy $autoloadDev): ProjectScopeMeasurement
     {
         $composerJsonPath = $projectRoot->joinRelative(RelativePath::fromString('composer.json'));
 
         // One question, one branch: either the manifest declares production
         // paths this product can compare a run against, or it declares none
-        // and no channel may judge anything on this run. A missing manifest
-        // is that second case. Its absence does produce a stderr line from
-        // CheckCommand::warnIfComposerJsonMissing(), but that line survives
-        // neither `-q` nor the machine formats, so on such a project this
-        // silence is what a CI pipeline sees — the price of not guessing
-        // "whole project" for a project that never said what its code is.
-        $autoloadPaths = $this->composerReader->productionAutoloadTargets($composerJsonPath->value());
+        // and the run's own paths are the project. A missing manifest is that
+        // second case.
+        [$autoloadPaths, $prunedTargets] = $this->partition(
+            $projectRoot,
+            $this->declaredTargets($composerJsonPath->value(), $autoloadDev) ?? [],
+        );
 
         // `[]` is the same answer as `null` and is spelled out rather than
-        // trusted away: reading an empty denominator as "covers" is precisely
-        // the defect this measurement was amended to remove.
-        if ($autoloadPaths === null || $autoloadPaths === []) {
-            return ProjectScopeMeasurement::unreadable();
+        // trusted away: an empty denominator is `Unknown`, which a report
+        // names, not `Covered`, which it does not. A manifest whose every
+        // target is pruned lands here too — it declares no code a walk of the
+        // project reaches.
+        if ($autoloadPaths === []) {
+            return ProjectScopeMeasurement::unreadable($prunedTargets);
         }
 
         $resolvedAnalyzed = [];
@@ -147,7 +201,64 @@ final readonly class ProjectScopeCoverage
             }
         }
 
-        return ProjectScopeMeasurement::against($uncoveredPaths);
+        return ProjectScopeMeasurement::against($uncoveredPaths, $prunedTargets);
+    }
+
+    /**
+     * The declared targets a walk from the project root reaches, in their
+     * declared order and spelling — what a run with no `paths` analyses and
+     * what this class measures a run against.
+     *
+     * @param list<string> $targets
+     *
+     * @return list<string>
+     */
+    public function reachableTargets(AbsolutePath $projectRoot, array $targets): array
+    {
+        return $this->partition($projectRoot, $targets)[0];
+    }
+
+    /**
+     * @param list<string> $targets
+     *
+     * @return array{list<string>, list<array{target: string, directory: string}>}
+     */
+    private function partition(AbsolutePath $projectRoot, array $targets): array
+    {
+        $pruner = new DirectoryPruner($projectRoot, DirectoryPruner::builtInPatterns());
+
+        $reachable = [];
+        $pruned = [];
+        foreach ($targets as $target) {
+            // The empty path is refused where paths are accepted; judging it
+            // here would only throw in a different vocabulary.
+            $directory = $target === ''
+                ? null
+                : $pruner->prunedAncestor(PathFactory::fromCliArgument($target, $projectRoot));
+
+            if ($directory === null) {
+                $reachable[] = $target;
+            } else {
+                $pruned[] = ['target' => $target, 'directory' => $directory];
+            }
+        }
+
+        return [$reachable, $pruned];
+    }
+
+    /**
+     * The targets a run is measured against — the reader's whole-manifest
+     * answer under the run's policy, which is also what a run with no
+     * `paths` analyses.
+     *
+     * @return ?list<string>
+     */
+    private function declaredTargets(string $composerJsonPath, AutoloadDevPolicy $autoloadDev): ?array
+    {
+        return $autoloadDev->projectTargets(
+            $this->composerReader->productionAutoloadTargets($composerJsonPath),
+            $autoloadDev === AutoloadDevPolicy::Include ? $this->composerReader->developmentAutoloadTargets($composerJsonPath) : null,
+        );
     }
 
     /**

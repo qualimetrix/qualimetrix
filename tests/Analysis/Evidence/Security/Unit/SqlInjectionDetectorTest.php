@@ -29,14 +29,14 @@ final class SqlInjectionDetectorTest extends TestCase
         $this->detector = new SqlInjectionDetector(new SuperglobalAnalyzer());
     }
 
-    // --- detectInFuncCall: SQL functions ---
+    // --- SQL functions ---
 
     #[Test]
     public function itDetectsMysqlQueryWithSuperglobal(): void
     {
         $funcCall = $this->createFuncCall('mysql_query', [$this->createGetAccess('id')]);
 
-        $locations = $this->detector->detectInFuncCall($funcCall);
+        $locations = $this->detector->detect($funcCall);
 
         self::assertCount(1, $locations);
         self::assertSame('sql_injection', $locations[0]->type);
@@ -52,7 +52,7 @@ final class SqlInjectionDetectorTest extends TestCase
             $this->createPostAccess('query'),
         ]);
 
-        $locations = $this->detector->detectInFuncCall($funcCall);
+        $locations = $this->detector->detect($funcCall);
 
         self::assertCount(1, $locations);
         self::assertStringContainsString('_POST', $locations[0]->context);
@@ -66,7 +66,7 @@ final class SqlInjectionDetectorTest extends TestCase
             $this->createGetAccess('sql'),
         ]);
 
-        $locations = $this->detector->detectInFuncCall($funcCall);
+        $locations = $this->detector->detect($funcCall);
 
         self::assertCount(1, $locations);
     }
@@ -76,7 +76,7 @@ final class SqlInjectionDetectorTest extends TestCase
     {
         $funcCall = $this->createFuncCall('mysql_query', [new Variable('safeQuery')]);
 
-        $locations = $this->detector->detectInFuncCall($funcCall);
+        $locations = $this->detector->detect($funcCall);
 
         self::assertCount(0, $locations);
     }
@@ -87,7 +87,7 @@ final class SqlInjectionDetectorTest extends TestCase
         // $func(...) — name is not a Name node
         $funcCall = new FuncCall(new Variable('func'));
 
-        $locations = $this->detector->detectInFuncCall($funcCall);
+        $locations = $this->detector->detect($funcCall);
 
         self::assertCount(0, $locations);
     }
@@ -97,12 +97,12 @@ final class SqlInjectionDetectorTest extends TestCase
     {
         $funcCall = $this->createFuncCall('array_map', [$this->createGetAccess('id')]);
 
-        $locations = $this->detector->detectInFuncCall($funcCall);
+        $locations = $this->detector->detect($funcCall);
 
         self::assertCount(0, $locations);
     }
 
-    // --- detectInFuncCall: sprintf ---
+    // --- sprintf ---
 
     #[Test]
     public function itDetectsSprintfWithSqlAndSuperglobal(): void
@@ -112,7 +112,7 @@ final class SqlInjectionDetectorTest extends TestCase
             $this->createGetAccess('id'),
         ]);
 
-        $locations = $this->detector->detectInFuncCall($funcCall);
+        $locations = $this->detector->detect($funcCall);
 
         self::assertCount(1, $locations);
         self::assertStringContainsString('sprintf()', $locations[0]->context);
@@ -126,7 +126,7 @@ final class SqlInjectionDetectorTest extends TestCase
             $this->createGetAccess('name'),
         ]);
 
-        $locations = $this->detector->detectInFuncCall($funcCall);
+        $locations = $this->detector->detect($funcCall);
 
         self::assertCount(0, $locations);
     }
@@ -139,7 +139,7 @@ final class SqlInjectionDetectorTest extends TestCase
             $this->createGetAccess('id'),
         ]);
 
-        $locations = $this->detector->detectInFuncCall($funcCall);
+        $locations = $this->detector->detect($funcCall);
 
         self::assertCount(0, $locations);
     }
@@ -149,7 +149,7 @@ final class SqlInjectionDetectorTest extends TestCase
     {
         $funcCall = $this->createFuncCall('sprintf', []);
 
-        $locations = $this->detector->detectInFuncCall($funcCall);
+        $locations = $this->detector->detect($funcCall);
 
         self::assertCount(0, $locations);
     }
@@ -162,12 +162,12 @@ final class SqlInjectionDetectorTest extends TestCase
             new Variable('safeId'),
         ]);
 
-        $locations = $this->detector->detectInFuncCall($funcCall);
+        $locations = $this->detector->detect($funcCall);
 
         self::assertCount(0, $locations);
     }
 
-    // --- detectInConcat ---
+    // --- Concatenation ---
 
     #[Test]
     public function itDetectsConcatWithSqlKeywordAndSuperglobal(): void
@@ -177,7 +177,7 @@ final class SqlInjectionDetectorTest extends TestCase
             $this->createGetAccess('id'),
         );
 
-        $locations = $this->detector->detectInConcat($concat);
+        $locations = $this->detector->detect($concat);
 
         self::assertCount(1, $locations);
         self::assertSame('sql_injection', $locations[0]->type);
@@ -192,7 +192,7 @@ final class SqlInjectionDetectorTest extends TestCase
             $this->createPostAccess('data'),
         );
 
-        $locations = $this->detector->detectInConcat($concat);
+        $locations = $this->detector->detect($concat);
 
         self::assertCount(1, $locations);
     }
@@ -205,7 +205,7 @@ final class SqlInjectionDetectorTest extends TestCase
             $this->createRequestAccess('name'),
         );
 
-        $locations = $this->detector->detectInConcat($concat);
+        $locations = $this->detector->detect($concat);
 
         self::assertCount(1, $locations);
     }
@@ -218,7 +218,7 @@ final class SqlInjectionDetectorTest extends TestCase
             $this->createCookieAccess('uid'),
         );
 
-        $locations = $this->detector->detectInConcat($concat);
+        $locations = $this->detector->detect($concat);
 
         self::assertCount(1, $locations);
     }
@@ -231,7 +231,7 @@ final class SqlInjectionDetectorTest extends TestCase
             $this->createGetAccess('name'),
         );
 
-        $locations = $this->detector->detectInConcat($concat);
+        $locations = $this->detector->detect($concat);
 
         self::assertCount(0, $locations);
     }
@@ -244,12 +244,12 @@ final class SqlInjectionDetectorTest extends TestCase
             new Variable('safeId'),
         );
 
-        $locations = $this->detector->detectInConcat($concat);
+        $locations = $this->detector->detect($concat);
 
         self::assertCount(0, $locations);
     }
 
-    // --- detectInInterpolation ---
+    // --- Interpolation ---
 
     #[Test]
     public function itDetectsInterpolationWithSqlAndSuperglobal(): void
@@ -259,7 +259,7 @@ final class SqlInjectionDetectorTest extends TestCase
             $this->createGetAccess('id'),
         ]);
 
-        $locations = $this->detector->detectInInterpolation($interpolated);
+        $locations = $this->detector->detect($interpolated);
 
         self::assertCount(1, $locations);
         self::assertStringContainsString('interpolated in SQL query', $locations[0]->context);
@@ -273,7 +273,7 @@ final class SqlInjectionDetectorTest extends TestCase
             $this->createGetAccess('name'),
         ]);
 
-        $locations = $this->detector->detectInInterpolation($interpolated);
+        $locations = $this->detector->detect($interpolated);
 
         self::assertCount(0, $locations);
     }
@@ -286,34 +286,9 @@ final class SqlInjectionDetectorTest extends TestCase
             new Variable('safeId'),
         ]);
 
-        $locations = $this->detector->detectInInterpolation($interpolated);
+        $locations = $this->detector->detect($interpolated);
 
         self::assertCount(0, $locations);
-    }
-
-    // --- isSqlFuncCall ---
-
-    #[Test]
-    public function itReturnsTrueForSqlFunctions(): void
-    {
-        foreach (['mysql_query', 'mysqli_query', 'pg_query', 'pg_query_params', 'sqlite_query'] as $func) {
-            $funcCall = $this->createFuncCall($func, []);
-            self::assertTrue($this->detector->isSqlFuncCall($funcCall), "Expected {$func} to be SQL function");
-        }
-    }
-
-    #[Test]
-    public function itReturnsFalseForNonSqlFunctions(): void
-    {
-        $funcCall = $this->createFuncCall('array_map', []);
-        self::assertFalse($this->detector->isSqlFuncCall($funcCall));
-    }
-
-    #[Test]
-    public function itReturnsFalseForDynamicName(): void
-    {
-        $funcCall = new FuncCall(new Variable('func'));
-        self::assertFalse($this->detector->isSqlFuncCall($funcCall));
     }
 
     // --- SQL keyword matching (case-insensitive, word boundary) ---
@@ -326,7 +301,7 @@ final class SqlInjectionDetectorTest extends TestCase
             $this->createGetAccess('id'),
         );
 
-        $locations = $this->detector->detectInConcat($concat);
+        $locations = $this->detector->detect($concat);
 
         self::assertCount(1, $locations);
     }
@@ -339,7 +314,7 @@ final class SqlInjectionDetectorTest extends TestCase
             $this->createGetAccess('name'),
         );
 
-        $locations = $this->detector->detectInConcat($concat);
+        $locations = $this->detector->detect($concat);
 
         self::assertCount(0, $locations);
     }

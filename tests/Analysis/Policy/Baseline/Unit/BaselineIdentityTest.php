@@ -224,15 +224,18 @@ final class BaselineIdentityTest extends TestCase
     }
 
     /**
-     * A pre-existing `SymbolPath` defect, independent of the baseline and
-     * pinned here so it is not rediscovered as a baseline bug: the project
-     * sentinel is a legal PHP namespace name, so a namespace literally
-     * called `__PROJECT__` canonicalizes to the project key.
+     * The project aggregate is typed, not spelled: a namespace literally
+     * called `__PROJECT__` — or `(project)`, its display value — keeps a
+     * baseline identity of its own instead of sharing the project's.
      */
     #[Test]
-    public function itInheritsTheProjectSentinelCollisionFromSymbolPath(): void
+    public function itKeepsANamespaceSpelledLikeTheProjectApartFromTheProjectKey(): void
     {
-        self::assertSame(
+        self::assertNotSame(
+            SymbolPath::forProject()->toCanonical(),
+            SymbolPath::forNamespace('(project)')->toCanonical(),
+        );
+        self::assertNotSame(
             SymbolPath::forProject()->toCanonical(),
             SymbolPath::forNamespace('__PROJECT__')->toCanonical(),
         );

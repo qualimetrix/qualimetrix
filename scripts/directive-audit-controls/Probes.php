@@ -58,6 +58,8 @@ final class Probes
 
     private const string PRESENTER = 'src/Infrastructure/Console/DirectiveAuditPresenter.php';
 
+    private const string DISCOVERY = 'src/Analysis/Run/Discovery/FinderFileDiscovery.php';
+
     private const string CONFIG_FILE_STAGE = 'src/Analysis/Configuration/Pipeline/Stage/ConfigFileStage.php';
 
     private const string TALLY = 'src/Infrastructure/Console/DirectiveVerdictTally.php';
@@ -858,8 +860,8 @@ final class Probes
                 "the product's own target class stops admitting the separators it captures in order to refuse",
                 self::EXTRACTOR,
                 [
-                    "'/@qmx-threshold\\s+([\\w.*#:-]+)(?:[ \\t]+([^\\n\\r]*))?/'"
-                    => "'/@qmx-threshold\\s+([\\w.-]+)(?:[ \\t]+([^\\n\\r]*))?/'",
+                    "'/@qmx-threshold[^\\S\\n\\r]+(?!\\*+\\/)([\\w.*#:-]+)(?:[ \\t]+([^\\n\\r]*))?/'"
+                    => "'/@qmx-threshold[^\\S\\n\\r]+(?!\\*+\\/)([\\w.-]+)(?:[ \\t]+([^\\n\\r]*))?/'",
                 ],
                 ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "star"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "hash"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "colon"'],
             )->alsoReddens(
@@ -873,8 +875,8 @@ final class Probes
                 "the product's own target class stops admitting digits, underscores and capitals",
                 self::EXTRACTOR,
                 [
-                    "'/@qmx-threshold\\s+([\\w.*#:-]+)(?:[ \\t]+([^\\n\\r]*))?/'"
-                    => "'/@qmx-threshold\\s+([a-z.*#:-]+)(?:[ \\t]+([^\\n\\r]*))?/'",
+                    "'/@qmx-threshold[^\\S\\n\\r]+(?!\\*+\\/)([\\w.*#:-]+)(?:[ \\t]+([^\\n\\r]*))?/'"
+                    => "'/@qmx-threshold[^\\S\\n\\r]+(?!\\*+\\/)([a-z.*#:-]+)(?:[ \\t]+([^\\n\\r]*))?/'",
                 ],
                 ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "digit"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "underscore"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "capital"'],
             )->alsoReddens(
@@ -950,6 +952,7 @@ final class Probes
                 [
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAcceptsAnExplicitFullSweep',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAnalysesTheSameFilesAsCheckUnderTheSameExcludes',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAnswersExitFourWhenAScannedDirectoryCannotBeRead',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itCallsASuppressionEffectiveWhenItSilencedAFinding',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itDefaultsToTheNarrowSweep',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itDoesNotCallAProducerDisabledAtALevelItNeverReportsAt',
@@ -964,6 +967,7 @@ final class Probes
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff with data set "the level the directive sits on"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff with data set "the whole rule"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itNoLongerLetsAFormWithoutARuleFilterSilenceTheBannedChannel',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itPrintsTheDocsPointerInTextOutput',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itPrintsTheSweepScopeInBothFormats',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "file, a group that covers it"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "file, that group at file level"',
@@ -1395,7 +1399,8 @@ final class Probes
                 'sweep-request-ignored',
                 'an explicit --sweep is discarded, so the command always resolves the narrow default',
                 self::COMMAND,
-                ["\$requestedSweep = \$input->getOption('sweep');" => '$requestedSweep = DirectiveSweepScope::Narrow->value;'],
+                ["\$requestedSweep = CommandLineSpelling::option(\$input, 'sweep') ?? '';"
+                    => '$requestedSweep = DirectiveSweepScope::Narrow->value;'],
                 [
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAcceptsAnExplicitFullSweep',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itPrintsTheSweepScopeInBothFormats',
@@ -1503,9 +1508,17 @@ final class Probes
                 'grouping-ignores-the-tag',
                 'two directive forms written on one line are counted as one authored site',
                 self::USAGE,
-                ['            $groups[$suppression->line . "\0" . $suppression->type->value . "\0" . $suppression->rule][] = $suppression;'
-                    => '            $groups[$suppression->line . "\0" . $suppression->rule][] = $suppression;'],
-                ['Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itKeepsTwoDirectiveFormsWrittenOnOneLineApart'],
+                // The usage's own grouping line, not `Suppression::authoredSite()`:
+                // the policy reads that key too, so breaking it there keeps the
+                // two readers in agreement and the agreement case cannot see it.
+                // The replacement is the key without the form and nothing else.
+                ['            $groups[$suppression->authoredSite()][] = $suppression;'
+                    => '            $groups[implode("\0", [(string) $suppression->line, $suppression->rule,'
+                    . ' $suppression->refusal->reason->value ?? \'\'])][] = $suppression;'],
+                [
+                    'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itKeepsTwoDirectiveFormsWrittenOnOneLineApart',
+                    'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itKeepsTwoRefusalsOfDifferentFormsOnOneLineApart',
+                ],
             )->alsoReddens(
                 'the grouping this breaks is the one the policy-agreement case reads as well',
                 [
@@ -1516,7 +1529,7 @@ final class Probes
                 'grouping-splits-one-site',
                 'the bindings of one authored directive are counted as several directives',
                 self::USAGE,
-                ['            $groups[$suppression->line . "\0" . $suppression->type->value . "\0" . $suppression->rule][] = $suppression;'
+                ['            $groups[$suppression->authoredSite()][] = $suppression;'
                     => '            $groups[spl_object_id($suppression)][] = $suppression;'],
                 ['Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itGroupsAuthoredSitesTheSameWayThePolicyDoes'],
             )->alsoReddens(
@@ -1524,6 +1537,26 @@ final class Probes
                 [
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itReportsOneVerdictForAClassDocblockThatBoundSixDeclarations',
                 ],
+            ),
+            Probe::breaking(
+                'usage-judges-a-refused-directive',
+                'a directive the extractor refused is judged as though it filtered something',
+                self::USAGE,
+                ['        if ($suppression->refusal !== null) {' => '        if (false) {'],
+                ['Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itRefusesToJudgeADirectiveTheExtractorRefused'],
+            )->alsoReddens(
+                'the unreadable-tag case asserts the refused directive stays unmeasured before it reads the form',
+                ['Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itReportsAnUnreadableTagUnderTheFormItWasWrittenAs'],
+            ),
+            Probe::breaking(
+                'verdict-names-the-type-not-the-form',
+                'a refused tag is reported under the type every refusal shares rather than the form it was written as',
+                self::USAGE,
+                ['                            form: $directive->form(),' => '                            form: $directive->type->value,'],
+                ['Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itReportsAnUnreadableTagUnderTheFormItWasWrittenAs'],
+            )->alsoReddens(
+                'the two-refusals case tells its verdicts apart by the form each one prints',
+                ['Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itKeepsTwoRefusalsOfDifferentFormsOnOneLineApart'],
             ),
             Probe::breaking(
                 'suppression-judges-the-unaddressable-pair',
@@ -1809,6 +1842,124 @@ final class Probes
                 ['if ($report->coverage->analyzedFilesCount() === 0 && $report->coverage->isComplete()) {'
                     => 'if (false) {'],
                 ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesAScopeThatAnalysedNoFiles', 'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesAScopeOfNothingButGeneratedFiles'],
+            ),
+            ...self::command(),
+        ];
+    }
+
+    /**
+     * What the command answers around the audit rather than inside it: the
+     * paths it refuses, the exit code an incomplete run earns, the clause an
+     * unrecognised failure lands in, and the pointer text output ends with.
+     *
+     * One breakage sits in discovery rather than in the command: an
+     * unlistable directory is only an incomplete run if discovery records it,
+     * and removing the exit code alone leaves that recording unguarded.
+     *
+     * @return list<Probe>
+     */
+    private static function command(): array
+    {
+        return [
+            Probe::breaking(
+                'missing-path-not-refused',
+                'a path that does not exist is not refused by name before the run',
+                self::COMMAND,
+                ['        $missing = AnalysisPreflight::missingPaths($prepared->runConfiguration);'
+                    => '        $missing = [];'],
+                ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesANonExistentPath'],
+            ),
+            Probe::breaking(
+                'incomplete-run-exits-clean',
+                'a run that could not read part of the tree answers as though it read all of it',
+                self::COMMAND,
+                ["        if (!\$report->coverage->isComplete()) {\n"
+                    . "            return self::EXIT_INCOMPLETE_RUN;\n"
+                    . "        }\n" => ''],
+                [
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAnswersExitFourWhenAScannedDirectoryCannotBeRead',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itExitsFourWhenTheRunCouldNotParsePartOfTheTree',
+                ],
+            ),
+            Probe::breaking(
+                'unlistable-directory-dropped-silently',
+                'a directory discovery cannot list is left out of the run without being recorded as unread',
+                self::DISCOVERY,
+                [
+                    "        if (!is_readable(\$entry->getPathname()) || !is_executable(\$entry->getPathname())) {\n"
+                    . "            \$this->record(\n"
+                    . "                \$path,\n"
+                    . "                AnalysisFailureKind::UnreadableDirectory,\n"
+                    . "                'Directory cannot be listed',\n"
+                    . "            );\n"
+                    => "        if (!is_readable(\$entry->getPathname()) || !is_executable(\$entry->getPathname())) {\n",
+                ],
+                ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAnswersExitFourWhenAScannedDirectoryCannotBeRead'],
+            ),
+            Probe::breaking(
+                'unrecognised-failure-read-as-bad-input',
+                'an exception nothing recognised is answered as the caller\'s mistake rather than as an internal failure',
+                self::COMMAND,
+                ['            return $this->refusalPresenter->internalError($output, $format, $failure);'
+                    => '            return $this->refusalPresenter->fallbackRefusal($output, $format, $failure);'],
+                ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAnswersExitOneForAnUnrecognisedExceptionFromTheAudit'],
+            ),
+            Probe::breaking(
+                'docs-pointer-dropped-from-text',
+                'the text report stops ending with the documentation pointer',
+                self::COMMAND,
+                ["            \$output->writeln(\\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));\n" => ''],
+                ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itPrintsTheDocsPointerInTextOutput'],
+            ),
+            Probe::breaking(
+                'docs-pointer-written-into-json',
+                'the documentation pointer is written after the JSON document as well as after the text report',
+                self::COMMAND,
+                [
+                    "            \$output->writeln(\\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));\n"
+                    . "        }\n"
+                    => "        }\n"
+                    . "        \$output->writeln(\\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));\n",
+                ],
+                ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itOmitsTheDocsPointerFromJsonOutput'],
+            )->alsoReddens(
+                'every JSON case of the command decodes stdout as one document, and a trailing line makes none of them parse',
+                [
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAcceptsAnExplicitFullSweep',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAnalysesTheSameFilesAsCheckUnderTheSameExcludes',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itCallsASuppressionEffectiveWhenItSilencedAFinding',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itDefaultsToTheNarrowSweep',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "a rule that declares no override support"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "an unparsable payload"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "an unresolvable name"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itExitsCleanWhenADirectiveCouldNotBeMeasured',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itNoLongerLetsAFormWithoutARuleFilterSilenceTheBannedChannel',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itPrintsTheSweepScopeInBothFormats',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "file, a group that covers it"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "file, that group at file level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "file, the exact name at file level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "file, the exact name"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "next-line, a group that covers it"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "next-line, that group at file level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "next-line, the exact name at file level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "next-line, the exact name"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, a group that covers it"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, that group at file level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, the exact name at file level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, the exact name"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, a group that covers it"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, the exact name at project level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, the exact name"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "next-line, a group that covers it"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "next-line, the exact name at project level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "next-line, the exact name"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "symbol, a group that covers it"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "symbol, the exact name at project level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "symbol, the exact name"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesOneDirectiveWithoutTouchingAnotherStaleOneBesideIt',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itSaysTheSameThingInBothFormats',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itStillJudgesSuppressionsWhenTheDirectiveRuleIsDisabled',
+                ],
             ),
         ];
     }

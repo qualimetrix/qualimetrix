@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Json;
 
+use LogicException;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
+use Qualimetrix\Reporting\Formatter\FormatOptionValue;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\Ordering\FindingSorter;
+use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
@@ -44,13 +48,12 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
 
         $topN = $this->getTopN($context);
 
-        // When drill-down is active, compute summary from filtered findings
-        $isDrillDown = $context->namespace !== null || $context->class !== null;
-
         $data = [
             'meta' => ProductIdentity::meta(gmdate('c')),
-            'summary' => $this->buildSummary($report, $filteredFindings, $isDrillDown),
+            'summary' => $this->buildSummary($report, $filteredFindings),
+            'outOfScope' => $this->buildOutOfScope($report->outOfScope),
             'coverage' => $report->coverage?->toArray(),
+            'projectScope' => $report->projectScope?->toArray(),
             'health' => $this->healthSection->format($report, $context),
             'worstNamespaces' => $this->offenderSection->formatNamespaces(
                 $report->worstNamespaces,
@@ -80,7 +83,7 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
             );
         }
 
-        return json_encode($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
+        return PublishedUtf8::encodeJsonObject($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES);
     }
 
     public function getName(): string
@@ -113,13 +116,10 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
             return [];
         }
 
-        $filtered = $this->filterTopIssuesByContext($report->topIssues, $context);
-
-        if ($filtered === []) {
-            return [];
-        }
-
-        $issues = \array_slice($filtered, 0, $context->topIssuesLimit);
+        // Ranked from the report's findings, which the presenter has already
+        // narrowed to any --namespace/--class selection: filtering again here
+        // would be a second copy of that rule, free to drift from the first.
+        $issues = \array_slice($report->topIssues, 0, $context->topIssuesLimit);
         $result = [];
 
         foreach ($issues as $rank => $issue) {
@@ -133,7 +133,8 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
                 'symbol' => $finding->symbolPath->toString(),
                 'rule' => $finding->ruleName,
                 'severity' => $finding->severity->value,
-                'message' => $finding->getDisplayMessage(),
+                'message' => $finding->message,
+                'recommendation' => $finding->recommendation,
                 'impactScore' => round($issue->impactScore, 2),
                 'coupling.class-rank' => $issue->classRank !== null ? round($issue->classRank, 4) : null,
                 'debtMinutes' => $issue->debtMinutes,
@@ -144,49 +145,19 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
     }
 
     /**
-     * Filters top issues by namespace/class drill-down context.
-     *
-     * @param list<\Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue> $issues
-     *
-     * @return list<\Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue>
-     */
-    private function filterTopIssuesByContext(array $issues, FormatterContext $context): array
-    {
-        if ($context->namespace === null && $context->class === null) {
-            return $issues;
-        }
-
-        return array_values(array_filter($issues, static function ($issue) use ($context): bool {
-            $sp = $issue->finding->symbolPath;
-            $ns = $sp->namespace ?? '';
-            $type = $sp->type;
-
-            if ($context->namespace !== null) {
-                return $context->namespace->matches($ns);
-            }
-
-            if ($context->class !== null && $type !== null) {
-                $fqcn = $ns !== '' ? $ns . '\\' . $type : $type;
-
-                return $fqcn === $context->class;
-            }
-
-            return false;
-        }));
-    }
-
-    /**
      * Builds the summary section.
      *
-     * When drill-down is active, finding counts reflect the filtered set.
+     * Under a drill-down, finding counts reflect the selection. A drill-down
+     * is what `outOfScope` says it is — the same fact the `outOfScope` key
+     * publishes, so the two sections cannot disagree about whether one ran.
      *
      * @param list<Finding> $filteredFindings
      *
      * @return array<string, mixed>
      */
-    private function buildSummary(Report $report, array $filteredFindings, bool $isDrillDown): array
+    private function buildSummary(Report $report, array $filteredFindings): array
     {
-        if ($isDrillDown) {
+        if ($report->outOfScope !== null) {
             $errorCount = 0;
             $warningCount = 0;
             $infoCount = 0;
@@ -209,6 +180,10 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
                 'warningCount' => $warningCount,
                 'infoCount' => $infoCount,
                 'techDebtMinutes' => $debtSummary->totalMinutes,
+                // Kept, as null: the selection's debt over the whole project's
+                // LOC would mix two scopes, and a key that vanishes changes the
+                // document's shape with the command line.
+                'debtPer1kLoc' => null,
             ];
         }
 
@@ -222,6 +197,24 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
             'infoCount' => $report->infoCount,
             'techDebtMinutes' => $report->techDebtMinutes,
             'debtPer1kLoc' => $report->debtPer1kLoc,
+        ];
+    }
+
+    /**
+     * What a `--namespace`/`--class` selection left out of `summary`: the exit
+     * code is resolved over both. `null` without a selection, and zeroes when
+     * the selection left nothing out — present either way, so the document's
+     * shape does not move with the command line.
+     *
+     * @return array{violationCount: int, errorCount: int, warningCount: int, infoCount: int}|null
+     */
+    private function buildOutOfScope(?OutOfScopeFindings $outOfScope): ?array
+    {
+        return $outOfScope === null ? null : [
+            'violationCount' => $outOfScope->total(),
+            'errorCount' => $outOfScope->errorCount,
+            'warningCount' => $outOfScope->warningCount,
+            'infoCount' => $outOfScope->infoCount,
         ];
     }
 
@@ -254,38 +247,30 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
     /**
      * Returns the finding limit based on context.
      *
-     * Priority: explicit --format-opt violations=N > --detail > default (50).
-     * Returns null for "all findings" (no limit).
+     * Priority: an explicit `violations`/`limit` format option > --detail >
+     * default (no limit). Returns null for "all findings" (no limit).
      */
     private function getViolationLimit(FormatterContext $context): ?int
     {
-        // Support both --format-opt=violations=N and --format-opt=limit=N
-        // "violations" takes precedence when both are set
-        $opt = $context->getOption('violations');
-        $isLimitAlias = false;
+        $violations = $context->getOption('violations');
+        $limit = $context->getOption('limit');
 
-        if ($opt === '') {
-            $opt = $context->getOption('limit');
-            $isLimitAlias = $opt !== '';
+        if ($violations !== '' && $limit !== '') {
+            throw new LogicException(
+                '--format-opt violations and limit reached the formatter together; the command line must refuse the pair first.',
+            );
         }
 
-        if ($opt !== '') {
-            if ($opt === 'all') {
-                return null;
-            }
+        if ($violations !== '') {
+            // violations=0 means "show none"
+            return FormatOptionValue::limit('violations', $violations);
+        }
 
-            $parsed = filter_var($opt, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+        if ($limit !== '') {
+            // limit=0 means "no limit" (show all)
+            $parsed = FormatOptionValue::limit('limit', $limit);
 
-            if ($parsed === false) {
-                return self::DEFAULT_VIOLATION_LIMIT;
-            }
-
-            // limit=0 means "no limit" (show all), violations=0 means "show none"
-            if ($isLimitAlias && $parsed === 0) {
-                return null;
-            }
-
-            return $parsed;
+            return $parsed === 0 ? null : $parsed;
         }
 
         // --detail mode: respect limit (0 = all)
@@ -303,12 +288,6 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
     {
         $opt = $context->getOption('top');
 
-        if ($opt !== '') {
-            $parsed = filter_var($opt, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-
-            return $parsed !== false ? $parsed : self::DEFAULT_TOP_OFFENDERS;
-        }
-
-        return self::DEFAULT_TOP_OFFENDERS;
+        return $opt !== '' ? FormatOptionValue::positive('top', $opt) : self::DEFAULT_TOP_OFFENDERS;
     }
 }

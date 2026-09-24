@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
@@ -27,7 +28,7 @@ final class FileSetInspectionCompositeTest extends TestCase
         $alpha = new AlphaParticipant($events);
         $beta = new BetaParticipant($events);
 
-        $this->composite([$alpha, $beta])->inspect([], $this->root(), [], ['alpha.rule']);
+        $this->composite([$alpha, $beta])->inspect([], $this->root(), [], ['alpha.rule'], []);
 
         self::assertSame(['alpha.reset', 'beta.reset', 'beta.inspect'], $events);
         self::assertSame($events, $alpha->events());
@@ -40,7 +41,7 @@ final class FileSetInspectionCompositeTest extends TestCase
         $events = [];
         $participant = new AlphaParticipant($events);
 
-        $this->composite([$participant])->inspect([new SplFileInfo(__FILE__)], $this->root(), [], ['alpha.rule']);
+        $this->composite([$participant])->inspect([new SplFileInfo(__FILE__)], $this->root(), [], ['alpha.rule'], []);
 
         self::assertSame(['alpha.reset'], $events);
     }
@@ -51,10 +52,10 @@ final class FileSetInspectionCompositeTest extends TestCase
         $events = [];
         $participant = new AlphaParticipant($events);
         $composite = $this->composite([$participant]);
-        $composite->inspect([new SplFileInfo(__FILE__)], $this->root(), [], []);
+        $composite->inspect([new SplFileInfo(__FILE__)], $this->root(), [], [], []);
         self::assertTrue($participant->hasResult);
 
-        $composite->inspect([], $this->root(), [], ['alpha.rule']);
+        $composite->inspect([], $this->root(), [], ['alpha.rule'], []);
 
         self::assertFalse($participant->hasResult);
     }
@@ -65,10 +66,10 @@ final class FileSetInspectionCompositeTest extends TestCase
         $events = [];
         $participant = new AlphaParticipant($events);
         $composite = $this->composite([$participant]);
-        $composite->inspect([new SplFileInfo(__FILE__)], $this->root(), [], []);
+        $composite->inspect([new SplFileInfo(__FILE__)], $this->root(), [], [], []);
         self::assertTrue($participant->hasResult);
 
-        $composite->inspect([], $this->root(), [], []);
+        $composite->inspect([], $this->root(), [], [], []);
 
         self::assertFalse($participant->hasResult);
     }
@@ -76,7 +77,7 @@ final class FileSetInspectionCompositeTest extends TestCase
     #[Test]
     public function itAcceptsAnEmptyParticipantSet(): void
     {
-        $this->composite([])->inspect([], $this->root(), [], []);
+        $this->composite([])->inspect([], $this->root(), [], [], []);
 
         self::addToAssertionCount(1);
     }
@@ -87,7 +88,7 @@ final class FileSetInspectionCompositeTest extends TestCase
         $events = [];
 
         $this->composite([new AlphaParticipant($events), new BetaParticipant($events)])
-            ->inspect([], $this->root(), [], []);
+            ->inspect([], $this->root(), [], [], []);
 
         self::assertSame(['alpha.reset', 'beta.reset', 'alpha.inspect', 'beta.inspect'], $events);
     }
@@ -99,7 +100,7 @@ final class FileSetInspectionCompositeTest extends TestCase
         $profiler->expects(self::once())->method('start')->with('file-set-inspection.throwing', 'pipeline');
         $profiler->expects(self::once())->method('stop')->with('file-set-inspection.throwing');
         $this->expectException(RuntimeException::class);
-        $this->composite([new ThrowingParticipant()], $profiler)->inspect([], $this->root(), [], []);
+        $this->composite([new ThrowingParticipant()], $profiler)->inspect([], $this->root(), [], [], []);
     }
 
     #[Test]
@@ -109,7 +110,50 @@ final class FileSetInspectionCompositeTest extends TestCase
         $profiler = $this->createMock(ProfilerInterface::class);
         $profiler->expects(self::once())->method('start')->with('file-set-inspection.alpha', 'pipeline');
         $profiler->expects(self::once())->method('stop')->with('file-set-inspection.alpha');
-        $this->composite([new AlphaParticipant($events)], $profiler)->inspect([], $this->root(), [], []);
+        $this->composite([new AlphaParticipant($events)], $profiler)->inspect([], $this->root(), [], [], []);
+    }
+
+    /**
+     * The defect this pair fixes: the two spellings of switching a producer
+     * off answered differently, and only the selector one skipped the work.
+     *
+     * @param array<string, mixed> $ruleOptions
+     */
+    #[Test]
+    #[TestWith([['alpha.rule' => ['enabled' => false]]])]
+    #[TestWith([['alpha.rule' => false]])]
+    public function itSkipsAParticipantItsOwnOptionsSwitchedOff(array $ruleOptions): void
+    {
+        $events = [];
+
+        $this->composite([new AlphaParticipant($events), new BetaParticipant($events)])
+            ->inspect([new SplFileInfo(__FILE__)], $this->root(), [], [], $ruleOptions);
+
+        self::assertSame(['alpha.reset', 'beta.reset', 'beta.inspect'], $events);
+    }
+
+    /**
+     * Only a written `false` closes the gate. A value that merely looks like
+     * one leaves the producer running, because a gate that guesses wrong this
+     * way loses findings while a gate that guesses wrong the other way only
+     * spends the time the run spent yesterday.
+     *
+     * @param array<string, mixed> $ruleOptions
+     */
+    #[Test]
+    #[TestWith([['alpha.rule' => ['enabled' => 'false']]])]
+    #[TestWith([['alpha.rule' => ['enabled' => 0]]])]
+    #[TestWith([['alpha.rule' => ['enabled' => true]]])]
+    #[TestWith([['alpha.rule' => ['min_lines' => 5]]])]
+    #[TestWith([['beta.rule' => ['enabled' => false]]])]
+    public function itRunsAParticipantNoWrittenFalseAddresses(array $ruleOptions): void
+    {
+        $events = [];
+
+        $this->composite([new AlphaParticipant($events)])
+            ->inspect([new SplFileInfo(__FILE__)], $this->root(), [], [], $ruleOptions);
+
+        self::assertSame(['alpha.reset', 'alpha.inspect'], $events);
     }
 
     /** @param list<FileSetInspectionParticipantInterface> $participants */

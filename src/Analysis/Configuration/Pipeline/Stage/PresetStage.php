@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Configuration\Pipeline\Stage;
 use Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface;
 
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
@@ -68,6 +69,10 @@ final class PresetStage implements ConfigurationStageInterface
      * Supports both repeated options (--preset=strict --preset=ci)
      * and comma-separated values (--preset=strict,ci).
      *
+     * An empty name between commas (`--preset=strict,`, `--preset=,ci`) is
+     * refused rather than skipped: it is what a list assembled from an unset
+     * variable looks like, and skipping it runs fewer presets than written.
+     *
      * @return list<string>
      */
     private function extractPresetNames(ConfigurationResolutionRequest $request): array
@@ -81,9 +86,18 @@ final class PresetStage implements ConfigurationStageInterface
         foreach ($request->presetNames as $value) {
             foreach (explode(',', $value) as $part) {
                 $trimmed = trim($part);
-                if ($trimmed !== '') {
-                    $names[] = $trimmed;
+                if ($trimmed === '') {
+                    throw ConfigurationRefusal::aboutCommandLineInput(
+                        '--preset',
+                        \sprintf(
+                            'Option --preset was written with an empty preset name ("--preset=%s"). '
+                            . 'Name a preset between every pair of commas, or omit --preset entirely.',
+                            $value,
+                        ),
+                    );
                 }
+
+                $names[] = $trimmed;
             }
         }
 

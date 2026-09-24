@@ -7,17 +7,16 @@ namespace Qualimetrix\Infrastructure\Logging;
 use Psr\Log\AbstractLogger;
 use Psr\Log\LogLevel;
 use Stringable;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * PSR-3 logger that outputs to Symfony Console.
  *
- * Respects console verbosity levels:
- * - QUIET: no logs
- * - NORMAL: warnings and errors only
- * - VERBOSE: info, warnings, and errors
- * - VERY_VERBOSE: debug and above
- * - DEBUG: all logs
+ * The minimum level is the only filter: whoever builds this logger has
+ * already weighed verbosity against `--log-level` when choosing it, and a
+ * second, verbosity-bound gate here overrode that choice — `--log-level=debug
+ * -v` printed no DEBUG line, and ALERT was hidden below `-vv`.
  */
 final class ConsoleLogger extends AbstractLogger
 {
@@ -44,18 +43,19 @@ final class ConsoleLogger extends AbstractLogger
             return;
         }
 
-        $formatted = $this->format($level, (string) $message, $context);
+        // The text is data, not markup: an unescaped `<info>` inside a
+        // parser message was read as a style tag and deleted from it.
+        $formatted = OutputFormatter::escape($this->format($level, (string) $message, $context));
 
-        match ($level) {
-            LogLevel::ERROR, LogLevel::CRITICAL, LogLevel::EMERGENCY
-                => $this->output->writeln("<error>{$formatted}</error>", OutputInterface::VERBOSITY_NORMAL),
-            LogLevel::WARNING
-                => $this->output->writeln("<comment>{$formatted}</comment>", OutputInterface::VERBOSITY_NORMAL),
-            LogLevel::INFO, LogLevel::NOTICE
-                => $this->output->writeln("<info>{$formatted}</info>", OutputInterface::VERBOSITY_VERBOSE),
-            default
-            => $this->output->writeln($formatted, OutputInterface::VERBOSITY_VERY_VERBOSE),
-        };
+        // By rank, not by name: every level at or above ERROR — ALERT
+        // included, which a list of names once left out — is styled as one.
+        $rank = self::rank($level);
+        $this->output->writeln(match (true) {
+            $rank >= self::rank(LogLevel::ERROR) => "<error>{$formatted}</error>",
+            $rank === self::rank(LogLevel::WARNING) => "<comment>{$formatted}</comment>",
+            $rank >= self::rank(LogLevel::INFO) => "<info>{$formatted}</info>",
+            default => $formatted,
+        });
     }
 
     /**
@@ -75,7 +75,10 @@ final class ConsoleLogger extends AbstractLogger
 
         $contextStr = '';
         if ($context !== []) {
-            $contextStr = ' ' . json_encode($context, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
+            $encoded = self::encodeJson($context);
+            $contextStr = $encoded !== null
+                ? ' ' . $encoded
+                : \sprintf(' (context not shown: %s)', json_last_error_msg());
         }
 
         return "[{$timestamp}] [{$levelUpper}] {$message}{$contextStr}";

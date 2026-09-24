@@ -34,6 +34,14 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * being this rule's channel rather than {@see LayerDeclarationValidator}'s
  * lives.
  *
+ * A third, `architecture.doubted-assignment`, counts the symbols whose layer
+ * the run could not fully decide — assigned while a layer bearing on the
+ * assignment could not be answered, or in no layer only because of one — and
+ * names those layers. It is information, reported at `info` and never
+ * gating, whatever the coverage mode, and
+ * {@see DoubtedAssignmentDiagnostic::forDoubts()} says why it is not
+ * the coverage gap.
+ *
  * How much of the analysed code no layer claims is a fact about the run
  * rather than about one edge, and belongs to {@see UnassignedClassRule}. It
  * reads the same {@see LayerEvidenceCollector}, so the two rules still share
@@ -62,6 +70,8 @@ final class LayerViolationRule extends AbstractRule
     public const string DOCS_PAGE = 'rules/architecture.md';
 
     public const string UNMATCHED_EXCLUDE_NAME = LayerPolicyPreparationInterface::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME;
+
+    public const string DOUBTED_ASSIGNMENT_NAME = LayerPolicyPreparationInterface::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME;
 
     public const int REMEDIATION_MINUTES = 15;
 
@@ -112,7 +122,10 @@ final class LayerViolationRule extends AbstractRule
     {
         return [
             self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Class_),
-            self::UNMATCHED_EXCLUDE_NAME => ChannelDeclaration::occurrence(SymbolLevel::Project),
+            self::UNMATCHED_EXCLUDE_NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)
+                ->describedAs('Reports a layer\'s exclude clause that removed no class while the layer\'s own criteria matched some.'),
+            self::DOUBTED_ASSIGNMENT_NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)
+                ->describedAs('Counts the symbols whose layer assignment is in doubt because a layer criterion could not be answered about them.'),
         ];
     }
 
@@ -142,14 +155,24 @@ final class LayerViolationRule extends AbstractRule
             // reported whatever its scope. The exclude diagnostic is the other
             // shape: "this clause removed nothing" is a fact about the pair
             // (configuration, run scope), and a run narrowed below the
-            // project's autoload roots — or one whose manifest declares no
-            // readable production autoload — cannot tell an inert clause from
-            // one whose classes are simply outside the slice. The gate is the
+            // project's autoload roots cannot tell an inert clause from one
+            // whose classes are simply outside the slice. The gate is the
             // same project-coverage predicate
             // UnmatchedFrameworkNamespaceRule asks.
             ...($context->coversProjectScope
                 ? UnmatchedExcludeDiagnostic::forInertClauses($evidence, self::UNMATCHED_EXCLUDE_NAME)
                 : []),
+            // Not scope-gated: the doubt is about the symbols this run looked
+            // at. A narrower run reports different doubts, not fewer — a
+            // project class it left outside can be in doubt where a run over
+            // the whole project decides it — which is why the advice for a
+            // symbol outside the analysed paths names analysing it as well.
+            ...DoubtedAssignmentDiagnostic::forDoubts(
+                $evidence->coverageState,
+                $evidence->undecidedSymbolsByLayer(),
+                $evidence->ownsIfExcludedSymbolsByLayer(),
+                self::DOUBTED_ASSIGNMENT_NAME,
+            ),
         ];
     }
 

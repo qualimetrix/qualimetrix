@@ -21,14 +21,15 @@ use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Exception\ParseException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
 /**
  * Processes a source file while keeping parsing, collection, and
  * collection-wire assembly. Declaration binding and source
- * control extraction are immutable downstream results: they receive the AST
- * and collected metrics but do not invoke collectors or alter
+ * control extraction are immutable downstream results: they receive the AST,
+ * the source it was parsed from and collected metrics but do not invoke collectors or alter
  * the FileProcessingResult transport. Parse failures remain terminal
  * results, so sequential and parallel callers preserve the contract.
  */
@@ -61,49 +62,85 @@ final class FileProcessor implements FileProcessorInterface
         $relativePath = PathFactory::bestEffortRelative($file->getPathname(), $this->projectRoot);
 
         try {
-            $ast = $this->parser->parse($file);
-            $this->collector->reset();
-            $output = $this->collectMeasurements($file, $ast, $relativePath);
-
-            $callableMetrics = $this->extractCallableMetrics($relativePath);
-            $classMetrics = $this->extractClassMetrics($relativePath);
-            $namespaceMetrics = $this->extractNamespaceMetrics();
-            $controls = $this->sourceControlExtractor->extract(
-                $ast,
-                $relativePath,
-                $callableMetrics,
-                $classMetrics,
-            );
-
-            unset($ast);
-            if (gc_enabled()) {
-                gc_collect_cycles();
-            }
-
-            return FileProcessingResult::success(
-                filePath: $relativePath,
-                payload: new SuccessfulFileProcessing(
-                    fileBag: $output->metrics,
-                    callableMetrics: $callableMetrics,
-                    classMetrics: $classMetrics,
-                    namespaceMetrics: $namespaceMetrics,
-                    dependencies: $output->dependencies,
-                    suppressions: $controls->suppressions,
-                    thresholdOverrides: $controls->thresholdOverrides,
-                    thresholdDiagnostics: $controls->thresholdDiagnostics,
-                ),
-            );
+            $payload = $this->measure($file, $relativePath);
         } catch (ParseException $e) {
-            return FileProcessingResult::failure(
-                filePath: $relativePath,
-                error: $e->getMessage(),
-                kind: FileProcessingFailureKind::Parse,
-            );
+            return self::parseFailure($relativePath, $e->getMessage());
         }
+
+        return $payload === null
+            ? self::parseFailure($relativePath, 'Failed to read file contents')
+            : FileProcessingResult::success(filePath: $relativePath, payload: $payload);
+    }
+
+    private static function parseFailure(RelativePath $filePath, string $error): FileProcessingResult
+    {
+        return FileProcessingResult::failure(
+            filePath: $filePath,
+            error: $error,
+            kind: FileProcessingFailureKind::Parse,
+        );
+    }
+
+    /**
+     * Null means the entry could not be read and the parser did not refuse
+     * it. The AST and the source are released in this frame, before the
+     * cycle collection, so a worker does not hold a finished file's tree.
+     */
+    private function measure(SplFileInfo $file, RelativePath $relativePath): ?SuccessfulFileProcessing
+    {
+        $source = self::readSource($file);
+        if ($source === null) {
+            // The parser owns the typed refusal of an entry that cannot be
+            // read — its message names which of the reasons it was.
+            $this->parser->parse($file);
+
+            return null;
+        }
+
+        $ast = $this->parser->parseContent($file, $source);
+        $this->collector->reset();
+        $output = $this->collectMeasurements($file, $ast, $relativePath);
+
+        $callableMetrics = $this->extractCallableMetrics($relativePath);
+        $classMetrics = $this->extractClassMetrics($relativePath);
+        $namespaceMetrics = $this->extractNamespaceMetrics();
+        $controls = $this->sourceControlExtractor->extract($ast, $source, $relativePath, $callableMetrics, $classMetrics);
+
+        unset($ast, $source);
+        if (gc_enabled()) {
+            gc_collect_cycles();
+        }
+
+        return new SuccessfulFileProcessing(
+            fileBag: $output->metrics,
+            callableMetrics: $callableMetrics,
+            classMetrics: $classMetrics,
+            namespaceMetrics: $namespaceMetrics,
+            dependencies: $output->dependencies,
+            suppressions: $controls->suppressions,
+            thresholdOverrides: $controls->thresholdOverrides,
+            thresholdDiagnostics: $controls->thresholdDiagnostics,
+        );
+    }
+
+    /**
+     * The bytes are read here, once, and handed both to the parser and to
+     * source-control extraction, so the AST and the text extraction searches
+     * describe the same file whether the AST was parsed or came from a cache.
+     */
+    private static function readSource(SplFileInfo $file): ?string
+    {
+        if (!$file->isFile() || !$file->isReadable()) {
+            return null;
+        }
+
+        $source = @file_get_contents($file->getPathname());
+
+        return $source === false ? null : $source;
     }
 
     /** @param array<\PhpParser\Node> $ast */
-    private function collectMeasurements(SplFileInfo $file, array $ast, \Qualimetrix\Core\Path\RelativePath $filePath): CollectionOutput
+    private function collectMeasurements(SplFileInfo $file, array $ast, RelativePath $filePath): CollectionOutput
     {
         return $this->collector->collect($file, $ast, $filePath);
     }
@@ -114,7 +151,7 @@ final class FileProcessor implements FileProcessorInterface
      *
      * @return list<\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics>
      */
-    private function extractCallableMetrics(\Qualimetrix\Core\Path\RelativePath $file): array
+    private function extractCallableMetrics(RelativePath $file): array
     {
         /** @var array<string, \Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics> $callables */
         $callables = [];
@@ -180,7 +217,7 @@ final class FileProcessor implements FileProcessorInterface
     /**
      * @return array<string, array{subject: \Qualimetrix\Core\Symbol\MetricSubject, metrics: MetricBag, line: int, start: int}>
      */
-    private function extractClassMetrics(\Qualimetrix\Core\Path\RelativePath $file): array
+    private function extractClassMetrics(RelativePath $file): array
     {
         $classMetrics = [];
 

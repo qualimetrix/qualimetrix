@@ -9,6 +9,7 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\CodeSmell\ControlFlow\ChainOfAttempts;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ControlFlow\ControlFlowSmells;
 
 #[CoversClass(ControlFlowSmells::class)]
@@ -23,6 +24,8 @@ foreach ($items as $item) { try { work(); } catch (Throwable) { continue; } }
 try { work(); } catch (Throwable) {}
 goto retry;
 exit;
+\exit(1);
+\die(...);
 for ($i = 0; count(values($i)); ++$i) {}
 while (sizeof($items)) {}
 do {} while (count($items));
@@ -30,10 +33,10 @@ PHP);
         $smells = new ControlFlowSmells();
         $locations = [];
         foreach ($nodes as $node) {
-            array_push($locations, ...$smells->locations($node, 'file', $node instanceof \PhpParser\Node\Stmt\Foreach_ ? 1 : 0));
+            array_push($locations, ...$smells->locations($node, 'file'));
         }
 
-        self::assertSame(['empty_catch', 'goto', 'exit', 'count_in_loop', 'count_in_loop', 'count_in_loop'], array_column($locations, 'type'));
+        self::assertSame(['empty_catch', 'goto', 'exit', 'exit', 'count_in_loop', 'count_in_loop', 'count_in_loop'], array_column($locations, 'type'));
     }
 
     #[Test]
@@ -43,7 +46,7 @@ PHP);
         $while = (new NodeFinder())->findFirstInstanceOf($nodes, \PhpParser\Node\Stmt\While_::class);
         self::assertInstanceOf(\PhpParser\Node\Stmt\While_::class, $while);
 
-        self::assertSame([], (new ControlFlowSmells())->locations($while, 'file', 0));
+        self::assertSame([], (new ControlFlowSmells())->locations($while, 'file'));
     }
 
     #[Test]
@@ -55,7 +58,7 @@ PHP);
         );
         self::assertInstanceOf(\PhpParser\Node\Stmt\While_::class, $while);
 
-        self::assertSame([], (new ControlFlowSmells())->locations($while, 'file', 0));
+        self::assertSame([], (new ControlFlowSmells())->locations($while, 'file'));
     }
 
     #[Test]
@@ -67,36 +70,31 @@ PHP);
         );
         self::assertInstanceOf(\PhpParser\Node\Stmt\While_::class, $while);
 
-        self::assertSame([], (new ControlFlowSmells())->locations($while, 'file', 0));
+        self::assertSame([], (new ControlFlowSmells())->locations($while, 'file'));
     }
 
     #[Test]
-    public function itTreatsNestedIfElseifAndElseChainSignalsAsForeachControlFlow(): void
+    public function itRecognizesAChainAttemptEndingInABranchThatEndsTheIteration(): void
     {
-        $tryCatch = (new NodeFinder())->findFirstInstanceOf(
-            (new ParserFactory())->createForHostVersion()->parse(<<<'PHP'
+        $loop = $this->firstForeach(<<<'PHP'
 <?php
 foreach ($items as $item) {
-    try { if ($first) { work(); } elseif ($second) { if ($nested) { continue; } } else { return; } } catch (Throwable) {}
+    try { work(); if ($first) { work(); } elseif ($second) { if ($nested) { continue; } } else { return; } } catch (Throwable) {}
 }
-PHP) ?? [],
-            \PhpParser\Node\Stmt\TryCatch::class,
-        );
-        self::assertInstanceOf(\PhpParser\Node\Stmt\TryCatch::class, $tryCatch);
+PHP);
+        $attempts = (new ChainOfAttempts())->attempts($loop);
 
-        self::assertSame([], (new ControlFlowSmells())->locations($tryCatch, 'file', 1));
+        self::assertCount(1, $attempts);
+        self::assertSame([], (new ControlFlowSmells())->locations($attempts[0], 'file', true));
     }
 
     #[Test]
-    public function itDoesNotSuppressAnEmptyForeachCatchWithoutAChainSignal(): void
+    public function itReportsAnEmptyCatchOfATryThatIsNotAChainAttempt(): void
     {
-        $tryCatch = (new NodeFinder())->findFirstInstanceOf(
-            (new ParserFactory())->createForHostVersion()->parse('<?php foreach ($items as $item) { try { work(); } catch (Throwable) {} if ($ok) { work(); } }') ?? [],
-            \PhpParser\Node\Stmt\TryCatch::class,
-        );
+        $tryCatch = (new NodeFinder())->findFirstInstanceOf($this->nodes('<?php try { return work(); } catch (Throwable) {}'), \PhpParser\Node\Stmt\TryCatch::class);
         self::assertInstanceOf(\PhpParser\Node\Stmt\TryCatch::class, $tryCatch);
 
-        self::assertSame(['empty_catch'], array_column((new ControlFlowSmells())->locations($tryCatch, 'file', 1), 'type'));
+        self::assertSame(['empty_catch'], array_column((new ControlFlowSmells())->locations($tryCatch, 'file'), 'type'));
     }
 
     #[Test]
@@ -114,8 +112,16 @@ PHP) ?? [],
 
         foreach ($negativeNodes as $node) {
             self::assertInstanceOf(\PhpParser\Node::class, $node);
-            self::assertSame([], (new ControlFlowSmells())->locations($node, 'file', 0));
+            self::assertSame([], (new ControlFlowSmells())->locations($node, 'file'));
         }
+    }
+
+    private function firstForeach(string $code): \PhpParser\Node\Stmt\Foreach_
+    {
+        $loop = (new NodeFinder())->findFirstInstanceOf($this->nodes($code), \PhpParser\Node\Stmt\Foreach_::class);
+        self::assertInstanceOf(\PhpParser\Node\Stmt\Foreach_::class, $loop);
+
+        return $loop;
     }
 
     /** @return list<\PhpParser\Node> */

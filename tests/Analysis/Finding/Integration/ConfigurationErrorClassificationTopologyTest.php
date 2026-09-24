@@ -60,6 +60,8 @@ final class ConfigurationErrorClassificationTopologyTest extends TestCase
 
         self::assertFalse($declarations['stamp.rule']->isConfigurationError());
         self::assertTrue($declarations['stamp.diagnostic']->isConfigurationError());
+        // The stamp is a wither too, and must not drop the channel's own text.
+        self::assertSame('Reports a stamped diagnostic.', $declarations['stamp.diagnostic']->description);
     }
 
     /**
@@ -231,7 +233,10 @@ final class StampValidator implements ConfigurationValidatorInterface
 
     public static function channelDeclarations(): array
     {
-        return ['stamp.diagnostic' => ChannelDeclaration::occurrence(SymbolLevel::Project)];
+        return [
+            'stamp.diagnostic' => ChannelDeclaration::occurrence(SymbolLevel::Project)
+                ->describedAs('Reports a stamped diagnostic.'),
+        ];
     }
 
     public function validate(AnalysisContext $context): array

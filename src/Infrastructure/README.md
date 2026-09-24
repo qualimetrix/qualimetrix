@@ -16,7 +16,7 @@ Infrastructure contains external adapters and entry points:
 
 ## Internal Dependency Layers
 
-Infrastructure sub-packages are declared as `infra-*` sub-layers in the project's
+Infrastructure sub-packages are declared as `infrastructure-*` sub-layers in the project's
 own `qmx.yaml` to prevent circular dependencies (see
 [ADR 0014](../../docs/adr/0014-deptrac-retirement.md)):
 
@@ -48,15 +48,20 @@ Infrastructure/
 │       └── AnalysedInstallAnchorInterface.php # Re-aims install-backed adapters for each run
 ├── Git/                              # -> See Git/README.md
 │   ├── GitClient.php
+│   ├── NameStatusListing.php         # One `--name-status -z` listing read into files; the rows it drops, reported by reason
 │   ├── GitScopeParser.php
 │   ├── GitScope.php
 │   ├── ChangedFile.php
 │   ├── ChangeStatus.php
+│   ├── NameStatusRecord.php          # One `git diff --name-status -z` row, held as the bytes git wrote
+│   ├── GitRepositoryLocator.php      # Locates the git dir and the directory git runs hooks out of
+│   ├── GitRepositoryLocatorInterface.php
 │   ├── ReportingGitScopeQuery.php   # Git adapter for Reporting finding projection
 │   ├── GitScopeResolver.php          # Resolves git scope from CLI options
 │   ├── GitScopeResolution.php        # Resolution result VO
-│   ├── Exception/UnresolvedGitReferenceException.php # Invalid git revision input
-│   └── Exception/NotAGitRepositoryException.php # --report=git:* outside a repository
+│   ├── GitScopeRefusedException.php  # A scope git will not answer for
+│   ├── NotAGitRepositoryException.php # --report=git:* outside a repository
+│   └── UnresolvedGitReferenceException.php # Invalid git revision input
 ├── Logging/                          # -> See Logging/README.md
 │   ├── LoggerFactory.php
 │   ├── LoggerHolder.php
@@ -132,7 +137,7 @@ Infrastructure/
     ├── CliOptionsParser.php
     ├── OutputHelper.php               # Helper for large text output (line-by-line flush)
     ├── MeasuredFindingSet.php       # The one definition of the set a baseline measures: paths + resolved config in, findings at the baseline stage's input out (no InputInterface)
-    ├── FindingFilterOrchestrator.php # Adapts check options to the Reporting-owned FindingProjector, asks Finding's suppression-binding audit on a run wide enough to judge it, and reports the stage results
+    ├── FindingFilterOrchestrator.php # Adapts check options to the Reporting-owned FindingProjector, asks Finding's suppression-binding audit on a run wide enough to judge it — for findings and for the values it skipped, which the project scope publishes — and reports the stage results
     ├── RuntimeConfigurator.php        # Runtime DI configuration; applies the ConfigurationDocument to Coupling every run
     ├── RuntimeLoggerConfigurator.php  # Creates and publishes the logger for one console run
     ├── ErrorStream.php               # Sole owner of the run's error stream: progress section plus every diagnostic writer
@@ -141,9 +146,12 @@ Infrastructure/
     ├── ExitCodeResolver.php           # Determines policy codes and incomplete-analysis exit 4
     ├── DirectiveAuditPresenter.php    # Both projections of one directive audit; the text one prints the claim, the JSON one the stable key
     ├── DirectiveVerdictTally.php      # How many directives of each verdict one audit produced, tallied over the vocabulary and rendered for both projections
-    ├── ScopeWarningChecker.php        # Renders the incomplete-scope warning from Run's ProjectScopeCoverage answer
+    ├── ScopeWarningChecker.php        # Renders the incomplete-scope and pruned-target warnings from Run's ProjectScopeCoverage answer
     ├── ProfilePresenter.php           # Handles profiling output: summary to stderr or export to file
     ├── FormatterContextFactory.php    # Creates FormatterContext from CLI input options
+    ├── FormatOptionPairs.php          # The --format-opt door: every written pair judged, a repeated key and two spellings of one value refused
+    ├── ArtifactFile.php               # A file an option names for an artifact: written in place when it exists, created when it does not
+    ├── CommandLineSpelling.php        # An option or argument value as argv would spell it; other shapes refused with exit 3
     ├── CheckCommandDefinition.php     # Command option definitions
     ├── FilteredInputDefinition.php    # InputDefinition that hides rule-specific options from --help
     ├── Progress/
@@ -152,7 +160,7 @@ Infrastructure/
     └── Command/
         ├── CheckCommand.php           # Thin orchestrator (delegates to extracted classes)
         ├── BaselineCommand.php              # Base class for the five lifecycle commands: shared error-to-exit-code mapping, and — for cleanup/update — the measured-run preamble and scope validation
-        ├── BaselineCommandDefinition.php    # Shared input definition: paths + the configuration options that decide what is measured (--config, --preset, --rule-opt, --only-rule, --disable-rule), deliberately without check's exclusion/suppression flags (ADR 0017)
+        ├── BaselineCommandDefinition.php    # Shared input definition: paths + the configuration options that decide what is measured (--config, --preset, --rule-opt, --only-rule, --disable-rule, --include-generated, --include-autoload-dev), deliberately without check's exclusion/suppression flags (ADR 0017)
         ├── BaselineRunInterface.php         # The one way a baseline command obtains the set it measures
         ├── BaselineRun.php                  # Implements BaselineRunInterface: resolves configuration, configures the runtime and runs the analysis exactly as `check` does
         ├── BaselineRunContext.php           # VO: one run's measured findings, its RunScope and project root
@@ -165,6 +173,7 @@ Infrastructure/
         ├── BaselineRenameChannelsCommand.php # `baseline:rename-channels` — carries a baseline onto renamed channels along a declared TSV map; the one baseline command that runs no analysis
         ├── ChannelRenameReporter.php        # Renders a rename-channels outcome (refusal or ChannelRenameReport) in the caller's chosen format
         ├── BaselineExplainCommand.php  # `baseline:explain` — prints the effective boundary for one symbol and its three sources (baseline, qmx.yaml, @qmx-threshold)
+        ├── BaselineExplanationRenderer.php # How `baseline:explain` spells a BoundaryExplanation: entries present but not applied, unreadable entries, `mode: suppress`, a member without a finite value
         ├── DirectivesCommand.php      # `directives` — what each inline @qmx directive still does; exits 2 on an inert one (ADR 0039)
         ├── GraphExportCommand.php           # Export dependency graph (DOT, JSON)
         ├── RulesCommand.php           # Lists every option each rule accepts, its CLI aliases and judged metrics

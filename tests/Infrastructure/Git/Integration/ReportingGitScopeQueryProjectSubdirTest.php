@@ -14,7 +14,6 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Git\GitClient;
 use Qualimetrix\Infrastructure\Git\ReportingGitScopeQuery;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
@@ -28,7 +27,7 @@ use Symfony\Component\Process\Process;
  * not against the git top-level.
  *
  * Companion to {@see GitSubdirScopeTest} (which pins T10 at the git-output
- * translation boundary, {@see GitClient::parseNameStatus()}).
+ * translation boundary, {@see \Qualimetrix\Infrastructure\Git\NameStatusListing::changedFiles()}).
  *
  * Differential setup: two distinct files share the same project-relative path,
  * one at `{gitToplevel}/src/Service.php` and one at

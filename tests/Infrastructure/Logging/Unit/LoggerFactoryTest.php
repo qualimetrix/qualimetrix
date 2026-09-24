@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Logging\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
+use Qualimetrix\Infrastructure\Logging\Contract\LogFileUnavailable;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -132,6 +134,31 @@ final class LoggerFactoryTest extends TestCase
         self::assertStringContainsString('Warning message', $content);
     }
 
+    /**
+     * At `-v` the console takes the configured level, DEBUG included. A
+     * second gate in the console logger used to hold DEBUG back until `-vv`,
+     * so `--log-level=debug -v` printed no DEBUG line.
+     */
+    #[Test]
+    public function itWritesDebugAtVerboseWhenTheLevelAsksForIt(): void
+    {
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
+
+        (new LoggerFactory())->create($output, null, LogLevel::DEBUG)->debug('Debug message');
+
+        self::assertStringContainsString('Debug message', $output->fetch());
+    }
+
+    #[Test]
+    public function itWritesDebugAtVeryVerboseByDefault(): void
+    {
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_VERY_VERBOSE);
+
+        (new LoggerFactory())->create($output)->debug('Debug message');
+
+        self::assertStringContainsString('Debug message', $output->fetch());
+    }
+
     #[Test]
     public function itAppliesLogLevelToFileLogger(): void
     {
@@ -153,15 +180,113 @@ final class LoggerFactoryTest extends TestCase
         self::assertStringContainsString('Info message', $content);
     }
 
+    /**
+     * An empty `--log-file=` — typically an unset variable in a CI script —
+     * used to mean "no log file", and a blank one created a file named by the
+     * blank. Either way the run went on without the log that was asked for.
+     */
     #[Test]
-    public function itHandlesEmptyLogFilePath(): void
+    #[DataProvider('provideBlankLogFileCases')]
+    public function itRefusesABlankLogFilePath(string $logFile): void
+    {
+        $previous = (string) getcwd();
+        chdir($this->tempDir);
+
+        try {
+            (new LoggerFactory())->create(new BufferedOutput(), $logFile);
+            self::fail('A blank log file path was accepted');
+        } catch (LogFileUnavailable $unavailable) {
+            self::assertSame($logFile, $unavailable->path);
+            self::assertStringContainsString('leave the option out', $unavailable->reason);
+        } finally {
+            chdir($previous);
+        }
+
+        self::assertSame([], glob($this->tempDir . '/*'), 'nothing may be created for a blank path');
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function provideBlankLogFileCases(): iterable
+    {
+        yield 'empty' => [''];
+        yield 'space' => [' '];
+        yield 'tab and newline' => ["\t\n"];
+    }
+
+    /** The legitimate neighbour: no log file written is still no file logger, not a refusal. */
+    #[Test]
+    public function itWritesNoLogFileWhenNoneWasGiven(): void
     {
         $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
 
-        $logger = (new LoggerFactory())->create($output, '');
+        $logger = (new LoggerFactory())->create($output, null);
 
         $logger->info('Test');
         self::assertStringContainsString('Test', $output->fetch());
     }
 
+    /**
+     * The whole matrix, not the one cell that used to work: a written level
+     * holds at `-v` and above and narrows a normal-verbosity console, and
+     * verbosity chooses only when none was written. Before, the console
+     * ignored the level everywhere but `-v`.
+     *
+     * @param ?string $level the written `--log-level`, null when none
+     */
+    #[Test]
+    #[DataProvider('provideLevelAndVerbosityCases')]
+    public function itLetsAWrittenLevelHoldAtEveryVerbosity(int $verbosity, ?string $level, string $expected): void
+    {
+        $output = new BufferedOutput($verbosity);
+        $logger = (new LoggerFactory())->create($output, null, $level);
+
+        foreach ([LogLevel::DEBUG, LogLevel::INFO, LogLevel::WARNING, LogLevel::ERROR] as $message) {
+            $logger->log($message, 'line-' . $message);
+        }
+
+        $content = $output->fetch();
+        $written = '';
+        foreach (['D' => LogLevel::DEBUG, 'I' => LogLevel::INFO, 'W' => LogLevel::WARNING, 'E' => LogLevel::ERROR] as $mark => $message) {
+            $written .= str_contains($content, 'line-' . $message) ? $mark : '';
+        }
+
+        self::assertSame($expected, $written);
+    }
+
+    /** @return iterable<string, array{int, ?string, string}> */
+    public static function provideLevelAndVerbosityCases(): iterable
+    {
+        $verbosities = [
+            'normal' => OutputInterface::VERBOSITY_NORMAL,
+            '-v' => OutputInterface::VERBOSITY_VERBOSE,
+            '-vv' => OutputInterface::VERBOSITY_VERY_VERBOSE,
+            '-vvv' => OutputInterface::VERBOSITY_DEBUG,
+        ];
+        $written = ['debug' => 'DIWE', 'info' => 'IWE', 'warning' => 'WE', 'error' => 'E'];
+        $writtenAtNormal = ['debug' => 'WE', 'info' => 'WE', 'warning' => 'WE', 'error' => 'E'];
+        $unwritten = ['normal' => 'WE', '-v' => 'IWE', '-vv' => 'DIWE', '-vvv' => 'DIWE'];
+
+        foreach ($verbosities as $name => $verbosity) {
+            yield \sprintf('%s, no level written', $name) => [$verbosity, null, $unwritten[$name]];
+            foreach ($written as $level => $expected) {
+                $cell = $name === 'normal' ? $writtenAtNormal[$level] : $expected;
+                yield \sprintf('%s, --log-level=%s', $name, $level) => [$verbosity, $level, $cell];
+            }
+        }
+    }
+
+    #[Test]
+    public function itGivesTheLogFileInfoWhenNoLevelWasWritten(): void
+    {
+        $logFile = $this->tempDir . '/test.log';
+
+        $logger = (new LoggerFactory())->create(new BufferedOutput(OutputInterface::VERBOSITY_QUIET), $logFile);
+        $logger->debug('Debug message');
+        $logger->info('Info message');
+
+        $content = file_get_contents($logFile);
+        self::assertIsString($content);
+        self::assertStringNotContainsString('Debug message', $content);
+        self::assertStringContainsString('Info message', $content);
+    }
 }

@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Reporting\CoverageFailure;
+use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\ReportBuilder;
@@ -20,7 +21,7 @@ final class CoverageProjectionFormatterTest extends TestCase
     /** @return iterable<string, array{string, ReportCoverage}> */
     public static function matrix(): iterable
     {
-        $formats = ['text', 'text-verbose', 'summary', 'health', 'json', 'metrics', 'sarif', 'gitlab', 'checkstyle', 'github', 'html'];
+        $formats = ['text', 'text-verbose', 'summary', 'health', 'json', 'metrics', 'sarif', 'gitlab', 'checkstyle', 'github', 'html', 'suppressed'];
         $states = [
             'empty' => new ReportCoverage(0, 0, 0, 0),
             'complete' => new ReportCoverage(1, 1, 0, 0),
@@ -48,12 +49,13 @@ final class CoverageProjectionFormatterTest extends TestCase
                 ->filesAnalyzed($coverage->analyzed)
                 ->filesSkipped($coverage->generatedExcluded + $coverage->failed)
                 ->coverage($coverage)
+                ->suppressionComposition(new SuppressionComposition([]))
                 ->build(),
             new FormatterContext(useColor: false),
         );
 
         match ($format) {
-            'json', 'metrics' => self::assertJsonCoverage($output, $coverage),
+            'json', 'metrics', 'suppressed' => self::assertJsonCoverage($output, $coverage),
             'sarif' => self::assertSarifCoverage($output, $coverage),
             'gitlab' => self::assertGitlabCoverage($output, $coverage),
             'checkstyle' => self::assertCheckstyleCoverage($output, $coverage),

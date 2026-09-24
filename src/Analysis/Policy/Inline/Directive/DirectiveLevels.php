@@ -61,8 +61,10 @@ final readonly class DirectiveLevels
             return [$authored];
         }
 
-        if ($suppression->subject !== null) {
-            return [SymbolLevelProjection::ofDeclaration($suppression->subject->toSymbolPath()->getType())];
+        $binding = $suppression->binding;
+
+        if ($binding !== null) {
+            return [SymbolLevelProjection::ofDeclaration($binding->subject->toSymbolPath()->getType())];
         }
 
         // A physical directive — `@qmx-ignore-file`, `@qmx-ignore-next-line` —

@@ -94,14 +94,14 @@ final class RuleOptionShapeTest extends TestCase
     public static function provideDescriptions(): iterable
     {
         yield 'boolean' => [RuleOptionShape::boolean(), 'a boolean'];
-        yield 'nullable whole number' => [RuleOptionShape::integer()->orNull(), 'a whole number or null'];
+        yield 'nullable whole number' => [RuleOptionShape::integer()->orNull(), 'a non-negative whole number or null'];
         yield 'list names its elements in the plural' => [
             RuleOptionShape::listOf(RuleOptionShape::nonEmptyText()),
             'a list of non-empty strings',
         ];
         yield 'a nullable element keeps the singular, so the "or null" stays attached to one value' => [
             RuleOptionShape::listOf(RuleOptionShape::integer()->orNull()),
-            'a list of a whole number or null',
+            'a list of a non-negative whole number or null',
         ];
         yield 'map names its value' => [
             RuleOptionShape::mapOf(RuleOptionShape::listOf(RuleOptionShape::text())),
@@ -209,6 +209,60 @@ final class RuleOptionShapeTest extends TestCase
     {
         self::assertSame('a string', RuleOptionShape::text()->describeWritten('warnin'));
         self::assertSame('a list', RuleOptionShape::listOf(RuleOptionShape::text())->describeWritten(['a']));
+    }
+
+    /**
+     * A built-in threshold or count is never negative, and a negative value
+     * of the right type is refused by the form itself — so the recognition
+     * walk and the threshold-shorthand unfolding, which both ask the form,
+     * cannot disagree about it. Zero is inside the floor.
+     */
+    #[Test]
+    public function itRefusesANegativeValueForABuiltInNumberAndKeepsZero(): void
+    {
+        self::assertFalse(RuleOptionShape::integer()->matches(-1));
+        self::assertFalse(RuleOptionShape::number()->matches(-0.5));
+        self::assertFalse(RuleOptionShape::number()->matches(-3));
+        self::assertTrue(RuleOptionShape::integer()->matches(0));
+        self::assertTrue(RuleOptionShape::number()->matches(0.0));
+        self::assertFalse(RuleOptionShape::listOf(RuleOptionShape::integer())->matches([1, -1]));
+        self::assertFalse(RuleOptionValueForm::WholeNumber->accepts(-1));
+        self::assertTrue(RuleOptionValueForm::WholeNumber->accepts(0));
+    }
+
+    /**
+     * A computed metric's formula is written by the user and may be negative,
+     * so its boundary keeps both signs.
+     */
+    #[Test]
+    public function itKeepsBothSignsForASignedNumber(): void
+    {
+        $shape = RuleOptionShape::signedNumber()->orNull();
+
+        self::assertTrue($shape->matches(-2.5));
+        self::assertTrue($shape->matches(-2));
+        self::assertTrue($shape->matches(7));
+        self::assertFalse($shape->matches('-2'));
+        self::assertSame('a number or null', $shape->describe());
+    }
+
+    /**
+     * The value is the answer to a range question, as the word is to a
+     * membership question: "got a whole number" is true of `-1` and would
+     * contradict the expectation printed beside it.
+     */
+    #[Test]
+    public function itNamesTheValueThatWasOutOfRange(): void
+    {
+        self::assertSame('-1', RuleOptionShape::integer()->orNull()->describeWritten(-1));
+        self::assertSame('-0.5', RuleOptionShape::number()->describeWritten(-0.5));
+        self::assertSame(
+            '-1',
+            RuleOptionShape::either(RuleOptionShape::integer(), RuleOptionShape::text())->describeWritten(-1),
+        );
+        self::assertSame('a string', RuleOptionShape::integer()->describeWritten('-1'));
+        self::assertSame('a number', RuleOptionShape::integer()->describeWritten(-1.5));
+        self::assertSame('a non-negative number', RuleOptionShape::number()->describe());
     }
 
     #[Test]

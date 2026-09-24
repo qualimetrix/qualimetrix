@@ -12,8 +12,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Git\ChangedFile;
 use Qualimetrix\Infrastructure\Git\ChangeStatus;
-use Qualimetrix\Infrastructure\Git\Exception\UnresolvedGitReferenceException;
 use Qualimetrix\Infrastructure\Git\GitClient;
+use Qualimetrix\Infrastructure\Git\UnresolvedGitReferenceException;
 use ReflectionMethod;
 use RuntimeException;
 use Symfony\Component\Process\Process;
@@ -207,10 +207,12 @@ final class GitClientTest extends TestCase
 
         $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
 
-        // Use reflection to test parseNameStatus directly with copy format
+        // Use reflection to test parseNameStatus directly with copy format:
+        // git only emits `C` under --find-copies-harder, which none of the
+        // scopes pass, so the stream is written out rather than produced.
         $method = new ReflectionMethod($client, 'parseNameStatus');
 
-        $output = "C100\told.php\tnew.php\n";
+        $output = "C100\0old.php\0new.php\0";
         $files = $method->invoke($client, $output);
 
         self::assertCount(1, $files);
@@ -229,7 +231,7 @@ final class GitClientTest extends TestCase
         $method = new ReflectionMethod($client, 'parseNameStatus');
 
         // Copy with partial similarity (e.g., C075)
-        $output = "C075\tsrc/original.php\tsrc/copy.php\n";
+        $output = "C075\0src/original.php\0src/copy.php\0";
         $files = $method->invoke($client, $output);
 
         self::assertCount(1, $files);

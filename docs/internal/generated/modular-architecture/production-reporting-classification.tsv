@@ -5,6 +5,7 @@ src/Reporting/Contract/OutputFormatResolverInterface.php	Qualimetrix\Reporting\C
 src/Reporting/CoverageFailure.php	Qualimetrix\Reporting\CoverageFailure	"output projection"	Reporting
 src/Reporting/DrillDown/DrillDownBinding.php	Qualimetrix\Reporting\DrillDown\DrillDownBinding	"output projection"	Reporting
 src/Reporting/DrillDown/FindingFilter.php	Qualimetrix\Reporting\DrillDown\FindingFilter	"output projection"	Reporting
+src/Reporting/DrillDown/OutOfScopeFindings.php	Qualimetrix\Reporting\DrillDown\OutOfScopeFindings	"output projection"	Reporting
 src/Reporting/FindingProjection/Configuration/ConfiguredFindingExclusionsResolver.php	Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver	"output projection"	Reporting
 src/Reporting/FindingProjection/Contract/ConfiguredFindingExclusions.php	Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions	"output projection"	Reporting
 src/Reporting/FindingProjection/Contract/ConfiguredFindingExclusionsResolverInterface.php	Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface	"output projection"	Reporting
@@ -31,6 +32,7 @@ src/Reporting/Formatter/Detail/DebtBreakdownRenderer.php	Qualimetrix\Reporting\F
 src/Reporting/Formatter/Detail/DetailedFindingRenderer.php	Qualimetrix\Reporting\Formatter\Detail\DetailedFindingRenderer	"output projection"	Reporting
 src/Reporting/Formatter/Detail/FindingDetailRenderer.php	Qualimetrix\Reporting\Formatter\Detail\FindingDetailRenderer	"output projection"	Reporting
 src/Reporting/Formatter/FormatOptionKeysInterface.php	Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface	"output projection"	Reporting
+src/Reporting/Formatter/FormatOptionValue.php	Qualimetrix\Reporting\Formatter\FormatOptionValue	"output projection"	Reporting
 src/Reporting/Formatter/FormatterInterface.php	Qualimetrix\Reporting\Formatter\FormatterInterface	"output projection"	Reporting
 src/Reporting/Formatter/FormatterRegistry.php	Qualimetrix\Reporting\Formatter\FormatterRegistry	"output projection"	Reporting
 src/Reporting/Formatter/FormatterRegistryInterface.php	Qualimetrix\Reporting\Formatter\FormatterRegistryInterface	"output projection"	Reporting
@@ -42,6 +44,7 @@ src/Reporting/Formatter/Html/HtmlDebtCalculator.php	Qualimetrix\Reporting\Format
 src/Reporting/Formatter/Html/HtmlFindingPartitioner.php	Qualimetrix\Reporting\Formatter\Html\HtmlFindingPartitioner	"output projection"	Reporting
 src/Reporting/Formatter/Html/HtmlFormatter.php	Qualimetrix\Reporting\Formatter\Html\HtmlFormatter	"output projection"	Reporting
 src/Reporting/Formatter/Html/HtmlMetricAggregator.php	Qualimetrix\Reporting\Formatter\Html\HtmlMetricAggregator	"output projection"	Reporting
+src/Reporting/Formatter/Html/HtmlProjectMetadata.php	Qualimetrix\Reporting\Formatter\Html\HtmlProjectMetadata	"output projection"	Reporting
 src/Reporting/Formatter/Html/HtmlTreeBuilder.php	Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder	"output projection"	Reporting
 src/Reporting/Formatter/Html/HtmlTreeNode.php	Qualimetrix\Reporting\Formatter\Html\HtmlTreeNode	"output projection"	Reporting
 src/Reporting/Formatter/Json/JsonFindingSection.php	Qualimetrix\Reporting\Formatter\Json\JsonFindingSection	"output projection"	Reporting
@@ -51,6 +54,8 @@ src/Reporting/Formatter/Json/JsonOffenderSection.php	Qualimetrix\Reporting\Forma
 src/Reporting/Formatter/Json/JsonSanitizer.php	Qualimetrix\Reporting\Formatter\Json\JsonSanitizer	"output projection"	Reporting
 src/Reporting/Formatter/MetricsJsonFormatter.php	Qualimetrix\Reporting\Formatter\MetricsJsonFormatter	"output projection"	Reporting
 src/Reporting/Formatter/Ordering/FindingSorter.php	Qualimetrix\Reporting\Formatter\Ordering\FindingSorter	"output projection"	Reporting
+src/Reporting/Formatter/PublishedFinding.php	Qualimetrix\Reporting\Formatter\PublishedFinding	"output projection"	Reporting
+src/Reporting/Formatter/PublishedUtf8.php	Qualimetrix\Reporting\Formatter\PublishedUtf8	"output projection"	Reporting
 src/Reporting/Formatter/Sarif/SarifFormatter.php	Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter	"output projection"	Reporting
 src/Reporting/Formatter/Sarif/SarifRuleCollector.php	Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector	"output projection"	Reporting
 src/Reporting/Formatter/Summary/FindingSummaryRenderer.php	Qualimetrix\Reporting\Formatter\Summary\FindingSummaryRenderer	"output projection"	Reporting
@@ -78,3 +83,4 @@ src/Reporting/Health/SummaryEnricher.php	Qualimetrix\Reporting\Health\SummaryEnr
 src/Reporting/Report.php	Qualimetrix\Reporting\Report	"output projection"	Reporting
 src/Reporting/ReportBuilder.php	Qualimetrix\Reporting\ReportBuilder	"output projection"	Reporting
 src/Reporting/ReportCoverage.php	Qualimetrix\Reporting\ReportCoverage	"output projection"	Reporting
+src/Reporting/ReportProjectScope.php	Qualimetrix\Reporting\ReportProjectScope	"output projection"	Reporting

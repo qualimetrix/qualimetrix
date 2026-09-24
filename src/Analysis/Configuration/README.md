@@ -2,7 +2,7 @@
 
 ## Subject and current boundary
 
-`Analysis\\Configuration` owns loading, normalizing, merging, validating, and
+`Analysis\\Configuration` owns loading, normalizing, ordering, validating, and
 resolving the ordered `ConfigurationDocument` used for one analysis invocation.
 It owns source resolution and schema semantics, not a cross-owner runtime DTO.
 Each feature resolves its own immutable projection from that concrete document;
@@ -26,11 +26,13 @@ Configuration/
 │                                  # per-source shorthands (atResolvedKey, aboutCommandLineInput, …)
 │                                  # let a throw site name its source without importing the vocabulary
 ├── Discovery/          # Composer metadata reader
-├── Loader/             # YAML load, section normalization, and the container shape of every root
-├── Pipeline/Stage/     # defaults, preset, file, Composer, CLI stages
+├── Loader/             # YAML load, section key normalization (one spelling per key), and the container shape of every root
+├── Pipeline/           # ordered stage runner, source-layer value, rule-name validator, the
+│   │                   # `~`-as-unwritten normalizer (ConfigDataNormalizer)
+│   └── Stage/          # defaults, Composer, preset, file, CLI stages
 ├── Preset/             # built-in and custom preset resolution
 ├── ConfigKeySpelling.php   # the snake/kebab/camel fold of a key, and its inverse
-├── ConfigurationMerger.php # document-layer merge mechanics
+├── ConfigSchema.php        # every YAML key, its result key, type and normalization policy
 ├── SelectorYamlDecoder.php  # explicit selector mapping → Core path/namespace pattern
 └── RetiredSuppressionOptions.php # the retired `exclude*` spellings and the one refusal
 ```
@@ -40,9 +42,24 @@ Configuration/
 `ConfigurationPipelineInterface` runs ordered stages over a
 `ConfigurationResolutionRequest`, then produces `ConfigurationDocument`.
 `ConfigSchema` remains the single source of YAML key names and types. The
-precedence order is defaults, presets, configuration files, Composer discovery,
-and CLI options; later layers override earlier scalar values while the schema
-defines merge semantics for collection values.
+precedence order, lowest first, is defaults, Composer discovery, presets, the
+configuration file, and CLI options — the stage priorities 0, 10, 15, 20 and 30.
+Stages do not merge: the document keeps every contribution in that order, and
+each owner folds its own key — a scalar is usually taken from the last layer
+that wrote it, while each collection states its own semantics (`disabled_rules`
+accumulates, `only_rules` is replaced). Composer discovery contributes the
+production and `autoload-dev` targets — every autoload form, `psr-4`, `psr-0`,
+`classmap` and `files`, the list the scope denominator also reads — under two
+internal keys rather than `paths`: `include_autoload_dev`, which a later
+source may write, decides which of them Run takes as the default paths. The
+lists are the manifest as written: Run, not the reader, drops a target that
+lies inside `vendor`, `node_modules` or `.git`, because that is Run's
+discovery rule.
+
+A key is written once per document. `suppress_paths`, `suppress-paths` and
+`suppressPaths` fold into one key, so writing two of them in one mapping is
+refused by the loader rather than resolved by whichever comes last. A refusal
+about a key answers in the spelling its author used (`ConfigKeySpelling`).
 `RetiredSuppressionOptions` holds the retired `exclude*` suppression spellings
 and the one sentence refusing them, for all four doors: the YAML root, a
 `rules:` block, `--rule-opt`, and the rule-option factory behind it. Each door

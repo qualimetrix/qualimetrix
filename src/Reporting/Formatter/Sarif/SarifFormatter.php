@@ -8,8 +8,9 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Version;
-use Qualimetrix\Reporting\Formatter\AcceptedLevelNarrator;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\Formatter\PublishedFinding;
+use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
@@ -23,6 +24,7 @@ use Qualimetrix\Reporting\Report;
 final class SarifFormatter implements FormatterInterface
 {
     private const SCHEMA = 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json';
+
     public function __construct(
         private readonly SarifRuleCollector $ruleCollector,
     ) {}
@@ -30,6 +32,7 @@ final class SarifFormatter implements FormatterInterface
     public function format(Report $report, FormatterContext $context): string
     {
         $rules = $this->ruleCollector->collectRules($report->findings);
+        $repairs = 0;
 
         // Build ruleIndex map: code -> index in rules array
         $ruleIndexMap = [];
@@ -51,7 +54,7 @@ final class SarifFormatter implements FormatterInterface
                     'rules' => $rules,
                 ],
             ],
-            'results' => $this->formatResults($report->findings, $context, $ruleIndexMap),
+            'results' => $this->formatResults($report->findings, $context, $ruleIndexMap, $repairs),
         ];
 
         if ($report->coverage !== null) {
@@ -68,11 +71,20 @@ final class SarifFormatter implements FormatterInterface
             ]];
         }
 
+        if ($report->outOfScope !== null && $report->outOfScope->total() > 0) {
+            $run = self::withNotification($run, 'note', $report->outOfScope->describe(), 'QMX-DRILL-DOWN-OUT-OF-SCOPE');
+        }
+
+        $projectScope = $report->projectScope?->describe();
+        if ($projectScope !== null) {
+            $run = self::withNotification($run, 'note', $projectScope, 'QMX-RUN-PROJECT-SCOPE');
+        }
+
         // Add originalUriBaseIds when basePath is provided
         if ($context->basePath !== '') {
             $run['originalUriBaseIds'] = [
                 '%SRCROOT%' => [
-                    'uri' => self::pathToFileUri($context->basePath),
+                    'uri' => self::pathToFileUri($context->basePath, $repairs),
                 ],
             ];
         }
@@ -83,7 +95,21 @@ final class SarifFormatter implements FormatterInterface
             'runs' => [$run],
         ];
 
-        return json_encode($sarif, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
+        return PublishedUtf8::encodeJson(
+            $sarif,
+            \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES,
+            static function (array $sarif, int $repairs): array {
+                $sarif['runs'][0] = self::withNotification(
+                    $sarif['runs'][0],
+                    'warning',
+                    PublishedUtf8::describe($repairs),
+                    'QMX-PUBLICATION-INVALID-UTF8',
+                );
+
+                return $sarif;
+            },
+            $repairs,
+        );
     }
 
     public function getName(): string
@@ -97,6 +123,26 @@ final class SarifFormatter implements FormatterInterface
     }
 
     /**
+     * Adds a tool notification about the document itself, opening the
+     * invocation when coverage did not.
+     *
+     * @param array<string, mixed> $run
+     *
+     * @return array<string, mixed>
+     */
+    private static function withNotification(array $run, string $level, string $text, string $descriptor): array
+    {
+        $run['invocations'] ??= [['executionSuccessful' => true, 'toolExecutionNotifications' => []]];
+        $run['invocations'][0]['toolExecutionNotifications'][] = [
+            'level' => $level,
+            'message' => ['text' => $text],
+            'descriptor' => ['id' => $descriptor],
+        ];
+
+        return $run;
+    }
+
+    /**
      * Formats findings as SARIF results.
      *
      * @param list<Finding> $findings
@@ -104,10 +150,10 @@ final class SarifFormatter implements FormatterInterface
      *
      * @return list<array<string, mixed>>
      */
-    private function formatResults(array $findings, FormatterContext $context, array $ruleIndexMap): array
+    private function formatResults(array $findings, FormatterContext $context, array $ruleIndexMap, int &$repairs): array
     {
         return array_map(
-            function (Finding $v) use ($context, $ruleIndexMap): array {
+            function (Finding $v) use ($context, $ruleIndexMap, &$repairs): array {
                 // 'level' derives from Finding::severity, which a measured
                 // breach already promoted to Error via reportedAsBreach()
                 // (ADR 0017) — no extra mapping needed here for promotion to
@@ -118,7 +164,7 @@ final class SarifFormatter implements FormatterInterface
                     'ruleId' => $v->code,
                     'ruleIndex' => $ruleIndexMap[$v->code] ?? 0,
                     'level' => $this->ruleCollector->mapLevel($v->severity),
-                    'message' => ['text' => $v->message . $this->formatBreachSuffix($v)],
+                    'message' => ['text' => PublishedFinding::annotatedMessage($v)],
                     'partialFingerprints' => [
                         'primaryLocationLineHash' => $v->getFingerprint(),
                     ],
@@ -133,6 +179,7 @@ final class SarifFormatter implements FormatterInterface
                                 'artifactLocation' => $this->buildArtifactLocation(
                                     $context->relativizePath($v->location->file),
                                     $context->basePath !== '',
+                                    $repairs,
                                 ),
                                 'region' => [
                                     'startLine' => $v->location->line ?? 1,
@@ -145,20 +192,10 @@ final class SarifFormatter implements FormatterInterface
 
                 if ($v->relatedLocations !== []) {
                     $result['relatedLocations'] = array_values(array_map(
-                        fn(int $index, Location $loc): array => [
-                            'id' => $index,
-                            'physicalLocation' => [
-                                'artifactLocation' => $this->buildArtifactLocation(
-                                    $context->relativizePath($loc->file),
-                                    $context->basePath !== '',
-                                ),
-                                'region' => [
-                                    'startLine' => $loc->line ?? 1,
-                                    'startColumn' => 1,
-                                ],
-                            ],
-                            'message' => ['text' => 'Related location'],
-                        ],
+                        // Not an arrow function: it would capture the repair count by value and lose this location's repairs.
+                        function (int $index, Location $loc) use ($context, &$repairs): array {
+                            return $this->buildRelatedLocation($index, $loc, $context, $repairs);
+                        },
                         array_keys($v->relatedLocations),
                         $v->relatedLocations,
                     ));
@@ -171,13 +208,32 @@ final class SarifFormatter implements FormatterInterface
     }
 
     /**
-     * " (accepted at 25, now 31)" on a measured breach, '' otherwise (ADR 0017).
+     * A related location without a file keeps its id and message and carries
+     * no physical location: `"uri": ""` would point at the base itself.
+     *
+     * @return array<string, mixed>
      */
-    private function formatBreachSuffix(Finding $finding): string
+    private function buildRelatedLocation(int $index, Location $loc, FormatterContext $context, int &$repairs): array
     {
-        $breach = AcceptedLevelNarrator::describe($finding);
+        if ($loc->file === null) {
+            return ['id' => $index, 'message' => ['text' => 'Related location']];
+        }
 
-        return $breach === null ? '' : \sprintf(' (%s)', $breach);
+        return [
+            'id' => $index,
+            'physicalLocation' => [
+                'artifactLocation' => $this->buildArtifactLocation(
+                    $context->relativizePath($loc->file),
+                    $context->basePath !== '',
+                    $repairs,
+                ),
+                'region' => [
+                    'startLine' => $loc->line ?? 1,
+                    'startColumn' => 1,
+                ],
+            ],
+            'message' => ['text' => 'Related location'],
+        ];
     }
 
     /**
@@ -188,9 +244,12 @@ final class SarifFormatter implements FormatterInterface
      *
      * @return array<string, string>
      */
-    private function buildArtifactLocation(string $uri, bool $hasBasePath): array
+    private function buildArtifactLocation(string $relativePath, bool $hasBasePath, int &$repairs): array
     {
-        $location = ['uri' => $uri];
+        // A URI reference, encoded segment by segment like the base it is
+        // resolved against: a raw `#` would end it, a raw `%` would be read as
+        // an escape.
+        $location = ['uri' => self::encodeSegments($relativePath, $repairs)];
 
         if ($hasBasePath) {
             $location['uriBaseId'] = '%SRCROOT%';
@@ -200,19 +259,28 @@ final class SarifFormatter implements FormatterInterface
     }
 
     /**
+     * Percent-encodes each segment of a path. The repair comes first:
+     * `rawurlencode()` turns an invalid byte into a valid `%FF`, which the
+     * document encoder would then publish without the repair's mark.
+     */
+    private static function encodeSegments(string $path, int &$repairs): string
+    {
+        return implode('/', array_map('rawurlencode', explode('/', PublishedUtf8::repair($path, $repairs))));
+    }
+
+    /**
      * Converts an absolute filesystem path to a file:/// URI (RFC 8089).
      *
      * Path separator handling is POSIX-only per ADR 0015; Windows paths must
      * already be POSIX-normalized at the boundary that produced $context->basePath.
      */
-    private static function pathToFileUri(string $path): string
+    private static function pathToFileUri(string $path, int &$repairs): string
     {
         // Ensure trailing slash
         $path = rtrim($path, '/') . '/';
 
         // Percent-encode path segments per RFC 3986 (handles spaces, #, % etc.)
-        $segments = explode('/', $path);
-        $encoded = implode('/', array_map('rawurlencode', $segments));
+        $encoded = self::encodeSegments($path, $repairs);
 
         // Restore Windows drive letter colon (e.g., don't encode C:)
         if (preg_match('/^([A-Za-z])%3A/', $encoded, $m) === 1) {

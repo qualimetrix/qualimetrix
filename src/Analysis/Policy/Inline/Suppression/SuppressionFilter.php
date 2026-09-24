@@ -28,7 +28,7 @@ final class SuppressionFilter implements FindingFilterInterface, AnnotationSuppr
     private array $suppressions = [];
 
     /**
-     * @var array<string, list<Suppression>> exact subject canonical => symbol controls
+     * @var array<string, array<string, list<Suppression>>> exact subject canonical => file => symbol controls
      */
     private array $symbolSuppressionsBySubject = [];
 
@@ -38,9 +38,15 @@ final class SuppressionFilter implements FindingFilterInterface, AnnotationSuppr
      */
     public function apply(array $findings, array $suppressions): AnnotationSuppressionResult
     {
+        // Loads every file first and indexes once. Routing each file through
+        // `setSuppressions()` cost one index rebuild per file, which is
+        // quadratic in the number of annotated files and lands in the phase
+        // this pipeline declares sequential and cheap: measured at 0.6s for a
+        // thousand annotated files and 9.1s for four thousand.
         $this->clearSuppressions();
         foreach ($suppressions as $file => $fileSuppressions) {
-            $this->setSuppressions($file, $fileSuppressions);
+            $this->suppressions[$file] = $fileSuppressions;
+            $this->indexSymbolControls($file, $fileSuppressions);
         }
 
         $retained = [];
@@ -59,12 +65,17 @@ final class SuppressionFilter implements FindingFilterInterface, AnnotationSuppr
     /**
      * Sets suppressions for a file (replaces any existing).
      *
+     * Only this file's entries move: the index is keyed by subject **and** by
+     * the file the directive was written in, so replacing one file's controls
+     * neither reads nor rewrites another's.
+     *
      * @param list<Suppression> $suppressions
      */
     public function setSuppressions(string $file, array $suppressions): void
     {
+        $this->forgetSymbolControls($file);
         $this->suppressions[$file] = $suppressions;
-        $this->rebuildSymbolSuppressionsBySubject();
+        $this->indexSymbolControls($file, $suppressions);
     }
 
     /**
@@ -75,9 +86,11 @@ final class SuppressionFilter implements FindingFilterInterface, AnnotationSuppr
     {
         $file = $finding->location->pathString();
 
-        foreach ($this->symbolSuppressionsBySubject[$finding->subject->toCanonical()] ?? [] as $suppression) {
-            if (self::applies($file, $suppression, $finding)) {
-                return false;
+        foreach ($this->symbolSuppressionsBySubject[$finding->subject->toCanonical()] ?? [] as $authoredIn) {
+            foreach ($authoredIn as $suppression) {
+                if (self::applies($file, $suppression, $finding)) {
+                    return false;
+                }
             }
         }
 
@@ -98,6 +111,15 @@ final class SuppressionFilter implements FindingFilterInterface, AnnotationSuppr
      * answers "is this finding suppressed by anything". Both go through
      * {@see applies()}, so the two questions cannot drift into disagreeing
      * about what a directive covers.
+     *
+     * A third reader asks a narrower question elsewhere —
+     * `Reporting\FindingProjection\DirectiveSuppressorResolver` names the
+     * line of the directive that silenced an already-suppressed finding — and
+     * it reproduces the placement half of {@see applies()} rather than calling
+     * it, because Reporting holds these values as `mixed`. What it leaves out
+     * is the channel ban, and the set it is asked about is this filter's own
+     * output: a banned channel never reaches it, because the ban is what kept
+     * the finding out of that set.
      *
      * @param string $file the file the directive was authored in — the key
      *                     the caller holds it under
@@ -124,6 +146,10 @@ final class SuppressionFilter implements FindingFilterInterface, AnnotationSuppr
      * they were written in, and the next-line form additionally to the line
      * after it.
      *
+     * A directive the extractor refused reaches this method like any other —
+     * the report and the filter read one list — and is stopped by the selector
+     * question below, which it answers `false` to for every channel.
+     *
      * {@see DirectiveChannelBan} is asked first and about the finding alone:
      * no directive silences a banned channel, the form that names it having
      * been refused where it was written and the form that names nothing having
@@ -145,8 +171,7 @@ final class SuppressionFilter implements FindingFilterInterface, AnnotationSuppr
         }
 
         if ($suppression->type === SuppressionType::Symbol) {
-            return $suppression->subject !== null
-                && $suppression->subject->toCanonical() === $finding->subject->toCanonical();
+            return $suppression->binding?->subject->toCanonical() === $finding->subject->toCanonical();
         }
 
         if ($finding->location->pathString() !== $file) {
@@ -187,17 +212,34 @@ final class SuppressionFilter implements FindingFilterInterface, AnnotationSuppr
         ));
     }
 
-    private function rebuildSymbolSuppressionsBySubject(): void
+    /** @param list<Suppression> $suppressions */
+    private function indexSymbolControls(string $file, array $suppressions): void
     {
-        $this->symbolSuppressionsBySubject = [];
+        foreach ($suppressions as $suppression) {
+            $binding = $suppression->binding;
 
-        foreach ($this->suppressions as $suppressions) {
-            foreach ($suppressions as $suppression) {
-                if ($suppression->type !== SuppressionType::Symbol || $suppression->subject === null) {
-                    continue;
-                }
+            if ($suppression->type !== SuppressionType::Symbol || $binding === null) {
+                continue;
+            }
 
-                $this->symbolSuppressionsBySubject[$suppression->subject->toCanonical()][] = $suppression;
+            $this->symbolSuppressionsBySubject[$binding->subject->toCanonical()][$file][] = $suppression;
+        }
+    }
+
+    private function forgetSymbolControls(string $file): void
+    {
+        foreach ($this->suppressions[$file] ?? [] as $suppression) {
+            $binding = $suppression->binding;
+
+            if ($binding === null) {
+                continue;
+            }
+
+            $subject = $binding->subject->toCanonical();
+            unset($this->symbolSuppressionsBySubject[$subject][$file]);
+
+            if (($this->symbolSuppressionsBySubject[$subject] ?? []) === []) {
+                unset($this->symbolSuppressionsBySubject[$subject]);
             }
         }
     }

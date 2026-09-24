@@ -155,6 +155,48 @@ final class CheckCommandPathInputTest extends TestCase
         self::assertStringContainsString('does not exist', $tester->getErrorOutput());
     }
 
+    #[Test]
+    public function itRefusesANamedRootThatIsAVendorDirectoryBeforeAnyReport(): void
+    {
+        mkdir($this->tempDir . '/lib/vendor', 0777, true);
+        file_put_contents($this->tempDir . '/lib/vendor/Hidden.php', '<?php class Hidden {}');
+        chdir($this->tempDir);
+
+        $tester = $this->createCommandTester();
+        $tester->execute([
+            'paths' => ['lib/vendor'],
+            '--format' => 'json',
+            '--no-progress' => true,
+        ], ['capture_stderr_separately' => true]);
+
+        self::assertSame(3, $tester->getStatusCode());
+        // The refusal envelope is the only stdout document: no report was started.
+        $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($envelope);
+        self::assertSame(['error', 'exit_code', 'position'], array_keys($envelope));
+        self::assertIsString($envelope['error']);
+        self::assertStringContainsString('"lib/vendor" is a vendor, node_modules or .git directory', $envelope['error']);
+    }
+
+    #[Test]
+    public function itAnalysesANamedRootThatContainsAVendorDirectory(): void
+    {
+        mkdir($this->tempDir . '/src/vendor', 0777, true);
+        file_put_contents($this->tempDir . '/src/vendor/Hidden.php', '<?php class Hidden {}');
+        chdir($this->tempDir);
+
+        $tester = $this->createCommandTester();
+        $tester->execute([
+            'paths' => ['src'],
+            '--format' => 'text',
+            '--no-progress' => true,
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
+        ]);
+
+        self::assertSame(0, $tester->getStatusCode());
+        self::assertStringContainsString('1 file', $tester->getDisplay());
+    }
+
     private function createCommandTester(): CommandTester
     {
         $container = (new ContainerFactory())->create();

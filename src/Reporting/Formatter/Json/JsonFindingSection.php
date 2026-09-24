@@ -6,6 +6,7 @@ namespace Qualimetrix\Reporting\Formatter\Json;
 
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Reporting\Formatter\PublishedFinding;
 use Qualimetrix\Reporting\FormatterContext;
 
 final class JsonFindingSection
@@ -82,7 +83,7 @@ final class JsonFindingSection
             'symbol' => $finding->symbolPath->toString(),
             'channel' => $finding->channel()->code,
             'occurrence' => $finding->occurrenceKey?->value,
-            'edge' => self::formatEdge($finding),
+            'edge' => PublishedFinding::edge($finding),
             'namespace' => $ns !== '' ? $ns : null,
             'rule' => $finding->ruleName,
             'code' => $finding->code,
@@ -122,31 +123,11 @@ final class JsonFindingSection
     }
 
     /**
-     * @return ?array{target: string, type?: string}
-     */
-    private static function formatEdge(Finding $finding): ?array
-    {
-        if ($finding->dependencyTarget === null) {
-            return null;
-        }
-
-        $target = $finding->dependencyTarget->toCanonical();
-        if ($finding->dependencyType === null) {
-            return ['target' => $target];
-        }
-
-        return [
-            'type' => $finding->dependencyType->value,
-            'target' => $target,
-        ];
-    }
-
-    /**
      * @return array{string, string, string, int, string, string}
      */
     private static function identitySortKey(Finding $finding): array
     {
-        $edge = self::formatEdge($finding);
+        $edge = PublishedFinding::edge($finding);
 
         return [
             $finding->channel()->code,

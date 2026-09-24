@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Reporting\Unit\Formatter\Json;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -27,6 +28,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
+use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\Formatter\Json\JsonFindingSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonFormatter;
 use Qualimetrix\Reporting\Formatter\Json\JsonHealthSection;
@@ -221,6 +223,39 @@ final class JsonFormatterTest extends TestCase
 
         // message field always uses the raw finding message
         self::assertSame('Technical message only', $data['violations'][0]['message']);
+    }
+
+    /**
+     * One key, one field, within the document: `message` is the finding's
+     * message in both sections, and the recommendation has a key of its own.
+     */
+    #[Test]
+    public function itGivesMessageOneMeaningAcrossTheViolationsAndTopIssuesSections(): void
+    {
+        $finding = self::finding(
+            location: new Location(RelativePath::fromString('src/Foo.php'), 10),
+            symbolPath: SymbolPath::forClass('App', 'Foo'),
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
+            message: 'Cyclomatic complexity is 79, exceeds threshold of 20.',
+            severity: Severity::Error,
+            recommendation: 'Cyclomatic complexity: 79 (threshold: 20) - too many code paths',
+        );
+        $report = new Report(
+            findings: [$finding],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0.1,
+            errorCount: 1,
+            warningCount: 0,
+            topIssues: [new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($finding, 10.0, null, 30, 3)],
+        );
+
+        $data = json_decode($this->formatter->format($report, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame($data['violations'][0]['message'], $data['topIssues'][0]['message']);
+        self::assertSame('Cyclomatic complexity is 79, exceeds threshold of 20.', $data['topIssues'][0]['message']);
+        self::assertSame($finding->recommendation, $data['topIssues'][0]['recommendation']);
     }
 
     #[Test]
@@ -538,8 +573,10 @@ final class JsonFormatterTest extends TestCase
     public function itFiltersFindingsByNamespace(): void
     {
         // Findings are pre-filtered by ResultPresenter before reaching the formatter.
-        // Only in-scope findings are passed to the report builder.
+        // Only in-scope findings are passed to the report builder, beside the
+        // count of what the selection left out.
         $report = ReportBuilder::create()
+            ->outOfScope(new OutOfScopeFindings(0, 0, 0))
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Payment/Pay.php'), 10),
                 symbolPath: SymbolPath::forClass('App\Payment', 'PayService'),
@@ -578,6 +615,85 @@ final class JsonFormatterTest extends TestCase
         self::assertSame(3, $data['summary']['filesAnalyzed']);
         // techDebtMinutes recalculated for filtered findings (2 × 15min default)
         self::assertSame(30, $data['summary']['techDebtMinutes']);
+    }
+
+    /**
+     * The section keeps its shape under a drill-down: the numerator of
+     * `debtPer1kLoc` would be the selection's and its denominator the
+     * project's, so the key says "not applicable" by value.
+     *
+     * "Under a drill-down" is the report's own `outOfScope`, the one fact
+     * that also decides the `outOfScope` key — not the context's selector,
+     * which a second copy of the predicate would read and could disagree on.
+     */
+    #[Test]
+    public function itKeepsTheSummaryShapeUnderADrillDown(): void
+    {
+        $plain = new Report(
+            findings: [],
+            filesAnalyzed: 3,
+            filesSkipped: 0,
+            duration: 0.1,
+            errorCount: 0,
+            warningCount: 0,
+            debtPer1kLoc: 5.4,
+        );
+        $selected = new Report(
+            findings: [],
+            filesAnalyzed: 3,
+            filesSkipped: 0,
+            duration: 0.1,
+            errorCount: 0,
+            warningCount: 0,
+            debtPer1kLoc: 5.4,
+            outOfScope: new OutOfScopeFindings(1, 0, 0),
+        );
+
+        $plainData = json_decode($this->formatter->format($plain, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
+        $scopedData = json_decode($this->formatter->format($selected, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame(array_keys($plainData['summary']), array_keys($scopedData['summary']));
+        self::assertSame(5.4, $plainData['summary']['debtPer1kLoc']);
+        self::assertNull($plainData['outOfScope']);
+        self::assertNull($scopedData['summary']['debtPer1kLoc']);
+        self::assertSame(1, $scopedData['outOfScope']['errorCount']);
+    }
+
+    #[Test]
+    public function itCutsTheViolationListAfterItsIdentityOrder(): void
+    {
+        $report = ReportBuilder::create()
+            ->addFinding(self::finding(
+                location: new Location(RelativePath::fromString('src/A.php'), 1),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
+                message: 'produced first, ordered last',
+                severity: Severity::Error,
+            ))
+            ->addFinding(self::finding(
+                location: new Location(RelativePath::fromString('src/B.php'), 1),
+                symbolPath: SymbolPath::forClass('App', 'B'),
+                ruleName: 'cohesion.lcom',
+                code: 'cohesion.lcom',
+                message: 'produced last, ordered first',
+                severity: Severity::Warning,
+            ))
+            ->filesAnalyzed(2)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $data = json_decode(
+            $this->formatter->format($report, new FormatterContext(options: ['violations' => '1'])),
+            true,
+            512,
+            \JSON_THROW_ON_ERROR,
+        );
+
+        self::assertCount(1, $data['violations']);
+        self::assertSame('produced last, ordered first', $data['violations'][0]['message']);
+        self::assertTrue($data['violationsMeta']['truncated']);
     }
 
     #[Test]
@@ -958,7 +1074,7 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itFallsBackToDefaultForInvalidViolationsOption(): void
+    public function itRejectsAnInvalidViolationsOptionThatBypassedTheCommandLine(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -978,11 +1094,13 @@ final class JsonFormatterTest extends TestCase
 
         $report = $builder->build();
         $context = new FormatterContext(options: ['violations' => 'invalid']);
-        $output = $this->formatter->format($report, $context);
-        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
-        // Invalid value falls back to default (no limit)
-        self::assertCount(55, $data['violations']);
+        // The command line refuses this value before any formatter runs; one
+        // that bypassed that door is a wiring defect, not "no limit".
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('--format-opt violations=invalid reached a formatter unparsed');
+
+        $this->formatter->format($report, $context);
     }
 
     #[Test]
@@ -1309,34 +1427,24 @@ final class JsonFormatterTest extends TestCase
         self::assertFalse($data['violationsMeta']['truncated']);
     }
 
+    /**
+     * `violations` and `limit` set one value, and the command line refuses
+     * the pair; a formatter that still receives both is wired wrong, and
+     * picking one would drop the other in silence.
+     */
     #[Test]
-    public function itPrioritizesFormatOptViolationsOverLimit(): void
+    public function itRefusesToPickBetweenViolationsAndLimit(): void
     {
-        $builder = ReportBuilder::create()
+        $report = ReportBuilder::create()
             ->filesAnalyzed(1)
             ->filesSkipped(0)
-            ->duration(0.1);
+            ->duration(0.1)
+            ->build();
 
-        for ($i = 0; $i < 20; $i++) {
-            $builder->addFinding(self::finding(
-                location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
-                symbolPath: SymbolPath::forClass('App', 'A'),
-                ruleName: 'test',
-                code: 'test',
-                message: "Violation {$i}",
-                severity: Severity::Warning,
-            ));
-        }
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('violations and limit reached the formatter together');
 
-        $report = $builder->build();
-
-        // When both are set, findings takes precedence
-        $context = new FormatterContext(options: ['violations' => '3', 'limit' => '10']);
-        $output = $this->formatter->format($report, $context);
-        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
-
-        self::assertCount(3, $data['violations']);
-        self::assertSame(3, $data['violationsMeta']['shown']);
+        $this->formatter->format($report, new FormatterContext(options: ['violations' => '3', 'limit' => '10']));
     }
 
     #[Test]

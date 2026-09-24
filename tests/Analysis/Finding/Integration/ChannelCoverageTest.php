@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Coupling\ClassRankOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\ParamTypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageOptions;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
@@ -188,8 +189,16 @@ final class ChannelCoverageTest extends TestCase
             ),
         ];
 
-        $analysis = new CircularDependencyAnalysis(new CircularDependencyDetector());
-        $analysis->replace($cycles);
+        $analysis = new CircularDependencyAnalysis(new class ($cycles) extends CircularDependencyDetector {
+            /** @param list<Cycle> $cycles */
+            public function __construct(private readonly array $cycles) {}
+
+            public function detect(DependencyGraphInterface $graph): array
+            {
+                return $this->cycles;
+            }
+        });
+        $analysis->prepare(self::createStub(DependencyGraphInterface::class));
         $rule = new CircularDependencyRule(new CircularDependencyOptions(), $analysis);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
@@ -209,7 +218,8 @@ final class ChannelCoverageTest extends TestCase
         $classInfo = self::classInfo('CriticalHub', RelativePath::fromString('src/CriticalHub.php'));
         // With one class, computeScaleFactor(1) = sqrt(1/100) = 0.1, so the
         // default error threshold (0.05) scales to 0.5 — 0.9 clears it.
-        $metricBag = (new MetricBag())->with('coupling.class-rank', 0.9);
+        // A class nothing depends on is never reported, whatever its rank.
+        $metricBag = (new MetricBag())->with('coupling.class-rank', 0.9)->with('coupling.ca', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
@@ -266,9 +276,11 @@ final class ChannelCoverageTest extends TestCase
         $context = new AnalysisContext($repository);
 
         $findings = $rule->analyze($context);
-        self::assertCount(1, $findings);
+        self::assertCount(2, $findings, 'one finding on each copy');
 
-        self::assertDeclared($findings[0]->channel());
+        foreach ($findings as $finding) {
+            self::assertDeclared($finding->channel());
+        }
     }
 
     #[Test]

@@ -3,8 +3,8 @@
 ## Overview
 
 The Baseline policy owns versioned snapshots of accepted findings, their
-fail-safe application as ceilings, and the generate, update, cleanup, migrate,
-and explain operations. Inline source controls are a separate peer policy under
+fail-safe application as ceilings, and the generate, update, cleanup,
+rename-channels and explain operations. Inline source controls are a separate peer policy under
 `Analysis/Policy/Inline`; this capability consumes their Finding-owned contract
 values only where an effective boundary must be explained.
 
@@ -13,7 +13,7 @@ values only where an effective boundary must be explained.
 ```
 Baseline/
 ├── Baseline.php                 # VO: a loaded/captured file (generated, scope, entries, inert entries)
-├── BaselineFormatVersion.php    # The current file format's version number, read by the loader, writer, and the v5/carry paths that never build a Baseline
+├── BaselineFormatVersion.php    # The current file format's version number, read by the loader, the writer, and the carry that never builds a Baseline
 ├── BaselineIdentity.php         # VO: what an entry is about — symbol + channel + dependency edge
 ├── BaselineEdge.php             # VO: the dependency edge half of an identity
 ├── BaselineEntry.php            # VO: one accepted group (identity, magnitudes, count, mode)
@@ -33,10 +33,11 @@ Baseline/
 ├── CanonicalBaselineReader.php  # Reads the canonical one-entry-per-line layout without decoding the whole document, or declines so the loader decodes it
 ├── BaselineWriter.php           # Turns a Baseline into the document's fields, and refuses two entries of one identity
 ├── BaselineDocumentLayout.php   # How a baseline document is spelled: one entry per line, float representation pinned
-├── BaselineDocumentWriter.php   # How a baseline file is replaced: sibling lock, compare-and-swap, atomic rename
+├── BaselineDocumentWriter.php   # How a baseline file is replaced: sibling lock, compare-and-swap, atomic rename, the snapshot a forced replacement compares; an unusable path throws ConfigurationRefusal
 ├── BaselineEntryOrder.php       # Where an entry sorts among its siblings, computed identically by the writer and the carry
 ├── BaselineEntryPayload.php     # One entry line as the file spells it: the identity and ordering the document alone decides, built from the real types
 ├── RunScope.php                 # VO: a run's analysed paths in the portable form the file records, plus the coverage predicate the scope guard reads
+├── RunRuleCoverage.php          # The rule axis beside RunScope: which entries' channel, at the level of their subject, this invocation did not publish
 │
 ├── BaselineUpdater.php          # `baseline:update`: direction-aware monotonic tightening
 ├── BaselineUpdateResult.php     # VO: the updated baseline, one outcome per entry, and whether anything actually changed
@@ -46,7 +47,7 @@ Baseline/
 │
 ├── BaselineCleaner.php          # `baseline:cleanup`: candidate enumeration and selector removal
 ├── BaselineCleanupCandidate.php # VO: one removal candidate — selector, description, reason
-├── BaselineCleanupReason.php    # Enum: stale / channel no longer declared / inert
+├── BaselineCleanupReason.php    # Enum: stale / producer did not run / channel no longer declared / configuration-error channel / inert
 ├── BaselineCleanupRemoval.php   # VO: what one `--remove` run did — removed/not-found/ambiguous
 │
 ├── BaselineChannelRenamer.php   # `baseline:rename-channels`: carries a raw document onto renamed channels, analysing nothing
@@ -54,20 +55,11 @@ Baseline/
 ├── ChannelRenameReport.php      # VO: what a carry did — entries moved, idle rows, lines this build cannot read
 ├── ChannelRenameRefusal.php     # A carry the product understood and declined; the file is left byte-identical
 │
-├── BaselineMigrator.php         # Historical continuity report logic for a fresh capture against v5 records; not a v12 conversion route
-├── BaselineMigratorResult.php   # VO: the migrated baseline plus its MigrationReport
-├── MigrationReport.php          # VO: carried/dropped/fresh pair counts, dropped entries and unreadable v5 rows enumerated in full
-├── MigrationReportDroppedEntry.php # VO: one v5 (symbolKey, rule) pair the fresh capture no longer backs
-├── V5Baseline.php               # VO: a parsed version 5 snapshot — read-only, never applied; holds what parsed, what did not, and its source-byte hash
-├── V5UnreadableRecord.php       # VO: one v5 row that did not parse — the symbol it was listed under and what failed
-├── V5Entry.php                  # VO: one v5 record — symbol, rule, and the opaque hash v5 stored instead of a magnitude
-├── V5BaselineReader.php         # Reads a v5 `violations` snapshot (or checks it is one, for --force's guard) with its source-byte hash; BaselineLoader refuses version 5 outright
-│
 ├── BoundaryExplanationService.php # `baseline:explain`: builds a BoundaryExplanation from the baseline, qmx.yaml-configured thresholds, and @qmx-threshold annotations
 ├── ExplainedSubject.php         # What the run knows about the explained symbol: its relevant identities, its typed repository index, its exact subject
 ├── EffectiveBoundary.php        # VO: one identity's boundary — baseline source, configured threshold, annotation, each independently nullable
-├── EffectiveBoundaryBaselineSource.php # VO: the baseline half of an EffectiveBoundary — the accepted level plus what the measured set currently compares against it
-├── BoundaryExplanation.php      # VO: every boundary bearing on one symbol — what the command prints
+├── EffectiveBoundaryBaselineSource.php # VO: the baseline half of an EffectiveBoundary — the entry's state (inert, mode, unmeasurable members), the accepted level, and what the measured set currently compares against it
+├── BoundaryExplanation.php      # VO: every boundary bearing on one symbol, plus the subject's lines whose identity could not be read — what the command prints
 ├── BoundaryExplanationStatus.php # Current, baseline-only, or unknown symbol classification
 │
 ├── Filter/
@@ -160,11 +152,11 @@ bad as `t` is no greater than the number of stored members at least as bad as `t
 `>=` on a `higher` channel, `<=` on a `lower` one. On an `occurrence` channel there are
 no magnitudes and one level: the group holds no more members than `count`.
 
-Counting rather than pairing is what makes a repair safe. With `[40, 100]` stored and
-the 40-line duplicate deleted, a rank comparison from the best end would measure the
-surviving `100` against the vacated `40` and fail the build on code nobody touched. The
-price of counting is recorded rather than hidden: a survivor may grow into a slot a
-repair vacated, bounded above by the worst magnitude already accepted.
+Counting rather than pairing is what makes a repair safe. With `[40, 100]` stored for a
+group of two and the member at `40` repaired, a rank comparison from the best end would
+measure the surviving `100` against the vacated `40` and fail the build on code nobody
+touched. The price of counting is recorded rather than hidden: a survivor may grow into a
+slot a repair vacated, bounded above by the worst magnitude already accepted.
 
 **The shape decides, not the value.** A `marker` channel emits a fixed `1.0` and
 `coupling.class-rank` emits a real PageRank score; both are declared `occurrence`, and
@@ -306,15 +298,27 @@ every later narrow run would cover it and the guard would never fire again.
 
 ### `BaselineCleaner` — candidate enumeration and selector removal
 
-`BaselineCleaner::candidates(Baseline $baseline, list<Finding> $measured, ChannelDeclarationRegistryInterface $declarations): list<BaselineCleanupCandidate>`
+`BaselineCleaner::candidates(Baseline $baseline, list<Finding> $measured, ChannelDeclarationRegistryInterface $declarations, array<string, true> $unmeasuredIdentities): list<BaselineCleanupCandidate>`
 lists every entry `cleanup` would offer to remove — **and changes nothing**.
 A valid entry is offered for `Stale` (absent from the measured set, via
-`Baseline::staleEntries()`), `ChannelNotDeclared`, or
-`ChannelIsConfigurationError`; an entry whose channel is no longer declared
-is reported under the second even when it is also stale, since a channel
-nothing declares can never produce a measured finding and the more permanent
-cause is the more useful answer. The third holds even while the finding is
-still being measured: a channel whose declaration answers
+`Baseline::staleEntries()`), `ProducerDidNotRun`, `ChannelNotDeclared`, or
+`ChannelIsConfigurationError`. `ProducerDidNotRun` is the absent entry whose
+channel this invocation did not publish at the level of the entry's subject —
+`--only-rule`, `--disable-rule` (a level-narrowed `X:namespace` included),
+`enabled: false`, or a level switched off in the rule's options — as answered
+by `RunRuleCoverage`, the rule axis beside `RunScope`'s path axis: such an
+entry is absent because nothing looked, and "nothing reported" would state a
+measurement that was not made. The level is read off the entry's subject key
+by `MetricSubject::levelOfCanonical()`, and the question is put to
+`RuleExecutionInterface::publishesAt()`, which asks both the selection and the
+rule's own level configuration. A subject key no subject is written as is
+refused at load as a malformed, inert entry.
+
+An entry whose channel is no longer declared is reported as
+`ChannelNotDeclared` even when it is also stale, since a channel nothing
+declares can never produce a measured finding and the more permanent cause is
+the more useful answer. `ChannelIsConfigurationError` holds even while the
+finding is still being measured: a channel whose declaration answers
 `isConfigurationError()` may never be accepted by any
 entry, so the entry can only be removed. Every
 `InertBaselineEntry` is offered too, under `Inert`, carrying its own
@@ -334,22 +338,10 @@ uniqueness). A selector addresses the *complete* identity including the
 dependency edge, so it can remove one of two entries differing only by edge
 without touching the other.
 
-### Historical migration report types
+## Explaining a Boundary
 
-The retained v5 reader and migration report VOs describe historical continuity
-data only. They are not a conversion route into version 13: neither a v5 nor a
-v10 logical symbol key can infer the exact declaration subject now required.
-Version 11 construction therefore starts from a fresh analysis and an explicit,
-reviewed map or split of every acceptance.
-
-A v5 row that never parsed into a record belongs to none of those groups, and
-`V5BaselineReader` **collects rather than skips** it: `read()` returns it in
-`V5Baseline::$unreadable`, and `BaselineMigrator` carries it into
-`MigrationReport::$unreadableV5Records` so historical inspection can name it;
-it does not make the record applicable to the current schema.
-
-`BoundaryExplanationService` is unrelated to migration but shares this
-package's "read-only against the measured set" shape: `baseline:explain`
+`BoundaryExplanationService` shares this package's "read-only against the
+measured set" shape: `baseline:explain`
 gives it the loaded baseline, the run's findings, and configuration read
 by its own command (thresholds, annotations), and it answers with one
 `EffectiveBoundary` per relevant identity — never touching a file itself.
@@ -373,6 +365,33 @@ repository then supplies the exact declaration/callable subject when needed;
 logical and aggregate projections may prove that a subject is current but do
 not invent a declaration subject. Without either exact source, annotation is
 reported absent rather than guessed.
+
+**The baseline source carries the entry's state, not only its numbers.** A
+pair of numbers alone reads as a verdict, and three states make the ceiling
+reach a different one, so each is carried as the fact the ceiling reads
+rather than left for the reader to infer from an absence:
+
+- an entry the loader turned inert but whose identity it read is a boundary
+  source of its own (`EffectiveBoundaryBaselineSource::$inert`), printed as
+  present but not applied, with the reason `check` names — never as "(none)".
+  A line whose identity could not be read at all has no boundary and is listed
+  beside them (`BoundaryExplanation::$unidentifiedEntries`);
+- `mode: suppress` travels with the level, because it waives the comparison
+  the pair of numbers invites;
+- a magnitude group member with no finite value is counted
+  (`$membersWithoutMagnitude`) rather than dropped, because the ceiling reports
+  such a group instead of comparing it. The members that do measure are still
+  listed — this is a report, not a re-judgement of acceptance.
+
+**An identity with an occurrence names it, and where its findings sit now.**
+Several identities of one channel and subject can differ only in an
+occurrence hash — every copy of a duplicate block is one under the project
+subject — and their sections would otherwise read the same.
+`EffectiveBoundary::$currentLocations` carries the `file:line` of each current
+finding in the identity's group, and `baseline:explain` prints it beside the
+occurrence. An entry nothing reports any more has no current location: its
+occurrence hash is all the baseline stores, so `baseline:explain`,
+`baseline:cleanup` and the stale-entry list can name no file for it.
 
 ## Entry Identity
 
@@ -414,8 +433,8 @@ owns.
     "declaration:callable:App\\OrderService::calculate@src/OrderService.php": [
       {"channel":"complexity.ccn","occurrence":"bd41b8a3f6cad9e1","magnitudes":[25]}
     ],
-    "file:src/Legacy/dup.php": [
-      {"channel":"duplication.clone","magnitudes":[40,100]}
+    "declaration:class:App\\Widget@src/Widget.php": [
+      {"channel":"code-smell.unused-private","magnitudes":[3,3,3]}
     ],
     "class:App\\Web\\Controller": [
       {"channel":"architecture.layer-violation","edge":{"target":"class:App\\Db\\Connection","type":"new"},"count":1}
@@ -541,10 +560,21 @@ check. The provenance is a property of the guard, never a field of the file.
 `write()` returns the token for the bytes it wrote, and
 `Baseline::withSourceContentHash()` carries it back — without which a caller writing one
 instance twice would be refused by its own first write.
+A caller that replaces a file it never loaded — `baseline:generate --force` — takes the
+token from `BaselineWriter::destinationSnapshot()` before the analysis; a destination
+that is not a regular file (a directory, a symbolic link) or cannot be read has no token
+the guard could compare, and is refused there as input rather than after the run.
 
 The wait for the lock is bounded (10 seconds by default): a crashed writer releases
 through the OS, but a hung one would otherwise stop the next `qmx` invocation with no
 output at all, which in CI reads as a job timeout rather than a baseline problem.
+
+A path that cannot be written — a directory that cannot be created, a lock file that
+cannot be opened, a temporary file that cannot be written, a target the rename cannot
+replace — is refused as the baseline file with `ConfigurationRefusal` (exit code 3),
+quoting the reason the system gave. The filesystem call's own PHP warning is kept out of
+the output. A lock held past the wait stays a `RuntimeException`: it is contention, not
+input.
 
 **Every entry read is an entry written.** The writer never groups entries under a key two
 of them can share, because resolving such a clash by overwriting would delete a line

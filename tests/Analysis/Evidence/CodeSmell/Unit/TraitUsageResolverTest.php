@@ -118,7 +118,7 @@ PHP;
         $resolver->resolve($classStmts, $data);
 
         // deepHelper is called from TraitB, which is used by TraitA
-        self::assertArrayHasKey('deepHelper', $data->usedMethods);
+        self::assertArrayHasKey('deephelper', $data->usedMethods);
     }
 
     #[Test]
@@ -161,8 +161,8 @@ PHP;
         // Should not stack overflow — cycle detection kicks in
         $resolver->resolve($classStmts, $data);
 
-        self::assertArrayHasKey('helperA', $data->usedMethods);
-        self::assertArrayHasKey('helperB', $data->usedMethods);
+        self::assertArrayHasKey('helpera', $data->usedMethods);
+        self::assertArrayHasKey('helperb', $data->usedMethods);
     }
 
     #[Test]
@@ -199,8 +199,8 @@ PHP;
         $resolver = new TraitUsageResolver($traitDefs, 'App');
         $resolver->resolve($classStmts, $data);
 
-        self::assertArrayHasKey('fromA', $data->usedMethods);
-        self::assertArrayHasKey('fromB', $data->usedMethods);
+        self::assertArrayHasKey('froma', $data->usedMethods);
+        self::assertArrayHasKey('fromb', $data->usedMethods);
     }
 
     #[Test]
@@ -303,10 +303,10 @@ PHP;
         $resolver = new TraitUsageResolver($traitDefs, 'App');
         $resolver->resolve($classStmts, $data);
 
-        self::assertArrayHasKey('fromA', $data->usedMethods);
-        self::assertArrayHasKey('fromB', $data->usedMethods);
-        self::assertArrayHasKey('fromC', $data->usedMethods);
-        self::assertArrayHasKey('staticFromC', $data->usedMethods);
+        self::assertArrayHasKey('froma', $data->usedMethods);
+        self::assertArrayHasKey('fromb', $data->usedMethods);
+        self::assertArrayHasKey('fromc', $data->usedMethods);
+        self::assertArrayHasKey('staticfromc', $data->usedMethods);
     }
 
     #[Test]
@@ -478,7 +478,7 @@ PHP;
         $resolver = new TraitUsageResolver($traitDefs, 'App');
         $resolver->resolve($classStmts, $data);
 
-        self::assertArrayHasKey('staticMethod', $data->usedMethods);
+        self::assertArrayHasKey('staticmethod', $data->usedMethods);
         self::assertArrayHasKey('staticProp', $data->usedProperties);
         self::assertArrayHasKey('MY_CONST', $data->usedConstants);
     }
@@ -583,8 +583,8 @@ PHP;
         $resolver = new TraitUsageResolver($traitDefs, 'App');
         $resolver->resolve($classStmts, $data);
 
-        self::assertArrayHasKey('fromA', $data->usedMethods);
-        self::assertArrayHasKey('fromB', $data->usedMethods);
+        self::assertArrayHasKey('froma', $data->usedMethods);
+        self::assertArrayHasKey('fromb', $data->usedMethods);
     }
 
     /**

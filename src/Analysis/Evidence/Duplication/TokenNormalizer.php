@@ -90,15 +90,18 @@ final class TokenNormalizer
 
         foreach ($rawTokens as $token) {
             if (\is_string($token)) {
-                // Single-character tokens (operators, braces, etc.)
-                // Inherit line number from the last seen token
+                // token_get_all() gives single-character tokens no line; the
+                // line where the previous token ENDS is the one they stand on.
                 $result[] = new NormalizedToken(0, $token, $currentLine);
 
                 continue;
             }
 
             [$type, $value, $line] = $token;
-            $currentLine = $line;
+            // A whitespace token that opens the next line starts on the line
+            // before it; its own start line would put a following `{` or `}`
+            // on that earlier line and shift both block bounds and the hint.
+            $currentLine = $line + substr_count($value, "\n");
 
             if ($type === \T_CLOSE_TAG && $this->tagDataDeclarations) {
                 // Preserve the PHP-block boundary as a barrier token instead

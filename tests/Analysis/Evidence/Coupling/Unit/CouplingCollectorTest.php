@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
@@ -54,15 +55,15 @@ final class CouplingCollectorTest extends TestCase
     #[Test]
     public function itProvidesTheCouplingMetricNames(): void
     {
-        self::assertSame(['coupling.ca', 'coupling.ce', 'coupling.cbo', 'coupling.instability', 'coupling.ce-packages', 'coupling.cbo-app', 'coupling.ce-framework'], $this->collector->provides());
+        self::assertSame(['coupling.ca', 'coupling.ce', 'coupling.cbo', 'coupling.instability', 'coupling.ce-packages', 'coupling.cbo-app', 'coupling.ce-framework', 'coupling.ca-own', 'coupling.ce-own', 'coupling.cbo-own', 'coupling.instability-own'], $this->collector->provides());
     }
 
     #[Test]
-    public function itDeclaresSevenMetricDefinitionsWithTheirAggregationStrategies(): void
+    public function itDeclaresElevenMetricDefinitionsWithTheirAggregationStrategies(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 
-        self::assertCount(7, $definitions);
+        self::assertCount(11, $definitions);
 
         // ca metric
         $ca = $definitions[0];
@@ -145,6 +146,17 @@ final class CouplingCollectorTest extends TestCase
             [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max, AggregationStrategy::Percentile95],
             $cboApp->getStrategiesForLevel(SymbolLevel::Project),
         );
+
+        // the own-scope namespace metrics, which no level aggregates: the pair
+        // exists so a parent namespace can answer for its own declarations as
+        // well as for its subtree, and only distance folds up from there.
+        foreach ([7 => 'coupling.ca-own', 8 => 'coupling.ce-own', 9 => 'coupling.cbo-own', 10 => 'coupling.instability-own'] as $index => $name) {
+            $own = $definitions[$index];
+            self::assertSame($name, $own->name);
+            self::assertSame(SymbolLevel::Namespace_, $own->collectedAt);
+            self::assertSame([], $own->getStrategiesForLevel(SymbolLevel::Namespace_));
+            self::assertSame([], $own->getStrategiesForLevel(SymbolLevel::Project));
+        }
 
         // ce_framework metric
         $ceFramework = $definitions[6];
@@ -551,6 +563,249 @@ final class CouplingCollectorTest extends TestCase
         self::assertSame(1, $bNsMetrics->get('coupling.cbo'));
     }
 
+    /**
+     * A parent namespace's Ca and Ce are taken over its whole subtree, so its
+     * CBO has to be taken over the same region: the namespaces on the far side
+     * of an edge that leaves or enters the subtree. Keyed by the namespace
+     * string alone, the parent matched no edge and published 0 beside a
+     * non-zero Ce, and a class declared in the parent itself counted its own
+     * sub-namespace as external.
+     */
+    #[Test]
+    public function itCountsAParentNamespaceCboOverTheSameSubtreeAsItsCaAndCe(): void
+    {
+        $deps = [
+            $this->dep('App\\A\\X', 'Ext\\Z'),
+            $this->dep('App\\B\\Y', 'Ext2\\Q'),
+            $this->dep('App\\Foo', 'App\\A\\X'),
+            $this->dep('Ext\\P', 'App\\B\\Y'),
+        ];
+
+        $graph = $this->realGraph($deps);
+        $repository = new InMemoryMetricRepository();
+        foreach (['App\\A\\X', 'App\\B\\Y', 'App\\Foo', 'Ext\\P'] as $class) {
+            $this->registerClass($repository, $class);
+        }
+        foreach (['App', 'App\\A', 'App\\B', 'Ext'] as $namespace) {
+            $this->registerNamespace($repository, $namespace);
+        }
+
+        $this->collector->calculate($graph, $repository);
+
+        $app = $repository->get(SymbolPath::forNamespace('App'));
+        self::assertSame(2, $app->get('coupling.ce'));
+        self::assertSame(1, $app->get('coupling.ca'));
+        // Ext (both directions) and Ext2; App\A is inside App, not coupled to it.
+        self::assertSame(2, $app->get('coupling.cbo'));
+
+        // A leaf keeps its own answer: Ext out, and App, where App\Foo lives, in.
+        self::assertSame(2, $repository->get(SymbolPath::forNamespace('App\\A'))->get('coupling.cbo'));
+        // Ext2 out, Ext in: one namespace each way.
+        self::assertSame(2, $repository->get(SymbolPath::forNamespace('App\\B'))->get('coupling.cbo'));
+    }
+
+    /**
+     * Extending a PHP class is how a class names PHP's type, not coupling to
+     * it: the same class written as `implements \Countable` or typed on
+     * `\DateTimeImmutable` counts nothing, so neither may `extends`. Every
+     * coupling number read from the class's edges agrees.
+     */
+    #[Test]
+    public function itCountsNoCouplingForExtendingAPhpClass(): void
+    {
+        $deps = [
+            $this->dep('App\\MyErr', 'RuntimeException', DependencyType::Extends),
+            $this->dep('App\\Rand', 'Random\\RandomException', DependencyType::Extends),
+            $this->dep('App\\Child', 'Vendor\\Base', DependencyType::Extends),
+        ];
+
+        $graph = $this->realGraph($deps);
+        $repository = new InMemoryMetricRepository();
+        foreach (['App\\MyErr', 'App\\Rand', 'App\\Child'] as $class) {
+            $this->registerClass($repository, $class);
+        }
+        $this->registerNamespace($repository, 'App');
+
+        $this->collector->calculate($graph, $repository);
+
+        foreach (['App\\MyErr', 'App\\Rand'] as $class) {
+            $metrics = $repository->get(SymbolPath::fromClassFqn($class));
+            foreach (['coupling.ce', 'coupling.cbo', 'coupling.cbo-app', 'coupling.ce-packages'] as $key) {
+                self::assertSame(0, $metrics->get($key), $class . ' ' . $key);
+            }
+        }
+
+        // The neighbour: extending a vendor class is coupling.
+        $child = $repository->get(SymbolPath::fromClassFqn('App\\Child'));
+        self::assertSame(1, $child->get('coupling.ce'));
+        self::assertSame(1, $child->get('coupling.cbo'));
+
+        $namespace = $repository->get(SymbolPath::forNamespace('App'));
+        self::assertSame(1, $namespace->get('coupling.ce'));
+        self::assertSame(1, $namespace->get('coupling.cbo'));
+    }
+
+    /**
+     * Namespace CBO counts namespaces and Ca/Ce count classes, so the numbers
+     * differ -- but over one region they cannot disagree about whether there
+     * is any coupling at all, nor can CBO exceed the classes it is drawn from.
+     */
+    #[Test]
+    public function itKeepsEveryNamespaceCboWithinTheCouplingItsCaAndCeMeasure(): void
+    {
+        $deps = [
+            $this->dep('App\\A\\X', 'Ext\\Z'),
+            $this->dep('App\\A\\X', 'App\\B\\Y'),
+            $this->dep('App\\B\\Y', 'App\\A\\W'),
+            $this->dep('App\\Foo', 'App\\A\\X'),
+            $this->dep('App\\C\\D\\E', 'App\\C\\F'),
+            $this->dep('Ext\\P', 'App\\C\\F'),
+            $this->dep('Other\\Iso', 'Other\\Iso2'),
+        ];
+
+        $graph = $this->realGraph($deps);
+        $repository = new InMemoryMetricRepository();
+        foreach ($graph->getAllClasses() as $class) {
+            $repository->add($class, new MetricBag(), RelativePath::fromString('test.php'), 1);
+        }
+        foreach ($graph->getAllNamespaces() as $namespace) {
+            $repository->add($namespace, new MetricBag(), RelativePath::fromString('test.php'), null);
+        }
+
+        $this->collector->calculate($graph, $repository);
+
+        foreach ($graph->getAllNamespaces() as $namespace) {
+            $metrics = $repository->get($namespace);
+            $classes = (int) $metrics->get('coupling.ca') + (int) $metrics->get('coupling.ce');
+            $cbo = (int) $metrics->get('coupling.cbo');
+
+            self::assertSame($classes === 0, $cbo === 0, $namespace->toString());
+            self::assertLessThanOrEqual($classes, $cbo, $namespace->toString());
+        }
+    }
+
+    /**
+     * A namespace that both declares classes and contains a sub-namespace gets
+     * two answers, and they have to be told apart: the subtree rollup counts
+     * the sub-namespace's crossings as its own, the own scope counts only what
+     * the namespace itself declares. Instability is published for both, so a
+     * fixture where the two ratios differ is what keeps them apart.
+     */
+    #[Test]
+    public function itPublishesTheOwnScopeOfANamespaceBesideItsSubtreeRollup(): void
+    {
+        $deps = [
+            $this->dep('A\\B\\X', 'Ext\\Y'),
+            $this->dep('A\\Z', 'Ext\\W'),
+            $this->dep('Ext\\P', 'A\\Z'),
+        ];
+
+        $graph = $this->realGraph($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'A\\Z');
+        $this->registerClass($repository, 'A\\B\\X');
+        $this->registerNamespace($repository, 'A');
+        $this->registerNamespace($repository, 'A\\B');
+
+        $this->collector->calculate($graph, $repository);
+        $metrics = $repository->get(SymbolPath::forNamespace('A'));
+
+        self::assertSame(2, $metrics->get('coupling.ce'));
+        self::assertSame(1, $metrics->get('coupling.ca'));
+        self::assertEqualsWithDelta(2 / 3, $metrics->get('coupling.instability'), 0.0001);
+
+        self::assertSame(1, $metrics->get('coupling.ce-own'));
+        self::assertSame(1, $metrics->get('coupling.ca-own'));
+        self::assertEqualsWithDelta(0.5, $metrics->get('coupling.instability-own'), 0.0001);
+    }
+
+    /**
+     * The own CBO of a namespace counts its sub-namespace as a namespace like
+     * any other, which the subtree region cannot: the region swallows it when
+     * the run holds it and not when the run does not, and the verdict on the
+     * namespace must not move with that. A namespace declaring nothing of its
+     * own gets no own CBO at all.
+     */
+    #[Test]
+    public function itPublishesAnOwnCboThatCountsTheSubNamespaceAsAnotherNamespace(): void
+    {
+        $deps = [
+            $this->dep('App\\Svc\\S', 'Ext\\Z'),
+            $this->dep('App\\Svc\\S', 'App\\Svc\\Exception\\Oops'),
+            $this->dep('App\\Svc\\Exception\\Oops', 'Ext2\\Q'),
+        ];
+
+        $graph = $this->realGraph($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Svc\\S');
+        $this->registerClass($repository, 'App\\Svc\\Exception\\Oops');
+        foreach (['App', 'App\\Svc', 'App\\Svc\\Exception'] as $namespace) {
+            $this->registerNamespace($repository, $namespace);
+        }
+
+        $this->collector->calculate($graph, $repository);
+
+        $svc = $repository->get(SymbolPath::forNamespace('App\\Svc'));
+        // Subtree: Ext and Ext2; the sub-namespace is inside.
+        self::assertSame(2, $svc->get('coupling.cbo'));
+        // Own: Ext and the sub-namespace; Ext2 is the sub-namespace's.
+        self::assertSame(2, $svc->get('coupling.cbo-own'));
+        self::assertSame(2, $repository->get(SymbolPath::forNamespace('App\\Svc\\Exception'))->get('coupling.cbo-own'));
+        self::assertNull($repository->get(SymbolPath::forNamespace('App'))->get('coupling.cbo-own'));
+    }
+
+    /**
+     * Left out of the run, the sub-namespace is still the far end of an edge,
+     * so the own CBO is the one the whole run publishes, while the subtree
+     * value moves.
+     */
+    #[Test]
+    public function itPublishesTheSameOwnCboWhenTheSubNamespaceIsLeftOutOfTheRun(): void
+    {
+        $deps = [
+            $this->dep('App\\Svc\\S', 'Ext\\Z'),
+            $this->dep('App\\Svc\\S', 'App\\Svc\\Exception\\Oops'),
+        ];
+
+        $graph = $this->realGraph($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Svc\\S');
+        $this->registerNamespace($repository, 'App\\Svc');
+
+        $this->collector->calculate($graph, $repository);
+
+        $svc = $repository->get(SymbolPath::forNamespace('App\\Svc'));
+        self::assertSame(2, $svc->get('coupling.cbo-own'));
+    }
+
+    /**
+     * A namespace without sub-namespaces has one scope, and both spellings must
+     * report it -- otherwise the own key would be a second, quieter metric
+     * rather than the same measurement taken over exactly this namespace.
+     */
+    #[Test]
+    public function itReportsTheSameCouplingInBothScopesForANamespaceWithoutChildren(): void
+    {
+        $deps = [
+            $this->dep('A\\Foo', 'B\\Bar'),
+            $this->dep('B\\Baz', 'A\\Qux'),
+        ];
+
+        $graph = $this->realGraph($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'A\\Foo');
+        $this->registerClass($repository, 'A\\Qux');
+        $this->registerNamespace($repository, 'A');
+
+        $this->collector->calculate($graph, $repository);
+        $metrics = $repository->get(SymbolPath::forNamespace('A'));
+
+        self::assertSame($metrics->get('coupling.ce'), $metrics->get('coupling.ce-own'));
+        self::assertSame($metrics->get('coupling.ca'), $metrics->get('coupling.ca-own'));
+        self::assertSame($metrics->get('coupling.instability'), $metrics->get('coupling.instability-own'));
+        self::assertSame(1, $metrics->get('coupling.ce-own'));
+    }
+
     #[Test]
     public function itDoesNotRegisterASymbolForAnExternalDependencyClass(): void
     {
@@ -857,14 +1112,30 @@ final class CouplingCollectorTest extends TestCase
         self::assertSame(1, $serviceMetrics->get('coupling.ce-framework'));
     }
 
-    private function dep(string $source, string $target): Dependency
+    private function dep(string $source, string $target, DependencyType $type = DependencyType::New_): Dependency
     {
         return new Dependency(
             DeclarationPath::of(SymbolPath::fromClassFqn($source), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
             new LogicalClassPath(SymbolPath::fromClassFqn($target)),
-            DependencyType::New_,
+            $type,
             new Location(RelativePath::fromString('test.php'), 1),
         );
+    }
+
+    /**
+     * The graph the product builds, rather than the adjacency double the rest
+     * of this file uses: the double knows no parent namespaces, so a subtree
+     * rollup and an own scope are the same number in it and a case about their
+     * difference would pass on a graph that never had one.
+     *
+     * @param list<Dependency> $dependencies
+     */
+    private function realGraph(array $dependencies): DependencyGraphInterface
+    {
+        return (new DependencyGraphBuilder())->build($dependencies, array_map(
+            static fn(Dependency $dependency): LogicalClassPath => new LogicalClassPath($dependency->sourceLogical()),
+            $dependencies,
+        ));
     }
 
     /**

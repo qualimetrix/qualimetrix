@@ -10,7 +10,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
-use RuntimeException;
+use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -95,8 +95,7 @@ final class BaselineGenerateCommand extends BaselineCommand
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        /** @var string $baselinePath */
-        $baselinePath = $input->getArgument('baseline');
+        $baselinePath = CommandLineSpelling::requiredArgument($input, 'baseline');
         $force = $input->getOption('force') === true;
 
         $mode = $this->readMode($input);
@@ -115,7 +114,7 @@ final class BaselineGenerateCommand extends BaselineCommand
         }
 
         $destination = $destinationExists
-            ? self::readRegularDestinationHash($baselinePath)
+            ? $this->writer->destinationSnapshot($baselinePath)
             : null;
 
         $context = $this->baselineRun->measure($input, $output);
@@ -154,42 +153,11 @@ final class BaselineGenerateCommand extends BaselineCommand
     }
 
     /**
-     * The destination's source snapshot at the moment the forced overwrite
-     * decision is taken.
-     *
-     * That hash is the compare-and-swap token {@see BaselineWriter} already
-     * verifies inside the lock it holds across the rename (ADR 0017), so a
-     * `--force` regeneration over a file another process rewrote during the
-     * analysis is refused rather than silently discarding that process's work.
-     *
-     * A non-regular or unreadable existing entry has no snapshot this contract
-     * can safely compare, so `--force` refuses it instead of treating it as an
-     * unchecked fresh target.
-     *
-     * @throws RuntimeException
-     */
-    private static function readRegularDestinationHash(string $path): string
-    {
-        if (is_link($path) || !is_file($path)) {
-            throw new RuntimeException(
-                "Baseline destination {$path} exists but is not a regular file; refusing to replace it safely.",
-            );
-        }
-
-        $content = file_get_contents($path);
-        if ($content === false) {
-            throw new RuntimeException("Failed to read baseline destination safely: {$path}");
-        }
-
-        return hash('sha256', $content);
-    }
-
-    /**
      * `null` is the ratchet default and the one mode that writes nothing.
      */
     private function readMode(InputInterface $input): ?BaselineEntryMode
     {
-        $raw = $input->getOption('mode');
+        $raw = CommandLineSpelling::option($input, 'mode');
 
         if ($raw === self::MODE_RATCHET) {
             return null;
@@ -203,7 +171,7 @@ final class BaselineGenerateCommand extends BaselineCommand
             '--mode',
             \sprintf(
                 'Unknown --mode value "%s". Expected %s or %s.',
-                \is_scalar($raw) ? (string) $raw : \gettype($raw),
+                $raw,
                 self::MODE_RATCHET,
                 self::MODE_SUPPRESS,
             ),

@@ -112,15 +112,39 @@ final readonly class RuleInputValidator
             }
 
             if ($selector === '' || !$this->ruleSelector->matchesKnownIn($selector, $producers, $channels)) {
+                $levelled = ChannelLevelSelector::carriesLevelSeparator($selector);
+
                 throw ConfigurationRefusal::aboutResolvedInput(
                     \sprintf(
-                        'Rule selector "%s" does not match any registered producer, group, or channel%s.',
+                        'Rule selector "%s" does not match any registered producer or channel%s.%s',
                         $selector,
-                        ChannelLevelSelector::carriesLevelSeparator($selector) ? ' at that level' : '',
+                        $levelled ? ' at that level' : '',
+                        $levelled ? '' : $this->groupSpellingHint($selector, $producers, $channels),
                     ),
                 );
             }
         }
+    }
+
+    /**
+     * A bare group name is the likeliest miss: the selector grammar dropped it
+     * in favour of `NAME.*`, and the two spellings differ by two characters.
+     * Offered only when the starred spelling would actually select something,
+     * so the hint never points at a second refusal.
+     *
+     * @param list<string> $producers
+     */
+    private function groupSpellingHint(string $selector, array $producers, ChannelUniverseInterface $channels): string
+    {
+        if ($selector === '' || str_ends_with($selector, '.*')) {
+            return '';
+        }
+
+        $starred = $selector . '.*';
+
+        return $this->ruleSelector->matchesKnownIn($starred, $producers, $channels)
+            ? \sprintf(' A bare prefix is not a group: write "%s" to select every rule under "%s".', $starred, $selector)
+            : '';
     }
 
     /**
@@ -135,9 +159,7 @@ final readonly class RuleInputValidator
         array $producers,
     ): void {
         $owners = array_keys($configuration->ruleOptions->rules);
-        /** @var list<string> $cliOptions */
-        $cliOptions = $input->hasOption('rule-opt') ? $input->getOption('rule-opt') : [];
-        foreach ($cliOptions as $option) {
+        foreach (CommandLineSpelling::options($input, 'rule-opt') as $option) {
             $owners[] = self::ownerOfWellFormedPair($option);
         }
 
@@ -233,11 +255,7 @@ final readonly class RuleInputValidator
 
     private function validateWorkers(InputInterface $input): void
     {
-        if (!$input->hasOption('workers')) {
-            return;
-        }
-
-        $workers = $input->getOption('workers');
+        $workers = CommandLineSpelling::option($input, 'workers');
         if ($workers === null) {
             return;
         }

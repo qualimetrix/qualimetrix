@@ -143,6 +143,69 @@ final class ExcludeBindingProbeTest extends TestCase
     }
 
     /**
+     * A subtree this process may not list hides what it holds exactly as a
+     * pruned one does, and the probe answers about it the same way: the
+     * selector is left unjudged rather than called unbound.
+     *
+     * Before the guard the walk did not answer at all — `getChildren()` on the
+     * unlistable directory threw an `UnexpectedValueException` out of the
+     * probe, and the run wore an unreadable subdirectory as an internal error.
+     */
+    #[Test]
+    public function itKeepsASelectorBelowAnUnlistableSubtreeUnjudgeable(): void
+    {
+        $this->withUnlistable('blocked', function (): void {
+            self::assertSame([], $this->unbound([$this->pattern(SelectorKind::Exact, 'blocked/Inner')]));
+        });
+    }
+
+    /** The guard must not turn every selector into an unanswered one. */
+    #[Test]
+    public function itStillReportsAnUnmatchedSelectorOutsideTheUnlistableSubtree(): void
+    {
+        $this->withUnlistable('blocked', function (): void {
+            self::assertSame(
+                ['exact:Missing'],
+                $this->unbound([$this->pattern(SelectorKind::Exact, 'Missing')]),
+            );
+        });
+    }
+
+    /** The root itself, where there is no parent walk to catch the refusal. */
+    #[Test]
+    public function itAnswersWhenTheScannedRootItselfIsUnlistable(): void
+    {
+        $this->withUnlistable('blocked', function (): void {
+            self::assertSame([], $this->unbound(
+                [$this->pattern(SelectorKind::Exact, 'blocked/Inner')],
+                [],
+                [AbsolutePath::fromString($this->root . '/blocked')],
+            ));
+        });
+    }
+
+    /**
+     * Runs $body with `$relative` present but unlistable, and restores the mode
+     * whatever happens — tearDown walks the same tree.
+     */
+    private function withUnlistable(string $relative, callable $body): void
+    {
+        if (posix_getuid() === 0) {
+            self::markTestSkipped('Root ignores directory permission bits.');
+        }
+
+        $path = $this->root . '/' . $relative;
+        mkdir($path . '/Inner', 0o755, true);
+        chmod($path, 0o000);
+
+        try {
+            $body();
+        } finally {
+            chmod($path, 0o755);
+        }
+    }
+
+    /**
      * @param list<PathPattern> $authored
      * @param list<PathPattern> $pruned
      * @param list<AbsolutePath>|null $roots

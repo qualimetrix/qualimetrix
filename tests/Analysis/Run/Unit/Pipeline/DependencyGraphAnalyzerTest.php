@@ -104,6 +104,7 @@ PHP);
             'class:App\Shared',
             'class:App\State',
             'class:GlobalType',
+            'class:UnitEnum',
             'class:Vendor\External',
         ], $classes);
     }

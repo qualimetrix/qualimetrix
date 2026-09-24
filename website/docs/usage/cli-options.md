@@ -20,7 +20,11 @@ bin/qmx check src/ lib/
 bin/qmx check src/Service/UserService.php
 ```
 
-If you omit paths, Qualimetrix auto-detects them from the `autoload` section of your `composer.json`.
+A path you name that is itself a `vendor`, `node_modules` or `.git` directory (`bin/qmx check lib/vendor`) stops the run with a configuration error: Qualimetrix never walks into one, so the run would analyse nothing. Name a file or a directory inside it instead (`bin/qmx check vendor/acme/`); a `vendor` directory inside a path you name is still skipped.
+
+A directory you name — here or under `paths:` in `qmx.yaml` — that your own `exclude:` or `--exclude` removes stops the run with a configuration error (exit code 3) before analysis starts, naming the path and the selector that removes it: the run would otherwise succeed without having looked inside it. `directives`, `baseline:generate`, `baseline:update`, `baseline:cleanup` and `baseline:explain` refuse it the same way. A file you name inside an excluded directory is still analysed, and so is a directory below one that an `exact:` selector removes, because `exact:` does not reach below the directory it names. A path detected from `composer.json` that you exclude is skipped without a word: there the exclusion is doing what it was written for.
+
+If you omit paths, Qualimetrix auto-detects them from every path the `autoload` section of your `composer.json` declares — `psr-4` and `psr-0` roots, `classmap` entries (a `*` wildcard expanded to the directories it matches) and `files` entries alike. These are the same paths a run is judged against when Qualimetrix asks whether it covered the whole project, so a run with no paths always counts as covering it. An entry that is, or lies inside, a `vendor`, `node_modules` or `.git` directory — which Qualimetrix never walks into — is left out of both and named in a warning instead: third-party code is not analysed as your project's. A declared path that does not exist on disk stops the run with a configuration error. `autoload-dev` is not included: test code is analysed only when you name its path (`bin/qmx check src/ tests/`, or `paths:` in `qmx.yaml`), or when you count it as part of the project with [`--include-autoload-dev`](#--include-autoload-dev).
 
 ---
 
@@ -34,6 +38,12 @@ Path to a YAML configuration file:
 bin/qmx check src/ --config=qmx.yaml
 ```
 
+An empty value is not an omitted option. `--config=` — typically `--config=$QMX_CONFIG` with
+the variable unset — is refused with exit code 3 instead of falling back to the `qmx.yaml` in
+the working directory. The same holds for `--baseline=`, `--output=`, `--report=` and
+`--preset=` (including an empty name in a list such as `--preset=strict,`): leave the option
+out to get its default.
+
 ### `--exclude`
 
 Exclude directories from analysis with an explicit path selector. Can be repeated:
@@ -44,9 +54,13 @@ bin/qmx check src/ --exclude=subtree:src/Generated --exclude=exact:src/Legacy
 
 A value that removes no directory is reported as
 [`discovery.unmatched-exclude`](../rules/discovery.md) — a `warning` at project
-level, not a refusal, and only on a run whose paths cover the project's
-production autoload roots. On a narrower run the pattern may bind nothing
+level, not a refusal, and only on a run whose paths cover the project: every
+path `composer.json` declares under `autoload`, and under `autoload-dev` too
+with [`--include-autoload-dev`](#--include-autoload-dev). On a narrower run the pattern may bind nothing
 simply because the code it names lies outside the slice.
+
+A value that removes a directory you named as a path is refused instead; see
+[Paths argument](#paths-argument).
 
 ### `--include-generated`
 
@@ -60,6 +74,25 @@ Can also be set in `qmx.yaml`:
 
 ```yaml
 include_generated: true
+```
+
+### `--include-autoload-dev`
+
+Counts the code `composer.json` declares under `autoload-dev` as part of the project. Both halves of a run follow it together:
+
+- a run with no paths analyses every path `autoload-dev` declares, in any autoload form, beside the `autoload` ones;
+- a run is judged against `autoload-dev` too when Qualimetrix asks whether it covered the whole project — so `bin/qmx check src/ --include-autoload-dev` warns that `tests/` was not analysed, and the channels that only speak on a whole-project run stay silent.
+
+Paths you name yourself are not widened. Off by default:
+
+```bash
+bin/qmx check --include-autoload-dev
+```
+
+Can also be set in `qmx.yaml`:
+
+```yaml
+include_autoload_dev: true
 ```
 
 ### `--suppress-path`
@@ -134,6 +167,41 @@ Available formats: `summary`, `text`, `text-verbose`, `json`, `metrics`, `checks
 
 See [Output Formats](output-formats.md) for details on each format.
 
+### `--output`, `-o`
+
+Write the report to a file instead of stdout:
+
+```bash
+bin/qmx check src/ --format=html --output=report.html
+```
+
+An existing file is written in place, as `>` in a shell does: it keeps its
+inode, owner, permissions and hard links, and a file mounted into a container
+on its own works too. A symbolic link is followed to the file it names, and
+the link stays; so do `/dev/null`, a named pipe and a process substitution such
+as `>(gzip > report.json.gz)`. A name nothing stands at yet is created, through
+a dangling symbolic link too; if the write then fails, the file it created is
+removed (one created through a link stays). A write that fails midway through
+an existing file leaves that file partly written. The kernel decides which
+links are followed: on Linux with `fs.protected_symlinks`, a link another user
+left in a shared directory such as `/tmp` is refused, as `>` refuses it. On a
+thread-safe (ZTS) PHP build, such a link to an existing file is still followed.
+
+`/dev/stdout`, `/dev/stderr`, `/dev/fd/N` and `/proc/self/fd/N`, spelled
+exactly so, are written through the stream itself, whether it is a terminal, a
+pipe or a file. Another spelling of the same stream, such as
+`/proc/thread-self/fd/1` or a symbolic link to `/dev/stdout`, is opened by its
+path, which on Linux fails when the stream is a pipe: use one of the four.
+
+qmx checks what it can before the run; the write itself is the final judge. A
+directory or a name ending in `/`, an existing file that is not writable, a new
+name in a directory that does not exist or does not allow creating a file, a
+descriptor the process does not hold, and on Linux one it holds only for
+reading, are refused with exit code 3 before analysis starts. A symbolic link
+that leads to no file qmx can create (dangling into a missing directory, a
+loop, a link the kernel refuses to follow) is refused by the write, with exit
+code 3 after the run, as is any write that still fails then.
+
 ### `--group-by`
 
 Group violations in the output. Default depends on the formatter.
@@ -154,14 +222,19 @@ bin/qmx check src/ --format-opt=key=value
 
 A key no formatter reads is refused with exit 3. A key some other formatter
 reads stays accepted, so a script that sweeps one option set across formats
-still works.
+still works. Each key may be written once: `--format-opt=violations=2
+--format-opt=violations=1` is refused with exit 3 rather than the later value
+winning, and every pair is checked as written, so an unparsable value is
+refused even when another pair or `--all` would have replaced it. Two keys
+that set one value are refused the same way: `violations` beside `limit`, or
+`limit` beside `--all` (which writes `violations=all`).
 
 **JSON format options:**
 
 | Option                   | Default | Description                                                                                                 |
 | ------------------------ | ------- | ----------------------------------------------------------------------------------------------------------- |
 | `violations=N\|all`      | all     | Max violations in output (0=none)                                                                           |
-| `limit=N`                | all     | Alias for `violations`                                                                                      |
+| `limit=N\|all`           | all     | The same value as `violations`, except that `0` means no limit; write one of the two                        |
 | `top=N`                  | 10      | Number of worst offenders to include                                                                        |
 | `rank-by=count\|density` | count   | Reorder worst-offender lists by violation count (default) or by [violation density](output-formats.md#json) |
 
@@ -249,7 +322,10 @@ exclude_health:
 
 ### `--detail`
 
-Show a grouped violation list after the summary. Only affects `summary` format.
+Adds a grouped violation list after the summary; the value is an optional cap on its
+length. Omitted, the list is not shown (unless `--namespace` or `--class` is used); written
+without a value, it shows up to 200 violations; `--detail=N` caps it at `N`; `--detail=all` or
+`--detail=0` removes the cap. Only affects `summary` format.
 
 ```bash
 # Default limit (200 violations)
@@ -299,7 +375,7 @@ bin/qmx check src/ --format=json --all
 bin/qmx check src/ --all
 ```
 
-Cannot be combined with `--format-opt=violations=N` (numeric limit) — this produces a clear error. Combining `--all` with `--format-opt=violations=all` is allowed (they are synonyms).
+Cannot be combined with `--format-opt=violations=N` (numeric limit) or with `--detail`/`--detail=N` (a capped list; `--detail` alone is a cap of 200) — each is refused with exit 3 before the analysis, rather than one of the two silently winning. Combining `--all` with `--format-opt=violations=all`, `--detail=all` or `--detail=0` is allowed (they are synonyms).
 
 ### `--namespace`
 
@@ -321,7 +397,10 @@ refusal says how many namespaces the run did have. A pattern that does select
 something and still reports nothing prints the ordinary empty result — that is
 the half of the pair worth telling apart.
 
-Mutually exclusive with `--class`.
+Mutually exclusive with `--class`. Refused with exit 3 before the analysis
+under `--format=gitlab` or `--format=checkstyle`, including when a configuration
+file selects the format: their consumers read every entry as a finding, so
+neither can say the report is a [partial view](output-formats.md#summary-default).
 
 ### `--class`
 
@@ -336,7 +415,8 @@ Filters violations to the specified class. Auto-enables `--detail`.
 An FQCN matching no analysed class is refused with exit 3, for the same reason
 `--namespace` is: an empty report otherwise reads as a clean class.
 
-Mutually exclusive with `--namespace`.
+Mutually exclusive with `--namespace`. Refused under `gitlab` and `checkstyle`
+as [`--namespace`](#--namespace) is.
 
 ---
 
@@ -536,6 +616,8 @@ bin/qmx check src/ --workers=4
 
 Set the PHP memory limit for analysis. By default, PHP's `memory_limit` from `php.ini` is used.
 
+The limit governs the worker processes too (see [`--workers`](#--workers--w)), where files are parsed and measured. A worker that runs out of memory fails the file it held: the run reports that file as failed, exits with code 4, and the failure names the limit the workers ran with; PHP's own "Allowed memory size … exhausted" line appears on stderr.
+
 ```bash
 # Set memory limit to 1GB for large projects
 bin/qmx check src/ --memory-limit=1G
@@ -544,28 +626,48 @@ bin/qmx check src/ --memory-limit=1G
 bin/qmx check src/ --memory-limit=-1
 ```
 
-Valid formats: `-1` (unlimited), or a positive integer with optional `K`/`M`/`G` suffix (e.g., `512M`, `2G`).
+Valid formats: `-1` (unlimited), or a positive integer with optional `K`/`M`/`G` suffix (e.g., `512M`, `2G`). `0` and a leading zero (`010M`, which PHP would read as octal) are refused with exit code 3.
 
 Equivalent YAML: `memory_limit: 1G`
 
 ### `--log-file`
 
-Write a debug log to a file:
+Write the run's log to a file, one JSON record per line:
 
 ```bash
 bin/qmx check src/ --log-file=qmx.log
 ```
 
+The file is appended to, and a missing directory is created. A path that cannot
+be written — a directory that cannot be created, a file that cannot be opened for
+appending — is refused with exit code 3 before analysis starts, and the message
+quotes the reason the system gave. An empty or blank value — `--log-file=`, as an
+unset variable in `--log-file=$LOG` writes it — is refused with exit code 3 too,
+rather than read as "no log file": leave the option out to write none. Only
+`check` takes the option.
+
 ### `--log-level`
 
-Set the minimum log level. Default: `info`.
+Set the minimum level of log lines, for the `--log-file` file and for the
+console:
 
 ```bash
 bin/qmx check src/ --log-file=qmx.log --log-level=debug
 ```
 
 Available levels: `debug`, `info`, `warning`, `error`. A value outside them is
-refused with exit 3 instead of falling back to `info`.
+refused with exit 3 instead of falling back to a default.
+
+| Written                    | Console                                               | `--log-file` |
+| -------------------------- | ----------------------------------------------------- | ------------ |
+| nothing                    | `warning`; `info` with `-v`; `debug` with `-vv`       | `info`       |
+| a level, with `-v` or more | that level                                            | that level   |
+| a level, without `-v`      | that level if stricter than `warning`, else `warning` | that level   |
+
+Without `-v` the level can only narrow the console: `--log-level=error` hides
+warnings, while `--log-level=debug --log-file=qmx.log` writes a detailed file and
+leaves the terminal as quiet as it was. `-q` silences the console whatever the
+level; the file still receives its lines.
 
 ### `--no-progress`
 
@@ -637,9 +739,19 @@ bin/qmx check src/ --profile
 bin/qmx check src/ --profile=profile.json
 ```
 
+A target that cannot be written is refused with exit code 3 before analysis
+starts, by the same rules as [`--output`](#--output--o): a directory or a name
+ending in `/`, a file in a directory that does not exist or cannot be written,
+or a file that is not writable. An empty `--profile=` is refused the same way. A
+write that still fails after the run also exits with code 3, never reported
+beside a finished run. The report is already published by then, so the reason
+goes to stderr and stdout keeps the report as its only document, even under
+`--format=json`.
+
 ### `--profile-format`
 
-Choose the profile export format. Default: `json`.
+Choose the profile export format. Default: `json`. Any other value is refused with exit
+code 3 before analysis starts, whether or not `--profile` names a file.
 
 ```bash
 bin/qmx check src/ --profile=profile.json --profile-format=chrome-tracing
@@ -657,9 +769,9 @@ Available formats: `json`, `chrome-tracing`.
 ### `--disable-rule`
 
 Disable a producer rule, an entire group, or a finding channel. A selector is either an
-**exact** name (a producer rule, a group like `complexity`, or a channel), or `X.*` for
-strictly the **descendants** of `X` — `X` itself is not included. A bare prefix without the
-star is an error. A channel selector can be narrowed to one level of the aggregation tree with
+**exact** name (a producer rule or a channel), or `X.*` for strictly the **descendants** of
+`X` — `X` itself is not included; a group is selected only this way (`complexity.*`). A bare
+prefix without the star is an error. A channel selector can be narrowed to one level of the aggregation tree with
 `:level`, same as `--only-rule`. Disabling one channel keeps its producer active so that other
 channels can still be reported. Can be repeated:
 
@@ -683,8 +795,8 @@ bin/qmx check src/ --disable-rule=health.complexity
 ### `--only-rule`
 
 Run only matching producer rules or finding channels. A selector is either an **exact** name
-(a producer rule, a group like `complexity`, or a channel), or `X.*` for strictly its
-**descendants**, either optionally narrowed to one level of the aggregation tree with `:level`.
+(a producer rule or a channel), or `X.*` for strictly its **descendants** — the only way to
+select a group, either optionally narrowed to one level of the aggregation tree with `:level`.
 A selector carrying a level keeps its producer running, since a producer filtered out would
 never emit the level that was asked for. Can be repeated:
 
@@ -700,14 +812,16 @@ bin/qmx check src/ --only-rule=complexity.ccn --only-rule=size.method-count
 bin/qmx check src/ --only-rule=health.complexity
 ```
 
-Selectors must match a registered producer, group, or emitted channel exactly, or resolve an
+Selectors must match a registered producer or emitted channel exactly, or resolve an
 `X.*` to at least one descendant. Unknown selectors — including a bare prefix without the
 star, or an `X.*` that matches nothing — fail closed with exit 3 before stdout receives a
-report payload:
+report payload. When the starred spelling would have matched, the refusal names it:
 
 ```text
-Rule selector "complexity" does not match any registered producer, group, or channel.
+Rule selector "complexity" does not match any registered producer or channel. A bare prefix is not a group: write "complexity.*" to select every rule under "complexity".
 ```
+
+`computed` is the one bare word that is accepted: it is the name of a producer, not a group.
 
 Likewise, the owner before `:` in `--rule-opt=RULE:OPTION=VALUE` must be an exact
 producer rule, not a group or channel — a group or channel there is an error. The same rule
@@ -916,18 +1030,25 @@ bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
   },
   "fqn": "App\\Service\\Foo",
   "assigned": { "layer": "any-foo", "criteria": ["pattern \"App\\**\\Foo\""] },
+  "contendingMatches": [],
   "shadowed": [
-    { "layer": "service", "criteria": ["pattern \"App\\Service\\**\""] }
+    { "layer": "service", "criteria": ["pattern \"App\\Service\\**\""], "reported": true }
   ],
+  "shadowedBy": "any-foo",
+  "undecided": [],
+  "contenders": [],
+  "chainStopsAt": [],
   "hasLayers": true
 }
 ```
 
 - `meta` is the same block `check --format=json` opens with: the tool's `version`, `package`, the run's `timestamp`, and the documentation addresses `docs` and `llmsTxt` (see [Documentation addresses in JSON reports](output-formats.md#documentation-addresses)).
-- `assigned` is `null` when no layer matched (empty `shadowed` follows).
-- `shadowed` lists every other matching layer in declaration order — each entry would have won the assignment had it been declared before `assigned`.
+- `assigned` is `null` when no layer matched; then `contendingMatches` and `shadowed` are empty too.
+- `shadowed` lists the matches after `shadowedBy`, the first match the run established, in declaration order. Each loses the class whichever way the layers the run could not answer answer, and `reported` says whether `architecture.potential-shadow` reports it. `shadowedBy` is `null` when `shadowed` is empty, and is not `assigned` when a match whose `exclude:` went unanswered stands in front of it.
+- `contendingMatches` lists, in the same form, every other match after `assigned`: the matches whose `exclude:` went unanswered and, when one stands in front of it, `shadowedBy`. Which of them owns the class depends on those clauses, so `reported` is always `false`. Together with `shadowed` it is every match the text report lists after the assignment.
+- `undecided` names the layers the run could not answer that bear on the assignment, `contenders` the layers that could own the class once they are answered, and `chainStopsAt` where the class's inheritance chain left the analysed paths; all three are empty when the run answered every layer. `assigned: null` beside a non-empty `undecided` means "could not tell", not "no layer claims this class". See [Inspecting layer assignment for a single class](../rules/architecture.md#debug-layer-assignment) for the full rules.
 - `hasLayers` distinguishes "no layers configured" (`false`) from "layers configured but none matched this class" (`true` with `assigned: null`).
-- On error, `--format=json` prints `{"error": "...", "exit_code": N}` to stdout instead of the human `<error>` line, and an unrecognized `--format` value exits with code 3 regardless of format.
+- On error, `--format=json` prints `{"error": "...", "exit_code": N, "position": ...}` to stdout instead of the human `<error>` line, and an unrecognized `--format` value exits with code 3 regardless of format.
 
 ### directives
 
@@ -984,7 +1105,7 @@ The `applied-boundary-only` verdict deliberately makes no claim about direction.
 
 Where a rule publishes no boundary alongside its finding, an `inert` verdict carries a note saying so, and **does not fail the build**: a boundary the value had already passed would have looked identical, so demanding the directive be deleted would report an unasked question as proven debt. `--format=json` reports it as `"boundary_observable": false`.
 
-On error, `--format=json` prints `{"error": "...", "exit_code": N}` to stdout instead of the human `<error>` line.
+On error, `--format=json` prints `{"error": "...", "exit_code": N, "position": ...}` to stdout instead of the human `<error>` line.
 
 ### graph:export
 
@@ -1022,6 +1143,12 @@ bin/qmx graph:export src/ --no-clusters
 A `--namespace` value matching no vertex is refused with exit 3 rather than
 exporting an empty graph. `--exclude-namespace` keeps its silence on purpose: a
 missed exclusion leaves the picture whole, so the viewer loses nothing.
+
+An `--output` target is judged and written the way `check` treats its own
+[`--output`](#--output--o): a directory or a name ending in `/`, an unwritable
+existing file and a new name in a directory that does not exist or does not
+allow creating a file are refused with exit 3 before any file is read; an existing target —
+a file, a symbolic link, `/dev/stdout`, a named pipe — is written in place.
 
 If any discovered file fails parsing or processing, `graph:export` exits 4 and
 emits no partial graph. It does not create a missing output file and preserves

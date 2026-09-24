@@ -11,9 +11,15 @@ final readonly class RuntimeLimits
 {
     public function __construct(public ?string $memoryLimit = null)
     {
-        if ($memoryLimit !== null && preg_match('/^(?:-1|[0-9]+[KMG]?)$/i', $memoryLimit) !== 1) {
+        // Zero has the shape of a size and PHP refuses it at `ini_set()`, where
+        // the refusal no longer knows which value it is about. A leading zero
+        // is read as octal by PHP (`010M` is 8 MB), so it is not a size either.
+        if ($memoryLimit !== null && preg_match('/^(?:-1|[1-9][0-9]*[KMG]?)$/i', $memoryLimit) !== 1) {
             throw ConfigurationRefusal::aboutResolvedInput(
-                \sprintf('Invalid memory_limit "%s". Expected bytes or a K, M, or G suffix.', $memoryLimit),
+                \sprintf(
+                    'Invalid memory_limit "%s". Expected a positive size in bytes without leading zeros, optionally with a K, M, or G suffix, or -1 for no limit.',
+                    $memoryLimit,
+                ),
                 ConfigSchema::MEMORY_LIMIT,
             );
         }

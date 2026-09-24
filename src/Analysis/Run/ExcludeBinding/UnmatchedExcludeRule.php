@@ -38,6 +38,15 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * of them does not have. An ordinary warning is visible in the report,
  * answers to `--fail-on`, and can be accepted as debt.
  *
+ * **Two findings answer to this one channel.** {@see UnmatchedExcludeAudit}
+ * reports the pattern that removed nothing, and {@see UnjudgedExcludeFinding}
+ * the pattern no walk could settle because a directory it might have matched
+ * inside would not list. They are one channel and one `enabled` switch but two
+ * occurrence kinds, so accepting the first into a baseline does not accept the
+ * second. The one-line description below names only the first: it is published
+ * verbatim by `qmx rules` and by every SARIF report's `shortDescription`, and
+ * both are compared surfaces, so widening it is a step of its own.
+ *
  * **Statelessness:** trivially — `analyze()` does nothing at all.
  */
 final class UnmatchedExcludeRule extends AbstractRule

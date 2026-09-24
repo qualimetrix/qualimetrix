@@ -146,8 +146,11 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     #[Test]
     public function itOverridesTheCoverageScalarWithTheLastContribution(): void
     {
+        // The layers ride along because a non-ignore coverage mode is refused
+        // without them; what this test measures is which of the two scalars
+        // survives the merge, and that is unchanged by their presence.
         $result = $this->factory->fromContributions([
-            ['coverage-gap' => 'warn'],
+            ['layers' => $this->mergeRegressionLayers(), 'coverage-gap' => 'warn'],
             ['coverage-gap' => 'error'],
         ]);
 

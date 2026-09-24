@@ -6,7 +6,15 @@ namespace Qualimetrix\Analysis\Configuration\Contract\Refusal;
 
 use LogicException;
 
-/** The position within a configuration document that a refusal is addressed to. */
+/**
+ * The position within a configuration document that a refusal is addressed to,
+ * as its throw site located it.
+ *
+ * It locates the refused spot for a reader; it is not a round trip to the
+ * document's text. A segment can be the key's normalized or schema spelling
+ * rather than the author's, and for a required key the author left out the
+ * path ends at that key, which was never written.
+ */
 final readonly class RefusedPosition
 {
     /**
@@ -65,14 +73,19 @@ final readonly class RefusedPosition
         return implode('.', $this->segments);
     }
 
-    /** The last segment — what was rejected, as the throw site received it. */
+    /**
+     * What was rejected, as the throw site holds it: usually the last segment
+     * as written, the required key's name when that key is missing, and the
+     * schema key when a value of the wrong type is refused.
+     */
     public function written(): string
     {
         return $this->written;
     }
 
     /**
-     * Canonical spellings accepted at this position, sorted; empty for {@see self::open()}.
+     * Spellings accepted at this position, in the order and spelling the throw
+     * site gave them; empty for {@see self::open()}.
      *
      * @return list<string>
      */

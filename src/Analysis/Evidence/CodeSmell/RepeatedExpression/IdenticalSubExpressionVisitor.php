@@ -22,14 +22,19 @@ final class IdenticalSubExpressionVisitor extends NodeVisitorAbstract implements
     /** @var list<IdenticalSubExpressionFinding> */
     private array $findings = [];
 
+    /** @var array<int, true> Object ids of ifs already evaluated as part of their chain's head */
+    private array $continuedIfs = [];
+
     public function __construct(
         private readonly RepeatedExpressions $repeatedExpressions = new RepeatedExpressions(),
         private readonly RepeatedConditions $repeatedConditions = new RepeatedConditions(),
+        private readonly IfChain $ifChain = new IfChain(),
     ) {}
 
     public function reset(): void
     {
         $this->findings = [];
+        $this->continuedIfs = [];
         $this->resetVisitorMethodContext();
     }
 
@@ -46,7 +51,10 @@ final class IdenticalSubExpressionVisitor extends NodeVisitorAbstract implements
         if ($node instanceof BinaryOp || $node instanceof Ternary) {
             $this->append($this->repeatedExpressions->findings($node, $subjectId));
         }
-        if ($node instanceof Stmt\If_ || $node instanceof Expr\Match_ || $node instanceof Stmt\Switch_) {
+        if ($node instanceof Stmt\If_) {
+            $this->enterIf($node, $subjectId);
+        }
+        if ($node instanceof Expr\Match_ || $node instanceof Stmt\Switch_) {
             $this->append($this->repeatedConditions->findings($node, $subjectId));
         }
 
@@ -64,6 +72,18 @@ final class IdenticalSubExpressionVisitor extends NodeVisitorAbstract implements
     public function getSubjectComponents(IdenticalSubExpressionFinding $finding): array
     {
         return $this->fileEntrySubjectComponents($finding->subjectId);
+    }
+
+    private function enterIf(Stmt\If_ $node, string $subjectId): void
+    {
+        if (isset($this->continuedIfs[spl_object_id($node)])) {
+            return;
+        }
+
+        foreach ($this->ifChain->continuations($node) as $continuation) {
+            $this->continuedIfs[spl_object_id($continuation)] = true;
+        }
+        $this->append($this->repeatedConditions->findings($node, $subjectId));
     }
 
     /** @param list<IdenticalSubExpressionFinding> $findings */

@@ -10,7 +10,6 @@ use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
-use Symfony\Component\DependencyInjection\Reference;
 
 /**
  * Registers the exact collector and rule roots owned by Design.
@@ -32,10 +31,6 @@ final class DesignConfigurator implements ContainerConfiguratorInterface
     private const string AUTOLOAD_MAP = 'Qualimetrix\\Infrastructure\\Composer\\ComposerAutoloadMap';
 
     private const string PARENT_READER = 'Qualimetrix\\Infrastructure\\Composer\\DeclaredParentReader';
-
-    private const string DIT_COLLECTOR = self::NAMESPACE . 'Inheritance\\DitGlobalCollector';
-
-    private const string DELEGATING_LOGGER = 'Qualimetrix\\Infrastructure\\Logging\\DelegatingLogger';
 
     /**
      * In published-channel order.
@@ -62,14 +57,6 @@ final class DesignConfigurator implements ContainerConfiguratorInterface
             self::NAMESPACE,
             $this->srcDir . '/Analysis/Evidence/Design/**/*Collector.php',
         );
-
-        // Autowiring cannot supply this one: `LoggerInterface` is not a service
-        // id here, only an alias keyed by the holder's class name, so the
-        // argument has to be named. Without this line the container refuses to
-        // compile, which is the point -- the collector's logger is required so
-        // that a forgotten registration cannot silence its diagnostic instead.
-        $container->getDefinition(self::DIT_COLLECTOR)
-            ->setArgument('$logger', new Reference(self::DELEGATING_LOGGER));
 
         // Neither of these ends in `Collector`, so the glob above does not see
         // them. They are registered here rather than anywhere else because they

@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Symfony\Component\Console\Input\InputInterface;
@@ -34,31 +35,64 @@ final class ConfigurationInputAdapter
 
     public function adapt(InputInterface $input, string $workingDirectory): ConfigurationResolutionRequest
     {
-        $config = $this->option($input, 'config');
-        $presets = $this->option($input, 'preset');
+        $this->refuseEmptyValues($input);
 
         return new ConfigurationResolutionRequest(
             self::absoluteWorkingDirectory($workingDirectory),
-            \is_string($config) && $config !== '' ? $config : null,
-            \is_array($presets) ? array_values(array_filter($presets, is_string(...))) : [],
+            CommandLineSpelling::option($input, 'config'),
+            CommandLineSpelling::options($input, 'preset'),
             $this->overrides($input),
         );
+    }
+
+    /**
+     * Options whose owners read the empty string as "not given". Written
+     * empty — `--config=$QMX_CONFIG` with the variable unset — each of them
+     * used to run something other than what was asked: `--config=` fell back
+     * to discovering `qmx.yaml` in the working directory, `--output=` printed
+     * the report to stdout and left no artifact. The other doors of these
+     * commands carry the empty string to an owner that refuses it itself.
+     */
+    private const array DOORS_READING_EMPTY_AS_ABSENT = ['config', 'preset', 'baseline', 'output', 'report'];
+
+    /**
+     * Every command that analyses passes through here once, before analysis
+     * starts, so a door refused here is refused before any work is done.
+     */
+    private function refuseEmptyValues(InputInterface $input): void
+    {
+        foreach (self::DOORS_READING_EMPTY_AS_ABSENT as $name) {
+            foreach (CommandLineSpelling::options($input, $name) as $written) {
+                if (trim($written) === '') {
+                    throw ConfigurationRefusal::aboutCommandLineInput(
+                        '--' . $name,
+                        \sprintf(
+                            'Option --%s was written with an empty value ("--%s="). '
+                            . 'Write a value after "=", or omit --%s entirely to use its default.',
+                            $name,
+                            $name,
+                            $name,
+                        ),
+                    );
+                }
+            }
+        }
     }
 
     /** @return array<string, mixed> */
     private function overrides(InputInterface $input): array
     {
         $values = [];
-        $this->put($values, ConfigSchema::PATHS, $input->hasArgument('paths') ? $input->getArgument('paths') : null);
-        foreach ($this->mappedOptions() as $option => $key) {
-            $value = $this->option($input, $option);
-            if ($option === 'exclude' && \is_array($value)) {
-                $value = array_map(
-                    fn(string $selector) => $this->selectorDecoder->decodePath($selector, '--exclude'),
-                    array_values(array_filter($value, is_string(...))),
-                );
-            }
-            $this->put($values, $key, $value);
+        $this->put($values, ConfigSchema::PATHS, CommandLineSpelling::arguments($input, 'paths'));
+        $this->put($values, ConfigSchema::EXCLUDES, array_map(
+            fn(string $selector) => $this->selectorDecoder->decodePath($selector, '--exclude'),
+            CommandLineSpelling::options($input, 'exclude'),
+        ));
+        foreach (self::SINGLE_VALUED as $option => $key) {
+            $this->put($values, $key, CommandLineSpelling::option($input, $option));
+        }
+        foreach (self::REPEATABLE as $option => $key) {
+            $this->put($values, $key, CommandLineSpelling::options($input, $option));
         }
 
         if ($this->option($input, 'no-cache') === true) {
@@ -67,7 +101,10 @@ final class ConfigurationInputAdapter
         if ($this->option($input, 'include-generated') === true) {
             $values[ConfigSchema::INCLUDE_GENERATED] = true;
         }
-        $workers = $this->option($input, 'workers');
+        if ($this->option($input, 'include-autoload-dev') === true) {
+            $values[ConfigSchema::INCLUDE_AUTOLOAD_DEV] = true;
+        }
+        $workers = CommandLineSpelling::option($input, 'workers');
         if ($workers !== null) {
             $values[ConfigSchema::PARALLEL_WORKERS] = (int) $workers;
         }
@@ -75,20 +112,20 @@ final class ConfigurationInputAdapter
         return $values;
     }
 
-    /** @return array<string, string> */
-    private function mappedOptions(): array
-    {
-        return [
-            'exclude' => ConfigSchema::EXCLUDES,
-            'format' => ConfigSchema::FORMAT,
-            'cache-dir' => ConfigSchema::CACHE_DIR,
-            'disable-rule' => ConfigSchema::DISABLED_RULES,
-            'only-rule' => ConfigSchema::ONLY_RULES,
-            'fail-on' => ConfigSchema::FAIL_ON,
-            'exclude-health' => ConfigSchema::EXCLUDE_HEALTH,
-            'memory-limit' => ConfigSchema::MEMORY_LIMIT,
-        ];
-    }
+    /** @var array<string, string> single-valued option => configuration key */
+    private const array SINGLE_VALUED = [
+        'format' => ConfigSchema::FORMAT,
+        'cache-dir' => ConfigSchema::CACHE_DIR,
+        'fail-on' => ConfigSchema::FAIL_ON,
+        'memory-limit' => ConfigSchema::MEMORY_LIMIT,
+    ];
+
+    /** @var array<string, string> repeatable option => configuration key */
+    private const array REPEATABLE = [
+        'disable-rule' => ConfigSchema::DISABLED_RULES,
+        'only-rule' => ConfigSchema::ONLY_RULES,
+        'exclude-health' => ConfigSchema::EXCLUDE_HEALTH,
+    ];
 
     private function option(InputInterface $input, string $name): mixed
     {

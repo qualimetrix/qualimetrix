@@ -36,9 +36,10 @@ Directories to skip entirely. Files in these directories are not analyzed at all
 
 ```yaml
 exclude:
-  - vendor/
-  - tests/Fixtures/
+  - subtree: tests/Fixtures
 ```
+
+Each entry is a path selector written the same way as under [Suppress Paths](#suppress-paths) — `exact`, `subtree` or `regex`; a bare string is refused. `vendor`, `node_modules` and `.git` are never walked, so they need no entry. A directory you name under `paths` or on the command line that an entry here removes stops the run with a configuration error (exit code 3) instead of a successful run that never looked inside it; see [Paths argument](../usage/cli-options.md#paths-argument).
 
 ### Include Generated
 
@@ -49,6 +50,18 @@ include_generated: true
 ```
 
 Equivalent CLI: `--include-generated`
+
+### Include Autoload Dev
+
+By default, the code `composer.json` declares under `autoload-dev` is not part of the project: a run with no `paths` analyses only the paths `autoload` declares (in any autoload form: `psr-4`, `psr-0`, `classmap`, `files`), and a run is judged against those alone when Qualimetrix asks whether it covered the whole project. To count test code as part of the project in both places:
+
+```yaml
+include_autoload_dev: true
+```
+
+Paths you write yourself are not widened; with `paths: [src]`, the run is reported as not covering the `autoload-dev` paths. In either section, an entry that is, or lies inside, a `vendor`, `node_modules` or `.git` directory is not part of the project: it is neither analysed by default nor counted, and a warning names it.
+
+Equivalent CLI: `--include-autoload-dev`
 
 ### Suppress Paths
 
@@ -233,7 +246,10 @@ rules:
 
 **Option key spellings are interchangeable, option keys themselves are not.**
 `max_warning`, `maxWarning` and `max-warning` are the same key and all three
-apply, at both depths. A key the rule does not have at that position is not
+apply, at both depths. Being one key, it is written once: two spellings of it in
+the same block — `max_warning: 1` beside `maxWarning: 999` — end the run with exit
+code 3 instead of letting the later one win. The same holds for every key in the
+document, root keys included. A key the rule does not have at that position is not
 guessed at: the run stops (see [Unknown rule option keys](#unknown-rule-option-keys)).
 
 **An empty level block means the same as an omitted one.** `callable:` with no
@@ -392,7 +408,7 @@ the name the same way:
 A bare prefix is **not** a group. `complexity` on its own selects nothing and is rejected:
 
 ```
-Configuration error: Rule selector "complexity" does not match any registered producer, group, or channel.
+Configuration error: Rule selector "complexity" does not match any registered producer or channel. A bare prefix is not a group: write "complexity.*" to select every rule under "complexity".
 Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
@@ -503,7 +519,7 @@ Equivalent CLI: `--exclude-health=typing --exclude-health=maintainability`
 
 ### Memory limit
 
-Set the PHP memory limit for analysis. By default, PHP's `memory_limit` from `php.ini` is used.
+Set the PHP memory limit for analysis. By default, PHP's `memory_limit` from `php.ini` is used. The limit applies to the worker processes as well, where files are parsed and measured; a file a worker could not finish within it is reported as failed, and the failure names the limit.
 
 ```yaml
 memory_limit: 1G    # 1 gigabyte
@@ -844,7 +860,7 @@ source the value arrives from is judged, not only the one that wins: a wrong
 overrides it, because a value nobody will use is still a value somebody wrote:
 
 ```
-Configuration error: Option "warning" of rule "complexity.ccn" at level "callable" must be a whole number or null, got a string.
+Configuration error: Option "warning" of rule "complexity.ccn" at level "callable" must be a non-negative whole number or null, got a string.
 Configuration error: Invalid value for "only_rules": expected a list of entries, got a map.
 Configuration error: Invalid value for "cache": expected a section of named keys (dir, enabled), got a list.
 ```
@@ -857,18 +873,19 @@ can be compared side by side.
 
 The shapes a key can ask for, in the words the refusal uses:
 
-| Shape              | Accepts                                                     |
-| ------------------ | ----------------------------------------------------------- |
-| a boolean          | `true` / `false`                                            |
-| a whole number     | `15` — not `10.5`, not `"15"`                               |
-| a number           | `15` or `10.5`                                              |
-| a string           | any string, the empty one included                          |
-| a non-empty string | a string with at least one non-blank character              |
-| a list of X        | a YAML sequence, every element of shape X                   |
-| a map of X         | a YAML mapping you name the keys of, every value of shape X |
-| a block of options | a mapping whose own keys another declaration answers for    |
+| Shape                       | Accepts                                                     |
+| --------------------------- | ----------------------------------------------------------- |
+| a boolean                   | `true` / `false`                                            |
+| a non-negative whole number | `15` or `0` — not `10.5`, not `"15"`, not `-1`              |
+| a non-negative number       | `15`, `10.5` or `0` — not `-0.5`                            |
+| a number                    | any number of either sign (computed-metric thresholds only) |
+| a string                    | any string, the empty one included                          |
+| a non-empty string          | a string with at least one non-blank character              |
+| a list of X                 | a YAML sequence, every element of shape X                   |
+| a map of X                  | a YAML mapping you name the keys of, every value of shape X |
+| a block of options          | a mapping whose own keys another declaration answers for    |
 
-Five consequences are worth spelling out, because each of them used to pass
+Six consequences are worth spelling out, because each of them used to pass
 unnoticed:
 
 - **A quoted number is a string.** `warning: "15"` is refused where a whole
@@ -878,11 +895,11 @@ unnoticed:
   `--rule-opt="size.method-count:threshold=25"` and
   `--rule-opt="complexity.ccn:enabled=false"` are unaffected.
 - **A whole number is not a fraction — except for the keys named here, which
-  declare "a number".** `warning: 10.5` is refused where a whole number is
-  declared, and most thresholds in this document declare exactly that: a
-  whole number. The keys below declare "a number" instead, and therefore
-  accept a fraction exactly as written, because each one measures a
-  continuously-valued metric rather than counting something: the
+  declare "a non-negative number".** `warning: 10.5` is refused where a whole
+  number is declared, and most thresholds in this document declare exactly
+  that: a whole number. The keys below declare "a non-negative number" instead,
+  and therefore accept a fraction exactly as written, because each one
+  measures a continuously-valued metric rather than counting something: the
   maintainability index (`maintainability.mi.error` / `.warning` /
   `.threshold`), instability (`coupling.instability.max-error` /
   `.max-warning` / `.threshold`, the same three at the `class.` and
@@ -898,6 +915,14 @@ unnoticed:
   `coupling.distance.min-class-count`, `coupling.instability.min-afferent`
   (at every level slot) and `coupling.instability.namespace.min-class-count`
   are each a class or file count, not a ratio.
+- **A threshold or a count is never negative.** Every numeric option under
+  `rules:` is a count or a boundary on a measurement that cannot be negative,
+  and a negative boundary does not tighten a rule, it inverts it: `warning: -1`
+  on `size.method-count` would report every class. It is refused with the value
+  itself, from the file and from `--rule-opt` alike, and a `threshold: -1`
+  shorthand is named as `threshold`, the key that was written. Zero is
+  accepted. A computed metric's `warning` / `error` / `threshold` keep both
+  signs, because its formula is yours and may well be negative.
 - **A list and a map are not interchangeable.** `only_rules: {a: complexity.ccn}`
   and `exclude_methods: {a: getName}` are refused; write
   `only_rules: [complexity.ccn]` and `exclude_methods: [getName]`. The same in

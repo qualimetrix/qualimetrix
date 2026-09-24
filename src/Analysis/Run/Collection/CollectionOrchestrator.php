@@ -6,13 +6,10 @@ namespace Qualimetrix\Analysis\Run\Collection;
 
 use LogicException;
 use Psr\Log\LoggerInterface;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedMetricExtractorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
@@ -22,7 +19,6 @@ use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterf
 use Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
-use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
@@ -90,58 +86,27 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         iterable $results,
         MetricRepositoryInterface $repository,
     ): CollectionPhaseOutput {
-        $profiler = $this->profiler;
-        $profiler->start('collection.register_results', 'collection');
-        /** @var list<RelativePath> $analyzedFiles */
-        $analyzedFiles = [];
-        /** @var list<FileProcessingResult> $failures */
-        $failures = [];
-        /** @var list<Dependency> $allDependencies */
-        $allDependencies = [];
-        /** @var array<string, list<Suppression>> $allSuppressions */
-        $allSuppressions = [];
-        /** @var array<string, list<ThresholdOverride>> $allThresholdOverrides */
-        $allThresholdOverrides = [];
-        /** @var array<string, list<ThresholdDiagnostic>> $allThresholdDiagnostics */
-        $allThresholdDiagnostics = [];
+        $this->profiler->start('collection.register_results', 'collection');
+        $fold = new CollectionPhaseFold();
 
         foreach ($results as $result) {
-            $filePathKey = $result->filePath->value();
-            $this->progress->setMessage('Registering ' . basename($filePathKey));
+            $this->progress->setMessage('Registering ' . basename($result->filePath->value()));
 
             if ($result->isSuccessful()) {
                 $this->registerResult($result, $repository);
-                $analyzedFiles[] = $result->filePath;
-                array_push($allDependencies, ...$result->dependencies());
-                if ($result->suppressions() !== []) {
-                    $allSuppressions[$filePathKey] = $result->suppressions();
-                }
-                if ($result->thresholdOverrides() !== []) {
-                    $allThresholdOverrides[$filePathKey] = $result->thresholdOverrides();
-                }
-                if ($result->thresholdDiagnostics() !== []) {
-                    $allThresholdDiagnostics[$filePathKey] = $result->thresholdDiagnostics();
-                }
             } else {
                 $this->logger->warning('Failed to process file', [
-                    'file' => $filePathKey,
+                    'file' => $result->filePath->value(),
                     'error' => $result->error(),
                 ]);
-                $failures[] = $result;
             }
+            $fold->absorb($result);
 
             $this->progress->advance();
         }
-        $profiler->stop('collection.register_results');
+        $this->profiler->stop('collection.register_results');
 
-        return new CollectionPhaseOutput(
-            $analyzedFiles,
-            $failures,
-            $allSuppressions,
-            $allThresholdOverrides,
-            $allThresholdDiagnostics,
-            $allDependencies,
-        );
+        return $fold->output();
     }
 
     private function processSafely(SplFileInfo $file, AbsolutePath $projectRoot): FileProcessingResult
@@ -164,30 +129,40 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         FileProcessingResult $result,
         MetricRepositoryInterface $repository,
     ): void {
-        // Store file-level metrics
         $filePath = $result->filePath;
-        $fileSymbol = SymbolPath::forFile($filePath);
-        $repository->add($fileSymbol, $result->fileBag(), $filePath, 1);
+        $repository->add(SymbolPath::forFile($filePath), $result->fileBag(), $filePath, 1);
 
         // Register exact callable declarations before any logical aggregation.
         foreach ($result->callableMetrics() as $callable) {
             $repository->addCallable($callable);
         }
 
-        // Register class-level metrics
         foreach ($result->classMetrics() as $classData) {
-            $repository->addSubject(
-                $classData['subject'],
-                $classData['metrics'],
-                $filePath,
-                $classData['line'],
-            );
+            $repository->addSubject($classData['subject'], $classData['metrics'], $filePath, $classData['line']);
         }
 
-        // Register source-owned namespace contributions before aggregation.
+        self::registerNamespaceContributions($result, $repository);
+
+        $this->derivedMetricExtractor->extract(
+            $repository,
+            $result->fileBag(),
+            $result->callableMetrics(),
+            $filePath,
+            self::derivationClasses($result),
+        );
+    }
+
+    /**
+     * Source-owned namespace contributions are registered before aggregation
+     * as running sums, each metric paired with a `.count` of contributing files.
+     */
+    private static function registerNamespaceContributions(
+        FileProcessingResult $result,
+        MetricRepositoryInterface $repository,
+    ): void {
         foreach ($result->namespaceMetrics() as $namespaceData) {
-            $contribution = new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag();
             $existing = $repository->get($namespaceData['symbolPath']);
+            $contribution = new MetricBag();
 
             foreach ($namespaceData['metrics']->all() as $name => $value) {
                 $contribution = $contribution
@@ -195,26 +170,24 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
                     ->with($name . '.count', ($existing->get($name . '.count') ?? 0) + 1);
             }
 
-            $repository->add(
-                $namespaceData['symbolPath'],
-                $contribution,
-                $filePath,
-                $namespaceData['line'],
-            );
+            $repository->add($namespaceData['symbolPath'], $contribution, $result->filePath, $namespaceData['line']);
+        }
+    }
+
+    /**
+     * Derived metrics keep their exact declaration subject, never an FQN key.
+     *
+     * @return list<ClassWithMetrics>
+     */
+    private static function derivationClasses(FileProcessingResult $result): array
+    {
+        $classes = [];
+        foreach ($result->classMetrics() as $classData) {
+            $declarationPath = $classData['subject']->declarationPath()
+                ?? throw new LogicException('Class metrics must use an exact declaration subject');
+            $classes[] = new ClassWithMetrics($declarationPath, $classData['start'], $classData['line'], $classData['metrics']);
         }
 
-        // Derived metrics keep their exact declaration subject, never an FQN key.
-        $classes = array_map(
-            static function (array $classData): ClassWithMetrics {
-                $declarationPath = $classData['subject']->declarationPath();
-                if ($declarationPath === null) {
-                    throw new LogicException('Class metrics must use an exact declaration subject');
-                }
-
-                return new ClassWithMetrics($declarationPath, $classData['start'], $classData['line'], $classData['metrics']);
-            },
-            array_values($result->classMetrics()),
-        );
-        $this->derivedMetricExtractor->extract($repository, $result->fileBag(), $result->callableMetrics(), $filePath, $classes);
+        return $classes;
     }
 }

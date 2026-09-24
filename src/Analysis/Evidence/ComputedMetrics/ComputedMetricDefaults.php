@@ -90,7 +90,7 @@ final class ComputedMetricDefaults
                     // (every internal edge contributes to both), so cbo.avg is symmetric and
                     // proportional to ce.avg. Calibrated against 11 benchmark projects
                     // (Guzzle→92, Sf Console→64, Qualimetrix→53, Laravel→53, Composer→32).
-                    SymbolLevel::Project->value => 'clamp(100 * 18 / (18 + (m["coupling.distance.avg"] ?? 0) * 6 + max((m["coupling.cbo.avg"] ?? 0) - 8, 0) * 3 + max((m["coupling.cbo.p95"] ?? 0) - 15, 0) * 0.4 + max((m["coupling.cbo.max"] ?? 0) - 30, 0) ** 0.5 * 0.8), 0, 100)',
+                    SymbolLevel::Project->value => 'clamp(100 * 18 / (18 + (m["coupling.distance-own.avg"] ?? 0) * 6 + max((m["coupling.cbo.avg"] ?? 0) - 8, 0) * 3 + max((m["coupling.cbo.p95"] ?? 0) - 15, 0) * 0.4 + max((m["coupling.cbo.max"] ?? 0) - 30, 0) ** 0.5 * 0.8), 0, 100)',
                 ],
                 description: 'Coupling health score (0-100, higher is better)',
                 levels: [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project],

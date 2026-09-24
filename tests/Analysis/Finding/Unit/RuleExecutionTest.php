@@ -715,6 +715,39 @@ final class RuleExecutionTest extends TestCase
         self::assertSame($methodFinding, $findings[0]);
     }
 
+    /**
+     * Channel selection is outside the exclusion account by decision, not by
+     * omission: a finding the selection removed stays in `$produced`, leaves
+     * `$published`, and is booked nowhere in `$exclusions` — even when the
+     * account is capturing, so that the two removal paths of one loop cannot
+     * be read as one.
+     */
+    #[Test]
+    public function itKeepsASelectedOutFindingInProducedAndOutOfTheExclusionAccount(): void
+    {
+        $this->captureExcludedFindings = true;
+        $methodFinding = $this->createFinding('complexity', code: 'complexity.callable');
+        $classFinding = $this->createFinding('complexity', code: 'complexity.class');
+
+        $rule = $this->createHierarchicalRule(
+            'complexity',
+            [SymbolLevel::Callable, SymbolLevel::Class_],
+            [
+                SymbolLevel::Callable->value => [$methodFinding],
+                SymbolLevel::Class_->value => [$classFinding],
+            ],
+        );
+
+        $result = $this->createExecution([$rule], $this->createConfiguredProvider(new RuleSelection(disabled: ['complexity.class'])))
+            ->execute($this->createMinimalContext());
+
+        self::assertContains($classFinding, $result->produced);
+        self::assertNotContains($classFinding, $result->published);
+        self::assertTrue($result->exclusions->isEmpty());
+        self::assertSame([], $result->exclusions->excludedFindings);
+        self::assertSame([], $result->exclusions->attributions);
+    }
+
     #[Test]
     public function itExecutesHierarchicalRuleWithEntireRuleDisabled(): void
     {
@@ -775,6 +808,80 @@ final class RuleExecutionTest extends TestCase
 
         self::assertCount(1, $findings);
         self::assertSame($methodFinding, $findings[0]);
+    }
+
+    // --- Publication of one channel at one level ---
+
+    /**
+     * A selector narrowed to one level stops that level and leaves the rule
+     * running at the others; the producer-wide answer would say "published"
+     * for both.
+     */
+    #[Test]
+    public function itDoesNotPublishTheLevelASelectorNarrowedOut(): void
+    {
+        $channel = new FindingChannel('complexity');
+        $executor = $this->createExecution(
+            [$this->createRule('complexity', [], ['complexity' => ['callable' => true, 'class' => true]])],
+            $this->createConfiguredProvider(new RuleSelection(disabled: ['complexity:class'])),
+        );
+
+        self::assertFalse($executor->publication()->publishes('complexity', $channel, SymbolLevel::Class_));
+        self::assertTrue($executor->publication()->publishes('complexity', $channel, SymbolLevel::Callable));
+    }
+
+    /**
+     * The other switch: the rule's own configuration turned a level off,
+     * which no selector knows about.
+     */
+    #[Test]
+    public function itDoesNotPublishTheLevelConfigurationSwitchedOff(): void
+    {
+        $channel = new FindingChannel('complexity');
+        $executor = $this->createExecution(
+            [$this->createRule('complexity', [], ['complexity' => ['callable' => true, 'class' => false]])],
+            $this->createConfiguredProvider(),
+        );
+
+        self::assertFalse($executor->publication()->publishes('complexity', $channel, SymbolLevel::Class_));
+        self::assertTrue($executor->publication()->publishes('complexity', $channel, SymbolLevel::Callable));
+    }
+
+    #[Test]
+    public function itPublishesNoLevelOfAProducerTheSelectionLeftOut(): void
+    {
+        $channel = new FindingChannel('complexity');
+        $rules = [$this->createRule('complexity', [], ['complexity' => ['callable' => true]])];
+
+        self::assertFalse(
+            $this->createExecution($rules, $this->createConfiguredProvider(new RuleSelection(disabled: ['complexity'])))
+                ->publication()->publishes('complexity', $channel, SymbolLevel::Callable),
+        );
+        self::assertFalse(
+            $this->createExecution($rules, $this->createConfiguredProvider(new RuleSelection(only: ['other'])))
+                ->publication()->publishes('complexity', $channel, SymbolLevel::Callable),
+        );
+    }
+
+    /**
+     * A classless producer has no instance to report its levels, and that
+     * absence is not a disablement.
+     */
+    #[Test]
+    public function itPublishesAClasslessProducerTheSelectionLeftIn(): void
+    {
+        $executor = $this->createExecution(
+            [$this->createRule('computed.health', [])],
+            $this->createConfiguredProvider(),
+            classlessProducers: [new ProducerDeclaration(
+                name: 'health.complexity',
+                hostRuleName: 'computed.health',
+                optionsClass: RuleExecutionFixtureOptions::class,
+                description: 'Complexity health, hosted by computed.health',
+            )],
+        );
+
+        self::assertTrue($executor->publication()->publishes('health.complexity', new FindingChannel('health.complexity'), SymbolLevel::Namespace_));
     }
 
     // --- Namespace exclusion tests ---
@@ -1236,14 +1343,19 @@ final class RuleExecutionTest extends TestCase
 
     /**
      * @param list<Finding> $findings
+     * @param array<string, array<string, bool>> $levelActivity what the rule says its configuration lets run
      */
-    private function createRule(string $name, array $findings): RuleInterface
+    private function createRule(string $name, array $findings, array $levelActivity = []): RuleInterface
     {
-        return new class ($name, $findings) implements RuleInterface {
-            /** @param list<Finding> $findings */
+        return new class ($name, $findings, $levelActivity) implements RuleInterface {
+            /**
+             * @param list<Finding> $findings
+             * @param array<string, array<string, bool>> $activity
+             */
             public function __construct(
                 private readonly string $name,
                 private readonly array $findings,
+                private readonly array $activity,
             ) {}
 
             public function getName(): string
@@ -1259,14 +1371,14 @@ final class RuleExecutionTest extends TestCase
                 return ChannelShape::Occurrence;
             }
             /**
-     * A double with no producers of its own: an empty activity declares
-     * nothing, and absence is not disablement.
-     *
-     * @return array<string, array<string, bool>>
-     */
+             * Empty unless a test scripts it: an empty activity declares
+             * nothing, and absence is not disablement.
+             *
+             * @return array<string, array<string, bool>>
+             */
             public function levelActivity(): array
             {
-                return [];
+                return $this->activity;
             }
 
             public function analyze(AnalysisContext $context): array

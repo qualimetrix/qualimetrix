@@ -33,7 +33,9 @@ use Symfony\Component\Console\Command\Command;
  *   measures, and the entries it did not write are debt nothing bounds.
  * - **Configuration flags are required.** `--preset`, `--rule-opt`,
  *   `--only-rule` and `--disable-rule` decide which rules run and against
- *   which thresholds — they *are* the configuration ADR 0017 defines the set by.
+ *   which thresholds, and `--include-generated` and `--include-autoload-dev`
+ *   decide what the project is — they *are* the configuration ADR 0017
+ *   defines the set by.
  *   Withholding them does not keep the two sides equal, it guarantees they
  *   differ the dangerous way: `check --preset=strict --baseline=b.json`
  *   measures more than `baseline:generate b.json` could capture, and every
@@ -56,12 +58,19 @@ final class BaselineCommandOptionSurfaceTest extends TestCase
     private const array FORBIDDEN_OPTIONS = ['suppress-path', 'suppress-namespace', 'no-suppression-annotations'];
 
     /**
-     * The options that decide which rules run and against which thresholds.
-     * Spelled exactly as `check` spells them — the configuration stages read
-     * them off the input by name, so a different spelling here would leave
-     * the option accepted and inert.
+     * The options that decide which rules run, against which thresholds, over
+     * which project. Spelled exactly as `check` spells them — the input
+     * adapter reads them off the input by name, so a different spelling here
+     * would leave the option accepted and inert.
      */
-    private const array REQUIRED_CONFIGURATION_OPTIONS = ['preset', 'rule-opt', 'only-rule', 'disable-rule'];
+    private const array REQUIRED_CONFIGURATION_OPTIONS = [
+        'preset',
+        'rule-opt',
+        'only-rule',
+        'disable-rule',
+        'include-generated',
+        'include-autoload-dev',
+    ];
 
     /**
      * @return iterable<string, array{class-string<Command>}>

@@ -12,7 +12,6 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
-use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
@@ -22,6 +21,7 @@ use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
+use Qualimetrix\Reporting\ReportProjectScope;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -41,7 +41,6 @@ final readonly class FindingFilterOrchestrator
         private FindingProjector $findingProjector,
         private ErrorStream $errorStream,
         private UnboundSuppressionAudit $unboundSuppressionAudit,
-        private ProjectScopeCoverage $projectScopeCoverage,
         private ComposerAutoloadPathReaderInterface $composerReader,
     ) {}
 
@@ -50,10 +49,8 @@ final readonly class FindingFilterOrchestrator
         InputInterface $input,
         GitScopeResolution $scope,
     ): FindingProjectionOptions {
-        /** @var list<string> $cliExcludePaths */
-        $cliExcludePaths = $input->getOption('suppress-path');
-        /** @var list<string> $cliExcludeNamespaces */
-        $cliExcludeNamespaces = $input->getOption('suppress-namespace');
+        $cliExcludePaths = CommandLineSpelling::options($input, 'suppress-path');
+        $cliExcludeNamespaces = CommandLineSpelling::options($input, 'suppress-namespace');
         $decoder = new CliSelectorDecoder();
         $exclusions = $configuredExclusions->withAdditional(
             array_map(fn(string $value) => $decoder->decodePath($value, '--suppress-path'), $cliExcludePaths),
@@ -69,10 +66,10 @@ final readonly class FindingFilterOrchestrator
             );
         }
 
-        $baselinePath = $input->getOption('baseline');
+        $baselinePath = CommandLineSpelling::option($input, 'baseline');
 
         return new FindingProjectionOptions(
-            baselinePath: \is_string($baselinePath) && $baselinePath !== '' ? $baselinePath : null,
+            baselinePath: $baselinePath !== '' ? $baselinePath : null,
             suppressPaths: $exclusions->suppressPaths,
             suppressNamespaces: $exclusions->suppressNamespaces,
             annotationSuppressionDisabled: (bool) $input->getOption('no-suppression-annotations'),
@@ -87,12 +84,13 @@ final readonly class FindingFilterOrchestrator
         AnalysisResult $result,
         InputInterface $input,
         OutputInterface $output,
-        GitScopeResolution $scopeResolution,
+        ResolvedCheckScope $resolvedScope,
         FindingProjectionOptions $options,
     ): FindingProjectionResult {
+        $scopeResolution = $resolvedScope->scope;
         $output = $this->errorStream->writer($output);
         $filterResult = $this->findingProjector->project(
-            [...$result->findings, ...$this->unboundSuppressions($result, $scopeResolution, $options)],
+            [...$result->findings, ...$this->unboundSuppressions($result, $options, $this->valueScope($resolvedScope))],
             $result->suppressions,
             $options,
         );
@@ -108,6 +106,68 @@ final readonly class FindingFilterOrchestrator
     }
 
     /**
+     * The per-value half of the run's shape, built from the scope the console
+     * already measured, or `null` on a run that judges no configured value at
+     * all. Both readers below build it from the same carried answer, so the
+     * findings and the report's list of skipped values cannot part.
+     *
+     * **Coverage is carried, not re-measured.** {@see CheckScopeResolver}
+     * measured it for the resolved paths — after `--report=git:...` narrowed
+     * them — and a second measurement here was one more place for the two
+     * answers to part. On a run narrowed below the project's autoload targets
+     * a value that names nothing binds nothing for a reason its author did not
+     * choose, so there is nothing to judge.
+     *
+     * The PSR-4 map includes `autoload-dev` whatever the run's policy, unlike
+     * the coverage denominator: it is asked where a namespace lives, not which
+     * roots a whole-project run must reach, and a value naming test code is
+     * judged exactly by a run that analysed it. An `unknown` project declares
+     * no autoload to place a namespace through, so none of its namespace
+     * values is judged.
+     */
+    private function valueScope(ResolvedCheckScope $resolvedScope): ?ValueScopeJudgement
+    {
+        if (!$resolvedScope->coversProjectScope) {
+            return null;
+        }
+
+        $scope = $resolvedScope->scope;
+
+        return new ValueScopeJudgement(
+            $scope->projectRoot->value(),
+            $this->composerReader->extractPsr4Roots(
+                $scope->projectRoot->joinRelative(RelativePath::fromString('composer.json'))->value(),
+            ),
+            array_map(static fn(AbsolutePath $path): string => $path->value(), $scope->paths),
+            projectDeclared: $resolvedScope->projectScope->state !== ReportProjectScope::UNKNOWN,
+        );
+    }
+
+    /**
+     * The project scope as the report publishes it: the measurement taken
+     * before the run, and — on a run that judged configured values — every
+     * value it skipped, from the same enumeration the findings below come from.
+     */
+    public function projectScope(
+        ResolvedCheckScope $resolvedScope,
+        AnalysisResult $result,
+        FindingProjectionOptions $options,
+    ): ReportProjectScope {
+        $valueScope = $this->valueScope($resolvedScope);
+
+        if ($valueScope === null) {
+            return $resolvedScope->projectScope;
+        }
+
+        return $resolvedScope->projectScope->withUnjudgedValues($this->unboundSuppressionAudit->unjudgedValues(
+            $options->suppressPaths,
+            $options->suppressNamespaces,
+            $result->namespaceTree?->getAllNamespaces(),
+            $valueScope,
+        ));
+    }
+
+    /**
      * The one seam where a configured `suppress_*` value and the universe it
      * claims to name are both in hand.
      *
@@ -119,39 +179,19 @@ final readonly class FindingFilterOrchestrator
      *
      * The findings are handed to {@see FindingProjector::project()} with the
      * run's own, so a report, a baseline decision and an exit code treat them
-     * like any other finding. Being declared project-scoped, they are exempt
-     * from the path and namespace filters, and a finding about
-     * `suppress_paths: [Gone]` cannot be removed by that very pattern.
-     *
-     * **The coverage precondition is asked here, using the same predicate as
-     * the rest of the run.** A value that names nothing binds nothing on a
-     * run narrowed below the project's production autoload roots for a reason
-     * its author did not choose, so on such a run there is nothing to judge and
-     * the audit is not called at all.
-     *
-     * **Coverage is re-measured rather than carried, and the measurement says
-     * the two answers cannot differ:** {@see CheckScopeResolver} asks
-     * {@see ProjectScopeCoverage} with `$scope->projectRoot` and
-     * `$scope->paths`, and this call passes the same two fields of the same
-     * resolution object. Carrying the answer instead would mean a parameter on
-     * this method and a value at its call site in `CheckCommand`, a file this
-     * change does not own. The cost is one extra read of `composer.json` per
-     * run.
-     *
-     * The second, per-value question is built here from the same two fields
-     * and the manifest's PSR-4 map: a run wide enough to judge the project is
-     * not automatically wide enough to judge every value written for it, and
-     * `suppress_paths: [tests/Legacy]` under `qmx check src/` is correct
-     * configuration this run never looked at.
+     * like any other finding. They sit on the project, which has no file for a
+     * path pattern to match and no namespace for a namespace pattern to
+     * compare, so a finding about `suppress_paths: [Gone]` cannot be removed
+     * by that very pattern.
      *
      * @return list<Finding>
      */
     private function unboundSuppressions(
         AnalysisResult $result,
-        GitScopeResolution $scopeResolution,
         FindingProjectionOptions $options,
+        ?ValueScopeJudgement $valueScope,
     ): array {
-        if (!$this->projectScopeCoverage->pathsCoverProjectScope($scopeResolution->projectRoot, $scopeResolution->paths)) {
+        if ($valueScope === null) {
             return [];
         }
 
@@ -160,17 +200,7 @@ final readonly class FindingFilterOrchestrator
             $options->suppressNamespaces,
             $result->coverage->analyzedFiles,
             $result->namespaceTree?->getAllNamespaces(),
-            new ValueScopeJudgement(
-                $scopeResolution->projectRoot->value(),
-                // `autoload-dev` included, unlike the coverage denominator:
-                // this map is asked where a namespace lives, not which roots a
-                // whole-project run must reach, and a value naming test code
-                // is judged exactly by a run that analysed it.
-                $this->composerReader->extractPsr4Roots(
-                    $scopeResolution->projectRoot->joinRelative(RelativePath::fromString('composer.json'))->value(),
-                ),
-                array_map(static fn(AbsolutePath $path): string => $path->value(), $scopeResolution->paths),
-            ),
+            $valueScope,
         );
     }
 

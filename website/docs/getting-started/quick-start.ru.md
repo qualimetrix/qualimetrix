@@ -44,7 +44,7 @@ Worst namespaces
 
 45 violations (12 errors, 33 warnings) | Tech debt: 2d 4h (8.5 min/kLOC)
 
-Hints: --detail to see violations (top 200) | --namespace='subtree:App\Service' to drill down | --format=html -o report.html for full report
+Hints: --detail to list violations (up to 200; --detail=all for every one) | --namespace='subtree:App\Service' to drill down | --format=html -o report.html for full report
 Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 

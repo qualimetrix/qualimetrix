@@ -34,6 +34,12 @@ final class MetricName
     public const string COUPLING_INSTABILITY = 'coupling.instability';
     public const string COUPLING_ABSTRACTNESS = 'coupling.abstractness';
     public const string COUPLING_DISTANCE = 'coupling.distance';
+    public const string COUPLING_CA_OWN = 'coupling.ca-own';
+    public const string COUPLING_CE_OWN = 'coupling.ce-own';
+    public const string COUPLING_CBO_OWN = 'coupling.cbo-own';
+    public const string COUPLING_INSTABILITY_OWN = 'coupling.instability-own';
+    public const string COUPLING_ABSTRACTNESS_OWN = 'coupling.abstractness-own';
+    public const string COUPLING_DISTANCE_OWN = 'coupling.distance-own';
     public const string COUPLING_CLASS_RANK = 'coupling.class-rank';
     public const string COUPLING_CE_PACKAGES = 'coupling.ce-packages';
     public const string COUPLING_CBO_APP = 'coupling.cbo-app';
@@ -114,6 +120,7 @@ final class MetricName
      */
     public const string SIZE_SYMBOL_METHOD_COUNT = 'size.symbol-method-count';
     public const string SIZE_SYMBOL_CLASS_COUNT = 'size.symbol-class-count';
+    public const string SIZE_SYMBOL_DECLARING_NAMESPACE_COUNT = 'size.symbol-declaring-namespace-count';
     public const string SIZE_METHOD_COUNT = 'size.method-count';
     public const string SIZE_METHOD_COUNT_TOTAL = 'size.method-count.total';
     public const string SIZE_PROPERTY_COUNT = 'size.property-count';

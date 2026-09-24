@@ -79,11 +79,13 @@ final class NamespaceToProjectAggregator implements AggregationPhaseInterface
                 $nsValues[$def->name] = [];
             }
 
-            // Only aggregate leaf namespaces (those with class/method/function symbols)
-            // to avoid double-counting parent namespaces whose I/A/D are derived from children.
-            $leafNamespaces = $this->tree->getLeaves();
-
-            foreach ($leafNamespaces as $namespace) {
+            // Every namespace contributes, parent as well as leaf. That is only
+            // sound while every namespace-collected metric reaching this fold is
+            // an own-scope value; a subtree rollup declaring a project
+            // aggregation would count a parent's declarations twice, and nothing
+            // here can tell the two apart. Declare the aggregation on the
+            // own-scope key, never on the rollup.
+            foreach ($this->tree->getAllNamespaces() as $namespace) {
                 $nsBag = $repository->get(SymbolPath::forNamespace($namespace));
 
                 foreach ($namespaceCollectedDefs as $def) {
@@ -104,6 +106,7 @@ final class NamespaceToProjectAggregator implements AggregationPhaseInterface
         }
 
         $projectBag = AggregationHelper::addSymbolCounts($projectBag, $allSymbolInfos);
+        $projectBag = AggregationHelper::addDeclaringNamespaceCount($projectBag, $allSymbolInfos);
 
         $firstFile = $allSymbolInfos[0]->file;
         $projectPath = SymbolPath::forProject();

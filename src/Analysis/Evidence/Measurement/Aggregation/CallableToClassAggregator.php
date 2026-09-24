@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Measurement\Aggregation;
 
+use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
@@ -117,10 +118,16 @@ final class CallableToClassAggregator implements AggregationPhaseInterface
         }
 
         foreach ($symbolInfos as $info) {
-            $subject = $info->subject;
-            if ($subject === null) {
-                continue;
-            }
+            // The denominator below counts every callable of the class, so a
+            // callable dropped here would leave the sum and the count measuring
+            // different populations. The project's rule for this condition is a
+            // refusal, and it has to outlive whatever makes the state
+            // unreachable today.
+            $subject = $info->subject
+                ?? throw new LogicException(\sprintf(
+                    'Callable metrics require an exact declaration subject; %s carries none',
+                    $info->symbolPath->toString(),
+                ));
             $bag = $repository->getSubject($subject);
             foreach ($definitions as $definition) {
                 $value = $bag->get($definition->name);

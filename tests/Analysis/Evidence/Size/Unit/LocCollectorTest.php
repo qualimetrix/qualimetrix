@@ -261,14 +261,36 @@ PHP;
     }
 
     #[Test]
+    public function itDoesNotCountTheTerminatingLineBreakAsALine(): void
+    {
+        $terminated = $this->collectMetrics("<?php\n\$a = 1;\n// note\n");
+        $unterminated = $this->collectMetrics("<?php\n\$a = 1;\n// note");
+
+        self::assertSame(3, $terminated->get('size.loc'));
+        self::assertSame(3, $unterminated->get('size.loc'));
+        self::assertSame(2, $terminated->get('size.lloc'));
+        self::assertSame(2, $unterminated->get('size.lloc'));
+        self::assertSame(1, $terminated->get('size.cloc'));
+    }
+
+    #[Test]
+    public function itCountsATrailingBlankLineBeforeTheTerminatingBreak(): void
+    {
+        $metrics = $this->collectMetrics("<?php\n\$a = 1;\n\n");
+
+        self::assertSame(3, $metrics->get('size.loc'));
+        self::assertSame(2, $metrics->get('size.lloc'));
+    }
+
+    #[Test]
     public function itHandlesOnlyEmptyLines(): void
     {
         $code = "\n\n\n";
 
         $metrics = $this->collectMetrics($code);
 
-        // 4 lines (3 newlines = 4 lines)
-        self::assertSame(4, $metrics->get('size.loc'));
+        // Three line breaks terminate three empty lines
+        self::assertSame(3, $metrics->get('size.loc'));
         // All empty
         self::assertSame(0, $metrics->get('size.lloc'));
         self::assertSame(0, $metrics->get('size.cloc'));
@@ -403,10 +425,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // 3 lines (trailing newline creates empty line)
-        self::assertSame(3, $metrics->get('size.loc'));
-        // 1 empty line
-        // LLOC = 3 - 1 = 2
+        // The trailing newline ends line 2; it does not open line 3
+        self::assertSame(2, $metrics->get('size.loc'));
         self::assertSame(2, $metrics->get('size.lloc'));
     }
 

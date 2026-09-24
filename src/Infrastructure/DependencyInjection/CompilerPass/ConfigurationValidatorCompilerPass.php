@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
 use LogicException;
+use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Infrastructure\Rule\ConfigurationValidatorRegistry;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -19,12 +20,16 @@ use Symfony\Component\DependencyInjection\Reference;
  * declare constructor dependencies only the container can resolve, so
  * consumers never build one themselves.
  */
-final class ConfigurationValidatorCompilerPass implements CompilerPassInterface
+final class ConfigurationValidatorCompilerPass implements CompilerPassInterface, ConsumerBoundPassInterface
 {
     public const string TAG = 'qmx.configuration_validator';
 
     private const string VALIDATOR_INTERFACE = 'Qualimetrix\\Analysis\\Finding\\Contract\\ConfigurationValidatorInterface';
-    private const string RULE_EXECUTION = 'Qualimetrix\\Analysis\\Finding\\RuleExecution';
+
+    public static function consumerServiceIds(): array
+    {
+        return [ConfigurationValidatorRegistry::class, RuleExecution::class];
+    }
 
     public function process(ContainerBuilder $container): void
     {
@@ -67,11 +72,11 @@ final class ConfigurationValidatorCompilerPass implements CompilerPassInterface
                 ->setArgument('$validatorClasses', $validatorClasses);
         }
 
-        if (!$container->hasDefinition(self::RULE_EXECUTION)) {
+        if (!$container->hasDefinition(RuleExecution::class)) {
             return;
         }
 
-        $container->getDefinition(self::RULE_EXECUTION)
+        $container->getDefinition(RuleExecution::class)
             ->setArgument('$configurationValidators', $validators);
     }
 }

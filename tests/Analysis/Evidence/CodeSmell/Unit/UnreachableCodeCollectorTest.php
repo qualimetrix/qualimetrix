@@ -142,7 +142,7 @@ PHP;
     }
 
     #[Test]
-    public function itDoesNotCountCodeAfterContinueInsideIfBlock(): void
+    public function itCountsCodeAfterContinueInsideIfBlock(): void
     {
         $code = <<<'PHP'
 <?php
@@ -165,13 +165,12 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // continue is inside an if block, not at the top-level of the method
-        // The top-level method body has: foreach — no unreachable code
-        self::assertSame(0, $metrics->get('code-smell.unreachable-code:App\Processor::process'));
+        self::assertSame(1, $metrics->get('code-smell.unreachable-code:App\Processor::process'));
+        self::assertSame(12, $metrics->get('code-smell.unreachable-code.first-line:App\Processor::process'));
     }
 
     #[Test]
-    public function itDoesNotCountCodeAfterBreakInsideIfBlock(): void
+    public function itCountsCodeAfterBreakInsideIfBlock(): void
     {
         $code = <<<'PHP'
 <?php
@@ -195,8 +194,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // break is inside an if block, not at top-level of the method
-        self::assertSame(0, $metrics->get('code-smell.unreachable-code:App\Finder::find'));
+        self::assertSame(1, $metrics->get('code-smell.unreachable-code:App\Finder::find'));
     }
 
     #[Test]
@@ -589,6 +587,284 @@ PHP;
 
         // $dead = 2 is unreachable (no label after it to reset)
         self::assertSame(1, $metrics->get('code-smell.unreachable-code:App\GotoNoLabel::test'));
+    }
+
+    #[Test]
+    public function itChecksEveryNestedStatementListOfTheCallable(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class Nested
+{
+    public function run(array $items, int $n): int
+    {
+        if ($n > 0) {
+            return 1;
+            $dead = 'if';
+        } elseif ($n < 0) {
+            throw new \RuntimeException();
+            $dead = 'elseif';
+        } else {
+            $alive = true;
+        }
+        while ($n-- > 0) {
+            break;
+            $dead = 'while';
+        }
+        try {
+            return 2;
+            $dead = 'try';
+        } catch (\Exception $e) {
+            throw $e;
+            $dead = 'catch';
+        } finally {
+            $alive = true;
+        }
+    }
+}
+PHP);
+
+        self::assertSame(5, $metrics->get('code-smell.unreachable-code:App\Nested::run'));
+        self::assertSame(11, $metrics->get('code-smell.unreachable-code.first-line:App\Nested::run'));
+    }
+
+    #[Test]
+    public function itReportsTheEarliestUnreachableLineAcrossLists(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class Order
+{
+    public function run(bool $flag): int
+    {
+        foreach ([1] as $x) {
+            continue;
+            $dead = 1;
+        }
+        return 1;
+        $dead = 2;
+    }
+}
+PHP);
+
+        self::assertSame(2, $metrics->get('code-smell.unreachable-code:App\Order::run'));
+        self::assertSame(11, $metrics->get('code-smell.unreachable-code.first-line:App\Order::run'));
+    }
+
+    #[Test]
+    public function itCountsAWholeDeadCompoundStatementOnceWithoutDescendingIntoIt(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class Whole
+{
+    public function run(): int
+    {
+        return 1;
+        if (true) {
+            return 2;
+            $inner = 3;
+        }
+    }
+}
+PHP);
+
+        self::assertSame(1, $metrics->get('code-smell.unreachable-code:App\Whole::run'));
+    }
+
+    #[Test]
+    public function itChecksSwitchCaseBodiesAndCountsABreakAfterReturn(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class Switcher
+{
+    public function run(int $n): int
+    {
+        switch ($n) {
+            case 1:
+                return 1;
+                break;
+            case 2:
+                return 2;
+                $dead = 2;
+                break;
+            default:
+                return 0;
+        }
+    }
+}
+PHP);
+
+        self::assertSame(3, $metrics->get('code-smell.unreachable-code:App\Switcher::run'));
+    }
+
+    #[Test]
+    public function itDoesNotDescendIntoClosuresOrDeclarationsNestedInTheBody(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class Outer
+{
+    public function run(): \Closure
+    {
+        if (true) {
+            $f = function (): int {
+                return 1;
+                $deadInClosure = 1;
+            };
+        }
+        return $f;
+    }
+}
+PHP);
+
+        self::assertSame(0, $metrics->get('code-smell.unreachable-code:App\Outer::run'));
+    }
+
+    #[Test]
+    public function itTreatsAFullyQualifiedExitCallAsTerminal(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class Runner
+{
+    public function run(): void
+    {
+        \exit(1);
+        $dead = 1;
+    }
+
+    public function stopLater(): \Closure
+    {
+        $stop = \exit(...);
+        return $stop;
+    }
+}
+PHP);
+
+        self::assertSame(1, $metrics->get('code-smell.unreachable-code:App\Runner::run'));
+        self::assertSame(0, $metrics->get('code-smell.unreachable-code:App\Runner::stopLater'));
+    }
+
+    #[Test]
+    public function itTreatsAFullyQualifiedDieCallInAnyLetterCaseAsTerminal(): void
+    {
+        // Unqualified `die()` parses as an exit expression; only the qualified spelling is a function call.
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class Runner
+{
+    public function run(): void
+    {
+        \die('stop');
+        $dead = 1;
+    }
+
+    public function shout(): void
+    {
+        \EXIT(1);
+        $dead = 1;
+    }
+}
+PHP);
+
+        self::assertSame(1, $metrics->get('code-smell.unreachable-code:App\Runner::run'));
+        self::assertSame(1, $metrics->get('code-smell.unreachable-code:App\Runner::shout'));
+    }
+
+    #[Test]
+    public function itDoesNotTreatAFirstClassExitCallableStatementAsTerminal(): void
+    {
+        // A bare statement, so the call node itself reaches the terminality check.
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class Runner
+{
+    public function run(): void
+    {
+        \exit(...);
+        \die(...);
+        $alive = 1;
+    }
+}
+PHP);
+
+        self::assertSame(0, $metrics->get('code-smell.unreachable-code:App\Runner::run'));
+    }
+
+    #[Test]
+    public function itResetsReachabilityAtAGotoLabelInsideANestedList(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class Jumper
+{
+    public function run(bool $flag): void
+    {
+        if ($flag) {
+            goto done;
+            done:
+            $alive = 1;
+        }
+    }
+}
+PHP);
+
+        self::assertSame(0, $metrics->get('code-smell.unreachable-code:App\Jumper::run'));
+    }
+
+    #[Test]
+    public function itDoesNotTreatAnIfElseWhoseBranchesAllTerminateAsTerminal(): void
+    {
+        // Known limit: terminality is decided per statement list, without flow analysis across branches.
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class Branches
+{
+    public function run(bool $flag): int
+    {
+        if ($flag) {
+            return 1;
+        } else {
+            return 2;
+        }
+        $undetected = 3;
+    }
+}
+PHP);
+
+        self::assertSame(0, $metrics->get('code-smell.unreachable-code:App\Branches::run'));
     }
 
     private function collectMetrics(string $code): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag

@@ -17,6 +17,8 @@ use Qualimetrix\Core\Path\RelativePath;
  */
 final readonly class DeclarationPath
 {
+    public const string CANONICAL_PREFIX = 'declaration:';
+
     private function __construct(
         public SymbolPath $logical,
         public RelativePath $file,
@@ -35,7 +37,7 @@ final readonly class DeclarationPath
     public function toCanonical(): string
     {
         $canonical = \sprintf(
-            'declaration:%s@%s',
+            self::CANONICAL_PREFIX . '%s@%s',
             $this->logical->toCanonical(),
             $this->file->value(),
         );

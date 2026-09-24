@@ -28,11 +28,17 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterfac
  * Handles:
  * - Instance methods via $this->method()
  * - Static methods via self::method() / static::method()
+ * - Literal callable arrays [$this, 'method'], [self::class, 'method'], [static::class, 'method'],
+ *   [__CLASS__, 'method'] and a proven same-class receiver variable
  * - Properties via $this->prop / self::$prop / static::$prop
  * - Constants via self::CONST / static::CONST
  * - Constructor promoted properties
- * - Magic method awareness (__get/__set skip properties, __call/__callStatic skip methods)
+ * - Magic method awareness (__get/__set skip properties, __call/__callStatic skip methods),
+ *   whatever the visibility and letter case of the magic method
+ * - Method names compared case-insensitively, as PHP resolves them
+ * - A call a private method makes to itself does not count as a usage
  * - Anonymous class isolation via classStack
+ * - Enums are analyzed like classes; interfaces and traits are not
  *
  * Same-file trait resolution:
  * - When a class uses a trait defined in the same file, the trait's method bodies
@@ -43,17 +49,18 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterfac
  *
  * Limitations:
  * - Variable method/property access ($this->$name) not detected
- * - Callable syntax [$this, 'method'] not detected
+ * - Callable strings ('self::method') and callable arrays whose method name is not a string literal not detected
  * - Traits from other files are not resolved
  */
 final class UnusedPrivateVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
 {
     use UsageTrackingTrait;
+    /** Lowercase, because PHP method names are case-insensitive. */
     private const MAGIC_METHODS = [
-        '__construct', '__destruct', '__call', '__callStatic',
+        '__construct', '__destruct', '__call', '__callstatic',
         '__get', '__set', '__isset', '__unset',
         '__sleep', '__wakeup', '__serialize', '__unserialize',
-        '__toString', '__invoke', '__debugInfo', '__clone', '__set_state',
+        '__tostring', '__invoke', '__debuginfo', '__clone', '__set_state',
     ];
 
     /**
@@ -85,6 +92,14 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
      */
     private array $sameClassReceiverScopes = [];
 
+    /**
+     * Lowercase names of the enclosing class methods, innermost last; null for
+     * methods of classes that are not tracked (anonymous classes).
+     *
+     * @var list<string|null>
+     */
+    private array $methodStack = [];
+
     public function reset(): void
     {
         $this->classData = [];
@@ -92,6 +107,7 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
         $this->classStack = [];
         $this->traitDefinitions = [];
         $this->sameClassReceiverScopes = [];
+        $this->methodStack = [];
     }
 
     /**
@@ -127,26 +143,27 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
             return $this->enterClassLike($node);
         }
 
-        $currentFqn = $this->getCurrentClassFqn();
-        if ($currentFqn === null) {
-            return null;
+        // Pushed for every callable, tracked or not: leaveNode() pops for every callable.
+        if ($node instanceof Node\FunctionLike) {
+            $this->sameClassReceiverScopes[] = [];
         }
 
-        $classData = $this->classData[$currentFqn] ?? null;
+        $currentFqn = $this->getCurrentClassFqn();
+        $classData = $currentFqn === null ? null : ($this->classData[$currentFqn] ?? null);
+
+        if ($node instanceof ClassMethod) {
+            $this->methodStack[] = $classData === null ? null : $node->name->toLowerString();
+        }
+
         if ($classData === null) {
             return null;
         }
 
         // Track declarations
         if ($node instanceof ClassMethod) {
-            $this->sameClassReceiverScopes[] = [];
             $this->trackMethodDeclaration($node, $classData);
 
             return null;
-        }
-
-        if ($node instanceof Node\FunctionLike) {
-            $this->sameClassReceiverScopes[] = [];
         }
 
         $this->trackSameClassReceiverAssignment($node);
@@ -182,6 +199,7 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
             $this->sameClassReceiverScopes === []
                 ? []
                 : $this->sameClassReceiverScopes[array_key_last($this->sameClassReceiverScopes)],
+            $this->methodStack === [] ? null : $this->methodStack[array_key_last($this->methodStack)],
         );
 
         return null;
@@ -189,8 +207,12 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
 
     public function leaveNode(Node $node): ?int
     {
-        if ($node instanceof Node\FunctionLike && $this->sameClassReceiverScopes !== []) {
+        if ($node instanceof Node\FunctionLike) {
             array_pop($this->sameClassReceiverScopes);
+        }
+
+        if ($node instanceof ClassMethod) {
+            array_pop($this->methodStack);
         }
 
         if ($this->isClassLikeNode($node)) {
@@ -253,27 +275,14 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
 
     private function trackMethodDeclaration(ClassMethod $node, UnusedPrivateClassData $data): void
     {
-        if (!$node->isPrivate()) {
+        $lowerName = $node->name->toLowerString();
+        $data->noteMethodDeclaration($lowerName);
+
+        if (!$node->isPrivate() || \in_array($lowerName, self::MAGIC_METHODS, true)) {
             return;
         }
 
-        $name = $node->name->toString();
-
-        // Track magic method presence
-        match ($name) {
-            '__call' => $data->hasMagicCall = true,
-            '__callStatic' => $data->hasMagicCallStatic = true,
-            '__get' => $data->hasMagicGet = true,
-            '__set' => $data->hasMagicSet = true,
-            default => null,
-        };
-
-        // Never flag magic methods as unused
-        if (\in_array($name, self::MAGIC_METHODS, true)) {
-            return;
-        }
-
-        $data->declaredMethods[$name] = $node->getStartLine();
+        $data->declaredMethods[$node->name->toString()] = $node->getStartLine();
     }
 
     private function trackPropertyDeclaration(Property $node, UnusedPrivateClassData $data): void

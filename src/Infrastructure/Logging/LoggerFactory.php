@@ -8,6 +8,7 @@ use Psr\Log\AbstractLogger;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
+use Qualimetrix\Infrastructure\Logging\Contract\LogFileUnavailable;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Stringable;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -31,30 +32,32 @@ final class LoggerFactory implements LoggerFactoryInterface
      *                                     error stream has exactly one owner, in the console adapter, and a
      *                                     second opinion here is what let log lines land inside a progress
      *                                     frame.
-     * @param string|null $logFile Optional path to log file
-     * @param string $level Minimum log level (default: INFO)
+     * @param string|null $logFile The written `--log-file`, or null when none was written
+     * @param string|null $level The written `--log-level`, or null when none was written
      */
     public function create(
         OutputInterface $diagnostics,
         ?string $logFile = null,
-        string $level = LogLevel::INFO,
+        ?string $level = null,
     ): LoggerInterface {
         $loggers = [];
 
-        // Console logger (respects verbosity)
         if (!$diagnostics->isQuiet()) {
-            $consoleLevel = match (true) {
-                $diagnostics->isDebug() => LogLevel::DEBUG,
-                $diagnostics->isVeryVerbose() => LogLevel::DEBUG,
-                $diagnostics->isVerbose() => $level,
-                default => LogLevel::WARNING,
-            };
-            $loggers[] = new ConsoleLogger($diagnostics, $consoleLevel);
+            $loggers[] = new ConsoleLogger($diagnostics, self::consoleLevel($diagnostics, $level));
         }
 
-        // File logger
-        if ($logFile !== null && $logFile !== '') {
-            $loggers[] = new FileLogger($logFile, $level);
+        if ($logFile !== null) {
+            // Only null means "no log file". A blank path is what an unset
+            // variable in `--log-file=$LOG` produces, and reading it as absent
+            // ran without the log that was asked for.
+            if (trim($logFile) === '') {
+                throw new LogFileUnavailable(
+                    $logFile,
+                    'which is not a file name; write a path, or leave the option out to write no log file',
+                );
+            }
+
+            $loggers[] = new FileLogger($logFile, $level ?? LogLevel::INFO);
         }
 
         if ($loggers === []) {
@@ -83,5 +86,30 @@ final class LoggerFactory implements LoggerFactoryInterface
                 }
             }
         };
+    }
+
+    /**
+     * A written level is the console's at `-v` and above:
+     * `--log-level=error -vv` shows errors, not debug. At normal verbosity it
+     * can only narrow the console below warnings, because
+     * `--log-level=debug --log-file=…` asks for a detailed file, not for a
+     * terminal flooded without `-v`.
+     */
+    private static function consoleLevel(OutputInterface $diagnostics, ?string $level): string
+    {
+        return match (true) {
+            $level === null && $diagnostics->isVeryVerbose() => LogLevel::DEBUG,
+            $level === null && $diagnostics->isVerbose() => LogLevel::INFO,
+            $level === null => LogLevel::WARNING,
+            $diagnostics->isVerbose() => $level,
+            default => self::stricter($level, LogLevel::WARNING),
+        };
+    }
+
+    private static function stricter(string $level, string $floor): string
+    {
+        $order = [LogLevel::DEBUG, LogLevel::INFO, LogLevel::NOTICE, LogLevel::WARNING, LogLevel::ERROR, LogLevel::CRITICAL, LogLevel::ALERT, LogLevel::EMERGENCY];
+
+        return array_search($level, $order, true) >= array_search($floor, $order, true) ? $level : $floor;
     }
 }

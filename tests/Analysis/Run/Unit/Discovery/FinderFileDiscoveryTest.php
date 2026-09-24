@@ -5,12 +5,18 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Run\Unit\Discovery;
 
 use FilesystemIterator;
+use Generator;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Run\Discovery\DirectoryPruner;
 use Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -160,6 +166,111 @@ final class FinderFileDiscoveryTest extends TestCase
         ]), false);
 
         self::assertCount(2, $files);
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function providePrunedRoots(): iterable
+    {
+        yield 'vendor at the root' => ['vendor', 'vendor'];
+        yield 'vendor below the root' => ['lib/vendor', 'lib/vendor'];
+        yield 'written with a trailing slash' => ['lib/vendor/', 'lib/vendor'];
+        yield 'node_modules' => ['node_modules', 'node_modules'];
+        yield '.git' => ['.git', '.git'];
+    }
+
+    #[Test]
+    #[DataProvider('providePrunedRoots')]
+    public function itRefusesANamedRootThatIsADirectoryItNeverWalks(string $written, string $shown): void
+    {
+        mkdir($this->fixturesDir . '/' . $shown, 0755, true);
+        $this->createFileInDir($shown, 'Hidden.php', '<?php class Hidden {}');
+
+        try {
+            iterator_to_array($this->discovery()->discover(AbsolutePath::fromString($this->fixturesDir . '/' . $written)), false);
+            self::fail('A named root the walk never enters must be refused, not analysed as empty.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringStartsWith(\sprintf('"%s" is a vendor, node_modules or .git directory', $shown), $refusal->summary());
+        }
+    }
+
+    #[Test]
+    public function itRefusesBeforeYieldingAFileNamedBesideThePrunedRoot(): void
+    {
+        $file = $this->createFile('Named.php', '<?php class Named {}');
+        mkdir($this->fixturesDir . '/lib/vendor', 0755, true);
+        mkdir($this->fixturesDir . '/node_modules', 0755, true);
+
+        $discovered = $this->discovery()->discover([
+            AbsolutePath::fromString($file),
+            AbsolutePath::fromString($this->fixturesDir . '/lib/vendor'),
+            AbsolutePath::fromString($this->fixturesDir . '/node_modules'),
+        ]);
+        self::assertInstanceOf(Generator::class, $discovered);
+
+        try {
+            // Runs the walk up to its first yield: a refusal that comes after a
+            // file was handed out would return here instead of throwing.
+            $discovered->current();
+            self::fail('Expected a refusal before the first file.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringStartsWith(
+                '"lib/vendor", "node_modules" are vendor, node_modules or .git directories',
+                $refusal->summary(),
+            );
+        }
+    }
+
+    #[Test]
+    public function itWalksANamedRootThatLiesInsideAPrunedDirectory(): void
+    {
+        mkdir($this->fixturesDir . '/vendor/acme', 0755, true);
+        $this->createFileInDir('vendor/acme', 'Vendored.php', '<?php class Vendored {}');
+
+        $files = iterator_to_array($this->discovery()->discover(AbsolutePath::fromString($this->fixturesDir . '/vendor/acme')), false);
+
+        self::assertCount(1, $files);
+        self::assertSame('Vendored.php', $files[0]->getFilename());
+    }
+
+    #[Test]
+    public function itAnalysesAFileNamedInsideAPrunedDirectory(): void
+    {
+        mkdir($this->fixturesDir . '/vendor/acme', 0755, true);
+        $file = $this->createFileInDir('vendor/acme', 'helpers.php', '<?php function helper() {}');
+
+        $files = iterator_to_array($this->discovery()->discover(AbsolutePath::fromString($file)), false);
+
+        self::assertCount(1, $files);
+    }
+
+    #[Test]
+    public function itStillPrunesAVendorDirectoryBelowANamedRoot(): void
+    {
+        mkdir($this->fixturesDir . '/src/vendor', 0755, true);
+        $this->createFileInDir('src', 'App.php', '<?php class App {}');
+        $this->createFileInDir('src/vendor', 'Hidden.php', '<?php class Hidden {}');
+
+        $files = iterator_to_array($this->discovery()->discover(AbsolutePath::fromString($this->fixturesDir . '/src')), false);
+
+        self::assertSame(['App.php'], array_map(static fn(SplFileInfo $file): string => $file->getFilename(), $files));
+    }
+
+    /**
+     * An authored exclude may remove a default root on purpose — a composer
+     * root the author does not want analysed — and discovery cannot tell that
+     * root from one written on the command line.
+     */
+    #[Test]
+    public function itLeavesARootRemovedByAnAuthoredExcludeToThatExclude(): void
+    {
+        mkdir($this->fixturesDir . '/legacy', 0755, true);
+        $this->createFileInDir('legacy', 'Old.php', '<?php class Old {}');
+        $discovery = new FinderFileDiscovery(new DirectoryPruner(
+            AbsolutePath::fromString($this->fixturesDir),
+            [...DirectoryPruner::builtInPatterns(), new PathPattern(new SelectorDefinition(SelectorKind::Exact, 'legacy'))],
+        ));
+
+        self::assertSame([], iterator_to_array($discovery->discover(AbsolutePath::fromString($this->fixturesDir . '/legacy')), false));
     }
 
     private function createFile(string $name, string $content): string

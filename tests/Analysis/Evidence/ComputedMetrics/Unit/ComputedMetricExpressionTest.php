@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricReads;
 
 /**
  * The reader that replaced a pattern over formula text.
@@ -19,6 +20,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMe
  * were found by review, not by a green test over a list.
  */
 #[CoversClass(ComputedMetricExpression::class)]
+#[CoversClass(ComputedMetricReads::class)]
 final class ComputedMetricExpressionTest extends TestCase
 {
     private ComputedMetricExpression $expression;
@@ -84,22 +86,76 @@ final class ComputedMetricExpressionTest extends TestCase
 
     /**
      * The reason this reads the tree rather than the text: whether a key is
-     * required is a fact about each occurrence, and a name-keyed pattern cannot
+     * needed is a fact about each occurrence, and a name-keyed pattern cannot
      * hold two answers for one name.
      */
     #[Test]
-    public function itRequiresAKeyThatIsGuardedInOnePlaceAndBareInAnother(): void
+    public function itMissesAKeyThatIsGuardedInOnePlaceAndBareInAnother(): void
     {
         $formula = 'm["complexity.ccn"] * 2 + (m["complexity.ccn"] ?? 0)';
 
         self::assertSame(['complexity.ccn'], $this->expression->keysOf($formula));
-        self::assertSame(['complexity.ccn'], $this->expression->requiredKeysOf($formula));
+        self::assertSame(['complexity.ccn'], $this->missing($formula));
     }
 
-    #[Test]
-    public function itDoesNotRequireAKeyGuardedEverywhere(): void
+    /**
+     * What a formula misses, given which keys are present.
+     *
+     * @return iterable<string, array{string, list<string>, list<string>}>
+     */
+    public static function provideMissingKeyCases(): iterable
     {
-        self::assertSame([], $this->expression->requiredKeysOf('(m["complexity.ccn"] ?? 0) * 2'));
+        yield 'a guarded read with a literal fallback needs nothing' => ['(m["a"] ?? 0) * 2', [], []];
+        yield 'a bare read of an absent key' => ['m["a"] + 1', [], ['a']];
+        yield 'a bare read of a present key' => ['m["a"] + 1', ['a'], []];
+        yield 'two bare reads, one absent' => ['m["a"] + m["b"]', ['a'], ['b']];
+        // The right side of `??` is read only where the left is absent.
+        yield 'a fallback between metrics, left present' => ['m["a"] ?? m["b"]', ['a'], []];
+        yield 'a fallback between metrics, only right present' => ['m["a"] ?? m["b"]', ['b'], []];
+        yield 'a fallback between metrics, neither present' => ['m["a"] ?? m["b"]', [], ['a', 'b']];
+        yield 'a chain ending in a literal needs nothing' => ['m["a"] ?? m["b"] ?? 0', [], []];
+        yield 'a chain ending in a metric, only the last present' => ['m["a"] ?? m["b"] ?? m["c"]', ['c'], []];
+        yield 'a chain ending in a metric, none present' => ['m["a"] ?? m["b"] ?? m["c"]', [], ['a', 'b', 'c']];
+        // The inner null is handed to the outer `??`, which catches it.
+        yield 'a parenthesised chain guarded to its last link' => ['(m["a"] ?? m["b"]) ?? 0', [], []];
+        yield 'a fallback inside arithmetic, both absent' => ['(m["a"] ?? m["b"]) + m["c"]', ['c'], ['a', 'b']];
+        yield 'a fallback inside arithmetic, left present' => ['(m["a"] ?? m["b"]) + m["c"]', ['a', 'c'], []];
+        // `??` guards nothing inside an operator: `null * 2` is already 0.
+        yield 'a read inside arithmetic under ??' => ['(m["a"] * 2) ?? 0', [], ['a']];
+        // Whether an arithmetic left side is null is not decided here, so its
+        // right side is taken as read.
+        yield 'an undecidable left side reads the right side' => ['(m["a"] * 2) ?? m["b"]', ['a'], ['b']];
+        // Which branch runs depends on the symbol's values, so a key only one
+        // branch reads is not certainly read; the evaluator judges it per symbol.
+        yield 'a key only one branch reads' => ['m["a"] > 0 ? m["b"] : m["c"]', ['a'], []];
+        yield 'a key only the else branch reads' => ['m["a"] > 0 ? 7 : m["c"]', ['a'], []];
+        yield 'a key both branches read' => ['m["a"] > 0 ? m["b"] : m["b"] * 2', ['a'], ['b']];
+        yield 'a key both branches hand to an enclosing ??' => ['(m["a"] > 0 ? m["b"] : m["b"]) ?? 0', ['a'], []];
+        // One path consumes it, the other hands it to `??`: not certain.
+        yield 'a key one branch consumes and the other hands to ??' => ['(m["a"] > 0 ? m["b"] * 2 : m["b"]) ?? 0', ['a'], []];
+        yield 'a key a nested ternary reads in both of its branches' => ['m["a"] > 0 ? 1 : (m["c"] > 0 ? m["b"] : m["b"])', ['a', 'c'], []];
+        // The condition always runs, and a null in it decides the branch.
+        yield 'a bare read in the condition' => ['m["a"] > 0 ? 1 : 2', [], ['a']];
+        yield 'a guarded read in the condition' => ['(m["a"] ?? 0) > 0 ? m["b"] : 2', [], []];
+        yield 'the condition of an elvis' => ['m["a"] ?: m["b"]', [], ['a']];
+        yield 'the fallback of an elvis' => ['m["a"] ?: m["b"]', ['a'], []];
+        // `and` and `or` run their right side only on the left's value.
+        yield 'the right side of and' => ['m["a"] > 0 and m["b"] > 0', ['a'], []];
+        yield 'the right side of ||' => ['m["a"] > 0 || m["b"] > 0', ['a'], []];
+        yield 'the left side of and' => ['m["a"] > 0 && m["b"] > 0', ['b'], ['a']];
+        yield 'both sides of xor' => ['m["a"] > 0 xor m["b"] > 0', ['a'], ['b']];
+        yield 'a function argument' => ['max(m["a"], 1)', [], ['a']];
+    }
+
+    /**
+     * @param list<string> $present
+     * @param list<string> $expected
+     */
+    #[Test]
+    #[DataProvider('provideMissingKeyCases')]
+    public function itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull(string $formula, array $present, array $expected): void
+    {
+        self::assertSame($expected, $this->missing($formula, $present));
     }
 
     #[Test]
@@ -133,12 +189,12 @@ final class ComputedMetricExpressionTest extends TestCase
     }
 
     /**
-     * Only the LEFT side of `??` is guarded by it. The right side is read
-     * exactly when the left is absent, which is what makes it required.
+     * @param list<string> $present
+     *
+     * @return list<string>
      */
-    #[Test]
-    public function itRequiresTheFallbackSideOfANullCoalesce(): void
+    private function missing(string $formula, array $present = []): array
     {
-        self::assertSame(['size.loc'], $this->expression->requiredKeysOf('m["complexity.ccn"] ?? m["size.loc"]'));
+        return $this->expression->missingKeysOf($formula, static fn(string $key): bool => \in_array($key, $present, true));
     }
 }

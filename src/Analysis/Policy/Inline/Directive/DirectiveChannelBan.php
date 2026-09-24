@@ -20,20 +20,19 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
  * arrangement is not debt an author may accept in place: the directive is
  * refused where it is written.
  *
- * `duplication.clone` reports one finding per duplicate block,
- * aggregated at project level ({@see \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule::channelDeclarations()}
+ * `duplication.clone` reports one finding on each copy of a duplicate block,
+ * and each copy has a project-level identity of its own — the block's
+ * content, the copy's file and its place among the block's copies there
+ * ({@see \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule::channelDeclarations()}
  * declares {@see \Qualimetrix\Core\Symbol\SymbolLevel::Project} and nothing
- * else). No directive form binds to that aggregate in a way an author
- * controls: a symbol directive binds to the declaration it is written on, and
- * the project is never that declaration; a file or next-line directive is
- * matched against the finding's `Location`, which the rule sets to the
- * block's first occurrence — an implementation detail of which copy the
- * duplicate scan visits first, not a stable target. On a two-file fixture:
- * a symbol directive on either copy's declaration never suppresses the
- * finding; a file or next-line directive suppresses it only when placed in
- * whichever file happens to hold the first occurrence, and does nothing —
- * silently, becoming `annotation.unused-directive` — in the other. Refusing
- * every form here closes that accident rather than leaving it to chance.
+ * else). A symbol directive binds to the declaration it is written on, and the
+ * project is never that declaration, so it would silence nothing. A file or
+ * next-line directive does reach the copy it is written beside, and that is
+ * the reason it is refused rather than allowed: it silences one copy of a
+ * block whose copies are the same debt, while every other copy still reports
+ * the block and names the silenced one. The silenced copy never reaches a
+ * baseline, so a copy pasted together with such a directive would pass it
+ * unseen.
  *
  * **Two questions, one list, and that is why they live together.** Can this
  * target be addressed at all ({@see problemWith()}, read by the two halves that
@@ -54,8 +53,8 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
  * own `exclude_*` keys run inside rule execution, and the channel is
  * assembled after it. The working path for `duplication.clone` is
  * channel-level: `disabled_rules: [duplication.clone]` /
- * `--disable-rule=duplication.clone`, or accepting individual
- * occurrences in the baseline.
+ * `--disable-rule=duplication.clone`, or accepting the block — all of
+ * its copies — in the baseline.
  */
 final readonly class DirectiveChannelBan
 {
@@ -126,12 +125,11 @@ final readonly class DirectiveChannelBan
                 Suppression::REASON_SEPARATOR,
             ),
             self::PROJECT_ONLY_DUPLICATION_NAME => \sprintf(
-                'Suppression "%s" addresses "%s", which reports one project-wide finding per duplicate'
-                . ' block: no declaration a symbol directive binds to is the project, and the file a file or'
-                . ' next-line directive names is only the block\'s first occurrence, which the scan chooses'
-                . ' and the author does not control. Disable the rule instead:'
-                . ' "disabled_rules: [%s]" in the configuration, or "--disable-rule=%s", or accept the'
-                . ' occurrence in the baseline. A reason goes after "%s".',
+                'Suppression "%s" addresses "%s", which reports every copy of a duplicate block as one'
+                . ' project-wide debt: no declaration a symbol directive binds to is the project, and a file or'
+                . ' next-line directive would silence one copy while the others still report the block.'
+                . ' Disable the rule instead: "disabled_rules: [%s]" in the configuration, or'
+                . ' "--disable-rule=%s", or accept the block in the baseline. A reason goes after "%s".',
                 $raw,
                 self::PROJECT_ONLY_DUPLICATION_NAME,
                 self::PROJECT_ONLY_DUPLICATION_NAME,

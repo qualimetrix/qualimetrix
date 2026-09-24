@@ -11,10 +11,15 @@ use Symfony\Component\DependencyInjection\Reference;
 /**
  * Registers tagged configuration stages with the ConfigurationPipeline.
  */
-final class ConfigurationStageCompilerPass implements CompilerPassInterface
+final class ConfigurationStageCompilerPass implements CompilerPassInterface, ConsumerBoundPassInterface
 {
     public const string TAG = 'qmx.configuration_stage';
     private const string PIPELINE_SERVICE_ID = 'qmx.configuration.pipeline';
+
+    public static function consumerServiceIds(): array
+    {
+        return [self::PIPELINE_SERVICE_ID];
+    }
 
     public function process(ContainerBuilder $container): void
     {

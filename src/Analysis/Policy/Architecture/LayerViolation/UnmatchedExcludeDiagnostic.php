@@ -75,6 +75,16 @@ final class UnmatchedExcludeDiagnostic
      * A layer declared `pending: true` is skipped for the same reason that
      * diagnostic skips it: its author has said the code does not exist yet.
      *
+     * **"Removed nothing" and "could not answer" are two outcomes.** A clause
+     * reading `extends`/`implements`/`attributes` cannot be answered about a
+     * class whose inheritance chain leaves the analysed paths; the match then
+     * stands with the doubt attached. Such a clause has not been shown to make
+     * no difference — the class it cannot answer about may be exactly the one
+     * it was written for — so a clause with any unanswered evaluation is not
+     * called inert, and "drop the clause" is never advised for it. The doubt
+     * itself reaches the reader through `architecture.doubted-assignment` and
+     * `debug:layer-assignment` when it bears on an assignment.
+     *
      * **Why the declaration and not the instance.** A template layer
      * `domain-{module}` is one `exclude:` clause in the file and N layers
      * after expansion. Judged per instance, a clause that does its work in one
@@ -95,30 +105,10 @@ final class UnmatchedExcludeDiagnostic
      */
     public static function forInertClauses(LayerEvidence $evidence, string $channelName): array
     {
-        $matchedCounts = $evidence->matchedCounts();
-        $excludedCounts = $evidence->excludedCounts();
-
-        /** @var array<string, array{definition: LayerDefinition, matched: int, excluded: int, instances: int}> $clauses */
-        $clauses = [];
-
-        foreach ($evidence->architecture->registry()->definitions() as $definition) {
-            if ($definition->membership()->exclude === null || $definition->lifecycle->isPending()) {
-                continue;
-            }
-
-            $declaration = $definition->declarationName();
-            $layerName = $definition->name();
-
-            $clauses[$declaration] ??= ['definition' => $definition, 'matched' => 0, 'excluded' => 0, 'instances' => 0];
-            $clauses[$declaration]['matched'] += $matchedCounts[$layerName] ?? 0;
-            $clauses[$declaration]['excluded'] += $excludedCounts[$layerName] ?? 0;
-            ++$clauses[$declaration]['instances'];
-        }
-
         $findings = [];
 
-        foreach ($clauses as $declaration => $clause) {
-            if ($clause['matched'] === 0 || $clause['excluded'] > 0) {
+        foreach (self::clauses($evidence) as $declaration => $clause) {
+            if (!self::isInert($clause)) {
                 continue;
             }
 
@@ -129,7 +119,52 @@ final class UnmatchedExcludeDiagnostic
     }
 
     /**
-     * @param array{definition: LayerDefinition, matched: int, excluded: int, instances: int} $clause
+     * Each `exclude:` clause with its counts summed over every layer the
+     * declaration expands to.
+     *
+     * @return array<string, array{definition: LayerDefinition, matched: int, excluded: int, unanswered: int, instances: int}>
+     */
+    private static function clauses(LayerEvidence $evidence): array
+    {
+        $matchedCounts = $evidence->matchedCounts();
+        $excludedCounts = $evidence->excludedCounts();
+        $unansweredCounts = $evidence->unansweredExcludeCounts();
+
+        /** @var array<string, array{definition: LayerDefinition, matched: int, excluded: int, unanswered: int, instances: int}> $clauses */
+        $clauses = [];
+
+        foreach ($evidence->architecture->registry()->definitions() as $definition) {
+            if ($definition->membership()->exclude === null || $definition->lifecycle->isPending()) {
+                continue;
+            }
+
+            $declaration = $definition->declarationName();
+            $layerName = $definition->name();
+
+            $clauses[$declaration] ??= ['definition' => $definition, 'matched' => 0, 'excluded' => 0, 'unanswered' => 0, 'instances' => 0];
+            $clauses[$declaration]['matched'] += $matchedCounts[$layerName] ?? 0;
+            $clauses[$declaration]['excluded'] += $excludedCounts[$layerName] ?? 0;
+            $clauses[$declaration]['unanswered'] += $unansweredCounts[$layerName] ?? 0;
+            ++$clauses[$declaration]['instances'];
+        }
+
+        return $clauses;
+    }
+
+    /**
+     * Caught something, removed nothing, and answered every time it was
+     * asked — the one shape of which "the clause makes no difference" has
+     * been shown.
+     *
+     * @param array{definition: LayerDefinition, matched: int, excluded: int, unanswered: int, instances: int} $clause
+     */
+    private static function isInert(array $clause): bool
+    {
+        return $clause['matched'] > 0 && $clause['excluded'] === 0 && $clause['unanswered'] === 0;
+    }
+
+    /**
+     * @param array{definition: LayerDefinition, matched: int, excluded: int, unanswered: int, instances: int} $clause
      */
     private static function finding(string $declaration, array $clause, string $channelName): Finding
     {

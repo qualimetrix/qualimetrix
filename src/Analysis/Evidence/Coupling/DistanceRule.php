@@ -150,13 +150,12 @@ final class DistanceRule extends AbstractRule
     {
         \assert($this->options instanceof DistanceOptions);
 
-        $metrics = $context->metrics->get($info->symbolPath);
-        $classCount = (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0);
-        $distance = $metrics->get(MetricName::COUPLING_DISTANCE);
-        if ($classCount < $this->options->minClassCount || $distance === null) {
+        if (!$this->isJudged($info, $context)) {
             return null;
         }
 
+        $metrics = $context->metrics->get($info->symbolPath);
+        $distance = $metrics->get(MetricName::COUPLING_DISTANCE);
         $subject = $info->subject ?? MetricSubject::aggregate($info->symbolPath);
         $distanceValue = (float) $distance;
         /** @var DistanceOptions $effectiveOptions */
@@ -188,6 +187,26 @@ final class DistanceRule extends AbstractRule
             recommendation: \sprintf('Distance: %.2f (threshold: %.2f) — poor balance of abstraction and stability', $distanceValue, $threshold),
             threshold: $threshold,
         );
+    }
+
+    /**
+     * A namespace is judged when it is large enough, has a distance, and is
+     * coupled at all. With Ca = Ce = 0 instability is 0 by convention rather
+     * than by measurement, and the distance built on it describes no package:
+     * a concrete namespace nothing touches would read as the worst zone of pain.
+     */
+    private function isJudged(SymbolInfo $info, AnalysisContext $context): bool
+    {
+        \assert($this->options instanceof DistanceOptions);
+
+        $metrics = $context->metrics->get($info->symbolPath);
+        $classCount = (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0);
+
+        if ($classCount < $this->options->minClassCount || $metrics->get(MetricName::COUPLING_DISTANCE) === null) {
+            return false;
+        }
+
+        return (int) $metrics->require(MetricName::COUPLING_CA) + (int) $metrics->require(MetricName::COUPLING_CE) > 0;
     }
 
     /**

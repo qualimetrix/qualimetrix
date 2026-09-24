@@ -32,7 +32,7 @@ final class ParserConfigurator implements ContainerConfiguratorInterface
 
     private function registerCache(ContainerBuilder $container): void
     {
-        $container->register(CacheKeyGenerator::class);
+        $container->register(CacheKeyGenerator::class)->setAutowired(true);
         $container->register(CacheConfigurationStore::class);
         $container->setAlias(CacheConfigurationStoreInterface::class, CacheConfigurationStore::class);
         $container->register(CacheConfigurationResolver::class);

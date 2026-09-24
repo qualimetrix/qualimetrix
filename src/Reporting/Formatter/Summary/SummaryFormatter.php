@@ -41,8 +41,9 @@ final class SummaryFormatter implements FormatterInterface, FormatOptionKeysInte
         $lines = [];
 
         $this->renderHeader($report, $context, $color, $lines);
-        if ($report->coverage !== null) {
-            $lines[] = CoverageNarrator::describe($report->coverage);
+        $coverageLines = CoverageNarrator::lines($report);
+        if ($coverageLines !== []) {
+            array_push($lines, ...$coverageLines);
             $lines[] = '';
         }
 
@@ -56,26 +57,9 @@ final class SummaryFormatter implements FormatterInterface, FormatOptionKeysInte
 
         // Append detailed finding list when --detail is used
         if ($context->isDetailEnabled() && !$report->isEmpty()) {
-            $detailFindings = $report->findings;
-            if ($detailFindings !== []) {
-                $limit = $context->detailLimit;
-                $totalCount = \count($detailFindings);
-                $showAll = $limit === null || $limit === 0 || $totalCount <= $limit;
-                $displayFindings = $showAll ? $detailFindings : \array_slice($detailFindings, 0, $limit);
-
-                $lines[] = '';
-                $lines[] = $color->bold('Violations');
-                $lines[] = $this->detailedRenderer->render($displayFindings, $context, $detailFindings);
-
-                if (!$showAll) {
-                    $remaining = $totalCount - $limit;
-                    $lines[] = '';
-                    $lines[] = $color->dim(\sprintf(
-                        '... and %d more. Use --detail=all to see all violations',
-                        $remaining,
-                    ));
-                }
-            }
+            $lines[] = '';
+            $lines[] = $color->bold('Violations');
+            $lines[] = $this->detailedRenderer->renderCapped($report->findings, $context);
         }
 
         return implode("\n", $lines) . "\n";

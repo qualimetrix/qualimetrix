@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition;
+use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
@@ -126,10 +127,13 @@ final class DirectivesCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        /** @var string $format */
-        $format = $input->getOption('format');
+        // The envelope's format is the one written, read before anything can
+        // refuse; a value of another type is refused inside the ladder below.
+        $rawFormat = $input->getOption('format');
+        $format = \is_string($rawFormat) ? $rawFormat : null;
 
         try {
+            $format = CommandLineSpelling::option($input, 'format') ?? '';
             if (!\in_array($format, self::SUPPORTED_FORMATS, true)) {
                 // A refusal like any other in this command's `--sweep`,
                 // `paths` and empty-scope checks below: the carrier lets one
@@ -155,9 +159,9 @@ final class DirectivesCommand extends Command
             // decides the stream from {@see MachineReadableFormats}, not from
             // whether this command itself supports the value, so an unknown
             // `--format` still lands on stdout as a JSON envelope when it
-            // names one of the six machine-readable formats (e.g.
+            // names one of the five JSON-document formats (e.g.
             // `--format=sarif`, which this command does not support) and
-            // falls through to stderr only for the other six.
+            // falls through to stderr for the other seven.
             return $this->refusalPresenter->refusal($output, $format, $refusal);
         } catch (InvalidArgumentException $failure) {
             // Named secondary signal for code 3: an
@@ -183,8 +187,7 @@ final class DirectivesCommand extends Command
 
     private function audit(InputInterface $input, OutputInterface $output, string $format): int
     {
-        /** @var string $requestedSweep */
-        $requestedSweep = $input->getOption('sweep');
+        $requestedSweep = CommandLineSpelling::option($input, 'sweep') ?? '';
         $sweep = DirectiveSweepScope::tryFrom($requestedSweep);
 
         if ($sweep === null) {

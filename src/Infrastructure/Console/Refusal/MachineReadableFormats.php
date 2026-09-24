@@ -7,11 +7,13 @@ namespace Qualimetrix\Infrastructure\Console\Refusal;
 /**
  * One question: does this format's stdout carry a JSON document?
  *
- * The set is closed: `json`, `sarif`, `gitlab`, `metrics`, `health`,
- * `suppressed`. `text`, `text-verbose`, `summary`, `checkstyle`, `github` and
+ * The set is closed: `json`, `sarif`, `gitlab`, `metrics`, `suppressed`.
+ * `text`, `text-verbose`, `summary`, `health`, `checkstyle`, `github` and
  * `html` are excluded — their stdout contract is human-readable, XML, or
  * workflow-command text, and a JSON envelope in that stream would be worse
  * than leaving stdout empty and the failure available only on stderr.
+ * `health` is the terminal table; its JSON form is the `health` section of
+ * `--format=json`.
  *
  * "Closed" is enforced, not just claimed: both lists together are the
  * complete classification this class promises, and
@@ -20,6 +22,8 @@ namespace Qualimetrix\Infrastructure\Console\Refusal;
  * `FormatterRegistry` has registered — a formatter added under
  * CLAUDE.md §7's automatic registration and left unclassified here fails
  * that test rather than silently taking the `false` (no envelope) default.
+ * The same test renders every formatter and holds each one to the list it
+ * is on, so a format filed on the wrong side fails too.
  */
 final class MachineReadableFormats
 {
@@ -28,7 +32,6 @@ final class MachineReadableFormats
         'sarif',
         'gitlab',
         'metrics',
-        'health',
         'suppressed',
     ];
 
@@ -37,6 +40,7 @@ final class MachineReadableFormats
         'text',
         'text-verbose',
         'summary',
+        'health',
         'checkstyle',
         'github',
         'html',

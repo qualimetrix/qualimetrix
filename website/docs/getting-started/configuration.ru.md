@@ -36,9 +36,10 @@ paths:
 
 ```yaml
 exclude:
-  - vendor/
-  - tests/Fixtures/
+  - subtree: tests/Fixtures
 ```
+
+Каждая запись — селектор пути, записанный так же, как в `suppress_paths`: `exact`, `subtree` или `regex`; голая строка отклоняется. В каталоги `vendor`, `node_modules` и `.git` Qualimetrix не заходит никогда, поэтому записи для них не нужны. Каталог, который вы называете в `paths` или в командной строке и который убирает запись отсюда, останавливает прогон ошибкой конфигурации (код 3), а не даёт успешный прогон, так и не заглянувший внутрь; см. [аргумент paths](../usage/cli-options.md#аргумент-paths).
 
 ### Включение сгенерированных файлов (include_generated)
 
@@ -49,6 +50,18 @@ include_generated: true
 ```
 
 Эквивалент в CLI: `--include-generated`
+
+### Код autoload-dev как часть проекта (include_autoload_dev)
+
+По умолчанию код, объявленный в `composer.json` в секции `autoload-dev`, не входит в проект: прогон без `paths` анализирует только пути, которые объявляет `autoload` (в любой форме автозагрузки: `psr-4`, `psr-0`, `classmap`, `files`), и только по ним Qualimetrix судит, охватил ли прогон весь проект. Чтобы считать тестовый код частью проекта в обоих местах:
+
+```yaml
+include_autoload_dev: true
+```
+
+Пути, которые вы пишете сами, не расширяются; при `paths: [src]` прогон будет отмечен как не охвативший пути `autoload-dev`. В обеих секциях запись, которая сама является каталогом `vendor`, `node_modules` или `.git` или лежит внутри него, не входит в проект: она не анализируется по умолчанию и не учитывается, а предупреждение её называет.
+
+Эквивалент в CLI: `--include-autoload-dev`
 
 ### Подавление путей в отчёте (suppress_paths)
 
@@ -238,7 +251,9 @@ rules:
 
 **Написание ключа опции взаимозаменяемо, сам ключ — нет.** `max_warning`,
 `maxWarning` и `max-warning` — один и тот же ключ, и все три применяются, на
-обеих глубинах. Ключ, которого у правила в этой позиции нет, не угадывается:
+обеих глубинах. Раз ключ один, он пишется один раз: два его написания в одном блоке —
+`max_warning: 1` рядом с `maxWarning: 999` — завершают прогон с кодом 3, а не отдают
+победу последнему. Это верно для любого ключа документа, включая корневые. Ключ, которого у правила в этой позиции нет, не угадывается:
 прогон останавливается — см. «Неизвестные ключи опций правила» в разделе
 «Валидация конфигурации» ниже.
 
@@ -400,7 +415,7 @@ CLI-эквиваленты, `suppress_namespace_channels` и семейство 
 отвергается:
 
 ```
-Configuration error: Rule selector "complexity" does not match any registered producer, group, or channel.
+Configuration error: Rule selector "complexity" does not match any registered producer or channel. A bare prefix is not a group: write "complexity.*" to select every rule under "complexity".
 Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
@@ -513,7 +528,7 @@ exclude_health:
 
 ### Лимит памяти (memory_limit)
 
-Лимит памяти PHP для анализа. По умолчанию используется значение `memory_limit` из `php.ini`.
+Лимит памяти PHP для анализа. По умолчанию используется значение `memory_limit` из `php.ini`. Лимит действует и в рабочих процессах, где файлы разбираются и измеряются; файл, который рабочий процесс не смог обработать в его пределах, отмечается как необработанный, и сообщение о сбое называет лимит.
 
 ```yaml
 memory_limit: 1G    # 1 гигабайт
@@ -854,7 +869,7 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 воспользуется, всё равно кем-то написано:
 
 ```
-Configuration error: Option "warning" of rule "complexity.ccn" at level "callable" must be a whole number or null, got a string.
+Configuration error: Option "warning" of rule "complexity.ccn" at level "callable" must be a non-negative whole number or null, got a string.
 Configuration error: Invalid value for "only_rules": expected a list of entries, got a map.
 Configuration error: Invalid value for "cache": expected a section of named keys (dir, enabled), got a list.
 ```
@@ -868,18 +883,19 @@ https://qualimetrix.dev/llms.txt`); здесь она опущена, чтобы
 
 Формы, которые может запросить ключ, в тех словах, которыми их называет отказ:
 
-| Форма              | Принимает                                                             |
-| ------------------ | --------------------------------------------------------------------- |
-| a boolean          | `true` / `false`                                                      |
-| a whole number     | `15` — не `10.5` и не `"15"`                                          |
-| a number           | `15` или `10.5`                                                       |
-| a string           | любую строку, включая пустую                                          |
-| a non-empty string | строку хотя бы с одним непробельным символом                          |
-| a list of X        | YAML-последовательность, каждый элемент формы X                       |
-| a map of X         | YAML-отображение, ключи которого называете вы; значения формы X       |
-| a block of options | отображение, за собственные ключи которого отвечает другое объявление |
+| Форма                       | Принимает                                                             |
+| --------------------------- | --------------------------------------------------------------------- |
+| a boolean                   | `true` / `false`                                                      |
+| a non-negative whole number | `15` или `0` — не `10.5`, не `"15"` и не `-1`                         |
+| a non-negative number       | `15`, `10.5` или `0` — не `-0.5`                                      |
+| a number                    | число любого знака (только пороги вычисляемых метрик)                 |
+| a string                    | любую строку, включая пустую                                          |
+| a non-empty string          | строку хотя бы с одним непробельным символом                          |
+| a list of X                 | YAML-последовательность, каждый элемент формы X                       |
+| a map of X                  | YAML-отображение, ключи которого называете вы; значения формы X       |
+| a block of options          | отображение, за собственные ключи которого отвечает другое объявление |
 
-Пять следствий стоит проговорить отдельно — каждое из них раньше проходило
+Шесть следствий стоит проговорить отдельно — каждое из них раньше проходило
 незамеченным:
 
 - **Число в кавычках — это строка.** `warning: "15"` отклоняется там, где
@@ -889,9 +905,9 @@ https://qualimetrix.dev/llms.txt`); здесь она опущена, чтобы
   `--rule-opt="size.method-count:threshold=25"` и
   `--rule-opt="complexity.ccn:enabled=false"` работают как раньше.
 - **Целое — это не дробь, кроме перечисленных здесь ключей, объявивших «a
-  number».** `warning: 10.5` отклоняется там, где объявлено целое, а таким
-  образом объявлено большинство порогов этого документа. Ключи ниже
-  объявляют «a number» вместо этого и потому принимают дробь точно в
+  non-negative number».** `warning: 10.5` отклоняется там, где объявлено
+  целое, а таким образом объявлено большинство порогов этого документа. Ключи
+  ниже объявляют «a non-negative number» вместо этого и потому принимают дробь точно в
   написанном виде — каждый измеряет непрерывную величину, а не считает
   что-то: индекс сопровождаемости (`maintainability.mi.error` / `.warning` /
   `.threshold`), нестабильность (`coupling.instability.max-error` /
@@ -908,6 +924,15 @@ https://qualimetrix.dev/llms.txt`); здесь она опущена, чтобы
   `coupling.instability.min-afferent` (на каждом слоте уровня) и
   `coupling.instability.namespace.min-class-count` каждый раз считают классы
   или файлы, а не отношение.
+- **Порог или счётчик не бывает отрицательным.** Каждая числовая опция под
+  `rules:` — это счётчик или граница измерения, которое не может быть
+  отрицательным, а отрицательная граница не ужесточает правило, а
+  переворачивает его: `warning: -1` на `size.method-count` сообщил бы о каждом
+  классе. Такое значение отклоняется с указанием самого значения — и из файла,
+  и из `--rule-opt`, а сокращение `threshold: -1` называется как `threshold`,
+  то есть тем ключом, который был написан. Ноль принимается. `warning` /
+  `error` / `threshold` вычисляемой метрики сохраняют оба знака: её формулу
+  пишете вы, и она вполне может быть отрицательной.
 - **Список и карта не взаимозаменяемы.** `only_rules: {a: complexity.ccn}` и
   `exclude_methods: {a: getName}` отклоняются; пишите
   `only_rules: [complexity.ccn]` и `exclude_methods: [getName]`. То же в другую

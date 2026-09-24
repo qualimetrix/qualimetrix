@@ -97,13 +97,17 @@ enumerate it.
   attribution. Both are loud.
 - How much of the list CI verifies is now a property of this repository rather
   than of `shivammathur/setup-php`'s defaults: the extensions the control needs
-  are pinned in the workflow, for the same reason `igbinary` already was.
+  are pinned in the workflow, for the same reason `igbinary` already was, and a
+  pinned extension that does not load reddens the CI run instead of quietly
+  narrowing what it compared.
 - The control cannot see one class of defect. PHP class names are
-  case-insensitive and `isBuiltin()` is an exact-key lookup, so
-  `class X extends \exception` is still measured as extending a project class.
-  The census compares canonical spellings on both sides and structurally cannot
-  reach it; a green census is agreement on a set of strings, not proof that
-  `isBuiltin()` answers correctly for every spelling source may use.
+  case-insensitive, and the census compares canonical spellings on both sides,
+  so it structurally cannot tell whether `isBuiltin()` answers for every
+  spelling source may use. When this was written `isBuiltin()` was an
+  exact-key lookup and `class X extends \exception` was measured as extending a
+  project class; it now folds ASCII case the way PHP does, and that fold is
+  held by the registry's own unit tests — a green census still proves only
+  agreement on a set of strings.
 - A name is verified wherever its extension is loaded, and nowhere else. No
   attributed extension is currently unloadable everywhere: `Pdo\Firebird` was
   recorded as such on the assumption that no runner builds `pdo_firebird`, and
@@ -113,3 +117,50 @@ enumerate it.
   php-src: the GitHub runner preinstalls eleven the developer boxes here do not.
   Each costs one row with a reason, and an unknown one reds rather than being
   assumed PECL — the assumption that would have let `uri` through in 8.5.
+
+## Amendment, 2026-09-23: what is above a PHP class is a static fact too
+
+Layer membership ([ADR 0079](0079-a-criterion-the-run-cannot-answer-is-undecidable.md))
+needs more than whether a name is PHP's: it follows a class extending
+`\RuntimeException` up to `\Throwable`. That walk first read the supertypes by
+reflection of the running PHP, which reintroduced the dependency this ADR
+exists to remove. `class BadUri extends \Uri\InvalidUriException` under
+`implements: ['\Throwable']` produced two layer violations on PHP 8.5 and, on
+PHP 8.4 without `uri`, no violation, an `architecture.unreachable-layer` error
+and a coverage gap advising to widen `paths:`.
+
+**`PhpBuiltinClassHierarchy` holds the parent, the transitive interfaces and the
+class-level attributes of every registered name, and
+`PhpBuiltinClassHierarchyCensusTest` compares it the way this ADR's control
+compares the list.** Which names it answers for is the registry's list itself,
+not a copy: four homogeneous maps (interface names, parents, interfaces,
+attributes) hold only the names with something to say, so an absent entry
+means "none". A name is compared wherever the running PHP declares it; a name
+no developer machine loads (`Pdo\Firebird`, `EnchantBroker`,
+`EnchantDictionary`) was written from php-src's stubs and is verified by the CI
+job that pins `enchant` and `pdo_firebird` in its extension list, so the
+comparison does not depend on what the runner image happens to preinstall.
+Both censuses skip an extension that is not loaded, so a pin that failed to
+load would take those names out of the comparison with the run still green;
+`PhpBuiltinClassRegistryCensusTest` therefore reads the pinned list from the
+workflow and, where GitHub Actions runs (`GITHUB_ACTIONS=true`), refuses a PHP
+that does not load every extension on it. Every map key must be
+registered, every supertype named must itself be registered so a walk never
+leaves the table, and a floor refuses a run that compared too few names.
+
+The table carries no version cells. Measured on PHP 8.4.24 and 8.5.9, every
+name both declare has the same parent, interfaces and class-level attributes;
+the entries for 8.5-only names are 8.5's, which is the registry's own rule — a
+name present in source implies the PHP that declares it. Member-level attributes
+are left out on the same measurement: which members carry `#[\Deprecated]`
+differs between the two versions, and no single table could state it.
+
+Adding a name now costs up to three edits: the registry, the attribution, and
+its entries in the hierarchy maps. A missing entry reads as "none", so it is
+the hierarchy census's comparison with a PHP that declares the name, not a key
+check, that names it.
+
+The alternative was to keep reading the running PHP and report "registered but
+not loaded" as a distinct reason in every reader. It was rejected because it
+repairs the message and not the verdict: the same source would still be
+assigned differently on two machines.

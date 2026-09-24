@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
+use ReflectionClass;
 
 #[CoversClass(PhpBuiltinClassRegistry::class)]
 final class PhpBuiltinClassRegistryTest extends TestCase
@@ -100,14 +101,49 @@ final class PhpBuiltinClassRegistryTest extends TestCase
         self::assertFalse(PhpBuiltinClassRegistry::isBuiltin($className));
     }
 
-    #[Test]
-    public function itCaseSensitivity(): void
+    /**
+     * PHP folds class names by ASCII case, so `\arrayobject` names the same
+     * class as `\ArrayObject`. Every registered name has to be recognised in
+     * any spelling, and answered with the one spelling the registry keeps.
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function registeredNamesProvider(): iterable
     {
-        // PHP class names in the registry are case-sensitive
-        self::assertFalse(PhpBuiltinClassRegistry::isBuiltin('exception'));
-        self::assertFalse(PhpBuiltinClassRegistry::isBuiltin('EXCEPTION'));
-        self::assertFalse(PhpBuiltinClassRegistry::isBuiltin('stdclass'));
-        self::assertTrue(PhpBuiltinClassRegistry::isBuiltin('Exception'));
-        self::assertTrue(PhpBuiltinClassRegistry::isBuiltin('stdClass'));
+        /** @var array<string, true> $classes */
+        $classes = (new ReflectionClass(PhpBuiltinClassRegistry::class))->getConstant('BUILTIN_CLASSES');
+
+        foreach (array_keys($classes) as $name) {
+            yield $name => [$name];
+        }
+    }
+
+    #[DataProvider('registeredNamesProvider')]
+    #[Test]
+    public function itRecognisesARegisteredNameInAnyCaseSpelling(string $className): void
+    {
+        foreach ([$className, strtolower($className), strtoupper($className)] as $spelling) {
+            self::assertTrue(PhpBuiltinClassRegistry::isBuiltin($spelling), $spelling);
+            self::assertSame($className, PhpBuiltinClassRegistry::canonicalName($spelling), $spelling);
+        }
+    }
+
+    #[Test]
+    public function itFoldsCaseTheWayPhpDoesAndNoFurther(): void
+    {
+        self::assertSame('Exception', PhpBuiltinClassRegistry::canonicalName('eXcEpTiOn'));
+        self::assertSame('FFI\\CData', PhpBuiltinClassRegistry::canonicalName('ffi\\cdata'));
+        self::assertNull(PhpBuiltinClassRegistry::canonicalName('App\\Exception'));
+        self::assertNull(PhpBuiltinClassRegistry::canonicalName('\\Exception'), 'a leading separator is the caller\'s to strip');
+    }
+
+    /** The spelling of a name PHP does not declare is the one it was written in, project or vendor. */
+    #[Test]
+    public function itSpellsAPhpClassAsTheListKeepsItAndAnyOtherNameAsWritten(): void
+    {
+        self::assertSame('IteratorAggregate', PhpBuiltinClassRegistry::spelling('iteratoraggregate'));
+        self::assertSame('Random\\Engine', PhpBuiltinClassRegistry::spelling('random\\engine'));
+        self::assertSame('App\\exception', PhpBuiltinClassRegistry::spelling('App\\exception'));
+        self::assertSame('Vendor\\Base', PhpBuiltinClassRegistry::spelling('Vendor\\Base'));
     }
 }

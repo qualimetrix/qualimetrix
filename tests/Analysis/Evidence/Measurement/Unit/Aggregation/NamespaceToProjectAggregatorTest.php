@@ -128,6 +128,88 @@ final class NamespaceToProjectAggregatorTest extends TestCase
         self::assertEqualsWithDelta(0.2, $projectMetrics->get('coupling.distance.avg'), 0.001);
     }
 
+    /**
+     * The population offered to a namespace-collected aggregate, counted from
+     * the declarations rather than from the tree walk the aggregate makes.
+     *
+     * The two sets must be made to disagree, or the assertion passes under the
+     * defect it exists to catch: `App` declares a type and also has a
+     * sub-namespace, so it is not a leaf and a denominator read from
+     * `getLeaves()` never learns it exists.
+     */
+    #[Test]
+    public function itCountsANamespaceThatDeclaresTypesAndAlsoHasSubNamespaces(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $repository->add(
+            SymbolPath::forClass('App', 'OwnClass'),
+            new MetricBag(),
+            RelativePath::fromString('src/OwnClass.php'),
+            10,
+        );
+        $repository->add(
+            SymbolPath::forClass('App\\Sub', 'Nested'),
+            new MetricBag(),
+            RelativePath::fromString('src/Sub/Nested.php'),
+            10,
+        );
+
+        $tree = new NamespaceTree(['App', 'App\\Sub']);
+        $project = $this->aggregateWith($repository, $tree);
+
+        self::assertSame(2, $project->get('size.symbol-declaring-namespace-count'));
+        // The walk the aggregate makes reaches one of the two, which is the point.
+        self::assertSame(['App\\Sub'], $tree->getLeaves());
+    }
+
+    /**
+     * A namespace holding only functions declares no type, so it is not part of
+     * the population a type-shaped aggregate could ever have covered. Counting
+     * it would publish a permanent gap that no run can close.
+     */
+    #[Test]
+    public function itDoesNotCountANamespaceThatDeclaresNoType(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $repository->add(
+            SymbolPath::forClass('Util', 'Helper'),
+            new MetricBag(),
+            RelativePath::fromString('src/Util/Helper.php'),
+            10,
+        );
+        $repository->addCallable(new CallableWithMetrics(
+            DeclarationPath::of(
+                SymbolPath::forGlobalFunction('Helpers', 'only_a_function'),
+                RelativePath::fromString('src/helpers.php'),
+                DeclarationOrdinal::fromRank(0),
+            ),
+            5,
+            CallableKind::Function,
+            null,
+            null,
+            null,
+            new MetricBag(),
+        ));
+
+        $tree = new NamespaceTree(['Util', 'Helpers']);
+        $project = $this->aggregateWith($repository, $tree);
+
+        self::assertSame(1, $project->get('size.symbol-declaring-namespace-count'));
+        self::assertSame(['Util', 'Helpers'], $tree->getLeaves());
+    }
+
+    private function aggregateWith(InMemoryMetricRepository $repository, NamespaceTree $tree): MetricBag
+    {
+        $definitions = [new MetricDefinition('size.loc', SymbolLevel::File, [
+            SymbolLevel::Project->value => [AggregationStrategy::Sum],
+        ])];
+
+        (new NamespaceToProjectAggregator($tree, self::createStub(ProfilerInterface::class)))
+            ->aggregate($repository, $definitions);
+
+        return $repository->get(SymbolPath::forProject());
+    }
+
     #[Test]
     public function itKeepsFileCollectedProjectTotalsPhysical(): void
     {

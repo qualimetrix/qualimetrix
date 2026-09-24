@@ -15,8 +15,8 @@ use InvalidArgumentException;
  * have matched if they were declared first.
  *
  * {@see matchedCriteria} carries the descriptors of every criterion kind that
- * fired (one per kind, in declaration order). For Phase-1-shape
- * patterns-only configs this list contains exactly one
+ * fired (one per kind, in declaration order). For a patterns-only
+ * layer this list contains exactly one
  * {@see MatchedCriterionKind::Pattern} entry. Under multi-criterion membership
  * with {@see MatchMode::Any} the list may contain several entries — e.g. a
  * class that lives in {@code App\Repository} AND ends in {@code Repository}
@@ -33,10 +33,15 @@ final readonly class LayerMatch
     /**
      * @param list<MatchedCriterion> $matchedCriteria Non-empty list of matched
      *                                                criterion descriptors.
+     * @param bool $ownsItsPatterns Whether the layer takes every class its
+     *                              patterns name ({@see MembershipSpec::ownsItsPatterns()});
+     *                              a later layer on the same pattern receives
+     *                              what one that does not leaves over.
      */
     public function __construct(
         public string $layerName,
         public array $matchedCriteria,
+        public bool $ownsItsPatterns,
     ) {
         if ($matchedCriteria === []) {
             throw new InvalidArgumentException(

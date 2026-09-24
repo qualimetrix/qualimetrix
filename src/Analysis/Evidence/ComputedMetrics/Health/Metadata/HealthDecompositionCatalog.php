@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata;
 
+use LogicException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\CoverageUnit;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -40,13 +41,20 @@ final class HealthDecompositionCatalog
      * is not a complexity signal, it is what the sums are divided by.
      *
      * `coverage` says how much of its subject the line actually saw: the
-     * `.count` the aggregate already publishes, and the population that count
-     * is a share of. It is required on every line and `null` where the line is
-     * not an aggregate over symbols — a class reading its own metrics, or a
-     * namespace reading its own D — so that a new line has to answer the
-     * question rather than omit it.
+     * population the line's `.count` is a share of. It is required on every
+     * line and `null` where the line is not an aggregate over symbols — a class
+     * reading its own metrics, or a namespace reading its own D — so that a new
+     * line has to answer the question rather than omit it.
      *
-     * @var array<string, array<string, list<array{key: string, sources: list<string>, label: string, direction: string, coverage: array{count: string, unit: CoverageUnit}|null}>>>
+     * The `.count` itself is not written here: it is the count of the very
+     * aggregate the line displays, so it is derived from `key` by
+     * {@see self::countOf()}. Declared beside the key it was a second spelling
+     * of the same fact, and a retargeted key with a stale count published a
+     * confident "0 of 168" — an absent `.count` reads as a measured zero, which
+     * is a real state (see {@see \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Score\CoverageReader})
+     * and therefore cannot be told from a typo at runtime.
+     *
+     * @var array<string, array<string, list<array{key: string, sources: list<string>, label: string, direction: string, coverage: CoverageUnit|null}>>>
      */
     private const array INPUTS = [
         'health.complexity' => [
@@ -62,11 +70,11 @@ final class HealthDecompositionCatalog
             // count callables, so the two agree — measured equal on this tree
             // (12533 / 4842 = 2.5883932, the reported `complexity.ccn.avg`).
             SymbolLevel::Namespace_->value => [
-                ['key' => 'complexity.ccn.avg', 'sources' => ['complexity.ccn.sum', MetricName::SIZE_SYMBOL_METHOD_COUNT], 'label' => 'CCN avg', 'direction' => 'lower', 'coverage' => ['count' => 'complexity.ccn.count', 'unit' => CoverageUnit::Callables]],
-                ['key' => 'complexity.cognitive.avg', 'sources' => ['complexity.cognitive.sum', MetricName::SIZE_SYMBOL_METHOD_COUNT], 'label' => 'Cognitive avg', 'direction' => 'lower', 'coverage' => ['count' => 'complexity.cognitive.count', 'unit' => CoverageUnit::Callables]],
-                ['key' => 'complexity.ccn.p95', 'sources' => ['complexity.ccn.p95'], 'label' => 'CCN p95', 'direction' => 'lower', 'coverage' => ['count' => 'complexity.ccn.count', 'unit' => CoverageUnit::Callables]],
-                ['key' => 'complexity.cognitive.p95', 'sources' => ['complexity.cognitive.p95'], 'label' => 'Cognitive p95', 'direction' => 'lower', 'coverage' => ['count' => 'complexity.cognitive.count', 'unit' => CoverageUnit::Callables]],
-                ['key' => 'complexity.ccn.max', 'sources' => ['complexity.ccn.max'], 'label' => 'CCN max', 'direction' => 'lower', 'coverage' => ['count' => 'complexity.ccn.count', 'unit' => CoverageUnit::Callables]],
+                ['key' => 'complexity.ccn.avg', 'sources' => ['complexity.ccn.sum', MetricName::SIZE_SYMBOL_METHOD_COUNT], 'label' => 'CCN avg', 'direction' => 'lower', 'coverage' => CoverageUnit::Callables],
+                ['key' => 'complexity.cognitive.avg', 'sources' => ['complexity.cognitive.sum', MetricName::SIZE_SYMBOL_METHOD_COUNT], 'label' => 'Cognitive avg', 'direction' => 'lower', 'coverage' => CoverageUnit::Callables],
+                ['key' => 'complexity.ccn.p95', 'sources' => ['complexity.ccn.p95'], 'label' => 'CCN p95', 'direction' => 'lower', 'coverage' => CoverageUnit::Callables],
+                ['key' => 'complexity.cognitive.p95', 'sources' => ['complexity.cognitive.p95'], 'label' => 'Cognitive p95', 'direction' => 'lower', 'coverage' => CoverageUnit::Callables],
+                ['key' => 'complexity.ccn.max', 'sources' => ['complexity.ccn.max'], 'label' => 'CCN max', 'direction' => 'lower', 'coverage' => CoverageUnit::Callables],
             ],
         ],
         'health.cohesion' => [
@@ -75,8 +83,8 @@ final class HealthDecompositionCatalog
                 ['key' => MetricName::COHESION_LCOM, 'sources' => [MetricName::COHESION_LCOM, 'cohesion.pure-method-count'], 'label' => 'LCOM', 'direction' => 'lower', 'coverage' => null],
             ],
             SymbolLevel::Namespace_->value => [
-                ['key' => 'cohesion.tcc.avg', 'sources' => ['cohesion.tcc.avg'], 'label' => 'TCC', 'direction' => 'higher', 'coverage' => ['count' => 'cohesion.tcc.count', 'unit' => CoverageUnit::Classes]],
-                ['key' => 'cohesion.lcom.avg', 'sources' => ['cohesion.lcom.avg'], 'label' => 'LCOM', 'direction' => 'lower', 'coverage' => ['count' => 'cohesion.lcom.count', 'unit' => CoverageUnit::Classes]],
+                ['key' => 'cohesion.tcc.avg', 'sources' => ['cohesion.tcc.avg'], 'label' => 'TCC', 'direction' => 'higher', 'coverage' => CoverageUnit::Classes],
+                ['key' => 'cohesion.lcom.avg', 'sources' => ['cohesion.lcom.avg'], 'label' => 'LCOM', 'direction' => 'lower', 'coverage' => CoverageUnit::Classes],
             ],
         ],
         'health.coupling' => [
@@ -86,16 +94,16 @@ final class HealthDecompositionCatalog
             ],
             SymbolLevel::Namespace_->value => [
                 ['key' => MetricName::COUPLING_DISTANCE, 'sources' => [MetricName::COUPLING_DISTANCE], 'label' => 'Distance', 'direction' => 'lower', 'coverage' => null],
-                ['key' => 'coupling.ce-packages.avg', 'sources' => ['coupling.ce-packages.avg', 'coupling.ce.avg'], 'label' => 'Ce pkg (avg)', 'direction' => 'lower', 'coverage' => ['count' => 'coupling.ce-packages.count', 'unit' => CoverageUnit::Classes]],
-                ['key' => 'coupling.ce.avg', 'sources' => ['coupling.ce-packages.avg', 'coupling.ce.avg'], 'label' => 'Ce (avg)', 'direction' => 'lower', 'coverage' => ['count' => 'coupling.ce.count', 'unit' => CoverageUnit::Classes]],
-                ['key' => 'coupling.ce.max', 'sources' => ['coupling.ce.max'], 'label' => 'Ce max', 'direction' => 'lower', 'coverage' => ['count' => 'coupling.ce.count', 'unit' => CoverageUnit::Classes]],
+                ['key' => 'coupling.ce-packages.avg', 'sources' => ['coupling.ce-packages.avg', 'coupling.ce.avg'], 'label' => 'Ce pkg (avg)', 'direction' => 'lower', 'coverage' => CoverageUnit::Classes],
+                ['key' => 'coupling.ce.avg', 'sources' => ['coupling.ce-packages.avg', 'coupling.ce.avg'], 'label' => 'Ce (avg)', 'direction' => 'lower', 'coverage' => CoverageUnit::Classes],
+                ['key' => 'coupling.ce.max', 'sources' => ['coupling.ce.max'], 'label' => 'Ce max', 'direction' => 'lower', 'coverage' => CoverageUnit::Classes],
                 ['key' => 'coupling.ce', 'sources' => ['coupling.ce'], 'label' => 'Ce (namespace)', 'direction' => 'lower', 'coverage' => null],
             ],
             SymbolLevel::Project->value => [
-                ['key' => 'coupling.distance.avg', 'sources' => ['coupling.distance.avg'], 'label' => 'Distance', 'direction' => 'lower', 'coverage' => ['count' => 'coupling.distance.count', 'unit' => CoverageUnit::LeafNamespaces]],
-                ['key' => 'coupling.cbo.avg', 'sources' => ['coupling.cbo.avg'], 'label' => 'CBO (avg)', 'direction' => 'lower', 'coverage' => ['count' => 'coupling.cbo.count', 'unit' => CoverageUnit::Classes]],
-                ['key' => 'coupling.cbo.p95', 'sources' => ['coupling.cbo.p95'], 'label' => 'CBO p95', 'direction' => 'lower', 'coverage' => ['count' => 'coupling.cbo.count', 'unit' => CoverageUnit::Classes]],
-                ['key' => 'coupling.cbo.max', 'sources' => ['coupling.cbo.max'], 'label' => 'CBO max', 'direction' => 'lower', 'coverage' => ['count' => 'coupling.cbo.count', 'unit' => CoverageUnit::Classes]],
+                ['key' => 'coupling.distance-own.avg', 'sources' => ['coupling.distance-own.avg'], 'label' => 'Distance', 'direction' => 'lower', 'coverage' => CoverageUnit::DeclaringNamespaces],
+                ['key' => 'coupling.cbo.avg', 'sources' => ['coupling.cbo.avg'], 'label' => 'CBO (avg)', 'direction' => 'lower', 'coverage' => CoverageUnit::Classes],
+                ['key' => 'coupling.cbo.p95', 'sources' => ['coupling.cbo.p95'], 'label' => 'CBO p95', 'direction' => 'lower', 'coverage' => CoverageUnit::Classes],
+                ['key' => 'coupling.cbo.max', 'sources' => ['coupling.cbo.max'], 'label' => 'CBO max', 'direction' => 'lower', 'coverage' => CoverageUnit::Classes],
             ],
         ],
         'health.typing' => [
@@ -117,9 +125,9 @@ final class HealthDecompositionCatalog
                 ['key' => 'maintainability.mi.min', 'sources' => ['maintainability.mi.min'], 'label' => 'MI min', 'direction' => 'higher', 'coverage' => null],
             ],
             SymbolLevel::Namespace_->value => [
-                ['key' => 'maintainability.mi.avg', 'sources' => ['maintainability.mi.avg'], 'label' => 'MI avg', 'direction' => 'higher', 'coverage' => ['count' => 'maintainability.mi.count', 'unit' => CoverageUnit::Callables]],
-                ['key' => 'maintainability.mi.p5', 'sources' => ['maintainability.mi.p5'], 'label' => 'MI p5', 'direction' => 'higher', 'coverage' => ['count' => 'maintainability.mi.count', 'unit' => CoverageUnit::Callables]],
-                ['key' => 'maintainability.mi.min', 'sources' => ['maintainability.mi.min'], 'label' => 'MI min', 'direction' => 'higher', 'coverage' => ['count' => 'maintainability.mi.count', 'unit' => CoverageUnit::Callables]],
+                ['key' => 'maintainability.mi.avg', 'sources' => ['maintainability.mi.avg'], 'label' => 'MI avg', 'direction' => 'higher', 'coverage' => CoverageUnit::Callables],
+                ['key' => 'maintainability.mi.p5', 'sources' => ['maintainability.mi.p5'], 'label' => 'MI p5', 'direction' => 'higher', 'coverage' => CoverageUnit::Callables],
+                ['key' => 'maintainability.mi.min', 'sources' => ['maintainability.mi.min'], 'label' => 'MI min', 'direction' => 'higher', 'coverage' => CoverageUnit::Callables],
             ],
         ],
         'health.overall' => [
@@ -212,7 +220,7 @@ final class HealthDecompositionCatalog
     public function __construct()
     {
         $this->decomposition = [
-            'inputs' => self::INPUTS,
+            'inputs' => self::resolveCoverage(),
             'contributors' => self::CONTRIBUTORS,
             'notable' => self::NOTABLE_CLASS_METRICS,
             'scores' => self::SCORES,
@@ -222,6 +230,60 @@ final class HealthDecompositionCatalog
                 'classCount' => 'size.class-count.sum',
             ],
         ];
+    }
+
+    /**
+     * Every declared line paired with the `.count` of the aggregate it shows.
+     *
+     * @return array<string, array<string, list<array{key: string, sources: list<string>, label: string, direction: string, coverage: array{count: string, unit: CoverageUnit}|null}>>>
+     */
+    private static function resolveCoverage(): array
+    {
+        $resolved = [];
+
+        foreach (self::INPUTS as $dimension => $perLevel) {
+            foreach ($perLevel as $level => $inputs) {
+                $resolved[$dimension][$level] = array_values(array_map(
+                    static fn(array $input): array => [
+                        'key' => $input['key'],
+                        'sources' => $input['sources'],
+                        'label' => $input['label'],
+                        'direction' => $input['direction'],
+                        'coverage' => $input['coverage'] === null
+                            ? null
+                            : ['count' => self::countOf($input['key']), 'unit' => $input['coverage']],
+                    ],
+                    $inputs,
+                ));
+            }
+        }
+
+        return $resolved;
+    }
+
+    /**
+     * The `.count` published beside an aggregate key.
+     *
+     * A line states a coverage only where it displays an aggregate, and every
+     * aggregate key is `<metric>.<strategy>` — so the sample size is the same
+     * metric read with `count`. A key without a strategy suffix carries no
+     * sample size at all, and answering with `.count` appended to the whole key
+     * would name a metric nothing publishes, which the reader could only report
+     * as a coverage of zero.
+     */
+    private static function countOf(string $key): string
+    {
+        $separator = strrpos($key, '.');
+
+        if ($separator === false || $separator === 0) {
+            throw new LogicException(\sprintf(
+                'Health decomposition line "%s" states a coverage, but its key names no aggregate'
+                . ' whose sample size could be read; drop the coverage or display an aggregate key.',
+                $key,
+            ));
+        }
+
+        return substr($key, 0, $separator) . '.count';
     }
 
     /**

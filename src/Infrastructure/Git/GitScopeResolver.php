@@ -9,11 +9,10 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
-use Qualimetrix\Core\Path\AbsolutePath;
-use Symfony\Component\Console\Input\InputInterface;
 
 /**
- * Resolves analysis scope, file discovery strategy and git client from CLI input.
+ * Resolves analysis scope, file discovery strategy and git client from the
+ * `--report` value.
  *
  * Stateless service — no DI registration needed, instantiate via `new`.
  */
@@ -25,9 +24,9 @@ final class GitScopeResolver
     ) {}
 
     /**
-     * Resolves analysis scope, file discovery strategy and git client from CLI input.
+     * @param ?string $report the `--report` value as a command line spells it; null when not written
      */
-    public function resolve(InputInterface $input, RunConfiguration $configuration): GitScopeResolution
+    public function resolve(?string $report, RunConfiguration $configuration): GitScopeResolution
     {
         // ADR 0015 Phase 2: convert raw CLI `paths` strings into AbsolutePath VOs
         // at the boundary, against the current working directory captured here.
@@ -36,7 +35,7 @@ final class GitScopeResolver
         $paths = $configuration->paths;
         $projectRoot = $configuration->projectRoot;
 
-        $reportScope = $this->resolveReportScope($input);
+        $reportScope = $this->resolveReportScope($report);
 
         $gitClient = $reportScope !== null
             ? new GitClient($projectRoot, $this->logger)
@@ -58,14 +57,11 @@ final class GitScopeResolver
     }
 
     /**
-     * Resolves the report scope from CLI options.
-     *
      * Returns null if no report scope is specified.
      */
-    private function resolveReportScope(InputInterface $input): ?GitScope
+    private function resolveReportScope(?string $report): ?GitScope
     {
-        $report = $input->getOption('report');
-        if (\is_string($report) && $report !== '') {
+        if ($report !== null && $report !== '') {
             $parser = new GitScopeParser();
             $scope = $parser->parse($report);
 

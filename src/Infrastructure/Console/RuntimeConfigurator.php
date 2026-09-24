@@ -48,6 +48,7 @@ final class RuntimeConfigurator
         $this->profileSession->disable();
         $this->progressConfigurator->reset();
         $this->runtimeLimitsController->reset();
+        $this->runtimeLoggerConfigurator->reset();
     }
 
     /**
@@ -79,6 +80,7 @@ final class RuntimeConfigurator
         $frameworkNamespaces = $this->analysisRuntimeConfigurator->resolveCoupling($document);
         $lcomConfiguration = $this->analysisRuntimeConfigurator->resolveLcom($findingConfiguration);
         $runtimeLimits = $this->resolveRuntimeLimits($document);
+        ProfilePresenter::refuseImpossibleExport($input);
         $capture = ($input->hasOption('show-suppressed') && $input->getOption('show-suppressed') === true)
             || $this->resolveFormat($document) === 'suppressed';
         $channels = $this->analysisRuntimeConfigurator->resolveRuleChannels(

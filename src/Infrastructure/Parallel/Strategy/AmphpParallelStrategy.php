@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Parallel\Strategy;
 
-use Amp\Parallel\Worker\ContextWorkerPool;
-use Amp\Parallel\Worker\Execution;
+use Closure;
 use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -17,6 +16,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
+use Qualimetrix\Infrastructure\Parallel\WorkerPool;
 use SplFileInfo;
 use Throwable;
 
@@ -68,13 +68,7 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
 
     public function isAvailable(): bool
     {
-        // Check if amphp/parallel is installed
-        if (!class_exists(ContextWorkerPool::class)) {
-            return false;
-        }
-
-        // amphp/parallel requires either ext-parallel or pcntl
-        return \extension_loaded('parallel') || \function_exists('pcntl_fork');
+        return WorkerPool::isAvailable();
     }
 
     public function isParallelAvailable(): bool
@@ -217,8 +211,7 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
             ],
         );
 
-        // Create worker pool
-        $pool = new ContextWorkerPool($this->workerCount);
+        $pool = WorkerPool::open($this->workerCount, $this->logger);
 
         try {
             $results = [];
@@ -251,8 +244,7 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
 
             throw $e;
         } finally {
-            // Always shutdown the pool
-            $pool->shutdown();
+            $pool->close();
         }
     }
 
@@ -265,7 +257,7 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
      * @return list<FileProcessingResult>
      */
     private function processBatch(
-        ContextWorkerPool $pool,
+        WorkerPool $pool,
         array $batch,
         int $batchIndex,
         int $totalBatches,
@@ -279,7 +271,7 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
         // Assertion: projectRoot is guaranteed non-null here (checked in executeParallel)
         \assert($this->projectRoot !== null);
         // Submit all tasks in batch
-        /** @var list<array{file: SplFileInfo, execution: Execution<FileProcessingResult, mixed, mixed>}> $executions */
+        /** @var list<array{file: SplFileInfo, await: Closure(): FileProcessingResult}> $executions */
         $executions = [];
         foreach ($batch as $file) {
             $task = $this->fileProcessingTaskFactory->create(
@@ -289,7 +281,7 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
             );
             $executions[] = [
                 'file' => $file,
-                'execution' => $pool->submit($task),
+                'await' => $pool->submit($task),
             ];
         }
 
@@ -297,25 +289,22 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
         $results = [];
         foreach ($executions as $item) {
             $file = $item['file'];
-            $execution = $item['execution'];
-
             try {
-                /** @var FileProcessingResult $result */
-                $result = $execution->getFuture()->await();
-                $results[] = $result;
+                $results[] = $item['await']();
             } catch (Throwable $e) {
                 // Record failure for this specific file, continue processing others
                 $errorCount++;
+                $message = WorkerPool::failureMessage($e);
                 $this->logger->warning(
                     'AmphpParallelStrategy: file processing failed',
                     [
                         'file' => $file->getPathname(),
-                        'error' => $e->getMessage(),
+                        'error' => $message,
                     ],
                 );
                 $results[] = FileProcessingResult::failure(
                     $this->relativePathFor($file),
-                    $e->getMessage(),
+                    $message,
                     FileProcessingFailureKind::Processing,
                 );
             }

@@ -19,10 +19,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
 use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\Ast\CachedFileParser;
-use Qualimetrix\Infrastructure\Ast\PhpFileParser;
-use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
-use Qualimetrix\Infrastructure\Cache\FileCache;
+use Qualimetrix\Infrastructure\Ast\WorkerParserFactory;
 use RuntimeException;
 
 /**
@@ -178,16 +175,7 @@ final class WorkerBootstrap
         ?AbsolutePath $cacheDir,
         array $ruleClasses = [],
     ): FileProcessorInterface {
-        // Create parser (with optional caching)
-        $baseParser = new PhpFileParser();
-
-        if ($cacheDir !== null) {
-            $cache = new FileCache($cacheDir);
-            $keyGenerator = new CacheKeyGenerator();
-            $parser = new CachedFileParser($baseParser, $cache, $keyGenerator);
-        } else {
-            $parser = $baseParser;
-        }
+        $parser = WorkerParserFactory::create($cacheDir);
 
         // Create collectors from class names
         $collectors = self::instantiateCollectors($collectorClasses, $lcomConfiguration);
@@ -266,9 +254,7 @@ final class WorkerBootstrap
         $collectors = [];
 
         foreach ($classNames as $className) {
-            if (!self::canInstantiate($className)) {
-                continue;
-            }
+            self::assertInstantiable($className);
 
             /** @var MetricCollectorInterface $collector */
             $collector = new $className();
@@ -297,9 +283,7 @@ final class WorkerBootstrap
         $collectors = [];
 
         foreach ($classNames as $className) {
-            if (!self::canInstantiate($className)) {
-                continue;
-            }
+            self::assertInstantiable($className);
 
             /** @var DerivedCollectorInterface $collector */
             $collector = new $className();
@@ -311,14 +295,20 @@ final class WorkerBootstrap
     }
 
     /**
-     * Checks if a collector class can be safely instantiated in a parallel worker.
+     * Asserts that a collector class may be instantiated in a parallel worker.
      *
      * Only collectors implementing ParallelSafeCollectorInterface are allowed.
      * This provides a compile-time contract instead of runtime reflection.
      *
+     * Both mismatches refuse. Dropping the collector instead made `--workers=N`
+     * measure less than `--workers=0` with nothing said about it anywhere a
+     * caller looks: the metrics were simply absent, the rules reading them
+     * reported nothing, coverage stayed complete and the exit code stayed
+     * normal. The warning it wrote went to the worker's own STDERR.
+     *
      * @param class-string $className
      */
-    private static function canInstantiate(string $className): bool
+    private static function assertInstantiable(string $className): void
     {
         if (!class_exists($className)) {
             throw new RuntimeException(\sprintf(
@@ -328,17 +318,13 @@ final class WorkerBootstrap
         }
 
         if (!is_subclass_of($className, ParallelSafeCollectorInterface::class)) {
-            fwrite(\STDERR, \sprintf(
-                "[WorkerBootstrap] WARNING: collector '%s' does not implement ParallelSafeCollectorInterface "
-                . "and will be SKIPPED in parallel mode. Run with --workers=0 for complete results, "
-                . "or implement ParallelSafeCollectorInterface if the collector has no required dependencies.\n",
+            throw new RuntimeException(\sprintf(
+                "WorkerBootstrap: collector '%s' does not implement %s and cannot run in a parallel worker. "
+                . 'Implement the interface, or run with --workers=0.',
                 $className,
+                ParallelSafeCollectorInterface::class,
             ));
-
-            return false;
         }
-
-        return true;
     }
 
     private static function applyRuntimeConfiguration(

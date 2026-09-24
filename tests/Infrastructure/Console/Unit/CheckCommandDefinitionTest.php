@@ -92,4 +92,21 @@ final class CheckCommandDefinitionTest extends TestCase
         self::assertFalse($option->acceptValue(), '--all should be VALUE_NONE (boolean flag)');
     }
 
+    /**
+     * An existing target is written in place, so a write that fails midway
+     * leaves it partly written; help that promised an atomic write told a
+     * reader the opposite of what happens.
+     */
+    #[Test]
+    public function itDescribesTheOutputWriteAsInPlaceRatherThanAtomic(): void
+    {
+        $command = new Command('test');
+
+        CheckCommandDefinition::addOptions($command, new RuleRegistry([]));
+
+        $description = $command->getDefinition()->getOption('output')->getDescription();
+
+        self::assertStringNotContainsStringIgnoringCase('atomic', $description);
+        self::assertStringContainsString('in place', $description);
+    }
 }

@@ -17,8 +17,8 @@ use Throwable;
 
 /**
  * Validates computed metric definitions: formula syntax, level coverage,
- * circular dependencies, cross-metric references, and that every other
- * addressed metric key exists in the catalog.
+ * circular dependencies, cross-metric references and the levels they are
+ * read at, and that every other addressed metric key exists in the catalog.
  */
 final class ComputedMetricFormulaValidator
 {
@@ -45,6 +45,7 @@ final class ComputedMetricFormulaValidator
         $this->validateFormulaCoverage($definitions);
         $this->validateCircularDependencies($definitions);
         $this->validateComputedMetricReferences($definitions);
+        $this->validateComputedMetricReferenceLevels($definitions);
         $this->validateMetricKeyExistence($definitions);
     }
 
@@ -204,6 +205,76 @@ final class ComputedMetricFormulaValidator
     }
 
     /**
+     * Refuses a formula that would read another computed metric at a level
+     * that metric does not declare.
+     *
+     * A computed metric is published only at its own levels, so such a read
+     * finds it on no symbol and the reading metric is published nowhere. Each
+     * level is judged by the formula it actually runs — `project` inherits the
+     * `namespace` formula — and a read behind `??` counts only where the
+     * fallback is reached. A read only one ternary branch or the right side of
+     * `and`/`or` makes is not refused: which branch runs is known per symbol,
+     * and the evaluator skips a symbol that reaches it. A measured key counts
+     * as present here: which levels
+     * carry it is known only once a run has measured, and the evaluator
+     * refuses it then.
+     *
+     * @param list<ComputedMetricDefinition> $definitions
+     */
+    private function validateComputedMetricReferenceLevels(array $definitions): void
+    {
+        $byName = [];
+        foreach ($definitions as $definition) {
+            $byName[$definition->name] = $definition;
+        }
+
+        foreach ($definitions as $definition) {
+            foreach ($definition->levels as $level) {
+                $formula = $definition->getFormulaForLevel($level);
+                if ($formula === null) {
+                    continue;
+                }
+
+                $unpublished = $this->expression->missingKeysOf(
+                    $formula,
+                    static fn(string $key): bool => !isset($byName[$key]) || $byName[$key]->hasLevel($level),
+                );
+
+                if ($unpublished !== []) {
+                    self::refuseUnpublishedReferences($definition->name, $unpublished, $byName, $level->value, $formula);
+                }
+            }
+        }
+    }
+
+    /**
+     * @param non-empty-list<string> $unpublished
+     * @param array<string, ComputedMetricDefinition> $byName
+     */
+    private static function refuseUnpublishedReferences(
+        string $definitionName,
+        array $unpublished,
+        array $byName,
+        string $level,
+        string $formula,
+    ): never {
+        $publishedAt = [];
+        foreach ($unpublished as $reference) {
+            $publishedAt[$reference] = [];
+            foreach ($byName[$reference]->reportingLevels() as $published) {
+                $publishedAt[$reference][] = $published->value;
+            }
+        }
+
+        // The entry, not `formulas.<level>`: an inherited project formula has
+        // no key of its own to point at.
+        throw ConfigurationRefusal::atResolvedKey(
+            RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($definitionName), $definitionName),
+            ComputedMetricRefusalWording::readsComputedMetricNotPublishedAtLevel($definitionName, $publishedAt, $level, $formula),
+        );
+    }
+
+    /**
      * The other computed metrics a formula reads.
      *
      * @return list<string>
@@ -229,6 +300,32 @@ final class ComputedMetricFormulaValidator
         }
     }
 
+    /**
+     * Refuses a formula that names a metric no symbol at the level carries.
+     *
+     * Beside the four checks above rather than at the site that measures it:
+     * this class is where a computed-metric formula is declared unacceptable,
+     * and a second author of the same refusal would be a second spelling of
+     * exit code 3 for the same mistake. Only the evidence differs — a key
+     * missing from the catalog is knowable from the configuration alone, while
+     * a key no symbol publishes is only knowable once a run has measured.
+     *
+     * @param list<string> $keys as the formula spells them
+     *
+     * @throws ConfigurationRefusal
+     */
+    public static function refuseMetricsAbsentAtLevel(
+        string $definitionName,
+        array $keys,
+        string $level,
+        string $formula,
+    ): never {
+        throw ConfigurationRefusal::atResolvedKey(
+            RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($definitionName), $definitionName),
+            ComputedMetricRefusalWording::referencesMetricAbsentAtLevel($definitionName, $keys, $level, $formula),
+        );
+    }
+
     private function validateFormulaMetricKeys(string $definitionName, string $formula): void
     {
         foreach ($this->expression->keysOf($formula) as $key) {
@@ -238,7 +335,7 @@ final class ComputedMetricFormulaValidator
 
     private function assertKeyIsCatalogued(string $definitionName, string $key, string $formula): void
     {
-        if (str_starts_with($key, 'health.') || str_starts_with($key, 'computed.')) {
+        if (ComputedMetricExpression::isComputedReference($key)) {
             return; // Cross-references, validated above against declared definitions.
         }
 

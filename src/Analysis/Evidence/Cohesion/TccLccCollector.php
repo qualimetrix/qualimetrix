@@ -40,6 +40,12 @@ use SplFileInfo;
  *
  * Only PUBLIC methods are considered (unlike LCOM which considers all methods).
  * Anonymous classes are ignored.
+ *
+ * No value is published for a class with fewer than two tracked methods
+ * (no pair: the ratio is undefined) or without declared instance properties.
+ * The latter deviates from Bieman & Kang, whose formula gives such a class
+ * TCC = LCC = 0; a stateless class is treated as outside the metric's
+ * domain rather than as maximally incohesive.
  */
 final class TccLccCollector extends AbstractCollector implements DeclarationIndexAwareInterface, ClassMetricsProviderInterface
 {
@@ -78,18 +84,13 @@ final class TccLccCollector extends AbstractCollector implements DeclarationInde
             // Skip classes with fewer than 2 public instance methods — TCC/LCC is not
             // meaningful for them. This covers all-static utility classes, empty classes,
             // single-method classes, and classes with only constructors/destructors.
-            // The health formula handles missing TCC via null-coalescing (tcc ?? 0.5).
             if (\count($classData->getMethods()) < 2) {
                 continue;
             }
 
-            // Skip classes with no declared instance properties — TCC is structurally
-            // undefined (not 0) when there are no properties to share between methods.
-            // Emitting TCC=0.0 for these classes would drag down cohesion averages
-            // and misrepresent the health of namespaces with many property-less classes.
-            // By-design: pureMethodCount is also skipped here — for propertyCount=0 classes
-            // the health formula uses tcc ?? 0.5 (neutral default), which is appropriate
-            // since TCC is undefined rather than low.
+            // Skip classes with no declared instance properties (deviation, see the
+            // class docblock): TCC=0.0 for them would drag down cohesion averages of
+            // namespaces with many property-less classes.
             if ($classData->getPropertyCount() === 0) {
                 continue;
             }

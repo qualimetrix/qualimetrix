@@ -321,7 +321,9 @@ final class LlmsIndexRegisteredSurfaceTest extends TestCase
     ): bool {
         $node = self::classNodeWithDoc($tagLine);
 
-        foreach ($extractor->extract($node, $subject, ControlScope::Callable) as $suppression) {
+        // `@qmx-threshold` is the other reader's family; answering that it carried
+        // every such tag keeps this probe about the suppression tags alone.
+        foreach ($extractor->extract($node, $subject, ControlScope::Callable, static fn(): bool => true) as $suppression) {
             if ($suppression->type === $expectedType) {
                 return true;
             }

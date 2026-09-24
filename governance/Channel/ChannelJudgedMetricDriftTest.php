@@ -81,8 +81,8 @@ use RuntimeException;
  *    cycle's member count).
  * 2. `architecture.unassigned-class` — magnitude of its own making (a count
  *    of unassigned declarations).
- * 3. `duplication.clone` — magnitude of its own making (a
- *    duplicated block's line count).
+ * 3. `duplication.clone` — magnitude of its own making (the lines one
+ *    copy of a duplicated block spans).
  * 4. `design.god-class` — magnitude of its own making (how many of its
  *    criteria matched).
  * 5. `coupling.class-rank` — the one this guard is silent over while a live

@@ -124,6 +124,19 @@ const hintsFixture = {
       ],
       formatTemplate: null,
     },
+    // An own-scope sibling is a base key of its own, not a suffix of
+    // `coupling.distance`: the project fold is published under this name, so a
+    // viewer that only knew the subtree key would print the raw key with no
+    // label and no target beside the project's Distance input.
+    'coupling.distance-own': {
+      label: 'Distance (own)',
+      ranges: [
+        { max: 0.1, text: 'On main sequence' },
+        { max: 0.3, text: 'Acceptable balance' },
+        { above: true, text: 'Off balance' },
+      ],
+      formatTemplate: null,
+    },
     'coupling.class-rank': {
       label: 'ClassRank',
       ranges: [
@@ -297,7 +310,7 @@ const hintsFixture = {
           { key: 'coupling.ce', label: 'Ce (namespace)', direction: 'lower' },
         ],
         project: [
-          { key: 'coupling.distance.avg', label: 'Distance', direction: 'lower' },
+          { key: 'coupling.distance-own.avg', label: 'Distance', direction: 'lower' },
           { key: 'coupling.cbo.avg', label: 'CBO (avg)', direction: 'lower' },
           { key: 'coupling.cbo.p95', label: 'CBO p95', direction: 'lower' },
           { key: 'coupling.cbo.max', label: 'CBO max', direction: 'lower' },
@@ -529,6 +542,11 @@ describe('getMetricHint', () => {
     expect(getMetricHint('coupling.distance.avg', 0.5)).toBe('Off balance');
   });
 
+  it('hints for own-scope distance, the key the project fold is published under', () => {
+    expect(getMetricHint('coupling.distance-own', 0.05)).toBe('On main sequence');
+    expect(getMetricHint('coupling.distance-own.avg', 0.5)).toBe('Off balance');
+  });
+
   it('hints for classRank', () => {
     expect(getMetricHint('coupling.class-rank', 0.005)).toBe('Peripheral class');
     expect(getMetricHint('coupling.class-rank.max', 0.06)).toBe('Critical coupling point');
@@ -716,7 +734,7 @@ describe('getHealthHint', () => {
       type: 'project',
       metrics: {
         'health.coupling': 30,
-        'coupling.distance.avg': 0.4,
+        'coupling.distance-own.avg': 0.4,
         'coupling.cbo.avg': 18,
         'coupling.cbo.p95': 23,
         'coupling.cbo.max': 125,

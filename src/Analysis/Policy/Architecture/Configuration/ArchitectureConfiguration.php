@@ -15,11 +15,11 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
  *
  * Encapsulates the resolved layer state:
  * 1. The {@see LayerRegistry} — which classes belong to which layer
- *    (post-expansion; identical to {@see entries()} for Phase-1 configs).
+ *    (post-expansion; identical to {@see entries()} when no template was declared).
  * 2. The {@see LayerPolicy} — which inter-layer dependencies are permitted.
  * 3. The {@see CoverageMode} — what to do with edges that involve unclassified
  *    classes.
- * 4. The unexpanded {@see entries()} list (Phase 2 direction 2) — may
+ * 4. The unexpanded {@see entries()} list — may
  *    interleave {@see LayerDefinition} and {@see TemplateLayerDefinition}.
  * 5. The {@see maxExpandedLayers()} ceiling — used by
  *    {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage} to bound
@@ -28,11 +28,11 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
  *    binding tuples; surfaced as {@code architecture.empty-template} warnings
  *    by the rule layer.
  *
- * **Phase-1 backward compatibility.** The {@code $entries} / {@code $maxExpandedLayers}
+ * **Template-free configurations.** The {@code $entries} / {@code $maxExpandedLayers}
  * / {@code $emptyTemplateNames} parameters default to backward-compatible
  * values: when omitted, {@code entries} is derived from the registry's
  * definitions, {@code maxExpandedLayers} defaults to 500, and the
- * empty-template list is empty. Existing callers (and Phase-1 configs)
+ * empty-template list is empty. A configuration that declares no template
  * therefore see no behaviour change — the {@code Phase1ConfigCompatibilityTest}
  * pins this invariant.
  *
@@ -44,10 +44,11 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
  * rule should short-circuit during analysis. {@see isEmpty()} is the canonical
  * predicate for that check.
  *
- * Lives in {@code Qualimetrix\Analysis\Policy\Architecture\Configuration} (the vertical slice's
- * pure-domain layer per ADR 0010). The architecture rule reaches it through
+ * Lives under {@code Qualimetrix\Analysis\Policy\Architecture\Configuration} because it is the
+ * resolved form of this capability's own configuration subject (ADR 0016,
+ * ADR 0022). The architecture rule reaches it through
  * {@see \Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy::getPreparedConfiguration()},
- * so Domain stays free of Configuration and Rules dependencies.
+ * so nothing outside the capability holds it directly.
  */
 final readonly class ArchitectureConfiguration
 {
@@ -61,7 +62,7 @@ final readonly class ArchitectureConfiguration
     /**
      * @param LayerRegistry $registry Post-expansion registry (contains only
      *                                static-resolved {@see LayerDefinition}s).
-     *                                For Phase-1 configs without templates,
+     *                                For configurations without templates,
      *                                this is identical to the static layer
      *                                list. For Phase-2 configs with templates,
      *                                the {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage}
@@ -77,7 +78,7 @@ final readonly class ArchitectureConfiguration
      *                                                                    order.
      *                                                                    When
      *                                                                    null
-     *                                                                    (Phase-1
+     *                                                                    (no-template
      *                                                                    callers),
      *                                                                    derived
      *                                                                    from
@@ -178,7 +179,7 @@ final readonly class ArchitectureConfiguration
 
     /**
      * Returns true when no entries are declared. Architecture-aware rules
-     * should skip work in that case. Phase 1 invariant: empty entries iff
+     * should skip work in that case. Invariant: empty entries iff
      * empty registry.
      */
     public function isEmpty(): bool

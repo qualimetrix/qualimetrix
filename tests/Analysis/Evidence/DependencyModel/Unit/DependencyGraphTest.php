@@ -264,9 +264,10 @@ final class DependencyGraphTest extends TestCase
 
         $graph = $this->build($deps);
 
-        // extends preserved, instanceof filtered
+        // extends preserved for inheritance readers, instanceof filtered;
+        // neither counts toward coupling
         self::assertCount(1, $graph->getAllDependencies());
-        self::assertSame(1, $graph->getClassCe(SymbolPath::fromClassFqn('App\\MyException')));
+        self::assertSame(0, $graph->getClassCe(SymbolPath::fromClassFqn('App\\MyException')));
 
         $classNames = array_map(fn(SymbolPath $p) => $p->toString(), $graph->getAllClasses());
         self::assertContains('RuntimeException', $classNames);
@@ -285,9 +286,10 @@ final class DependencyGraphTest extends TestCase
 
         $graph = $this->build($deps);
 
-        // App\Bar and Pdo\Mysql (extends) remain, Random\Randomizer and Dom\Document filtered
+        // App\Bar and Pdo\Mysql (extends) remain, Random\Randomizer and Dom\Document filtered;
+        // of the two, only App\Bar is coupling
         self::assertCount(2, $graph->getAllDependencies());
-        self::assertSame(2, $graph->getClassCe(SymbolPath::fromClassFqn('App\\Foo')));
+        self::assertSame(1, $graph->getClassCe(SymbolPath::fromClassFqn('App\\Foo')));
     }
 
     #[Test]
@@ -495,6 +497,86 @@ final class DependencyGraphTest extends TestCase
         // All deps are internal to A — no boundary crossing
         self::assertSame(0, $graph->getNamespaceCe(SymbolPath::fromNamespaceFqn('A')));
         self::assertSame(0, $graph->getNamespaceCa(SymbolPath::fromNamespaceFqn('A')));
+    }
+
+    // ---------------------------------------------------------------
+    // Own-scope Ce/Ca tests
+    // ---------------------------------------------------------------
+
+    /**
+     * A namespace that both declares classes and contains sub-namespaces holds
+     * two coupling scopes at once, and the graph has to answer for both: the
+     * subtree rollup, where a sub-namespace is inside, and its own scope, where
+     * everything but its own declarations is outside.
+     */
+    #[Test]
+    public function itSeparatesTheOwnScopeOfANamespaceFromItsSubtreeRollup(): void
+    {
+        $deps = [
+            $this->dep('A\\B\\X', 'Ext\\Y'),
+            $this->dep('A\\Z', 'Ext\\W'),
+            $this->dep('Ext\\P', 'A\\Z'),
+            $this->dep('Ext\\Q', 'A\\B\\X'),
+        ];
+
+        $graph = $this->build($deps);
+        $a = SymbolPath::fromNamespaceFqn('A');
+
+        self::assertSame(2, $graph->getNamespaceCe($a), 'rollup Ce counts both subtree crossings');
+        self::assertSame(2, $graph->getNamespaceCa($a), 'rollup Ca counts both subtree crossings');
+        self::assertSame(1, $graph->getNamespaceOwnCe($a), 'own Ce counts only what A itself declares');
+        self::assertSame(1, $graph->getNamespaceOwnCa($a), 'own Ca counts only what reaches A itself');
+    }
+
+    /**
+     * The own scope has to stay the own scope of the namespace that owns it: a
+     * sub-namespace is a whole namespace to itself, so its two scopes coincide,
+     * and a rollup recomputed for its parent must not reach it.
+     */
+    #[Test]
+    public function itLeavesTheOwnScopeOfANamespaceWithoutChildrenEqualToItsRollup(): void
+    {
+        $deps = [
+            $this->dep('A\\B\\X', 'Ext\\Y'),
+            $this->dep('A\\Z', 'Ext\\W'),
+            $this->dep('Ext\\P', 'A\\Z'),
+            $this->dep('Ext\\Q', 'A\\B\\X'),
+        ];
+
+        $graph = $this->build($deps);
+        $b = SymbolPath::fromNamespaceFqn('A\\B');
+
+        self::assertSame(1, $graph->getNamespaceOwnCe($b));
+        self::assertSame($graph->getNamespaceCe($b), $graph->getNamespaceOwnCe($b));
+        self::assertSame($graph->getNamespaceCa($b), $graph->getNamespaceOwnCa($b));
+    }
+
+    /**
+     * A dependency between two children of one parent is internal to the parent
+     * in the rollup, and a crossing in both children's own scopes. That is the
+     * case where reading the rollup as an own-scope value would lose the edge.
+     */
+    #[Test]
+    public function itCountsASiblingCrossingInTheOwnScopeOfBothChildren(): void
+    {
+        $deps = [
+            $this->dep('A\\X\\Foo', 'A\\Y\\Bar'),
+        ];
+
+        $graph = $this->build($deps);
+
+        self::assertSame(0, $graph->getNamespaceOwnCe(SymbolPath::fromNamespaceFqn('A')));
+        self::assertSame(1, $graph->getNamespaceOwnCe(SymbolPath::fromNamespaceFqn('A\\X')));
+        self::assertSame(1, $graph->getNamespaceOwnCa(SymbolPath::fromNamespaceFqn('A\\Y')));
+    }
+
+    #[Test]
+    public function itReportsZeroOwnCouplingForAnUnknownNamespace(): void
+    {
+        $graph = $this->build([$this->dep('A\\X', 'Ext\\Y')]);
+
+        self::assertSame(0, $graph->getNamespaceOwnCe(SymbolPath::fromNamespaceFqn('NonExistent')));
+        self::assertSame(0, $graph->getNamespaceOwnCa(SymbolPath::fromNamespaceFqn('NonExistent')));
     }
 
     private function dep(string $source, string $target, DependencyType $type = DependencyType::New_): Dependency

@@ -346,7 +346,7 @@ final class CoverageDiagnosticsTest extends TestCase
                 'broad' => ['class:App\\Controller\\OwnedClass' => true],
                 'narrow' => ['class:App\\Controller\\OwnedClass' => true],
             ],
-            $classWalk->matchedSymbols,
+            $classWalk->symbolSets['matched'],
             'The shadowed layer matched the class it lost — the two tallies must not collapse into one.',
         );
         self::assertArrayHasKey('broad', $classWalk->shadowEvidence);

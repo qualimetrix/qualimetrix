@@ -17,15 +17,28 @@ use Qualimetrix\Analysis\Evidence\Duplication\RetokenizedFiles;
 final class DuplicateBlockFinderTest extends TestCase
 {
     #[Test]
-    public function itSkipsABucketWithMoreThanTheMaximumPositionCount(): void
+    public function itReportsEveryCopyInALargeBucketAsOneBlock(): void
     {
         $finder = new DuplicateBlockFinder();
 
-        // A genuine duplicate pair buried in a ~1000-position bucket (mirrors
-        // the doctrine-dbal keyword tables / this repo's builtin-class
-        // registry). Without the guard the O(n²) loop still finds the one real
-        // block among ~500k pair evaluations; with it the whole bucket is
-        // skipped as pathological boilerplate.
+        // 150 copies: comparing them pairwise would evaluate 11175 pairs
+        // and keep a block per pair; one group keeps one block.
+        $positions = [];
+        for ($file = 0; $file < 150; $file++) {
+            $positions[] = PackedPosition::pack($file, 0);
+        }
+
+        $blocks = $finder->find($this->request([0x2a => $positions], 150));
+
+        self::assertCount(1, $blocks);
+        self::assertSame(150, $blocks[0]->occurrences());
+    }
+
+    #[Test]
+    public function itCountsARepeatedPositionOnce(): void
+    {
+        $finder = new DuplicateBlockFinder();
+
         $positions = [];
         for ($i = 0; $i < 500; $i++) {
             $positions[] = PackedPosition::pack(0, 0);
@@ -34,11 +47,28 @@ final class DuplicateBlockFinderTest extends TestCase
 
         $blocks = $finder->find($this->request([0x2a => $positions]));
 
-        self::assertSame([], $blocks, 'An over-large bucket must be skipped, not pair-evaluated');
+        self::assertCount(1, $blocks);
+        self::assertSame(2, $blocks[0]->occurrences());
     }
 
     #[Test]
-    public function itStillEvaluatesABucketWithinThePositionLimit(): void
+    public function itLeavesAWindowThatContinuesAnEarlierMatchToThatMatch(): void
+    {
+        $finder = new DuplicateBlockFinder();
+
+        // Offset 1 of both files is preceded by the same `foo`, so only the
+        // offset-0 bucket reports the block.
+        $blocks = $finder->find($this->request([
+            0x2a => [PackedPosition::pack(0, 0), PackedPosition::pack(1, 0)],
+            0x2b => [PackedPosition::pack(0, 1), PackedPosition::pack(1, 1)],
+        ], minTokens: 1));
+
+        self::assertCount(1, $blocks);
+        self::assertSame(2, $blocks[0]->tokens);
+    }
+
+    #[Test]
+    public function itReportsTwoCopiesAsOneBlock(): void
     {
         $finder = new DuplicateBlockFinder();
 
@@ -46,17 +76,16 @@ final class DuplicateBlockFinderTest extends TestCase
             0x2a => [PackedPosition::pack(0, 0), PackedPosition::pack(1, 0)],
         ]));
 
-        self::assertCount(1, $blocks, 'A bucket within the limit must still yield its duplicate block');
+        self::assertCount(1, $blocks, 'Two copies must yield their duplicate block');
     }
 
     /**
-     * Builds a search request over two files whose token streams match, so
-     * any evaluated pair of (file 0, offset 0) and (file 1, offset 0) yields
-     * a real duplicate block.
+     * Builds a search request over files whose token streams all match, so
+     * any group of offset-0 positions yields a real duplicate block.
      *
      * @param array<int, list<int>> $hashIndex
      */
-    private function request(array $hashIndex): DuplicateSearchRequest
+    private function request(array $hashIndex, int $fileCount = 2, int $minTokens = 2): DuplicateSearchRequest
     {
         $matching = [
             new NormalizedToken(\T_STRING, 'foo', 1),
@@ -65,12 +94,9 @@ final class DuplicateBlockFinderTest extends TestCase
 
         return new DuplicateSearchRequest(
             hashIndex: $hashIndex,
-            retokenized: new RetokenizedFiles(
-                [0 => $matching, 1 => $matching],
-                [],
-            ),
-            filePaths: ['a.php', 'b.php'],
-            minTokens: 2,
+            retokenized: new RetokenizedFiles(array_fill(0, $fileCount, $matching), []),
+            filePaths: array_map(static fn(int $file): string => "f{$file}.php", range(0, $fileCount - 1)),
+            minTokens: $minTokens,
             minLines: 1,
         );
     }

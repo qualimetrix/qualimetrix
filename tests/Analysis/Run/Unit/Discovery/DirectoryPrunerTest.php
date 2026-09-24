@@ -56,6 +56,43 @@ final class DirectoryPrunerTest extends TestCase
         self::assertNull($pruner->match(AbsolutePath::fromString(self::ROOT . '/git')));
     }
 
+    /**
+     * The question a declared target is asked so that it answers the way a
+     * walk from the project root would: the outermost directory at or above
+     * it that the walk refuses to enter.
+     */
+    #[Test]
+    public function itNamesTheOutermostPrunedDirectoryAWalkWouldStopAt(): void
+    {
+        $root = sys_get_temp_dir() . '/qmx-pruned-ancestor-' . bin2hex(random_bytes(8));
+        foreach (['vendor/acme/legacy', 'lib/vendor', 'vendors', 'src/Vendor', 'packages/vendor/deep/vendor'] as $directory) {
+            mkdir($root . '/' . $directory, 0o777, true);
+        }
+        file_put_contents($root . '/vendor/acme/helpers.php', "<?php\n");
+        file_put_contents($root . '/vendors/vendor', "not a directory\n");
+
+        try {
+            $pruner = new DirectoryPruner(AbsolutePath::fromString($root), DirectoryPruner::builtInPatterns());
+            $ancestor = static fn(string $path): ?string => $pruner->prunedAncestor(AbsolutePath::fromString($root . '/' . $path));
+
+            self::assertSame('vendor', $ancestor('vendor/acme/helpers.php'));
+            self::assertSame('vendor', $ancestor('vendor/acme/legacy'));
+            self::assertSame('lib/vendor', $ancestor('lib/vendor'));
+            self::assertSame('packages/vendor', $ancestor('packages/vendor/deep/vendor'));
+            // Absent, so not a directory: only its ancestors are asked, as a walk would.
+            self::assertSame('vendor', $ancestor('vendor/gone'));
+
+            self::assertNull($ancestor('vendors'));
+            self::assertNull($ancestor('src/Vendor'));
+            // A file is never asked about itself, whatever its name.
+            self::assertNull($ancestor('vendors/vendor'));
+            self::assertNull($pruner->prunedAncestor(AbsolutePath::fromString($root)));
+            self::assertNull($pruner->prunedAncestor(AbsolutePath::fromString(\dirname($root) . '/vendor')));
+        } finally {
+            exec('rm -rf ' . escapeshellarg($root));
+        }
+    }
+
     /** @param list<PathPattern> $patterns */
     private function pruner(array $patterns): DirectoryPruner
     {

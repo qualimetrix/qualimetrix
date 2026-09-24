@@ -430,9 +430,10 @@ function crossCheckLines(string $tree, array $rules, ?array $shape = null): arra
 /**
  * The two probe controls, each holding its own assertions.
  *
- * B1 takes the real process pair — there is no other way to say "the fixture
- * still answers unframed TODAY" — and then plants an outcome into the pure
- * judgement, which is what makes the control a control rather than a report.
+ * B1 takes the real process pair — the product's framed refusal and the
+ * stand's unframed witness, both read through the probe — and then plants an
+ * outcome into the pure judgement, which is what makes the control a control
+ * rather than a report.
  *
  * B2 addresses the logfile extraction directly. It has to: the frozen half
  * stores an md5 of the contaminated line, and nothing recomputed over the

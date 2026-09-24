@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Reporting\Unit\Formatter;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
@@ -16,6 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\Formatter\Detail\DetailedFindingRenderer;
 use Qualimetrix\Reporting\Formatter\TextFormatter;
 use Qualimetrix\Reporting\FormatterContext;
@@ -606,6 +608,80 @@ final class TextFormatterTest extends TestCase
         self::assertStringContainsString('complexity.ccn', $output);
         self::assertStringContainsString('cohesion.lcom', $output);
         self::assertStringContainsString('... and 2 more', $output);
+    }
+
+    /**
+     * The producer hands findings over in rule-execution order; the cut must
+     * come after the order the reader sees, so the shown ones are a prefix of
+     * what `--detail=all` prints, in every grouping.
+     *
+     * @return iterable<string, array{?GroupBy, string, string}>
+     */
+    public static function provideDetailBranches(): iterable
+    {
+        yield 'default grouping (by file)' => [null, 'src/A.php', 'src/Z.php'];
+        yield 'explicit severity grouping' => [GroupBy::Severity, 'ERROR', 'WARN'];
+        yield 'explicit flat list' => [GroupBy::None, 'ERROR', 'WARN'];
+        yield 'explicit rule grouping' => [GroupBy::Rule, 'cohesion.lcom', 'complexity.ccn'];
+    }
+
+    #[Test]
+    #[DataProvider('provideDetailBranches')]
+    public function itCutsTheDetailListAfterSortingIt(?GroupBy $groupBy, string $shown, string $hidden): void
+    {
+        $builder = ReportBuilder::create()->filesAnalyzed(2)->filesSkipped(0)->duration(0.01);
+        // Producer order: the finding that sorts last comes first.
+        $builder->addFinding(self::finding(
+            location: new Location(RelativePath::fromString('src/Z.php'), 1),
+            symbolPath: SymbolPath::forClass('App', 'Z'),
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
+            message: 'late',
+            severity: Severity::Warning,
+        ));
+        $builder->addFinding(self::finding(
+            location: new Location(RelativePath::fromString('src/A.php'), 1),
+            symbolPath: SymbolPath::forClass('App', 'A'),
+            ruleName: 'cohesion.lcom',
+            code: 'cohesion.lcom',
+            message: 'early',
+            severity: Severity::Error,
+        ));
+
+        $context = new FormatterContext(
+            useColor: false,
+            groupBy: $groupBy ?? GroupBy::None,
+            detailLimit: 1,
+            isGroupByExplicit: $groupBy !== null,
+        );
+        $output = $this->formatter->format($builder->build(), $context);
+        $listing = strstr($output, 'Technical debt by rule:', true);
+
+        self::assertStringContainsString('... and 1 more', $output);
+        self::assertIsString($listing);
+        self::assertStringContainsString($shown, $listing);
+        self::assertStringNotContainsString($hidden, $listing);
+    }
+
+    #[Test]
+    public function itDoesNotSummariseADrillDownAsACleanRun(): void
+    {
+        $report = ReportBuilder::create()
+            ->filesAnalyzed(10)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->outOfScope(new OutOfScopeFindings(5, 4, 0))
+            ->build();
+        $namespace = \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Clean');
+
+        foreach ([null, 0] as $detailLimit) {
+            $output = $this->formatter->format($report, new FormatterContext(useColor: true, namespace: $namespace, detailLimit: $detailLimit));
+
+            self::assertStringNotContainsString('No violations found.', $output);
+            self::assertStringNotContainsString("\e[1;32mQualimetrix", $output);
+            self::assertStringContainsString('0 error(s), 0 warning(s) in this scope', $output);
+            self::assertStringContainsString('outside it: 5 error(s), 4 warning(s), which decide the exit code', $output);
+        }
     }
 
     /**

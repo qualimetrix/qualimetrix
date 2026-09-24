@@ -11,15 +11,19 @@ Inline-owned extraction contract once; it owns no annotation policy state.
 Inline/
 ├── Contract/
 │   ├── Directive/               # the four annotation.* channel names, run state,
-│   │                            # the threshold audit's contract and input, and
-│   │                            # the verdict vocabulary a report renders:
+│   │                            # the threshold audit's contract and input, the
+│   │                            # verdict vocabulary a report renders:
 │   │                            # DirectiveVerdict, DirectiveSite, DirectiveEffect
 │   │                            # (effective / overrun / inert / unmeasured) and
-│   │                            # DirectiveUnmeasurableReason
+│   │                            # DirectiveUnmeasurableReason — and the two halves of
+│   │                            # what extraction could do with a tag: DeclarationBinding
+│   │                            # (bound here) and DirectiveRefusal (not carried out)
 │   ├── Suppression/             # suppression value and type
 │   ├── Threshold/               # annotation diagnostic value
 │   ├── AnnotationSuppressionInterface.php
 │   ├── AnnotationSuppressionResult.php
+│   ├── DocumentationRegions.php # which parts of a comment quote a tag rather
+│   │                            # than write one; read by both extractors
 │   ├── SourceControlExtractorInterface.php
 │   ├── SourceControls.php       # immutable extraction result
 │   ├── SuppressionExtractor.php
@@ -27,7 +31,8 @@ Inline/
 │   └── RuleValidatorMapFactory.php
 ├── Extraction/
 │   ├── DeclarationControlBindings.php
-│   └── SourceControlExtractor.php
+│   ├── SourceControlExtractor.php
+│   └── UnattachedComments.php
 ├── Directive/                      # the directive itself: store, addressing, validation
 │   ├── Audit/                      # what each authored directive did, both halves
 │   │   ├── AuthoredDirectiveGroup.php # one authored @qmx-threshold, its bindings, site and subjects
@@ -54,8 +59,11 @@ Inline/
 ## Public contracts
 
 - `SourceControlExtractorInterface` promises source-annotation interpretation
-  to the named Run consumer `FileProcessor`. It accepts the parsed AST,
-  relative file path, callable measurement facts, and class measurement map.
+  to the named Run consumer `FileProcessor`. It accepts the parsed AST, the
+  exact source bytes it was parsed from, relative file path, callable
+  measurement facts, and class measurement map. `FileProcessor` reads the file
+  once and hands the same bytes to the parser and to extraction, so an AST from
+  the cache and a fresh parse are read against the same text.
 - `SourceControls` returns the three ordered worker-safe lists: suppressions,
   threshold overrides, and threshold diagnostics. Suppression and diagnostic
   values stay with Inline; Finding owns the shared `ControlScope` and
@@ -63,6 +71,9 @@ Inline/
 - `SuppressionExtractor` and `ThresholdOverrideExtractor` preserve the exact
   physical and declaration annotation syntax. `RuleValidatorMapFactory`
   supplies rule-specific threshold validation to sequential and worker paths.
+  Both read one answer to "which of this comment is prose" —
+  `DocumentationRegions` — so a tag quoted as documentation and a tag written
+  as a directive cannot be told apart differently by the two.
 - `AnnotationSuppressionInterface` exposes one stateless projection operation
   to Reporting. Its immutable result separates kept and suppressed findings.
 - Internal `SuppressionFilter` implements annotation matching without exposing
@@ -94,6 +105,117 @@ them can be accepted by a baseline, and each fails the run without consulting
 validator names `annotation.directive` as its producer, so those three are
 registered, addressed, excluded and switched off exactly as they were while the
 rule declared them, and it answers to that rule's `enabled` option.
+
+**A directive that is read and refused is still carried.** Four mistakes are
+decided inside extraction, before any channel is consulted, each a
+`DirectiveRefusalReason`: a `@qmx-` tag name nobody reads (`@qmx-ignore-lines`);
+a tag this tool reads written without the argument it requires (`@qmx-ignore`
+or `@qmx-ignore-next-line` with no channel on its line, `@qmx-threshold` with no
+rule) — reported under the form it is, not as an unknown tag; a declaration form
+written where nothing it can act on is measured — above a statement, on a
+property without hooks; and a `@qmx-threshold` in a line or block comment, which
+only a docblock carries. Each used to be dropped where it was found, and a
+directive that never reaches the store is judged by nothing: not the
+configuration error `check` reports, not the verdict `directives` prints, not
+the stale-directive rule. So the extractor keeps them, marked with a
+`DirectiveRefusal`, which is the same move the channel grammars make when they
+admit `:` and `#` — capture, then refuse by name. A refused directive answers
+`false` to every channel, so it filters nothing; the refusal words itself,
+`DirectiveAddressability` routes it onto `annotation.unresolved-directive` at the
+line it was written on, and the audit reports it `unmeasured / already-refused`
+under its own form rather than judging it twice. The wording lives with the
+refusal and not with the addressability because these are the only directive
+mistakes decided against the grammar of the tag and the place it was written
+rather than against the channels a run resolved.
+
+**One key names an authored directive.** `Suppression::authoredSite()` — line,
+form, authored argument and refusal reason — is what extraction deduplicates by
+(beside the binding), what the store keeps one of per site, and what the usage
+audit groups by. The three used to spell the key separately from the type
+rather than the form, and every refusal shares one type, so two different
+refused tags naming one channel on one line collapsed into one — or one refusal
+replaced another.
+
+**A threshold tag is refused by the sweep only when its own reader did not
+answer for it.** `ThresholdOverrideExtractor` reports which docblock tags each
+override and each diagnostic came from, and the suppression sweep leaves exactly
+those to it; every other `@qmx-threshold` — in the wrong carrier, with no rule,
+over a node no threshold binds to — is refused there. The sweep asks what the
+reader did rather than a second copy of its node types and grammar, so the two
+cannot disagree about a tag and leave it to neither. A property without hooks is
+read for its diagnostics only: nothing measures it, so its override is not
+carried and is refused instead of vanishing.
+
+**A threshold on a closure binds by position, as an ignore does.** php-parser
+gives a docblock to the outermost node starting at the next token, so the
+docblock of a closure or arrow function passed as an argument, written as an
+array element or as a statement of its own lands on the `Arg`, the `ArrayItem`
+or the `Stmt_Expression`, never on the function. Suppressions always bound such
+a comment to the callable beginning at the same position; the threshold reader
+visited only declaration node types, missed it, and the sweep refused the tag as
+written where nothing is measured — about a function that is measured, and that
+an `@qmx-ignore` in the same place did silence. The reader now visits the same
+nodes the sweep does, and a node that is not itself a declaration binds through
+`DeclarationControlBindings::callablesBeginningWith()` — the position half of
+the suppression binding only: the containment bindings a suppression also has
+(a parameter to its function, a constant to its class) are not followed, so a
+threshold there is still refused.
+
+The declaration form on an unbound node used to throw instead, and the throw was
+not contained: the file failed to process, so one misplaced annotation cost every
+metric and every finding in it, and the run reported a coverage failure rather
+than an annotation mistake.
+
+**A comment's own punctuation is not an argument.** The channelless form was
+refused only in a line comment; in a block comment and a docblock the closing
+delimiter's `*` was read as the channel argument, and `*` is the one argument
+that names no channel at all. So `/** @qmx-ignore */` silenced every channel on
+the declaration it stood over, and said nothing: the tag parsed, so no refusal
+was reported, and it silenced something, so `annotation.unused-directive` stayed
+quiet too. The three grammars now require the argument on the tag's own line and
+refuse one that begins with the delimiter, which leaves the authored `*` — the
+documented "no rule filter" spelling — and a selector merely ending against the
+delimiter untouched. The threshold grammar carries the same two guards: its
+separator used to cross a line break, so `@qmx-threshold` with nothing after it
+was reported as a threshold on the rule `*`, which nobody wrote.
+
+**A carried-out declaration control travels with a `DeclarationBinding`.** The
+measured declaration, the control scope and the declaration's last line are one
+fact with one lifetime: a suppression either binds to a declaration or is a
+physical control or a refusal, and the three used to be optional arguments whose
+only legal combinations were all-or-nothing. The binding lives beside
+`DirectiveRefusal` because the two answer the same question either way — what
+extraction could and could not carry out.
+
+**Where a physical directive may be written is not a question about PHP.** The
+file and next-line forms are bound to a line and a file, so extraction reads them
+off every comment in the file rather than off a list of node types. The list that used to gate this named neither `if`, `foreach`, `return`,
+`namespace` nor `use`, and on each of those a docblock directive did nothing while
+the same directive in a line comment worked — the second condition that let
+unlisted nodes through excluded docblocks by construction. The declaration forms
+keep their binding requirement, which is theirs and not the grammar's:
+`@qmx-ignore` and `@qmx-threshold` name a measured declaration or they are
+refused, and `@qmx-threshold` is refused outside a docblock as well.
+
+**A comment the AST does not carry is read from the source.** php-parser gives a
+comment to the node that starts at the next token, so a comment followed by a
+modifier, a keyword or a closing bracket reaches no node — among them the
+docblock between a declaration's attributes and the declaration (`#[Attr]`, then
+the docblock, then `public function`), which PHP's own reflection hands to the
+declaration. Read from the AST alone, a directive there was neither carried out
+nor refused. `Extraction\UnattachedComments` finds the `@qmx-` comments no node
+carries in the source tokens (only in a file that contains the prefix at all).
+One standing after a declaration's last attribute group and before the first
+node of its own belongs to that declaration and reads exactly as the same
+comment written above the attributes; any other is read as a comment on a
+statement — the physical forms work, the declaration forms are refused. The
+declaration is read through a copy carrying the extra comments, never by
+writing them into the tree, because a cache hit shares one tree.
+
+A comment php-parser does attach, but to the wrong node, is not re-homed: a
+docblock between two attribute groups belongs to the second `AttributeGroup`
+and one between `function` and the name to the name `Identifier`. Both are
+refused as binding to nothing rather than read as the declaration's own.
 
 **The run state and the usage accounting are two classes, not one.**
 `InlineDirectivePolicy` holds what the run carried — the suppressions,
@@ -179,8 +301,10 @@ mentions. What the ban removes is only the ability to hide the finding with the
 mechanism it exists to audit.
 
 **The second banned channel is `duplication.clone`, for a different
-reason** — no directive form binds to its project-wide finding in a way an
-author controls; see the `DirectiveChannelBan` docblock for the mechanism.
+reason** — every copy of a block is one project-level debt: a symbol directive
+never binds to the project, and a file or next-line directive would silence the
+copy it is written beside while the other copies still report the block; see
+the `DirectiveChannelBan` docblock for the mechanism.
 Every form is refused at the line it is written on, with the same
 `annotation.unresolved-directive` code and its own wording; the working path
 is channel-level (`disabled_rules` / `--disable-rule` / baseline), not a
@@ -207,6 +331,8 @@ which names exist.
 `Extraction\\DeclarationControlBindings` is internal. It maps collected
 declaration facts onto AST nodes while extracting controls and never crosses
 the Run boundary or the serialized worker payload.
+`Extraction\\UnattachedComments` is internal: the comments php-parser attached to
+no node and the declaration each belongs to, for one file.
 `Extraction\\SourceControlExtractor` is the private implementation of the Run
 port and returns the immutable `SourceControls` result. Its class-level
 `health.cohesion` exception records metric inapplicability: the one public

@@ -73,32 +73,6 @@ final class ReportTest extends TestCase
     }
 
     #[Test]
-    public function itFiltersFindingsBySeverity(): void
-    {
-        $error1 = $this->createFinding(Severity::Error, 'error1');
-        $error2 = $this->createFinding(Severity::Error, 'error2');
-        $warning = $this->createFinding(Severity::Warning, 'warning1');
-
-        $report = new Report(
-            findings: [$error1, $warning, $error2],
-            filesAnalyzed: 3,
-            filesSkipped: 0,
-            duration: 0.2,
-            errorCount: 2,
-            warningCount: 1,
-        );
-
-        $errors = $report->getFindingsBySeverity(Severity::Error);
-        $warnings = $report->getFindingsBySeverity(Severity::Warning);
-
-        self::assertCount(2, $errors);
-        self::assertCount(1, $warnings);
-        self::assertSame($error1, $errors[0]);
-        self::assertSame($error2, $errors[1]);
-        self::assertSame($warning, $warnings[0]);
-    }
-
-    #[Test]
     public function itExposesReportProperties(): void
     {
         $findings = [$this->createFinding(Severity::Error)];

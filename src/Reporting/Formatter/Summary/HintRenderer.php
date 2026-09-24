@@ -55,7 +55,7 @@ final class HintRenderer
             return null;
         }
 
-        return '--detail to see violations (top 200)';
+        return '--detail to list violations (up to 200; --detail=all for every one)';
     }
 
     private function buildScopeHint(FormatterContext $context): ?string

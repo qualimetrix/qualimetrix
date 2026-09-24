@@ -23,37 +23,85 @@ Coupling metrics measure dependencies between components. All collectors in this
 
 **Collector:** `CouplingCollector`
 **Type:** `GlobalContextCollectorInterface`
-**Provides:** `coupling.ca`, `coupling.ce`, `coupling.cbo`, `coupling.instability`, `coupling.ce-packages`, `coupling.cbo-app`, `coupling.ce-framework`
-**Level:** Class
+**Provides:** `coupling.ca`, `coupling.ce`, `coupling.cbo`, `coupling.instability`, `coupling.ce-packages`, `coupling.cbo-app`, `coupling.ce-framework`, `coupling.ca-own`, `coupling.ce-own`, `coupling.cbo-own`, `coupling.instability-own`
+**Level:** Class and Namespace (`coupling.ca`, `coupling.ce`, `coupling.cbo` and
+`coupling.instability` are published on both; the `-own` keys on namespaces only)
 
 ### Metrics
 
-| Metric                  | Description                                           | Formula                           |
-| ----------------------- | ----------------------------------------------------- | --------------------------------- |
-| `coupling.ca`           | Afferent Coupling — incoming dependencies             | count(dependents)                 |
-| `coupling.ce`           | Efferent Coupling — outgoing dependencies             | count(dependencies)               |
-| `coupling.cbo`          | Coupling Between Objects (C&K) — all dependencies     | \|Ca ∪ Ce\|                       |
-| `coupling.instability`  | Class instability (Qualimetrix extension)             | Ce / (Ca + Ce)                    |
-| `coupling.ce-packages`  | Distinct external top-level namespaces in Ce          | count(distinct external packages) |
-| `coupling.cbo-app`      | Application-only CBO (excludes framework deps)        | \|Ca_app ∪ Ce_app\|               |
-| `coupling.ce-framework` | Framework efferent coupling (outgoing framework deps) | count(framework Ce targets)       |
+| Metric                     | Description                                           | Formula                                         |
+| -------------------------- | ----------------------------------------------------- | ----------------------------------------------- |
+| `coupling.ca`              | Afferent Coupling — incoming dependencies             | count(dependents)                               |
+| `coupling.ce`              | Efferent Coupling — outgoing dependencies             | count(dependencies)                             |
+| `coupling.cbo`             | Coupling Between Objects (C&K) — all dependencies     | \|Ca ∪ Ce\| (classes; see below for namespaces) |
+| `coupling.instability`     | Class instability (Qualimetrix extension)             | Ce / (Ca + Ce)                                  |
+| `coupling.ce-packages`     | Distinct external top-level namespaces in Ce          | count(distinct external packages)               |
+| `coupling.cbo-app`         | Application-only CBO (excludes framework deps)        | \|Ca_app ∪ Ce_app\|                             |
+| `coupling.ce-framework`    | Framework efferent coupling (outgoing framework deps) | count(framework Ce targets)                     |
+| `coupling.ca-own`          | Namespace Ca over its own declarations only           | count(dependents of this namespace)             |
+| `coupling.ce-own`          | Namespace Ce over its own declarations only           | count(dependencies of this namespace)           |
+| `coupling.cbo-own`         | Namespace CBO over its own declarations only          | count(namespaces coupled to this namespace)     |
+| `coupling.instability-own` | Instability of that own scope                         | Ce_own / (Ca_own + Ce_own)                      |
+
+> **Note:** A namespace that both declares classes and contains sub-namespaces
+> has two coupling scopes, and both are published. `coupling.ca`/`coupling.ce`
+> on such a namespace are the **subtree rollup**: a dependency on one of its
+> sub-namespaces is internal, and does not count. The `-own` pair is the same
+> measurement taken over exactly the classes that namespace declares, where a
+> sub-namespace is outside like anything else. For a namespace without
+> sub-namespaces the two coincide. The rollup is what a reader of one namespace
+> expects; the own scope is what folds into a project number, because only it
+> partitions the declarations.
+
+> **Note:** On a namespace `coupling.cbo` counts **namespaces**, not classes:
+> the distinct namespaces declaring a class on the far side of an edge that
+> crosses the namespace's region, in either direction. `coupling.ca` and
+> `coupling.ce` on the same namespace count classes, so CBO is usually smaller
+> than either. The region is the subtree, the same one the published Ca and Ce
+> are counted over (`CoupledNamespaces`): a parent namespace is coupled to what
+> lies outside it, never to its own sub-namespaces, and a leaf's answer is its
+> own. The far side is named by its declaring namespace and never truncated, so
+> the number depends on how finely the code outside is split into namespaces:
+> dividing a directory into sub-namespaces raises the CBO of its neighbours
+> while their Ca and Ce stay put. The namespace thresholds are the same numbers
+> as the class ones but measure this different quantity; they were not
+> calibrated separately.
+
+> **Note:** `CboRule` judges a namespace on `coupling.cbo-own`, the same
+> count over the classes it declares itself, where a sub-namespace is a
+> namespace like any other (`CoupledNamespaces::ownCountFor()`). The subtree
+> value grows with the subtree, and its region depends on which sub-namespaces
+> the run holds, so a narrowed run and a whole one would judge different code;
+> the own scope's boundary does not move with that. Its count does, like every
+> coupling count: an edge is read from the class it starts at, so a dependent
+> the run did not analyse is not counted, and a narrowed run can judge a lower
+> value. It is published only on a
+> namespace declaring a type the run analysed, which is the population of the
+> project fold (ADR 0080), and `min_class_count` counts that namespace's own
+> classes. The finding's direction reads `coupling.ca-own`/`coupling.ce-own`.
+> The subtree `coupling.cbo` is still published on every namespace.
+> `CboRule` decides whether there is a finding; `CboFindingText` words it —
+> the dominant direction, the message and the recommendation with a class's
+> top dependencies.
 
 > **Note:** Robert C. Martin (1994) originally defined Instability only at the **package** (namespace) level. Qualimetrix extends it to the class level for finer-grained analysis. The namespace-level instability is the canonical metric per Martin's specification.
 
 > **Note:** The dependency graph is seeded with every named project class,
 > interface, trait, and enum, including degree-zero declarations. CBO/Ca/Ce
-> deduplicate logical endpoints, retain undeclared external targets, and remove
-> PHP built-ins except structural `extends` edges. One logical class score is
+> deduplicate logical endpoints, retain undeclared external targets, and count
+> no PHP built-in, however it is named: an `extends` edge to one stays in the
+> graph for DIT and NOC but is not in the per-class dependency lists these
+> metrics read. One logical class score is
 > projected to every exact owned declaration so declaration controls, baseline
 > identities, and fingerprints remain independent.
 
 ### Instability Interpretation
 
-| Value | Description                                     |
-| ----- | ----------------------------------------------- |
-| 0.0   | Maximally stable (only incoming dependencies)   |
-| 0.5   | Balanced                                        |
-| 1.0   | Maximally unstable (only outgoing dependencies) |
+| Value | Description                                                                                                           |
+| ----- | --------------------------------------------------------------------------------------------------------------------- |
+| 0.0   | Maximally stable (only incoming dependencies), or no dependencies at all (Ca = Ce = 0 is reported as 0 by convention) |
+| 0.5   | Balanced                                                                                                              |
+| 1.0   | Maximally unstable (only outgoing dependencies)                                                                       |
 
 **Stable classes (I ~ 0):** Used by many, depend on few. Difficult to change.
 
@@ -104,7 +152,7 @@ Two facts about the shape, both measured rather than chosen:
   `--disable-rule` and the baseline. Three mechanical guards hold that: the
   compiler pass refuses a channel declared by both producer kinds, the
   declared-channel fixture carries no `config-error` token, and an integration
-  case pins exit 0 under `--fail-on=none` against exit 2 under
+  case pins exit 0 under `--fail-on=none` against the warning exit 1 under
   `--fail-on=warning`.
 
 The binding universe is `FrameworkClassificationSites::names()` — the two
@@ -146,7 +194,7 @@ namespace CBO configuration remains under `namespace:`.
 **Collector:** `AbstractnessCollector`
 **Type:** `GlobalContextCollectorInterface`
 **Requires:** `size.class-count.sum`, `size.abstract-class-count.sum`, `size.interface-count.sum`, `size.implementing-enum-count.sum`, `size.trait-count.sum`
-**Provides:** `coupling.abstractness`
+**Provides:** `coupling.abstractness`, `coupling.abstractness-own`
 **Level:** Namespace
 
 ### Formula
@@ -165,6 +213,13 @@ A = (size.abstract-class-count + size.interface-count)
 > Without that split, a namespace holding one interface and N enums implementing it
 > would report `A = 1.0` while its implementations sit right beside it. The shape of
 > the formula is unchanged; only the classification of one construct is.
+
+`coupling.abstractness-own` applies the same formula to the unsuffixed counts —
+the types declared in exactly this namespace — rather than to their `.sum`
+subtree rollups. A namespace that declares no type of its own carries no
+unsuffixed count at all and gets **no key**, not a zero: how far a package sits
+from the main sequence is undefined where there is no package, and that silence
+is what keeps a pure container out of the project average.
 
 A namespace whose only declarations are bare enums therefore has `totalTypes = 0` and
 keeps the pre-existing no-type result `A = 0.0`. Downstream namespace rules already
@@ -189,8 +244,8 @@ concrete types still computes as `1 / 6` rather than losing the abstraction in a
 
 **Collector:** `DistanceCollector`
 **Type:** `GlobalContextCollectorInterface`
-**Requires:** `coupling.instability`, `coupling.abstractness`
-**Provides:** `coupling.distance`
+**Requires:** `coupling.instability`, `coupling.abstractness`, `coupling.instability-own`, `coupling.abstractness-own`
+**Provides:** `coupling.distance`, `coupling.distance-own`
 **Level:** Namespace
 
 ### Formula
@@ -198,6 +253,26 @@ concrete types still computes as `1 / 6` rather than losing the abstraction in a
 ```
 D = |A + I - 1|
 ```
+
+A namespace missing either input gets no distance in that scope, not a
+distance computed from 0: a namespace declaring only functions is in the
+repository but not in the class graph, so it has no instability, and reading
+that as 0 used to publish D = 1.0 for it.
+
+`DistanceRule` does not judge a namespace with `Ca = Ce = 0`: its instability
+is 0 by convention, not by measurement, and a concrete namespace nothing
+touches would otherwise read as the worst zone of pain. The value itself is
+still published, and still enters `health.coupling` and the project average.
+
+`coupling.distance` stays the subtree value and carries **no project
+aggregation**. The project average is taken over `coupling.distance-own`, whose
+population is every namespace declaring at least one type. That population is a
+partition: a parent and its children each answer for their own declarations, so
+no declaration is weighed twice and none is left unrepresented. Averaging the
+published values instead would count the classes of a namespace that is both
+leaf and parent in two entries at once — which is why the earlier rule folded
+leaf namespaces only, and why the classes declared directly in a namespace that
+also has sub-namespaces reached no project number at all.
 
 The optional `rules.coupling.distance.include-namespaces` override uses the
 same explicit namespace selectors. YAML takes a list of one-entry mappings;
@@ -235,6 +310,21 @@ Ideal packages lie on the line `A + I = 1`:
 
 ---
 
+## ClassRank
+
+**Collector:** `ClassRankCollector` (PageRank, damping 0.85, over project classes)
+**Provides:** `coupling.class-rank`
+**Level:** Class
+
+A class without outgoing project edges spreads its rank evenly over every class,
+so each class holds a floor of `(1 - d) / N + d · S / N`, where `S` is the total
+rank of such classes. On a small or loosely coupled project that floor alone
+clears the size-scaled threshold, so `ClassRankRule` never reports a class
+nothing depends on (`coupling.ca` = 0), and its recommendation names the
+measured number of dependents.
+
+---
+
 ## Aggregation
 
 ### CouplingCollector
@@ -265,7 +355,15 @@ new MetricDefinition(
 new MetricDefinition(
     name: 'coupling.distance',
     collectedAt: SymbolLevel::Namespace_,
-    aggregations: [], // Derived metric
+    aggregations: [], // Subtree value; folding it would double-count
+)
+
+new MetricDefinition(
+    name: 'coupling.distance-own',
+    collectedAt: SymbolLevel::Namespace_,
+    aggregations: [
+        SymbolLevel::Project->value => [Average],
+    ],
 )
 ```
 

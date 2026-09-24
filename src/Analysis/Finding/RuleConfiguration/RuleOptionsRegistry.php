@@ -21,17 +21,8 @@ use Qualimetrix\Core\Path\RelativePath;
  */
 final class RuleOptionsRegistry implements RuleConfigurationInterface
 {
-    /**
-     * @var array<string, mixed> Rule options from config file (values may be arrays or scalars)
-     */
-    private array $configFileOptions = [];
-
-    /**
-     * @var array<string, array<string, mixed>> Rule options from CLI
-     */
-    private array $cliOptions = [];
-
-    private RuleSelection $selection;
+    /** Rule options from the config file and the CLI, and the rule selection. */
+    private FindingConfiguration $configuration;
 
     private bool $capturesExcludedFindings = false;
 
@@ -39,7 +30,7 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
         private readonly RuleNamespaceExclusionProvider $exclusionProvider = new RuleNamespaceExclusionProvider(),
         private readonly RulePathExclusionProvider $pathExclusionProvider = new RulePathExclusionProvider(),
     ) {
-        $this->selection = new RuleSelection();
+        $this->configuration = FindingConfiguration::none();
     }
 
     /**
@@ -52,14 +43,17 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
      */
     public function setConfigFileOptions(array $options): void
     {
-        $this->configFileOptions = $options;
+        $this->replace($this->configuration->withRuleOptions($options));
     }
 
+    /**
+     * The one door the product configures a run through. Every narrower
+     * setter below is written in terms of it, so a field it learns to set is
+     * set by all of them rather than left behind by the ones only tests call.
+     */
     public function replace(FindingConfiguration $configuration): void
     {
-        $this->configFileOptions = $configuration->ruleOptions->rules;
-        $this->cliOptions = $configuration->cliOverrides->options;
-        $this->selection = $configuration->selection;
+        $this->configuration = $configuration;
     }
 
     /**
@@ -69,7 +63,7 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
      */
     public function configFileOptions(): array
     {
-        return $this->configFileOptions;
+        return $this->configuration->ruleOptions->rules;
     }
 
     /**
@@ -77,11 +71,10 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
      */
     public function addCliOption(string $ruleName, string $option, mixed $value): void
     {
-        if (!isset($this->cliOptions[$ruleName])) {
-            $this->cliOptions[$ruleName] = [];
-        }
+        $cliOptions = $this->cliOptions();
+        $cliOptions[$ruleName][$option] = $value;
 
-        $this->cliOptions[$ruleName][$option] = $value;
+        $this->replace($this->configuration->withCliOverrides($cliOptions));
     }
 
     /**
@@ -91,12 +84,15 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
      */
     public function setCliOptions(string $ruleName, array $options): void
     {
-        $this->cliOptions[$ruleName] = $options;
+        $this->configureCli($ruleName, $options);
     }
 
     public function configureCli(string $ruleName, array $options): void
     {
-        $this->cliOptions[$ruleName] = $options;
+        $cliOptions = $this->cliOptions();
+        $cliOptions[$ruleName] = $options;
+
+        $this->replace($this->configuration->withCliOverrides($cliOptions));
     }
 
     /**
@@ -106,22 +102,22 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
      */
     public function cliOptions(): array
     {
-        return $this->cliOptions;
+        return $this->configuration->cliOverrides->options;
     }
 
     public function all(): array
     {
-        return array_replace_recursive($this->configFileOptions, $this->cliOptions);
+        return array_replace_recursive($this->configFileOptions(), $this->cliOptions());
     }
 
     public function configureSelection(RuleSelection $selection): void
     {
-        $this->selection = $selection;
+        $this->replace($this->configuration->withSelection($selection));
     }
 
     public function selection(): RuleSelection
     {
-        return $this->selection;
+        return $this->configuration->selection;
     }
 
     public function captureExcludedFindings(): void
@@ -135,27 +131,13 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
     }
 
     /**
-     * Resets CLI options only, preserving config file options.
-     *
-     * Must be called between runs to prevent options from a previous run
-     * leaking into the next one.
-     */
-    public function resetCliOptions(): void
-    {
-        $this->cliOptions = [];
-        $this->selection = new RuleSelection();
-    }
-
-    /**
      * Resets all runtime state between analysis runs.
      *
      * Clears all invocation state before the next configuration is resolved.
      */
     public function resetRuntimeState(): void
     {
-        $this->configFileOptions = [];
-        $this->cliOptions = [];
-        $this->selection = new RuleSelection();
+        $this->configuration = FindingConfiguration::none();
         $this->capturesExcludedFindings = false;
         $this->exclusionProvider->reset();
         $this->pathExclusionProvider->reset();

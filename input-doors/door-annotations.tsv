@@ -21,6 +21,7 @@ config	*	cache.dir	yes		whole-value	the directory path is matched as a whole	inv
 config	*	cache.enabled	no	boolean; nothing to point at			invariant:no-cache
 config	*	failOn	yes		whole-value	the severity name is matched as a whole	invariant:fail-on
 config	*	format	yes		whole-value	the format name is matched as a whole	invariant:format
+config	*	includeAutoloadDev	no	boolean; nothing to point at			
 config	*	includeGenerated	no	boolean; nothing to point at			
 config	*	memoryLimit	no	PHP size string; nothing to point at			
 config	*	parallel.workers	no	integer count; nothing to point at			invariant:workers

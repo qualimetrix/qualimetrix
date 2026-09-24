@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
+use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -32,6 +33,7 @@ use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubBaselineRun;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -96,6 +98,25 @@ final class BaselineCleanupCommandTest extends TestCase
      * they forbid, plus an unrelated neighbour. Removing one leaves the other
      * two — which is only possible because the selector digests the edge too.
      */
+    /**
+     * `--only-rule` and `--disable-rule` are this command's own options; an
+     * entry their run never measured is not described as one nothing reported.
+     */
+    #[Test]
+    public function itSaysAnEntryWasNotMeasuredWhenItsRuleDidNotRun(): void
+    {
+        $this->writeBaseline([self::occurrenceEntry()], ['src']);
+
+        $tester = $this->execute([], coverage: StubRuleCoverage::withSkipped(notSelected: [self::OCCURRENCE_CHANNEL]));
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString(
+            '(not measured: this invocation did not run the rule for this channel at this level)',
+            $tester->getDisplay(),
+        );
+        self::assertStringNotContainsString('nothing reported for this identity', $tester->getDisplay());
+    }
+
     #[Test]
     public function itRemovesOnlyTheNamedEntryEvenWhenTwoDifferOnlyByEdge(): void
     {
@@ -205,8 +226,12 @@ final class BaselineCleanupCommandTest extends TestCase
      * @param list<string> $runScope
      * @param list<Finding> $measured
      */
-    private function execute(array $options, array $runScope = ['src'], array $measured = []): CommandTester
-    {
+    private function execute(
+        array $options,
+        array $runScope = ['src'],
+        array $measured = [],
+        ?RunRuleCoverage $coverage = null,
+    ): CommandTester {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
 
         $command = new BaselineCleanupCommand(
@@ -215,6 +240,7 @@ final class BaselineCleanupCommandTest extends TestCase
             new BaselineCleaner(new FixedClock('2026-09-01T00:00:00+00:00')),
             new BaselineWriter(),
             $declarations,
+            $coverage ?? StubRuleCoverage::everyRuleRan(),
         );
         $command->setRefusalPresenter(new RefusalPresenter(new ErrorStream()));
 

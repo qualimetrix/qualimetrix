@@ -181,6 +181,61 @@ final class ApplicationRefusalTest extends TestCase
         yield 'graph:export' => ['graph:export'];
     }
 
+    /**
+     * A refusal the outer ladder catches is enveloped exactly like one a
+     * command catches: the requested format is on the command line whether or
+     * not binding got far enough to read it.
+     *
+     * @param list<string> $arguments
+     */
+    #[Test]
+    #[DataProvider('provideOuterLadderRefusalsUnderJson')]
+    public function itEnvelopesAnOuterLadderRefusalWhenJsonWasRequested(array $arguments): void
+    {
+        $run = $this->runBin($arguments);
+
+        self::assertSame(self::REFUSAL, $run['exitCode'], $run['stderr']);
+        /** @var array{error?: string, exit_code?: int} $envelope */
+        $envelope = json_decode($run['stdout'], true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(self::REFUSAL, $envelope['exit_code'] ?? null);
+        self::assertNotSame('', $envelope['error'] ?? '');
+    }
+
+    /** @return iterable<string, array{list<string>}> */
+    public static function provideOuterLadderRefusalsUnderJson(): iterable
+    {
+        yield 'unknown option' => [['check', 'src', '--format=json', '--no-such-option=1']];
+        yield 'unknown option, separate value' => [['check', 'src', '--format', 'json', '--no-such-option']];
+        yield 'unknown command' => [['no-such-command', '--format=json', '--no-interaction']];
+        yield 'bad working directory' => [['check', 'src', '--format=sarif', '--working-dir=/nonexistent-qmx-dir']];
+    }
+
+    /**
+     * The lawful neighbours: a format that is not JSON, and the short `-f`,
+     * which the outer ladder cannot read because it means `--force` on
+     * `hook:install` — both keep the prose refusal on stderr.
+     *
+     * @param list<string> $arguments
+     */
+    #[Test]
+    #[DataProvider('provideOuterLadderRefusalsInProse')]
+    public function itKeepsTheOuterLadderRefusalOnStderrWithoutAJsonFormat(array $arguments): void
+    {
+        $run = $this->runBin($arguments);
+
+        self::assertSame(self::REFUSAL, $run['exitCode']);
+        self::assertSame('', $run['stdout']);
+        self::assertStringContainsString('option does not exist', $run['stderr']);
+    }
+
+    /** @return iterable<string, array{list<string>}> */
+    public static function provideOuterLadderRefusalsInProse(): iterable
+    {
+        yield 'text format' => [['check', 'src', '--format=text', '--no-such-option']];
+        yield 'dot format' => [['graph:export', '--format=dot', '--no-such-option']];
+        yield 'short -f' => [['hook:install', '-f', '--no-such-option']];
+    }
+
     #[Test]
     public function itPrintsATraceForAnInternalErrorUnderVerboseButNotForARefusal(): void
     {

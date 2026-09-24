@@ -91,6 +91,19 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
         . ' RuleThresholdKeyGroupRegistryCompletenessTest.';
 
     /**
+     * Why `ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS` spells four names by
+     * hand: the report names them as not judged on a narrowed run, and their
+     * owners declare them on internal classes Run may not import.
+     */
+    private const string WHOLE_PROJECT_CHANNELS_REASON =
+        'The list a narrowed run\'s report names as not judged. The coupling and'
+        . ' suppression owners declare these names on internal classes Run may not'
+        . ' import; the Architecture names in the same list come from their'
+        . ' contract\'s constants and Discovery\'s is Run\'s own. ProjectScopeReadersTest compares'
+        . ' every entry with its owner\'s constant and every reader of the predicate'
+        . ' with the list, so the copy cannot drift silently.';
+
+    /**
      * Why `JsonFormatter`'s `coupling.class-rank` output key is exempt: it is
      * the published JSON key carrying $issue->classRank, sibling to authored
      * output vocabulary (rank, file, line, symbol, rule, severity, message,
@@ -197,6 +210,12 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
                 . ' The first banned name needs no entry here because Inline owns it'
                 . ' (InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME); this one has no owner inside'
                 . ' Inline to borrow a constant from.',
+        ],
+        'src/Analysis/Run/Configuration/ProjectScopeCoverage.php' => [
+            'coupling.unmatched-framework-namespace' => self::WHOLE_PROJECT_CHANNELS_REASON,
+            'suppression.unmatched-namespace' => self::WHOLE_PROJECT_CHANNELS_REASON,
+            'suppression.unmatched-path' => self::WHOLE_PROJECT_CHANNELS_REASON,
+            'suppression.unmatched-rule-ledger' => self::WHOLE_PROJECT_CHANNELS_REASON,
         ],
         'src/Reporting/Formatter/Json/JsonFormatter.php' => [
             'coupling.class-rank' => self::JSON_FORMATTER_CLASS_RANK_REASON,

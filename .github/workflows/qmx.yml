@@ -142,7 +142,7 @@ jobs:
           php-version: ${{ matrix.php-version }}
           extensions: igbinary, intl, soap, ldap, snmp, tidy, xsl, gmp, sockets, pgsql, odbc,
             dba, ftp, bcmath, mysqli, gd, zip, pcntl, shmop, sysvmsg, sysvsem, sysvshm, ffi,
-            enchant, calendar, exif, gettext, bz2, iconv, pdo_mysql, pdo_pgsql, pdo_odbc
+            enchant, calendar, exif, gettext, bz2, iconv, pdo_mysql, pdo_pgsql, pdo_odbc, pdo_firebird
           coverage: none
           tools: composer:v2
 

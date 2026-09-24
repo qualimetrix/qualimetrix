@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer;
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameMap;
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameRefusal;
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameReport;
+use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -73,9 +74,9 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
                 . 'of, so a carried entry gets a new selector: a saved' . "\n"
                 . '"baseline:cleanup --remove SELECTOR" stops addressing it.' . "\n\n"
                 . 'A refusal is reported in the chosen format too: with --format=json it' . "\n"
-                . 'is the {error, exit_code} envelope every other machine-readable refusal' . "\n"
-                . 'in this tool uses, so a script does not have to read the outcome off the' . "\n"
-                . 'exit code alone.',
+                . 'is the {error, exit_code, position} envelope every other' . "\n"
+                . 'machine-readable refusal in this tool uses, so a script does not have' . "\n"
+                . 'to read the outcome off the exit code alone.',
             ));
     }
 
@@ -94,17 +95,13 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        /** @var string $baselinePath */
-        $baselinePath = $input->getArgument('baseline');
-        /** @var string $mapPath */
-        $mapPath = $input->getArgument('map');
-
-        $format = $input->getOption('format');
-
         // Resolved before the file checks, not after: a caller that asked for
         // a machine format has asked for every outcome in it, and an
         // unreadable path is one of the outcomes.
-        self::assertKnownFormat($format);
+        $format = self::knownFormat(CommandLineSpelling::option($input, 'format'));
+        $baselinePath = CommandLineSpelling::requiredArgument($input, 'baseline');
+        $mapPath = CommandLineSpelling::requiredArgument($input, 'map');
+
         self::assertBaselineReadable($baselinePath);
         self::assertMapReadable($mapPath);
 
@@ -117,7 +114,7 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
     }
 
     /** @throws ConfigurationRefusal */
-    private static function assertKnownFormat(mixed $format): void
+    private static function knownFormat(?string $format): string
     {
         if ($format !== 'text' && $format !== 'json') {
             throw ConfigurationRefusal::aboutCommandLineInput(
@@ -125,6 +122,8 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
                 'Unknown --format; expected text or json.',
             );
         }
+
+        return $format;
     }
 
     /** @throws ConfigurationRefusal */

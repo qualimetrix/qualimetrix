@@ -43,6 +43,7 @@ use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubBaselineRun;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -135,10 +136,9 @@ final class BaselineRunBeforeLoadTest extends TestCase
     }
 
     /**
-     * `explain` must report the accepted level rather than "(none)" — the
-     * answer it gives when the file holds nothing for the symbol, which is
-     * indistinguishable from the answer it gives when the file holds
-     * something it could not read.
+     * `explain` must report the accepted level rather than naming the entry
+     * as one it cannot apply — the answer it gives when the file holds a line
+     * this build could not read.
      */
     #[Test]
     public function itReportsAConfiguredComputedEntryInExplain(): void
@@ -173,7 +173,10 @@ final class BaselineRunBeforeLoadTest extends TestCase
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
 
         if ($command === 'explain') {
-            self::assertStringContainsString('baseline:      (none)', $tester->getDisplay());
+            self::assertStringContainsString(
+                'baseline:      present but not applied (channel is not declared by any rule',
+                $tester->getDisplay(),
+            );
 
             return;
         }
@@ -201,6 +204,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
             new BaselineCleaner(new FixedClock('2026-09-01T00:00:00+00:00')),
             new BaselineWriter(),
             $declarations,
+            StubRuleCoverage::everyRuleRan(),
         );
 
         return self::tester($command, ['baseline' => $this->baselinePath, 'paths' => ['src']]);
@@ -227,7 +231,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
         $command = new BaselineExplainCommand(
             $this->measuredRun($configured),
             new BaselineLoader(new BaselineEntryParser($declarations)),
-            new BoundaryExplanationService(self::producerEdge()),
+            new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan()),
             new BaselineConfiguredThresholds(self::emptyRuleRegistry(), new RuleOptionsFactory(new RuleOptionsRegistry())),
             $declarations,
         );

@@ -4,30 +4,33 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Complexity;
 
+use LogicException;
 use PhpParser\Node;
 use PhpParser\Node\Expr\ArrowFunction;
 use PhpParser\Node\Expr\BinaryOp\BooleanAnd;
 use PhpParser\Node\Expr\BinaryOp\BooleanOr;
-use PhpParser\Node\Expr\BinaryOp\Coalesce;
 use PhpParser\Node\Expr\BinaryOp\LogicalAnd;
 use PhpParser\Node\Expr\BinaryOp\LogicalOr;
 use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Expr\Match_;
 use PhpParser\Node\Expr\MethodCall;
+use PhpParser\Node\Expr\NullsafeMethodCall;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Expr\Ternary;
-use PhpParser\Node\PropertyHook;
+use PhpParser\Node\Expr\Variable;
+use PhpParser\Node\Identifier;
+use PhpParser\Node\MatchArm;
+use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\Break_;
+use PhpParser\Node\Stmt\Case_;
 use PhpParser\Node\Stmt\Catch_;
-use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Continue_;
 use PhpParser\Node\Stmt\Do_;
 use PhpParser\Node\Stmt\Else_;
 use PhpParser\Node\Stmt\ElseIf_;
 use PhpParser\Node\Stmt\For_;
 use PhpParser\Node\Stmt\Foreach_;
-use PhpParser\Node\Stmt\Function_;
 use PhpParser\Node\Stmt\Goto_;
 use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Switch_;
@@ -40,32 +43,68 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterfac
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorCallableScope;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait;
 use Qualimetrix\Core\Path\RelativePath;
+use SplObjectStorage;
 
 /**
  * Visitor for calculating Cognitive Complexity.
  *
- * Cognitive Complexity measures code understandability, not just execution paths.
+ * Implements the SonarSource whitepaper (version 1.7, Appendix B):
+ * - B1 increments: if, else if, else, ternary, switch, loops, catch, goto and
+ *   numbered break/continue, each sequence of like logical operators read in
+ *   source order, and +1 once for a method that calls itself.
+ * - B2 nesting level: raised inside the bodies of if, else if, else, ternary
+ *   branches, switch, loops and catch, and inside lambdas. The whitepaper does
+ *   not place conditions; here a condition or subject is read as not nested
+ *   inside the structure it controls.
+ * - B3 nesting increment: if, ternary, switch, loops and catch add the
+ *   current nesting level on top of their +1.
+ * - `else if` in two words is the whitepaper's hybrid `else if`, scored as
+ *   `elseif`; an `if` inside a braced `else { }` is a nested if.
+ * - `match` is PHP's switch expression and is scored as switch, per the
+ *   whitepaper's rule that a language's own spelling of a listed keyword counts.
+ * - `??`, `??=` and `?->` add nothing: the whitepaper ignores null-coalescing
+ *   operators as shorthand (section "Ignore shorthand", p. 6).
  *
- * Key differences from Cyclomatic Complexity:
- * - Nesting increments complexity: deeper = harder to understand
- * - Logical operator chains: "a && b && c" = +1 (one chain), not +3
- * - Switch is +1 regardless of case count
- * - Recursion adds +1
+ * Lambdas (closures and arrow functions) get no increment of their own and
+ * raise the nesting level of their body by one.
  *
- * Rules:
- * - Control structures (if, for, while, etc.): +1 + nesting level
- * - Logical operators: +1 for each sequence of same operator
- * - Switch/Match: +1 + nesting level
- * - Catch blocks: +1 + nesting level
- * - Goto, labeled break/continue: +1 (no nesting bonus, per SonarSource B1)
- * - Ternary, null coalescing: +1 (no nesting bonus)
- * - Recursion: +1
+ * Deviations from the whitepaper:
+ * - A lambda inside a callable is measured as its own unit, as every other
+ *   callable metric measures it, instead of adding its body to the enclosing
+ *   callable. The whitepaper's method total is the sum of the callable and
+ *   the lambdas it contains.
+ * - A named function or an anonymous-class method declared inside a callable
+ *   is measured as its own unit starting at nesting level 0. The whitepaper
+ *   (B2) nests it one level inside the enclosing structure and adds its body
+ *   to the enclosing method.
+ * - Recursion is detected only as a direct self-call: `$this->m()` or
+ *   `$this?->m()`, `self::`/`static::` or the own class name, or a function
+ *   calling itself by its short, fully qualified or namespace-relative name.
+ *   A cycle through other methods, and a call through a variable or a
+ *   callable, is not detected.
  *
  * @see https://www.sonarsource.com/docs/CognitiveComplexity.pdf
  */
 final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements DeclarationIndexAwareInterface, ResettableVisitorInterface
 {
     use VisitorMethodTrackingTrait;
+
+    /** B1 + B3: +1 plus the current nesting level */
+    private const NESTING_INCREMENT_STRUCTURES = [
+        If_::class, For_::class, Foreach_::class, While_::class, Do_::class,
+        Catch_::class, Switch_::class, Match_::class, Ternary::class,
+    ];
+
+    /** @var array<class-string<Node>, string> Breakdown label of each incrementing node type */
+    private const INCREMENT_LABELS = [
+        If_::class => 'if', ElseIf_::class => 'elseif', Else_::class => 'else',
+        For_::class => 'for', Foreach_::class => 'foreach', While_::class => 'while', Do_::class => 'do',
+        Catch_::class => 'catch', Switch_::class => 'switch', Match_::class => 'match', Ternary::class => 'ternary',
+        Goto_::class => 'goto', Break_::class => 'break', Continue_::class => 'continue',
+        BooleanAnd::class => '&&/||', LogicalAnd::class => '&&/||', BooleanOr::class => '&&/||', LogicalOr::class => '&&/||',
+        FuncCall::class => 'recursion', MethodCall::class => 'recursion',
+        NullsafeMethodCall::class => 'recursion', StaticCall::class => 'recursion',
+    ];
 
     /** @var array<string, int> Method/function FQN => complexity */
     private array $complexities = [];
@@ -76,24 +115,51 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements De
     /** @var array<string, VisitorCallableScope> */
     private array $scopes = [];
 
-    /** @var list<array{fqn: string, depth: int, nestingLevel: int, nodeStack: list<Node>}> Stack of nested methods/functions */
-    private array $methodStack = [];
+    /** @var array<string, true> Units whose self-call has already been counted */
+    private array $recursionCounted = [];
+
+    /**
+     * Entered callables, each measured as its own unit.
+     *
+     * @var list<array{unit: string, nestingLevel: int}>
+     */
+    private array $callableStack = [];
 
     /** @var int Current nesting level (0 = top level in method) */
     private int $nestingLevel = 0;
 
-    /** @var list<Node> Stack of ancestor nodes for tree-aware logical operator detection */
-    private array $nodeStack = [];
+    /** @var SplObjectStorage<Node, int> Body nodes => nesting level they run at */
+    private SplObjectStorage $bodyLevels;
+
+    /** @var list<int> Nesting levels saved on entering a body node */
+    private array $savedLevels = [];
+
+    /** @var SplObjectStorage<Node, int> Logical operators of an entered sequence group => their increment */
+    private SplObjectStorage $logicalIncrements;
+
+    /** @var SplObjectStorage<Node, true> The else and the if of each `else if` */
+    private SplObjectStorage $elseIfParts;
+
+    public function __construct()
+    {
+        $this->bodyLevels = new SplObjectStorage();
+        $this->logicalIncrements = new SplObjectStorage();
+        $this->elseIfParts = new SplObjectStorage();
+    }
 
     public function reset(): void
     {
         $this->complexities = [];
         $this->increments = [];
         $this->scopes = [];
-        $this->methodStack = [];
+        $this->recursionCounted = [];
+        $this->callableStack = [];
         $this->nestingLevel = 0;
         $this->resetVisitorMethodContext();
-        $this->nodeStack = [];
+        $this->bodyLevels = new SplObjectStorage();
+        $this->savedLevels = [];
+        $this->logicalIncrements = new SplObjectStorage();
+        $this->elseIfParts = new SplObjectStorage();
     }
 
     /**
@@ -148,129 +214,144 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements De
 
     public function enterNode(Node $node): ?int
     {
+        if ($this->bodyLevels->offsetExists($node)) {
+            $this->savedLevels[] = $this->nestingLevel;
+            $this->nestingLevel = $this->bodyLevels[$node];
+        }
+
         $scope = $this->enterVisitorMethodContext($node);
         if ($scope !== null) {
-            // Add +1 structural increment to parent method (SonarSource spec B1: lambdas)
-            if ($scope->kind === \Qualimetrix\Core\Symbol\CallableKind::AnonymousCallable && $this->methodStack !== []) {
-                $parentMethod = $this->methodStack[array_key_last($this->methodStack)];
-                $parentFqn = $parentMethod['fqn'];
-                $increment = 1 + $this->nestingLevel; // B1 + B3 nesting bonus
-                $this->complexities[$parentFqn] = ($this->complexities[$parentFqn] ?? 0) + $increment;
-                $this->increments[$parentFqn][] = [
-                    'type' => 'closure',
-                    'line' => $node->getStartLine(),
-                    'points' => $increment,
-                ];
-            }
-
-            $this->startMethod($scope);
+            $this->enterCallable($node, $scope);
 
             return null;
         }
 
-        // Count complexity BEFORE incrementing nesting
-        // This ensures we count the structure at its current nesting level
+        // Count at the node's own level; only its bodies run one level deeper.
         $this->countComplexity($node);
 
-        // Track node stack for tree-aware logical operator detection.
-        // Push AFTER counting complexity so the current node is not in its own ancestor stack.
-        $this->nodeStack[] = $node;
-
-        // Increment nesting for nesting structures AFTER counting
-        if ($this->isNestingStructure($node)) {
-            ++$this->nestingLevel;
+        if ($node instanceof If_) {
+            $this->markElseIf($node);
         }
+
+        $this->registerBodies($node);
 
         return null;
     }
 
     public function leaveNode(Node $node): ?int
     {
-        $scope = $this->leaveVisitorMethodContext($node);
-        // Pop node stack only for nodes that were pushed (methods/functions/closures return
-        // early in enterNode before the push, so they must not be popped here)
-        if (!($node instanceof ClassMethod)
-            && !($node instanceof Function_)
-            && !($node instanceof PropertyHook)
-            && !($node instanceof Closure)
-            && !($node instanceof ArrowFunction)
-        ) {
-            array_pop($this->nodeStack);
+        if ($this->leaveVisitorMethodContext($node) !== null) {
+            $this->leaveCallable();
         }
 
-        // Decrement nesting for nesting structures
-        if ($this->isNestingStructure($node)) {
-            --$this->nestingLevel;
+        if ($this->bodyLevels->offsetExists($node)) {
+            $this->bodyLevels->offsetUnset($node);
+            $this->nestingLevel = array_pop($this->savedLevels) ?? 0;
         }
 
-        if ($scope !== null) {
-            $this->endMethod($scope);
-        }
+        $this->elseIfParts->offsetUnset($node);
 
         return null;
     }
 
-    private function startMethod(VisitorCallableScope $scope): void
+    private function enterCallable(Node $node, VisitorCallableScope $scope): void
     {
-        $fqn = $scope->traversalKey;
-        // Save current nesting level and node stack before resetting (for closures/arrow functions inside nested scopes)
-        $this->methodStack[] = [
-            'fqn' => $fqn,
-            'depth' => \count($this->methodStack),
+        $isNestedLambda = $this->callableStack !== [] && ($node instanceof Closure || $node instanceof ArrowFunction);
+
+        $this->callableStack[] = [
+            'unit' => $scope->traversalKey,
             'nestingLevel' => $this->nestingLevel,
-            'nodeStack' => $this->nodeStack,
         ];
-        // Initialize with base complexity of 0 (unlike CCN which starts at 1)
-        $this->complexities[$fqn] = 0;
-        $this->increments[$fqn] = [];
-        $this->scopes[$fqn] = $scope;
-        // Reset nesting level and node stack for new method
-        $this->nestingLevel = 0;
-        $this->nodeStack = [];
+        $this->complexities[$scope->traversalKey] = 0;
+        $this->increments[$scope->traversalKey] = [];
+        $this->scopes[$scope->traversalKey] = $scope;
+        $this->nestingLevel = $isNestedLambda ? $this->nestingLevel + 1 : 0;
     }
 
-    private function endMethod(VisitorCallableScope $scope): void
+    private function leaveCallable(): void
     {
-        $popped = array_pop($this->methodStack);
+        $popped = array_pop($this->callableStack);
 
-        // Restore outer method's nesting level and node stack
         if ($popped !== null) {
             $this->nestingLevel = $popped['nestingLevel'];
-            $this->nodeStack = $popped['nodeStack'];
         }
     }
 
-    /**
-     * Checks if node is a nesting structure that increases nesting level.
-     *
-     * Note: ElseIf and Else are NOT nesting structures - they're at the same
-     * level as their parent If. Only If increases nesting.
-     */
-    private function isNestingStructure(Node $node): bool
+    private function currentUnit(): ?string
     {
-        return $node instanceof If_
-            || $node instanceof For_
-            || $node instanceof Foreach_
-            || $node instanceof While_
-            || $node instanceof Do_
-            || $node instanceof Catch_
-            || $node instanceof Switch_
-            || $node instanceof Match_;
+        if ($this->callableStack === []) {
+            return null;
+        }
+
+        return $this->callableStack[array_key_last($this->callableStack)]['unit'];
+    }
+
+    /**
+     * Marks an `else` whose only statement is an `if` written right after it:
+     * `else if`, the whitepaper's hybrid increment, as PHP spells `elseif` in
+     * two words. The parser drops the braces of `else { if ... }`, so the two
+     * are told apart by where they end: an `else if` ends with its `if` and
+     * with the `if` it continues, a braced or alternative-syntax `else` ends
+     * after them.
+     */
+    private function markElseIf(If_ $node): void
+    {
+        $else = $node->else;
+        if ($else === null || \count($else->stmts) !== 1 || !$else->stmts[0] instanceof If_) {
+            return;
+        }
+
+        $inner = $else->stmts[0];
+        $end = $this->endFilePos($node);
+        if ($this->endFilePos($else) === $end && $this->endFilePos($inner) === $end) {
+            $this->elseIfParts[$else] = true;
+            $this->elseIfParts[$inner] = true;
+        }
+    }
+
+    private function endFilePos(Node $node): int
+    {
+        if (!$node->hasAttribute('endFilePos')) {
+            throw new LogicException('Cognitive complexity needs the parser\'s endFilePos attribute to tell `else if` from a nested if');
+        }
+
+        return $node->getEndFilePos();
+    }
+
+    /**
+     * Marks the bodies a B2 structure nests: statements and branches, never
+     * the condition or subject that controls them. The `if` of an `else if`
+     * runs at the level of the chain it continues.
+     */
+    private function registerBodies(Node $node): void
+    {
+        $bodies = match (true) {
+            $node instanceof Else_ => $this->elseIfParts->offsetExists($node) ? [] : $node->stmts,
+            $node instanceof If_, $node instanceof ElseIf_, $node instanceof For_, $node instanceof Foreach_, $node instanceof While_,
+            $node instanceof Do_, $node instanceof Catch_ => $node->stmts,
+            $node instanceof Switch_ => array_merge(...array_map(static fn(Case_ $case): array => $case->stmts, $node->cases)),
+            $node instanceof Match_ => array_map(static fn(MatchArm $arm): Node => $arm->body, $node->arms),
+            $node instanceof Ternary => array_filter([$node->if, $node->else]),
+            default => [],
+        };
+
+        foreach ($bodies as $body) {
+            $this->bodyLevels[$body] = $this->nestingLevel + 1;
+        }
     }
 
     private function countComplexity(Node $node): void
     {
-        if ($this->methodStack === []) {
+        $unit = $this->currentUnit();
+        if ($unit === null) {
             return;
         }
 
-        $increment = $this->getComplexityIncrement($node);
+        $increment = $this->getComplexityIncrement($node, $unit);
 
         if ($increment > 0) {
-            $currentMethod = $this->methodStack[array_key_last($this->methodStack)];
-            $fqn = $currentMethod['fqn'];
-            $this->complexities[$fqn] += $increment;
-            $this->increments[$fqn][] = [
+            $this->complexities[$unit] += $increment;
+            $this->increments[$unit][] = [
                 'type' => $this->getNodeTypeLabel($node),
                 'line' => $node->getStartLine(),
                 'points' => $increment,
@@ -281,60 +362,48 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements De
     /**
      * Returns complexity increment for a given node.
      */
-    private function getComplexityIncrement(Node $node): int
+    private function getComplexityIncrement(Node $node, string $unit): int
     {
-        // Control flow structures with nesting bonus
-        if ($node instanceof If_
-            || $node instanceof For_
-            || $node instanceof Foreach_
-            || $node instanceof While_
-            || $node instanceof Do_
-            || $node instanceof Catch_
-            || $node instanceof Switch_
-            || $node instanceof Match_
-        ) {
+        // B1 only for the two-word `else if`: its `if` carries the increment, its `else` none
+        if ($this->elseIfParts->offsetExists($node)) {
+            return $node instanceof If_ ? 1 : 0;
+        }
+
+        if (\in_array($node::class, self::NESTING_INCREMENT_STRUCTURES, true)) {
             return 1 + $this->nestingLevel;
         }
 
-        // ElseIf: +1 structural increment only, NO nesting bonus per SonarSource spec (B1 only, not B3)
-        if ($node instanceof ElseIf_) {
-            return 1; // No nesting bonus per SonarSource spec (B1 only, not B3)
-        }
-
-        // Else: +1 structural increment only, NO nesting bonus per SonarSource spec (B1 only, not B3)
-        if ($node instanceof Else_) {
+        if ($this->hasFlatIncrement($node)) {
             return 1;
         }
 
-        // Ternary and null coalescing: +1 without nesting bonus
-        if ($node instanceof Ternary || $node instanceof Coalesce) {
-            return 1;
-        }
-
-        // Labeled jumps: +1 only (B1 fundamental increment, no nesting bonus per SonarSource spec)
-        if ($node instanceof Goto_) {
-            return 1;
-        }
-
-        if ($node instanceof Break_ && $node->num !== null) {
-            return 1;
-        }
-
-        if ($node instanceof Continue_ && $node->num !== null) {
-            return 1;
-        }
-
-        // Logical operators: count sequences using tree-aware parent detection
         if ($this->isLogicalOperator($node)) {
             return $this->getLogicalOperatorIncrement($node);
         }
 
-        // Recursive calls: +1
-        if ($this->isRecursiveCall($node)) {
-            return 1;
+        return $this->recursionIncrement($node, $unit);
+    }
+
+    /**
+     * B1 only: elseif, else, goto and numbered jumps take no nesting increment.
+     */
+    private function hasFlatIncrement(Node $node): bool
+    {
+        return $node instanceof ElseIf_
+            || $node instanceof Else_
+            || $node instanceof Goto_
+            || (($node instanceof Break_ || $node instanceof Continue_) && $node->num !== null);
+    }
+
+    private function recursionIncrement(Node $node, string $unit): int
+    {
+        if (isset($this->recursionCounted[$unit]) || !$this->isRecursiveCall($node, $unit)) {
+            return 0;
         }
 
-        return 0;
+        $this->recursionCounted[$unit] = true;
+
+        return 1;
     }
 
     private function isLogicalOperator(Node $node): bool
@@ -346,37 +415,44 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements De
     }
 
     /**
-     * Calculates increment for logical operators using tree-aware parent detection.
-     *
-     * A boolean operator gets +1 if its nearest boolean ancestor in the AST is NOT
-     * the same operator type (i.e., it starts a new sequence). If the nearest boolean
-     * ancestor IS the same type, it's a continuation of a chain and gets +0.
-     *
-     * This correctly handles expressions like `$a && $b || $c && $d` where the AST is:
-     *   BooleanOr(BooleanAnd($a, $b), BooleanAnd($c, $d))
-     * Each BooleanAnd has a BooleanOr parent (different type) -> +1 each.
-     * Total logical: +1 (Or) + 1 (left And) + 1 (right And) = +3.
-     *
-     * For `$a && $b && $c`, the AST is:
-     *   BooleanAnd(BooleanAnd($a, $b), $c)
-     * Inner BooleanAnd has no boolean ancestor yet -> +1.
-     * Outer BooleanAnd has BooleanAnd ancestor (same type) -> +0.
-     * Total logical: +1.
+     * B1 "sequences of binary logical operators": a group is a logical operator
+     * whose parent is not one, together with the logical operators reached from
+     * it through logical operators only. Read in source order, as the whitepaper
+     * writes it, each operator that differs from the one before it starts a new
+     * sequence: `$a && $b && $c || $d` is two, `$a && ($b || $c) && $d` is three.
+     * Anything else in between — `!`, a call, an assignment, a ternary — closes
+     * the group, and a logical operator below it starts a group of its own.
      */
     private function getLogicalOperatorIncrement(Node $node): int
     {
-        // Walk up the node stack to find the nearest boolean operator ancestor
-        for ($i = \count($this->nodeStack) - 1; $i >= 0; $i--) {
-            $ancestor = $this->nodeStack[$i];
-            if ($this->isLogicalOperator($ancestor)) {
-                // Parent is a logical operator - same type means continuation (+0),
-                // different type means new sequence (+1)
-                return $this->isSameLogicalOperatorType($node, $ancestor) ? 0 : 1;
+        if (!$this->logicalIncrements->offsetExists($node)) {
+            $previous = null;
+            foreach ($this->logicalOperatorsInSourceOrder($node) as $operator) {
+                $this->logicalIncrements[$operator] = $previous !== null && $this->isSameLogicalOperatorType($previous, $operator) ? 0 : 1;
+                $previous = $operator;
             }
         }
 
-        // No logical operator ancestor - this is the root of a new boolean expression
-        return 1;
+        $increment = $this->logicalIncrements[$node];
+        $this->logicalIncrements->offsetUnset($node);
+
+        return $increment;
+    }
+
+    /**
+     * @return list<Node>
+     */
+    private function logicalOperatorsInSourceOrder(Node $node): array
+    {
+        if (!$node instanceof Node\Expr\BinaryOp || !$this->isLogicalOperator($node)) {
+            return [];
+        }
+
+        return [
+            ...$this->logicalOperatorsInSourceOrder($node->left),
+            $node,
+            ...$this->logicalOperatorsInSourceOrder($node->right),
+        ];
     }
 
     /**
@@ -384,26 +460,11 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements De
      */
     private function getNodeTypeLabel(Node $node): string
     {
-        return match (true) {
-            $node instanceof If_ => 'if',
-            $node instanceof ElseIf_ => 'elseif',
-            $node instanceof Else_ => 'else',
-            $node instanceof For_ => 'for',
-            $node instanceof Foreach_ => 'foreach',
-            $node instanceof While_ => 'while',
-            $node instanceof Do_ => 'do',
-            $node instanceof Catch_ => 'catch',
-            $node instanceof Switch_ => 'switch',
-            $node instanceof Match_ => 'match',
-            $node instanceof Ternary => 'ternary',
-            $node instanceof Coalesce => '??',
-            $node instanceof Goto_ => 'goto',
-            $node instanceof Break_ => 'break',
-            $node instanceof Continue_ => 'continue',
-            $this->isLogicalOperator($node) => '&&/||',
-            $node instanceof FuncCall, $node instanceof MethodCall, $node instanceof StaticCall => 'recursion',
-            default => 'other',
-        };
+        if ($node instanceof If_ && $this->elseIfParts->offsetExists($node)) {
+            return 'elseif';
+        }
+
+        return self::INCREMENT_LABELS[$node::class] ?? 'other';
     }
 
     /**
@@ -418,81 +479,74 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements De
     }
 
     /**
-     * Checks if a call is recursive (calls the current method/function).
+     * A direct self-call, in every spelling PHP resolves to the unit itself:
+     * names compare case-insensitively, a static call may name the own class,
+     * and a function call may be fully qualified or namespace-relative.
      */
-    private function isRecursiveCall(Node $node): bool
+    private function isRecursiveCall(Node $node, string $unit): bool
     {
-        if ($this->methodStack === []) {
+        $scope = $this->scopes[$unit] ?? null;
+        if ($scope === null) {
             return false;
         }
 
-        $currentMethod = $this->methodStack[array_key_last($this->methodStack)];
-        $currentFqn = $currentMethod['fqn'];
-        $info = $this->scopes[$currentFqn] ?? null;
-
-        if ($info === null) {
-            return false;
+        if ($node instanceof MethodCall || $node instanceof NullsafeMethodCall) {
+            return $node->var instanceof Variable
+                && $node->var->name === 'this'
+                && $this->namesMember($node->name, $scope);
         }
 
-        $methodName = $info->member;
-
-        // Check for instance method call recursion: only $this->method()
-        if ($node instanceof MethodCall) {
-            if (!($node->var instanceof Node\Expr\Variable && $node->var->name === 'this')) {
-                return false;
-            }
-
-            $calledMethod = $node->name instanceof Node\Identifier
-                ? $node->name->toString()
-                : null;
-
-            return $calledMethod === $methodName;
-        }
-
-        // Check for static method call recursion: only self:: and static::
-        // parent:: calls the PARENT's method, not the current class — it's not recursion
+        // parent:: calls the parent's method, which is not recursion
         if ($node instanceof StaticCall) {
-            if (!($node->class instanceof Node\Name)) {
-                return false;
-            }
-
-            $className = $node->class->toString();
-            if ($className !== 'self' && $className !== 'static') {
-                return false;
-            }
-
-            $calledMethod = $node->name instanceof Node\Identifier
-                ? $node->name->toString()
-                : null;
-
-            return $calledMethod === $methodName;
+            return $node->class instanceof Name
+                && $this->namesOwnClass($node->class, $scope)
+                && $this->namesMember($node->name, $scope);
         }
 
-        // Check for function call recursion (only inside standalone functions, not class methods).
-        // A FuncCall inside a ClassMethod is a call to a global/imported function, NOT recursion.
-        // For example, a method named count() calling \count($arr) is not recursive.
-        if ($node instanceof FuncCall && $node->name instanceof Node\Name) {
-            // Only consider it recursion if we're inside a standalone function (no class context)
-            if ($info->class !== null) {
-                return false;
-            }
-
-            $calledFunction = $node->name->toString();
-
-            // Strip leading backslash (fully-qualified marker) but keep namespace
-            if (str_starts_with($calledFunction, '\\')) {
-                $calledFunction = substr($calledFunction, 1);
-            }
-
-            // If the called function has a namespace (contains \), it cannot match
-            // a simple function name — e.g. \Other\Namespace\foo() is not foo()
-            if (str_contains($calledFunction, '\\')) {
-                return false;
-            }
-
-            return $calledFunction === $methodName;
+        // A function call inside a class method calls a function, never the method
+        if ($node instanceof FuncCall) {
+            return $scope->class === null
+                && $node->name instanceof Name
+                && $this->namesOwnFunction($node->name, $scope);
         }
 
         return false;
+    }
+
+    private function namesMember(Node $name, VisitorCallableScope $scope): bool
+    {
+        return $name instanceof Identifier && $name->toLowerString() === strtolower($scope->member);
+    }
+
+    private function namesOwnClass(Name $class, VisitorCallableScope $scope): bool
+    {
+        $lower = $class->toLowerString();
+        if ($lower === 'self' || $lower === 'static') {
+            return true;
+        }
+
+        if ($scope->class === null || $scope->anonymousClassContext) {
+            return false;
+        }
+
+        return $class->isFullyQualified()
+            ? $lower === strtolower($this->qualify($scope->namespace, $scope->class))
+            : $class->isUnqualified() && $lower === strtolower($scope->class);
+    }
+
+    private function namesOwnFunction(Name $function, VisitorCallableScope $scope): bool
+    {
+        $lower = $function->toLowerString();
+
+        if ($function->isFullyQualified()) {
+            return $lower === strtolower($this->qualify($scope->namespace, $scope->member));
+        }
+
+        return ($function->isUnqualified() || $function->isRelative()) && $lower === strtolower($scope->member);
+    }
+
+    private function qualify(?string $namespace, string $name): string
+    {
+        return $namespace === null || $namespace === '' ? $name : $namespace . '\\' . $name;
     }
 }

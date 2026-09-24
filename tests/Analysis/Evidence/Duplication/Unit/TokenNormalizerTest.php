@@ -166,4 +166,54 @@ PHP;
         self::assertGreaterThan(0, \count($tokens));
         self::assertSame(3, $tokens[0]->line);
     }
+
+    #[Test]
+    public function itAssignsASingleCharacterTokenTheLineItStandsOnAfterAMultiLineGap(): void
+    {
+        // The whitespace before `}` starts on line 2 and spans four line
+        // breaks, so a line inherited from the previous array token lands
+        // four lines too early.
+        $tokens = $this->normalizer->normalize("<?php\nfoo();\n\n\n\n}\n");
+
+        $closing = array_values(array_filter($tokens, static fn(NormalizedToken $t): bool => $t->value === '}'));
+
+        self::assertCount(1, $closing);
+        self::assertSame(6, $closing[0]->line);
+    }
+
+    #[Test]
+    public function itAssignsAnOpeningBraceOnItsOwnLineThatLine(): void
+    {
+        $code = <<<'PHP'
+<?php
+function foo(): array
+{
+    return [];
+}
+PHP;
+
+        $tokens = $this->normalizer->normalize($code);
+
+        $lines = [];
+        foreach ($tokens as $token) {
+            if ($token->value === '{' || $token->value === '}' || $token->value === ';') {
+                $lines[] = $token->value . '@' . $token->line;
+            }
+        }
+
+        self::assertSame(['{@3', ';@4', '}@5'], $lines);
+    }
+
+    #[Test]
+    public function itKeepsASingleCharacterTokenOnTheLineOfAPrecedingTokenThatSharesIt(): void
+    {
+        $tokens = $this->normalizer->normalize("<?php\n\$a = 1;\n\$b = 2;\n");
+
+        $semicolons = array_map(
+            static fn(NormalizedToken $t): int => $t->line,
+            array_values(array_filter($tokens, static fn(NormalizedToken $t): bool => $t->value === ';')),
+        );
+
+        self::assertSame([2, 3], $semicolons);
+    }
 }

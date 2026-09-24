@@ -32,7 +32,9 @@ final class IncompleteAnalysisException extends RuntimeException
         }
 
         return \sprintf(
-            'Analysis incomplete: %d of %d discovered PHP file(s) failed%s.',
+            // "Entries", not "files": three of the five kinds name something
+            // that never was a PHP file — a directory, a link, a FIFO.
+            'Analysis incomplete: %d of %d discovered entries were not analyzed%s.',
             $count,
             $coverage->discoveredFiles(),
             $categories === [] ? '' : ' (' . implode(', ', $categories) . ')',

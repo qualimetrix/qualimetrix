@@ -6,9 +6,10 @@ declare(strict_types=1);
  * The fourth observation point — the report — and the cache-isolation protocol
  * of 02 §4.
  *
- * `--no-cache` does not hold in this tree; that was measured in the round and
- * carried into `DEFERRED`. An oracle that trusts a broken switch is not an
- * oracle, so the flag is never used here. Instead every probe:
+ * `--no-cache` is never used here. The cache switches are among the promises
+ * this stand measures, and an oracle isolated by the switch under measurement
+ * cannot see that switch fail — which it has done: the flag was once inert,
+ * and runs taken under it read the cache. Instead every probe:
  *
  *   1. names its cache directory explicitly, and the name is unique to the
  *      probe — a run cannot quietly fall back to the default one;
@@ -122,6 +123,32 @@ final class ProcessProbe
         $this->memo[$key] = $this->run($document, $extraArguments, $cacheOwned, $observable, $key, $withdraw);
 
         return $this->memo[$key];
+    }
+
+    /**
+     * One run of a command that is not the product, read exactly as a product
+     * run is read: the same heads, the same tokenizing, the same
+     * {@see ProcessObservation::outcome()}. Not counted in {@see self::runs()}
+     * and not put under the cache protocol — neither says anything about a
+     * process that is not the product.
+     *
+     * @param list<string> $argv
+     */
+    public function observeCommand(array $argv): ProcessObservation
+    {
+        try {
+            $result = ChildProcess::run($argv, $this->repositoryRoot);
+        } catch (RuntimeException $failure) {
+            throw new ProbeFailure('the command did not complete: ' . $failure->getMessage(), 0, $failure);
+        }
+
+        return new ProcessObservation(
+            $result['exitCode'],
+            'n/a',
+            $this->tokenize(substr($result['stdout'], 0, 400), null),
+            $this->tokenize(substr($result['stderr'], 0, 400), null),
+            'n/a',
+        );
     }
 
     /**
@@ -421,7 +448,7 @@ final class ProcessProbe
      * absolute home path in a tracked file. Longest prefix first, raw and
      * resolved, because the run directory lives inside the scratch root.
      */
-    private function tokenize(string $text, string $runDirectory): string
+    private function tokenize(string $text, ?string $runDirectory): string
     {
         // Longest prefix first, raw and resolved: the run directory lives
         // inside the scratch root, and on macOS `/tmp` resolves to
@@ -429,10 +456,15 @@ final class ProcessProbe
         // The product tree is here too — a crash quotes the frame it crashed
         // in, and that frame is an absolute path inside this checkout.
         $roots = [
-            $runDirectory => '<RUN>',
             $this->scratchRoot => '<SCRATCH>',
             $this->repositoryRoot => '<REPO>',
         ];
+
+        // A null run directory is omitted rather than passed as '': realpath('')
+        // resolves to the working directory and would tokenize it as `<RUN>`.
+        if ($runDirectory !== null) {
+            $roots = [$runDirectory => '<RUN>', ...$roots];
+        }
 
         foreach ($roots as $root => $token) {
             foreach ([$root, realpath($root)] as $candidate) {

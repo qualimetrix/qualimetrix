@@ -18,10 +18,16 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * Constructs all indexes and precomputes namespace-level Ce/Ca metrics
  * for efficient coupling queries.
  *
- * Dependencies targeting PHP built-in classes are excluded from the graph
- * because coupling to stable standard library types does not contribute to
- * architectural risk measured by CBO. Only `extends` edges are preserved
- * (needed by DitGlobalCollector and NocCollector for inheritance metrics).
+ * Dependencies targeting PHP built-in classes are excluded from the coupling
+ * views because coupling to stable standard library types does not contribute
+ * to architectural risk measured by CBO. An `extends` edge to one stays in the
+ * edge list, because DitGlobalCollector and NocCollector read inheritance from
+ * it, but no coupling query counts it: not the per-class lists, not Ce/Ca, not
+ * either namespace scope.
+ *
+ * The declaration view keeps every declaration edge, built-in target or not:
+ * what a class declares is a fact about the class, and a layer criterion
+ * naming `\JsonSerializable` has nothing else to read it from.
  */
 final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
 {
@@ -33,19 +39,15 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
      */
     public function build(array $dependencies, iterable $logicalClassUniverse): DependencyGraphInterface
     {
+        $declarationDependencies = DependencyGraph::declarationsAmong($dependencies);
         $dependencies = $this->retainGraphDependencies($dependencies);
-        $indexes = $this->indexGraphInputs($dependencies, $logicalClassUniverse);
+        $couplingDependencies = $this->couplingDependencies($dependencies);
+        $indexes = $this->indexGraphInputs($dependencies, $couplingDependencies, $logicalClassUniverse);
         [$canonicalNamespaceMap, $parentNamespaces] = $this->expandNamespaceUniverse($indexes['leafNamespaces']);
-        $namespaceCouplings = $this->computeNamespaceCouplings($dependencies, $canonicalNamespaceMap);
-
-        if ($parentNamespaces !== []) {
-            $this->computeParentNamespaceCouplings(
-                $dependencies,
-                $parentNamespaces,
-                $namespaceCouplings['coupling.ce'],
-                $namespaceCouplings['coupling.ca'],
-            );
-        }
+        $ownCouplings = $this->computeNamespaceCouplings($couplingDependencies, $canonicalNamespaceMap);
+        $rollupCouplings = $parentNamespaces === []
+            ? $ownCouplings
+            : $this->withParentNamespaceCouplings($couplingDependencies, $parentNamespaces, $ownCouplings);
 
         return new DependencyGraph(
             $dependencies,
@@ -53,10 +55,15 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
             $indexes['byTarget'],
             array_values($indexes['classes']),
             array_values($canonicalNamespaceMap),
-            $namespaceCouplings['coupling.ce'],
-            $namespaceCouplings['coupling.ca'],
-            $this->computeClassCe($indexes['bySource']),
-            $this->computeClassCa($indexes['byTarget']),
+            NamespaceCouplings::fromScopes(
+                $rollupCouplings['coupling.ce'],
+                $rollupCouplings['coupling.ca'],
+                $ownCouplings['coupling.ce'],
+                $ownCouplings['coupling.ca'],
+            ),
+            self::distinctOtherEnds($indexes['bySource'], static fn(Dependency $dep): SymbolPath => $dep->targetLogical()),
+            self::distinctOtherEnds($indexes['byTarget'], static fn(Dependency $dep): SymbolPath => $dep->sourceLogical()),
+            $declarationDependencies,
         );
     }
 
@@ -75,7 +82,27 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
     }
 
     /**
+     * The retained edges every coupling query counts: all of them but an
+     * `extends` of a PHP class, which is kept only for inheritance readers.
+     *
      * @param list<Dependency> $dependencies
+     *
+     * @return list<Dependency>
+     */
+    private function couplingDependencies(array $dependencies): array
+    {
+        return array_values(array_filter(
+            $dependencies,
+            fn(Dependency $dependency): bool => !$this->isPhpBuiltinClass($dependency->targetLogical()),
+        ));
+    }
+
+    /**
+     * Classes and namespaces come from every retained edge; the per-class
+     * lists, which Ce/Ca and CBO are read from, from the coupling edges only.
+     *
+     * @param list<Dependency> $dependencies
+     * @param list<Dependency> $couplingDependencies
      * @param iterable<LogicalClassPath> $logicalClassUniverse
      *
      * @return array{
@@ -85,10 +112,9 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
      *     leafNamespaces: array<string, SymbolPath>
      * }
      */
-    private function indexGraphInputs(array $dependencies, iterable $logicalClassUniverse): array
+    private function indexGraphInputs(array $dependencies, array $couplingDependencies, iterable $logicalClassUniverse): array
     {
-        $bySource = [];
-        $byTarget = [];
+        [$bySource, $byTarget] = $this->indexCouplingEdges($couplingDependencies);
         /** @var array<string, SymbolPath> $classMap */
         $classMap = [];
         /** @var array<string, SymbolPath> $namespaceMap */
@@ -108,10 +134,6 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
             $target = $dep->targetLogical();
             $sourceKey = $source->toCanonical();
             $targetKey = $target->toCanonical();
-
-            $bySource[$sourceKey][] = $dep;
-
-            $byTarget[$targetKey][] = $dep;
 
             // Collect unique classes
             $classMap[$sourceKey] = $source;
@@ -135,6 +157,24 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
             'classes' => $classMap,
             'leafNamespaces' => $namespaceMap,
         ];
+    }
+
+    /**
+     * @param list<Dependency> $couplingDependencies
+     *
+     * @return array{array<string, list<Dependency>>, array<string, list<Dependency>>}
+     */
+    private function indexCouplingEdges(array $couplingDependencies): array
+    {
+        $bySource = [];
+        $byTarget = [];
+
+        foreach ($couplingDependencies as $dep) {
+            $bySource[$dep->sourceLogical()->toCanonical()][] = $dep;
+            $byTarget[$dep->targetLogical()->toCanonical()][] = $dep;
+        }
+
+        return [$bySource, $byTarget];
     }
 
     /**
@@ -209,23 +249,31 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
     }
 
     /**
-     * Computes Ce/Ca for parent namespaces using prefix-based boundary semantics.
+     * Returns the namespace couplings with every parent namespace recomputed
+     * over prefix-based boundary semantics.
      *
      * For a parent namespace P, a dependency is external if one side is inside P
      * (namespace equals P or starts with P\) and the other side is outside P.
      * Dependencies between child namespaces of the same parent are internal.
      *
+     * The argument is returned changed rather than modified in place because a
+     * parent namespace carries both scopes at once: this subtree rollup, and
+     * the own-scope value it replaces, which the graph also publishes.
+     *
      * @param array<Dependency> $dependencies
      * @param array<string, SymbolPath> $parentNamespaces raw namespace string => SymbolPath
-     * @param array<string, StringSet> $namespaceCe modified in place
-     * @param array<string, StringSet> $namespaceCa modified in place
+     * @param array{'coupling.ce': array<string, StringSet>, 'coupling.ca': array<string, StringSet>} $ownCouplings
+     *
+     * @return array{'coupling.ce': array<string, StringSet>, 'coupling.ca': array<string, StringSet>}
      */
-    private function computeParentNamespaceCouplings(
+    private function withParentNamespaceCouplings(
         array $dependencies,
         array $parentNamespaces,
-        array &$namespaceCe,
-        array &$namespaceCa,
-    ): void {
+        array $ownCouplings,
+    ): array {
+        $namespaceCe = $ownCouplings['coupling.ce'];
+        $namespaceCa = $ownCouplings['coupling.ca'];
+
         // Build prefix list: "App\Service" => "App\Service\"
         $parentPrefixes = [];
         $parentCanonicals = [];
@@ -273,51 +321,31 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
                 }
             }
         }
+
+        return ['coupling.ce' => $namespaceCe, 'coupling.ca' => $namespaceCa];
     }
 
     /**
-     * Precomputes Efferent Coupling (Ce) for each class.
+     * Precomputes a class coupling count: for each key of an edge index, the
+     * number of unique classes at the other end of its edges. Indexed by
+     * source with the target as the other end this is Ce; indexed by target
+     * with the source as the other end, Ca.
      *
-     * Ce = count of unique classes this class depends on.
-     *
-     * @param array<string, array<Dependency>> $bySource Dependencies indexed by source canonical key
-     *
-     * @return array<string, int>
-     */
-    private function computeClassCe(array $bySource): array
-    {
-        $result = [];
-
-        foreach ($bySource as $sourceKey => $deps) {
-            $targets = [];
-            foreach ($deps as $dep) {
-                $targets[$dep->targetLogical()->toCanonical()] = true;
-            }
-            $result[$sourceKey] = \count($targets);
-        }
-
-        return $result;
-    }
-
-    /**
-     * Precomputes Afferent Coupling (Ca) for each class.
-     *
-     * Ca = count of unique classes that depend on this class.
-     *
-     * @param array<string, array<Dependency>> $byTarget Dependencies indexed by target canonical key
+     * @param array<string, array<Dependency>> $index Dependencies indexed by one end's canonical key
+     * @param callable(Dependency): SymbolPath $otherEnd
      *
      * @return array<string, int>
      */
-    private function computeClassCa(array $byTarget): array
+    private static function distinctOtherEnds(array $index, callable $otherEnd): array
     {
         $result = [];
 
-        foreach ($byTarget as $targetKey => $deps) {
-            $sources = [];
+        foreach ($index as $key => $deps) {
+            $ends = [];
             foreach ($deps as $dep) {
-                $sources[$dep->sourceLogical()->toCanonical()] = true;
+                $ends[$otherEnd($dep)->toCanonical()] = true;
             }
-            $result[$targetKey] = \count($sources);
+            $result[$key] = \count($ends);
         }
 
         return $result;

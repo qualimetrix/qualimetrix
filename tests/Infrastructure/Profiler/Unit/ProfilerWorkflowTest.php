@@ -93,14 +93,14 @@ final class ProfilerWorkflowTest extends TestCase
 
         // Verify JSON structure
         self::assertIsArray($data);
-        self::assertSame('test', $data['name']);
-        self::assertSame('category', $data['category']);
-        self::assertArrayHasKey('duration_ms', $data);
-        self::assertArrayHasKey('memory_delta_bytes', $data);
-        self::assertArrayHasKey('peak_memory_delta_bytes', $data);
-        self::assertArrayHasKey('children', $data);
-        self::assertCount(1, $data['children']);
-        self::assertSame('child', $data['children'][0]['name']);
+        self::assertCount(1, $data['spans']);
+        $span = $data['spans'][0];
+        self::assertSame(['name', 'category', 'duration_ms', 'memory_delta_bytes', 'stopped', 'children'], array_keys($span));
+        self::assertSame('test', $span['name']);
+        self::assertSame('category', $span['category']);
+        self::assertTrue($span['stopped']);
+        self::assertCount(1, $span['children']);
+        self::assertSame('child', $span['children'][0]['name']);
     }
 
     #[Test]

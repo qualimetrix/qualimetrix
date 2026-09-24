@@ -252,7 +252,7 @@ Not all code smell findings are equally urgent. Here is a prioritization guide b
 - **`debug-code`** -- suppress in files that intentionally provide dump/debug API
 - **`data-class`** -- prefer marking deliberate records `readonly` over suppressing
 - **`identical-subexpression`** -- exclude generated files via `--exclude` or baseline
-- **`empty-catch`** -- suppress for chain-of-responsibility patterns; always add a comment explaining why
+- **`empty-catch`** -- a `foreach` that tries each candidate until one succeeds is already not flagged; for any other intentional ignore, suppress with `@qmx-ignore code-smell.empty-catch` and a reason -- a comment inside the `catch` does not clear the finding
 
 ### Monitor but Do Not Block CI
 

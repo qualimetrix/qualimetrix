@@ -53,6 +53,10 @@ final class CouplingCollector implements GlobalContextCollectorInterface
             MetricName::COUPLING_CE_PACKAGES,
             MetricName::COUPLING_CBO_APP,
             MetricName::COUPLING_CE_FRAMEWORK,
+            MetricName::COUPLING_CA_OWN,
+            MetricName::COUPLING_CE_OWN,
+            MetricName::COUPLING_CBO_OWN,
+            MetricName::COUPLING_INSTABILITY_OWN,
         ];
     }
 
@@ -159,6 +163,26 @@ final class CouplingCollector implements GlobalContextCollectorInterface
                     ],
                 ],
             ),
+            new MetricDefinition(
+                name: MetricName::COUPLING_CA_OWN,
+                collectedAt: SymbolLevel::Namespace_,
+                aggregations: [],
+            ),
+            new MetricDefinition(
+                name: MetricName::COUPLING_CE_OWN,
+                collectedAt: SymbolLevel::Namespace_,
+                aggregations: [],
+            ),
+            new MetricDefinition(
+                name: MetricName::COUPLING_CBO_OWN,
+                collectedAt: SymbolLevel::Namespace_,
+                aggregations: [],
+            ),
+            new MetricDefinition(
+                name: MetricName::COUPLING_INSTABILITY_OWN,
+                collectedAt: SymbolLevel::Namespace_,
+                aggregations: [],
+            ),
         ];
     }
 
@@ -259,18 +283,28 @@ final class CouplingCollector implements GlobalContextCollectorInterface
     }
 
     /**
-     * Computes Ca, Ce, CBO, Instability for each namespace in the graph.
+     * Computes Ca, Ce, CBO, Instability for each namespace in the graph, in
+     * both of the scopes the graph distinguishes: the subtree rollup a parent
+     * namespace publishes, and the own scope of the declarations it holds
+     * itself. For a namespace without sub-namespaces the two coincide.
      *
      * CBO at namespace level counts uniquely coupled external namespaces (union of
      * incoming and outgoing namespace dependencies). If namespace A depends on B
      * and B depends on A, CBO(A) = 1 (not 2), mirroring the class-level C&K definition.
+     * It is taken over the same region as the published Ca and Ce: the subtree
+     * (see {@see CoupledNamespaces}).
+     *
+     * `coupling.cbo-own` is the same count over the namespace's own
+     * declarations, published only on a namespace declaring a type the run
+     * analysed: a namespace with no declarations of its own is no package, and
+     * a 0 would read as a measured one.
      */
     private function computeNamespaceMetrics(
         DependencyGraphInterface $graph,
         MetricRepositoryInterface $repository,
     ): void {
-        // Pre-compute coupled namespace sets from the full dependency list
-        $coupledNamespaces = $this->buildCoupledNamespaceSets($graph);
+        $coupledNamespaces = CoupledNamespaces::of($graph);
+        $declaring = $this->namespacesDeclaringAnAnalysedType($graph, $repository);
 
         foreach ($graph->getAllNamespaces() as $symbolPath) {
             // Skip namespaces not in the repository (e.g. vendor namespaces)
@@ -280,46 +314,45 @@ final class CouplingCollector implements GlobalContextCollectorInterface
 
             $ca = $graph->getNamespaceCa($symbolPath);
             $ce = $graph->getNamespaceCe($symbolPath);
-            $nsKey = $symbolPath->namespace ?? '';
-            $cbo = \count($coupledNamespaces[$nsKey] ?? []);
+            $cbo = $coupledNamespaces->countFor($symbolPath->namespace ?? '');
             $instability = $this->computeInstability($ca, $ce);
+            $ownCa = $graph->getNamespaceOwnCa($symbolPath);
+            $ownCe = $graph->getNamespaceOwnCe($symbolPath);
 
             $metrics = (new MetricBag())
                 ->with(MetricName::COUPLING_CA, $ca)
                 ->with(MetricName::COUPLING_CE, $ce)
                 ->with(MetricName::COUPLING_CBO, $cbo)
-                ->with(MetricName::COUPLING_INSTABILITY, $instability);
+                ->with(MetricName::COUPLING_INSTABILITY, $instability)
+                ->with(MetricName::COUPLING_CA_OWN, $ownCa)
+                ->with(MetricName::COUPLING_CE_OWN, $ownCe)
+                ->with(MetricName::COUPLING_INSTABILITY_OWN, $this->computeInstability($ownCa, $ownCe));
+
+            $namespace = $symbolPath->namespace ?? '';
+            if (isset($declaring[$namespace])) {
+                $metrics = $metrics->with(MetricName::COUPLING_CBO_OWN, $coupledNamespaces->ownCountFor($namespace));
+            }
 
             $repository->add($symbolPath, $metrics, null, null);
         }
     }
 
     /**
-     * Builds a map of namespace -> set of uniquely coupled external namespaces.
-     *
-     * For each cross-namespace dependency, both the source and target namespace
-     * get the other namespace added to their coupled set.
-     *
-     * @return array<string, array<string, true>> Namespace name -> set of coupled namespace names
+     * @return array<string, true>
      */
-    private function buildCoupledNamespaceSets(DependencyGraphInterface $graph): array
-    {
-        $coupled = [];
+    private function namespacesDeclaringAnAnalysedType(
+        DependencyGraphInterface $graph,
+        MetricRepositoryInterface $repository,
+    ): array {
+        $declaring = [];
 
-        foreach ($graph->getAllDependencies() as $dep) {
-            $sourceNs = $dep->sourceLogical()->namespace ?? '';
-            $targetNs = $dep->targetLogical()->namespace ?? '';
-
-            // Only count cross-namespace dependencies
-            if ($sourceNs === $targetNs) {
-                continue;
+        foreach ($graph->getAllClasses() as $class) {
+            if ($class->namespace !== null && $repository->has($class)) {
+                $declaring[$class->namespace] = true;
             }
-
-            $coupled[$sourceNs][$targetNs] = true;
-            $coupled[$targetNs][$sourceNs] = true;
         }
 
-        return $coupled;
+        return $declaring;
     }
 
     /**

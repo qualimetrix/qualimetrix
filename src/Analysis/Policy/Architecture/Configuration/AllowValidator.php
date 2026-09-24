@@ -24,14 +24,14 @@ use Throwable;
  *
  * Cross-validation against the registry's layer names runs only for
  * {@see LayerSelector}s of kind {@code exact} — glob and captured selectors
- * are intentionally not validated against the current registry because Step D
- * adds template-layer expansion that produces concrete layer names after
- * config load. A glob source that matches no concrete layer today may still be
+ * are intentionally not validated against the current registry, because
+ * template-layer expansion produces concrete layer names after config load.
+ * A glob source that matches no concrete layer today may still be
  * the intent (the user may add layers later, or the template-expansion stage
  * may produce them); the rule executor will simply skip non-matching entries.
  *
  * The long form ({@code [target: 'service', relations: ['static_call']]}) is
- * fully wired in Step G: {@code relations:} expands through
+ * fully wired: {@code relations:} expands through
  * {@see AllowAliasExpander} into a {@see DependencyType} list that
  * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy::isAllowed()} checks
  * the actual dependency edge against. Bare-string targets keep the legacy

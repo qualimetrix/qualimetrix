@@ -82,8 +82,12 @@ final class CodeDuplicationRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
+    /**
+     * Each copy is a finding of its own, located on that copy and naming the
+     * other one — so the file a copy lives in is where it is reported.
+     */
     #[Test]
-    public function itProducesAFindingDescribingADuplicateBlockAndItsOtherOccurrence(): void
+    public function itProducesAFindingOnEachCopyNamingTheOtherCopy(): void
     {
         $rule = $this->createRule();
 
@@ -105,20 +109,27 @@ final class CodeDuplicationRuleTest extends TestCase
 
         $findings = $rule->analyze($context);
 
-        self::assertCount(1, $findings);
+        self::assertCount(2, $findings);
 
-        $v = $findings[0];
-        self::assertSame('duplication.clone', $v->ruleName);
-        self::assertSame('src/A.php', $v->location->pathString());
-        self::assertSame(10, $v->location->line);
-        self::assertSame(Severity::Warning, $v->severity);
-        self::assertSame(16, $v->metricValue);
-        self::assertSame(MetricSubject::aggregate(SymbolPath::forProject())->toCanonical(), $v->subject->toCanonical());
-        self::assertSame(SymbolPath::forProject()->toCanonical(), $v->symbolPath->toCanonical());
-        self::assertNotNull($v->occurrenceKey);
-        self::assertStringContainsString('16 lines', $v->message);
-        self::assertStringContainsString('2 occurrences', $v->message);
-        self::assertStringContainsString('src/B.php:30-45', $v->message);
+        foreach ($findings as $v) {
+            self::assertSame('duplication.clone', $v->ruleName);
+            self::assertSame(Severity::Warning, $v->severity);
+            self::assertSame(16, $v->metricValue);
+            self::assertSame(MetricSubject::aggregate(SymbolPath::forProject())->toCanonical(), $v->subject->toCanonical());
+            self::assertSame(SymbolPath::forProject()->toCanonical(), $v->symbolPath->toCanonical());
+            self::assertNotNull($v->occurrenceKey);
+            self::assertStringContainsString('16 lines', $v->message);
+            self::assertStringContainsString('2 occurrences', $v->message);
+        }
+
+        [$onA, $onB] = $findings;
+        self::assertSame(['src/A.php', 10], [$onA->location->pathString(), $onA->location->line]);
+        self::assertStringEndsWith('also at src/B.php:30-45', $onA->message);
+        self::assertSame(['src/B.php:30'], self::related($onA));
+        self::assertSame(['src/B.php', 30], [$onB->location->pathString(), $onB->location->line]);
+        self::assertStringEndsWith('also at src/A.php:10-25', $onB->message);
+        self::assertSame(['src/A.php:10'], self::related($onB));
+        self::assertNotSame($onA->getFingerprint(), $onB->getFingerprint());
     }
 
     /**
@@ -151,10 +162,13 @@ final class CodeDuplicationRuleTest extends TestCase
 
         $findings = $rule->analyze($context);
 
-        self::assertCount(1, $findings);
+        self::assertCount(2, $findings);
         self::assertSame(
-            OccurrenceKey::semantic('duplication.code-duplication', ['contentHash' => self::CONTENT_HASH])->value,
-            $findings[0]->occurrenceKey?->value,
+            [
+                OccurrenceKey::semantic('duplication.code-duplication', ['contentHash' => self::CONTENT_HASH, 'file' => 'src/A.php', 'copyInFile' => 0])->value,
+                OccurrenceKey::semantic('duplication.code-duplication', ['contentHash' => self::CONTENT_HASH, 'file' => 'src/B.php', 'copyInFile' => 0])->value,
+            ],
+            array_map(static fn($finding): ?string => $finding->occurrenceKey?->value, $findings),
         );
     }
 
@@ -182,7 +196,7 @@ final class CodeDuplicationRuleTest extends TestCase
 
         $findings = $rule->analyze($context);
 
-        self::assertCount(1, $findings);
+        self::assertCount(2, $findings);
         self::assertStringContainsString(
             ': "function processItems($items) { $result = [];"',
             $findings[0]->message,
@@ -214,7 +228,7 @@ final class CodeDuplicationRuleTest extends TestCase
 
         $findings = $rule->analyze($context);
 
-        self::assertCount(1, $findings);
+        self::assertCount(2, $findings);
         // No hint means no quotes in the message
         self::assertStringNotContainsString('"', $findings[0]->message);
         self::assertStringContainsString('(16 lines, 2 occurrences) — also at', $findings[0]->message);
@@ -243,12 +257,12 @@ final class CodeDuplicationRuleTest extends TestCase
 
         $findings = $rule->analyze($context);
 
-        self::assertCount(1, $findings);
-        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertCount(2, $findings);
+        self::assertSame([Severity::Error, Severity::Error], array_column($findings, 'severity'));
     }
 
     #[Test]
-    public function itProducesOneFindingPerDuplicateBlock(): void
+    public function itProducesOneFindingPerCopyOfEveryBlock(): void
     {
         $rule = $this->createRule();
 
@@ -273,7 +287,10 @@ final class CodeDuplicationRuleTest extends TestCase
 
         $findings = $rule->analyze($context);
 
-        self::assertCount(2, $findings);
+        self::assertSame(
+            ['a.php', 'b.php', 'c.php', 'd.php'],
+            array_map(static fn($finding): string => $finding->location->pathString(), $findings),
+        );
     }
 
     #[Test]
@@ -300,54 +317,148 @@ final class CodeDuplicationRuleTest extends TestCase
 
         $findings = $rule->analyze($context);
 
-        self::assertCount(1, $findings);
-        self::assertStringContainsString('3 occurrences', $findings[0]->message);
-        self::assertStringContainsString('b.php:5-14', $findings[0]->message);
-        self::assertStringContainsString('c.php:20-29', $findings[0]->message);
+        self::assertCount(3, $findings);
+        self::assertStringEndsWith('3 occurrences) — also at b.php:5-14, c.php:20-29', $findings[0]->message);
+        self::assertStringEndsWith('3 occurrences) — also at a.php:1-10, c.php:20-29', $findings[1]->message);
+        self::assertStringEndsWith('3 occurrences) — also at a.php:1-10, b.php:5-14', $findings[2]->message);
+        self::assertSame(['a.php:1', 'c.php:20'], self::related($findings[1]));
     }
 
     #[Test]
-    public function itUsesOnlyProjectAndContentForDuplicateGroupIdentity(): void
+    public function itNamesTheFirstTenOtherOccurrencesAndCountsTheRestInTheMessage(): void
     {
-        $rule = $this->createRule();
-        $repository = self::createStub(MetricRepositoryInterface::class);
+        $locations = [];
+        for ($copy = 0; $copy < 100; $copy++) {
+            $locations[] = new DuplicateLocation(RelativePath::fromString(\sprintf('c%03d.php', $copy)), 1, 10);
+        }
 
-        $sameContentWithLaterPrimary = new DuplicateBlock(
+        $findings = $this->createRule()->analyze($this->contextWithBlocks(
+            self::createStub(MetricRepositoryInterface::class),
+            [new DuplicateBlock(locations: $locations, lines: 10, tokens: 50, contentHash: self::CONTENT_HASH)],
+        ));
+
+        self::assertCount(100, $findings);
+        self::assertStringContainsString('100 occurrences', $findings[0]->message);
+        self::assertStringEndsWith('— also at c001.php:1-10, c002.php:1-10, c003.php:1-10, c004.php:1-10, c005.php:1-10, c006.php:1-10, c007.php:1-10, c008.php:1-10, c009.php:1-10, c010.php:1-10 and 89 more', $findings[0]->message);
+        self::assertStringEndsWith('— also at c000.php:1-10, c001.php:1-10, c002.php:1-10, c003.php:1-10, c004.php:1-10, c006.php:1-10, c007.php:1-10, c008.php:1-10, c009.php:1-10, c010.php:1-10 and 89 more', $findings[5]->message);
+        self::assertStringEndsWith('— also at c000.php:1-10, c001.php:1-10, c002.php:1-10, c003.php:1-10, c004.php:1-10, c005.php:1-10, c006.php:1-10, c007.php:1-10, c008.php:1-10, c009.php:1-10 and 89 more', $findings[99]->message);
+        self::assertSame(
+            ['c000.php:1', 'c001.php:1', 'c002.php:1', 'c003.php:1', 'c004.php:1', 'c006.php:1', 'c007.php:1', 'c008.php:1', 'c009.php:1', 'c010.php:1'],
+            self::related($findings[5]),
+            'a copy names the same ten others as related locations as in its message',
+        );
+        self::assertSame($findings[0]->relatedLocations[4], $findings[99]->relatedLocations[5], 'the copies share their locations');
+    }
+
+    /**
+     * Each copy is told apart from the others, so a consumer comparing
+     * fingerprints — GitLab Code Quality, SARIF — sees one entry per copy and
+     * a new copy as new; two copies inside one file are told apart as well.
+     */
+    #[Test]
+    public function itGivesEveryCopyOfABlockAnIdentityOfItsOwn(): void
+    {
+        $fingerprints = $this->fingerprintsByCopy(self::block(['src/A.php' => [10, 60], 'src/B.php' => [30]]));
+
+        self::assertCount(3, $fingerprints);
+        self::assertCount(3, array_unique($fingerprints));
+    }
+
+    /**
+     * Lines added or removed above a copy, or around the other copies, move
+     * no identity: a copy is keyed by its file and its place among the
+     * block's copies in that file, never by a line number.
+     */
+    #[Test]
+    public function itKeepsACopysIdentityWhenTheLinesAroundItShift(): void
+    {
+        $before = $this->fingerprintsByCopy(self::block(['src/A.php' => [10, 60], 'src/B.php' => [30]]));
+        $after = $this->fingerprintsByCopy(self::block(['src/A.php' => [17, 90], 'src/B.php' => [4]]));
+
+        self::assertSame(array_values($before), array_values($after));
+    }
+
+    /**
+     * A new copy is the only new identity — the copies already there keep
+     * theirs, so a baseline accepting them reports only the new one — and a
+     * copy moved to another file is a different copy.
+     */
+    #[Test]
+    public function itGivesOnlyANewCopyANewIdentity(): void
+    {
+        $accepted = $this->fingerprintsByCopy(self::block(['src/A.php' => [10], 'src/B.php' => [30]]));
+        // The new copy sorts before the others, so no identity may count the
+        // copies across the whole block
+        $grown = $this->fingerprintsByCopy(self::block(['src/0.php' => [5], 'src/A.php' => [10], 'src/B.php' => [30]]));
+        $moved = $this->fingerprintsByCopy(self::block(['src/A.php' => [10], 'src/D.php' => [30]]));
+
+        self::assertSame($accepted['src/A.php:10'], $grown['src/A.php:10']);
+        self::assertSame($accepted['src/B.php:30'], $grown['src/B.php:30']);
+        self::assertNotContains($grown['src/0.php:5'], $accepted);
+        self::assertSame($accepted['src/A.php:10'], $moved['src/A.php:10']);
+        self::assertNotContains($moved['src/D.php:30'], $accepted);
+    }
+
+    /**
+     * `min_lines` admits a block by its longest copy, and every copy of an
+     * admitted block is reported at its own value: a shorter copy too, below
+     * `warning` and so as a warning.
+     */
+    #[Test]
+    public function itReportsACopyShorterThanMinLinesAtItsOwnValue(): void
+    {
+        $block = new DuplicateBlock(
             locations: [
-                new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45),
-                new DuplicateLocation(RelativePath::fromString('src/C.php'), 60, 75),
+                new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25),
+                new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 33),
             ],
             lines: 16,
             tokens: 80,
             contentHash: self::CONTENT_HASH,
         );
-        $sameContentWithEarlierSibling = new DuplicateBlock(
+        $context = $this->contextWithBlocks(self::createStub(MetricRepositoryInterface::class), [$block]);
+
+        [$onA, $onB] = $this->createRule()->analyze($context);
+
+        self::assertSame(['src/A.php', 16, Severity::Warning], [$onA->location->pathString(), $onA->metricValue, $onA->severity]);
+        self::assertSame(['src/B.php', 4, Severity::Warning], [$onB->location->pathString(), $onB->metricValue, $onB->severity]);
+        self::assertStringContainsString('(4 lines, 2 occurrences)', $onB->message);
+    }
+
+    /**
+     * `min_lines` and `warning` are separate options: a copy that clears the
+     * first but not the second is still reported, as a warning.
+     */
+    #[Test]
+    public function itReportsACopyBelowTheWarningThresholdAsAWarning(): void
+    {
+        $block = new DuplicateBlock(
             locations: [
-                new DuplicateLocation(RelativePath::fromString('src/A.php'), 1, 16),
-                new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45),
-                new DuplicateLocation(RelativePath::fromString('src/C.php'), 60, 75),
+                new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 13),
+                new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 33),
             ],
-            lines: 16,
+            lines: 4,
             tokens: 80,
             contentHash: self::CONTENT_HASH,
         );
-        $differentContent = new DuplicateBlock(
-            locations: [
-                new DuplicateLocation(RelativePath::fromString('src/A.php'), 1, 16),
-                new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45),
-            ],
-            lines: 16,
-            tokens: 80,
-            contentHash: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+        $context = $this->contextWithBlocks(self::createStub(MetricRepositoryInterface::class), [$block]);
+
+        $findings = $this->createRule(new CodeDuplicationOptions(min_lines: 3, warning: 10))->analyze($context);
+
+        self::assertCount(2, $findings);
+        self::assertSame([Severity::Warning, Severity::Warning], array_map(static fn($finding) => $finding->severity, $findings));
+        self::assertSame([4, 4], array_map(static fn($finding) => $finding->metricValue, $findings));
+    }
+
+    #[Test]
+    public function itKeepsTheBlocksContentInEachCopysIdentity(): void
+    {
+        $original = $this->fingerprintsByCopy(self::block(['src/A.php' => [10], 'src/B.php' => [30]]));
+        $otherContent = $this->fingerprintsByCopy(
+            self::block(['src/A.php' => [10], 'src/B.php' => [30]], str_repeat('b', 64)),
         );
 
-        $fingerprints = array_map(
-            fn(DuplicateBlock $block): string => $this->analyzeBlock($rule, $repository, $block),
-            [$sameContentWithLaterPrimary, $sameContentWithEarlierSibling, $differentContent],
-        );
-
-        self::assertSame($fingerprints[0], $fingerprints[1]);
-        self::assertNotSame($fingerprints[0], $fingerprints[2]);
+        self::assertSame([], array_intersect($original, $otherContent));
     }
 
     #[Test]
@@ -414,13 +525,44 @@ final class CodeDuplicationRuleTest extends TestCase
         return new AnalysisContext($repository);
     }
 
-    private function analyzeBlock(
-        CodeDuplicationRule $rule,
-        MetricRepositoryInterface $repository,
-        DuplicateBlock $block,
-    ): string {
-        $this->resultProvider->replace([$block]);
+    /**
+     * @return list<string>
+     */
+    private static function related(\Qualimetrix\Analysis\Finding\Contract\Finding $finding): array
+    {
+        return array_map(
+            static fn($location): string => $location->pathString() . ':' . $location->line,
+            $finding->relatedLocations,
+        );
+    }
 
-        return $rule->analyze(new AnalysisContext($repository))[0]->getFingerprint();
+    /**
+     * @param array<string, list<int>> $copies file => start line of each copy in it
+     */
+    private static function block(array $copies, string $contentHash = self::CONTENT_HASH): DuplicateBlock
+    {
+        $locations = [];
+        foreach ($copies as $file => $startLines) {
+            foreach ($startLines as $startLine) {
+                $locations[] = new DuplicateLocation(RelativePath::fromString($file), $startLine, $startLine + 15);
+            }
+        }
+
+        return new DuplicateBlock(locations: $locations, lines: 16, tokens: 80, contentHash: $contentHash);
+    }
+
+    /**
+     * @return array<string, string> `file:line` of each copy => its finding's fingerprint
+     */
+    private function fingerprintsByCopy(DuplicateBlock $block): array
+    {
+        $fingerprints = [];
+        $context = $this->contextWithBlocks(self::createStub(MetricRepositoryInterface::class), [$block]);
+
+        foreach ($this->createRule()->analyze($context) as $finding) {
+            $fingerprints[$finding->location->pathString() . ':' . $finding->location->line] = $finding->getFingerprint();
+        }
+
+        return $fingerprints;
     }
 }

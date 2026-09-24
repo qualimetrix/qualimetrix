@@ -85,7 +85,7 @@ final class GodClassRule extends AbstractRule
         }
         $metrics = $context->metrics->get($subject->toSymbolPath());
 
-        // Apply @qmx-threshold overrides for this class
+        // Apply `@qmx-threshold` overrides for this class
         $effectiveOptions = $this->getEffectiveOptions(
             $context,
             $this->options,

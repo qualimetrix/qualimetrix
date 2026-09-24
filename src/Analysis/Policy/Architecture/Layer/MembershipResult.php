@@ -24,8 +24,7 @@ use InvalidArgumentException;
  * {@see LayerRegistry::resolveAll()} forwards the list into {@see LayerMatch}
  * so the {@code architecture.layer-violation} and
  * {@code architecture.potential-shadow} messages can report WHICH criterion
- * caught the class — the diagnostic specificity edge case from Phase 2
- * direction 1.
+ * caught the class.
  *
  * Modelled as a single VO with static factories rather than a sealed
  * hierarchy: the field count is small and the additional indirection adds no
@@ -33,13 +32,20 @@ use InvalidArgumentException;
  * non-membership; the {@see matchedCriteria} list is empty on both
  * non-matching variants.
  *
- * There are three variants, not two, and the third one changes nothing about
- * membership: {@see excluded()} is a NoMatch whose cause is a firing
- * `exclude:` clause rather than a positive criterion that did not fire. Every
- * consumer that reads {@see matched} sees the two variants it always saw. The
- * distinction exists because the two are indistinguishable from the outside
- * otherwise, and `architecture.unmatched-exclude` is exactly the question
- * "did this clause ever cause the difference".
+ * Beside the plain match and non-match there are three variants, and none of
+ * them changes what {@see $matched} says. {@see excluded()} is a non-match
+ * whose cause is a firing `exclude:` clause rather than a positive criterion
+ * that did not fire; {@see undecided()} is a non-match the run never
+ * established; {@see doubtedMatch()} is a match the run could not fully
+ * establish, because the `exclude:` clause that would remove it could not be
+ * answered. Every consumer that reads {@see $matched} sees membership exactly
+ * as a two-valued reader would. The distinctions exist because each is
+ * otherwise indistinguishable from the outside, and each answers a question
+ * someone asks: `architecture.unmatched-exclude` asks "did this clause ever
+ * cause the difference"; `architecture.coverage-gap`,
+ * `architecture.doubted-assignment` and `debug:layer-assignment` ask what the
+ * run could not decide; `architecture.unreachable-layer` and
+ * `architecture.potential-shadow` ask which matches the run established.
  */
 final readonly class MembershipResult
 {
@@ -50,6 +56,7 @@ final readonly class MembershipResult
         public bool $matched,
         public array $matchedCriteria,
         public bool $excluded = false,
+        public bool $undecided = false,
     ) {}
 
     /**
@@ -90,6 +97,39 @@ final readonly class MembershipResult
     public static function excluded(): self
     {
         return new self(false, [], true);
+    }
+
+    /**
+     * A non-match the run could not actually establish: at least one declared
+     * positive criterion was {@see CriterionOutcome::Undecidable} and none of
+     * the decided ones settled the layer either way.
+     *
+     * Membership-wise it is {@see noMatch()} — {@see $matched} is false, so no
+     * consumer starts counting an unproven class as a member.
+     *
+     * Read through the {@see $undecided} property rather than a predicate, the
+     * way {@see $matched} is; {@see isExcluded()} keeps its method only because
+     * every caller it has already spells it that way.
+     */
+    public static function undecided(): self
+    {
+        return new self(false, [], undecided: true);
+    }
+
+    /**
+     * A match whose `exclude:` clause could not be answered.
+     *
+     * The positive criteria caught the class; whether the clause removes it
+     * is unknown. The match stands — withdrawing it would leave the class in
+     * no layer and its edges unjudged, a missing answer where a doubtful one
+     * was available — and {@see $undecided} carries the doubt to the same
+     * readers an unanswered earlier layer reaches.
+     *
+     * @param list<MatchedCriterion> $criteria
+     */
+    public static function doubtedMatch(array $criteria): self
+    {
+        return new self(true, self::match($criteria)->matchedCriteria, undecided: true);
     }
 
     public function isExcluded(): bool

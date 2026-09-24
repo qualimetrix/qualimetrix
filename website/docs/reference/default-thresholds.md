@@ -108,19 +108,19 @@ Rules that detect structural problems in the dependency graph. These rules do no
 
 The built-in `discovery.unmatched-exclude` rule reports on the run's own file selection: an `--exclude` value or an `exclude:` entry that matched no directory. It has no numeric thresholds.
 
-| Channel                       | Severity                          | Default | Notes                                                                                                                                                                                                                                  |
-| ----------------------------- | --------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `discovery.unmatched-exclude` | Warning (fixed, not configurable) | enabled | Ordinary finding, not a configuration error: a shared configuration may legitimately name a path one repository does not have. Reported at project level, and only on a run whose paths cover the project's production autoload roots. |
+| Channel                       | Severity                          | Default | Notes                                                                                                                                                                                                                                                                           |
+| ----------------------------- | --------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `discovery.unmatched-exclude` | Warning (fixed, not configurable) | enabled | Ordinary finding, not a configuration error: a shared configuration may legitimately name a path one repository does not have. Reported at project level, and only on a run whose paths cover the project's autoload targets (`autoload-dev` too under `include_autoload_dev`). |
 
 ## Suppression Rules
 
 The built-in `suppression.configuration` rule reports on the run's own suppression configuration: a `suppress_paths` or `suppress_namespaces` value, global or per-rule, that names nothing this run holds. It has no numeric thresholds.
 
-| Channel                             | Severity                          | Default | Notes                                                                                                                                                                          |
-| ----------------------------------- | --------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `suppression.unmatched-path`        | Warning (fixed, not configurable) | enabled | A global `suppress_paths` value matching no analysed file. Reported at project level, only on a run covering the production autoload roots, and never written into a baseline. |
-| `suppression.unmatched-namespace`   | Warning (fixed, not configurable) | enabled | The same for `suppress_namespaces` against the namespaces the run declared.                                                                                                    |
-| `suppression.unmatched-rule-ledger` | Warning (fixed, not configurable) | enabled | The same for either key configured under `rules.<name>`.                                                                                                                       |
+| Channel                             | Severity                          | Default | Notes                                                                                                                                                                                                                             |
+| ----------------------------------- | --------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `suppression.unmatched-path`        | Warning (fixed, not configurable) | enabled | A global `suppress_paths` value matching no analysed file. Reported at project level, only on a run covering the project's autoload targets (`autoload-dev` too under `include_autoload_dev`), and never written into a baseline. |
+| `suppression.unmatched-namespace`   | Warning (fixed, not configurable) | enabled | The same for `suppress_namespaces` against the namespaces the run declared.                                                                                                                                                       |
+| `suppression.unmatched-rule-ledger` | Warning (fixed, not configurable) | enabled | The same for either key configured under `rules.<name>`.                                                                                                                                                                          |
 
 ## Annotation Rules
 
@@ -164,7 +164,7 @@ Rules that detect duplicated code.
 | ---------------- | ------------------- | --------- | ---------- | ------ |
 | Code Duplication | `duplication.clone` | <50 lines | >=50 lines | Method |
 
-**Code Duplication** detects duplicate code blocks. Configured with `min_lines: 5` and `min_tokens: 70` -- blocks shorter than these thresholds are ignored. Duplicates under 50 lines produce a warning; 50 lines or more produce an error.
+**Code Duplication** detects duplicate code blocks. Configured with `min_lines: 5` and `min_tokens: 70` -- a block under `min_tokens` tokens is ignored, and so is a block whose longest copy spans fewer than `min_lines` lines; every copy of a checked block is reported, a shorter one too. Duplicates under 50 lines produce a warning; 50 lines or more produce an error.
 
 ## Security Rules
 

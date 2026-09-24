@@ -356,6 +356,23 @@ PHP;
     }
 
     #[Test]
+    public function itDetectsAVoConstructorWhoseNameIsSpelledInAnotherCase(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App\Dto;
+
+readonly class UserDto
+{
+    public function __Construct(public string $name, public string $email) {}
+}
+PHP);
+
+        self::assertSame(1, $metrics->get('code-smell.is-vo-constructor:App\Dto\UserDto::__Construct'));
+    }
+
+    #[Test]
     public function itDetectsVoConstructorForFinalReadonlyClass(): void
     {
         $code = <<<'PHP'

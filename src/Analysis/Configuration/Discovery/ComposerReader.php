@@ -9,39 +9,6 @@ use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathRe
 final class ComposerReader implements ComposerAutoloadPathReaderInterface
 {
     /**
-     * Extracts paths from autoload.psr-4 and optionally autoload-dev.psr-4.
-     *
-     * Handles both single-path strings and multi-path arrays per PSR-4 spec:
-     *   "App\\": "src/"
-     *   "Lib\\": ["lib/", "packages/"]
-     *
-     * @return list<string> Paths relative to composer.json
-     */
-    public function extractAutoloadPaths(string $composerJsonPath, bool $includeDev = true): array
-    {
-        $data = $this->decode($composerJsonPath);
-        if ($data === null) {
-            return [];
-        }
-
-        $roots = [];
-        $this->collectPsr4Roots($data, 'autoload', $roots);
-
-        if ($includeDev) {
-            $this->collectPsr4Roots($data, 'autoload-dev', $roots);
-        }
-
-        $paths = [];
-        foreach ($roots as $prefixPaths) {
-            foreach ($prefixPaths as $path) {
-                $paths[] = $path;
-            }
-        }
-
-        return array_values(array_unique($paths));
-    }
-
-    /**
      * The whole PSR-4 map, `autoload-dev` included, read in one parse.
      *
      * No production-only variant: the map answers where a namespace lives,
@@ -65,32 +32,37 @@ final class ComposerReader implements ComposerAutoloadPathReaderInterface
         return $roots;
     }
 
-    /**
-     * The production autoload targets, every section of it.
-     *
-     * Sections are read in the order `composer.json` writes them and merged
-     * into one list, because the comparison downstream is about containment
-     * and not about which mechanism served a path.
-     *
-     * @return ?list<string>
-     */
+    /** @return ?list<string> */
     public function productionAutoloadTargets(string $composerJsonPath): ?array
+    {
+        return $this->sectionTargets($composerJsonPath, 'autoload');
+    }
+
+    /** @return ?list<string> */
+    public function developmentAutoloadTargets(string $composerJsonPath): ?array
+    {
+        return $this->sectionTargets($composerJsonPath, 'autoload-dev');
+    }
+
+    /** @return ?list<string> */
+    private function sectionTargets(string $composerJsonPath, string $section): ?array
     {
         $data = $this->decode($composerJsonPath);
 
-        if (!\is_array($data['autoload'] ?? null)) {
+        if (!\is_array($data[$section] ?? null)) {
             return null;
         }
 
         /** @var array<string, mixed> $autoload */
-        $autoload = $data['autoload'];
+        $autoload = $data[$section];
 
-        // Every section merged into one list: the comparison downstream is
-        // about containment, not about which mechanism served a path.
+        // Every section merged into one list: both readers of it — the
+        // default paths and the scope denominator — ask about containment,
+        // not about which mechanism served a path.
         $targets = array_values(array_unique([
             ...$this->prefixMapPaths($autoload['psr-4'] ?? null),
             ...$this->prefixMapPaths($autoload['psr-0'] ?? null),
-            ...$this->pathListPaths($autoload['classmap'] ?? null),
+            ...$this->expandWildcards($this->pathListPaths($autoload['classmap'] ?? null), \dirname($composerJsonPath)),
             ...$this->pathListPaths($autoload['files'] ?? null),
         ]));
 
@@ -143,6 +115,43 @@ final class ComposerReader implements ComposerAutoloadPathReaderInterface
         }
 
         return $paths;
+    }
+
+    /**
+     * Composer accepts `*` in a `classmap` entry and expands it to the
+     * directories it matches. Left unexpanded, the entry names no path on
+     * disk: a run with no `paths` would be refused over a manifest Composer
+     * itself accepts. An entry matching nothing is kept as written, so it
+     * meets the same refusal as any other missing target — Composer refuses
+     * it too.
+     *
+     * @param list<string> $paths
+     *
+     * @return list<string>
+     */
+    private function expandWildcards(array $paths, string $baseDirectory): array
+    {
+        $expanded = [];
+        foreach ($paths as $path) {
+            $matches = str_contains($path, '*')
+                ? glob(str_starts_with($path, '/') ? $path : $baseDirectory . '/' . $path, \GLOB_ONLYDIR)
+                : false;
+
+            if ($matches === false || $matches === []) {
+                $expanded[] = $path;
+
+                continue;
+            }
+
+            sort($matches);
+            foreach ($matches as $match) {
+                $expanded[] = str_starts_with($match, $baseDirectory . '/')
+                    ? substr($match, \strlen($baseDirectory) + 1)
+                    : $match;
+            }
+        }
+
+        return $expanded;
     }
 
     /**

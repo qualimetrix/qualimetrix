@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Complexity;
 
 use PhpParser\Node;
+use PhpParser\Node\Expr\AssignOp\Coalesce as CoalesceAssign;
 use PhpParser\Node\Expr\BinaryOp\BooleanAnd;
 use PhpParser\Node\Expr\BinaryOp\BooleanOr;
 use PhpParser\Node\Expr\BinaryOp\Coalesce;
@@ -45,8 +46,14 @@ use Qualimetrix\Core\Path\RelativePath;
  * - || (BooleanOr), or (LogicalOr): +1
  * - xor (LogicalXor): +1
  * - ?: (ternary): +1
- * - ?? (null coalescing): +1
+ * - ?? (null coalescing) and ??= (null-coalescing assignment): +1
  * - ?-> (nullsafe): +1
+ *
+ * Deviation from McCabe's original (the CCN2+ reading): `??`, `??=` and `?->`
+ * are PHP operators the original has no counterpart for; each skips an
+ * evaluation on null the way a condition does, so each counts as a decision
+ * point. `xor` counts with the other logical operators although it does not
+ * short-circuit.
  */
 final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements DeclarationIndexAwareInterface, ResettableVisitorInterface
 {
@@ -171,6 +178,7 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements D
         LogicalXor::class,
         Ternary::class,
         Coalesce::class,
+        CoalesceAssign::class,
         NullsafeMethodCall::class,
         NullsafePropertyFetch::class,
     ];

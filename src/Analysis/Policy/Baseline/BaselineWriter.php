@@ -68,6 +68,19 @@ final readonly class BaselineWriter
     }
 
     /**
+     * The compare-and-swap token of an existing destination this run did not
+     * load, for a caller that replaces it wholesale ({@see Baseline::withSourceContentHash()}).
+     *
+     * Answered by {@see BaselineDocumentWriter::snapshot()}, which owns the guard the token feeds.
+     *
+     * @throws \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal if the destination is not a readable regular file
+     */
+    public function destinationSnapshot(string $path): string
+    {
+        return BaselineDocumentWriter::snapshot($path);
+    }
+
+    /**
      * An empty entry set stays an empty array here and becomes `{}` in
      * {@see BaselineDocumentLayout}: ADR 0017 spells `entries` as an object, and the layout
      * is the one place that decides how a value is spelled.

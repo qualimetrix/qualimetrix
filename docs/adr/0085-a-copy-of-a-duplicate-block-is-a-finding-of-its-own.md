@@ -1,0 +1,168 @@
+# 0085. A Copy of a Duplicate Block Is a Finding of Its Own
+
+**Date:** 2026-09-24
+**Status:** Accepted
+
+## Context
+
+`duplication.clone` groups the copies of one block by content and used to
+publish one finding per block, located on the copy that sorts first and
+reading "N occurrences". Grouping is what keeps a block copied a thousand
+times inside the memory limit, and it stays.
+
+One finding per block hid a new copy in two places. Its identity is the
+project plus the block's content hash, so a baseline entry accepting a block
+of three copies accepted a fourth unchanged: the entry stored one magnitude,
+the run produced one finding, and the ceiling passed. And the finding sat in
+one file, so `--report=git:staged` with only the new copy staged reported
+nothing.
+
+A third consumer compares findings by fingerprint rather than through a
+baseline. GitLab Code Quality shows findings sharing a fingerprint as one
+entry and decides what a merge request introduced by comparing fingerprints
+with the target branch; SARIF consumers match alerts across runs by the
+partial fingerprint. Both fingerprints are built from the finding's identity
+alone, never its location. A finding on each copy that kept the block's
+identity would still collapse the copies into one entry there, and a new
+copy would carry a fingerprint the target branch already had.
+
+## Decision
+
+**Each copy of a block is a finding located on that copy, with an identity of
+its own:** the block's content hash, the project-relative path of the file
+holding the copy, and the copy's place among the block's copies in that file,
+counted in line order. The subject stays the project. No line number enters
+the identity, so lines added or removed outside the matched tokens re-key
+nothing.
+
+The identity holds while the detector finds the same block, and the block is
+defined by all of its copies at once: it is the longest token run they all
+agree on, and the match takes in whatever context the copies share around the
+copied code. A new copy that agrees with the whole block is then the only new
+identity. A baseline reports it as a new finding, on the new copy alone, and
+keeps every copy it accepted accepted; a GitLab merge request and a SARIF
+consumer see one new fingerprint. A deleted copy leaves its entry stale, as
+any repaired finding does. The git scope keeps a finding by its location, so a
+new copy is reported in the file it was pasted into.
+
+**A copy's value is the lines that copy spans**, not the span of the block's
+longest copy. Comments and blank lines are no tokens, so one copy can span
+more lines than another without changing the block. A value shared by every
+copy would let a comment written in one file raise the value of copies in
+files nobody touched, and a baseline would promote those accepted copies to
+Error while the new copy, a new finding, stayed a warning.
+
+**`min_lines` admits the block by its longest copy, and every copy of an
+admitted block is reported** — a shorter copy too, at its own value below
+`min_lines`, as a warning when that value is below `warning`. The bar is a
+property of the block, not of a copy: judged by its own lines, a copy pasted
+without the blank lines of the one it copies would be no finding anywhere.
+The change that adds it would pass a baseline and a git scope clean, and a
+run without a baseline would report the block only on the copies that were
+already there.
+
+A finding names at most ten other copies, in its message and as its related
+locations, and counts the rest. Every copy is reported by a finding of its
+own, so the bound removes no copy from the report; without it a block of N
+copies carries N² related locations, and a thousand copies turned the SARIF
+report into a memory exhaustion at 512M. Measured on a thousand copies of one
+class, `--format=json`: peak PHP memory 104.9 MB against 102.8 MB for one
+finding per block. Keying each copy apart did not move it, measured again
+by `memory_get_peak_usage()` with one worker: 85.1 MB against 85.4 MB for
+`--format=json` and 86.6 MB against 86.8 MB for `--format=sarif`, with 1000
+distinct fingerprints where there was one.
+
+Inline directives stay refused on the channel. A symbol directive binds to a
+declaration and the finding's subject is the project. A file or next-line
+directive now reaches the copy it is written beside and would silence it:
+that copy's debt would never reach a baseline, so a copy pasted together with
+such a directive would pass unseen, while every other copy still reports the
+block and names the silenced one.
+
+## Consequences
+
+- A baseline written before this change holds one entry per block and now
+  meets one finding per copy under a different identity: every accepted
+  block's entry is stale and every copy reports as new until the baseline is
+  regenerated.
+- A block of N copies is N findings, where v0.27.0 reported N − 1 pairs, so
+  the violation count and the technical debt grow by one finding and one
+  remediation time per block — twice the debt for a block of two copies.
+- A copy that agrees with only part of an accepted block, an edit inside one
+  of its copies, or code inserted between a copy and the context its copies
+  share changes the blocks the detector finds. Each copy of a new block is a
+  new finding, in files the change never touched too, and an entry whose
+  block is gone goes stale. `--fail-on=warning` then fails on files outside
+  the change, and a GitLab merge request shows new fingerprints there; the
+  git scope, which keeps a finding by its location, reports only the changed
+  files. Measured: a copy of the first nine lines of a method accepted in
+  two files, closing its loop and ending in a `return` of its own, adds a
+  13-line block over all three copies, so both untouched copies gain a new
+  finding while their accepted 17-line one stays accepted and no entry goes
+  stale; a method inserted between a class's property and the copied method
+  narrows the match in both copies and re-keys the copy in the untouched
+  file.
+- The baseline's ceiling on this channel compares a copy's own line span with
+  the span it accepted. A copy that is reformatted, or given a comment or a
+  blank line, breaches its own entry and no other copy's — unless the edit
+  moves the block's longest copy across `min_lines` (next point). A
+  duplicate that grows in every copy changes its tokens and so its identity:
+  it reads as new findings and stale entries, never as a breach.
+- Admitting by the longest copy has two costs. A comment or a blank line that
+  lifts the longest copy past `min_lines` adds the block, so every copy is a
+  new finding, the ones in files nobody touched too; one that drops it below
+  removes the block and stales every copy's entry. That is a change of the
+  block, as loud as a partial copy or an edit inside one. And a copy's value
+  can be below `min_lines`: a shorter copy of an admitted block reports the
+  lines it spans, as a warning when they are below `warning`.
+- `suppress_paths`, global or per rule, silences only the copies inside its
+  paths. The block's other copies are still reported; silencing a block means
+  listing every file it has a copy in.
+- A copy moved to another file, and every copy in a renamed file, is a new
+  copy and leaves a stale entry behind, as a renamed symbol does (ADR 0017,
+  residual limitation 7).
+- A copy pasted above another copy of the same block in the same file takes
+  the lower place, and the copy it displaced is the one reported as new. The
+  count of new copies is right; which copy of that file it names is not.
+- A new copy of an accepted block is reported at its own severity, not
+  promoted to Error as a measured breach of a group is: it is a new finding,
+  and `--fail-on` decides whether it fails the run, as for any other.
+
+## Rejected alternatives
+
+- **Every copy keeps the block's identity.** A baseline entry then bounds the
+  number of copies and a new copy breaches it, but every copy of the block is
+  reported with it — the ceiling cannot tell which member is new (ADR 0017,
+  residual limitation 4) — and every fingerprint-matching consumer collapses
+  the copies into one entry and never sees a new one.
+- **A formatter-only fingerprint that tells copies apart.** GitLab and SARIF
+  would see each copy while the baseline kept one identity for all: two
+  identities for one finding, with the published `occurrence` in JSON
+  disagreeing with the fingerprint built from it.
+- **The copy's line in its identity.** Every edit above a copy would re-key
+  it, and a baseline would read one stale entry and one new finding for code
+  that did not change.
+- **The copy's place among all of the block's copies.** A copy added in a
+  file that sorts earlier would re-key every copy after it.
+- **The number of copies as the finding's magnitude.** The ceiling would see
+  a fourth copy as a larger value, but a baseline written before the change
+  stores the line count, which the count of copies does not exceed for most
+  blocks: the old baseline would accept the new copy silently.
+- **A finding per copy with every other copy as a related location.** N²
+  related locations; measured above.
+- **The span of the block's longest copy as every copy's value.** A comment
+  or a blank line in one copy raises every copy's value, and a baseline
+  promotes accepted copies in untouched files to Error.
+- **Each copy admitted by its own span.** A new copy written on fewer lines
+  than `min_lines` — the same tokens without their blank lines — is no finding
+  anywhere. Measured: two accepted twelve-line copies and a new three-line
+  one gave no finding under `--baseline` and none under `--report=git:staged`,
+  exit 0 with `--fail-on=warning`; with only the original in the repository, a
+  full run after the merge reported the block on the untouched original
+  alone. A silent loss of the copy being added costs more than the loud
+  over-report of the longest copy crossing the bar.
+- **The block admitted by its shortest copy.** A dense copy pasted beside
+  accepted ones drops the whole accepted block below the bar: its entries go
+  stale and the new copy is reported nowhere.
+- **`min_lines` read against the block's tokens rather than lines.** It would
+  give the option a different meaning, which is a separate change.

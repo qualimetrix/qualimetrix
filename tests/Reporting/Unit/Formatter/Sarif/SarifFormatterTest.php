@@ -654,6 +654,70 @@ final class SarifFormatterTest extends TestCase
         self::assertSame('Checks cyclomatic complexity at method and class levels', $rule['shortDescription']['text']);
     }
 
+    /**
+     * `artifactLocation.uri` is a URI reference resolved against the encoded
+     * `%SRCROOT%`; a raw space, `#` or `%` in it makes it a different, or a
+     * truncated, reference.
+     */
+    #[Test]
+    public function itPercentEncodesTheRelativeArtifactUriLikeTheBaseUri(): void
+    {
+        $report = ReportBuilder::create()
+            ->addFinding(self::finding(
+                location: new Location(RelativePath::fromString('my src/sub dir/A#b%c.php'), 10),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'test',
+                code: 'test',
+                message: 'Test',
+                severity: Severity::Error,
+                relatedLocations: [new Location(RelativePath::fromString('other dir/B.php'), 3)],
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $data = json_decode(
+            $this->formatter->format($report, new FormatterContext(basePath: '/Users/dev/My Project')),
+            true,
+            512,
+            \JSON_THROW_ON_ERROR,
+        );
+        $result = $data['runs'][0]['results'][0];
+
+        self::assertSame('my%20src/sub%20dir/A%23b%25c.php', $result['locations'][0]['physicalLocation']['artifactLocation']['uri']);
+        self::assertSame('other%20dir/B.php', $result['relatedLocations'][0]['physicalLocation']['artifactLocation']['uri']);
+    }
+
+    /**
+     * A related location with no file has nothing to point at; it keeps its
+     * message and loses the physical location instead of carrying `"uri": ""`.
+     */
+    #[Test]
+    public function itPublishesAFilelessRelatedLocationWithoutAnEmptyUri(): void
+    {
+        $report = ReportBuilder::create()
+            ->addFinding(self::finding(
+                location: new Location(RelativePath::fromString('src/A.php'), 10),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'test',
+                code: 'test',
+                message: 'Test',
+                severity: Severity::Error,
+                relatedLocations: [new Location(null, null)],
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $data = json_decode($this->formatter->format($report, new FormatterContext(basePath: '/p')), true, 512, \JSON_THROW_ON_ERROR);
+        $related = $data['runs'][0]['results'][0]['relatedLocations'][0];
+
+        self::assertArrayNotHasKey('physicalLocation', $related);
+        self::assertSame(['id' => 0, 'message' => ['text' => 'Related location']], $related);
+    }
+
     #[Test]
     public function itIncludesRelatedLocationsInResult(): void
     {

@@ -4,10 +4,33 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter;
 
+use Qualimetrix\Reporting\Report;
 use Qualimetrix\Reporting\ReportCoverage;
 
 final readonly class CoverageNarrator
 {
+    /**
+     * The sentences a human format prints about what the run covered: the
+     * files it read and, unless it covered the whole project, the project
+     * scope it was judged against.
+     *
+     * @return list<string>
+     */
+    public static function lines(Report $report): array
+    {
+        $lines = [];
+        if ($report->coverage !== null) {
+            $lines[] = self::describe($report->coverage);
+        }
+
+        $projectScope = $report->projectScope?->describe();
+        if ($projectScope !== null) {
+            $lines[] = $projectScope;
+        }
+
+        return $lines;
+    }
+
     public static function describe(ReportCoverage $coverage): string
     {
         if (!$coverage->isComplete()) {

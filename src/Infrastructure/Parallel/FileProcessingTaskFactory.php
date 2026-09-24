@@ -47,12 +47,17 @@ final readonly class FileProcessingTaskFactory
         return new FileProcessingTask(
             filePath: $filePath,
             projectRoot: $projectRoot,
-            collectorClasses: $this->collectorClasses,
-            dependencyTraversalParticipantClass: $this->dependencyTraversalParticipantClass,
-            derivedCollectorClasses: $this->derivedCollectorClasses,
+            composition: new WorkerComposition(
+                collectorClasses: $this->collectorClasses,
+                dependencyTraversalParticipantClass: $this->dependencyTraversalParticipantClass,
+                derivedCollectorClasses: $this->derivedCollectorClasses,
+                ruleClasses: $this->ruleClasses,
+            ),
+            // Read per task rather than once: the coordinator applies the
+            // run's limit after the container that built this factory.
+            memoryLimit: (string) \ini_get('memory_limit'),
             cacheDir: $cacheDir,
             lcomConfiguration: $this->lcomConfigurationStore->current(),
-            ruleClasses: $this->ruleClasses,
         );
     }
 

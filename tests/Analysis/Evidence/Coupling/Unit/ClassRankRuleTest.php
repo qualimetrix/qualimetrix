@@ -117,7 +117,7 @@ final class ClassRankRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn($this->createDummyClasses(100));
         $repository->method('allDeclarations')->willReturn([$targetInfo]);
-        $repository->method('get')->willReturn((new MetricBag())->with('coupling.class-rank', 0.03));
+        $repository->method('get')->willReturn((new MetricBag())->with('coupling.class-rank', 0.03)->with('coupling.ca', 2));
 
         self::assertCount(1, $rule->analyze(new AnalysisContext($repository)));
 
@@ -141,7 +141,7 @@ final class ClassRankRuleTest extends TestCase
 
         $classes = $this->createDummyClasses(100);
 
-        $metricBag = (new MetricBag())->with('coupling.class-rank', 0.01);
+        $metricBag = (new MetricBag())->with('coupling.class-rank', 0.01)->with('coupling.ca', 2);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -167,8 +167,8 @@ final class ClassRankRuleTest extends TestCase
         $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/ImportantClass.php'), 10);
 
         // 0.03 is above warning (0.02) but below error (0.05)
-        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.03);
-        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.005);
+        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.03)->with('coupling.ca', 2);
+        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.005)->with('coupling.ca', 2);
 
         $classes = $this->createDummyClasses(99);
         $classes[] = $targetInfo;
@@ -203,8 +203,8 @@ final class ClassRankRuleTest extends TestCase
         $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/CriticalHub.php'), 10);
 
         // 0.08 is above error threshold (0.05)
-        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.08);
-        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.005);
+        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.08)->with('coupling.ca', 2);
+        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.005)->with('coupling.ca', 2);
 
         $classes = $this->createDummyClasses(99);
         $classes[] = $targetInfo;
@@ -240,8 +240,8 @@ final class ClassRankRuleTest extends TestCase
         $targetPath = SymbolPath::forClass('App', 'TestClass');
         $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('test.php'), 1);
 
-        $targetBag = (new MetricBag())->with('coupling.class-rank', $classRank);
-        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.001);
+        $targetBag = (new MetricBag())->with('coupling.class-rank', $classRank)->with('coupling.ca', 2);
+        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.001)->with('coupling.ca', 2);
 
         // Use 100 classes so scale factor = 1.0
         $classes = $this->createDummyClasses(99);
@@ -322,8 +322,8 @@ final class ClassRankRuleTest extends TestCase
         $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/Hub.php'), 10);
 
         // 0.015 would be below unscaled warning (0.02), but above scaled warning (0.01)
-        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.015);
-        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.001);
+        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.015)->with('coupling.ca', 2);
+        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.001)->with('coupling.ca', 2);
 
         $classes = $this->createDummyClasses(399);
         $classes[] = $targetInfo;
@@ -359,8 +359,8 @@ final class ClassRankRuleTest extends TestCase
 
         // 0.03 would normally be a warning with default thresholds,
         // but with 25 classes, scaled warning = 0.04, so no finding
-        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.03);
-        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.001);
+        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.03)->with('coupling.ca', 2);
+        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.001)->with('coupling.ca', 2);
 
         $classes = $this->createDummyClasses(24);
         $classes[] = $targetInfo;
@@ -394,8 +394,8 @@ final class ClassRankRuleTest extends TestCase
         $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/MegaHub.php'), 10);
 
         // 0.02 would normally just be a warning, but with 1600 classes it's an error
-        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.02);
-        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.0001);
+        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.02)->with('coupling.ca', 2);
+        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.0001)->with('coupling.ca', 2);
 
         $classes = $this->createDummyClasses(1599);
         $classes[] = $targetInfo;
@@ -427,8 +427,8 @@ final class ClassRankRuleTest extends TestCase
         $targetPath = SymbolPath::forClass('App', 'Hub');
         $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/Hub.php'), 10);
 
-        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.03);
-        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.001);
+        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.03)->with('coupling.ca', 2);
+        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.001)->with('coupling.ca', 2);
 
         $classes = $this->createDummyClasses(99);
         $classes[] = $targetInfo;
@@ -450,6 +450,40 @@ final class ClassRankRuleTest extends TestCase
 
         self::assertCount(1, $targetFindings);
         self::assertStringContainsString('scaled for 100 classes', $targetFindings[0]->message);
+    }
+
+    /**
+     * PageRank hands every class a floor share of the rank -- the damping base
+     * plus the mass of classes without outgoing edges, spread evenly -- so on
+     * a small or loosely coupled project a class nothing depends on can clear
+     * the scaled threshold on the floor alone, and was then called a hub that
+     * many depend on. A class with no dependents is not a hub.
+     */
+    #[Test]
+    public function itDoesNotCallAClassNothingDependsOnAHub(): void
+    {
+        $rule = new ClassRankRule(new ClassRankOptions());
+        $isolatedPath = SymbolPath::forClass('Iso', 'C1');
+        $hubPath = SymbolPath::forClass('Iso', 'Hub');
+        $classes = [
+            self::subjectInfo($isolatedPath, RelativePath::fromString('src/C1.php'), 3),
+            self::subjectInfo($hubPath, RelativePath::fromString('src/Hub.php'), 3),
+        ];
+        $bags = [
+            $isolatedPath->toCanonical() => (new MetricBag())->with('coupling.class-rank', 0.5)->with('coupling.ca', 0),
+            $hubPath->toCanonical() => (new MetricBag())->with('coupling.class-rank', 0.5)->with('coupling.ca', 1),
+        ];
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')->willReturn($classes);
+        $repository->method('allDeclarations')->willReturn($classes);
+        $repository->method('get')->willReturnCallback(static fn(SymbolPath $sp): MetricBag => $bags[$sp->toCanonical()]);
+
+        $findings = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $findings);
+        self::assertSame($hubPath, $findings[0]->symbolPath);
+        self::assertStringContainsString('1 class depends on this', (string) $findings[0]->recommendation);
     }
 
     // --- Options tests ---
@@ -540,7 +574,7 @@ final class ClassRankRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn($this->createDummyClasses(100));
         $repository->method('allDeclarations')->willReturn([$first, $second]);
-        $repository->method('get')->willReturn((new MetricBag())->with('coupling.class-rank', 0.03));
+        $repository->method('get')->willReturn((new MetricBag())->with('coupling.class-rank', 0.03)->with('coupling.ca', 2));
 
         $findings = (new ClassRankRule(new ClassRankOptions()))
             ->analyze(new AnalysisContext($repository));

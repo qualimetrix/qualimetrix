@@ -103,7 +103,8 @@ the no-presentation fallback and the tool-level field change.
 ## Edge cases
 
 - **Refusals.** The JSON refusal envelope stays `{error, exit_code}`. A refusal is
-  not a report.
+  not a report. *Superseded:* the envelope is now `{error, exit_code, position}`
+  (ADR 0051 amendment); it still carries no documentation addresses.
 - **`suppressed` and the gate map.** `finding-gate/report-values.tsv` is declared
   against `format:suppressed`. Re-check it after the `meta` change: a shifted map
   is a silent failure, not a red test.

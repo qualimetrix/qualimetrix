@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Security\Unit;
 
-use PhpParser\Node\Arg;
-use PhpParser\Node\Expr\ArrayDimFetch;
+use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\BinaryOp\Concat;
-use PhpParser\Node\Expr\Cast;
-use PhpParser\Node\Expr\FuncCall;
-use PhpParser\Node\Expr\Variable;
-use PhpParser\Node\InterpolatedStringPart;
-use PhpParser\Node\Name;
-use PhpParser\Node\Scalar\InterpolatedString;
+use PhpParser\Node\Expr\ShellExec;
 use PhpParser\Node\Scalar\String_;
+use PhpParser\Node\Stmt\Expression;
+use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -30,284 +26,77 @@ final class SuperglobalAnalyzerTest extends TestCase
         $this->analyzer = new SuperglobalAnalyzer();
     }
 
-    // --- isDangerousSuperglobal ---
-
     #[Test]
-    #[DataProvider('provideDangerousSuperglobals')]
-    public function itReturnsTrueForDangerousSuperglobal(string $name): void
+    #[DataProvider('provideExpressions')]
+    public function itFindsTheSuperglobalWhoseValueTheExpressionCarries(string $expression, ?string $expected): void
     {
-        $variable = new Variable($name);
-
-        self::assertTrue($this->analyzer->isDangerousSuperglobal($variable));
+        self::assertSame($expected, $this->analyzer->findSuperglobal($this->parseExpression($expression)));
     }
 
     /**
-     * @return iterable<string, array{string}>
+     * @return iterable<string, array{string, ?string}>
      */
-    public static function provideDangerousSuperglobals(): iterable
+    public static function provideExpressions(): iterable
     {
-        yield '$_GET' => ['_GET'];
-        yield '$_POST' => ['_POST'];
-        yield '$_REQUEST' => ['_REQUEST'];
-        yield '$_COOKIE' => ['_COOKIE'];
+        yield '$_GET' => ['$_GET', '_GET'];
+        yield '$_POST element' => ['$_POST["a"]', '_POST'];
+        yield '$_REQUEST nested element' => ['$_REQUEST["a"]["b"]', '_REQUEST'];
+        yield '$_COOKIE element' => ['$_COOKIE["a"]', '_COOKIE'];
+        yield 'concat, superglobal on the right' => ['"a" . $_GET["x"]', '_GET'];
+        yield 'nested concat' => ['"a" . ("b" . $_POST["x"])', '_POST'];
+        yield 'interpolation' => ['"a {$_GET[\'x\']}"', '_GET'];
+        yield 'coalesce, superglobal on the left' => ['$_GET["x"] ?? "d"', '_GET'];
+        yield 'coalesce, superglobal as fallback' => ['$x ?? $_GET["x"]', '_GET'];
+        yield 'ternary if branch' => ['$c ? $_GET["x"] : "d"', '_GET'];
+        yield 'ternary else branch' => ['$c ? "d" : $_GET["x"]', '_GET'];
+        yield 'short ternary condition is its value' => ['$_GET["x"] ?: "d"', '_GET'];
+        yield 'string cast' => ['(string) $_GET["x"]', '_GET'];
+        yield 'error suppression' => ['@$_GET["x"]', '_GET'];
+        yield 'assignment' => ['$y = $_GET["x"]', '_GET'];
+        yield 'match arm result' => ['match ($m) { 1 => "a", default => $_GET["x"] }', '_GET'];
+        yield 'element of a coalesced superglobal' => ['($_GET["x"] ?? [])["y"]', '_GET'];
+        yield 'first of two superglobals' => ['$_POST["a"] . $_GET["b"]', '_POST'];
+
+        yield '$_SESSION is not user input' => ['$_SESSION["x"]', null];
+        yield '$_SERVER is not user input' => ['$_SERVER["x"]', null];
+        yield '$GLOBALS is not user input' => ['$GLOBALS["x"]', null];
+        yield 'regular variable' => ['$x', null];
+        yield 'full ternary condition is not its value' => ['$_GET["x"] ? "a" : "b"', null];
+        yield 'match subject is not its value' => ['match ($_GET["x"]) { default => "a" }', null];
+        yield 'int cast' => ['(int) $_GET["x"]', null];
+        yield 'float cast' => ['(float) $_GET["x"]', null];
+        yield 'sanitizer call' => ['htmlspecialchars($_GET["x"])', null];
+        yield 'any other call' => ['trim($_GET["x"])', null];
+        yield 'method call' => ['$f->clean($_GET["x"])', null];
+        yield 'array key' => ['$map[$_GET["x"]]', null];
+        yield 'isset' => ['isset($_GET["x"])', null];
+        yield 'comparison' => ['$_GET["x"] === "a"', null];
     }
 
     #[Test]
-    #[DataProvider('provideNonDangerousSuperglobals')]
-    public function itReturnsFalseForNonDangerousSuperglobal(string $name): void
+    public function itFindsTheSuperglobalInBacktickCommandParts(): void
     {
-        $variable = new Variable($name);
+        $shellExec = $this->parseExpression('`ls {$_COOKIE[\'d\']}`');
+        self::assertInstanceOf(ShellExec::class, $shellExec);
 
-        self::assertFalse($this->analyzer->isDangerousSuperglobal($variable));
-    }
-
-    /**
-     * @return iterable<string, array{string}>
-     */
-    public static function provideNonDangerousSuperglobals(): iterable
-    {
-        yield '$_SESSION' => ['_SESSION'];
-        yield '$_SERVER' => ['_SERVER'];
-        yield '$_FILES' => ['_FILES'];
-        yield '$_ENV' => ['_ENV'];
-        yield '$GLOBALS' => ['GLOBALS'];
-        yield '$regular' => ['regular'];
+        self::assertSame('_COOKIE', $this->analyzer->findSuperglobal(...$shellExec->parts));
     }
 
     #[Test]
-    public function itDetectsDangerousSuperglobalForArrayDimFetch(): void
+    public function itFindsNothingInBacktickCommandPartsWithoutASuperglobal(): void
     {
-        $arrayAccess = new ArrayDimFetch(new Variable('_GET'), new String_('id'));
+        $shellExec = $this->parseExpression('`ls {$dir}`');
+        self::assertInstanceOf(ShellExec::class, $shellExec);
 
-        self::assertTrue($this->analyzer->isDangerousSuperglobal($arrayAccess));
+        self::assertNull($this->analyzer->findSuperglobal(...$shellExec->parts));
     }
 
-    #[Test]
-    public function itDetectsDangerousSuperglobalForNestedArrayDimFetch(): void
+    private function parseExpression(string $expression): Expr
     {
-        $nested = new ArrayDimFetch(
-            new ArrayDimFetch(new Variable('_POST'), new String_('data')),
-            new String_('sub'),
-        );
+        $statements = (new ParserFactory())->createForHostVersion()->parse("<?php {$expression};") ?? [];
+        self::assertInstanceOf(Expression::class, $statements[0] ?? null);
 
-        self::assertTrue($this->analyzer->isDangerousSuperglobal($nested));
-    }
-
-    #[Test]
-    public function itReturnsFalseForOtherExpressions(): void
-    {
-        $funcCall = new FuncCall(new Name('someFunc'));
-
-        self::assertFalse($this->analyzer->isDangerousSuperglobal($funcCall));
-    }
-
-    // --- containsSuperglobal ---
-
-    #[Test]
-    public function itContainsSuperglobalInConcat(): void
-    {
-        $concat = new Concat(
-            new String_('prefix'),
-            new ArrayDimFetch(new Variable('_GET'), new String_('x')),
-        );
-
-        self::assertTrue($this->analyzer->containsSuperglobal($concat));
-    }
-
-    #[Test]
-    public function itContainsSuperglobalInNestedConcat(): void
-    {
-        $concat = new Concat(
-            new Concat(
-                new String_('a'),
-                new ArrayDimFetch(new Variable('_POST'), new String_('b')),
-            ),
-            new String_('c'),
-        );
-
-        self::assertTrue($this->analyzer->containsSuperglobal($concat));
-    }
-
-    #[Test]
-    public function itReturnsFalseForSafeConcat(): void
-    {
-        $concat = new Concat(
-            new String_('hello'),
-            new Variable('safe'),
-        );
-
-        self::assertFalse($this->analyzer->containsSuperglobal($concat));
-    }
-
-    // --- getSuperglobalName ---
-
-    #[Test]
-    public function itGetsSuperglobalNameForVariable(): void
-    {
-        $variable = new Variable('_GET');
-
-        self::assertSame('_GET', $this->analyzer->getSuperglobalName($variable));
-    }
-
-    #[Test]
-    public function itGetsSuperglobalNameForArrayAccess(): void
-    {
-        $access = new ArrayDimFetch(new Variable('_POST'), new String_('key'));
-
-        self::assertSame('_POST', $this->analyzer->getSuperglobalName($access));
-    }
-
-    #[Test]
-    public function itReturnsUnknownSuperglobalNameForOtherExpr(): void
-    {
-        $funcCall = new FuncCall(new Name('someFunc'));
-
-        self::assertSame('unknown', $this->analyzer->getSuperglobalName($funcCall));
-    }
-
-    // --- findSuperglobalName ---
-
-    #[Test]
-    public function itFindsSuperglobalNameInConcat(): void
-    {
-        $concat = new Concat(
-            new String_('prefix'),
-            new ArrayDimFetch(new Variable('_REQUEST'), new String_('key')),
-        );
-
-        self::assertSame('_REQUEST', $this->analyzer->findSuperglobalName($concat));
-    }
-
-    #[Test]
-    public function itFindsSuperglobalNameInLeftBranch(): void
-    {
-        $concat = new Concat(
-            new ArrayDimFetch(new Variable('_COOKIE'), new String_('token')),
-            new String_('suffix'),
-        );
-
-        self::assertSame('_COOKIE', $this->analyzer->findSuperglobalName($concat));
-    }
-
-    // --- isUnsanitizedSuperglobal ---
-
-    #[Test]
-    public function itIsUnsanitizedForDirectSuperglobal(): void
-    {
-        $access = new ArrayDimFetch(new Variable('_GET'), new String_('id'));
-
-        self::assertTrue($this->analyzer->isUnsanitizedSuperglobal($access, ['htmlspecialchars']));
-    }
-
-    #[Test]
-    public function itIsNotUnsanitizedForSanitizedCall(): void
-    {
-        $sanitized = new FuncCall(
-            new Name('htmlspecialchars'),
-            [new Arg(new ArrayDimFetch(new Variable('_GET'), new String_('name')))],
-        );
-
-        self::assertFalse($this->analyzer->isUnsanitizedSuperglobal($sanitized, ['htmlspecialchars']));
-    }
-
-    #[Test]
-    public function itIsNotUnsanitizedForIntCast(): void
-    {
-        $cast = new Cast\Int_(new ArrayDimFetch(new Variable('_GET'), new String_('id')));
-
-        self::assertFalse($this->analyzer->isUnsanitizedSuperglobal($cast, []));
-    }
-
-    #[Test]
-    public function itIsNotUnsanitizedForDoubleCast(): void
-    {
-        $cast = new Cast\Double(new ArrayDimFetch(new Variable('_GET'), new String_('price')));
-
-        self::assertFalse($this->analyzer->isUnsanitizedSuperglobal($cast, []));
-    }
-
-    #[Test]
-    public function itIsNotUnsanitizedForIntvalCall(): void
-    {
-        $intval = new FuncCall(
-            new Name('intval'),
-            [new Arg(new ArrayDimFetch(new Variable('_GET'), new String_('id')))],
-        );
-
-        self::assertFalse($this->analyzer->isUnsanitizedSuperglobal($intval, []));
-    }
-
-    // --- containsUnsanitizedSuperglobalInExpr ---
-
-    #[Test]
-    public function itContainsUnsanitizedInConcatChain(): void
-    {
-        $concat = new Concat(
-            new String_('prefix'),
-            new ArrayDimFetch(new Variable('_GET'), new String_('val')),
-        );
-
-        self::assertTrue($this->analyzer->containsUnsanitizedSuperglobalInExpr($concat, ['htmlspecialchars']));
-    }
-
-    #[Test]
-    public function itDoesNotContainUnsanitizedWhenAllSanitized(): void
-    {
-        $sanitized = new FuncCall(
-            new Name('htmlspecialchars'),
-            [new Arg(new ArrayDimFetch(new Variable('_GET'), new String_('val')))],
-        );
-        $concat = new Concat(new String_('prefix'), $sanitized);
-
-        self::assertFalse($this->analyzer->containsUnsanitizedSuperglobalInExpr($concat, ['htmlspecialchars']));
-    }
-
-    // --- findUnsanitizedSuperglobalName ---
-
-    #[Test]
-    public function itFindsUnsanitizedSuperglobalNameInConcat(): void
-    {
-        $concat = new Concat(
-            new String_('prefix'),
-            new ArrayDimFetch(new Variable('_POST'), new String_('data')),
-        );
-
-        self::assertSame('_POST', $this->analyzer->findUnsanitizedSuperglobalName($concat, []));
-    }
-
-    #[Test]
-    public function itReturnsNullForUnsanitizedSuperglobalNameWhenSanitized(): void
-    {
-        $sanitized = new FuncCall(
-            new Name('escapeshellarg'),
-            [new Arg(new ArrayDimFetch(new Variable('_GET'), new String_('cmd')))],
-        );
-
-        self::assertNull($this->analyzer->findUnsanitizedSuperglobalName($sanitized, ['escapeshellarg']));
-    }
-
-    // --- findSuperglobalInInterpolatedString ---
-
-    #[Test]
-    public function itFindsSuperglobalInInterpolatedString(): void
-    {
-        $interpolated = new InterpolatedString([
-            new InterpolatedStringPart('Hello '),
-            new ArrayDimFetch(new Variable('_GET'), new String_('name')),
-        ]);
-
-        self::assertSame('_GET', $this->analyzer->findSuperglobalInInterpolatedString($interpolated));
-    }
-
-    #[Test]
-    public function itReturnsNullForSuperglobalInSafeInterpolatedString(): void
-    {
-        $interpolated = new InterpolatedString([
-            new InterpolatedStringPart('Hello '),
-            new Variable('name'),
-        ]);
-
-        self::assertNull($this->analyzer->findSuperglobalInInterpolatedString($interpolated));
+        return $statements[0]->expr;
     }
 
     // --- flattenConcat ---

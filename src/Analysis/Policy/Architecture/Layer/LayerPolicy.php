@@ -62,7 +62,7 @@ final readonly class LayerPolicy
      *   and callers that only care about layer-pair reachability without
      *   per-edge granularity.
      * - `$type !== null` — only allow targets whose `relations` field is null
-     *   (any relation) OR contains `$type` accept the edge. The Step G
+     *   (any relation) OR contains `$type` accept the edge. The
      *   `relations:` long-form key populates `relations`; bare-string targets
      *   leave it null and continue to accept any relation kind.
      *
@@ -95,20 +95,25 @@ final readonly class LayerPolicy
             }
 
             foreach ($entry->targets as $target) {
-                $effectiveBinding = $target->allowCrossInstance ? CaptureBinding::empty() : $binding;
-                if (!$target->target->matchesTarget($to, $effectiveBinding)) {
-                    continue;
+                if (self::targetAdmits($target, $to, $binding, $type)) {
+                    return true;
                 }
-
-                if (!self::acceptsRelation($target, $type)) {
-                    continue;
-                }
-
-                return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * Whether one allowed target takes the edge: its layer matches under the
+     * source's capture binding (or none, across instances), and its relation
+     * whitelist admits the edge type.
+     */
+    private static function targetAdmits(AllowTarget $target, string $to, CaptureBinding $binding, ?DependencyType $type): bool
+    {
+        $effectiveBinding = $target->allowCrossInstance ? CaptureBinding::empty() : $binding;
+
+        return $target->target->matchesTarget($to, $effectiveBinding) && self::acceptsRelation($target, $type);
     }
 
     /**

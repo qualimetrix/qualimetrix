@@ -87,6 +87,47 @@ final class AnalysisCoverageTest extends TestCase
         self::assertSame(3, $merged->discoveredFiles());
     }
 
+    #[Test]
+    public function itGivesASkippedEntryATerminalStateThatMakesTheRunIncomplete(): void
+    {
+        $coverage = new AnalysisCoverage(
+            analyzedFiles: [RelativePath::fromString('src/A.php')],
+            generatedExcludedFiles: [],
+            failures: [],
+        );
+
+        $withSkip = $coverage->withSkipped(
+            RelativePath::fromString('src/linked'),
+            AnalysisFailureKind::DirectorySymlink,
+            'Symbolic link to a directory is not traversed',
+        );
+
+        self::assertTrue($coverage->isComplete(), 'The original is untouched');
+        self::assertFalse($withSkip->isComplete());
+        self::assertSame(2, $withSkip->discoveredFiles());
+        self::assertSame(1, $withSkip->failedFilesCount());
+        self::assertSame('src/linked', $withSkip->failures[0]->path->value());
+        self::assertSame(AnalysisFailureKind::DirectorySymlink, $withSkip->failures[0]->kind);
+    }
+
+    #[Test]
+    public function itRefusesASkipForAPathThatAlreadyHasATerminalState(): void
+    {
+        $coverage = new AnalysisCoverage(
+            analyzedFiles: [RelativePath::fromString('src/A.php')],
+            generatedExcludedFiles: [],
+            failures: [],
+        );
+
+        $this->expectException(LogicException::class);
+
+        $coverage->withSkipped(
+            RelativePath::fromString('src/A.php'),
+            AnalysisFailureKind::NotRegularFile,
+            'Discovered entry is not a regular file',
+        );
+    }
+
     /**
      * @param list<RelativePath> $paths
      *

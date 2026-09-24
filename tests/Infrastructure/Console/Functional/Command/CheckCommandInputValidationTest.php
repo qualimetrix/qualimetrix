@@ -90,6 +90,32 @@ final class CheckCommandInputValidationTest extends TestCase
         self::assertStringContainsString('must use KIND:VALUE', $tester->getErrorOutput());
     }
 
+    /**
+     * An embedder passes numbers as numbers; the run is an ordinary run, not
+     * an internal error with exit code 1.
+     */
+    #[Test]
+    public function itRunsWithDetailAndTopAnEmbedderPassesAsNumbers(): void
+    {
+        $tester = $this->tester();
+        $tester->execute(
+            [
+                'paths' => ['tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php'],
+                '--format' => 'json',
+                '--no-cache' => true,
+                '--workers' => '0',
+                '--detail' => 50,
+                '--top' => 5,
+            ],
+            ['capture_stderr_separately' => true],
+        );
+
+        self::assertNotContains($tester->getStatusCode(), [1, 3], $tester->getDisplay() . $tester->getErrorOutput());
+        /** @var array<string, mixed> $report */
+        $report = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertArrayNotHasKey('error', $report);
+    }
+
     #[Test]
     public function itFailsClosedForUnknownRuleSelectorWithoutPollutingStdout(): void
     {

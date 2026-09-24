@@ -36,7 +36,7 @@ final class NocCollectorTest extends TestCase
     /**
      * Helper method to create an extends dependency.
      */
-    private function createExtends(string $childClass, string $parentClass, string $file = 'test.php', int $line = 1, bool $describesNestedAnonymousClass = false): Dependency
+    private function createExtends(string $childClass, string $parentClass, string $file = 'test.php', int $line = 1, bool $describesNestedAnonymousClass = false, bool $interfaceExtends = false): Dependency
     {
         return new Dependency(
             source: DeclarationPath::of(SymbolPath::fromClassFqn($childClass), RelativePath::fromString($file), DeclarationOrdinal::fromRank(0)),
@@ -44,7 +44,49 @@ final class NocCollectorTest extends TestCase
             type: DependencyType::Extends,
             location: new Location(RelativePath::fromString($file), $line),
             describesNestedAnonymousClass: $describesNestedAnonymousClass,
+            interfaceExtends: $interfaceExtends,
         );
+    }
+
+    /**
+     * What the per-file pass leaves on a named class and on nothing else:
+     * the DIT it measured, which is how the population of classes is told
+     * apart from interfaces, traits and enums at class level.
+     */
+    private static function measuredClass(): MetricBag
+    {
+        return (new MetricBag())->with('design.dit', 0);
+    }
+
+    /**
+     * NOC is a class metric, measured on the population DIT is: an interface
+     * extending an interface is not a subclass, and an interface, a trait or
+     * an enum has no NOC at all -- not even 0, which would enter every NOC
+     * aggregate's denominator beside DIT's smaller one.
+     */
+    #[Test]
+    public function itMeasuresNocOnClassesOnly(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $graph = $this->graph([
+            $this->createExtends('N\\B', 'N\\A', interfaceExtends: true),
+            $this->createExtends('N\\D', 'N\\C'),
+        ]);
+
+        foreach (['N\\A', 'N\\B', 'N\\T', 'N\\E'] as $typeWithoutDit) {
+            $repository->add(SymbolPath::fromClassFqn($typeWithoutDit), new MetricBag(), RelativePath::fromString('all.php'), 1);
+        }
+        foreach (['N\\C', 'N\\D'] as $class) {
+            $repository->add(SymbolPath::fromClassFqn($class), self::measuredClass(), RelativePath::fromString('all.php'), 1);
+        }
+
+        $this->collector->calculate($graph, $repository);
+
+        foreach (['N\\A', 'N\\B', 'N\\T', 'N\\E'] as $typeWithoutDit) {
+            self::assertFalse($repository->get(SymbolPath::fromClassFqn($typeWithoutDit))->has('design.noc'), $typeWithoutDit);
+        }
+        self::assertSame(1, $repository->get(SymbolPath::fromClassFqn('N\\C'))->get('design.noc'));
+        self::assertSame(0, $repository->get(SymbolPath::fromClassFqn('N\\D'))->get('design.noc'));
     }
 
     #[Test]
@@ -74,7 +116,7 @@ final class NocCollectorTest extends TestCase
 
         // Add leaf class without parent
         $leafPath = SymbolPath::forClass('App', 'LeafClass');
-        $repository->add($leafPath, new MetricBag(), RelativePath::fromString('test.php'), 10);
+        $repository->add($leafPath, self::measuredClass(), RelativePath::fromString('test.php'), 10);
 
         $this->collector->calculate($graph, $repository);
 
@@ -94,11 +136,11 @@ final class NocCollectorTest extends TestCase
 
         // Add parent class
         $parentPath = SymbolPath::forClass('App', 'BaseClass');
-        $repository->add($parentPath, new MetricBag(), RelativePath::fromString('base.php'), 10);
+        $repository->add($parentPath, self::measuredClass(), RelativePath::fromString('base.php'), 10);
 
         // Add child class
         $childPath = SymbolPath::forClass('App', 'ChildClass');
-        $repository->add($childPath, new MetricBag(), RelativePath::fromString('child.php'), 20);
+        $repository->add($childPath, self::measuredClass(), RelativePath::fromString('child.php'), 20);
 
         $this->collector->calculate($graph, $repository);
 
@@ -123,15 +165,15 @@ final class NocCollectorTest extends TestCase
 
         // Add parent class
         $parentPath = SymbolPath::forClass('App', 'BaseClass');
-        $repository->add($parentPath, new MetricBag(), RelativePath::fromString('base.php'), 10);
+        $repository->add($parentPath, self::measuredClass(), RelativePath::fromString('base.php'), 10);
 
         // Add first child
         $child1Path = SymbolPath::forClass('App', 'ChildA');
-        $repository->add($child1Path, new MetricBag(), RelativePath::fromString('child1.php'), 20);
+        $repository->add($child1Path, self::measuredClass(), RelativePath::fromString('child1.php'), 20);
 
         // Add second child
         $child2Path = SymbolPath::forClass('App', 'ChildB');
-        $repository->add($child2Path, new MetricBag(), RelativePath::fromString('child2.php'), 30);
+        $repository->add($child2Path, self::measuredClass(), RelativePath::fromString('child2.php'), 30);
 
         $this->collector->calculate($graph, $repository);
 
@@ -154,15 +196,15 @@ final class NocCollectorTest extends TestCase
 
         // Add grandparent
         $grandparentPath = SymbolPath::forClass('App', 'GrandParent');
-        $repository->add($grandparentPath, new MetricBag(), RelativePath::fromString('grand.php'), 10);
+        $repository->add($grandparentPath, self::measuredClass(), RelativePath::fromString('grand.php'), 10);
 
         // Add parent (child of grandparent)
         $parentPath = SymbolPath::forClass('App', 'Parent');
-        $repository->add($parentPath, new MetricBag(), RelativePath::fromString('parent.php'), 20);
+        $repository->add($parentPath, self::measuredClass(), RelativePath::fromString('parent.php'), 20);
 
         // Add child (child of parent)
         $childPath = SymbolPath::forClass('App', 'Child');
-        $repository->add($childPath, new MetricBag(), RelativePath::fromString('child.php'), 30);
+        $repository->add($childPath, self::measuredClass(), RelativePath::fromString('child.php'), 30);
 
         $this->collector->calculate($graph, $repository);
 
@@ -193,14 +235,14 @@ final class NocCollectorTest extends TestCase
 
         // Add parent in Vendor namespace
         $parentPath = SymbolPath::forClass('Vendor', 'BaseService');
-        $repository->add($parentPath, new MetricBag(), RelativePath::fromString('vendor/base.php'), 10);
+        $repository->add($parentPath, self::measuredClass(), RelativePath::fromString('vendor/base.php'), 10);
 
         // Add children in App namespace
         $child1Path = SymbolPath::forClass('App', 'ServiceA');
-        $repository->add($child1Path, new MetricBag(), RelativePath::fromString('app/service-a.php'), 20);
+        $repository->add($child1Path, self::measuredClass(), RelativePath::fromString('app/service-a.php'), 20);
 
         $child2Path = SymbolPath::forClass('App', 'ServiceB');
-        $repository->add($child2Path, new MetricBag(), RelativePath::fromString('app/service-b.php'), 30);
+        $repository->add($child2Path, self::measuredClass(), RelativePath::fromString('app/service-b.php'), 30);
 
         $this->collector->calculate($graph, $repository);
 
@@ -221,11 +263,11 @@ final class NocCollectorTest extends TestCase
 
         // Add parent in global namespace
         $parentPath = SymbolPath::forClass('', 'GlobalParent');
-        $repository->add($parentPath, new MetricBag(), RelativePath::fromString('global.php'), 10);
+        $repository->add($parentPath, self::measuredClass(), RelativePath::fromString('global.php'), 10);
 
         // Add child extending global parent
         $childPath = SymbolPath::forClass('App', 'Child');
-        $repository->add($childPath, new MetricBag(), RelativePath::fromString('child.php'), 20);
+        $repository->add($childPath, self::measuredClass(), RelativePath::fromString('child.php'), 20);
 
         $this->collector->calculate($graph, $repository);
 
@@ -246,7 +288,7 @@ final class NocCollectorTest extends TestCase
 
         // Only the project class is in the repository
         $childPath = SymbolPath::forClass('App\\Service', 'MyException');
-        $repository->add($childPath, new MetricBag(), RelativePath::fromString('exception.php'), 10);
+        $repository->add($childPath, self::measuredClass(), RelativePath::fromString('exception.php'), 10);
 
         $this->collector->calculate($graph, $repository);
 
@@ -268,10 +310,10 @@ final class NocCollectorTest extends TestCase
 
         // Add multiple classes
         $class1Path = SymbolPath::forClass('App', 'ClassA');
-        $repository->add($class1Path, new MetricBag(), RelativePath::fromString('a.php'), 10);
+        $repository->add($class1Path, self::measuredClass(), RelativePath::fromString('a.php'), 10);
 
         $class2Path = SymbolPath::forClass('App', 'ClassB');
-        $repository->add($class2Path, new MetricBag(), RelativePath::fromString('b.php'), 20);
+        $repository->add($class2Path, self::measuredClass(), RelativePath::fromString('b.php'), 20);
 
         $this->collector->calculate($graph, $repository);
 
@@ -302,13 +344,13 @@ final class NocCollectorTest extends TestCase
         ]);
 
         $l0Path = SymbolPath::forClass('An', 'L0');
-        $repository->add($l0Path, new MetricBag(), RelativePath::fromString('l0.php'), 1);
+        $repository->add($l0Path, self::measuredClass(), RelativePath::fromString('l0.php'), 1);
 
         $l1Path = SymbolPath::forClass('An', 'L1');
-        $repository->add($l1Path, new MetricBag(), RelativePath::fromString('l1.php'), 1);
+        $repository->add($l1Path, self::measuredClass(), RelativePath::fromString('l1.php'), 1);
 
         $hostPath = SymbolPath::forClass('An', 'Host');
-        $repository->add($hostPath, new MetricBag(), RelativePath::fromString('host.php'), 1);
+        $repository->add($hostPath, self::measuredClass(), RelativePath::fromString('host.php'), 1);
 
         $this->collector->calculate($graph, $repository);
 
@@ -334,7 +376,7 @@ final class NocCollectorTest extends TestCase
 
         // Add child
         $childPath = SymbolPath::forClass('App', 'ChildClass');
-        $repository->add($childPath, new MetricBag(), RelativePath::fromString('child.php'), 20);
+        $repository->add($childPath, self::measuredClass(), RelativePath::fromString('child.php'), 20);
 
         $this->collector->calculate($graph, $repository);
 
@@ -358,10 +400,10 @@ final class NocCollectorTest extends TestCase
         ]);
 
         $parentPath = SymbolPath::forClass('App', 'BaseClass');
-        $repository->add($parentPath, new MetricBag(), RelativePath::fromString('base.php'), 10);
+        $repository->add($parentPath, self::measuredClass(), RelativePath::fromString('base.php'), 10);
 
         $childPath = SymbolPath::forClass('App', 'Shim');
-        $repository->add($childPath, new MetricBag(), RelativePath::fromString('native.php'), 30);
+        $repository->add($childPath, self::measuredClass(), RelativePath::fromString('native.php'), 30);
 
         $this->collector->calculate($graph, $repository);
 
@@ -386,13 +428,13 @@ final class NocCollectorTest extends TestCase
         $parentPath = SymbolPath::forClass('App', 'BaseClass');
         $repository->addSubject(
             MetricSubject::declaration(DeclarationPath::of($parentPath, RelativePath::fromString('base-one.php'), DeclarationOrdinal::fromRank(0))),
-            new MetricBag(),
+            self::measuredClass(),
             RelativePath::fromString('base-one.php'),
             10,
         );
         $repository->addSubject(
             MetricSubject::declaration(DeclarationPath::of($parentPath, RelativePath::fromString('base-two.php'), DeclarationOrdinal::fromRank(0))),
-            new MetricBag(),
+            self::measuredClass(),
             RelativePath::fromString('base-two.php'),
             10,
         );

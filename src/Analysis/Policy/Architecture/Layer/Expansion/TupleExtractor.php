@@ -7,8 +7,10 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\CriterionOutcome;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerCriteriaMatcher;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
@@ -29,23 +31,22 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
  *
  * - **Mode-aware non-pattern criteria.** Non-pattern criteria
  *   ({@code suffix}, {@code attributes}, {@code implements}, {@code extends})
- *   now respect the membership's {@see MatchMode}: under
- *   {@see MatchMode::Any} they act as OR alongside the capture-producing
- *   pattern (a class with a binding from the capture pattern is observed
- *   even if none of the non-pattern criteria match); under
- *   {@see MatchMode::All} every declared non-pattern criterion must match
- *   (the AND behavior). This aligns template expansion with the runtime
- *   membership semantics implemented by
- *   {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition::matches()}.
+ *   respect the membership's {@see MatchMode}, and answer it through the same
+ *   {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerCriteriaMatcher}
+ *   runtime membership uses rather than through a copy kept here. Under
+ *   {@see MatchMode::Any} a template may not declare one at all — the
+ *   configuration refuses it, because only patterns carry the capture
+ *   variables that would bind it to an instance — so what is left is the
+ *   {@see MatchMode::All} reading, where every declared kind must match.
  *
- * **Capture-producing vs non-capturing criteria.** Within
+ * **Capture-producing vs non-capturing patterns.** Within
  * {@see MembershipSpec::$patterns}, patterns are classified: a pattern that
  * contains at least one `{var}` placeholder is capture-producing; a plain
- * glob is non-capturing. {@see MembershipSpec::$mode} (`match: any|all`)
- * governs the combination of capture-producing patterns AND (post-M2 Path B)
- * the non-pattern criteria above. Non-capturing patterns continue to act as
- * a pure AND-filter regardless of mode — they describe "where the layer
- * lives" and would never widen membership.
+ * glob is non-capturing. A non-capturing pattern acts as an AND-filter here,
+ * regardless of mode — it describes "where the layer lives". Note that
+ * runtime matching does NOT read it that way: on the expanded layer both
+ * spellings sit in the single {@code patterns} kind, whose entries are OR-ed,
+ * so observation is the narrower of the two in this one shape.
  *
  * **Determinism.** Observed tuples are sorted lexicographically by the
  * template's {@see TemplateLayerDefinition::$variables} order so the result
@@ -86,13 +87,6 @@ final class TupleExtractor
         /** @var array<string, array<string, string>> */
         $observed = [];
 
-        // Hoist the mode check out of the per-class loop: under MatchMode::Any
-        // the post-pattern criteria check is a no-op (a class that bound via
-        // the capture pattern is admitted regardless of non-pattern criteria),
-        // so we skip the function call entirely.
-        $checkNonPatternCriteria = $membership->mode === MatchMode::All;
-        $exclude = $membership->exclude;
-
         foreach ($classes->classes() as $classPath) {
             $context = $classes->contextFor($classPath);
             if ($context->fqn === '') {
@@ -108,17 +102,7 @@ final class TupleExtractor
                 continue;
             }
 
-            if ($checkNonPatternCriteria && !self::matchAllNonPatternCriteria($membership, $context)) {
-                continue;
-            }
-
-            // M1 — apply the template's exclude clause AFTER capture binding
-            // succeeds, using the substituted bindings. A class that would be
-            // removed from the concrete layer at runtime must not contribute
-            // a tuple, otherwise template expansion produces a "phantom"
-            // concrete layer driven solely by classes that are then unassigned
-            // (and the layer itself would be empty under runtime classification).
-            if ($exclude !== null && self::excludeFires($exclude, $context, $tuple)) {
+            if (!self::admitsBoundTuple($membership, $context, $tuple)) {
                 continue;
             }
 
@@ -127,6 +111,28 @@ final class TupleExtractor
         }
 
         return array_values($observed);
+    }
+
+    /**
+     * The checks that need the capture bound first. Under `match: any` the
+     * non-pattern criteria are not asked: a class that bound through the
+     * capture pattern is admitted regardless of them.
+     *
+     * The template's `exclude:` is applied with the substituted bindings. A
+     * class that would be removed from the concrete layer at runtime must not
+     * contribute a tuple, otherwise template expansion produces a "phantom"
+     * concrete layer driven solely by classes that are then unassigned (and the
+     * layer itself would be empty under runtime classification).
+     *
+     * @param array<string, string> $tuple
+     */
+    private static function admitsBoundTuple(MembershipSpec $membership, ClassContext $context, array $tuple): bool
+    {
+        if ($membership->mode === MatchMode::All && !self::admitsNonPatternCriteria($membership, $context)) {
+            return false;
+        }
+
+        return $membership->exclude === null || !self::excludeRemoves($membership->exclude, $context, $tuple);
     }
 
     /**
@@ -156,7 +162,7 @@ final class TupleExtractor
 
     /**
      * Returns true if the class FQN matches every non-capture pattern
-     * (D7 AND-filter). Empty non-capture pattern list trivially passes.
+     * (they are an AND-filter). Empty non-capture pattern list trivially passes.
      *
      * @param list<string> $patterns
      */
@@ -172,148 +178,71 @@ final class TupleExtractor
     }
 
     /**
-     * Returns true if the class context satisfies every declared non-pattern
-     * criterion (suffix / attributes / implements / extends).
+     * Whether the non-pattern criteria admit the class, decided by the same
+     * primitive runtime membership uses.
      *
-     * **Match-mode consistency.** Non-pattern criteria follow the membership's
-     * {@see MatchMode}, matching the runtime semantics in
-     * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition::matches()}.
-     * That requires two distinct paths:
+     * Patterns are passed empty on purpose: the capture-producing pattern has
+     * already been matched by the caller, and the template's raw {@code {var}}
+     * spelling would not match a concrete FQN anyway. What is left is exactly
+     * the {@see MatchMode::All} question over the four non-pattern kinds, and
+     * {@see LayerCriteriaMatcher} answers it — a second implementation of this
+     * predicate lived here once, and it is how observation and matching came to
+     * disagree with each other while each looked right on its own.
      *
-     * - {@see MatchMode::Any}: a class that already binds via the
-     *   capture-producing pattern passes regardless of the non-pattern
-     *   criteria. Callers hoist this short-circuit out of the per-class
-     *   loop and skip the helper entirely under Any.
-     *
-     * - {@see MatchMode::All}: every declared non-pattern criterion must
-     *   match (this method's contract). The capture pattern matching has
-     *   already been verified by the caller.
-     *
-     * Empty (undeclared) criteria are trivially satisfied — the early
-     * `$x !== []` guards make sure we only run the haystack check when the
-     * user actually declared a criterion of that kind.
+     * **A kind the run cannot decide admits the class.** Refusing it here would
+     * delete the concrete layer, so runtime would never evaluate any class
+     * against it and the doubt would come out as a plain non-match with nothing
+     * to report. Observing the tuple keeps the layer alive and lets the
+     * undecidable membership travel to `architecture.coverage-gap`, where a
+     * reader sees it. `architecture.unreachable-layer` may name that layer
+     * alongside — noisy rather than silent, which is the failure direction this
+     * slice chooses.
      */
-    private static function matchAllNonPatternCriteria(MembershipSpec $membership, ClassContext $context): bool
+    private static function admitsNonPatternCriteria(MembershipSpec $membership, ClassContext $context): bool
     {
-        LayerCriteriaMatcher::refuseUnbackedCriteria(
+        $evaluation = LayerCriteriaMatcher::evaluate(
             $context,
+            [],
+            $membership->suffix,
             $membership->attributes,
             $membership->implements,
             $membership->extends,
         );
 
-        if ($membership->suffix !== [] && !self::matchesAnySuffix($membership->suffix, $context->shortName)) {
-            return false;
-        }
+        $outcome = $evaluation->outcome(MatchMode::All, LayerCriteriaMatcher::declaredKindCount(
+            [],
+            $membership->suffix,
+            $membership->attributes,
+            $membership->implements,
+            $membership->extends,
+        ));
 
-        if ($membership->attributes !== [] && !self::needleHits($membership->attributes, $context->attributeFqnSet)) {
-            return false;
-        }
-
-        if ($membership->implements !== [] && !self::needleHits($membership->implements, $context->interfaceSet)) {
-            return false;
-        }
-
-        if ($membership->extends !== [] && !self::needleHits($membership->extends, $context->parentClassSet)) {
-            return false;
-        }
-
-        return true;
+        return $outcome !== CriterionOutcome::DoesNotMatch;
     }
 
     /**
-     * Evaluates the template's exclude clause against the class using the
-     * bindings produced by the matched capture-producing pattern.
+     * Whether the template's exclude clause removes the class, evaluated with
+     * the bindings produced by the matched capture-producing pattern.
      *
-     * Exclude patterns may reference the same capture variables as the
-     * template name; we substitute the bindings first, then evaluate the
-     * concrete exclude criteria with the same primitive (
-     * {@see LayerCriteriaMatcher::collectMatches()}) used by runtime
-     * membership in {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition}.
-     * Non-pattern criteria on exclude do not currently support captures and
-     * pass through verbatim.
+     * Exclude patterns may reference the same capture variables as the template
+     * name; substitution happens here and the concrete criteria then go through
+     * {@see LayerDefinition::excludeOutcome()}, the same entry point runtime
+     * membership uses, mode combination included. Non-pattern criteria on
+     * exclude do not support captures and pass through verbatim.
      *
-     * The exclude clause's own {@see ExcludeSpec::$mode} governs combination:
-     * {@see MatchMode::Any} fires as soon as any declared kind matches;
-     * {@see MatchMode::All} requires every declared kind to match.
+     * An exclude clause the run cannot decide does NOT remove the tuple, for
+     * the reason {@see admitsNonPatternCriteria()} gives.
      *
      * @param array<string, string> $bindings
      */
-    private static function excludeFires(ExcludeSpec $exclude, ClassContext $context, array $bindings): bool
+    private static function excludeRemoves(ExcludeSpec $exclude, ClassContext $context, array $bindings): bool
     {
         $substitutedPatterns = array_map(
             static fn(string $pattern): string => CapturePattern::applySubstitution($pattern, $bindings),
             $exclude->patterns,
         );
-        $matched = LayerCriteriaMatcher::collectMatches(
-            $context,
-            $substitutedPatterns,
-            $exclude->suffix,
-            $exclude->attributes,
-            $exclude->implements,
-            $exclude->extends,
-        );
 
-        if ($matched === []) {
-            return false;
-        }
-
-        if ($exclude->mode === MatchMode::Any) {
-            return true;
-        }
-
-        $declaredKinds = LayerCriteriaMatcher::declaredKindCount(
-            $exclude->patterns,
-            $exclude->suffix,
-            $exclude->attributes,
-            $exclude->implements,
-            $exclude->extends,
-        );
-
-        return \count($matched) === $declaredKinds;
-    }
-
-    /**
-     * @param list<string> $suffixes
-     */
-    private static function matchesAnySuffix(array $suffixes, string $shortName): bool
-    {
-        if ($shortName === '') {
-            return false;
-        }
-
-        foreach ($suffixes as $suffix) {
-            if (str_ends_with($shortName, $suffix)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Returns true if any of {@code $needles} is present as a key in the
-     * already-prepared {@code $haystackSet}. Callers pass the precomputed
-     * lookup tables on {@see ClassContext} (e.g. {@see ClassContext::$interfaceSet})
-     * so the {@code array_fill_keys} cost is paid once per class — not once
-     * per layer per class.
-     *
-     * @param list<string> $needles
-     * @param array<string, true> $haystackSet
-     */
-    private static function needleHits(array $needles, array $haystackSet): bool
-    {
-        if ($haystackSet === []) {
-            return false;
-        }
-
-        foreach ($needles as $needle) {
-            if (isset($haystackSet[$needle])) {
-                return true;
-            }
-        }
-
-        return false;
+        return LayerDefinition::excludeOutcome($context, $exclude, $substitutedPatterns) === CriterionOutcome::Matches;
     }
 
     /**

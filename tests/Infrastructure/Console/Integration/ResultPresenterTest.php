@@ -220,6 +220,52 @@ final class ResultPresenterTest extends TestCase
         }
     }
 
+    /**
+     * A directory passes a check that only asks whether the path is writable,
+     * and the write then failed after the analysis.
+     */
+    #[Test]
+    public function itRefusesADirectoryOutputTargetBeforeAnalysis(): void
+    {
+        $dir = sys_get_temp_dir() . '/qmx-result-presenter-directory-' . bin2hex(random_bytes(6));
+        mkdir($dir, 0o755, true);
+
+        try {
+            $this->presenter(self::createStub(FormatterRegistryInterface::class))
+                ->assertOutputIsWritable($this->input(['--output' => $dir]));
+            self::fail('A directory named by --output must be refused before analysis runs.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString('is a directory', $refusal->summary());
+        } finally {
+            rmdir($dir);
+        }
+    }
+
+    /** An existing report is written in place, which needs the file and not its directory. */
+    #[Test]
+    public function itAcceptsAWritableOutputFileInADirectoryItCannotWrite(): void
+    {
+        if (\function_exists('posix_geteuid') && posix_geteuid() === 0) {
+            self::markTestSkipped('Directory permissions do not bind root.');
+        }
+
+        self::expectNotToPerformAssertions();
+
+        $dir = sys_get_temp_dir() . '/qmx-result-presenter-sealed-' . bin2hex(random_bytes(6));
+        mkdir($dir, 0o755, true);
+        touch($dir . '/report.json');
+        chmod($dir, 0o555);
+
+        try {
+            $this->presenter(self::createStub(FormatterRegistryInterface::class))
+                ->assertOutputIsWritable($this->input(['--output' => $dir . '/report.json']));
+        } finally {
+            chmod($dir, 0o755);
+            unlink($dir . '/report.json');
+            rmdir($dir);
+        }
+    }
+
     #[Test]
     public function itAcceptsAWritableOutputTargetOrNoTargetAtAll(): void
     {

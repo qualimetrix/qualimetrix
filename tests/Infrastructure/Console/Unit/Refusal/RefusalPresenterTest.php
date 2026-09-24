@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
@@ -24,7 +25,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * A {@see ConfigurationRefusal} and a bare `InvalidArgumentException`-shaped
  * fallback both answer exit code 3, an internal error answers 1; a JSON
- * format gets the `{error, exit_code}` envelope on stdout, anything else gets
+ * format gets the `{error, exit_code, position}` envelope on stdout, anything else gets
  * one framed sentence on stderr; every write survives `-q`; a trace is added
  * only for an internal error and only from `VERBOSITY_VERBOSE` up.
  */
@@ -52,7 +53,6 @@ final class RefusalPresenterTest extends TestCase
     #[TestWith(['sarif'])]
     #[TestWith(['gitlab'])]
     #[TestWith(['metrics'])]
-    #[TestWith(['health'])]
     #[TestWith(['suppressed'])]
     public function itAnswersAConfigurationRefusalAsAnEnvelopeOnEveryJsonFormat(string $format): void
     {
@@ -67,23 +67,61 @@ final class RefusalPresenterTest extends TestCase
         self::assertSame(3, $exit);
         self::assertSame('', $output->errorOutputContent());
         self::assertSame(
-            ['error' => 'Configuration error: unknown group "bogus"', 'exit_code' => 3],
+            ['error' => 'Configuration error: unknown group "bogus"', 'exit_code' => 3, 'position' => null],
             json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR),
         );
     }
 
+    /**
+     * `health` is the case that was missed: its formatter prints a text table,
+     * and an envelope written into that stream left a reader of the table a
+     * JSON document instead of the sentence on stderr.
+     */
     #[Test]
-    public function itAnswersAFallbackRefusalWithTheCaughtMessageUnframed(): void
+    #[TestWith(['text'])]
+    #[TestWith(['text-verbose'])]
+    #[TestWith(['summary'])]
+    #[TestWith(['health'])]
+    #[TestWith(['checkstyle'])]
+    #[TestWith(['github'])]
+    #[TestWith(['html'])]
+    public function itAnswersAConfigurationRefusalOnStderrUnderEveryNonJsonFormat(string $format): void
     {
-        // No "Configuration error:" prefix — this path carries no carrier and
-        // no summary(), only the exception's own message.
         $output = self::terminalOutput();
+        $refusal = ConfigurationRefusal::aboutInput(
+            ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--group'),
+            'unknown group "bogus"',
+        );
 
-        $exit = $this->presenter()->fallbackRefusal($output, null, new RuntimeException('bad value'));
+        $exit = $this->presenter()->refusal($output, $format, $refusal);
 
         self::assertSame(3, $exit);
-        self::assertStringContainsString('bad value', $output->errorOutputContent());
-        self::assertStringNotContainsString('Configuration error:', $output->errorOutputContent());
+        self::assertSame('', $output->standardOutputContent());
+        self::assertStringContainsString('Configuration error: unknown group "bogus"', $output->errorOutputContent());
+    }
+
+    /**
+     * One exit code, one framing. The fallback stays a separate method so the
+     * inputs still reaching it remain a call count, but a reader of the
+     * message cannot tell the two paths apart and has no reason to: both are
+     * the same refusal of what they typed.
+     */
+    #[Test]
+    public function itFramesAFallbackRefusalLikeACarriedOne(): void
+    {
+        $fallback = self::terminalOutput();
+        $carried = self::terminalOutput();
+
+        $exit = $this->presenter()->fallbackRefusal($fallback, null, new RuntimeException('bad value'));
+        $this->presenter()->refusal(
+            $carried,
+            null,
+            ConfigurationRefusal::aboutInput(ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--x'), 'bad value'),
+        );
+
+        self::assertSame(3, $exit);
+        self::assertStringContainsString('Configuration error: bad value', $fallback->errorOutputContent());
+        self::assertSame($carried->errorOutputContent(), $fallback->errorOutputContent());
     }
 
     #[Test]
@@ -106,7 +144,7 @@ final class RefusalPresenterTest extends TestCase
 
         self::assertSame(1, $exit);
         self::assertSame(
-            ['error' => 'Internal error: boom', 'exit_code' => 1],
+            ['error' => 'Internal error: boom', 'exit_code' => 1, 'position' => null],
             json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR),
         );
     }
@@ -174,7 +212,7 @@ final class RefusalPresenterTest extends TestCase
 
         self::assertSame(3, $exit);
         self::assertSame(
-            ['error' => 'Configuration error: unknown group "bogus"', 'exit_code' => 3],
+            ['error' => 'Configuration error: unknown group "bogus"', 'exit_code' => 3, 'position' => null],
             json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR),
         );
     }
@@ -244,7 +282,7 @@ final class RefusalPresenterTest extends TestCase
         self::assertSame(3, $exit);
         $decoded = json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertSame(3, $decoded['exit_code']);
-        self::assertSame($message, $decoded['error']);
+        self::assertSame('Configuration error: ' . $message, $decoded['error']);
     }
 
     /**
@@ -306,8 +344,50 @@ final class RefusalPresenterTest extends TestCase
     }
 
     /**
-     * The JSON envelope stays closed at two keys: `present()` never appends
-     * the pointer to `writeEnvelope()`'s output.
+     * A refusal addressed to a position publishes it: the path as segments,
+     * what was written there, and the spellings accepted there.
+     */
+    #[Test]
+    public function itPublishesTheRefusedPositionInTheEnvelope(): void
+    {
+        $output = self::terminalOutput();
+        $refusal = ConfigurationRefusal::atResolvedKey(
+            RefusedPosition::closed(['computed_metrics', 'health', 'nope'], 'nope', ['complexity', 'cohesion']),
+            'unknown dimension',
+        );
+
+        $this->presenter()->refusal($output, 'json', $refusal);
+
+        self::assertSame(
+            ['path' => ['computed_metrics', 'health', 'nope'], 'written' => 'nope', 'accepted' => ['complexity', 'cohesion'], 'closed' => true],
+            json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR)['position'],
+        );
+    }
+
+    /**
+     * The document has one shape whatever ended the run: a refusal with no
+     * position, the fallback and an internal error all carry `position: null`.
+     */
+    #[Test]
+    public function itCarriesANullPositionWhenTheRunEndedWithoutOne(): void
+    {
+        $presenter = $this->presenter();
+        $outputs = [self::terminalOutput(), self::terminalOutput(), self::terminalOutput()];
+
+        $presenter->refusal($outputs[0], 'json', ConfigurationRefusal::aboutResolvedInput('no position', 'paths'));
+        $presenter->fallbackRefusal($outputs[1], 'json', new RuntimeException('fallback'));
+        $presenter->internalError($outputs[2], 'json', new RuntimeException('defect'));
+
+        foreach ($outputs as $output) {
+            $envelope = json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR);
+            self::assertSame(['error', 'exit_code', 'position'], array_keys($envelope));
+            self::assertNull($envelope['position']);
+        }
+    }
+
+    /**
+     * The JSON envelope stays closed at its three keys: `present()` never
+     * appends the pointer to `writeEnvelope()`'s output.
      */
     #[Test]
     public function itKeepsTheDocumentationPointerOutOfTheJsonEnvelope(): void
@@ -321,10 +401,35 @@ final class RefusalPresenterTest extends TestCase
         $this->presenter()->refusal($output, 'json', $refusal);
 
         self::assertSame(
-            ['error', 'exit_code'],
+            ['error', 'exit_code', 'position'],
             array_keys(json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR)),
         );
         self::assertStringNotContainsString('qualimetrix.dev', $output->standardOutputContent());
+    }
+
+    /**
+     * Once a command has published its document on stdout, a second document
+     * there would leave neither parseable: what ends the run is a sentence on
+     * stderr, whatever the format, with the code of its kind.
+     */
+    #[Test]
+    public function itKeepsStdoutToThePublishedReportWhenTheRunEndsAfterIt(): void
+    {
+        $refused = self::terminalOutput();
+        $failed = self::terminalOutput();
+
+        $refusalExit = $this->presenter()->refusalAfterPublishedReport(
+            $refused,
+            ConfigurationRefusal::aboutCommandLineInput('--profile', 'Failed to write the export'),
+        );
+        $failureExit = $this->presenter()->internalErrorAfterPublishedReport($failed, new RuntimeException('boom'));
+
+        self::assertSame(3, $refusalExit);
+        self::assertSame('', $refused->standardOutputContent());
+        self::assertStringContainsString('Configuration error: Failed to write the export', $refused->errorOutputContent());
+        self::assertSame(1, $failureExit);
+        self::assertSame('', $failed->standardOutputContent());
+        self::assertStringContainsString('Internal error: boom', $failed->errorOutputContent());
     }
 
     #[Test]

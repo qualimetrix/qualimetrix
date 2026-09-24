@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Coupling;
 
 use LogicException;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
@@ -21,7 +20,6 @@ use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
-use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
@@ -32,11 +30,12 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * - Medium CBO (14-19): acceptable (warning)
  * - High CBO (>=20): tightly coupled, hard to isolate (error)
  *
- * Besides the published `coupling.cbo` (or `coupling.cbo-app` under
- * `scope: application`) value, also reads `coupling.ca` and `coupling.ce`
- * to describe the coupling direction in the message/recommendation, plus
- * `coupling.ce-framework` to report the excluded-framework-classes count
- * under the application scope.
+ * A class is judged on the published `coupling.cbo` (or `coupling.cbo-app`
+ * under `scope: application`), a namespace on `coupling.cbo-own`. Besides it
+ * the rule reads the Ca and Ce of the same scope (`coupling.ca`/`coupling.ce`,
+ * or their `-own` pair) to describe the coupling direction in the
+ * message/recommendation, plus `coupling.ce-framework` to report the
+ * excluded-framework-classes count under the application scope.
  *
  * @qmx-threshold coupling.cbo 22 -- Raw CBO 21: this hierarchical rule's own dependencies plus
  *                the per-rule channel, shape and judged-metric declarations every producer must
@@ -133,6 +132,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
                 JudgedMetrics::of(
                     MetricName::COUPLING_CBO,
                     MetricName::COUPLING_CBO_APP,
+                    MetricName::COUPLING_CBO_OWN,
                 ),
                 SymbolLevel::Class_,
                 SymbolLevel::Namespace_,
@@ -183,11 +183,25 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             $subject,
             $options,
             $context,
-            ['applicationScope' => $applicationScope, 'frameworkCe' => $frameworkCe],
+            ['applicationScope' => $applicationScope, 'frameworkCe' => $frameworkCe, 'namespaceLevel' => false],
         );
     }
 
     /**
+     * Judges every namespace on the coupling of its own declarations,
+     * `coupling.cbo-own`: the population a project fold reads, where each
+     * declaration belongs to exactly one namespace. The published
+     * `coupling.cbo` of a namespace is taken over its whole subtree, grows with
+     * it, and is not judged — nor is its region, which is the namespace alone
+     * or its subtree depending on which sub-namespaces the run holds. The own
+     * scope's boundary does not move with that, so which namespaces are judged
+     * does not depend on the run's paths. The value judged does, as Ca,
+     * instability and class rank do: it counts the dependencies of the code
+     * analysed, so a run that leaves out a dependent — reported as a narrowed
+     * project scope — can judge a lower value.
+     * `min_class_count` counts the namespace's own classes, for the same
+     * reason.
+     *
      * @return list<Finding>
      */
     private function analyzeNamespaceLevel(AnalysisContext $context): array
@@ -211,8 +225,8 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     {
         $subject = $info->subject ?? MetricSubject::aggregate($info->symbolPath);
         $metrics = $context->metrics->get($info->symbolPath);
-        $classCount = (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0);
-        $cbo = $metrics->get(MetricName::COUPLING_CBO);
+        $classCount = (int) ($metrics->get(MetricName::SIZE_CLASS_COUNT) ?? 0);
+        $cbo = $metrics->get(MetricName::COUPLING_CBO_OWN);
         if ($classCount < $options->minClassCount || $cbo === null) {
             return null;
         }
@@ -223,14 +237,14 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             $subject,
             $options,
             $context,
-            ['applicationScope' => false, 'frameworkCe' => null],
+            ['applicationScope' => false, 'frameworkCe' => null, 'namespaceLevel' => true],
         );
     }
 
     /**
      * Checks CBO threshold for a symbol.
      *
-     * @param array{applicationScope: bool, frameworkCe: ?int} $presentation
+     * @param array{applicationScope: bool, frameworkCe: ?int, namespaceLevel: bool} $presentation
      */
     private function checkCbo(
         int $cbo,
@@ -243,8 +257,9 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         /** @var ClassCboOptions|NamespaceCboOptions $options */
         $options = $this->getEffectiveOptions($context, $options, $subject);
         $metrics = $context->metrics->get($subject->toSymbolPath());
-        $ca = (int) $metrics->require(MetricName::COUPLING_CA);
-        $ce = (int) $metrics->require(MetricName::COUPLING_CE);
+        // A namespace is judged on its own scope, so its direction is read there too.
+        $ca = (int) $metrics->require($presentation['namespaceLevel'] ? MetricName::COUPLING_CA_OWN : MetricName::COUPLING_CA);
+        $ce = (int) $metrics->require($presentation['namespaceLevel'] ? MetricName::COUPLING_CE_OWN : MetricName::COUPLING_CE);
 
         $severity = $options->getSeverity($cbo);
         if ($severity === null) {
@@ -252,6 +267,9 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         }
 
         $threshold = $severity === Severity::Error ? $options->error : $options->warning;
+        // Namespace CBO counts namespaces while its Ca and Ce count classes;
+        // without the unit the union reads smaller than its own parts.
+        $cboText = $presentation['namespaceLevel'] ? $cbo . ' namespaces' : (string) $cbo;
 
         return new Finding(
             location: new Location($symbolInfo->file, $symbolInfo->line),
@@ -259,157 +277,12 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             symbolPath: $symbolInfo->symbolPath,
             ruleName: $this->getName(),
             code: self::NAME,
-            message: $this->buildMessage($cbo, $ca, $ce, $threshold, $presentation['applicationScope'], $presentation['frameworkCe']),
+            message: CboFindingText::message($cboText, $ca, $ce, $threshold, $presentation['applicationScope'], $presentation['frameworkCe']),
             severity: $severity,
             metricValue: (float) $cbo,
-            recommendation: $this->buildRecommendation($cbo, $ca, $ce, $threshold, $symbolInfo->symbolPath, $context, $presentation['applicationScope']),
+            recommendation: CboFindingText::recommendation($cboText, $ca, $ce, $threshold, $symbolInfo->symbolPath, $context, $presentation),
             threshold: $threshold,
         );
-    }
-
-    /**
-     * Determines coupling direction and builds a direction-aware finding message.
-     *
-     * When $isAppScope is true, labels the metric as "CBO_APP" and appends
-     * framework exclusion count so users understand the decomposition.
-     */
-    private function buildMessage(int $cbo, int $ca, int $ce, int $threshold, bool $isAppScope = false, ?int $ceFramework = null): string
-    {
-        $direction = $this->getCouplingDirection($ca, $ce);
-        $label = $isAppScope ? 'CBO_APP' : 'CBO';
-        $frameworkSuffix = $isAppScope && $ceFramework !== null
-            ? \sprintf(', framework: %d classes excluded', $ceFramework)
-            : '';
-
-        return match ($direction) {
-            'efferent' => \sprintf(
-                'Efferent coupling too high: depends on %d classes (%s: %d, threshold: %d%s)',
-                $ce,
-                $label,
-                $cbo,
-                $threshold,
-                $frameworkSuffix,
-            ),
-            'afferent' => \sprintf(
-                'Afferent coupling too high: %d classes depend on this (%s: %d, threshold: %d%s)',
-                $ca,
-                $label,
-                $cbo,
-                $threshold,
-                $frameworkSuffix,
-            ),
-            default => \sprintf(
-                'Coupling too high: %d inbound + %d outbound (%s: %d, threshold: %d%s)',
-                $ca,
-                $ce,
-                $label,
-                $cbo,
-                $threshold,
-                $frameworkSuffix,
-            ),
-        };
-    }
-
-    /**
-     * Builds a direction-aware recommendation, optionally including top dependencies.
-     */
-    private function buildRecommendation(
-        int $cbo,
-        int $ca,
-        int $ce,
-        int $threshold,
-        ?SymbolPath $symbolPath,
-        AnalysisContext $context,
-        bool $isAppScope,
-    ): string {
-        $direction = $this->getCouplingDirection($ca, $ce);
-        $label = $isAppScope ? 'CBO_APP' : 'CBO';
-
-        $base = match ($direction) {
-            'efferent' => \sprintf(
-                '%s: %d (threshold: %d) — extract dependencies to reduce outbound coupling',
-                $label,
-                $cbo,
-                $threshold,
-            ),
-            'afferent' => \sprintf(
-                '%s: %d (threshold: %d) — this class is a coupling magnet, consider if it is a healthy abstraction point',
-                $label,
-                $cbo,
-                $threshold,
-            ),
-            default => \sprintf(
-                '%s: %d (threshold: %d) — reduce both inbound and outbound coupling',
-                $label,
-                $cbo,
-                $threshold,
-            ),
-        };
-
-        $topDeps = $this->getTopDependencies($symbolPath, $context);
-        if ($topDeps !== '') {
-            return $topDeps . '. ' . $base;
-        }
-
-        return $base;
-    }
-
-    /**
-     * Returns a formatted string of top-5 efferent dependencies for a class, sorted by occurrence count.
-     *
-     * Only works for class-level SymbolPaths when the dependency graph is available.
-     */
-    private function getTopDependencies(?SymbolPath $symbolPath, AnalysisContext $context): string
-    {
-        $dependencyGraph = $context->dependencyGraph;
-        if ($symbolPath === null || $dependencyGraph === null) {
-            return '';
-        }
-
-        if ($symbolPath->getType() !== SymbolType::Class_) {
-            return '';
-        }
-
-        $dependencies = $dependencyGraph->getClassDependencies($symbolPath);
-        if ($dependencies === []) {
-            return '';
-        }
-
-        // Count occurrences per target class (a class may be referenced multiple times)
-        $counts = [];
-        $targetNames = [];
-        foreach ($dependencies as $dep) {
-            $targetKey = $dep->targetLogical()->toCanonical();
-            $counts[$targetKey] = ($counts[$targetKey] ?? 0) + 1;
-            $targetNames[$targetKey] = $dep->targetLogical()->type ?? $targetKey;
-        }
-
-        // Sort by occurrence count descending
-        arsort($counts);
-
-        $topKeys = \array_slice(array_keys($counts), 0, 5);
-        $topNames = array_map(static fn(string $targetKey): string => $targetNames[$targetKey], $topKeys);
-
-        return 'Top dependencies: ' . implode(', ', $topNames);
-    }
-
-    /**
-     * Determines coupling direction: 'afferent', 'efferent', or 'balanced'.
-     *
-     * Uses a 2:1 ratio threshold: a direction dominates when it accounts
-     * for more than twice the other direction.
-     */
-    private function getCouplingDirection(int $ca, int $ce): string
-    {
-        if ($ca > $ce * 2) {
-            return 'afferent';
-        }
-
-        if ($ce > $ca * 2) {
-            return 'efferent';
-        }
-
-        return 'balanced';
     }
 
     /**

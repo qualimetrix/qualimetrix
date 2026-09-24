@@ -53,10 +53,24 @@ architecture:
       patterns: ['Corpus\Layers\AnonMember\**']
       exclude:
         extends: ['Corpus\Layers\GraphBase\Marker']
+    # The fixture for architecture.doubted-assignment: this layer's own
+    # exclude: cannot be answered about Gateway (its interface chain leaves
+    # the corpus at Corpus\Outside\Vendorish\Port), and graph-extends,
+    # declared before outside, cannot be answered about the never-analysed
+    # Port and Base. No inheritance chain leaves the corpus, so the run
+    # writes no DIT warning to stderr.
+    - name: doubt
+      patterns: ['Corpus\Layers\Doubt\**']
+      exclude:
+        implements: ['Corpus\Layers\GraphBase\Marker']
+    - name: outside
+      patterns: ['Corpus\Outside\**']
   allow:
     controller: []
     repository: []
     extra-broad: []
     graph-extends: []
     anon-member: []
+    doubt: [outside]
+    outside: []
   coverage-gap: error

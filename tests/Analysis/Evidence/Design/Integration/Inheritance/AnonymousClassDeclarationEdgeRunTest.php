@@ -165,15 +165,16 @@ final class AnonymousClassDeclarationEdgeRunTest extends TestCase
     }
 
     /**
-     * A second, independent witness for the same invariant: the edge to a PHP
-     * builtin parent survives with coupling.ce = 1, and design.dit stays at
-     * the corrected value even though the parent is never a project class.
+     * A second, independent witness for the same invariant: design.dit stays
+     * at the corrected value even though the parent is never a project class.
+     * The edge to a PHP builtin parent counts toward no coupling, as a PHP
+     * type named any other way does not, so coupling.ce is 0.
      */
     #[Test]
     public function itKeepsTheBuiltinParentEdgeWhileDitStaysCorrected(): void
     {
         self::assertSame(0, self::metricOf('class', 'Bi\\Factory', 'design.dit'), 'Bi\\Factory.design.dit');
-        self::assertSame(1, self::metricOf('class', 'Bi\\Factory', 'coupling.ce'), 'Bi\\Factory.coupling.ce');
+        self::assertSame(0, self::metricOf('class', 'Bi\\Factory', 'coupling.ce'), 'Bi\\Factory.coupling.ce');
     }
 
     private static function metricOf(string $type, string $name, string $metric): int|float|null

@@ -8,6 +8,11 @@ The analysis evidence, occurrence decoding, and rules are co-located in the
 `Analysis\Evidence\CodeSmell` capability. Rule IDs and configuration remain
 unchanged.
 
+Function names are matched as they are written in the call. Imports are not
+resolved, so a function called through an alias (`use function var_dump as vd;
+vd($x);`) is not recognized by the rules that look for a function by name
+(`debug-code`, `count-in-loop`).
+
 ---
 
 ## Boolean Arguments
@@ -19,6 +24,8 @@ unchanged.
 ### What it measures
 
 Detects methods that accept `bool` parameters. A boolean argument usually means the method does two different things depending on the flag, which violates the Single Responsibility Principle.
+
+The evidence is the declared type: `bool`, `?bool`, or a union containing `bool`. An untyped parameter is not flagged, even with a boolean default (`$overwrite = false`) or a `@param bool` PHPDoc.
 
 Promoted constructor properties (`public function __construct(public bool $x)`) are not flagged by default: a promoted parameter declares a field, not a behavior switch, so "split into two methods" doesn't apply to it. Set `flag_promoted_properties: true` to flag them too.
 
@@ -148,7 +155,9 @@ foreach ($items as $item) {
 
 Detects debugging functions left in production code: `var_dump()`, `print_r()`, `var_export()`, `dd()`, `dump()`, `debug_print_backtrace()`, and `debug_zval_dump()`.
 
-Calls in return mode (`var_export($value, true)`) and calls inside debug API methods (`dump()`, `dd()`, `debug()`, `dumpRawSql()`, `dumpSql()`, `debugInfo()`, `__debugInfo()`) are not flagged.
+Calls in return mode (`var_export($value, true)`, `print_r($value, return: true)`) and calls inside debug API methods (`dump()`, `dd()`, `debug()`, `dumpRawSql()`, `dumpSql()`, `debugInfo()`, `__debugInfo()`) are not flagged. A positional `true` means return mode only for `print_r()` and `var_export()`, the two functions that have a `$return` parameter: `var_dump($value, true)`, `dd($value, true)` and `dump($value, true)` print both arguments and are flagged.
+
+`debug_backtrace()` is not flagged: it returns the trace instead of printing it and is a common part of error handling.
 
 <!-- llms:skip-end -->
 
@@ -193,6 +202,22 @@ Remove all debug statements before committing. If you need to inspect data:
 
 Detects `catch` blocks that are completely empty -- they catch an exception and do absolutely nothing with it. This silently swallows errors, making bugs extremely hard to diagnose.
 
+A catch that holds only a comment is still empty: the comment explains the silence but does not end it.
+
+**Chain of attempts.** One shape is not flagged: a `foreach` that tries each item until one succeeds. The `try` must be a direct statement of the loop body and must be able to end the search on success: it holds a `return`, or a `continue` that skips statements following the `try` -- at its top level or inside its `if` branches:
+
+```php
+foreach ($this->resolvers as $resolver) {
+    try {
+        return $resolver->resolve($key);  // success ends the search
+    } catch (ResolverException $e) {
+        // failure means "try the next resolver"
+    }
+}
+```
+
+A `try` nested deeper in the loop body, one inside a closure, or one whose only way out is a `continue` with nothing after the `try` (so it skips nothing) is flagged as usual.
+
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
@@ -233,6 +258,8 @@ try {
     ```
 
 3. **Handle the error explicitly** if it is expected and recoverable.
+
+4. **Suppress it with a reason** if ignoring the exception is intentional: a comment in the `catch` does not clear the finding, `@qmx-ignore code-smell.empty-catch -- <reason>` does.
 
 ---
 
@@ -351,7 +378,7 @@ eval('$config = ' . var_export($data, true) . ';');
 <!-- llms:skip-begin -->
 ### What it measures
 
-Detects use of `exit()` and `die()`. These functions terminate the entire PHP process immediately, which:
+Detects use of `exit()` and `die()`, including the fully qualified function-call spelling `\exit()` / `\die()` that PHP 8.4 introduced. These functions terminate the entire PHP process immediately, which:
 
 - Prevents proper error handling
 - Makes the code untestable (PHPUnit cannot catch `exit`)
@@ -461,7 +488,7 @@ Use loops, functions, early returns, or exceptions -- they all express intent mo
 <!-- llms:skip-begin -->
 ### What it measures
 
-Detects direct access to PHP superglobal variables: `$_GET`, `$_POST`, `$_REQUEST`, `$_SERVER`, `$_SESSION`, `$_COOKIE`, `$_FILES`, `$_ENV`.
+Detects direct access to PHP superglobal variables: `$_GET`, `$_POST`, `$_REQUEST`, `$_SERVER`, `$_SESSION`, `$_COOKIE`, `$_FILES`, `$_ENV`, and `$GLOBALS`. Only the plain variable name is read: a variable-variable spelling (`${'_GET'}`, `$$name`) is not detected.
 
 Direct superglobal access creates hidden dependencies on the global state, making code hard to test and unpredictable.
 
@@ -748,16 +775,20 @@ bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:vo_threshold=12"
 <!-- llms:skip-begin -->
 ### What it measures
 
-Detects identical sub-expressions that indicate copy-paste errors or logic bugs. The rule catches four patterns:
+Detects identical sub-expressions that indicate copy-paste errors or logic bugs. The rule catches five patterns:
 
-1. **Identical operands in binary operations** -- the same expression on both sides of an operator (e.g., `$a === $a`, `$a - $a`, `$a && $a`).
-2. **Duplicate conditions in if/elseif chains** -- the same condition checked more than once, meaning the second branch is dead code.
-3. **Identical ternary branches** -- a ternary where the "true" and "false" branches are the same, making the condition pointless.
-4. **Duplicate match arm conditions** -- repeated conditions in a `match` expression, where only the first arm will ever execute.
+1. **Identical operands in binary operations** (`identical_operands`) -- the same expression on both sides of an operator (e.g., `$a === $a`, `$a - $a`, `$a && $a`).
+2. **Duplicate conditions in if/elseif chains** (`duplicate_condition`) -- the same condition checked more than once, meaning the second branch is dead code. An `else` that holds nothing but another `if` (`else if`, or `else { if (...) }`) continues the chain.
+3. **Identical ternary branches** (`identical_ternary`) -- a ternary where the "true" and "false" branches are the same, making the condition pointless.
+4. **Duplicate match arm conditions** (`duplicate_match_arm`) -- repeated conditions in a `match` expression, where only the first arm will ever execute.
+5. **Duplicate switch cases** (`duplicate_switch_case`) -- the same `case` value repeated in a `switch`, where only the first case is ever entered.
 
-Operators with legitimate identical-operand use cases are not flagged: `+`, `*`, `.`, `&`, `|`, `<<`, `>>`.
+Operators with legitimate identical-operand use cases are not flagged: `+`, `*`, `**`, `.`, `&`, `|`, `<<`, `>>`.
 
-Expressions with side effects (function calls, method calls, etc.) are excluded since consecutive calls may return different results.
+Side effects are treated differently per pattern:
+
+- **Operands and ternary branches** with side effects (function calls, method calls, assignments, increments, etc.) are excluded, since two evaluations may produce different results.
+- **Conditions** (patterns 2, 4 and 5) are compared including calls: a repeated call in a condition chain is almost always a copy-paste error, like the `$order->isPaid()` example below. A chain that deliberately repeats a side-effecting call (`$stack->pop()`) is reported and needs an inline suppression with a reason.
 
 <!-- llms:skip-end -->
 
@@ -832,6 +863,8 @@ These are almost always bugs -- inspect each occurrence and fix the intended log
 
 4. **Duplicate match arms:** Remove the duplicate or fix the condition value.
 
+5. **Duplicate switch cases:** Remove the unreachable `case` or fix its value.
+
 ---
 
 <!-- llms:skip-end -->
@@ -850,11 +883,13 @@ Detects private methods, properties, and constants that are declared but never r
 
 The rule is smart about edge cases:
 
-- **Magic method awareness:** classes with `__call`/`__callStatic` skip method checks; classes with `__get`/`__set` skip property checks
+- **Magic method awareness:** classes with `__call`/`__callStatic` skip method checks; classes with `__get`/`__set` skip property checks. The magic method counts whatever its visibility and letter case, and also when a trait used from the same file declares it
 - **Constructor promotion:** promoted properties are tracked correctly
 - **Anonymous classes:** private members in anonymous classes are isolated and don't leak to the parent class
-- **Excluded types:** interfaces, traits, and enums are not analyzed
-- **Access patterns:** recognizes `$this->method()`, `self::method()`, `static::method()`, property access, and constant access
+- **Analyzed types:** classes and enums; interfaces and traits are not analyzed
+- **Access patterns:** recognizes `$this->method()`, `self::method()`, `static::method()`, property access, and constant access. Method names are matched case-insensitively, as PHP resolves them; property and constant names are case-sensitive
+- **Callables:** a literal callable array counts as a use of the method: `[$this, 'method']`, `[self::class, 'method']`, `[static::class, 'method']`, `[__CLASS__, 'method']`, also inside `Closure::fromCallable()` or `array_map()`. A method named by a variable (`[$this, $name]`, `$this->$name()`) or by a string such as `'self::method'` is not recognized, and such a method is reported as unused
+- **Recursion:** a private method that is only called from its own body is reported as unused; a callable array naming the method inside its own body is a self-reference too
 - **Trait resolution:** calls to methods defined in traits used by the same class (in the same file) are recognized, reducing false positives
 
 <!-- llms:skip-end -->
@@ -904,6 +939,10 @@ class OrderService
 ### What it measures
 
 Detects code that can never be executed because it appears after a terminal statement (`return`, `throw`, `exit`/`die`, `continue`, `break`, `goto`). Dead code adds noise, confuses readers, and may indicate a logic error.
+
+Every statement list of a method, function, closure or property hook is checked on its own: the body itself and each block nested in `if`/`elseif`/`else`, loops, `try`/`catch`/`finally`, `switch` cases and plain blocks. A dead statement is counted once, without looking inside it, and a `goto` label makes the statements after it reachable again. A `break` placed after a `return` in a `switch` case is unreachable too and is counted.
+
+Terminality is decided per statement list, without flow analysis across branches: code after an `if`/`else` whose every branch returns is not reported.
 
 <!-- llms:skip-end -->
 

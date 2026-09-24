@@ -22,33 +22,60 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
  * stays reported, since a false alarm costs a configuration review while a
  * missed shadow costs a layer that silently owns nothing.
  *
- * @internal Consumed by {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector}.
+ * A layer repeating the pattern of one that does not take every class it
+ * names ({@see MembershipSpec::ownsItsPatterns()}) is not reported either: it
+ * is the recipient of what that layer leaves over — a carve-out behind an
+ * `exclude:`, or the residue of a `match: all` layer — and being beaten on the
+ * rest is what it was declared for. Layer loading accepts exactly these
+ * repetitions by the same predicate, so no configuration it loads is reported
+ * as a shadow on every run for the repetition alone. Whether the recipient
+ * gets anything is `architecture.unreachable-layer`'s question.
+ *
+ * A shadow is drawn only between the matches the run established, which
+ * {@see LayerRegistry::establishedMatches()} decides: a match whose
+ * `exclude:` went unanswered may still lose the class, so it neither shadows
+ * nor is shadowed — that is a doubt about the assignment, and
+ * `architecture.doubted-assignment` publishes it. The first established match
+ * shadows every later one whatever those clauses answer, even when it is not
+ * the assigned layer itself.
+ *
+ * @internal Consumed by {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector}
+ *           and {@see \Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy::inspect()}.
  */
 final class LayerShadowing
 {
     /**
-     * @param list<LayerMatch> $matches As returned by {@see LayerRegistry::resolveAll()}:
-     *                                  declaration order, first entry assigned.
+     * @param list<LayerMatch> $established As returned by {@see LayerRegistry::establishedMatches()}:
+     *                                      declaration order, the first entry shadowing the rest.
      *
      * @return list<LayerMatch> The shadowed matches that indicate a declaration
      *                          defect, in declaration order.
      */
-    public static function reportableShadows(array $matches): array
+    public static function reportableShadows(array $established): array
     {
-        $assigned = array_shift($matches);
-        if ($assigned === null) {
+        $shadowing = array_shift($established);
+        if ($shadowing === null) {
             return [];
         }
 
-        $assignedCriterion = $assigned->primaryCriterion();
+        $shadowingCriterion = $shadowing->primaryCriterion();
 
         return array_values(array_filter(
-            $matches,
-            static fn(LayerMatch $shadowed): bool => !self::isStrictlyMoreSpecific(
-                $assignedCriterion,
-                $shadowed->primaryCriterion(),
-            ),
+            $established,
+            static fn(LayerMatch $shadowed): bool => !self::isStrictlyMoreSpecific($shadowingCriterion, $shadowed->primaryCriterion())
+                && !self::receivesWhatItLeaves($shadowing, $shadowed),
         ));
+    }
+
+    private static function receivesWhatItLeaves(LayerMatch $shadowing, LayerMatch $shadowed): bool
+    {
+        $left = $shadowing->primaryCriterion();
+        $taken = $shadowed->primaryCriterion();
+
+        return !$shadowing->ownsItsPatterns
+            && $left->kind === MatchedCriterionKind::Pattern
+            && $taken->kind === MatchedCriterionKind::Pattern
+            && MembershipSpec::patternIdentity($left->value) === MembershipSpec::patternIdentity($taken->value);
     }
 
     private static function isStrictlyMoreSpecific(MatchedCriterion $assigned, MatchedCriterion $shadowed): bool

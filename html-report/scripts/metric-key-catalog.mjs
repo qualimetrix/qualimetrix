@@ -2,8 +2,7 @@
 //
 // Used by tests/metric-key-catalog.test.js (regression guard, run by
 // `vitest`), the only remaining consumer: it imports loadCatalog(),
-// isCatalogMember() and isFamilyShaped() and does its own AST walk over
-// src/*.js. The literal-collection functions that used to live here
+// isKeyShaped() and staleLiterals() and does its own AST walk over src/. The literal-collection functions that used to live here
 // (collectCodeLiterals, collectCommentLiterals, scanFile, collectAll, and the
 // listJsFiles/TEMPLATE_ROOT/SRC_DIR/TESTS_DIR plumbing that fed them) had
 // exactly one caller, scripts/collect-metric-keys.mjs, and were deleted with
@@ -63,6 +62,19 @@ export function loadCatalog() {
     baseKeys.add(key);
   }
 
+  // Each source is read by a pattern, not parsed: a pattern that stops
+  // matching would otherwise hand back an empty set and every literal would be
+  // judged against nothing. Refuse that here, per source.
+  for (const [source, found] of [
+    [METRIC_NAME_PHP, baseKeys.size - healthKeys.size],
+    [AGGREGATION_STRATEGY_PHP, suffixes.size],
+    [HEALTH_DECOMPOSITION_CATALOG_PHP, healthKeys.size],
+  ]) {
+    if (found <= 0) {
+      throw new Error(`metric-key catalog: no key read from ${source}; its declaration shape changed`);
+    }
+  }
+
   const familyPrefixes = new Set([...baseKeys].map((key) => key.split('.')[0]));
 
   return { baseKeys, suffixes, familyPrefixes };
@@ -85,18 +97,38 @@ export function isCatalogMember(literal, catalog) {
   return catalog.suffixes.has(suffix) && catalog.baseKeys.has(base);
 }
 
-const FAMILY_SHAPED = /^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+$/;
+const KEY_SHAPED = /^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+$/;
 
 /**
- * True when `literal` has the `family.rest` shape and `family` is a known
- * catalog family prefix (complexity, coupling, size, health, ...). This is
- * the population/guard net: wide enough to catch a hand-typed typo of a real
- * key, narrow enough that unrelated dotted strings (CSS classes, event
- * names) are not swept in.
+ * True when `literal` has the dotted `family.rest` shape of a metric key.
+ *
+ * The population deliberately does not consult the catalog: a population
+ * drawn from the catalog's own families shrinks exactly when a family is
+ * renamed on the PHP side, and the stale literals it should catch fall out of
+ * it instead of failing. A dotted literal that is not a metric key at all has
+ * to be named in the caller's allow-list rather than skipped by shape.
  */
-export function isFamilyShaped(literal, catalog) {
-  if (!FAMILY_SHAPED.test(literal)) {
-    return false;
-  }
-  return catalog.familyPrefixes.has(literal.split('.')[0]);
+export function isKeyShaped(literal) {
+  return KEY_SHAPED.test(literal);
+}
+
+/**
+ * The key-shaped literals that are not catalog keys, each with the reason:
+ * an unknown family (renamed or removed on the PHP side, or a dotted literal
+ * that needs allow-listing) or an unknown key inside a known family.
+ *
+ * @param {{key: string}[]} literals
+ * @param {{baseKeys: Set<string>, suffixes: Set<string>, familyPrefixes: Set<string>}} catalog
+ * @param {Set<string>} [allowed] dotted literals that are not metric keys
+ * @returns {{key: string, reason: string}[]}
+ */
+export function staleLiterals(literals, catalog, allowed = new Set()) {
+  return literals
+    .filter((literal) => !allowed.has(literal.key) && !isCatalogMember(literal.key, catalog))
+    .map((literal) => ({
+      ...literal,
+      reason: catalog.familyPrefixes.has(literal.key.split('.')[0])
+        ? 'not a key of its family'
+        : `family '${literal.key.split('.')[0]}' is not in the catalog`,
+    }));
 }

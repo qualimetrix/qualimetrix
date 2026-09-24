@@ -77,7 +77,7 @@ final class ChannelExclusionKeySpellingTest extends TestCase
     {
         $tester = $this->runCheck($this->config(''));
 
-        self::assertSame(2, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertSame(0, $tester->getStatusCode(), $tester->getErrorOutput());
         self::assertContains('size.class-count', $this->channelsOf($tester));
     }
 
@@ -86,7 +86,7 @@ final class ChannelExclusionKeySpellingTest extends TestCase
     {
         $tester = $this->runCheck($this->config("      size.class-count:\n        - subtree: Fx\\Deep"));
 
-        self::assertSame(2, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertSame(0, $tester->getStatusCode(), $tester->getErrorOutput());
         self::assertNotContains('size.class-count', $this->channelsOf($tester));
     }
 
@@ -95,7 +95,7 @@ final class ChannelExclusionKeySpellingTest extends TestCase
     {
         $tester = $this->runCheck($this->config("      size.class-count:namespace:\n        - subtree: Fx\\Deep"));
 
-        self::assertSame(2, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertSame(0, $tester->getStatusCode(), $tester->getErrorOutput());
         self::assertNotContains('size.class-count', $this->channelsOf($tester));
     }
 
@@ -113,7 +113,7 @@ final class ChannelExclusionKeySpellingTest extends TestCase
             owner: 'code-smell.boolean-argument',
         ));
 
-        self::assertSame(2, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertSame(0, $tester->getStatusCode(), $tester->getErrorOutput());
         self::assertContains('code-smell.boolean-argument', $this->channelsOf($tester));
     }
 
@@ -126,7 +126,7 @@ final class ChannelExclusionKeySpellingTest extends TestCase
             owner: 'code-smell.boolean-argument',
         ));
 
-        self::assertSame(2, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertSame(0, $tester->getStatusCode(), $tester->getErrorOutput());
         self::assertContains('code-smell.boolean-argument', $this->channelsOf($tester));
     }
 
@@ -153,10 +153,10 @@ final class ChannelExclusionKeySpellingTest extends TestCase
             disableComputed: false,
         );
 
-        self::assertSame(2, $withoutKey->getStatusCode(), $withoutKey->getErrorOutput());
+        self::assertSame(0, $withoutKey->getStatusCode(), $withoutKey->getErrorOutput());
         self::assertContains('computed.my-score', $this->channelsOf($withoutKey));
 
-        self::assertSame(2, $withKey->getStatusCode(), $withKey->getErrorOutput());
+        self::assertSame(0, $withKey->getStatusCode(), $withKey->getErrorOutput());
         self::assertNotContains('computed.my-score', $this->channelsOf($withKey));
     }
 

@@ -18,6 +18,10 @@ namespace Qualimetrix\Analysis\Finding\Contract;
  * declares such a field ({@see \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory}), and
  * — unlike the global filter — is not exempted for `architecture.*` rules. Without
  * this VO, that suppression was invisible: nothing counted it, nothing reported it.
+ *
+ * A finding removed by per-finding channel selection is not counted here, by
+ * decision: see {@see RuleExecutionResult} for why selection is not a
+ * suppression and where a reader finds what it removed.
  */
 final readonly class RuleExclusionStats
 {

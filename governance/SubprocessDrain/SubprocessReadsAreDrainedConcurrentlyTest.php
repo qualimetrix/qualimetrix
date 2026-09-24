@@ -292,6 +292,11 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
         'tests/Infrastructure/Console/Support/PseudoTerminalRun.php:85' => 'A pty master reports EIO where a pipe '
             . 'reports EOF, which is a different read discipline rather than a caller of this one. Both streams are '
             . 'drained from one `stream_select` loop.',
+
+        'tests/Infrastructure/Console/Unit/ArtifactFileTest.php:548' => 'PHP source handed to `php -r`, so a '
+            . 'literal here and a real call in the parent it describes. That parent hands its own non-blocking '
+            . 'STDOUT to the child as a descriptor and opens no pipe, so it reads nothing; the test itself runs '
+            . 'the pipeline through the shared subprocess module.',
     ];
 
     /** @var list<array{path: string, line: int, name: string, spelled: string, kind: string}>|null */

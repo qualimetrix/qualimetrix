@@ -56,7 +56,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
         // Build reverse map (normalizedKey → originalKey) for user-facing error messages
         $keyMap = $this->buildRootKeyMap($content);
 
-        $normalized = $this->normalizeKeys($content);
+        $normalized = DocumentKeyNormalizer::normalize($content, $path);
 
         // Validate after key normalization so we only need camelCase allowed keys
         // (derived from ConfigSchema — single source of truth)
@@ -91,91 +91,6 @@ final class YamlConfigLoader implements ConfigLoaderInterface
         }
 
         return $map;
-    }
-
-    /**
-     * Normalizes the root-level config map using the per-section policy declared
-     * in {@see ConfigSchema::sectionPolicies()}.
-     *
-     * Each root key chooses one of three policies (see
-     * {@see SectionNormalizationPolicy}):
-     *
-     *  - {@code NORMALIZE_TO_CAMEL_CASE}: keys are camelCased at every depth.
-     *  - {@code PRESERVE_IMMEDIATE_CHILDREN}: level-1 keys are preserved
-     *    verbatim (user identifiers); level-2 and deeper resume normalization.
-     *  - {@code PRESERVE_SUBTREE}: every descendant key is preserved verbatim,
-     *    including scalar leaves at every depth — closes the leaf-mangling
-     *    bug class the previous opt-out model could not address.
-     *
-     * See [ADR 0009](../../../docs/adr/0009-yaml-loader-normalization-model.md).
-     *
-     * @param array<string|int, mixed> $config
-     *
-     * @return array<string, mixed>
-     */
-    private function normalizeKeys(array $config): array
-    {
-        $policies = ConfigSchema::sectionPolicies();
-        $result = [];
-
-        foreach ($config as $key => $value) {
-            $stringKey = (string) $key;
-            $normalizedRoot = ConfigKeySpelling::normalize($stringKey);
-
-            // Unregistered roots will be rejected by validateRootKeys() below;
-            // default them to NORMALIZE so we still produce a usable shape for
-            // the error path without throwing LogicException prematurely.
-            $policy = $policies[$normalizedRoot] ?? SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE;
-
-            $result[$normalizedRoot] = \is_array($value)
-                ? $this->applyPolicy($value, $policy, depth: 0)
-                : $value;
-        }
-
-        return $result;
-    }
-
-    /**
-     * Walks a sub-tree applying the section {@code $policy} according to
-     * {@code $depth}:
-     *
-     *  - {@code PRESERVE_SUBTREE}: preserve at every depth.
-     *  - {@code PRESERVE_IMMEDIATE_CHILDREN}: preserve at depth 0 (the
-     *    section root's children); resume normalization at depth >= 1.
-     *  - {@code NORMALIZE_TO_CAMEL_CASE}: never preserve.
-     *
-     * List items (integer keys) carry no user-facing snake_case; their keys
-     * pass through unchanged regardless of policy.
-     *
-     * Where a sub-array goes next is the policy's own answer
-     * ({@see SectionNormalizationPolicy::childPolicyFor()} and
-     * {@see SectionNormalizationPolicy::childDepthFor()}): an option declared
-     * identifier-keyed opens a fresh identifier boundary for its own children.
-     *
-     * @param array<string|int, mixed> $config
-     *
-     * @return array<string|int, mixed>
-     */
-    private function applyPolicy(array $config, SectionNormalizationPolicy $policy, int $depth): array
-    {
-        $preserveKeysHere = $policy === SectionNormalizationPolicy::PRESERVE_SUBTREE
-            || ($policy === SectionNormalizationPolicy::PRESERVE_IMMEDIATE_CHILDREN && $depth === 0);
-
-        $result = [];
-
-        foreach ($config as $key => $value) {
-            $normalizedKey = \is_int($key) ? $key : ConfigKeySpelling::normalize($key);
-            $newKey = \is_int($key) || $preserveKeysHere ? $key : $normalizedKey;
-            $result[$newKey] = \is_array($value)
-                ? $this->applyPolicy($value, ...$policy->descentFor(
-                    $normalizedKey,
-                    ConfigSchema::identifierKeyedOptions(),
-                    $depth,
-                ))
-                : $value;
-        }
-
-        return $result;
     }
 
     /**
@@ -222,16 +137,10 @@ final class YamlConfigLoader implements ConfigLoaderInterface
 
         RetiredSuppressionOptions::refuseRootKey($unknownKeys, $path, $keyMap);
 
-        // Build allowed keys in original format (snake_case) for suggestions
-        $allowedOriginal = array_map(
-            static fn(string $camelKey): string => strtolower((string) preg_replace('/[A-Z]/', '_$0', $camelKey)),
-            $allowedRootKeys,
-        );
-
         $messages = [];
         foreach ($unknownKeys as $key) {
             $original = $this->originalKey($key, $keyMap);
-            $suggestion = self::suggestSimilarKey($original, $allowedOriginal);
+            $suggestion = self::suggestSimilarKey($original, self::spelledLike($allowedRootKeys, $original));
             $messages[] = $suggestion !== null
                 ? \sprintf('"%s" (did you mean "%s"?)', $original, $suggestion)
                 : \sprintf('"%s"', $original);
@@ -241,7 +150,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
 
         throw ConfigurationRefusal::atConfigFileKey(
             $path,
-            RefusedPosition::closed([$firstOriginal], $firstOriginal, $allowedRootKeys),
+            RefusedPosition::closed([$firstOriginal], $firstOriginal, self::spelledLike($allowedRootKeys, $firstOriginal)),
             \sprintf('Unknown configuration %s: %s', \count($messages) === 1 ? 'key' : 'keys', implode(', ', $messages)),
         );
     }
@@ -313,29 +222,28 @@ final class YamlConfigLoader implements ConfigLoaderInterface
             $messages = [];
             foreach ($unknownSubKeys as $subKey) {
                 $originalSubKey = $this->findOriginalSubKey($section, $subKey, $rawConfig);
-                // Suggest against original (snake_case) allowed keys for better UX
-                $originalAllowed = $this->getOriginalSectionSubKeys($section, $rawConfig);
-                $suggestion = self::suggestSimilarKey($originalSubKey, $originalAllowed);
+                $suggestion = self::suggestSimilarKey($originalSubKey, self::spelledLike($allowedSubKeys, $originalSubKey));
                 $messages[] = $suggestion !== null
                     ? \sprintf('"%s" (did you mean "%s"?)', $originalSubKey, $suggestion)
                     : \sprintf('"%s"', $originalSubKey);
             }
 
             $firstOriginalSubKey = $this->findOriginalSubKey($section, $unknownSubKeys[array_key_first($unknownSubKeys)], $rawConfig);
+            $allowedLikeAuthor = self::spelledLike($allowedSubKeys, $firstOriginalSubKey);
 
             throw ConfigurationRefusal::atConfigFileKey(
                 $path,
                 RefusedPosition::closed(
                     [$originalSection, $firstOriginalSubKey],
                     $firstOriginalSubKey,
-                    $this->getOriginalSectionSubKeys($section, $rawConfig),
+                    $allowedLikeAuthor,
                 ),
                 \sprintf(
                     'Unknown %s in "%s" section: %s. Allowed keys: %s',
                     \count($messages) === 1 ? 'key' : 'keys',
                     $originalSection,
                     implode(', ', $messages),
-                    implode(', ', $this->getOriginalSectionSubKeys($section, $rawConfig)),
+                    implode(', ', $allowedLikeAuthor),
                 ),
             );
         }
@@ -438,21 +346,19 @@ final class YamlConfigLoader implements ConfigLoaderInterface
     }
 
     /**
-     * Returns original (snake_case) sub-key names for a section from raw config,
-     * falling back to allowed camelCase names from schema.
+     * Normalized keys rewritten in the separator style of what the author
+     * wrote, so a suggestion or a list of allowed keys answers in their own
+     * spelling rather than in one they never typed.
      *
-     * @param array<string, mixed> $rawConfig
+     * @param list<string> $normalizedKeys
      *
      * @return list<string>
      */
-    private function getOriginalSectionSubKeys(string $normalizedSection, array $rawConfig): array
+    private static function spelledLike(array $normalizedKeys, string $authored): array
     {
-        $allowedSubKeys = ConfigSchema::allowedSectionSubKeys()[$normalizedSection] ?? [];
-
-        // Reverse-map camelCase to snake_case by examining what the user would write
         return array_map(
-            static fn(string $camelKey): string => strtolower((string) preg_replace('/[A-Z]/', '_$0', $camelKey)),
-            $allowedSubKeys,
+            static fn(string $key): string => ConfigKeySpelling::offerLike($key, $authored),
+            $normalizedKeys,
         );
     }
 

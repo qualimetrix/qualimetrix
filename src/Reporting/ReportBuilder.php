@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
 
 /**
@@ -28,6 +29,8 @@ final class ReportBuilder
     private ?NamespaceTree $namespaceTree = null;
     private ?ReportCoverage $coverage = null;
     private ?SuppressionComposition $suppressionComposition = null;
+    private ?OutOfScopeFindings $outOfScope = null;
+    private ?ReportProjectScope $projectScope = null;
 
     /**
      * Creates a new builder instance.
@@ -148,6 +151,25 @@ final class ReportBuilder
     }
 
     /**
+     * Records what a drill-down selection left out of the findings added here —
+     * see {@see Report::$outOfScope}.
+     */
+    public function outOfScope(OutOfScopeFindings $outOfScope): self
+    {
+        $this->outOfScope = $outOfScope;
+
+        return $this;
+    }
+
+    /** Records how the run's paths stood against the project — see {@see ReportProjectScope}. */
+    public function projectScope(ReportProjectScope $projectScope): self
+    {
+        $this->projectScope = $projectScope;
+
+        return $this;
+    }
+
+    /**
      * Builds the Report instance.
      */
     public function build(): Report
@@ -176,6 +198,8 @@ final class ReportBuilder
             infoCount: $infoCount,
             coverage: $this->coverage,
             suppressionComposition: $this->suppressionComposition,
+            outOfScope: $this->outOfScope,
+            projectScope: $this->projectScope,
         );
     }
 }

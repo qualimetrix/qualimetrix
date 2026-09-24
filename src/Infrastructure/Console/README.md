@@ -17,7 +17,7 @@ Console/
 ├── Application.php
 ├── CliSelectorDecoder.php       # explicit kind:value scalar → Core path/namespace pattern
 ├── CliOptionsParser.php
-├── MeasuredFindingSet.php         # The set a baseline measures (ADR 0017): the pipeline's findings before the baseline stage. Defined by config + source annotations; a CLI flag may narrow it, never widen it
+├── MeasuredFindingSet.php         # The set a baseline measures (ADR 0017): the pipeline's findings before the baseline stage. Defined by configuration alone — qmx.yaml, source annotations, and the config CLI flags baseline commands share with check (--preset, --disable-rule, --only-rule, --include-generated, --include-autoload-dev), which can narrow or widen it; check's own --suppress-path/--suppress-namespace flags never reach it, since baseline commands deliberately omit them
 ├── FindingFilterOrchestrator.php  # Builds Reporting projection options and renders stage diagnostics; policy and ordering remain in Reporting
 ├── RuntimeConfigurator.php
 ├── RuntimeLoggerConfigurator.php    # Creates, publishes, and returns the logger for one run
@@ -29,6 +29,9 @@ Console/
 ├── ChannelExclusionKeyValidator.php  # Whether one suppress_namespace_channels key can exclude anything
 ├── ChannelExclusionKeyHints.php      # What to say when it cannot
 ├── ResultPresenter.php
+├── ArtifactFile.php                 # A file an option names for an artifact (--output, --profile, graph --output): one model of the target for the precheck and the write
+├── CommandLineSpelling.php          # An option or argument value as argv would spell it; every valued door reads through it
+├── FormatOptionPairs.php            # The --format-opt door: every written pair judged, a repeated key and two spellings of one value refused
 ├── CheckCommandDefinition.php
 ├── FilteredInputDefinition.php      # InputDefinition that hides rule-specific options from --help
 ├── OutputHelper.php                 # Line-by-line output with flush (avoids PTY truncation)
@@ -68,12 +71,26 @@ has no logger, `GitScopeResolver`, or `ScopeWarningChecker` property.
 
 `CheckScopeResolver` owns the narrow scope seam. It resolves
 `GitScopeResolution` first, so invalid Git references fail before warnings or a
-payload are produced, and only then asks Run's `ProjectScopeCoverage` which
-production autoload roots the resolved paths leave uncovered. That one answer
-feeds both outputs of `ResolvedCheckScope`: `ScopeWarningChecker` renders it as
-the partial-autoload warning, and its emptiness is the `coversProjectScope`
-boolean `CheckCommand` puts on the scoped `RunConfiguration`, so a rule that
-must stay quiet on a slice and the warning about that slice cannot disagree.
+payload are produced, and only then asks Run's `ProjectScopeCoverage` which of
+the project's autoload targets — production, plus `autoload-dev` under
+`AutoloadDevPolicy::Include` — the resolved paths leave uncovered. That one
+measurement feeds every output of `ResolvedCheckScope`: `ScopeWarningChecker`
+renders its uncovered targets as the partial-autoload warning, its
+`ProjectScopeState` decides the `coversProjectScope` boolean `CheckCommand` puts
+on the scoped `RunConfiguration` (true for `Covered` and for `Unknown`, where
+the manifest declares nothing and the paths are the project), and the same
+state becomes the `Reporting\ReportProjectScope` `ResultPresenter` adds to the
+report — naming, on a `Narrowed` run, the uncovered targets and
+`ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS` as not judged. A rule that must
+stay quiet on a slice, the warning about that slice and the report's statement
+of it cannot disagree. The suppression audit reads the same answer rather than
+measuring again: `FindingFilterOrchestrator::valueScope()` builds Finding's
+per-value `ValueScopeJudgement` once from `ResolvedCheckScope` — `null` on a
+narrowed run — and both the audit's findings and the values it skipped, which
+`projectScope()` adds to the report's scope, are read from it. The measurement's pruned targets —
+declared entries under a `vendor`, `node_modules` or `.git` directory, which are
+neither analysed by default nor counted — get a warning line of their own,
+independent of coverage: a whole-project run can still have dropped them.
 The coverage is taken for the resolved paths, not the configured ones: a Git
 report scope narrows the run after the configuration was resolved. `CheckCommand` validates the resolved paths
 before emitting the messages through its stderr-only warning route; structured
@@ -135,7 +152,55 @@ way PHP folds class names; layer matching itself stays case-sensitive.
 | 4    | Analysis incomplete; policy result is not authoritative |
 
 Unknown `--only-rule` / `--disable-rule` selectors and unknown rule-option
-owners are input errors (exit 3). On incomplete analysis, the selected report is
+owners are input errors (exit 3); a bare group prefix is refused with the
+`NAME.*` spelling named when that spelling would match. `ConfigurationInputAdapter`
+refuses an empty value for the five doors whose owners would read it as
+"not given" (`--config`, `--preset`, `--baseline`, `--output`, `--report`), and
+`ProfilePresenter::refuseImpossibleExport()` refuses a `--profile-format` outside
+its closed set and a `--profile` target the export cannot be written to, and
+`ResultPresenter::assertOutputIsWritable()` the same for `--output` — all before
+analysis. Both targets, and `graph:export --output`, are judged by
+`ArtifactFile`, which also makes the write, so the precheck cannot model a
+different write than the one made. The write is a shell's `>` as nearly as
+PHP allows, and the kernel decides what a path leads to: a target it reaches is
+opened by the path as written and written in place; a name it reaches nothing
+at is created by `touch()`, whose open the kernel resolves, so a dangling link
+creates its target and a link `fs.protected_symlinks` forbids is refused —
+every other PHP open resolves links in userspace, beyond that rule. The
+precheck asks only what the kernel answers without a write (not a directory; a
+reachable target writable; a new name's directory writable and searchable; a
+descriptor held and, on Linux, open for writing) and leaves a link it does not
+follow to the write, which refuses after the run. The supported spellings
+`/dev/stdout`, `/dev/stderr`, `/dev/fd/N` and `/proc/self/fd/N`, exactly as
+written, go through `php://fd/N` in blocking mode, because PHP on Linux opens
+those paths by resolving them, which fails on a pipe and truncates a redirected
+file; another spelling is opened by its path. A write that fails midway removes
+a file it created and leaves an existing target partly written. A profile write
+that still fails after the report is published
+ends the run with exit 3 through `RefusalPresenter::refusalAfterPublishedReport()`:
+the sentence goes to stderr whatever the format, so stdout keeps the report as
+its only document. `FormatOptionPairs` judges every written `--format-opt` pair
+before any fold by key and refuses a key written twice, and two keys that set
+one value (`violations` and `limit`, or `limit` beside `--all`);
+`FormatterContextFactory` refuses `--detail` or `--detail=N` beside `--all` the
+same way, and — in `bindFormatBeforeAnalysis()`, against the resolved format,
+and again in `create()` — a `--namespace` or `--class` selection under a format
+`OutOfScopeFindings::FORMATS_WITHOUT_A_PLACE` names. `--report`
+is read here, through `CommandLineSpelling`, and handed to
+`Git\GitScopeResolver` as a string.
+Every valued option and argument is read through `CommandLineSpelling`: argv
+delivers strings, and an embedder's array input may deliver any PHP value, so an
+integer is read as its digits and any other shape is refused (exit 3) instead
+of reaching a string-typed reader as a type error (exit 1) or being dropped.
+Flags are read as booleans, and a value-optional option decides its "written
+alone" forms (`null`, or `true` from an array input) before spelling the value.
+`Application::doRun()` reads the long `--format` off the raw tokens, so a
+refusal it catches is enveloped for the JSON formats like one a command catches,
+and `RefusalPresenter` frames the fallback path exactly like a carried refusal.
+The JSON envelope is `{error, exit_code, position}`: `position` publishes a
+refusal's `RefusedPosition` (`path`, `written`, `accepted`, `closed`) — the
+refused spot as its throw site located it — and is `null` for every outcome
+without one, including a merged value whose sentence names its key. On incomplete analysis, the selected report is
 still rendered for diagnosis and exit 4 takes precedence over finding policy.
 Non-payload diagnostics from `check` are written to stderr.
 
@@ -185,6 +250,15 @@ All three commands test `is_link` before `file_exists`, because a hook
 installed by an earlier release is now a symlink leading nowhere, and
 `file_exists` follows the link and calls it absent.
 
+They refuse the way every other command does: by throwing a
+`ConfigurationRefusal`, which `Application::doRun()` turns into exit 3 and a
+line on stderr — no hook command writes its reason to stdout or returns 1.
+The `.backup` slot is single because `--restore-backup` reads it by that name,
+so `hook:install --force` refuses to overwrite a slot holding a different hook
+rather than lose it. `RunningBinaryLocator` resolves a relative
+`SCRIPT_FILENAME`/`argv[0]` through the entry script PHP opened at startup,
+not against the working directory `--working-dir` has since changed.
+
 ## CLI Options (main)
 
 ### Configuration and Formatting
@@ -211,11 +285,11 @@ installed by an earlier release is now a symlink leading nowhere, and
 
 ### Logging and Progress
 
-| Option          | Default | Description                |
-| --------------- | ------- | -------------------------- |
-| `--log-file`    | —       | Log file path (JSON Lines) |
-| `--log-level`   | `info`  | Minimum log level          |
-| `--no-progress` | false   | Disable progress bar       |
+| Option          | Default | Description                                                                                                                                                              |
+| --------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--log-file`    | —       | Log file path (JSON Lines); a path that cannot be written is refused with exit 3                                                                                         |
+| `--log-level`   | —       | Minimum log level for `--log-file` and, with `-v` or more, the console; without `-v` it can only narrow the console. Not given: verbosity chooses, the file takes `info` |
+| `--no-progress` | false   | Disable progress bar                                                                                                                                                     |
 
 ### Baseline
 

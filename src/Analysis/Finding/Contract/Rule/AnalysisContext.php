@@ -15,7 +15,9 @@ final readonly class AnalysisContext
 {
     /**
      * @param array<string, list<ThresholdOverride>> $thresholdOverrides Per-file threshold overrides
-     * @param bool $coversProjectScope Whether the run analysed the whole project rather than a slice of it
+     * @param bool $coversProjectScope Whether the run analysed the whole project rather than a slice of it —
+     *                                 including a project whose manifest declares no autoload, where the
+     *                                 analysed paths are the project
      *
      * `$coversProjectScope` is the answer
      * {@see \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage}
@@ -69,7 +71,7 @@ final readonly class AnalysisContext
                 }
 
                 $specificity = $override->controlScope->specificity();
-                $span = $override->endLine !== null ? ($override->endLine - $override->line) : \PHP_INT_MAX;
+                $span = self::span($override);
 
                 if ($bestMatch === null
                     || $specificity > $bestSpecificity
@@ -83,5 +85,11 @@ final readonly class AnalysisContext
         }
 
         return $bestMatch;
+    }
+
+    /** Lines the override covers; one without an end covers everything after it. */
+    private static function span(ThresholdOverride $override): int
+    {
+        return $override->endLine !== null ? $override->endLine - $override->line : \PHP_INT_MAX;
     }
 }

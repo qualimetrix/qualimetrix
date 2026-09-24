@@ -50,9 +50,10 @@ Maintainability Index uses this metric as its method-size input. See
 - Multi-line comments: `/* ... */`
 - DocBlocks: `/** ... */`
 
-> **Note:** `size.loc` is counted as the number of line breaks, so a trailing newline
-> at end of file is counted as an extra line. This matches common line-count
-> definitions and may differ by +1 per file from `wc -l`.
+`size.loc` counts physical lines the way line-counting tools do: a file's final
+line break ends its last line and does not open another, so a file ending in a
+newline has exactly `wc -l` lines, and a last line without a newline still
+counts.
 
 For files with namespace declarations, namespace LOC/LLOC/CLOC use each
 `Namespace_` AST node's inclusive source span. Declarations before the first

@@ -48,7 +48,7 @@ Presets: `strict` (greenfield, tight thresholds), `legacy` (relaxed thresholds),
 
 Rule groups: `complexity`, `coupling`, `size`, `design`, `maintainability`, `cohesion`, `architecture`, `duplication`, `code-smell`, `security`. Full rule list with IDs, thresholds, and options: `qmx rules`.
 
-Configuration: `qmx.yaml` (auto-discovered) or `--config=path`. Root keys: `paths`, `exclude`, `format`, `rules`, `disabledRules`, `onlyRules`, `suppressPaths`, `suppressNamespaces`, `failOn`, `cache`, `parallel`, `coupling`, `includeGenerated`, `memoryLimit`, `architecture`, `computedMetrics`, `excludeHealth`.
+Configuration: `qmx.yaml` (auto-discovered) or `--config=path`. Root keys: `paths`, `exclude`, `format`, `rules`, `disabledRules`, `onlyRules`, `suppressPaths`, `suppressNamespaces`, `failOn`, `cache`, `parallel`, `coupling`, `includeGenerated`, `includeAutoloadDev`, `memoryLimit`, `architecture`, `computedMetrics`, `excludeHealth`.
 
 Suppression: `@qmx-ignore` / `@qmx-ignore-next-line` in docblocks or comments (symbol/line scope), `@qmx-ignore-file` (whole file). Threshold override: `@qmx-threshold` on a class/method.
 

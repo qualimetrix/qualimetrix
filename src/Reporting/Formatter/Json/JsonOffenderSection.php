@@ -7,6 +7,7 @@ namespace Qualimetrix\Reporting\Formatter\Json;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
+use Qualimetrix\Reporting\Formatter\FormatOptionValue;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Report;
 
@@ -139,6 +140,6 @@ final class JsonOffenderSection
      */
     private function rankOffenders(array $offenders, FormatterContext $context): array
     {
-        return WorstOffender::rankByDensity($offenders, $context->getOption('rank-by', 'count'));
+        return WorstOffender::rankByDensity($offenders, FormatOptionValue::rankBy($context->getOption('rank-by', 'count')));
     }
 }

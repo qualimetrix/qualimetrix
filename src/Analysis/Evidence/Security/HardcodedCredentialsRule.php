@@ -125,6 +125,7 @@ final class HardcodedCredentialsRule extends AbstractRule
             'class_const' => 'Hardcoded credential in class constant',
             'define' => 'Hardcoded credential in define() call',
             'property' => 'Hardcoded credential in property default',
+            'property_assignment' => 'Hardcoded credential in property assignment',
             'parameter' => 'Hardcoded credential in parameter default',
             'enum_case' => 'Hardcoded credential in enum case',
             default => 'Hardcoded credential found',

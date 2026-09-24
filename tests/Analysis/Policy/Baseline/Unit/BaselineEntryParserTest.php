@@ -119,6 +119,21 @@ final class BaselineEntryParserTest extends TestCase
     }
 
     /**
+     * A key no subject is written as never meets a finding, and it measures
+     * at no level a run could be asked about; kept, it would read as stale
+     * forever.
+     */
+    #[Test]
+    public function itTurnsAnEntryUnderAKeyNoSubjectIsWrittenAsInert(): void
+    {
+        $entry = $this->parser->parse('App\Foo::bar', ['channel' => 'complexity.ccn', 'magnitudes' => [25]]);
+
+        self::assertInertFor($entry, InertEntryReason::Malformed);
+        self::assertInstanceOf(InertBaselineEntry::class, $entry);
+        self::assertStringContainsString('not a canonical metric subject', $entry->detail);
+    }
+
+    /**
      * A channel written in the retired `rule#code` spelling is not a name, so
      * the entry never reaches the "is this channel declared?" question.
      */

@@ -29,7 +29,7 @@ final class HealthDecompositionCatalogTest extends TestCase
         );
         self::assertSame(['cohesion.tcc.avg', 'cohesion.lcom.avg'], $this->provider->getDecomposition('health.cohesion', SymbolLevel::Project));
         self::assertSame(
-            ['coupling.distance.avg', 'coupling.cbo.avg', 'coupling.cbo.p95', 'coupling.cbo.max'],
+            ['coupling.distance-own.avg', 'coupling.cbo.avg', 'coupling.cbo.p95', 'coupling.cbo.max'],
             $this->provider->getDecomposition('health.coupling', SymbolLevel::Project),
         );
         self::assertSame(

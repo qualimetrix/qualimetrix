@@ -187,6 +187,23 @@ final class ConstructorOverinjectionRuleTest extends TestCase
     }
 
     #[Test]
+    public function itChecksAConstructorWhoseNameIsSpelledInAnotherCase(): void
+    {
+        $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 8, error: 12));
+
+        $methodInfo = $this->exactDeclarationInfo(SymbolPath::forMethod('App\Service', 'UserService', '__CONSTRUCT'), 'src/Service/UserService.php', 10);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('code-smell.parameter-count', 9));
+
+        $findings = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $findings);
+        self::assertSame(9, $findings[0]->metricValue);
+    }
+
+    #[Test]
     public function itAtErrorThreshold(): void
     {
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 8, error: 12));

@@ -46,7 +46,9 @@ less-severe member is repaired.
 The baseline runs after source/configuration suppressions and path/namespace
 exclusions, and before git report scoping. `generate`, `migrate`, `update`,
 `cleanup`, and `check` use that same measured set. Configuration options
-`--preset`, `--rule-opt`, `--only-rule`, and `--disable-rule` are available to
+`--preset`, `--rule-opt`, `--only-rule`, `--disable-rule`,
+`--include-generated` and `--include-autoload-dev` (the last two added by the
+2026-09-24 amendment below) are available to
 the lifecycle commands so their set can match `check`; CLI-only exclusions and
 `--no-suppression-annotations` are not. The latter restores annotations only
 for presentation after the baseline has measured the set, so it never widens a
@@ -115,8 +117,59 @@ rejected boundary.
 5. **A magnitude scale can change without a channel change.** CBO scope and computed formulas or direction may change what a stored value means, risking over-acceptance; project-normalized `coupling.class-rank` is deliberately an occurrence channel instead.
 6. **`complexity.npath.*` saturates at 10^9.** An entry at saturation cannot breach.
 7. **Renames strand entries.** The renamed finding reports as new and the old identity becomes stale.
-8. **Duplication can re-key after the first copy moves.** A reduction can yield one stale entry and one fresh finding.
-9. **Symbol keys are not unique per declaration.** Same-FQN declarations and trait consumers can share an identity, and `__PROJECT__` is a legal PHP namespace name.
+8. **A duplicate copy's findings follow the blocks the detector finds, and its file.** A copy's identity is the block's whole normalized token sequence, its file and its place among the block's copies there. Lines added or removed outside the matched tokens re-key nothing while the detector finds the same block. An edit inside one copy, or code inserted between a copy and the context the copies share, takes that copy out of the block and stales its entry; the untouched copies keep theirs while two of them still agree on the whole block, and when none is left to agree with — two copies, one edited — the untouched copy's entry goes stale too. What the copies still agree on reports as fresh findings on every copy, in untouched files too. A partial copy leaves the accepted block in place and adds one over the part it agrees with: every copy, in untouched files too, gains a fresh finding, its accepted entry stays accepted, and nothing goes stale. A comment or blank line inside one copy re-keys nothing, unless it moves the block's longest copy across `min_lines`: that adds the block, a fresh finding on every copy, or removes it, a stale entry for every copy — in untouched files too. A copy moved to another file yields a stale entry and a fresh finding.
+9. **Symbol keys are not unique per declaration.** Same-FQN declarations and trait consumers can share an identity.
 10. **Aggregate magnitudes can move after another file changes.** A class CBO boundary can breach without an edit to that class.
 11. **Three project-keyed architecture channels form multi-member groups.** `architecture.unreachable-layer`, `architecture.potential-shadow`, and `architecture.empty-template` have occurrence ceilings with no member-position information; single-result `architecture.coverage` is unaffected.
 12. **A survivor can grow into a repaired member's slot.** Cumulative comparison accepts redistribution below the worst previously accepted magnitude; this is the cost of not tracking member identity.
+
+## Amendment, 2026-09-24: the project-scope flags are configuration too
+
+`--include-generated` and `--include-autoload-dev` are the command-line
+spellings of `include_generated` and `include_autoload_dev`. Both decide what
+the project is — which files a run with no paths analyses, and, for the second,
+the scope a run is judged against — so they change the measured set exactly as
+a preset does. Offered by `check` alone, they let `check --include-autoload-dev
+--baseline=b.json` measure more than `baseline:generate b.json` captured, and
+every finding the capture could not see read as a breach. The baseline
+lifecycle commands now accept both, spelled as `check` spells them; the YAML
+keys were already shared, since both sides resolve the same configuration.
+
+## Amendment, 2026-09-24: there is no migration command
+
+`baseline:migrate` has been removed, and three sentences above still name it:
+`migrate` in the list of lifecycle commands that share the measured set, the
+**Decision** paragraph that accepts version 5 "only by `baseline:migrate`", and
+the first **Consequences** bullet that sends existing v5 files to it. They
+record what was decided then and no longer describe the tool. No earlier
+version is converted: a version 5 file is refused on load like versions 10, 11
+and 12, with guidance to run a fresh analysis, map or split the accepted groups
+deliberately, and write a current file — `baseline:generate --force` replaces
+the old one once that review is done. Machine migration was dropped because it
+is needed only where the analysed source is unavailable, while a regeneration
+on the same commit is always possible.
+
+## Amendment, 2026-09-24: a duplicate copy's findings follow its block and its file, not its first copy
+
+Residual limitation 8 used to say that a duplicate block re-keys after its
+first copy moves. No copy is first any more: ADR 0085 reports a finding on
+each copy and keys each one by the block's whole normalized token sequence,
+the project-relative path of the file holding the copy and the copy's place
+among the block's copies in that file. No line number enters the key, so lines
+added or removed outside the matched tokens re-key nothing while the detector
+finds the same block, and a deleted copy leaves its own entry stale, as any
+repaired finding does. The block is what the detector finds over all of its
+copies at once — the longest token run they agree on, together with whatever
+context they share around the copied code — so it is not fixed by the code
+that was copied. An edit inside one copy, or code inserted between a copy and
+the context the copies share, takes that copy out of the block: its entry goes
+stale, and so does an untouched copy's once no other copy agrees with it on the
+whole block, while what the copies still agree on reports fresh findings on
+every copy, untouched files included. A partial copy takes nothing out: the
+accepted block is still found, and a second block over the part the partial
+copy agrees with gives every copy, in untouched files too, a fresh finding
+beside its accepted entry, with no entry going stale. A comment or blank
+line that moves the block's longest copy across `min_lines` adds or removes
+the block as a whole, in untouched files too. A copy moved to another
+file, or every copy in a renamed file, is a stale entry and a new finding, as
+a renamed symbol is (limitation 7). Item 8 now states that limitation.

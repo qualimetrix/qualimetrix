@@ -32,6 +32,7 @@ final class SpanTest extends TestCase
             startTime: 1000000.0,
             startMemory: 100,
             endTime: 2000000.0,
+            endMemory: 100,
         );
 
         // 1000000 ns = 1 ms
@@ -133,79 +134,17 @@ final class SpanTest extends TestCase
     }
 
     #[Test]
-    public function itInitializesPeakMemoryToStartMemory(): void
+    public function itIsStoppedOnlyByItsOwnFinish(): void
     {
-        $span = new Span(
-            name: 'test',
-            category: null,
-            startTime: 1000000.0,
-            startMemory: 1000,
-        );
+        $finished = new Span(name: 'own', category: null, startTime: 1000000.0, startMemory: 100);
+        $finished->finish(2000000.0, 100);
 
-        self::assertSame(1000, $span->peakMemory);
-    }
+        $closed = new Span(name: 'borrowed', category: null, startTime: 1000000.0, startMemory: 100);
+        $closed->closeWithAncestor(2000000.0, 100);
 
-    #[Test]
-    public function itUpdatesPeakWhenValueIsHigher(): void
-    {
-        $span = new Span(
-            name: 'test',
-            category: null,
-            startTime: 1000000.0,
-            startMemory: 1000,
-        );
-
-        $span->updatePeak(5000);
-        self::assertSame(5000, $span->peakMemory);
-
-        // Lower value should not update
-        $span->updatePeak(3000);
-        self::assertSame(5000, $span->peakMemory);
-    }
-
-    #[Test]
-    public function itReturnsNullPeakMemoryDeltaForRunningSpan(): void
-    {
-        $span = new Span(
-            name: 'test',
-            category: null,
-            startTime: 1000000.0,
-            startMemory: 1000,
-        );
-
-        $span->updatePeak(5000);
-        self::assertNull($span->getPeakMemoryDelta());
-    }
-
-    #[Test]
-    public function itReturnsPeakMemoryDeltaAboveStart(): void
-    {
-        $span = new Span(
-            name: 'test',
-            category: null,
-            startTime: 1000000.0,
-            startMemory: 1000,
-            endTime: 2000000.0,
-            endMemory: 2000,
-        );
-
-        $span->updatePeak(5000);
-        self::assertSame(4000, $span->getPeakMemoryDelta());
-    }
-
-    #[Test]
-    public function itReturnsPeakMemoryDeltaOfZeroWithNoPeakUpdate(): void
-    {
-        $span = new Span(
-            name: 'test',
-            category: null,
-            startTime: 1000000.0,
-            startMemory: 1000,
-            endTime: 2000000.0,
-            endMemory: 800,
-        );
-
-        // No updatePeak called — peak stays at startMemory
-        self::assertSame(0, $span->getPeakMemoryDelta());
+        self::assertTrue($finished->wasStopped());
+        self::assertFalse($closed->wasStopped());
+        self::assertFalse($closed->isRunning());
+        self::assertSame(1.0, $closed->getDuration());
     }
 }

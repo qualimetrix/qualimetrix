@@ -50,10 +50,28 @@ final class ResidualLimitationsCoverageTest extends TestCase
             'class' => \Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStageFailSafeTest::class,
             'method' => 'itReportsARenamedSymbolAndStrandsItsEntry',
         ]],
-        8 => [[
-            'class' => \Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::class,
-            'method' => 'itKeepsADuplicateAcceptedWhenThePrimaryCopyChanges',
-        ]],
+        8 => [
+            [
+                'class' => \Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::class,
+                'method' => 'itReKeysADuplicateWhoseMatchedTokensChangeInEveryCopy',
+            ],
+            [
+                'class' => \Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::class,
+                'method' => 'itGivesTheUntouchedCopiesNewFindingsWhenAPartialCopyAddsABlock',
+            ],
+            [
+                'class' => \Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::class,
+                'method' => 'itRekeysTheUntouchedCopyWhenCodeIsInsertedNextToAnotherCopy',
+            ],
+            [
+                'class' => \Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::class,
+                'method' => 'itStalesOnlyTheEditedCopyWhenTheOthersStillAgreeOnTheBlock',
+            ],
+            [
+                'class' => \Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::class,
+                'method' => 'itKeepsTheBlockAndEveryCopysIdentityWhenCodeOutsideTheMatchIsAdded',
+            ],
+        ],
         9 => [[
             'class' => \Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::class,
             'method' => 'itSeparatesSameFqnFindingsWithDifferentDeclarationSubjects',

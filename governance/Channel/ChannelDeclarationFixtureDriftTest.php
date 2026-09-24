@@ -59,8 +59,12 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
                     $key,
                 ),
             );
+            // The fixture states the structural facts; a channel's display
+            // text is held to its producer by ChannelDescriptionTest instead.
             self::assertEquals(
-                $expected[$key],
+                $declaration->description === null
+                    ? $expected[$key]
+                    : $expected[$key]->describedAs($declaration->description),
                 $declaration,
                 \sprintf('Fixture line for "%s" does not match the declaration the code actually registers.', $key),
             );
@@ -281,6 +285,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
         $names[] = LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME;
         $names[] = LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME;
         $names[] = LayerViolationRule::UNMATCHED_EXCLUDE_NAME;
+        $names[] = LayerViolationRule::DOUBTED_ASSIGNMENT_NAME;
 
         $names[] = UnboundSuppressionOptions::UNMATCHED_PATH;
         $names[] = UnboundSuppressionOptions::UNMATCHED_NAMESPACE;

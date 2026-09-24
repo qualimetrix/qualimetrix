@@ -11,10 +11,15 @@ use Symfony\Component\DependencyInjection\Reference;
 /**
  * Collects all services tagged with 'qmx.formatter' and injects them into FormatterRegistry.
  */
-final class FormatterCompilerPass implements CompilerPassInterface
+final class FormatterCompilerPass implements CompilerPassInterface, ConsumerBoundPassInterface
 {
     public const string TAG = 'qmx.formatter';
     private const string REGISTRY = 'Qualimetrix\\Reporting\\Formatter\\FormatterRegistry';
+
+    public static function consumerServiceIds(): array
+    {
+        return [self::REGISTRY];
+    }
 
     public function process(ContainerBuilder $container): void
     {

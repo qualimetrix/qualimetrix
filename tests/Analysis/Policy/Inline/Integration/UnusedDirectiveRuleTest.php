@@ -21,6 +21,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
@@ -631,8 +632,7 @@ final class UnusedDirectiveRuleTest extends TestCase
                 'reason',
                 $line,
                 SuppressionType::Symbol,
-                subject: $subject,
-                controlScope: ControlScope::Class_,
+                binding: new DeclarationBinding($subject, ControlScope::Class_),
             ),
             self::boundSubjects(),
         );

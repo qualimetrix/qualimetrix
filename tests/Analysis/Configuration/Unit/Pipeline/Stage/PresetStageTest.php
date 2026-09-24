@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
@@ -61,13 +62,30 @@ final class PresetStageTest extends TestCase
         ], $layer->documents);
     }
 
+    /**
+     * An empty name between commas is what `--preset=$A,$B` looks like with
+     * one variable unset; skipping it would run fewer presets than written.
+     */
     #[Test]
-    public function itFiltersEmptyPresetSegments(): void
+    public function itRefusesAnEmptyPresetSegment(): void
+    {
+        $this->loader->expects(self::never())->method('load');
+
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('empty preset name');
+
+        $this->stage()->apply(
+            new ConfigurationResolutionRequest(AbsolutePath::fromString('/project'), null, [', strict, ']),
+        );
+    }
+
+    #[Test]
+    public function itTrimsWhitespaceAroundAPresetName(): void
     {
         $this->loader->expects(self::once())->method('load')->willReturn(['format' => 'json']);
 
         $layer = $this->stage()->apply(
-            new ConfigurationResolutionRequest(AbsolutePath::fromString('/project'), null, [', strict, ']),
+            new ConfigurationResolutionRequest(AbsolutePath::fromString('/project'), null, [' strict ']),
         );
 
         self::assertNotNull($layer);

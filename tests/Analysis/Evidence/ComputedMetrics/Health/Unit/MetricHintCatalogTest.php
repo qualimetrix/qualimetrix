@@ -51,6 +51,21 @@ final class MetricHintCatalogTest extends TestCase
         self::assertSame('Cyclomatic (avg)', $this->provider->getLabel('complexity.ccn.avg'));
     }
 
+    /**
+     * `coupling.cbo-own` is a base key, not a suffix of `coupling.cbo`, so it
+     * resolves to nothing unless it has an entry of its own — and a report
+     * then prints the raw key with an empty target where a label belongs.
+     */
+    #[Test]
+    public function itDescribesTheOwnScopeCboLikeItsSiblings(): void
+    {
+        self::assertSame('CBO (own)', $this->provider->getLabel('coupling.cbo-own'));
+        self::assertSame('lower_is_better', $this->provider->getDirection('coupling.cbo-own'));
+        self::assertSame($this->provider->getGoodValue('coupling.cbo'), $this->provider->getGoodValue('coupling.cbo-own'));
+        self::assertNotSame('', $this->provider->getExplanation('coupling.cbo-own', 30.0));
+        self::assertArrayHasKey('coupling.cbo-own', $this->provider->metricHints());
+    }
+
     // --- getExplanation ---
 
     #[Test]

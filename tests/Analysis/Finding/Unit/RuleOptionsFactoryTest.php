@@ -17,7 +17,11 @@ use Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\InstabilityOptions;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageOptions;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
+use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
@@ -38,6 +42,12 @@ final class RuleOptionsFactoryTest extends TestCase
 {
     private RuleOptionsRegistry $registry;
     private RuleOptionsFactory $factory;
+
+    /** @var array<string, mixed> the configuration file's `rules:` written so far */
+    private array $configFileRules = [];
+
+    /** @var array<string, array<string, mixed>> the command line's rule options written so far */
+    private array $cliRules = [];
 
     protected function setUp(): void
     {
@@ -61,7 +71,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itCreatesWithConfigFileOptions(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'warning_threshold' => 15,
                 'error_threshold' => 30,
@@ -82,8 +92,8 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itCreatesWithCliOptions(): void
     {
-        $this->registry->addCliOption('test-rule', 'warningThreshold', 25);
-        $this->registry->addCliOption('test-rule', 'countNullsafe', false);
+        $this->writeCliOption('test-rule', 'warningThreshold', 25);
+        $this->writeCliOption('test-rule', 'countNullsafe', false);
 
         /** @var TestRuleOptions $options */
         $options = $this->factory->create('test-rule', TestRuleOptions::class);
@@ -98,13 +108,13 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itCliOptionsOverrideConfigFile(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'warning_threshold' => 15,
             ],
         ]);
 
-        $this->registry->addCliOption('test-rule', 'warningThreshold', 25);
+        $this->writeCliOption('test-rule', 'warningThreshold', 25);
 
         /** @var TestRuleOptions $options */
         $options = $this->factory->create('test-rule', TestRuleOptions::class);
@@ -117,7 +127,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itSetsCliOptions(): void
     {
-        $this->registry->setCliOptions('test-rule', [
+        $this->writeCliOptions('test-rule', [
             'warningThreshold' => 50,
             'errorThreshold' => 100,
         ]);
@@ -133,7 +143,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itGetsConfigFileOptions(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'rule-a' => ['enabled' => false],
             'rule-b' => ['enabled' => true],
         ]);
@@ -146,8 +156,8 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itGetsCliOptions(): void
     {
-        $this->registry->addCliOption('rule-a', 'opt1', 'value1');
-        $this->registry->addCliOption('rule-b', 'opt2', 'value2');
+        $this->writeCliOption('rule-a', 'opt1', 'value1');
+        $this->writeCliOption('rule-b', 'opt2', 'value2');
 
         $options = $this->registry->cliOptions();
 
@@ -180,7 +190,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itNormalizesSnakeCaseKeys(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'warning_threshold' => 15,
                 'count_nullsafe' => false,
@@ -198,7 +208,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itNormalizesKebabCaseKeys(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'warning-threshold' => 15,
                 'count-nullsafe' => false,
@@ -216,9 +226,9 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itExpandsDotNotationInCliOptions(): void
     {
-        $this->registry->addCliOption('test-rule', 'method.warning', 5);
-        $this->registry->addCliOption('test-rule', 'method.error', 10);
-        $this->registry->addCliOption('test-rule', 'class.enabled', false);
+        $this->writeCliOption('test-rule', 'method.warning', 5);
+        $this->writeCliOption('test-rule', 'method.error', 10);
+        $this->writeCliOption('test-rule', 'class.enabled', false);
 
         $cliOptions = $this->registry->cliOptions();
 
@@ -233,7 +243,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesNestedConfigFileOptions(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'enabled' => true,
                 'nested' => [
@@ -254,14 +264,14 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itDeepMergesNestedArrays(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'warning_threshold' => 15,
                 'enabled' => true,
             ],
         ]);
 
-        $this->registry->setCliOptions('test-rule', [
+        $this->writeCliOptions('test-rule', [
             'errorThreshold' => 25,
             'countNullsafe' => false,
         ]);
@@ -279,8 +289,8 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesEmptyConfigArrays(): void
     {
-        $this->registry->setConfigFileOptions([]);
-        $this->registry->setCliOptions('test-rule', []);
+        $this->writeConfigFile([]);
+        $this->writeCliOptions('test-rule', []);
 
         /** @var TestRuleOptions $options */
         $options = $this->factory->create('test-rule', TestRuleOptions::class);
@@ -295,14 +305,14 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itOverridesArrayValuesInMerge(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'warning_threshold' => 5,
             ],
         ]);
 
         // CLI completely overrides config value (not merges)
-        $this->registry->addCliOption('test-rule', 'warningThreshold', 50);
+        $this->writeCliOption('test-rule', 'warningThreshold', 50);
 
         /** @var TestRuleOptions $options */
         $options = $this->factory->create('test-rule', TestRuleOptions::class);
@@ -313,7 +323,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itNormalizesMixedCaseKeys(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'Warning_Threshold' => 12,
                 'error-threshold' => 24,
@@ -332,8 +342,8 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesMultiLevelDotNotation(): void
     {
-        $this->registry->addCliOption('test-rule', 'level1.level2.level3', 'deep');
-        $this->registry->addCliOption('test-rule', 'level1.level2.other', 'value');
+        $this->writeCliOption('test-rule', 'level1.level2.level3', 'deep');
+        $this->writeCliOption('test-rule', 'level1.level2.other', 'value');
 
         // The factory stores raw dot notation, expansion happens during create()
         $cliOptions = $this->registry->cliOptions();
@@ -346,7 +356,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRefusesABooleanOptionWrittenAsAString(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'enabled' => 'true',
             ],
@@ -361,7 +371,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesNullValues(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'warning_threshold' => null,
             ],
@@ -377,7 +387,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itPreservesZeroValues(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'warning_threshold' => 0,
                 'error_threshold' => 0,
@@ -395,14 +405,14 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRefusesAFractionWhereAWholeNumberWasDeclared(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'warning_threshold' => 10.5,
             ],
         ]);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Option "warningThreshold" of rule "test-rule" must be a whole number or null, got a number.');
+        self::expectExceptionMessage('Option "warningThreshold" of rule "test-rule" must be a non-negative whole number or null, got a number.');
 
         $this->factory->create('test-rule', TestRuleOptions::class);
     }
@@ -410,7 +420,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itMergesPartialConfigFileOptions(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'enabled' => false, // only override enabled
             ],
@@ -428,13 +438,13 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesMultipleRulesIndependently(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'rule-a' => ['warning_threshold' => 5],
             'rule-b' => ['warning_threshold' => 15],
         ]);
 
-        $this->registry->addCliOption('rule-a', 'errorThreshold', 10);
-        $this->registry->addCliOption('rule-b', 'errorThreshold', 30);
+        $this->writeCliOption('rule-a', 'errorThreshold', 10);
+        $this->writeCliOption('rule-b', 'errorThreshold', 30);
 
         /** @var TestRuleOptions $optionsA */
         $optionsA = $this->factory->create('rule-a', TestRuleOptions::class);
@@ -451,9 +461,9 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesCliOptionsAddedIncrementally(): void
     {
-        $this->registry->addCliOption('test-rule', 'option1', 'value1');
-        $this->registry->addCliOption('test-rule', 'option2', 'value2');
-        $this->registry->addCliOption('test-rule', 'option3', 'value3');
+        $this->writeCliOption('test-rule', 'option1', 'value1');
+        $this->writeCliOption('test-rule', 'option2', 'value2');
+        $this->writeCliOption('test-rule', 'option3', 'value3');
 
         $cliOptions = $this->registry->cliOptions();
 
@@ -467,8 +477,8 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itOverwritesCliOptionWhenAddedTwice(): void
     {
-        $this->registry->addCliOption('test-rule', 'warningThreshold', 5);
-        $this->registry->addCliOption('test-rule', 'warningThreshold', 15);
+        $this->writeCliOption('test-rule', 'warningThreshold', 5);
+        $this->writeCliOption('test-rule', 'warningThreshold', 15);
 
         /** @var TestRuleOptions $options */
         $options = $this->factory->create('test-rule', TestRuleOptions::class);
@@ -479,8 +489,8 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itReplacesCliOptionsWhenUsingSetCliOptions(): void
     {
-        $this->registry->addCliOption('test-rule', 'option1', 'old');
-        $this->registry->setCliOptions('test-rule', [
+        $this->writeCliOption('test-rule', 'option1', 'old');
+        $this->writeCliOptions('test-rule', [
             'option2' => 'new',
         ]);
 
@@ -494,7 +504,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesEmptyStringKeys(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 '' => 'empty-key-value',
                 'valid_key' => 'valid-value',
@@ -511,7 +521,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itNormalizesNumericStringKeys(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 '123_value' => 'numeric-start',
             ],
@@ -526,8 +536,8 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesDotNotationWithSingleKey(): void
     {
-        $this->registry->addCliOption('test-rule', 'simpleKey', 'value');
-        $this->registry->addCliOption('test-rule', 'nested.key', 'nested-value');
+        $this->writeCliOption('test-rule', 'simpleKey', 'value');
+        $this->writeCliOption('test-rule', 'nested.key', 'nested-value');
 
         $cliOptions = $this->registry->cliOptions();
 
@@ -539,13 +549,13 @@ final class RuleOptionsFactoryTest extends TestCase
     public function itCreatesNestedStructureFromDotNotationDuringMerge(): void
     {
         // When create() is called, dot notation should expand
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'enabled' => true,
             ],
         ]);
 
-        $this->registry->addCliOption('test-rule', 'warningThreshold', 99);
+        $this->writeCliOption('test-rule', 'warningThreshold', 99);
 
         /** @var TestRuleOptions $options */
         $options = $this->factory->create('test-rule', TestRuleOptions::class);
@@ -557,14 +567,14 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesArrayMergeWithScalarOverwrite(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'warning_threshold' => 5,
             ],
         ]);
 
         // Overwrite from the CLI door, which hands over an already-typed value
-        $this->registry->addCliOption('test-rule', 'warningThreshold', 25);
+        $this->writeCliOption('test-rule', 'warningThreshold', 25);
 
         /** @var TestRuleOptions $options */
         $options = $this->factory->create('test-rule', TestRuleOptions::class);
@@ -575,7 +585,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itPreservesCamelCaseKeysFromConfigFile(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'warningThreshold' => 8, // already camelCase
                 'errorThreshold' => 16,
@@ -592,7 +602,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesConfigWithOnlyDisabledFlag(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'enabled' => false,
             ],
@@ -610,7 +620,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesEmptyRuleNameInConfig(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             '' => [
                 'warning_threshold' => 5,
             ],
@@ -626,18 +636,18 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itResetsClearsAllState(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'rule1' => ['opt1' => 'val1'],
             'rule2' => ['opt2' => 'val2'],
         ]);
 
-        $this->registry->addCliOption('rule1', 'cliOpt', 'cliVal');
-        $this->registry->addCliOption('rule3', 'cliOpt2', 'cliVal2');
+        $this->writeCliOption('rule1', 'cliOpt', 'cliVal');
+        $this->writeCliOption('rule3', 'cliOpt2', 'cliVal2');
 
         self::assertNotEmpty($this->registry->configFileOptions());
         self::assertNotEmpty($this->registry->cliOptions());
 
-        $this->registry->resetRuntimeState();
+        $this->resetRun();
 
         self::assertEmpty($this->registry->configFileOptions());
         self::assertEmpty($this->registry->cliOptions());
@@ -647,14 +657,14 @@ final class RuleOptionsFactoryTest extends TestCase
     public function itMergesPriorityCorrectly(): void
     {
         // Setup: defaults (10, 20) → config (15, 25) → CLI (warningThreshold=30)
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'warning_threshold' => 15,
                 'error_threshold' => 25,
             ],
         ]);
 
-        $this->registry->addCliOption('test-rule', 'warningThreshold', 30);
+        $this->writeCliOption('test-rule', 'warningThreshold', 30);
 
         /** @var TestRuleOptions $options */
         $options = $this->factory->create('test-rule', TestRuleOptions::class);
@@ -696,7 +706,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itMergesConfigWithTypeBasedDefaults(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'enabled' => false,
                 'threshold' => 100,
@@ -721,12 +731,12 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itOverridesTypeBasedDefaultsWithCliOptions(): void
     {
-        $this->registry->addCliOption('test-rule', 'enabled', false);
-        $this->registry->addCliOption('test-rule', 'threshold', 50);
-        $this->registry->addCliOption('test-rule', 'ratio', 0.5);
-        $this->registry->addCliOption('test-rule', 'name', 'cli-name');
-        $this->registry->addCliOption('test-rule', 'items', ['a', 'b', 'c']);
-        $this->registry->addCliOption('test-rule', 'optional', 'value');
+        $this->writeCliOption('test-rule', 'enabled', false);
+        $this->writeCliOption('test-rule', 'threshold', 50);
+        $this->writeCliOption('test-rule', 'ratio', 0.5);
+        $this->writeCliOption('test-rule', 'name', 'cli-name');
+        $this->writeCliOption('test-rule', 'items', ['a', 'b', 'c']);
+        $this->writeCliOption('test-rule', 'optional', 'value');
 
         /** @var TestRuleOptionsWithRequiredParams $options */
         $options = $this->factory->create('test-rule', TestRuleOptionsWithRequiredParams::class);
@@ -755,10 +765,10 @@ final class RuleOptionsFactoryTest extends TestCase
     public function itExpandsDeepDotNotationInCliOptions(): void
     {
         // Test actual expansion during create() call
-        $this->registry->addCliOption('complexity', 'method.warning', 5);
-        $this->registry->addCliOption('complexity', 'method.error', 10);
-        $this->registry->addCliOption('complexity', 'class.warning', 15);
-        $this->registry->addCliOption('complexity', 'class.error', 20);
+        $this->writeCliOption('complexity', 'method.warning', 5);
+        $this->writeCliOption('complexity', 'method.error', 10);
+        $this->writeCliOption('complexity', 'class.warning', 15);
+        $this->writeCliOption('complexity', 'class.error', 20);
 
         // Before expansion, options are stored as-is
         $cliOptions = $this->registry->cliOptions();
@@ -773,8 +783,8 @@ final class RuleOptionsFactoryTest extends TestCase
     public function itHandlesDotNotationCollisionsCorrectly(): void
     {
         // Test that dot notation expansion handles collisions
-        $this->registry->addCliOption('test-rule', 'nested.key1', 'value1');
-        $this->registry->addCliOption('test-rule', 'nested.key2', 'value2');
+        $this->writeCliOption('test-rule', 'nested.key1', 'value1');
+        $this->writeCliOption('test-rule', 'nested.key2', 'value2');
 
         $cliOptions = $this->registry->cliOptions();
 
@@ -784,35 +794,17 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itResetsCliOptionsWithoutAffectingConfigFileOptions(): void
-    {
-        $this->registry->setConfigFileOptions([
-            'test-rule' => ['warning_threshold' => 15],
-        ]);
-        $this->registry->addCliOption('test-rule', 'errorThreshold', 30);
-        $this->registry->addCliOption('other-rule', 'enabled', false);
-
-        self::assertNotEmpty($this->registry->cliOptions());
-
-        $this->registry->resetCliOptions();
-
-        self::assertEmpty($this->registry->cliOptions());
-        // Config file options preserved
-        self::assertSame(['test-rule' => ['warning_threshold' => 15]], $this->registry->configFileOptions());
-    }
-
-    #[Test]
     public function itDoesNotLeakCliOptionsIntoTheNextRunAfterReset(): void
     {
         // Simulate first run
-        $this->registry->setCliOptions('test-rule', ['warningThreshold' => 50]);
+        $this->writeCliOptions('test-rule', ['warningThreshold' => 50]);
 
         /** @var TestRuleOptions $options1 */
         $options1 = $this->factory->create('test-rule', TestRuleOptions::class);
         self::assertSame(50, $options1->warningThreshold);
 
-        // Reset between runs
-        $this->registry->resetCliOptions();
+        // Reset between runs, the way the product does before resolving the next configuration
+        $this->resetRun();
 
         // Second run without CLI options — should use defaults
         /** @var TestRuleOptions $options2 */
@@ -824,7 +816,7 @@ final class RuleOptionsFactoryTest extends TestCase
     public function itNormalizesScalarFalseRuleConfig(): void
     {
         // YAML: `rules: { test-rule: false }` arrives as scalar false
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => false,
         ]);
 
@@ -841,7 +833,7 @@ final class RuleOptionsFactoryTest extends TestCase
     public function itNormalizesScalarTrueRuleConfig(): void
     {
         // YAML: `rules: { test-rule: true }` arrives as scalar true
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => true,
         ]);
 
@@ -856,7 +848,7 @@ final class RuleOptionsFactoryTest extends TestCase
     public function itNormalizesScalarNullRuleConfig(): void
     {
         // YAML: `rules: { test-rule: ~ }` arrives as null
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => null,
         ]);
 
@@ -873,7 +865,7 @@ final class RuleOptionsFactoryTest extends TestCase
     public function itHandlesDeepNestedDotNotationLevels(): void
     {
         // Test very deep nesting: a.b.c.d.e
-        $this->registry->addCliOption('test-rule', 'a.b.c.d.e', 'deep-value');
+        $this->writeCliOption('test-rule', 'a.b.c.d.e', 'deep-value');
 
         $cliOptions = $this->registry->cliOptions();
 
@@ -884,7 +876,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itThrowsWhenNumericFieldContainsNonNumericString(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'warning_threshold' => 'not_a_number',
             ],
@@ -895,7 +887,7 @@ final class RuleOptionsFactoryTest extends TestCase
             self::fail('The non-numeric value was accepted.');
         } catch (ConfigurationRefusal $e) {
             self::assertStringContainsString(
-                'Option "warningThreshold" of rule "test-rule" must be a whole number or null, got a string.',
+                'Option "warningThreshold" of rule "test-rule" must be a non-negative whole number or null, got a string.',
                 $e->getMessage(),
             );
             self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
@@ -909,14 +901,14 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itThrowsWhenErrorThresholdIsNonNumericString(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'error_threshold' => 'invalid',
             ],
         ]);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Option "errorThreshold" of rule "test-rule" must be a whole number or null, got a string.');
+        self::expectExceptionMessage('Option "errorThreshold" of rule "test-rule" must be a non-negative whole number or null, got a string.');
 
         $this->factory->create('test-rule', TestRuleOptions::class);
     }
@@ -924,14 +916,14 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRefusesANumericStringForAWholeNumberOption(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'warning_threshold' => '15',
             ],
         ]);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Option "warningThreshold" of rule "test-rule" must be a whole number or null, got a string.');
+        self::expectExceptionMessage('Option "warningThreshold" of rule "test-rule" must be a non-negative whole number or null, got a string.');
 
         $this->factory->create('test-rule', TestRuleOptions::class);
     }
@@ -939,7 +931,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itAcceptsAWholeNumberWrittenAsANumber(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test-rule' => [
                 'warning_threshold' => 15,
             ],
@@ -954,7 +946,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itIncludesRuleNameInNumericValidationError(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'complexity.ccn' => [
                 'error_threshold' => 'not_a_number',
             ],
@@ -971,7 +963,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itExtractsSuppressNamespacesWrittenInSnakeCase(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test.rule' => [
                 'suppress_namespaces' => [
                     ['subtree' => 'App\\Tests'],
@@ -990,7 +982,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itExtractsSuppressNamespacesWrittenInCamelCase(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test.rule' => [
                 'suppressNamespaces' => [['subtree' => 'App\\Tests']],
             ],
@@ -1004,7 +996,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRefusesAScalarSuppressNamespacesValue(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test.rule' => [
                 'suppress_namespaces' => 'App\\Tests',
             ],
@@ -1019,7 +1011,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itExtractsCodeScopedNamespaceExclusions(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'computed.health' => [
                 'suppress_namespace_channels' => [
                     'health.cohesion' => [['subtree' => 'App\\Metrics']],
@@ -1045,7 +1037,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRejectsEmptyCodeScopedNamespaceExclusions(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'computed.health' => [
                 'suppress_namespace_channels' => ['health.cohesion' => []],
             ],
@@ -1060,7 +1052,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRejectsEmptyNamespacePatternsInChannelExclusions(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'computed.health' => [
                 'suppress_namespace_channels' => ['health.cohesion' => [['exact' => '']]],
             ],
@@ -1075,7 +1067,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRejectsNonListChannelNamespaceExclusions(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'computed.health' => [
                 'suppress_namespace_channels' => ['health.cohesion' => 'App\\Metrics'],
             ],
@@ -1090,7 +1082,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRejectsEmptyCodeSelectorsInNamespaceChannelExclusions(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'computed.health' => [
                 'suppress_namespace_channels' => ['' => [['subtree' => 'App\\Metrics']]],
             ],
@@ -1105,7 +1097,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRejectsChannelMapsWhereASelectorListIsRequired(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'computed.health' => [
                 'suppress_namespaces' => ['health.cohesion' => ['App\\Metrics']],
             ],
@@ -1120,7 +1112,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRejectsNonStringLegacyNamespaceExclusions(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'computed.health' => [
                 'suppress_namespaces' => [['subtree' => 'App\\Metrics'], 42],
             ],
@@ -1135,7 +1127,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itStripsSuppressNamespacesFromOptionsBeforeBuildingThem(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'test.rule' => [
                 'suppress_namespaces' => [['subtree' => 'App\\Tests']],
                 'warningThreshold' => 7,
@@ -1156,9 +1148,9 @@ final class RuleOptionsFactoryTest extends TestCase
         $registry = new RuleOptionsRegistry($provider);
         $factory = new RuleOptionsFactory($registry);
 
-        $registry->setConfigFileOptions([
+        $registry->replace(self::configuration([
             'test.rule' => ['suppress_namespaces' => [['subtree' => 'App\\Tests']]],
-        ]);
+        ]));
         $factory->create('test.rule', TestRuleOptions::class);
         self::assertSame(
             ['subtree:App\\Tests'],
@@ -1191,7 +1183,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itKeepsTheRuleEnabledWhenOnlyExcludeNamespacesIsConfiguredInTheFile(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'code-smell.long-parameter-list' => [
                 'suppress_namespaces' => [['subtree' => 'App\\Tests']],
             ],
@@ -1209,7 +1201,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itKeepsTheRuleEnabledWhenOnlyExcludePathsIsConfiguredInTheFile(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'code-smell.long-parameter-list' => [
                 'suppress_paths' => [['subtree' => 'src/Legacy']],
             ],
@@ -1232,7 +1224,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itKeepsTheRuleEnabledWhenExcludeNamespacesIsConfiguredAlongsideARealOption(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'code-smell.long-parameter-list' => [
                 'suppress_namespaces' => [['subtree' => 'App\\Tests']],
                 'error' => 8,
@@ -1253,7 +1245,7 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         // No config file entry at all for this rule — suppress_namespaces
         // arrives purely through --rule-opt / addCliOption().
-        $this->registry->addCliOption(
+        $this->writeCliOption(
             'code-smell.long-parameter-list',
             'suppressNamespaces',
             [['subtree' => 'App\\Tests']],
@@ -1288,7 +1280,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRefusesTheRetiredSnakeCaseExcludeNamespacesSpelling(): void
     {
-        $this->registry->addCliOption('code-smell.long-parameter-list', 'exclude_namespaces', ['App\\Tests']);
+        $this->writeCliOption('code-smell.long-parameter-list', 'exclude_namespaces', ['App\\Tests']);
 
         // Asserted by catching: `expectExceptionMessage()` and its `Matches()`
         // twin each hold one expectation, so a second call of the same kind
@@ -1307,7 +1299,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRefusesTheRetiredCamelCaseExcludeNamespacesSpelling(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'code-smell.long-parameter-list' => ['excludeNamespaces' => ['App\\Tests']],
         ]);
 
@@ -1320,7 +1312,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRefusesTheRetiredExcludeNamespaceChannelsSpelling(): void
     {
-        $this->registry->addCliOption('computed.health', 'exclude_namespace_channels', ['health.cohesion' => ['App\\Metrics']]);
+        $this->writeCliOption('computed.health', 'exclude_namespace_channels', ['health.cohesion' => ['App\\Metrics']]);
 
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessageMatches('/suppress_namespace_channels/');
@@ -1331,7 +1323,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRefusesTheRetiredSnakeCaseExcludePathsSpelling(): void
     {
-        $this->registry->addCliOption('code-smell.long-parameter-list', 'exclude_paths', ['src/Legacy/**']);
+        $this->writeCliOption('code-smell.long-parameter-list', 'exclude_paths', ['src/Legacy/**']);
 
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessageMatches('/suppress_paths/');
@@ -1342,7 +1334,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRefusesTheRetiredCamelCaseExcludePathsSpelling(): void
     {
-        $this->registry->addCliOption('code-smell.long-parameter-list', 'excludePaths', ['src/Legacy/**']);
+        $this->writeCliOption('code-smell.long-parameter-list', 'excludePaths', ['src/Legacy/**']);
 
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessageMatches('/suppressPaths/');
@@ -1369,7 +1361,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itAppliesFlatThresholdShorthandThroughTheFactory(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'size.method-count' => [
                 'threshold' => 25,
             ],
@@ -1386,7 +1378,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itAppliesNestedThresholdShorthandThroughTheFactory(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'complexity.ccn' => [
                 'callable' => ['threshold' => 15],
             ],
@@ -1405,7 +1397,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itThrowsWhenUserExplicitlyMixesThresholdAndWarningThroughTheFactory(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'size.method-count' => [
                 'threshold' => 25,
                 'warning' => 10,
@@ -1446,7 +1438,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itAcceptsTheDocumentedThresholdShorthandOnASupportingRule(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'size.method-count' => ['threshold' => 25],
         ]);
 
@@ -1460,7 +1452,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itAcceptsTheVoThresholdShorthandOnLongParameterList(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'code-smell.long-parameter-list' => ['vo-threshold' => 9],
         ]);
 
@@ -1474,7 +1466,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itAcceptsTheThresholdShorthandOnTypeCoverage(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'design.type-coverage.param' => ['threshold' => 70.0],
         ]);
 
@@ -1488,7 +1480,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itAcceptsTheThresholdShorthandOnCboAndAppliesItToBothLevels(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'coupling.cbo' => ['threshold' => 30],
         ]);
 
@@ -1507,7 +1499,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itAcceptsTheThresholdShorthandOnInstabilityAndAppliesItToBothLevels(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'coupling.instability' => ['threshold' => 0.9],
         ]);
 
@@ -1532,7 +1524,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRefusesAGenuinelyUnknownKeyAtTheRulesOwnDepth(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'size.method-count' => ['nonsense' => 1],
         ]);
 
@@ -1554,7 +1546,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRefusesAMistypedFrameworkKeyAndPrintsTheSpellingThatWorks(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'size.method-count' => ['suppress_path' => ['src/']],
         ]);
 
@@ -1570,7 +1562,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRefusesAnUnknownKeyInsideALevelSlotAndNamesThatSlotsOwnSet(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'coupling.cbo' => ['class' => ['maxWarning' => 1]],
         ]);
 
@@ -1593,7 +1585,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itComparesEachSlotAgainstItsOwnLevelClass(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'coupling.instability' => ['class' => ['max_warning' => 0.6, 'max_error' => 0.8]],
         ]);
 
@@ -1603,7 +1595,7 @@ final class RuleOptionsFactoryTest extends TestCase
         self::assertSame(0.6, $options->class->maxWarning);
         self::assertSame(0.8, $options->class->maxError);
 
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'coupling.instability' => ['class' => ['warning' => 0.6]],
         ]);
 
@@ -1622,7 +1614,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itAcceptsTheBareThresholdInsideALevelSlotAndAppliesIt(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'coupling.cbo' => ['class' => ['threshold' => 7]],
         ]);
 
@@ -1641,7 +1633,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itAcceptsANullLevelSlotAsAnOmittedOne(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'coupling.cbo' => ['class' => null],
         ]);
 
@@ -1657,7 +1649,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRefusesAFalseLevelSlotWithTheSpellingThatSwitchesOneLevelOff(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'coupling.cbo' => ['class' => false],
         ]);
 
@@ -1673,7 +1665,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRefusesANonMapLevelSlotWithoutInventingAdvice(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'coupling.cbo' => ['class' => 10],
         ]);
 
@@ -1698,7 +1690,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itPrintsTheKeyAsTheFactoryReceivedItRatherThanGuessingAnAuthoredSpelling(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'coupling.instability' => ['class' => ['maxWarnign' => 1]],
         ]);
 
@@ -1716,7 +1708,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itLetsAKeyTheClassAnswersForReachThatClassUnchallenged(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'architecture.unassigned-class' => ['enabled' => true],
         ]);
 
@@ -1749,10 +1741,10 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         // Reproduces: qmx.yaml sets `warning`/`error`,
         // `--rule-opt=size.method-count:threshold=25` on top.
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'size.method-count' => ['warning' => 10, 'error' => 20],
         ]);
-        $this->registry->setCliOptions('size.method-count', ['threshold' => 25]);
+        $this->writeCliOptions('size.method-count', ['threshold' => 25]);
 
         /** @var MethodCountOptions $options */
         $options = $this->factory->create('size.method-count', MethodCountOptions::class);
@@ -1769,10 +1761,10 @@ final class RuleOptionsFactoryTest extends TestCase
         // (arrives here as "config file options", since presets are merged
         // in before RuleOptionsFactory ever runs), and
         // `--rule-opt=size.method-count:threshold=25` on top.
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'size.method-count' => ['warning' => 5, 'error' => 8],
         ]);
-        $this->registry->setCliOptions('size.method-count', ['threshold' => 25]);
+        $this->writeCliOptions('size.method-count', ['threshold' => 25]);
 
         /** @var MethodCountOptions $options */
         $options = $this->factory->create('size.method-count', MethodCountOptions::class);
@@ -1784,10 +1776,10 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itLetsCliWarningAndErrorOverrideAConfigFileThreshold(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'size.method-count' => ['threshold' => 25],
         ]);
-        $this->registry->setCliOptions('size.method-count', ['warning' => 10, 'error' => 20]);
+        $this->writeCliOptions('size.method-count', ['warning' => 10, 'error' => 20]);
 
         /** @var MethodCountOptions $options */
         $options = $this->factory->create('size.method-count', MethodCountOptions::class);
@@ -1801,13 +1793,13 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         // Hierarchical rule (complexity.ccn): unfolding must be
         // scoped to the `callable:` nesting level, not the rule's top level.
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'complexity.ccn' => [
                 'callable' => ['warning' => 10, 'error' => 20],
                 'class' => ['max_warning' => 30, 'max_error' => 50],
             ],
         ]);
-        $this->registry->addCliOption('complexity.ccn', 'callable.threshold', 15);
+        $this->writeCliOption('complexity.ccn', 'callable.threshold', 15);
 
         /** @var ComplexityOptions $options */
         $options = $this->factory->create('complexity.ccn', ComplexityOptions::class);
@@ -1825,7 +1817,7 @@ final class RuleOptionsFactoryTest extends TestCase
         // Both keys set by the SAME source (CLI) must still be reported as
         // a genuine configuration error — unfolding never touches a layer
         // that already carries a graduated key of the same group.
-        $this->registry->setCliOptions('size.method-count', ['threshold' => 25, 'warning' => 10]);
+        $this->writeCliOptions('size.method-count', ['threshold' => 25, 'warning' => 10]);
 
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Cannot mix "threshold" with "warning"/"error"');
@@ -1839,10 +1831,10 @@ final class RuleOptionsFactoryTest extends TestCase
         // code-smell.long-parameter-list has two independent dimensions:
         // bare warning/error/threshold, and the vo-prefixed variant.
         // A CLI override of one group must not unfold the other.
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'code-smell.long-parameter-list' => ['warning' => 4, 'error' => 6, 'voWarning' => 8, 'voError' => 12],
         ]);
-        $this->registry->setCliOptions('code-smell.long-parameter-list', ['threshold' => 5]);
+        $this->writeCliOptions('code-smell.long-parameter-list', ['threshold' => 5]);
 
         /** @var LongParameterListOptions $options */
         $options = $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
@@ -1869,10 +1861,10 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itLetsACliThresholdOverrideConfigFilePrefixedGraduatedKeys(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'coupling.distance' => ['max_distance_warning' => 0.4, 'max_distance_error' => 0.6],
         ]);
-        $this->registry->setCliOptions('coupling.distance', ['threshold' => 0.5]);
+        $this->writeCliOptions('coupling.distance', ['threshold' => 0.5]);
 
         /** @var DistanceOptions $options */
         $options = $this->factory->create('coupling.distance', DistanceOptions::class);
@@ -1886,10 +1878,10 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         // Symmetric direction: config file sets the bare `threshold`
         // shorthand, CLI switches to the prefixed graduated pair.
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'coupling.distance' => ['threshold' => 0.5],
         ]);
-        $this->registry->setCliOptions('coupling.distance', [
+        $this->writeCliOptions('coupling.distance', [
             'maxDistanceWarning' => 0.4,
             'maxDistanceError' => 0.6,
         ]);
@@ -1906,7 +1898,7 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         // Both keys set by the SAME source (CLI) for a prefixed group must
         // still be a genuine configuration error.
-        $this->registry->setCliOptions('coupling.distance', [
+        $this->writeCliOptions('coupling.distance', [
             'threshold' => 0.5,
             'maxDistanceWarning' => 0.4,
         ]);
@@ -1933,12 +1925,12 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itFoldsAnUnnormalizedGraduatedKeyBeforeMergingAgainstAnUnfoldedOverlay(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'coupling.instability' => [
                 'class' => ['max_warning' => 0.7, 'max_error' => 0.9],
             ],
         ]);
-        $this->registry->addCliOption('coupling.instability', 'class.threshold', 0.85);
+        $this->writeCliOption('coupling.instability', 'class.threshold', 0.85);
 
         /** @var InstabilityOptions $options */
         $options = $this->factory->create('coupling.instability', InstabilityOptions::class);
@@ -1963,13 +1955,13 @@ final class RuleOptionsFactoryTest extends TestCase
         // fixture using an unfolded snake_case spelling here would not be
         // reachable through any real door and would wrongly appear to leave
         // two keys (`max_warning` and `maxWarning`) alive side by side.
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'coupling.instability' => [
                 'class' => ['maxWarning' => 0.8, 'maxError' => 0.95],
                 'namespace' => ['maxWarning' => 0.7, 'maxError' => 0.9],
             ],
         ]);
-        $this->registry->addCliOption('coupling.instability', 'class.threshold', 0.85);
+        $this->writeCliOption('coupling.instability', 'class.threshold', 0.85);
 
         /** @var InstabilityOptions $options */
         $options = $this->factory->create('coupling.instability', InstabilityOptions::class);
@@ -1997,10 +1989,10 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itAppliesBothHalvesWhenTheCliOnlyOverridesOneHalfOfAConfigFileThreshold(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'complexity.ccn' => ['callable' => ['threshold' => 5]],
         ]);
-        $this->registry->addCliOption('complexity.ccn', 'callable.warning', 2);
+        $this->writeCliOption('complexity.ccn', 'callable.warning', 2);
 
         /** @var ComplexityOptions $options */
         $options = $this->factory->create('complexity.ccn', ComplexityOptions::class);
@@ -2032,12 +2024,12 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRefusesAFractionalThresholdNamingThresholdRatherThanWarning(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'size.method-count' => ['threshold' => 10.5],
         ]);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Option "threshold" of rule "size.method-count" must be a whole number');
+        self::expectExceptionMessage('Option "threshold" of rule "size.method-count" must be a non-negative whole number');
 
         $this->factory->create('size.method-count', MethodCountOptions::class);
     }
@@ -2051,7 +2043,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRefusesAListWhereABooleanSwitchWasDeclared(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'complexity.ccn' => ['enabled' => [7331]],
         ]);
 
@@ -2064,7 +2056,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itStillSwitchesARuleOffWithAnExplicitBoolean(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'complexity.ccn' => ['enabled' => false],
         ]);
 
@@ -2077,7 +2069,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRefusesAWholeNumberWhereAPathPatternWasDeclared(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'complexity.ccn' => ['suppress_paths' => 7331],
         ]);
 
@@ -2093,7 +2085,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRefusesBarePathStringsInsteadOfCoercingThem(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'one.rule' => ['suppress_paths' => 'src/Generated'],
         ]);
 
@@ -2106,7 +2098,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRefusesAWholeNumberWhereANamespacePatternWasDeclared(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'complexity.ccn' => ['suppress_namespaces' => 7331],
         ]);
 
@@ -2119,7 +2111,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRefusesAWholeNumberWhereASeverityWordWasDeclared(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'architecture.layer-violation' => ['severity' => 7331],
         ]);
 
@@ -2135,7 +2127,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itStillTakesASeverityWord(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'architecture.layer-violation' => ['severity' => 'error'],
         ]);
 
@@ -2148,13 +2140,13 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itRefusesAWronglyShapedValueInsideALevelSlot(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'complexity.ccn' => ['callable' => ['warning' => 'ten']],
         ]);
 
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage(
-            'Option "warning" of rule "complexity.ccn" at level "callable" must be a whole number or null, got a string.',
+            'Option "warning" of rule "complexity.ccn" at level "callable" must be a non-negative whole number or null, got a string.',
         );
 
         $this->factory->create('complexity.ccn', ComplexityOptions::class);
@@ -2163,7 +2155,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itStillTakesAWholeNumberInsideALevelSlot(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'complexity.ccn' => ['callable' => ['warning' => 7, 'error' => 9]],
         ]);
 
@@ -2183,7 +2175,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itLeavesAKeyTheClassAnswersAboutToItsOwnWords(): void
     {
-        $this->registry->setConfigFileOptions([
+        $this->writeConfigFile([
             'architecture.layer-violation' => ['unreachable_layer_severity' => 7331],
         ]);
 
@@ -2191,5 +2183,57 @@ final class RuleOptionsFactoryTest extends TestCase
         $this->expectExceptionMessage('no longer exists');
 
         $this->factory->create('architecture.layer-violation', LayerViolationOptions::class);
+    }
+
+    // -- the door ---------------------------------------------------------------
+    //
+    // Every write goes through `replace()`, the one door the product configures
+    // the registry by, with the whole configuration written so far: a suite
+    // built on per-field setters would test the merge against a state shape the
+    // product never builds.
+
+    /** @param array<string, mixed> $rules */
+    private function writeConfigFile(array $rules): void
+    {
+        $this->configFileRules = $rules;
+        $this->install();
+    }
+
+    private function writeCliOption(string $ruleName, string $option, mixed $value): void
+    {
+        $this->cliRules[$ruleName][$option] = $value;
+        $this->install();
+    }
+
+    /** @param array<string, mixed> $options */
+    private function writeCliOptions(string $ruleName, array $options): void
+    {
+        $this->cliRules[$ruleName] = $options;
+        $this->install();
+    }
+
+    private function resetRun(): void
+    {
+        $this->configFileRules = [];
+        $this->cliRules = [];
+        $this->registry->resetRuntimeState();
+    }
+
+    private function install(): void
+    {
+        $this->registry->replace(self::configuration($this->configFileRules, $this->cliRules));
+    }
+
+    /**
+     * @param array<string, mixed> $configFileRules
+     * @param array<string, array<string, mixed>> $cliRules
+     */
+    private static function configuration(array $configFileRules, array $cliRules = []): FindingConfiguration
+    {
+        return new FindingConfiguration(
+            new RuleOptionsDocument($configFileRules),
+            new FindingCliOverrides($cliRules),
+            new RuleSelection(),
+        );
     }
 }

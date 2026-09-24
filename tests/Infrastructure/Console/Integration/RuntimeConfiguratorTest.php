@@ -380,7 +380,7 @@ final class RuntimeConfiguratorTest extends TestCase
             $this->configure($document, $root, $this->input(['--profile' => null]), new BufferedOutput());
             self::fail('A memory limit below current usage must fail.');
         } catch (RuntimeException $exception) {
-            self::assertSame('Cannot set requested memory_limit.', $exception->getMessage());
+            self::assertStringStartsWith('Cannot set requested memory_limit "1": the PHP runtime refused it.', $exception->getMessage());
         }
 
         self::assertFalse($this->cacheStore->current()->enabled);
@@ -405,7 +405,7 @@ final class RuntimeConfiguratorTest extends TestCase
                 (new RuntimeLimitsController())->apply(new RuntimeLimits('1'));
                 self::fail('An unapplicable memory limit must fail.');
             } catch (RuntimeException $exception) {
-                self::assertSame('Cannot set requested memory_limit.', $exception->getMessage());
+                self::assertStringStartsWith('Cannot set requested memory_limit "1": the PHP runtime refused it.', $exception->getMessage());
             }
 
             self::assertSame(0, $warnings);

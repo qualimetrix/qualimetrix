@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Unit;
 
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
@@ -19,16 +20,19 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\EntrySelector;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
+use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FindingFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 
 /**
  * ADR 0017's rules for `baseline:cleanup`: enumeration is read-only,
  * and removal touches exactly the selectors it is given.
  */
 #[CoversClass(BaselineCleaner::class)]
+#[CoversClass(RunRuleCoverage::class)]
 final class BaselineCleanerTest extends TestCase
 {
     #[Test]
@@ -41,11 +45,66 @@ final class BaselineCleanerTest extends TestCase
             self::baselineOf($entry),
             [],
             StubChannelDeclarationRegistry::withDefaults(),
+            [],
         );
 
         self::assertCount(1, $candidates);
         self::assertSame(BaselineCleanupReason::Stale, $candidates[0]->reason);
         self::assertSame($entry->selector()->value, $candidates[0]->selector->value);
+    }
+
+    /**
+     * An entry whose rule did not run is absent because nothing looked, and
+     * is listed under its own reason rather than as stale: a selector or a
+     * rule switched off in configuration, the same answer either way.
+     *
+     * @return iterable<string, array{RunRuleCoverage}>
+     */
+    public static function provideSkippedProducers(): iterable
+    {
+        yield 'left out by a selector' => [StubRuleCoverage::withSkipped(notSelected: ['complexity.ccn'])];
+        yield 'disabled at every level by configuration' => [StubRuleCoverage::withSkipped(disabledEverywhere: ['complexity.ccn'])];
+    }
+
+    #[Test]
+    #[DataProvider('provideSkippedProducers')]
+    public function itListsAnEntryWhoseRuleDidNotRunUnderItsOwnReason(RunRuleCoverage $coverage): void
+    {
+        $unmeasured = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($unmeasured), [15], 1);
+
+        $candidates = $this->cleaner()->candidates(
+            self::baselineOf($entry),
+            [],
+            StubChannelDeclarationRegistry::withDefaults(),
+            $coverage->unmeasured([$entry->identity]),
+        );
+
+        self::assertCount(1, $candidates);
+        self::assertSame(BaselineCleanupReason::ProducerDidNotRun, $candidates[0]->reason);
+    }
+
+    /**
+     * The legitimate neighbour: another rule being left out does not change
+     * the reason of an entry whose own rule ran and reported nothing — a
+     * loosened threshold looks exactly like this, and "nothing reported" is
+     * true of it.
+     */
+    #[Test]
+    public function itStillListsAnEntryWhoseRuleRanAsStale(): void
+    {
+        $repaired = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($repaired), [15], 1);
+
+        $candidates = $this->cleaner()->candidates(
+            self::baselineOf($entry),
+            [],
+            StubChannelDeclarationRegistry::withDefaults(),
+            StubRuleCoverage::withSkipped(notSelected: ['code-smell.goto'])->unmeasured([$entry->identity]),
+        );
+
+        self::assertCount(1, $candidates);
+        self::assertSame(BaselineCleanupReason::Stale, $candidates[0]->reason);
     }
 
     #[Test]
@@ -58,6 +117,7 @@ final class BaselineCleanerTest extends TestCase
             self::baselineOf($entry),
             [$finding],
             new StubChannelDeclarationRegistry(),
+            [],
         );
 
         self::assertCount(1, $candidates);
@@ -79,6 +139,7 @@ final class BaselineCleanerTest extends TestCase
             self::baselineOf($entry),
             [],
             new StubChannelDeclarationRegistry(),
+            [],
         );
 
         self::assertCount(1, $candidates);
@@ -95,6 +156,7 @@ final class BaselineCleanerTest extends TestCase
             self::baselineOf($entry),
             [$finding],
             StubChannelDeclarationRegistry::withDefaults(),
+            [],
         );
 
         self::assertSame([], $candidates);
@@ -107,7 +169,7 @@ final class BaselineCleanerTest extends TestCase
 
         $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], inertEntries: [$inert]);
 
-        $candidates = $this->cleaner()->candidates($baseline, [], StubChannelDeclarationRegistry::withDefaults());
+        $candidates = $this->cleaner()->candidates($baseline, [], StubChannelDeclarationRegistry::withDefaults(), []);
 
         self::assertCount(1, $candidates);
         self::assertSame(BaselineCleanupReason::Inert, $candidates[0]->reason);
@@ -122,7 +184,7 @@ final class BaselineCleanerTest extends TestCase
         $entry = new BaselineEntry(BaselineIdentity::forFinding($repaired), [15], 1);
         $baseline = self::baselineOf($entry);
 
-        $this->cleaner()->candidates($baseline, [], StubChannelDeclarationRegistry::withDefaults());
+        $this->cleaner()->candidates($baseline, [], StubChannelDeclarationRegistry::withDefaults(), []);
 
         self::assertSame([$entry], $baseline->entries, 'candidates() must not mutate the baseline it was given');
     }

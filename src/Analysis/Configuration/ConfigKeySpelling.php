@@ -48,4 +48,18 @@ final class ConfigKeySpelling
             ? $normalized
             : strtolower((string) preg_replace('/[A-Z]/', $separator . '$0', $normalized));
     }
+
+    /**
+     * {@see self::rewriteLike()} for a list of keys the author is offered —
+     * a suggestion, the allowed keys of a section. A key written as one plain
+     * word shows no style to copy, and then the documented snake_case is the
+     * better guess than camelCase: `failon` is answered with `fail_on`, not
+     * `failOn`.
+     */
+    public static function offerLike(string $normalized, string $authored): string
+    {
+        return preg_match('/[A-Z_-]/', $authored) === 1
+            ? self::rewriteLike($normalized, $authored)
+            : self::rewriteLike($normalized, '_');
+    }
 }

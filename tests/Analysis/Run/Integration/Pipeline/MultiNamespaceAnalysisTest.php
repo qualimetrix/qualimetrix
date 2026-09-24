@@ -149,7 +149,8 @@ PHP
                     throw new RuntimeException('Failed to create parallel fixture file');
                 }
                 $paths[] = $path;
-                $expectedPhysicalLoc += substr_count($content, "\n") + 1;
+                // A final line break ends the last line; an unterminated last line still counts.
+                $expectedPhysicalLoc += substr_count($content, "\n") + (str_ends_with($content, "\n") ? 0 : 1);
             }
 
             $strategy = new AmphpParallelStrategy(new FileProcessingTaskFactory(

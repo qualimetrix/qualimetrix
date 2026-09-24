@@ -421,15 +421,23 @@ final class ChannelEmissionStaticGuardTest extends TestCase
                 'LayerViolationRule delegates its second channel here, and the channel name arrives as an'
                 . ' argument rather than a constant on this class, so the resolver has nothing to read even'
                 . ' if it followed the call.',
+            'src/Analysis/Policy/Architecture/LayerViolation/DoubtedAssignmentDiagnostic.php' =>
+                'LayerViolationRule delegates architecture.doubted-assignment here, the same shape as'
+                . ' UnmatchedExcludeDiagnostic above.',
             'src/Analysis/Policy/Architecture/LayerViolation/DeclaredLayerReachability.php' =>
                 'Reached from LayerDeclarationValidator, a configuration validator rather than a rule, so no'
                 . ' rule class chain leads here at all.',
+            'src/Analysis/Policy/Architecture/LayerViolation/PotentialShadowDiagnostic.php' =>
+                'Reached from LayerDeclarationValidator, like DeclaredLayerReachability above.',
             'src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php' =>
                 'A configuration validator, like the one above.',
             'src/Analysis/Run/ExcludeBinding/UnmatchedExcludeAudit.php' =>
                 'UnmatchedExcludeRule names the channel but cannot emit it: what an exclude pattern bound to is'
                 . ' known during file discovery, before rules run, so the finding is assembled here and no rule'
                 . ' class chain leads to this construction.',
+            'src/Analysis/Run/ExcludeBinding/UnjudgedExcludeFinding.php' =>
+                'The second shape of the same channel, for the pattern the walk could not judge; the audit above'
+                . ' delegates to it, and it is off the rule chain for the same reason the audit is.',
             'src/Analysis/Finding/SuppressionBinding/UnboundSuppressionAudit.php' =>
                 'UnboundSuppressionRule names the three channels but cannot emit them: whether a suppression'
                 . ' value bound to anything is known only after the run, at the reporting seam, so the findings'

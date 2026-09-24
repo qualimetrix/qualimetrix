@@ -8,14 +8,11 @@ use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
-use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanation;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationStatus;
-use Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundary;
-use Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundaryBaselineSource;
+use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -92,18 +89,23 @@ final class BaselineExplainCommand extends BaselineCommand
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        /** @var string $subjectKey */
-        $subjectKey = $input->getArgument('subject');
+        $subjectKey = CommandLineSpelling::requiredArgument($input, 'subject');
 
         $channel = $this->readChannel($input);
 
-        // The run first, then the file (ADR 0017). A `computed.*` / `health.*`
-        // channel's declaration is resolved from configuration this run
-        // resolves; a file read before it loads every such entry inert, and
-        // `explain` would then deny the existence of an acceptance `check`
-        // applies on the same file.
+        // The run first, then the file's contents (ADR 0017). A `computed.*` /
+        // `health.*` channel's declaration is resolved from configuration this
+        // run resolves; a file read before it loads every such entry inert,
+        // and `explain` would then deny the existence of an acceptance `check`
+        // applies on the same file. Whether the file exists needs no
+        // declaration, so that alone is asked before the run.
+        $baselinePath = self::baselinePath($input);
+        if ($baselinePath !== null) {
+            BaselineLoader::assertReadable($baselinePath);
+        }
+
         $context = $this->baselineRun->measure($input, $output);
-        $baseline = $this->readBaseline($input);
+        $baseline = $baselinePath !== null ? $this->loader->load($baselinePath) : null;
 
         // Addressability is checked here, not in readChannel(): the registry
         // side needs the computed-metric definitions this run just resolved,
@@ -142,24 +144,24 @@ final class BaselineExplainCommand extends BaselineCommand
             );
         }
 
-        self::render($explanation, $output);
+        BaselineExplanationRenderer::render($explanation, $output);
 
         return self::SUCCESS;
     }
 
-    private function readBaseline(InputInterface $input): ?Baseline
+    private static function baselinePath(InputInterface $input): ?string
     {
-        $path = $input->getOption('baseline');
+        $path = CommandLineSpelling::option($input, 'baseline');
 
-        return \is_string($path) && $path !== '' ? $this->loader->load($path) : null;
+        return $path !== null && $path !== '' ? $path : null;
     }
 
     /** `null` when `--channel` was not given at all, which means "every channel". */
     private function readChannel(InputInterface $input): ?FindingChannel
     {
-        $raw = $input->getOption('channel');
+        $raw = CommandLineSpelling::option($input, 'channel');
 
-        if (!\is_string($raw) || $raw === '') {
+        if ($raw === null || $raw === '') {
             return null;
         }
 
@@ -200,98 +202,5 @@ final class BaselineExplainCommand extends BaselineCommand
         }
 
         return false;
-    }
-
-    private static function render(BoundaryExplanation $explanation, OutputInterface $output): void
-    {
-        $output->writeln(\sprintf('Subject: <info>%s</info>', $explanation->subjectKey));
-
-        if ($explanation->status === BoundaryExplanationStatus::BaselineOnly) {
-            $output->writeln('  <comment>Baseline only: this subject is absent from the current analysis scope or result.</comment>');
-        }
-
-        if ($explanation->boundaries === []) {
-            $output->writeln('');
-            $output->writeln($explanation->status === BoundaryExplanationStatus::BaselineOnly
-                ? '  <comment>The baseline names this subject, but no entry forms an applicable boundary.</comment>'
-                : '  <comment>Nothing currently reports on this measured subject.</comment>');
-
-            return;
-        }
-
-        foreach ($explanation->boundaries as $boundary) {
-            $output->writeln('');
-            $output->writeln(\sprintf('  Channel: <info>%s</info>', $boundary->identity->channel->code));
-
-            if ($boundary->identity->edge !== null) {
-                $output->writeln(\sprintf('    Edge: %s', $boundary->identity->edge->target));
-            }
-
-            $output->writeln(\sprintf('    baseline:      %s', self::describeBaseline($boundary->baseline)));
-            $output->writeln(\sprintf('    qmx.yaml:      %s', self::describeConfigured($boundary)));
-            $output->writeln(\sprintf('    annotation:    %s', self::describeAnnotation($boundary->annotation)));
-        }
-    }
-
-    /**
-     * Both numbers, always: the level the entry stores and the level being
-     * compared against it in this run (ADR 0017).
-     */
-    private static function describeBaseline(?EffectiveBoundaryBaselineSource $source): string
-    {
-        if ($source === null) {
-            return '(none)';
-        }
-
-        return \sprintf(
-            'accepted %s; now %s',
-            $source->accepted->describe(),
-            self::describeCurrent($source),
-        );
-    }
-
-    private static function describeCurrent(EffectiveBoundaryBaselineSource $source): string
-    {
-        if ($source->currentCount === 0) {
-            return 'nothing reported';
-        }
-
-        if ($source->currentMagnitudes === null || $source->currentMagnitudes === []) {
-            return $source->currentCount === 1 ? '1 occurrence' : $source->currentCount . ' occurrences';
-        }
-
-        return implode(', ', array_map(self::formatNumber(...), $source->currentMagnitudes));
-    }
-
-    private static function describeConfigured(EffectiveBoundary $boundary): string
-    {
-        return $boundary->configuredThreshold === null
-            ? '(not resolvable from configuration)'
-            : self::formatNumber($boundary->configuredThreshold);
-    }
-
-    private static function describeAnnotation(?ThresholdOverride $annotation): string
-    {
-        if ($annotation === null) {
-            return '(none)';
-        }
-
-        return \sprintf(
-            '@qmx-threshold %s warning=%s error=%s',
-            $annotation->rulePattern,
-            $annotation->warning === null ? '(unchanged)' : self::formatNumber($annotation->warning),
-            $annotation->error === null ? '(unchanged)' : self::formatNumber($annotation->error),
-        );
-    }
-
-    private static function formatNumber(int|float $value): string
-    {
-        if (\is_int($value)) {
-            return (string) $value;
-        }
-
-        $formatted = rtrim(rtrim(\sprintf('%.6F', $value), '0'), '.');
-
-        return $formatted === '' || $formatted === '-' ? '0' : $formatted;
     }
 }

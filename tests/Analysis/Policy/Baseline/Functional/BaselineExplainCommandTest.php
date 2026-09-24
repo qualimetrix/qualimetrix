@@ -26,11 +26,13 @@ use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
+use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
@@ -49,6 +51,7 @@ use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubBaselineRun;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -246,8 +249,8 @@ final class BaselineExplainCommandTest extends TestCase
         // addressability comes from the loaded baseline alone: a channel a
         // rename map has
         // already carried a baseline onto is a legitimate `--channel` before
-        // the release declaring it lands, even though an inert entry has no
-        // accepted magnitude of its own to print.
+        // the release declaring it lands. The entry has no accepted level the
+        // ceiling could read, so it is named as present and not applied.
         $tester = $this->execute(
             [],
             ['--baseline' => $this->baselinePath, '--channel' => 'renamed.channel'],
@@ -256,7 +259,7 @@ final class BaselineExplainCommandTest extends TestCase
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString('Channel: renamed.channel', $tester->getDisplay());
-        self::assertStringContainsString('baseline:      (none)', $tester->getDisplay());
+        self::assertStringContainsString('baseline:      present but not applied (channel is not declared', $tester->getDisplay());
     }
 
     #[Test]
@@ -330,6 +333,159 @@ final class BaselineExplainCommandTest extends TestCase
     }
 
     /**
+     * An entry the loader turned inert is still in the file, and `check`
+     * names it as one that cannot be applied. `explain` answering "(none)"
+     * for the same channel would deny a line `check` just printed — the
+     * ordinary state of a file carried onto a channel name this build does
+     * not declare yet.
+     */
+    #[Test]
+    public function itNamesAnEntryItCannotApplyInsteadOfDenyingIt(): void
+    {
+        $symbol = SymbolPath::forMethod('App', 'OrderService', 'calculate');
+        $this->writeBaseline([new BaselineEntry(self::identity($symbol, 'complexity.renamed-ccn'), [25.0], 1)]);
+
+        $tester = $this->execute(
+            [self::finding($symbol, self::CCN_CHANNEL, 31.0)],
+            ['--baseline' => $this->baselinePath, '--channel' => 'complexity.renamed-ccn'],
+        );
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        $display = $tester->getDisplay();
+        self::assertStringNotContainsString('baseline:      (none)', $display);
+        self::assertStringContainsString(
+            'baseline:      present but not applied (channel is not declared by any rule',
+            $display,
+        );
+    }
+
+    /**
+     * A line nothing could read has no identity to explain a boundary for,
+     * but it is still a line about this subject, and is named as one.
+     */
+    #[Test]
+    public function itNamesAnUnreadableEntryForTheSubject(): void
+    {
+        $symbol = SymbolPath::forMethod('App', 'OrderService', 'calculate');
+        $subjectKey = self::subject($symbol)->toCanonical();
+        file_put_contents($this->baselinePath, json_encode([
+            'version' => 13,
+            'generated' => '2026-09-01T00:00:00+00:00',
+            'scope' => ['src'],
+            'entries' => [$subjectKey => [['channel' => 5, 'count' => 1]]],
+        ], \JSON_THROW_ON_ERROR));
+
+        $tester = $this->execute(
+            [self::finding($symbol, self::CCN_CHANNEL, 31.0)],
+            ['--baseline' => $this->baselinePath],
+        );
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Unreadable baseline entry', $tester->getDisplay());
+        self::assertStringContainsString('malformed entry', $tester->getDisplay());
+    }
+
+    /**
+     * `mode: suppress` waives the comparison, so the pair of numbers alone
+     * reads as a breach the ceiling will never report.
+     */
+    #[Test]
+    public function itSaysASuppressEntryAcceptsWhateverIsReportedNow(): void
+    {
+        $symbol = SymbolPath::forMethod('App', 'OrderService', 'calculate');
+        $this->writeBaseline([
+            new BaselineEntry(self::identity($symbol, self::CCN_CHANNEL), [24.0], 1, BaselineEntryMode::Suppress),
+        ]);
+
+        $tester = $this->execute(
+            [self::finding($symbol, self::CCN_CHANNEL, 32.0)],
+            ['--baseline' => $this->baselinePath],
+        );
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString(
+            'baseline:      accepted 24 (mode: suppress, accepted whatever is reported); now 32',
+            $tester->getDisplay(),
+        );
+    }
+
+    /**
+     * The ceiling refuses to compare a group one of whose members reports no
+     * finite number, and reports the whole group. Printing the surviving
+     * numbers alone would read as a group within its acceptance.
+     */
+    #[Test]
+    public function itSaysAnEntryIsNotAppliedWhenAMemberReportsNoFiniteMagnitude(): void
+    {
+        $symbol = SymbolPath::forMethod('App', 'OrderService', 'calculate');
+        $this->writeBaseline([new BaselineEntry(self::identity($symbol, self::CCN_CHANNEL), [25.0, 25.0], 2)]);
+
+        $unmeasured = new Finding(
+            location: new Location(RelativePath::fromString(self::SYMBOL_FILE), 14),
+            subject: self::subject($symbol),
+            symbolPath: $symbol,
+            ruleName: self::CCN_CHANNEL,
+            code: self::CCN_CHANNEL,
+            message: 'finding',
+            severity: Severity::Warning,
+            metricValue: null,
+        );
+
+        $tester = $this->execute(
+            [self::finding($symbol, self::CCN_CHANNEL, 20.0), $unmeasured],
+            ['--baseline' => $this->baselinePath],
+        );
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString(
+            'baseline:      accepted 25, 25; now 20, and 1 without a finite value, so the entry is not applied',
+            $tester->getDisplay(),
+        );
+    }
+
+    /**
+     * An empty group says nothing about the code when the rule producing the
+     * channel did not run; "nothing reported" would claim it looked.
+     */
+    #[Test]
+    public function itSaysTheChannelWasNotMeasuredWhenItsRuleDidNotRun(): void
+    {
+        $symbol = SymbolPath::forMethod('App', 'OrderService', 'calculate');
+        $this->writeBaseline([new BaselineEntry(self::identity($symbol, self::CCN_CHANNEL), [25.0], 1)]);
+
+        $tester = $this->execute(
+            [],
+            ['--baseline' => $this->baselinePath, '--channel' => self::CCN_CHANNEL],
+            coverage: StubRuleCoverage::withSkipped(notSelected: [self::CCN_CHANNEL]),
+        );
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString(
+            'accepted 25; now not measured (this invocation did not run the rule for this channel at this level)',
+            $tester->getDisplay(),
+        );
+    }
+
+    /**
+     * The legitimate neighbour of the three above: an applicable entry whose
+     * members all measure still prints the plain pair.
+     */
+    #[Test]
+    public function itPrintsThePlainPairForAnApplicableEntry(): void
+    {
+        $symbol = SymbolPath::forMethod('App', 'OrderService', 'calculate');
+        $this->writeBaseline([new BaselineEntry(self::identity($symbol, self::CCN_CHANNEL), [25.0], 1)]);
+
+        $tester = $this->execute(
+            [self::finding($symbol, self::CCN_CHANNEL, 20.0)],
+            ['--baseline' => $this->baselinePath],
+        );
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString("baseline:      accepted 25; now 20\n", $tester->getDisplay());
+    }
+
+    /**
      * @param list<Finding> $measured
      * @param array<string, mixed> $options
      * @param array<string, list<ThresholdOverride>> $overrides
@@ -346,6 +502,7 @@ final class BaselineExplainCommandTest extends TestCase
         ?array $ruleClasses = null,
         ?SymbolPath $symbol = null,
         ?MetricRepositoryInterface $metrics = null,
+        ?RunRuleCoverage $coverage = null,
     ): CommandTester {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(self::CBO_CHANNEL, ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_));
@@ -363,7 +520,7 @@ final class BaselineExplainCommandTest extends TestCase
                 metrics: $metrics,
             ),
             new BaselineLoader(new BaselineEntryParser($declarations)),
-            new BoundaryExplanationService(self::producerEdge()),
+            new BoundaryExplanationService(self::producerEdge(), $coverage ?? StubRuleCoverage::everyRuleRan()),
             new BaselineConfiguredThresholds(
                 self::ruleRegistry($ruleClasses ?? ($registerRules ? [ComplexityRule::class] : [])),
                 new RuleOptionsFactory($registry),
@@ -399,7 +556,7 @@ final class BaselineExplainCommandTest extends TestCase
         $command = new BaselineExplainCommand(
             new StubBaselineRun($measured, ['src'], AbsolutePath::fromString($this->tempDir)),
             new BaselineLoader(new BaselineEntryParser($declarations)),
-            new BoundaryExplanationService(self::producerEdge()),
+            new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan()),
             new BaselineConfiguredThresholds(self::ruleRegistry([]), new RuleOptionsFactory(new RuleOptionsRegistry())),
             $declarations,
         );

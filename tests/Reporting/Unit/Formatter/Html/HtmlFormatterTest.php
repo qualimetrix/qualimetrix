@@ -115,6 +115,54 @@ final class HtmlFormatterTest extends TestCase
         self::assertStringContainsString('"tree"', $output);
     }
 
+    /**
+     * The data is substituted into the template together with the scripts; a
+     * value spelled like a later placeholder must stay a value.
+     */
+    #[Test]
+    public function itKeepsAValueSpelledLikeATemplatePlaceholderInTheData(): void
+    {
+        $report = ReportBuilder::create()->filesAnalyzed(1)->filesSkipped(0)->duration(0.1)->build();
+
+        $output = $this->formatter->format($report, new FormatterContext(options: ['project-name' => '__APP_JS__ and __D3_JS__']));
+
+        self::assertSame('__APP_JS__ and __D3_JS__', self::payload($output)['project']['name']);
+    }
+
+    #[Test]
+    public function itNamesTheReportAfterTheAnalysedProjectNotAfterTheRunningTool(): void
+    {
+        $root = sys_get_temp_dir() . '/qmx-html-name-' . bin2hex(random_bytes(8));
+        mkdir($root);
+        file_put_contents($root . '/composer.json', '{"name": "corpus/reporting-review"}');
+        $bare = $root . '/no-manifest-here';
+        mkdir($bare);
+
+        try {
+            $report = ReportBuilder::create()->filesAnalyzed(1)->filesSkipped(0)->duration(0.1)->build();
+
+            $named = self::payload($this->formatter->format($report, new FormatterContext(basePath: $root)));
+            $unnamed = self::payload($this->formatter->format($report, new FormatterContext(basePath: $bare)));
+            $explicit = self::payload($this->formatter->format($report, new FormatterContext(basePath: $root, options: ['project-name' => 'Chosen'])));
+        } finally {
+            unlink($root . '/composer.json');
+            rmdir($bare);
+            rmdir($root);
+        }
+
+        self::assertSame('corpus/reporting-review', $named['project']['name']);
+        self::assertSame('no-manifest-here', $unnamed['project']['name']);
+        self::assertSame('Chosen', $explicit['project']['name']);
+    }
+
+    /** @return array<string, mixed> */
+    private static function payload(string $html): array
+    {
+        self::assertSame(1, preg_match('~<script type="application/json" id="report-data">(.*?)</script>~s', $html, $match));
+
+        return json_decode($match[1], true, 512, \JSON_THROW_ON_ERROR);
+    }
+
     #[Test]
     public function itUsesJsonHexTagEncoding(): void
     {

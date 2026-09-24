@@ -41,9 +41,11 @@ All analysis-bearing baseline commands accept the same configuration options nee
 --rule-opt=RULE-OPT
 --only-rule=ONLY-RULE
 --disable-rule=DISABLE-RULE
+--include-generated
+--include-autoload-dev
 ```
 
-They also accept `--config=CONFIG`. They do **not** accept `--suppress-path` or `--suppress-namespace`, because those safe `check` narrowings would otherwise make lifecycle operations asymmetric. They also do not accept `--no-suppression-annotations`, which is report-only and cannot widen the measured set.
+The two `--include-*` flags decide what the project is — the paths a run with no paths analyses and the scope it is judged against — so a baseline captured without the flag a later `check` uses does not measure the same set. They also accept `--config=CONFIG`. They do **not** accept `--suppress-path` or `--suppress-namespace`, because those safe `check` narrowings would otherwise make lifecycle operations asymmetric. They also do not accept `--no-suppression-annotations`, which is report-only and cannot widen the measured set.
 
 ### Generate
 
@@ -77,7 +79,7 @@ bin/qmx baseline:cleanup baseline.json src/
 bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
 ```
 
-Without `--remove`, `baseline:cleanup <baseline> [<paths>...]` only lists candidates and never writes the file. Repeat `--remove=<selector>` for exactly the entries you have reviewed. There is no bulk removal: absence can be caused by a configuration change, not only a repair. `--force` has the same scope-guard meaning as `baseline:update`.
+Without `--remove`, `baseline:cleanup <baseline> [<paths>...]` only lists candidates and never writes the file. Each candidate names its reason: `nothing reported for this identity` means the run measured the entry's channel at the level of its subject and reported nothing; `not measured: this invocation did not run the rule for this channel at this level` means the run left that channel out at that level, so its absence says nothing about the code. The level is the entry's own: `--disable-rule=coupling.cbo:namespace` marks a namespace entry of `coupling.cbo` as not measured while its class entries are still judged, and so does a level switched off in the rule's options (`class: { enabled: false }`), as well as `--only-rule`, `--disable-rule` or `enabled: false` for the whole rule. A copy of a duplicate block that nothing reports any more is named by its occurrence hash rather than by a file — `project: duplication.clone [<occurrence>]` — because that hash is all the baseline stores for it; each copy has a selector of its own. Repeat `--remove=<selector>` for exactly the entries you have reviewed. There is no bulk removal: absence can be caused by a configuration change, not only a repair. `--force` has the same scope-guard meaning as `baseline:update`.
 
 ### Carry a baseline onto renamed channels
 
@@ -116,7 +118,7 @@ rename that matches nothing in this file is reported, not refused. Exit codes:
 baseline or the map not being a readable file, or on a malformed `--format`
 value; every refusal takes the same code regardless of which of those caused
 it. A refusal is reported in the chosen format: under `--format=json` it is
-the `{error, exit_code}` envelope every other machine-readable refusal in the
+the `{error, exit_code, position}` envelope every other machine-readable refusal in the
 tool uses, not a bespoke `error`-only object.
 
 Two consequences are worth knowing before you run it:
@@ -162,6 +164,25 @@ bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --channel=c
 A symbol absent from both the current analysis and the baseline is invalid input,
 not a clean result. A baseline-only symbol remains explainable and is labelled as
 absent from the current scope or result.
+
+The `baseline:` line says whether `check` compares the two numbers at all:
+
+| Output                                                                                                         | Meaning                                                                                                      |
+| -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `accepted 25; now 31`                                                                                          | The entry is applied: the current group is compared against the accepted level.                              |
+| `accepted 24 (mode: suppress, accepted whatever is reported); now 32`                                          | A `mode: suppress` entry: the numbers are shown, but the group is accepted whatever they are.                |
+| `accepted 25, 25; now 20, and 1 without a finite value, so the entry is not applied and the group is reported` | A member reports no finite number, so `check` does not compare the group and reports it at its own severity. |
+| `present but not applied (<reason> — <detail>) [<selector>]; now …`                                            | The file holds an entry for this identity that cannot be applied — the same entry `check` lists as inert.    |
+| `(none)`                                                                                                       | The file holds no entry for this identity.                                                                   |
+| `…; now not measured (this invocation did not run the rule for this channel at this level)`                    | The run left the channel out at the level of this subject, so an empty group says nothing about the code.    |
+
+A line about the symbol whose identity could not be read at all is listed separately as
+`Unreadable baseline entry [<selector>]`, with the reason `check` gives for it.
+
+A `--baseline` file (for `check` and `baseline:explain`) or a `<baseline>` argument (for
+`baseline:update` and `baseline:cleanup`) that does not exist, is not a regular file (a directory, for example) or cannot be read is
+refused with exit 3 before any analysis runs. `baseline:generate --force` refuses a destination
+it cannot read, or one that is not a regular file, the same way.
 
 All lifecycle commands require complete analysis. A parse or processing failure
 returns exit 4 before any baseline is interpreted, classified, created, or
@@ -245,16 +266,18 @@ A channel can also be a computed metric, e.g. `@qmx-ignore health.cohesion` — 
 
 A directive that names something invalid, or that no longer fires, is not silently ignored — it becomes a finding of its own under the built-in `annotation.directive` rule, reported on the file that carries the directive. See [Annotation rules](../rules/annotation.md) for the full reference. Three of its four channels are configuration errors that end the run regardless of `--fail-on` and can never be baselined or suppressed:
 
-| Channel                            | Fires when                                                                                                                                               |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `annotation.unresolved-directive`  | the directive names a channel that does not exist (typo, a rule name where a channel was meant, an `X.*` matching nothing, or a removed computed metric) |
-| `annotation.unsupported-threshold` | `@qmx-threshold` targets a rule that declares no threshold override support                                                                              |
-| `annotation.invalid-threshold`     | the `@qmx-threshold` payload itself is malformed                                                                                                         |
-| `annotation.unused-directive`      | the directive is valid but nothing it addressed fired this run — ordinary cleanup debt                                                                   |
+| Channel                            | Fires when                                                                                                                                                                                                                                                                                             |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `annotation.unresolved-directive`  | the directive names a channel that does not exist (typo, a rule name where a channel was meant, an `X.*` matching nothing, or a removed computed metric), **or** it never became a directive at all — a `@qmx-` tag this tool does not read, or the declaration form written where nothing is measured |
+| `annotation.unsupported-threshold` | `@qmx-threshold` targets a rule that declares no threshold override support                                                                                                                                                                                                                            |
+| `annotation.invalid-threshold`     | the `@qmx-threshold` payload itself is malformed                                                                                                                                                                                                                                                       |
+| `annotation.unused-directive`      | the directive is valid but nothing it addressed fired this run — ordinary cleanup debt                                                                                                                                                                                                                 |
 
 Only `annotation.unused-directive` behaves like an ordinary finding: it defaults to `Info`, its severity is configurable via the `unused_directive_severity` rule option, and it can be baselined, dropped by the top-level `suppress_paths` or narrowed by a git scope like any other channel. `suppress_namespaces` does not reach it — the finding's subject is the file the annotation sits in, which carries no namespace — and neither do the rule's own exclusions, which run before this channel is assembled. It is the one channel no `@qmx-ignore` can silence — a directive addressing it is refused as an `annotation.unresolved-directive` — so a baseline entry is the way to accept it in place. `@qmx-threshold` never counts toward it.
 
 An inline same-line comment is not supported.
+
+A tag that is misspelled, and a `@qmx-ignore` written above a statement or on a property, used to do nothing quietly; both are now `annotation.unresolved-directive` errors. See [Forms that never become a directive](../rules/annotation.md#forms-that-never-become-a-directive).
 
 ### View what annotations hide
 

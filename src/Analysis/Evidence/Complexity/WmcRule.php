@@ -24,10 +24,8 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * Rule that checks WMC (Weighted Methods per Class) at class level.
  *
  * WMC is the sum of cyclomatic complexities of all methods in a class.
- * It combines size and complexity into a single metric:
- * - WMC <= 30: simple class
- * - WMC 31-50: medium complexity
- * - WMC > 50: complex class requiring refactoring
+ * It combines size and complexity into a single metric. The warning and
+ * error thresholds are owned by {@see WmcOptions}.
  *
  * Besides the published `complexity.wmc` value, also reads
  * `design.is-data-class` (skip data classes when configured) and

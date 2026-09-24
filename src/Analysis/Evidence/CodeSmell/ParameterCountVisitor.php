@@ -19,9 +19,8 @@ use Qualimetrix\Core\Path\RelativePath;
 /**
  * Visitor for counting method/function parameters.
  *
- * Counts the number of parameters for each method and function.
- * Closures are intentionally skipped as they don't have meaningful
- * SymbolPath for callable-level metrics.
+ * Counts the parameters of every callable scope the method context opens: methods, functions,
+ * closures and arrow functions. Which of those a rule judges is the rule's decision.
  */
 final class ParameterCountVisitor extends NodeVisitorAbstract implements DeclarationIndexAwareInterface, ResettableVisitorInterface
 {
@@ -123,7 +122,7 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Declara
         $this->parameterCounts[$fqn] = \count($node->getParams());
 
         if ($node instanceof ClassMethod
-            && $scope->member === '__construct'
+            && strtolower($scope->member) === '__construct'
             && $this->isCurrentClassReadonly()
             && $this->isVoConstructor($node)
         ) {

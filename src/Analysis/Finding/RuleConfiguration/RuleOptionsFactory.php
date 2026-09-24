@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use ReflectionClass;
 use ReflectionNamedType;
@@ -140,13 +141,13 @@ final class RuleOptionsFactory
      */
     private function extractSuppressNamespaces(string $ruleName, array &$merged): void
     {
-        $namespaces = $this->takeFrameworkOption($merged, FrameworkOptionKeys::NAMESPACES);
+        $namespaces = ConfiguredSuppression::take($merged, FrameworkOptionKeys::NAMESPACES);
         $this->registry->configureNamespaceExclusions(
             $ruleName,
             $this->suppressionSelectors->optionalNamespaces($ruleName, 'suppress_namespaces', $namespaces),
         );
 
-        $channels = $this->takeFrameworkOption($merged, FrameworkOptionKeys::NAMESPACE_CHANNELS);
+        $channels = ConfiguredSuppression::take($merged, FrameworkOptionKeys::NAMESPACE_CHANNELS);
         $this->registry->configureNamespaceChannelExclusions($ruleName, $this->suppressionSelectors->channels($ruleName, $channels));
     }
 
@@ -159,32 +160,11 @@ final class RuleOptionsFactory
      */
     private function extractSuppressPaths(string $ruleName, array &$merged): void
     {
-        $raw = $this->takeFrameworkOption($merged, FrameworkOptionKeys::PATHS);
+        $raw = ConfiguredSuppression::take($merged, FrameworkOptionKeys::PATHS);
         $this->registry->configurePathExclusions(
             $ruleName,
             $this->suppressionSelectors->optionalPaths($ruleName, 'suppress_paths', $raw),
         );
-    }
-
-    /**
-     * Reads and removes one option exposed under camelCase and snake_case aliases.
-     *
-     * @param array<string, mixed> $options
-     */
-    private function takeFrameworkOption(array &$options, string $canonicalKey): mixed
-    {
-        // The two spellings a door can hand this key over under, rewritten from
-        // the one canonical name rather than written out again beside it: the
-        // camelCase the configuration pipeline's normalization produces, and the
-        // snake_case an author writes in `qmx.yaml`.
-        $camelKey = ConfigKeySpelling::normalize($canonicalKey);
-        $snakeKey = ConfigKeySpelling::rewriteLike($camelKey, 'a_b');
-
-        $value = $options[$camelKey] ?? $options[$snakeKey] ?? null;
-
-        unset($options[$camelKey], $options[$snakeKey]);
-
-        return $value;
     }
 
     /**

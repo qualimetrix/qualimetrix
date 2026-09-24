@@ -7,6 +7,7 @@ namespace Qualimetrix\Reporting\GraphProjection;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 
 /**
  * Exports dependency graphs to JSON format.
@@ -115,6 +116,11 @@ final class JsonGraphExporter
             'edges' => $edges,
         ];
 
-        return json_encode($result, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n";
+        // A class or method name can carry a byte `nikic/php-parser` accepts
+        // inside an identifier but that is not valid UTF-8 — see
+        // {@see PublishedUtf8}. Without this repair, `json_encode`'s
+        // `JSON_THROW_ON_ERROR` would throw here and the whole export would
+        // fail on an otherwise complete analysis.
+        return PublishedUtf8::encodeJsonObject($result, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES) . "\n";
     }
 }

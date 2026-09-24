@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Configuration\Pipeline;
 
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
+use Qualimetrix\Analysis\Configuration\Loader\SectionNormalizationPolicy;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
 
@@ -65,7 +66,12 @@ final class ConfigDataNormalizer
      *    absent key;
      *  - a null *list element* survives. An element is a value, not a key, so
      *    "never written" says nothing about it, and silently dropping it would
-     *    turn a malformed list into an accepted one.
+     *    turn a malformed list into an accepted one;
+     *  - a null *identifier entry* survives: the level-1 keys of a root whose
+     *    policy is {@see SectionNormalizationPolicy::PRESERVE_IMMEDIATE_CHILDREN}
+     *    are names the author gave an entity (a computed metric), which has no
+     *    default for `~` to stand for. What such an entry means is its owner's
+     *    call, and erasing it here left the owner nothing to refuse.
      *
      * @param array<string, mixed> $data
      *
@@ -73,6 +79,7 @@ final class ConfigDataNormalizer
      */
     private static function omittingUnwrittenKeys(array $data): array
     {
+        $policies = ConfigSchema::sectionPolicies();
         $result = [];
 
         foreach ($data as $key => $value) {
@@ -80,9 +87,15 @@ final class ConfigDataNormalizer
                 continue;
             }
 
-            $result[$key] = $key !== ConfigSchema::RULES && \is_array($value)
-                ? self::omittingUnwrittenEntries($value)
-                : $value;
+            if ($key === ConfigSchema::RULES || !\is_array($value)) {
+                $result[$key] = $value;
+
+                continue;
+            }
+
+            $result[$key] = ($policies[$key] ?? null) === SectionNormalizationPolicy::PRESERVE_IMMEDIATE_CHILDREN
+                ? self::omittingUnwrittenEntriesBelowIdentifiers($value)
+                : self::omittingUnwrittenEntries($value);
         }
 
         return $result;
@@ -109,6 +122,26 @@ final class ConfigDataNormalizer
                 continue;
             }
 
+            $result[$key] = \is_array($value) ? self::omittingUnwrittenEntries($value) : $value;
+        }
+
+        return $result;
+    }
+
+    /**
+     * The level-1 entries of an identifier-keyed root keep a null value — see
+     * {@see self::omittingUnwrittenKeys()} — and everything below them is read
+     * as usual.
+     *
+     * @param array<string|int, mixed> $identifiers
+     *
+     * @return array<string|int, mixed>
+     */
+    private static function omittingUnwrittenEntriesBelowIdentifiers(array $identifiers): array
+    {
+        $result = [];
+
+        foreach ($identifiers as $key => $value) {
             $result[$key] = \is_array($value) ? self::omittingUnwrittenEntries($value) : $value;
         }
 

@@ -9,7 +9,10 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Refusal\MachineReadableFormats;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\ReportBuilder;
 
 /**
  * Ties `MachineReadableFormats`'s "closed and measured" claim to the actual
@@ -19,6 +22,12 @@ use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
  * touches `MachineReadableFormats.php` or its unit test by construction —
  * only this test, which boots the real DI container, catches a format that
  * was registered but never classified.
+ *
+ * Membership alone did not keep the classification true: `health` sat among
+ * the JSON formats while its formatter printed a text table, so a refusal
+ * under `--format=health` put a JSON envelope where a reader expected the
+ * table. {@see self::itClassifiesEachFormatByWhatItsFormatterPrints()} renders
+ * every formatter and holds the list to what came out.
  */
 #[CoversClass(MachineReadableFormats::class)]
 final class MachineReadableFormatsRegistryTest extends TestCase
@@ -71,6 +80,30 @@ final class MachineReadableFormatsRegistryTest extends TestCase
         sort($known);
 
         self::assertSame($expectedKnown, $known);
+    }
+
+    #[Test]
+    public function itClassifiesEachFormatByWhatItsFormatterPrints(): void
+    {
+        $registry = self::registry();
+        // The `suppressed` formatter refuses a report whose run never built the
+        // composition; an empty one is what a run that suppressed nothing has.
+        $report = ReportBuilder::create()->suppressionComposition(new SuppressionComposition([]))->build();
+
+        foreach (MachineReadableFormats::knownFormats() as $format) {
+            $printed = $registry->get($format)->format($report, new FormatterContext(useColor: false));
+
+            self::assertSame(
+                MachineReadableFormats::carriesJson($format),
+                json_validate($printed),
+                \sprintf(
+                    'MachineReadableFormats says "%s" %s a JSON document, but its formatter printed %s.',
+                    $format,
+                    MachineReadableFormats::carriesJson($format) ? 'carries' : 'does not carry',
+                    json_validate($printed) ? 'one' : 'something else',
+                ),
+            );
+        }
     }
 
     private static function registry(): FormatterRegistryInterface

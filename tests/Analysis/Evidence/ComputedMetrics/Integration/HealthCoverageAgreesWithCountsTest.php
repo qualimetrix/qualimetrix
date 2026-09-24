@@ -111,12 +111,14 @@ final class HealthCoverageAgreesWithCountsTest extends TestCase
             $measuredDimensions++;
             $basis = $coverage['basis'];
 
-            // An aggregate that never reached the project publishes no key and
-            // is a measured zero, exactly as the score's own `?? 0` read it —
-            // so a missing key is only wrong when a number was reported for it.
-            if ($coverage['measured'] > 0) {
-                self::assertArrayHasKey($basis, $projectMetrics, "$dimension names a basis the run does not publish");
-            }
+            // Unconditional, although an absent key is a legitimate measured
+            // zero elsewhere: every namespace of this fixture declares a class
+            // and every class carries every aggregate, so there is no
+            // contributor for the run to lack. Excusing a zero here excused a
+            // basis naming a key the product had renamed away, and the line
+            // reported "0 of 168 (0%)" with no sign that it was the reader who
+            // failed rather than the code.
+            self::assertArrayHasKey($basis, $projectMetrics, "$dimension names a basis the run does not publish");
 
             self::assertSame(
                 (int) ($projectMetrics[$basis] ?? 0),

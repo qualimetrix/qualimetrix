@@ -30,6 +30,14 @@ namespace QmxFindingGate;
  * as the first: SARIF carries five of the seventeen tuple fields, and letting the
  * other twelve fall back to their tuple spelling would have the reader hunting
  * for keys the surface does not have.
+ *
+ * This is the gate's oracle, not the product's contract. It answers "which key
+ * do I look for on this line", and it pins key names, never what a key holds:
+ * two surfaces publishing different fields under one key would both pass it.
+ * What each surface puts under its text keys is decided where the formatters
+ * read it, in `Qualimetrix\Reporting\Formatter\PublishedFinding`; a row here
+ * names the key that composition is published under, and the self-test pins the
+ * key against the formatter's source.
  */
 final class PublishedVocabulary
 {
@@ -97,18 +105,22 @@ final class PublishedVocabulary
         // publishes under `code` and whose own `channel` this surface does not
         // carry at all. Spelling that out is the whole point of the table:
         // reading `channel` under its tuple spelling here would compare one
-        // field against another field's value.
+        // field against another field's value. `edge` is an object rather than
+        // a scalar, so, as on the baseline file, it is not readable as a value.
         'format:suppressed' => [
             'syntax' => self::MEMBER,
             'exhaustive' => true,
             'keys' => [
                 'rule' => 'rule',
                 'code' => 'channel',
+                'subject' => 'subject',
+                'occurrence' => 'occurrence',
                 'file' => 'file',
                 'line' => 'line',
                 'symbol' => 'symbol',
                 'severity' => 'severity',
                 'message' => 'message',
+                'recommendation' => 'recommendation',
             ],
         ],
         // Not a format but a captured file, and the one non-format artifact that

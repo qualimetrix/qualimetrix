@@ -10,7 +10,9 @@ use InvalidArgumentException;
  * Represents a group of identical or near-identical code blocks found in multiple locations.
  *
  * Each DuplicateBlock contains 2+ locations where the same code appears.
- * The block is characterized by its size (lines and tokens).
+ * The block is characterized by its size (lines and tokens). Comments and
+ * blank lines are no tokens, so copies of one block can span different
+ * numbers of lines: each copy's own span is its location's line count.
  */
 final readonly class DuplicateBlock
 {
@@ -19,7 +21,7 @@ final readonly class DuplicateBlock
 
     /**
      * @param list<DuplicateLocation> $locations At least 2 locations (sorted deterministically)
-     * @param int $lines Number of lines in the duplicated block
+     * @param int $lines Lines spanned by the block's longest copy — what `min_lines` admits the block, and so every copy of it, by
      * @param int $tokens Number of tokens in the duplicated block
      * @param string $contentHash Full SHA-256 of the normalized matched token sequence and token count
      * @param string|null $hint Short content preview (~80 chars) of the duplicated code
@@ -41,8 +43,8 @@ final readonly class DuplicateBlock
             throw new InvalidArgumentException('DuplicateBlock contentHash must be a full lowercase SHA-256 digest');
         }
 
-        // Sort locations deterministically so primaryLocation() is stable
-        // regardless of file discovery order
+        // Sorted so the order of the copies' findings, and the copies each
+        // names, do not depend on file discovery order
         usort($locations, static fn(DuplicateLocation $a, DuplicateLocation $b) => ($a->pathString() <=> $b->pathString()) !== 0 ? ($a->pathString() <=> $b->pathString()) : ($a->startLine <=> $b->startLine));
         $this->locations = $locations;
     }
@@ -53,23 +55,5 @@ final readonly class DuplicateBlock
     public function occurrences(): int
     {
         return \count($this->locations);
-    }
-
-    /**
-     * Returns the primary (first) location for reporting.
-     */
-    public function primaryLocation(): DuplicateLocation
-    {
-        return $this->locations[0];
-    }
-
-    /**
-     * Returns all locations except the primary one.
-     *
-     * @return list<DuplicateLocation>
-     */
-    public function relatedLocations(): array
-    {
-        return \array_slice($this->locations, 1);
     }
 }

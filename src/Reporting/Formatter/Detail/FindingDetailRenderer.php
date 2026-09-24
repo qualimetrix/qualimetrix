@@ -7,21 +7,34 @@ namespace Qualimetrix\Reporting\Formatter\Detail;
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Reporting\Formatter\AcceptedLevelNarrator;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
 use Qualimetrix\Reporting\Formatter\Ordering\FindingSorter;
+use Qualimetrix\Reporting\Formatter\PublishedFinding;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 
 /** Renders sorted and grouped finding details. */
 final class FindingDetailRenderer
 {
+    /**
+     * The order this renderer prints findings in: by the explicit `--group-by`,
+     * by file otherwise.
+     *
+     * @param list<Finding> $findings
+     *
+     * @return list<Finding>
+     */
+    public static function order(array $findings, FormatterContext $context): array
+    {
+        return FindingSorter::sort($findings, self::effectiveGroupBy($context));
+    }
+
     /** @param list<Finding> $findings */
     public function render(array $findings, FormatterContext $context): string
     {
         $color = new AnsiColor($context->useColor);
         $lines = [];
-        $effectiveGroupBy = $context->isGroupByExplicit ? $context->groupBy : GroupBy::File;
+        $effectiveGroupBy = self::effectiveGroupBy($context);
         $sorted = FindingSorter::sort($findings, $effectiveGroupBy);
 
         if ($effectiveGroupBy === GroupBy::None) {
@@ -37,6 +50,11 @@ final class FindingDetailRenderer
         }
 
         return implode("\n", $lines);
+    }
+
+    private static function effectiveGroupBy(FormatterContext $context): GroupBy
+    {
+        return $context->isGroupByExplicit ? $context->groupBy : GroupBy::File;
     }
 
     /**
@@ -129,7 +147,7 @@ final class FindingDetailRenderer
         }
         $lines[] = $line;
 
-        $message = $finding->getDisplayMessage() . $this->formatBreachSuffix($finding);
+        $message = PublishedFinding::advice($finding);
         $ruleCode = $color->dim('[' . $finding->code . ']');
         $lines[] = \sprintf('    %s  %s', $message, $ruleCode);
         $lines[] = '';
@@ -171,12 +189,5 @@ final class FindingDetailRenderer
         $line = $finding->location->line;
 
         return $line !== null && $finding->location->precise ? \sprintf('at line %d', $line) : '';
-    }
-
-    private function formatBreachSuffix(Finding $finding): string
-    {
-        $breach = AcceptedLevelNarrator::describe($finding);
-
-        return $breach === null ? '' : \sprintf(' (%s)', $breach);
     }
 }

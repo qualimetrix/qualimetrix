@@ -147,6 +147,58 @@ final class NamespaceExclusionFilterTest extends TestCase
         self::assertTrue($filter->shouldInclude($finding), 'File-symbol violation without a declaring namespace should not be filtered');
     }
 
+    /**
+     * The project aggregate publishes `(project)` where a namespace would be.
+     * Compared, that display value let `exact: '(project)'` — or any pattern
+     * broad enough to match it — drop every project-level finding, the
+     * unbound-suppression audit's own report about that very pattern included.
+     */
+    #[Test]
+    public function itNeverComparesTheProjectAggregateDisplayValue(): void
+    {
+        foreach ([[SelectorKind::Exact, '(project)'], [SelectorKind::Regex, '.*']] as [$kind, $value]) {
+            $filter = new NamespaceExclusionFilter(new NamespaceMatcher([self::namespace($kind, $value)]), self::declaredFileScope());
+
+            self::assertTrue(
+                $filter->shouldInclude($this->createProjectFinding('health.typing')),
+                \sprintf('%s:%s must not suppress a project-level finding', $kind->value, $value),
+            );
+        }
+    }
+
+    /** The legitimate neighbour: a namespace-level finding is still compared by its namespace. */
+    #[Test]
+    public function itStillFiltersANamespaceLevelFindingItsPatternNames(): void
+    {
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher([self::namespace(SelectorKind::Exact, 'Acme')]), self::declaredFileScope());
+        $symbol = SymbolPath::forNamespace('Acme');
+
+        $finding = new Finding(
+            location: Location::none(),
+            symbolPath: $symbol,
+            subject: MetricSubject::aggregate($symbol),
+            ruleName: 'health.typing',
+            code: 'health.typing',
+            message: 'Test',
+            severity: Severity::Warning,
+        );
+
+        self::assertFalse($filter->shouldInclude($finding));
+    }
+
+    private function createProjectFinding(string $ruleName): Finding
+    {
+        return new Finding(
+            location: Location::none(),
+            symbolPath: SymbolPath::forProject(),
+            subject: MetricSubject::aggregate(SymbolPath::forProject()),
+            ruleName: $ruleName,
+            code: $ruleName,
+            message: 'Test',
+            severity: Severity::Warning,
+        );
+    }
+
     private function createFinding(string $namespace, string $ruleName): Finding
     {
         return new Finding(

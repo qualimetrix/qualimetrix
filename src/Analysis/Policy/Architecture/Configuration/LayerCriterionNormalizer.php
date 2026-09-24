@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
+use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 
 /**
  * Per-criterion shape and semantic validator shared by {@see LayersValidator}
@@ -80,11 +81,20 @@ final class LayerCriterionNormalizer
     }
 
     /**
+     * A leading separator is accepted and dropped: it is the only way to name
+     * a class in the global namespace (`\Throwable`), and the run records
+     * every name without one, so a name kept verbatim could never match.
+     *
+     * A class PHP declares is stored in the spelling its registry keeps, the
+     * one the run records it by whatever case the source used: PHP class names
+     * are case-insensitive, and `\exception` is `\Exception`. Kept verbatim,
+     * it would be a type the run met that no class could ever match.
+     *
      * @return list<string>
      */
     public function normalizeFqnList(int $index, string $layerName, string $kind, mixed $value): array
     {
-        return self::normalizeStringList(
+        $entries = self::normalizeStringList(
             $index,
             $layerName,
             $kind,
@@ -93,15 +103,23 @@ final class LayerCriterionNormalizer
                 if (!str_contains($entry, '\\')) {
                     return \sprintf(
                         'must be a fully-qualified class name (containing at least one namespace separator); got "%s". '
-                        . 'Short names are not accepted in "%s".',
+                        . 'Short names are not accepted in "%s"; a class in the global namespace is written with a '
+                        . 'leading backslash, e.g. "\\%s".',
                         $entry,
                         $kind,
+                        $entry,
                     );
+                }
+
+                if (ltrim($entry, '\\') === '') {
+                    return \sprintf('must name a class; got "%s".', $entry);
                 }
 
                 return null;
             },
         );
+
+        return array_map(static fn(string $entry): string => PhpBuiltinClassRegistry::spelling(ltrim($entry, '\\')), $entries);
     }
 
     /**

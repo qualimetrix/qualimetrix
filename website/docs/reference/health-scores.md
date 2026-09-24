@@ -82,7 +82,7 @@ Uses hyperbolic decay (`K / (K + penalty)`) for smooth scoring.
 
 - **Class level** blends package-level (`coupling.ce-packages`) and dampened raw efferent coupling (`coupling.ce`).
 - **Namespace level** also relies on **efferent-only** signals: per-class average outgoing coupling (`coupling.ce.avg`, `coupling.ce-packages.avg`), worst-case class outlier (`coupling.ce.max`), and namespace-level outgoing breadth (`coupling.ce`), plus Distance from Main Sequence. Bidirectional CBO is intentionally avoided here because it conflates afferent (Ca) with efferent (Ce) and would unfairly penalize stable contracts namespaces (high Ca, low Ce by design).
-- **Project level** keeps bidirectional CBO aggregates (`coupling.cbo.avg`, `coupling.cbo.p95`, `coupling.cbo.max`): at project level Σ Ca = Σ Ce because every internal edge contributes to both sides, so CBO is symmetric and proportional to Ce.
+- **Project level** keeps bidirectional CBO aggregates (`coupling.cbo.avg`, `coupling.cbo.p95`, `coupling.cbo.max`): at project level Σ Ca = Σ Ce because every internal edge contributes to both sides, so CBO is symmetric and proportional to Ce. Its Distance term reads `coupling.distance-own.avg`, not `coupling.distance.avg` — see [Distance from Main Sequence](../rules/coupling.md#distance-from-main-sequence) for why the project fold is taken over own scopes.
 
 ### Typing
 
@@ -131,9 +131,22 @@ than reporting zero: `health.overall` composes the other dimensions, `health.typ
 is computed from typed/total sums that publish no `.count`, and a class-level or
 namespace-filtered score is not an aggregate over symbols at all.
 
-Coverage appears in `--format=json` (a `coverage` object per dimension) and in
-`--format=health` (one line per dimension). The compact formats — `summary`,
-HTML — leave it out for space.
+Coverage appears in `--format=json` (a `coverage` object per dimension), in
+`--format=health` (a `Coverage` column plus one line per dimension in the
+decomposition), in `--format=summary` (one line under each score) and in
+`--format=html` (a `summary.healthCoverage` object beside `summary.healthScores`,
+rendered under the health bars).
+
+A coverage short of 100% is not automatically a fault in the run. Some gaps are
+permanent by construction: cohesion is undefined for a class with fewer than two
+methods, and a namespace that declares nothing but bare enums has no abstractness
+of its own — a bare enum is deliberately outside that denominator (see
+[Distance from Main Sequence](../rules/coupling.md#distance-from-main-sequence))
+— so no own-scope distance is published for it, while the population counts it
+because it declares a type. The denominator is deliberately *not* narrowed to the
+namespaces the aggregate reached: a denominator that is the aggregate's own walk
+prints 100% by construction and cannot show what the walk did not reach, which is
+the whole point of the line.
 
 
 ---
@@ -253,8 +266,15 @@ Formulas read every metric through a single `m` array, indexed by the metric's r
 | `coupling.ce.max`                         | namespace, project        |
 | `coupling.ce-packages`                    | class                     |
 | `coupling.ce-packages.avg`                | namespace, project        |
+| `coupling.abstractness`                   | namespace                 |
 | `coupling.distance`                       | namespace                 |
-| `coupling.distance.avg`                   | project                   |
+| `coupling.ca-own`                         | namespace                 |
+| `coupling.ce-own`                         | namespace                 |
+| `coupling.instability-own`                | namespace                 |
+| `coupling.abstractness-own`               | namespace                 |
+| `coupling.distance-own`                   | namespace                 |
+| `coupling.distance-own.avg`               | project                   |
+| `size.symbol-declaring-namespace-count`   | project                   |
 | `maintainability.mi.avg`                  | class, namespace, project |
 | `maintainability.mi.min`                  | class, namespace, project |
 | `maintainability.mi.p5`                   | namespace, project        |
@@ -282,6 +302,16 @@ This is not an exhaustive list — any metric collected by Qualimetrix can be re
 
 !!! warning "Unknown metric references"
     If a formula references a metric key that does not exist (e.g., a typo like `m["complexity.ccn.abg"]` instead of `m["complexity.ccn.avg"]`), Qualimetrix will report a clear error instead of silently returning zero. Always use the `??` operator to provide a default for metrics that may legitimately be absent: `(m["complexity.ccn.avg"] ?? 0)`.
+
+!!! warning "Metrics a level does not carry"
+    A formula runs at each of its `levels:`, and a key is judged at that level:
+
+    - **No symbol at the level carries the key**, and the formula reads it without `??` — a configuration error (exit code 3). This includes another computed metric read at a level missing from its own `levels:`: `computed.a` with `levels: [class]` cannot be read bare by a `project` formula, and the error says where `computed.a` is published. A `project` level that inherits the `namespace` formula is checked at `project`.
+    - **Some symbols carry the key and others do not** — the symbols without it get no value rather than a fabricated 0, and the run logs one warning per metric and level with the number of skipped symbols and the missing keys.
+
+    `m["a"] ?? m["b"]` reads `b` only where `a` is absent, so a symbol is skipped only when it carries neither. End the chain with a literal — `m["a"] ?? m["b"] ?? 0` — to give every symbol a value.
+
+    A ternary reads only the branch it takes. `m["size.method-count"] > 0 ? 7 : m["cohesion.tcc"]` reads `cohesion.tcc` only on a class without methods, so a key only one branch reads is never a configuration error: each symbol is judged by the branch its own values select, and a symbol whose branch reads a key it lacks is skipped with the same warning. The right side of `and` / `or` is judged the same way. The condition always runs, so a bare read there counts like one in arithmetic — an absent metric would pick the branch on nothing (`null > 0` is false); guard it with `??` as well. A key both branches read counts as read.
 
 ### Available Functions
 

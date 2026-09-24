@@ -23,6 +23,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 #[CoversClass(ClassContext::class)]
 final class ClassContextFactoryTest extends TestCase
 {
+    private const bool INTERFACE_EXTENDS = true;
+
     #[Test]
     public function itBuildsAMinimalContextWithoutABoundGraph(): void
     {
@@ -162,6 +164,95 @@ final class ClassContextFactoryTest extends TestCase
     }
 
     #[Test]
+    public function itCountsTheInterfacesAnInterfaceExtendsAmongItsInterfaces(): void
+    {
+        // `getInterfaceNames()` semantics, which PHP's own interfaces already
+        // get from the builtin table: `\OuterIterator` answers "yes" to
+        // `implements: ['\Iterator']`, so an analysed interface extending
+        // `\IteratorAggregate` must too, and not only for what is above it.
+        $bag = SymbolPath::forClass('App\\Library', 'Bag');
+        $child = SymbolPath::forClass('App\\Library', 'SortedBag');
+
+        $factory = new ClassContextFactory();
+        $factory->bindGraph(self::graphWith([
+            [$bag, SymbolPath::fromClassFqn('IteratorAggregate'), DependencyType::Extends, self::INTERFACE_EXTENDS],
+            [$child, $bag, DependencyType::Extends, self::INTERFACE_EXTENDS],
+        ]), [$bag, $child]);
+
+        self::assertSame(['IteratorAggregate', 'Traversable'], $factory->build($bag)->interfaces);
+        self::assertSame(['App\\Library\\Bag', 'IteratorAggregate', 'Traversable'], $factory->build($child)->interfaces);
+    }
+
+    #[Test]
+    public function itCountsEveryInterfaceUpAChainTheProjectWrites(): void
+    {
+        $leaf = SymbolPath::forClass('App\\Library', 'Leaf');
+        $mid = SymbolPath::forClass('App\\Library', 'Mid');
+        $root = SymbolPath::forClass('App\\Library', 'Root');
+
+        $factory = new ClassContextFactory();
+        $factory->bindGraph(self::graphWith([
+            [$leaf, $mid, DependencyType::Extends, self::INTERFACE_EXTENDS],
+            [$mid, $root, DependencyType::Extends, self::INTERFACE_EXTENDS],
+        ]), [$leaf, $mid, $root]);
+
+        $context = $factory->build($leaf);
+
+        self::assertSame(['App\\Library\\Mid', 'App\\Library\\Root'], $context->interfaces);
+        self::assertSame(['App\\Library\\Mid', 'App\\Library\\Root'], $context->parentClasses);
+        self::assertTrue($context->interfacesKnown());
+        // An interface extending nothing has nothing to add.
+        self::assertSame([], $factory->build($root)->interfaces);
+    }
+
+    #[Test]
+    public function itKeepsTheParentsOfAClassOutOfItsInterfaces(): void
+    {
+        // The neighbour the interface seeding must not swallow: a parent class
+        // is not an interface its subclass implements, so `implements:
+        // [SomeClass]` stays off the subclasses — a PHP parent class included.
+        $sub = SymbolPath::forClass('App\\Domain', 'Sub');
+        $base = SymbolPath::forClass('App\\Domain', 'Base');
+        $root = SymbolPath::forClass('App\\Domain', 'Root');
+        $failure = SymbolPath::forClass('App\\Domain', 'Failure');
+
+        $factory = new ClassContextFactory();
+        $factory->bindGraph(self::graphWith([
+            [$sub, $base, DependencyType::Extends],
+            [$base, $root, DependencyType::Extends],
+            [$failure, SymbolPath::fromClassFqn('RuntimeException'), DependencyType::Extends],
+        ]), [$sub, $base, $root, $failure]);
+
+        self::assertSame([], $factory->build($sub)->interfaces);
+        self::assertSame(['App\\Domain\\Base', 'App\\Domain\\Root'], $factory->build($sub)->parentClasses);
+        self::assertNotContains('RuntimeException', $factory->build($failure)->interfaces);
+        self::assertNotContains('Exception', $factory->build($failure)->interfaces);
+        self::assertContains('Throwable', $factory->build($failure)->interfaces);
+    }
+
+    #[Test]
+    public function itCountsAnUnreadInterfaceAnInterfaceExtendsAndSaysWhereItStopped(): void
+    {
+        // The edge was recorded from the analysed side, so the direct vendor
+        // parent is known; what it extends in turn is not.
+        $port = SymbolPath::forClass('App\\Library', 'Port');
+
+        $factory = new ClassContextFactory();
+        $factory->bindGraph(self::graphWith([
+            [$port, SymbolPath::forClass('Vendor\\Contract', 'Thing'), DependencyType::Extends, self::INTERFACE_EXTENDS],
+        ]), [$port]);
+
+        $context = $factory->build($port);
+
+        self::assertSame(['Vendor\\Contract\\Thing'], $context->interfaces);
+        self::assertSame(
+            ['parentChain' => ['Vendor\\Contract\\Thing'], 'interfaces' => ['Vendor\\Contract\\Thing']],
+            $context->ancestryCuts,
+        );
+        self::assertFalse($context->interfacesKnown());
+    }
+
+    #[Test]
     public function itDeduplicatesRepeatedAttributeAndRelationEdges(): void
     {
         // Same target referenced through multiple edges (e.g. two #[Attr]
@@ -245,17 +336,22 @@ final class ClassContextFactoryTest extends TestCase
     }
 
     /**
-     * @param list<array{0: SymbolPath, 1: SymbolPath, 2: DependencyType}> $edges
+     * The optional fourth element of an edge marks an `Extends` edge an
+     * interface declares.
+     *
+     * @param list<array{0: SymbolPath, 1: SymbolPath, 2: DependencyType, 3?: bool}> $edges
      */
     private static function graphWith(array $edges): DependencyGraphInterface
     {
         $deps = [];
-        foreach ($edges as [$source, $target, $type]) {
+        foreach ($edges as $edge) {
+            [$source, $target, $type] = $edge;
             $deps[] = new Dependency(
                 DeclarationPath::of($source, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath($target),
                 $type,
                 Location::none(),
+                interfaceExtends: $edge[3] ?? false,
             );
         }
 
@@ -295,6 +391,16 @@ final class ClassContextFactoryTest extends TestCase
                 return 0;
             }
 
+            public function getNamespaceOwnCe(SymbolPath $namespace): int
+            {
+                return 0;
+            }
+
+            public function getNamespaceOwnCa(SymbolPath $namespace): int
+            {
+                return 0;
+            }
+
             public function getAllClasses(): array
             {
                 return [];
@@ -306,6 +412,11 @@ final class ClassContextFactoryTest extends TestCase
             }
 
             public function getAllDependencies(): array
+            {
+                return $this->deps;
+            }
+
+            public function getDeclarationDependencies(): array
             {
                 return $this->deps;
             }

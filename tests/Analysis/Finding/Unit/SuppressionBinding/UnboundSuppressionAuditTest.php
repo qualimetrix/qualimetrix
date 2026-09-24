@@ -407,6 +407,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             $this->tempDir,
             (new ComposerReader())->extractPsr4Roots($this->tempDir . '/composer.json'),
             $analyzedPaths ?? [$this->tempDir . '/src'],
+            projectDeclared: true,
         );
     }
 

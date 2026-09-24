@@ -15,6 +15,7 @@ use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
  * Applies a producer's `suppress_namespaces`, `suppress_namespace_channels` and
@@ -123,6 +124,15 @@ final class FindingExclusionLedger
      */
     private function namespaceExclusionAttribution(string $producerRuleName, Finding $finding): ?RuleExclusionAttribution
     {
+        // The project aggregate has no namespace; its symbol path shows
+        // `(project)` in that field. Compared, `exact: '(project)'` or a broad
+        // regex removed the finding while the unbound-suppression audit, which
+        // judges patterns against declared namespaces, reported the same
+        // pattern as having suppressed nothing.
+        if ($finding->symbolPath->getType() === SymbolType::Project) {
+            return null;
+        }
+
         // Occurrence-style rules attach a file symbol path (namespace null) to
         // their findings; the declaring namespace lives on the subject, so
         // fall back to it the same way NamespaceExclusionFilter does.
@@ -144,7 +154,7 @@ final class FindingExclusionLedger
         }
 
         if (
-            $finding->symbolPath->getType()->value === 'namespace'
+            $finding->symbolPath->getType() === SymbolType::Namespace_
             && $this->ruleOptionsRegistry->isNamespaceChannelExcluded($producerRuleName, $finding->channel(), $namespace)
         ) {
             $hits = $this->matchingChannelPatterns($producerRuleName, $finding->channel(), $namespace);

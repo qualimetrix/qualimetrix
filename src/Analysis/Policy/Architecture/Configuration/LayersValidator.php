@@ -19,8 +19,8 @@ use Throwable;
 /**
  * Parses and validates the {@code architecture.layers} sub-tree.
  *
- * Accepts the long-form ordered list with five criterion kinds (Phase 2
- * direction 1) plus the optional {@code exclude:} block (direction 3):
+ * Accepts the long-form ordered list with five criterion kinds plus the
+ * optional {@code exclude:} block:
  *
  * ```yaml
  * layers:
@@ -171,6 +171,7 @@ final class LayersValidator
     private static function buildTemplateDefinition(int $index, string $nameTemplate, array $criteria, MatchMode $mode, ?ExcludeSpec $exclude): TemplateLayerDefinition
     {
         self::rejectAllEmptyCriteria($index, $nameTemplate, $criteria);
+        self::rejectUnboundNonPatternCriteria($index, $nameTemplate, $criteria, $mode);
 
         try {
             return new TemplateLayerDefinition(
@@ -257,6 +258,66 @@ final class LayersValidator
                 'architecture.layers[%d] ("%s"): must declare at least one of "patterns", "suffix", "attributes", "implements" or "extends".',
                 $index,
                 $name,
+            ),
+        );
+    }
+
+    /**
+     * Refuses a template that declares a non-pattern criterion it cannot bind
+     * to the instances it produces.
+     *
+     * Only `patterns` carry capture variables, so `suffix`, `attributes`,
+     * `implements` and `extends` are copied into every expanded layer verbatim.
+     * Under `match: all` that is harmless — the criterion narrows each instance
+     * within the scope its own substituted pattern already fixes. Under
+     * `match: any` it is OR'd with that pattern instead, so every instance
+     * carries the same global net: one clause reading "or anything named
+     * *Repository" makes `domain-Order`, `domain-Billing` and every sibling
+     * claim every Repository in the codebase, and the first instance in
+     * expansion order — which is binding-value alphabetical, not anything the
+     * author wrote — wins it. The class then belongs to an arbitrary module,
+     * is judged against that module's allow-list, and appears in no coverage
+     * report at all.
+     *
+     * Refused rather than silently narrowed: scoping the criterion to the
+     * instance's own pattern would make it a subset of that pattern and so
+     * inert, which trades a wrong answer for one that does nothing while still
+     * looking like it does something. `match: all` expresses the narrowing the
+     * author almost certainly meant, and a static layer expresses the global
+     * net if that is really what was wanted.
+     *
+     * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
+     */
+    private static function rejectUnboundNonPatternCriteria(int $index, string $nameTemplate, array $criteria, MatchMode $mode): void
+    {
+        if ($mode === MatchMode::All) {
+            return;
+        }
+
+        $declared = [];
+        foreach (['suffix', 'attributes', 'implements', 'extends'] as $kind) {
+            if ($criteria[$kind] !== []) {
+                $declared[] = $kind;
+            }
+        }
+
+        if ($declared === []) {
+            return;
+        }
+
+        self::refuse(
+            \sprintf('architecture.layers[%d]', $index),
+            \sprintf(
+                'architecture.layers[%d] ("%s"): %s cannot be combined with "match: any" on a template layer. '
+                . 'Only "patterns" carry the capture variables, so %s would be copied into every expanded layer '
+                . 'unchanged and, OR-ed with the substituted pattern, would make every instance claim the same '
+                . 'classes project-wide — the instance that wins one is then decided by binding-value order rather '
+                . 'than by the declaration. Add "match: all" so the criterion narrows each instance, or declare a '
+                . 'static layer if the criterion really is meant to apply project-wide.',
+                $index,
+                $nameTemplate,
+                self::quoteList($declared),
+                \count($declared) === 1 ? 'it' : 'they',
             ),
         );
     }

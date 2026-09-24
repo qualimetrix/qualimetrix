@@ -9,7 +9,6 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
@@ -23,6 +22,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAudi
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
+use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -31,13 +31,24 @@ use SplFileInfo;
 /** Coordinates rule-producing preparation while capabilities retain their own state. */
 final readonly class RuleProducerPreparation
 {
+    /**
+     * @param RuleSelectorProducerGate $producerGate the one predicate every preparation here is
+     *                                               gated on, so that a second way of switching a
+     *                                               producer off has one place to be taught. Two
+     *                                               preparations asking the selector directly while
+     *                                               the file set asked the gate was three answers
+     *                                               to one question, and the rule's own
+     *                                               `enabled: false` reached none of them. It is
+     *                                               the same instance the file set is given, so
+     *                                               that one subject has one construction.
+     */
     public function __construct(
         private LayerPolicyPreparationInterface $layerPolicyPreparation,
         private CircularDependencyPreparationInterface $circularDependencyPreparation,
         private InlineDirectivePolicyInterface $inlineDirectivePolicy,
         private ThresholdDirectiveAuditInterface $thresholdDirectiveAudit,
         private FileSetInspectionComposite $fileSetInspection,
-        private RuleSelector $ruleSelector,
+        private RuleSelectorProducerGate $producerGate,
         private RuleConfigurationInterface $ruleConfiguration,
     ) {}
 
@@ -50,6 +61,7 @@ final readonly class RuleProducerPreparation
         ProfilerInterface $profiler,
     ): void {
         $selection = $this->ruleConfiguration->selection();
+        $ruleOptions = $this->ruleConfiguration->all();
         $enabled = false;
 
         // Every producer that reads the prepared policy, not just the first
@@ -59,7 +71,7 @@ final readonly class RuleProducerPreparation
         // two left `--only-rule=architecture.unassigned-class` reaching an
         // unprepared policy. The list is the capability's, not the run's.
         foreach (LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES as $producerRuleName) {
-            if ($this->ruleSelector->isProducerEnabled($producerRuleName, $selection->only, $selection->disabled)) {
+            if ($this->producerGate->isEnabled($producerRuleName, $selection->only, $selection->disabled, $ruleOptions)) {
                 $enabled = true;
 
                 break;
@@ -82,10 +94,11 @@ final readonly class RuleProducerPreparation
         ProfilerInterface $profiler,
     ): void {
         $selection = $this->ruleConfiguration->selection();
-        if (!$this->ruleSelector->isProducerEnabled(
+        if (!$this->producerGate->isEnabled(
             CircularDependencyPreparationInterface::PRODUCER_RULE_NAME,
             $selection->only,
             $selection->disabled,
+            $this->ruleConfiguration->all(),
         )) {
             $this->circularDependencyPreparation->reset();
 
@@ -180,6 +193,12 @@ final readonly class RuleProducerPreparation
     public function inspectFiles(array $eligibleFiles, AbsolutePath $projectRoot): void
     {
         $selection = $this->ruleConfiguration->selection();
-        $this->fileSetInspection->inspect($eligibleFiles, $projectRoot, $selection->only, $selection->disabled);
+        $this->fileSetInspection->inspect(
+            $eligibleFiles,
+            $projectRoot,
+            $selection->only,
+            $selection->disabled,
+            $this->ruleConfiguration->all(),
+        );
     }
 }

@@ -135,9 +135,10 @@ final class AnalysisPipelineTest extends TestCase
         $profiler = self::createStub(ProfilerInterface::class);
         $ruleConfiguration = new RuleOptionsRegistry();
         $selector = new RuleSelector(new InMemoryRuleChannelRegistry());
+        $producerGate = new RuleSelectorProducerGate($selector);
         $fileSetInspection = new FileSetInspectionComposite(
             [],
-            new RuleSelectorProducerGate($selector),
+            $producerGate,
             $profiler,
         );
         $layerPolicy = self::createStub(LayerPolicyPreparationInterface::class);
@@ -148,7 +149,7 @@ final class AnalysisPipelineTest extends TestCase
             self::createStub(InlineDirectivePolicyInterface::class),
             self::createStub(ThresholdDirectiveAuditInterface::class),
             $fileSetInspection,
-            $selector,
+            $producerGate,
             $ruleConfiguration,
         );
 

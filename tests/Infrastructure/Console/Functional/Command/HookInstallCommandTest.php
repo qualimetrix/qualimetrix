@@ -8,12 +8,14 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\HookInstallCommand;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Hook\PreCommitHook;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
-use Symfony\Component\Console\Application;
-use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\Console\Tester\ApplicationTester;
 
 /**
  * These cases cannot see the defect that motivated the change, and saying so
@@ -110,8 +112,8 @@ final class HookInstallCommandTest extends TestCase
     {
         $tester = $this->install([], null);
 
-        self::assertSame(1, $tester->getStatusCode());
-        self::assertStringContainsString('Could not determine the path', $tester->getDisplay());
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertStringContainsString('Could not determine the path', $tester->getErrorOutput());
         self::assertFileDoesNotExist($this->hookPath());
     }
 
@@ -122,9 +124,9 @@ final class HookInstallCommandTest extends TestCase
 
         $tester = $this->install([]);
 
-        self::assertSame(1, $tester->getStatusCode());
-        self::assertStringContainsString('Pre-commit hook already exists', $tester->getDisplay());
-        self::assertStringContainsString('Use --force to overwrite', $tester->getDisplay());
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertStringContainsString('Pre-commit hook already exists', $tester->getErrorOutput());
+        self::assertStringContainsString('Use --force to overwrite', $tester->getErrorOutput());
     }
 
     #[Test]
@@ -171,8 +173,8 @@ final class HookInstallCommandTest extends TestCase
 
         $tester = $this->install([]);
 
-        self::assertSame(1, $tester->getStatusCode());
-        self::assertStringContainsString('Pre-commit hook already exists', $tester->getDisplay());
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertStringContainsString('Pre-commit hook already exists', $tester->getErrorOutput());
         self::assertTrue(is_link($this->hookPath()));
     }
 
@@ -231,23 +233,21 @@ final class HookInstallCommandTest extends TestCase
 
         $tester = $this->install([]);
 
-        self::assertSame(1, $tester->getStatusCode());
-        self::assertStringContainsString('Not a git repository', $tester->getDisplay());
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertStringContainsString('Not a git repository', $tester->getErrorOutput());
     }
 
-    /** @param array<string, mixed> $input */
-    private function install(array $input, ?string $binary = self::BINARY): CommandTester
+    /** @param array<string, mixed> $input run through the application, whose ladder turns a refusal into exit 3 */
+    private function install(array $input, ?string $binary = self::BINARY): ApplicationTester
     {
-        $command = new HookInstallCommand(
-            new GitRepositoryLocator(),
-            $this->locator($binary),
-        );
-
-        $application = new Application();
+        $command = new HookInstallCommand(new GitRepositoryLocator(), $this->locator($binary));
+        $errorStream = new ErrorStream();
+        $application = new Application($errorStream, new RefusalPresenter($errorStream));
+        $application->setAutoExit(false);
         $application->addCommand($command);
 
-        $tester = new CommandTester($command);
-        $tester->execute($input);
+        $tester = new ApplicationTester($application);
+        $tester->run(['command' => 'hook:install', ...$input], ['capture_stderr_separately' => true]);
 
         return $tester;
     }

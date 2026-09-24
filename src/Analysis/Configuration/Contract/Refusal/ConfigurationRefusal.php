@@ -25,18 +25,16 @@ use Throwable;
  * type dependencies where one would do. The three general forms stay public
  * for the sites that compute their source or forward an origin they were given.
  *
- * ClassRank measures how much of the graph flows into a type, and for the
- * one carried kind of exit code 3 that number is a count of places the
- * product refuses bad input rather than accepting it. CLI doors must use
- * this carrier instead of folding empty values into defaults. Splitting the
- * kind to lower the rank would buy a number with a second way to spell a
- * refusal, which is what the single-kind design exists to prevent. This
- * class is legitimately a hub of the dependency graph, not a design defect —
- * a `@qmx-threshold coupling.class-rank` used to hold that headroom
- * explicitly, but the class's rank has since fallen below the rule's default
- * on its own, as the graph grew new nodes elsewhere, so the override was
- * removed rather than re-measured and re-inflated for a boundary nothing is
- * pressing on.
+ * ClassRank measures how much of the graph flows into a type, and for the one
+ * carried kind of exit code 3 that number counts the places the product refuses
+ * bad input instead of accepting it. CLI doors must use this carrier instead of
+ * folding empty values into defaults. Splitting the kind to lower the rank would
+ * buy a number and a second way to spell a refusal, which is what the
+ * single-kind design exists to prevent.
+ *
+ * @qmx-threshold coupling.class-rank warning=0.03 -- The paragraph above is the
+ * reason. The tag takes the rule's unscaled units: raw rank 0.0079 at 1027 classes is
+ * 0.0252 before scaling, against the default 0.02; the error bound stays the default.
  */
 final class ConfigurationRefusal extends RuntimeException
 {
@@ -186,7 +184,9 @@ final class ConfigurationRefusal extends RuntimeException
 
     /**
      * A merged value with no position in any document. The locator trails for
-     * the same reason as in {@see self::atResolvedKey()}.
+     * the same reason as in {@see self::atResolvedKey()}, and naming the key
+     * there does not give the refusal a position: the merge no longer tells
+     * whether a file or a command-line option wrote the value.
      */
     public static function aboutResolvedInput(
         string $summary,

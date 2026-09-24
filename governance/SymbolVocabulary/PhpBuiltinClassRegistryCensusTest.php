@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 use ReflectionClass;
 use ReflectionExtension;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * The registry is hand-written on purpose, and until this control nothing
@@ -413,6 +414,48 @@ final class PhpBuiltinClassRegistryCensusTest extends TestCase
         ));
     }
 
+    /**
+     * The comparisons below skip every extension this PHP does not load, so
+     * an extension the CI job pins and then fails to load would take its names
+     * out of both censuses without a single red. `Pdo\Firebird`,
+     * `EnchantBroker` and `EnchantDictionary` load on no developer machine
+     * here, which leaves CI as their only witness. Where GitHub Actions runs,
+     * every extension the job pins must therefore be loaded; elsewhere the
+     * list is only read, so a workflow this control can no longer parse
+     * reddens on every machine.
+     */
+    #[Test]
+    public function itLoadsEveryExtensionTheCheckJobPinsWhereGitHubActionsRuns(): void
+    {
+        $pinned = self::extensionsPinnedByTheCheckJob();
+        self::assertContains('enchant', $pinned);
+        self::assertContains('pdo_firebird', $pinned);
+
+        $unloaded = self::pinnedButUnloaded($pinned);
+        self::assertSame([], $unloaded, \sprintf(
+            'This PHP does not load %s, which the CI job pins. The censuses skip an extension that is not '
+                . 'loaded, so every name it declares went unchecked in a run that stays green.',
+            implode(', ', $unloaded),
+        ));
+    }
+
+    #[Test]
+    public function itDemandsThePinnedExtensionsOnlyWhereGitHubActionsRuns(): void
+    {
+        $pinned = ['Core', 'qmx_no_such_extension'];
+        $previous = getenv('GITHUB_ACTIONS');
+
+        try {
+            putenv('GITHUB_ACTIONS=true');
+            self::assertSame(['qmx_no_such_extension'], self::pinnedButUnloaded($pinned));
+
+            putenv('GITHUB_ACTIONS');
+            self::assertSame([], self::pinnedButUnloaded($pinned));
+        } finally {
+            putenv($previous === false ? 'GITHUB_ACTIONS' : 'GITHUB_ACTIONS=' . $previous);
+        }
+    }
+
     #[Test]
     public function itAttributesEveryRegisteredNameToExactlyOneExtension(): void
     {
@@ -591,6 +634,50 @@ final class PhpBuiltinClassRegistryCensusTest extends TestCase
             "Registered, its extension is loaded, and PHP does not know it:\n  %s",
             implode("\n  ", $absent),
         ));
+    }
+
+    /**
+     * Read from the workflow rather than copied here, so the pin and its
+     * witness cannot drift apart.
+     *
+     * @return list<string>
+     */
+    private static function extensionsPinnedByTheCheckJob(): array
+    {
+        $workflow = Yaml::parseFile(\dirname(__DIR__, 2) . '/.github/workflows/qmx.yml');
+        self::assertIsArray($workflow);
+        $steps = $workflow['jobs']['check']['steps'] ?? null;
+        self::assertIsArray($steps, 'The workflow has no "check" job with steps.');
+
+        foreach ($steps as $step) {
+            if (!\is_array($step) || !str_starts_with((string) ($step['uses'] ?? ''), 'shivammathur/setup-php@')) {
+                continue;
+            }
+            $extensions = $step['with']['extensions'] ?? null;
+            self::assertIsString($extensions, 'The "check" job sets PHP up without an extension list.');
+
+            return array_values(array_filter(array_map(trim(...), explode(',', $extensions)), static fn(string $name): bool => $name !== ''));
+        }
+
+        self::fail('The "check" job has no shivammathur/setup-php step.');
+    }
+
+    /**
+     * The pinned extensions this PHP does not load, where GitHub Actions runs;
+     * nothing anywhere else, since a developer machine is not the pinned
+     * environment.
+     *
+     * @param list<string> $pinned
+     *
+     * @return list<string>
+     */
+    private static function pinnedButUnloaded(array $pinned): array
+    {
+        if (getenv('GITHUB_ACTIONS') !== 'true') {
+            return [];
+        }
+
+        return array_values(array_filter($pinned, static fn(string $extension): bool => !\extension_loaded($extension)));
     }
 
     /**

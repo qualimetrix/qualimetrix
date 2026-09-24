@@ -41,7 +41,7 @@ final readonly class LayerAssignmentResolver
      * @param list<string> $paths
      * @param list<PathPattern> $pathExcludes
      *
-     * @return array{matches: list<\Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch>, hasLayers: bool}
+     * @return array{matches: list<\Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch>, hasLayers: bool, undecided: list<string>, chainStopsAt: list<string>, contenders: list<string>, firstEstablished: string|null, reportedShadows: list<string>}
      */
     public function resolve(
         array $paths,
@@ -60,7 +60,7 @@ final readonly class LayerAssignmentResolver
      * @param list<string> $paths
      * @param list<PathPattern> $pathExcludes
      *
-     * @return array{matches: list<\Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch>, hasLayers: bool}
+     * @return array{matches: list<\Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch>, hasLayers: bool, undecided: list<string>, chainStopsAt: list<string>, contenders: list<string>, firstEstablished: string|null, reportedShadows: list<string>}
      */
     public function resolveIncludingGenerated(
         array $paths,
@@ -74,7 +74,7 @@ final readonly class LayerAssignmentResolver
     /**
      * @param list<SplFileInfo> $files
      *
-     * @return array{matches: list<\Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch>, hasLayers: bool}
+     * @return array{matches: list<\Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch>, hasLayers: bool, undecided: list<string>, chainStopsAt: list<string>, contenders: list<string>, firstEstablished: string|null, reportedShadows: list<string>}
      */
     private function resolveFiles(array $files, AbsolutePath $projectRoot, SymbolPath $symbol): array
     {
@@ -96,6 +96,19 @@ final readonly class LayerAssignmentResolver
         return [
             'matches' => $assignment->matches,
             'hasLayers' => $assignment->hasLayers,
+            // Carried, not dropped: an empty `matches` is two different facts
+            // — every criterion answered "no", and some criterion the run
+            // could not answer at all — and a reader handed only `matches`
+            // cannot tell them apart. The same distinction reaches
+            // `architecture.coverage-gap` from the same walk.
+            'undecided' => $assignment->undecidedLayers,
+            'chainStopsAt' => $assignment->chainStopsAt,
+            'contenders' => $assignment->contenders,
+            // Carried rather than read off `matches`: which later match is a
+            // shadow depends on whether the matches in front of it were
+            // established, and only the registry's walk knows that.
+            'firstEstablished' => $assignment->firstEstablished,
+            'reportedShadows' => $assignment->reportedShadows,
         ];
     }
 

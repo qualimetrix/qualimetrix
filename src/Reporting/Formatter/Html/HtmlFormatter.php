@@ -6,6 +6,7 @@ namespace Qualimetrix\Reporting\Formatter\Html;
 
 use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\HealthHintProjector;
@@ -30,9 +31,11 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
         $data['hints'] = $this->hintProjector->project();
         $data['coverage'] = $report->coverage?->toArray();
 
-        $json = json_encode(
+        $repairs = 0;
+        $json = PublishedUtf8::encodeJsonObject(
             $data,
-            \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR,
+            \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES,
+            $repairs,
         );
 
         $templateDir = \dirname(__DIR__, 4) . '/html-report';
@@ -42,11 +45,15 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
         $d3Js = $this->readFile($templateDir . '/dist/d3.min.js');
         $appJs = $this->readFile($templateDir . '/dist/report.min.js');
 
-        $rendered = str_replace(
-            ['__CSS__', '__DATA__', '__D3_JS__', '__APP_JS__'],
-            [$css, $json, $d3Js, $appJs],
-            $html,
-        );
+        // One pass: str_replace() would rescan the inserted data for the
+        // placeholders after it, and a symbol named `__APP_JS__` would pull the
+        // whole viewer bundle into the JSON.
+        $rendered = strtr($html, [
+            '__CSS__' => $css,
+            '__DATA__' => $json,
+            '__D3_JS__' => $d3Js,
+            '__APP_JS__' => $appJs,
+        ]);
 
         if ($report->coverage !== null && !$report->coverage->isComplete()) {
             $banner = \sprintf(
@@ -55,6 +62,29 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
                 $report->coverage->discovered,
             );
             $rendered = str_replace('<body>', '<body>' . $banner, $rendered);
+        }
+
+        if ($report->outOfScope !== null && $report->outOfScope->total() > 0) {
+            $rendered = str_replace('<body>', '<body>' . \sprintf(
+                '<div role="status" data-qmx-drill-down="out-of-scope" style="padding:12px;background:#78350f;color:#fff">%s</div>',
+                htmlspecialchars($report->outOfScope->describe(), \ENT_QUOTES),
+            ), $rendered);
+        }
+
+        $projectScope = $report->projectScope?->describe();
+        if ($projectScope !== null) {
+            $rendered = str_replace('<body>', '<body>' . \sprintf(
+                '<div role="status" data-qmx-project-scope="%s" style="padding:12px;background:#78350f;color:#fff">%s</div>',
+                htmlspecialchars($report->projectScope->state, \ENT_QUOTES),
+                htmlspecialchars($projectScope, \ENT_QUOTES),
+            ), $rendered);
+        }
+
+        if ($repairs > 0) {
+            $rendered = str_replace('<body>', '<body>' . \sprintf(
+                '<div role="alert" data-qmx-publication="invalid-utf8" style="padding:12px;background:#78350f;color:#fff">%s</div>',
+                htmlspecialchars(PublishedUtf8::describe($repairs), \ENT_QUOTES),
+            ), $rendered);
         }
 
         return $rendered;

@@ -21,8 +21,13 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * each worker can rebuild its own threshold-override validator map via
  * {@see \Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory}.
  */
-final class ParallelCollectorClassesCompilerPass implements CompilerPassInterface
+final class ParallelCollectorClassesCompilerPass implements CompilerPassInterface, ConsumerBoundPassInterface
 {
+    public static function consumerServiceIds(): array
+    {
+        return [FileProcessingTaskFactory::class];
+    }
+
     public function process(ContainerBuilder $container): void
     {
         if (!$container->hasDefinition(FileProcessingTaskFactory::class)) {

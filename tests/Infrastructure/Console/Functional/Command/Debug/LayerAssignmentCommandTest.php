@@ -813,12 +813,18 @@ final class LayerAssignmentCommandTest extends TestCase
                 'layer' => 'any-foo',
                 'criteria' => ['pattern "App\\**\\Foo"'],
             ],
+            'contendingMatches' => [],
             'shadowed' => [
                 [
                     'layer' => 'service',
                     'criteria' => ['pattern "App\\Service\\**"'],
+                    'reported' => true,
                 ],
             ],
+            'shadowedBy' => 'any-foo',
+            'undecided' => [],
+            'contenders' => [],
+            'chainStopsAt' => [],
             'hasLayers' => true,
         ], $decoded);
     }
@@ -889,7 +895,12 @@ final class LayerAssignmentCommandTest extends TestCase
         self::assertSame([
             'fqn' => 'Other\\Place\\Thing',
             'assigned' => null,
+            'contendingMatches' => [],
             'shadowed' => [],
+            'shadowedBy' => null,
+            'undecided' => [],
+            'contenders' => [],
+            'chainStopsAt' => [],
             'hasLayers' => true,
         ], $decoded);
     }
@@ -983,9 +994,403 @@ final class LayerAssignmentCommandTest extends TestCase
         self::assertSame(ConsoleExitCode::Refusal->value, $decoded['exit_code']);
     }
 
+    #[Test]
+    public function itSeparatesAnUndecidedMembershipFromAnAnsweredNonMatch(): void
+    {
+        // `App\Web\OrderController extends Vendor\Lib\Middle extends
+        // Vendor\Lib\Base`, with only the child inside `paths`. The walk stops
+        // at Middle, so the `extends: [Vendor\Lib\Base]` criterion is not
+        // answered. `architecture.coverage-gap` says so; this reader used to
+        // print the same `(no layer)` it prints for a class every criterion
+        // answered "no" about.
+        $configPath = $this->writeUndecidableConfig();
+        $this->declareClassExtending('App\\Web\\OrderController', 'Vendor\\Lib\\Middle');
+        $this->declareClasses(['App\\Web\\Plain']);
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'App\\Web\\OrderController',
+            '--config' => $configPath,
+        ]);
+
+        self::assertSame(Command::SUCCESS, $exit);
+        $output = $tester->getDisplay();
+        self::assertStringNotContainsString('(no layer)', $output);
+        self::assertStringContainsString('Assigned to: (undecided)', $output);
+        self::assertStringContainsString('Could not be decided: web', $output);
+        self::assertStringContainsString('outside the analysed paths', $output);
+        self::assertStringContainsString('The chain stops at: Vendor\\Lib\\Middle', $output);
+        // A later layer, a catch-all included, would assign this class — an
+        // unanswered layer does not withdraw a later match — but only as a
+        // guess. Offering it as the cure for an unclassified class, or saying
+        // it cannot help, are both wrong here.
+        self::assertStringNotContainsString("catch-all layer with pattern '**'", $output);
+        self::assertStringNotContainsString('will not cover', $output);
+        self::assertStringContainsString('guess', $output);
+    }
+
+    #[Test]
+    public function itKeepsReportingAnAnsweredNonMatchAsUnclassified(): void
+    {
+        // The control for the case above, on the same configuration: a class
+        // with no parent at all is a decided non-match, and must keep the
+        // `(no layer)` answer and the catch-all suggestion.
+        $configPath = $this->writeUndecidableConfig();
+        $this->declareClassExtending('App\\Web\\OrderController', 'Vendor\\Lib\\Middle');
+        $this->declareClasses(['App\\Web\\Plain']);
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'App\\Web\\Plain',
+            '--config' => $configPath,
+        ]);
+
+        self::assertSame(Command::SUCCESS, $exit);
+        $output = $tester->getDisplay();
+        self::assertStringContainsString('Assigned to: (no layer)', $output);
+        self::assertStringContainsString("catch-all layer with pattern '**'", $output);
+        self::assertStringNotContainsString('Could not be decided', $output);
+    }
+
+    #[Test]
+    public function itPublishesAnUndecidedLayerBesideAnAssignmentThatStands(): void
+    {
+        // The third state: a layer the run could not answer, plus a later one
+        // that matched outright. The assignment is not withdrawn
+        // (`LayerRegistry::undecidedLayers()` says why), so the report shows
+        // both — an assignment printed alone would hide that an
+        // earlier-declared layer might have owned the class.
+        $configPath = $this->writeUndecidableConfig(withWebPattern: true);
+        $this->declareClassExtending('App\\Web\\OrderController', 'Vendor\\Lib\\Middle');
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'App\\Web\\OrderController',
+            '--config' => $configPath,
+        ]);
+
+        self::assertSame(Command::SUCCESS, $exit);
+        $output = $tester->getDisplay();
+        self::assertStringContainsString('Assigned to: catch-all', $output);
+        self::assertStringContainsString('Could not be decided: web', $output);
+        self::assertStringContainsString('The chain stops at: Vendor\\Lib\\Middle', $output);
+    }
+
+    #[Test]
+    public function itDoesNotDoubtAnAssignmentOverALayerDeclaredAfterIt(): void
+    {
+        // First match wins: a layer the run could not answer, declared after
+        // the one that assigned the class, cannot change the assignment, so
+        // "it can change" would be false here. `architecture.coverage-gap`
+        // and `architecture.doubted-assignment` do not count such a class
+        // either, and the two readers of one fact must agree.
+        $sourcePath = $this->sourcePath();
+        $configPath = $this->tempDir . '/qmx-' . bin2hex(random_bytes(6)) . '.yaml';
+        file_put_contents($configPath, "paths: ['{$sourcePath}']\narchitecture:\n  layers:\n"
+            . "    - name: app\n      patterns: ['App\\**']\n"
+            . "    - name: vendorish\n      extends: ['Vendor\\Lib\\Base']\n"
+            . "  allow:\n    app: []\n    vendorish: []\n");
+        $this->declareClassExtending('App\\Web\\OrderController', 'Vendor\\Lib\\Middle');
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'App\\Web\\OrderController',
+            '--config' => $configPath,
+        ]);
+
+        self::assertSame(Command::SUCCESS, $exit);
+        $output = $tester->getDisplay();
+        self::assertStringContainsString('Assigned to: app', $output);
+        self::assertStringNotContainsString('Could not be decided', $output);
+        self::assertStringNotContainsString('it can change', $output);
+
+        $json = $this->newTester();
+        $json->execute([
+            'fqn' => 'App\\Web\\OrderController',
+            '--config' => $configPath,
+            '--format' => 'json',
+        ]);
+        $decoded = json_decode($json->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($decoded);
+        self::assertSame([], $decoded['undecided']);
+        self::assertSame([], $decoded['chainStopsAt']);
+    }
+
+    #[Test]
+    public function itShowsAnAssignmentWhoseExcludeCannotBeAnsweredWithItsDoubt(): void
+    {
+        // The positive pattern caught the class and the `exclude:` clause
+        // cannot be answered past the vendor parent. The class stays in the
+        // layer, and the report names the doubt about that same layer.
+        $sourcePath = $this->sourcePath();
+        $configPath = $this->tempDir . '/qmx-' . bin2hex(random_bytes(6)) . '.yaml';
+        file_put_contents($configPath, "paths: ['{$sourcePath}']\narchitecture:\n  layers:\n"
+            . "    - name: web\n      patterns: ['App\\Web\\**']\n      exclude:\n        extends: ['Vendor\\Lib\\Base']\n"
+            . "  allow:\n    web: []\n");
+        $this->declareClassExtending('App\\Web\\OrderController', 'Vendor\\Lib\\Middle');
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'App\\Web\\OrderController',
+            '--config' => $configPath,
+        ]);
+
+        self::assertSame(Command::SUCCESS, $exit);
+        $output = $tester->getDisplay();
+        self::assertStringContainsString('Assigned to: web', $output);
+        self::assertStringContainsString('Could not be decided: web', $output);
+        self::assertStringContainsString('The chain stops at: Vendor\\Lib\\Middle', $output);
+    }
+
+    #[Test]
+    public function itDoesNotCallAMatchShadowedWhileAnUnansweredExcludeDecidesWhoOwnsTheClass(): void
+    {
+        // `repos` owns the class if `app`'s clause answers "yes", so "app
+        // shadows repos" is not a conclusion the run reached, and `check`
+        // reports no such shadow. The report names who could own the class.
+        $configPath = $this->writeCarveOutConfig(withLegacy: false);
+        $this->declareClassExtending('App\\Web\\OrderController', 'Vendor\\Lib\\Middle');
+
+        $text = $this->newTester();
+        self::assertSame(Command::SUCCESS, $text->execute(['fqn' => 'App\\Web\\OrderController', '--config' => $configPath]));
+        $output = $text->getDisplay();
+        self::assertStringContainsString('Could be owned by: app, repos', $output);
+        self::assertStringNotContainsString('Class is shadowed', $output);
+        self::assertStringNotContainsString('architecture.potential-shadow', $output);
+
+        $json = $this->newTester();
+        $json->execute(['fqn' => 'App\\Web\\OrderController', '--config' => $configPath, '--format' => 'json']);
+        $decoded = json_decode($json->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($decoded);
+        self::assertSame([], $decoded['shadowed']);
+        self::assertNull($decoded['shadowedBy']);
+        self::assertSame(['app', 'repos'], $decoded['contenders']);
+    }
+
+    #[Test]
+    public function itNamesTheShadowThatHoldsWhateverAnUnansweredExcludeAnswers(): void
+    {
+        // `legacy` loses the class to `app` or to `repos`, whichever way the
+        // clause answers, and `check` reports `repos` → `legacy`. The report
+        // names that pair, not the one through the doubted `app`.
+        $configPath = $this->writeCarveOutConfig(withLegacy: true);
+        $this->declareClassExtending('App\\Web\\OrderController', 'Vendor\\Lib\\Middle');
+
+        $text = $this->newTester();
+        $text->execute(['fqn' => 'App\\Web\\OrderController', '--config' => $configPath]);
+        self::assertStringContainsString(
+            "Class is shadowed: would have matched 'legacy' if 'repos' was declared later.",
+            $text->getDisplay(),
+        );
+
+        $json = $this->newTester();
+        $json->execute(['fqn' => 'App\\Web\\OrderController', '--config' => $configPath, '--format' => 'json']);
+        $decoded = json_decode($json->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($decoded);
+        self::assertSame('app', $decoded['assigned']['layer']);
+        self::assertSame('repos', $decoded['shadowedBy']);
+        self::assertSame(
+            [['layer' => 'legacy', 'criteria' => ['pattern "App\\Web\\OrderController"'], 'reported' => true]],
+            $decoded['shadowed'],
+        );
+    }
+
+    #[Test]
+    public function itNamesALaterMatchWhoseExcludeWentUnansweredInBothProjections(): void
+    {
+        // `web` owns the class for certain, and `infra` behind it loses the
+        // class whatever its clause answers, so the text lists it and so must
+        // the JSON — flagged as nothing `architecture.potential-shadow`
+        // reports, because `infra` may not match at all.
+        $sourcePath = $this->sourcePath();
+        $configPath = $this->tempDir . '/qmx-' . bin2hex(random_bytes(6)) . '.yaml';
+        file_put_contents($configPath, "paths: ['{$sourcePath}']\narchitecture:\n  layers:\n"
+            . "    - name: web\n      patterns: ['App\\Web\\**']\n"
+            . "    - name: infra\n      patterns: ['App\\**']\n      exclude:\n        extends: ['Vendor\\Lib\\Base']\n"
+            . "  allow:\n    web: []\n    infra: []\n  coverage-gap: ignore\n");
+        $this->declareClassExtending('App\\Web\\OrderController', 'Vendor\\Lib\\Middle');
+
+        $text = $this->newTester();
+        $text->execute(['fqn' => 'App\\Web\\OrderController', '--config' => $configPath]);
+        self::assertStringContainsString('- infra', $text->getDisplay());
+        self::assertStringNotContainsString('architecture.potential-shadow', $text->getDisplay());
+
+        $json = $this->newTester();
+        $json->execute(['fqn' => 'App\\Web\\OrderController', '--config' => $configPath, '--format' => 'json']);
+        $decoded = json_decode($json->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($decoded);
+        self::assertSame('web', $decoded['shadowedBy']);
+        self::assertSame([['layer' => 'infra', 'criteria' => ['pattern "App\\**"'], 'reported' => false]], $decoded['shadowed']);
+        self::assertSame([], $decoded['contenders']);
+    }
+
+    #[Test]
+    public function itListsEveryMatchInFrontOfTheShadowWithItsCriteriaInJson(): void
+    {
+        // `repo2` matched the class under an `exclude:` the run cannot answer,
+        // exactly as `app` did, and `repos` owns it if both clauses answer
+        // "yes". The text lists both with the criterion that matched; a JSON
+        // consumer must be able to tell them from `hand`, which did not match.
+        $sourcePath = $this->sourcePath();
+        $configPath = $this->tempDir . '/qmx-' . bin2hex(random_bytes(6)) . '.yaml';
+        file_put_contents($configPath, "paths: ['{$sourcePath}']\narchitecture:\n  layers:\n"
+            . "    - name: hand\n      implements: ['App\\Contracts\\Handler']\n"
+            . "    - name: app\n      patterns: ['App\\**']\n      exclude:\n        extends: ['Vendor\\Lib\\Base']\n"
+            . "    - name: repo2\n      patterns: ['App\\Web\\OrderController']\n      exclude:\n        implements: ['Some\\Iface']\n"
+            . "    - name: repos\n      patterns: ['App\\Web\\**']\n"
+            . "    - name: legacy\n      patterns: ['App\\Web\\Order*']\n"
+            . "  allow:\n    hand: []\n    app: []\n    repo2: []\n    repos: []\n    legacy: []\n  coverage-gap: ignore\n");
+        $this->declareClassExtending('App\\Web\\OrderController', 'Vendor\\Lib\\Middle');
+
+        $text = $this->newTester();
+        $text->execute(['fqn' => 'App\\Web\\OrderController', '--config' => $configPath]);
+        self::assertStringContainsString("- repo2  (matched by: 'pattern \"App\\Web\\OrderController\"')", $text->getDisplay());
+
+        $json = $this->newTester();
+        $json->execute(['fqn' => 'App\\Web\\OrderController', '--config' => $configPath, '--format' => 'json']);
+        $decoded = json_decode($json->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($decoded);
+        self::assertSame('app', $decoded['assigned']['layer']);
+        self::assertSame([
+            ['layer' => 'repo2', 'criteria' => ['pattern "App\\Web\\OrderController"'], 'reported' => false],
+            ['layer' => 'repos', 'criteria' => ['pattern "App\\Web\\**"'], 'reported' => false],
+        ], $decoded['contendingMatches']);
+        self::assertSame('repos', $decoded['shadowedBy']);
+        self::assertSame(
+            [['layer' => 'legacy', 'criteria' => ['pattern "App\\Web\\Order*"'], 'reported' => true]],
+            $decoded['shadowed'],
+        );
+        self::assertSame(['hand', 'app', 'repo2', 'repos'], $decoded['contenders']);
+    }
+
+    #[Test]
+    public function itDoesNotPointAtPotentialShadowForABroaderLayerDeclaredLater(): void
+    {
+        // Narrow before broad is how declaration order is meant to be used,
+        // and `architecture.potential-shadow` stays silent about it; the
+        // report must not send the reader there.
+        $configPath = $this->writeConfig([
+            ['service', ['App\\Service\\**']],
+            ['catch-all', ['**']],
+        ]);
+        $this->declareClasses(['App\\Service\\Foo']);
+
+        $text = $this->newTester();
+        $text->execute(['fqn' => 'App\\Service\\Foo', '--config' => $configPath]);
+        self::assertStringNotContainsString('architecture.potential-shadow', $text->getDisplay());
+        self::assertStringContainsString('- catch-all', $text->getDisplay());
+
+        $json = $this->newTester();
+        $json->execute(['fqn' => 'App\\Service\\Foo', '--config' => $configPath, '--format' => 'json']);
+        $decoded = json_decode($json->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($decoded);
+        self::assertSame([['layer' => 'catch-all', 'criteria' => ['pattern "**"'], 'reported' => false]], $decoded['shadowed']);
+    }
+
+    #[Test]
+    public function itNamesUndecidedLayersInJsonToo(): void
+    {
+        // Both projections read one resolution; a JSON consumer that branched
+        // on `assigned === null` alone would read "no layer claims this class"
+        // from a run that never answered.
+        $configPath = $this->writeUndecidableConfig();
+        $this->declareClassExtending('App\\Web\\OrderController', 'Vendor\\Lib\\Middle');
+        $this->declareClasses(['App\\Web\\Plain']);
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'App\\Web\\OrderController',
+            '--config' => $configPath,
+            '--format' => 'json',
+        ]);
+
+        self::assertSame(Command::SUCCESS, $exit);
+        $decoded = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertNull($decoded['assigned']);
+        self::assertSame(['web'], $decoded['undecided']);
+        self::assertSame(['Vendor\\Lib\\Middle'], $decoded['chainStopsAt']);
+
+        $control = $this->newTester();
+        $control->execute([
+            'fqn' => 'App\\Web\\Plain',
+            '--config' => $configPath,
+            '--format' => 'json',
+        ]);
+        $decodedControl = json_decode($control->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertNull($decodedControl['assigned']);
+        self::assertSame([], $decodedControl['undecided']);
+        self::assertSame([], $decodedControl['chainStopsAt']);
+    }
+
     /**
-     * The text branch has three internal exits inside its own renderer
-     * (matched, no-layer, and unique-match), but they all fall through to one
+     * A configuration whose first layer is decided by an inheritance chain,
+     * so a class whose chain leaves the analysed set cannot be answered.
+     *
+     * Written out rather than built by {@see writeConfig()} because that helper
+     * only emits `patterns`, and `patterns` is decidable by construction.
+     */
+    private function writeUndecidableConfig(bool $withWebPattern = false): string
+    {
+        $sourcePath = $this->sourcePath();
+        $catchAll = $withWebPattern
+            ? "    - name: catch-all\n      patterns: ['App\\Web\\**']\n"
+            : "    - name: elsewhere\n      patterns: ['App\\Other\\**']\n";
+        $allow = $withWebPattern ? "    catch-all: []\n" : "    elsewhere: []\n";
+
+        $yaml = "paths: ['{$sourcePath}']\narchitecture:\n  layers:\n"
+            . "    - name: web\n      extends: ['Vendor\\Lib\\Base']\n"
+            . $catchAll
+            . "  allow:\n    web: []\n" . $allow
+            . "  coverage-gap: ignore\n";
+
+        $path = $this->tempDir . '/qmx-' . bin2hex(random_bytes(6)) . '.yaml';
+        file_put_contents($path, $yaml);
+
+        return $path;
+    }
+
+    /**
+     * `app` carves `App\**` out with an `exclude:` the run cannot answer past
+     * an unread vendor parent, and `repos` — plus, optionally, a narrower
+     * `legacy` — is declared after it.
+     */
+    private function writeCarveOutConfig(bool $withLegacy): string
+    {
+        $sourcePath = $this->sourcePath();
+        $yaml = "paths: ['{$sourcePath}']\narchitecture:\n  layers:\n"
+            . "    - name: app\n      patterns: ['App\\**']\n      exclude:\n        extends: ['Vendor\\Lib\\Base']\n"
+            . "    - name: repos\n      patterns: ['App\\Web\\**']\n"
+            . ($withLegacy ? "    - name: legacy\n      patterns: ['App\\Web\\OrderController']\n" : '')
+            . "  allow:\n    app: []\n    repos: []\n" . ($withLegacy ? "    legacy: []\n" : '')
+            . "  coverage-gap: ignore\n";
+
+        $path = $this->tempDir . '/qmx-' . bin2hex(random_bytes(6)) . '.yaml';
+        file_put_contents($path, $yaml);
+
+        return $path;
+    }
+
+    /**
+     * Materialises a class whose parent is never declared in the source tree,
+     * so the recorded chain stops one link short of what a criterion names.
+     */
+    private function declareClassExtending(string $fqn, string $parentFqn): void
+    {
+        $position = strrpos($fqn, '\\');
+        $namespace = $position === false ? null : substr($fqn, 0, $position);
+        $shortName = $position === false ? $fqn : substr($fqn, $position + 1);
+        $body = "<?php\n"
+            . ($namespace === null ? '' : "\nnamespace {$namespace};\n")
+            . "\nfinal class {$shortName} extends \\{$parentFqn} {}\n";
+        file_put_contents(
+            $this->sourcePath() . '/' . str_replace('\\', '_', $fqn) . '.php',
+            $body,
+        );
+    }
+
+    /**
+     * The text branch has several internal exits inside its own renderer
+     * (matched, no-layer, undecided and unique-match among them), but they all fall through to one
      * call site in the command — this pins that the pointer reaches all of
      * them by covering the matched case here and the no-layer case below.
      */

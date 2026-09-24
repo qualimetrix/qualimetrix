@@ -19,13 +19,13 @@ require_once __DIR__ . '/subprocess/ChildProcess.php';
 
 const OUTPUT_DIRECTORY = 'docs/internal/generated/modular-architecture';
 const TEST_LEVELS = ['Unit', 'Integration', 'Functional'];
-// 65 paths. Stage 05 moved four of them from Unit/ to Integration/ --
+// 70 paths. Stage 05 moved four of them from Unit/ to Integration/ --
 // BaselineChannelRenamerTest, BaselineRoundTripVOTest, BaselineWriterTest and
 // ConfigurationErrorChannelRejectionTest -- because their bodies do real work,
 // not because the set changed: no file entered or left the tree, and the count
 // is the same on both sides of the move. Re-hash only against a diff of the
 // path list; a digest refreshed to make the generator run again asserts nothing.
-const P6_C_BASELINE_PATHS_SHA256 = 'c8620ffa4e9199f0acd82954a306942839a9e5c3ada3e51daa878b2d347867b8';
+const P6_C_BASELINE_PATHS_SHA256 = 'd0bb0082d22f4bdcad0156a0941a8941975bbfa928bda7ed91f5a956b4880193';
 
 $arguments = $_SERVER['argv'] ?? [];
 $check = in_array('--check', $arguments, true);
@@ -233,7 +233,6 @@ const P3_TEST_PATHS = [
     'tests/Analysis/Configuration/Unit/Discovery/ComposerReaderTest.php',
     'tests/Analysis/Configuration/Unit/Loader/YamlConfigLoaderTest.php',
     'tests/Analysis/Configuration/Unit/Pipeline/ConfigDataNormalizerTest.php',
-    'tests/Analysis/Configuration/Unit/Pipeline/ConfigurationMergerTest.php',
     'tests/Analysis/Configuration/Unit/Pipeline/ConfigurationPipelineTest.php',
     'tests/Analysis/Configuration/Unit/Pipeline/RuleNameValidatorTest.php',
     'tests/Analysis/Configuration/Unit/Pipeline/Stage/CliStageTest.php',
@@ -433,6 +432,7 @@ const RETIRED_PATH_ASSERTIONS = [
     'tests/Analysis/Evidence/Measurement/Unit/Contract/CollectorRuntimeConfigurationTest.php' => 'P3 closure; the test was removed after the package.',
     'tests/Analysis/Run/Unit/Collection/Declaration/DeclarationBindingsTest.php' => 'P3 closure; the test was removed after the package.',
     'tests/Analysis/Run/Unit/Pipeline/MetricEnricherTest.php' => 'P3 closure; the test was removed after the package.',
+    'tests/Analysis/Configuration/Unit/Pipeline/ConfigurationMergerTest.php' => 'The class it covered had no production caller and was removed with it.',
     'tests/Infrastructure/Logging/LoggerFactoryTest.php' => 'The P8 LoggerFactory coverage consolidation described for this path has happened.',
     'tests/Unit/Infrastructure/Logging/LoggerFactoryTest.php' => 'The P8 LoggerFactory coverage consolidation described for this path has happened.',
 ];
@@ -1213,6 +1213,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Reporting/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Path/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Symbol/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Core/Symbol/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Core/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Policy/Architecture/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Policy/Baseline/Integration/', 'suite' => 'Integration'],

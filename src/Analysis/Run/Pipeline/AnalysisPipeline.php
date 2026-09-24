@@ -24,6 +24,7 @@ use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
@@ -194,29 +195,30 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         $this->logger->debug('Starting collection phase', ['files' => \count($files)]);
 
         $profiler->start('collection', 'pipeline');
-        $collectionOutput = $this->collectionOrchestrator->collect($files, $repository, $configuration->projectRoot);
-        $collectionResult = $collectionOutput;
+        $collectionResult = $this->collectionOrchestrator->collect($files, $repository, $configuration->projectRoot);
         $profiler->stop('collection');
 
         $collectionTime = microtime(true) - $phaseStartTime;
         $this->logger->info('Collection completed', [
             'processed' => $collectionResult->filesAnalyzed,
             'errors' => $collectionResult->filesSkipped,
-            'dependencies' => \count($collectionOutput->dependencies),
+            'dependencies' => \count($collectionResult->dependencies),
             'duration' => \sprintf('%.2fs', $collectionTime),
         ]);
 
-        // Phase 2.5: Build dependency graph from collected dependencies
-        // Dependencies are consumed here and freed immediately after graph is built
+        // Phase 2.5: Build dependency graph from collected dependencies.
+        // The raw dependency list is not released here: the same
+        // CollectionPhaseOutput carries the suppressions and counters the rest
+        // of the run needs, so it stays reachable until the run ends. An
+        // `unset()` of a second name for it used to claim otherwise.
         $this->logger->debug('Building dependency graph', [
-            'dependencies' => \count($collectionOutput->dependencies),
+            'dependencies' => \count($collectionResult->dependencies),
         ]);
         $profiler->start('dependency', 'pipeline');
         $graph = $this->buildDependencyGraph(
-            $collectionOutput->dependencies,
+            $collectionResult->dependencies,
             $repository,
         );
-        unset($collectionOutput); // Free raw dependencies — no longer needed
         $profiler->stop('dependency');
 
         // Phase 2.6: prepare Architecture-owned layer policy from this run's
@@ -288,7 +290,13 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             collection: $collectionResult,
             context: $context,
             ruleExecution: $ruleExecution,
-            coverage: self::buildCoverage($eligiblePaths, $generatedExcludedFiles, $collectionResult),
+            coverage: self::buildCoverage(
+                $eligiblePaths,
+                $generatedExcludedFiles,
+                $collectionResult,
+                $discoveredFiles->skippedEntries,
+                $configuration->projectRoot,
+            ),
             unmatchedExcludeFindings: $discoveredFiles->unmatchedExcludeFindings,
         );
     }
@@ -374,11 +382,14 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
     /**
      * @param list<RelativePath> $eligiblePaths
      * @param list<RelativePath> $generatedExcludedFiles
+     * @param list<SkippedEntry> $skippedEntries
      */
     private static function buildCoverage(
         array $eligiblePaths,
         array $generatedExcludedFiles,
         CollectionPhaseOutput $collectionResult,
+        array $skippedEntries,
+        AbsolutePath $projectRoot,
     ): AnalysisCoverage {
         $failures = array_map(
             static function ($failure): AnalysisFailure {
@@ -400,7 +411,17 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             $failures,
         );
 
-        self::assertCoverageMatchesDiscovery($coverage, $eligiblePaths);
+        // A skipped entry is a discovered path with a terminal state, so it
+        // belongs on both sides of the invariant below — not only in the
+        // coverage it is recorded in.
+        $skippedPaths = [];
+        foreach ($skippedEntries as $skip) {
+            $path = $skip->relativeTo($projectRoot);
+            $skippedPaths[] = $path;
+            $coverage = $coverage->withSkipped($path, $skip->reason, $skip->detail);
+        }
+
+        self::assertCoverageMatchesDiscovery($coverage, [...$eligiblePaths, ...$skippedPaths]);
 
         return $coverage;
     }

@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingCollector;
@@ -70,9 +71,12 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Infrastructure\Ast\CachedFileParser;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
 use Qualimetrix\Infrastructure\Cache\CacheConfigurationStore;
+use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
+use Qualimetrix\Infrastructure\Cache\FileCache;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
@@ -304,7 +308,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         ]], AbsolutePath::fromString($fixtureRoot));
 
         /**
-         * @return array{\Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult, array<string, array{total: float, count: int, avg: float, memory: int, peak_memory: int}>}
+         * @return array{\Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult, array<string, array{total: float, count: int, unstopped: int}>}
          */
         $run = static function (
             string $path,
@@ -622,6 +626,10 @@ namespace InlineWorkerFixture;
 final class Controlled
 {
     public function run(): void {}
+
+    #[\Deprecated]
+    /** @qmx-ignore complexity.ccn -- written after the attribute */
+    public function afterAttribute(): void {}
 }
 PHP);
 
@@ -632,6 +640,10 @@ PHP);
 
             self::assertSame(SequentialStrategy::class, $sequential['strategy']);
             self::assertNotEmpty($sequential['suppressions']);
+            self::assertContains(15, array_map(
+                static fn($suppression): int => $suppression->line,
+                array_merge(...array_values($sequential['suppressions'])),
+            ), 'the directive written after the attribute is read before the worker round trip is compared');
             self::assertNotEmpty($sequential['thresholdOverrides']);
             self::assertNotEmpty($sequential['thresholdDiagnostics']);
 
@@ -644,6 +656,104 @@ PHP);
         } finally {
             self::removeFixtureDirectory($fixtureRootPath);
         }
+    }
+
+    /**
+     * The AST cache stores what php-parser produced, and php-parser attaches
+     * no node to a comment written between a declaration's attributes and the
+     * declaration. What a cached AST cannot carry the source must, so a cache
+     * hit has to read the same directives as a fresh parse of the same file.
+     */
+    #[Test]
+    public function itReadsTheSameInlineControlsFromACachedAstAsFromAFreshParse(): void
+    {
+        $fixtureRootPath = sys_get_temp_dir() . '/qmx-inline-cache-' . bin2hex(random_bytes(6));
+        mkdir($fixtureRootPath, 0o755, true);
+        $fixturePath = $fixtureRootPath . '/Controlled.php';
+        file_put_contents($fixturePath, <<<'PHP'
+<?php
+
+namespace InlineCacheFixture;
+
+final class Controlled
+{
+    #[\Deprecated]
+    /** @qmx-ignore complexity.ccn -- written after the attribute */
+    public function afterAttribute(): void {}
+
+    #[\Deprecated]
+    /** @qmx-ignorr complexity.ccn -- misspelled after the attribute */
+    public function misspelled(): void {}
+}
+PHP);
+
+        try {
+            $root = AbsolutePath::fromString((string) realpath($fixtureRootPath));
+            $inner = new class implements \Qualimetrix\Core\Ast\FileParserInterface {
+                public int $parsed = 0;
+
+                private PhpFileParser $parser;
+
+                public function __construct()
+                {
+                    $this->parser = new PhpFileParser();
+                }
+
+                public function parse(SplFileInfo $file): array
+                {
+                    ++$this->parsed;
+
+                    return $this->parser->parse($file);
+                }
+
+                public function parseContent(SplFileInfo $file, string $content): array
+                {
+                    ++$this->parsed;
+
+                    return $this->parser->parseContent($file, $content);
+                }
+            };
+            $cacheStore = new CacheConfigurationStore();
+            $cacheStore->replace(new CacheConfiguration($root->joinRelative(RelativePath::fromString('.qmx-cache')), true));
+            $cachedParser = new CachedFileParser(
+                $inner,
+                new FileCache($root->joinRelative(RelativePath::fromString('.qmx-cache'))),
+                new CacheKeyGenerator(),
+                $cacheStore,
+            );
+
+            $fresh = self::processWith(new PhpFileParser(), $root, $fixturePath);
+            $miss = self::processWith($cachedParser, $root, $fixturePath);
+            $hit = self::processWith($cachedParser, $root, $fixturePath);
+
+            self::assertSame(1, $inner->parsed, 'the second cached run must not parse');
+            self::assertSame(
+                ['8:bound', '12:refused'],
+                array_map(
+                    static fn($suppression): string => $suppression->line . ':' . ($suppression->refusal === null ? 'bound' : 'refused'),
+                    $fresh->suppressions(),
+                ),
+            );
+            self::assertEquals($fresh->suppressions(), $miss->suppressions());
+            self::assertEquals($fresh->suppressions(), $hit->suppressions());
+        } finally {
+            self::removeFixtureDirectory($fixtureRootPath);
+        }
+    }
+
+    private static function processWith(
+        \Qualimetrix\Core\Ast\FileParserInterface $parser,
+        AbsolutePath $root,
+        string $path,
+    ): \Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult {
+        $processor = new FileProcessor(
+            $parser,
+            new CompositeCollector([new CyclomaticComplexityCollector()], new DeclarationRegistrarFactory()),
+            new SourceControlExtractor(),
+        );
+        $processor->setProjectRoot($root);
+
+        return $processor->process(new SplFileInfo($path));
     }
 
     /**

@@ -152,6 +152,24 @@ final readonly class Baseline
         return $this->byIdentityKey[$identity->key()] ?? null;
     }
 
+    /**
+     * The inert line claiming this identity, when the loader could read the
+     * identity but not apply the entry. The first of several, for a
+     * duplicated identity: all of them carry the same reason.
+     */
+    public function findInertByIdentity(BaselineIdentity $identity): ?InertBaselineEntry
+    {
+        $key = $identity->key();
+
+        foreach ($this->inertEntries as $inert) {
+            if ($inert->identity?->key() === $key) {
+                return $inert;
+            }
+        }
+
+        return null;
+    }
+
     public function hasIdentity(BaselineIdentity $identity): bool
     {
         return isset($this->byIdentityKey[$identity->key()]);
@@ -232,7 +250,7 @@ final readonly class Baseline
      * The counterpart of {@see detached()}: {@see BaselineWriter::write()}
      * returns the token for the bytes it wrote, and without a way to put it
      * back a caller that writes the same instance twice — a read-modify-write
-     * such as `update` or `migrate` — would be refused by its own first write.
+     * such as `update` — would be refused by its own first write.
      */
     public function withSourceContentHash(string $sourceContentHash): self
     {
@@ -248,8 +266,8 @@ final readonly class Baseline
 
     /**
      * The same baseline expecting its target to remain absent until the
-     * write's compare-and-swap check. This is provenance too: a forced
-     * migration may replace a path that was absent at its snapshot, but must
+     * write's compare-and-swap check. This is provenance too: `generate`
+     * may create a path that was absent at its snapshot, but must
      * not erase a file another process created while it was measuring.
      */
     public function withExpectedSourceAbsence(): self

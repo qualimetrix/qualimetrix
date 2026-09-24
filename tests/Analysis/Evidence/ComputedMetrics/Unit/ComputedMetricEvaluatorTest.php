@@ -7,9 +7,12 @@ namespace Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\AbstractLogger;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricBranchTrace;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
@@ -19,9 +22,10 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use RuntimeException;
+use Stringable;
 
 #[CoversClass(ComputedMetricEvaluator::class)]
+#[CoversClass(ComputedMetricBranchTrace::class)]
 final class ComputedMetricEvaluatorTest extends TestCase
 {
     #[Test]
@@ -100,8 +104,10 @@ final class ComputedMetricEvaluatorTest extends TestCase
             levels: [SymbolLevel::Class_],
         );
 
-        self::expectException(RuntimeException::class);
-        self::expectExceptionMessage('references unknown metrics: missing_var');
+        // A ConfigurationRefusal, not a plain RuntimeException: this is a
+        // mistake in `qmx.yaml`, and only that kind carries exit code 3.
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('reads "missing_var" at level "class", where no symbol carries it');
 
         $this->evaluate($repo, [$definition]);
     }
@@ -120,10 +126,44 @@ final class ComputedMetricEvaluatorTest extends TestCase
             levels: [SymbolLevel::Class_],
         );
 
-        self::expectException(RuntimeException::class);
-        self::expectExceptionMessage('references unknown metrics: foo, bar');
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('reads "foo", "bar" at level "class", where no symbol carries them');
 
         $this->evaluate($repo, [$definition]);
+    }
+
+    /**
+     * A fallback chain that starts at another computed metric the level does
+     * not carry and ends at a measured key the level does not carry reads
+     * nothing any symbol has. Configuration cannot see it — which levels carry
+     * a measured key is a fact of the run — so it is refused here, naming both
+     * keys, rather than skipping every symbol with a warning.
+     */
+    #[Test]
+    public function itRefusesAFallbackChainWhereNoSymbolAtTheLevelCarriesAnyLink(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $classPath = SymbolPath::forClass('App', 'Svc');
+        $repo->add($classPath, MetricBag::fromArray(['size.method-count' => 2]), RelativePath::fromString('src/Svc.php'), 1);
+        $repo->add(SymbolPath::forProject(), MetricBag::fromArray(['size.loc' => 10]), null, null);
+
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('reads "computed.cls-only", "size.method-count" at level "project", where no symbol carries them');
+
+        $this->evaluate($repo, [
+            new ComputedMetricDefinition(
+                name: 'computed.cls-only',
+                formulas: ['class' => 'm["size.method-count"] + 1'],
+                description: 'Class only',
+                levels: [SymbolLevel::Class_],
+            ),
+            new ComputedMetricDefinition(
+                name: 'computed.reader',
+                formulas: ['project' => 'm["computed.cls-only"] ?? m["size.method-count"]'],
+                description: 'Reads a chain the project level carries no link of',
+                levels: [SymbolLevel::Project],
+            ),
+        ]);
     }
 
     #[Test]
@@ -148,6 +188,370 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         self::assertSame(50.0, $repo->get($classA)->get('health.test'));
         self::assertSame(0.0, $repo->get($classB)->get('health.test'));
+    }
+
+    /**
+     * An unguarded read of a key this symbol does not carry used to reach the
+     * arithmetic as `null`, which PHP coerces to 0. The zero was published as a
+     * measurement and scored the symbol; with `inverted: true` it raised a
+     * finding of severity error. A formula that asked without `??` gets no
+     * value, and the run says which symbol and which key.
+     */
+    #[Test]
+    public function itPublishesNoValueForASymbolMissingAnUnguardedMetric(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $rich = SymbolPath::forClass('App', 'Rich');
+        $bare = SymbolPath::forClass('App', 'Bare');
+        $repo->add($rich, MetricBag::fromArray(['cohesion.tcc' => 1.0]), RelativePath::fromString('src/Rich.php'), 1);
+        $repo->add($bare, MetricBag::fromArray([]), RelativePath::fromString('src/Bare.php'), 1);
+
+        $definition = new ComputedMetricDefinition(
+            name: 'computed.probe',
+            formulas: ['class' => 'm["cohesion.tcc"] * 100'],
+            description: 'Test metric',
+            levels: [SymbolLevel::Class_],
+        );
+
+        $logger = new class extends AbstractLogger {
+            /** @var list<array<string, mixed>> */
+            public array $contexts = [];
+
+            /** @param array<mixed> $context */
+            public function log($level, string|Stringable $message, array $context = []): void
+            {
+                $this->contexts[] = $context;
+            }
+        };
+
+        $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $catalog->method('all')->willReturn([$definition]);
+        (new ComputedMetricEvaluator($catalog, self::createStub(ProfilerInterface::class), $logger))
+            ->evaluate($repo, 1);
+
+        self::assertSame(100.0, $repo->get($rich)->get('computed.probe'));
+        self::assertNull($repo->get($bare)->get('computed.probe'));
+        self::assertCount(1, $logger->contexts);
+        self::assertSame(1, $logger->contexts[0]['skipped']);
+        self::assertSame('App\\Bare', $logger->contexts[0]['symbols']);
+        self::assertSame('cohesion.tcc', $logger->contexts[0]['missing']);
+    }
+
+    /**
+     * The right side of `??` is read only where the left is absent. Treating it
+     * as required skipped a symbol that carried the left side, and the value
+     * the formula computes there was lost.
+     */
+    #[Test]
+    public function itPublishesTheLeftSideOfAFallbackBetweenMetricsWhereOnlyTheLeftIsPresent(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $tccOnly = SymbolPath::forClass('App', 'TccOnly');
+        $lccOnly = SymbolPath::forClass('App', 'LccOnly');
+        $repo->add($tccOnly, MetricBag::fromArray(['cohesion.tcc' => 0.5]), RelativePath::fromString('src/TccOnly.php'), 1);
+        $repo->add($lccOnly, MetricBag::fromArray(['cohesion.lcc' => 0.7]), RelativePath::fromString('src/LccOnly.php'), 1);
+
+        $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
+            name: 'computed.probe',
+            formulas: ['class' => 'm["cohesion.tcc"] ?? m["cohesion.lcc"]'],
+            description: 'Test metric',
+            levels: [SymbolLevel::Class_],
+        )]);
+
+        self::assertSame(0.5, $repo->get($tccOnly)->get('computed.probe'));
+        self::assertSame(0.7, $repo->get($lccOnly)->get('computed.probe'));
+        self::assertSame([], $logger->records);
+    }
+
+    /**
+     * Where neither side of the fallback is present, the formula's value is
+     * `null`; that is a symbol with no value, and the run names both keys the
+     * formula looked for.
+     */
+    #[Test]
+    public function itSkipsASymbolCarryingNeitherSideOfAFallbackBetweenMetrics(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $tccOnly = SymbolPath::forClass('App', 'TccOnly');
+        $bare = SymbolPath::forClass('App', 'Bare');
+        $repo->add($tccOnly, MetricBag::fromArray(['cohesion.tcc' => 0.5, 'cohesion.lcc' => 0.7]), RelativePath::fromString('src/TccOnly.php'), 1);
+        $repo->add($bare, MetricBag::fromArray(['size.loc' => 3]), RelativePath::fromString('src/Bare.php'), 1);
+
+        $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
+            name: 'computed.probe',
+            formulas: ['class' => 'm["cohesion.tcc"] ?? m["cohesion.lcc"]'],
+            description: 'Test metric',
+            levels: [SymbolLevel::Class_],
+        )]);
+
+        self::assertSame(0.5, $repo->get($tccOnly)->get('computed.probe'));
+        self::assertNull($repo->get($bare)->get('computed.probe'));
+        self::assertCount(1, $logger->records);
+        self::assertSame('App\\Bare', $logger->records[0]['context']['symbols']);
+        self::assertSame('cohesion.tcc, cohesion.lcc', $logger->records[0]['context']['missing']);
+    }
+
+    /**
+     * One line per metric and level, not per symbol: a formula that misses on
+     * most of a large project would otherwise flood the log. The line says
+     * how many symbols got no value, names some, and does not claim they
+     * carry none of the formula's metrics — one missing key is enough.
+     */
+    #[Test]
+    public function itReportsSkippedSymbolsOnceForTheMetricAndLevel(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $repo->add(SymbolPath::forClass('App', 'Rich'), MetricBag::fromArray(['cohesion.tcc' => 1.0, 'size.loc' => 1]), RelativePath::fromString('src/Rich.php'), 1);
+        foreach (range(1, 7) as $i) {
+            $repo->add(SymbolPath::forClass('App', 'Bare' . $i), MetricBag::fromArray(['size.loc' => 1]), RelativePath::fromString('src/Bare' . $i . '.php'), 1);
+        }
+
+        $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
+            name: 'computed.probe',
+            formulas: ['class' => 'm["cohesion.tcc"] * m["size.loc"]'],
+            description: 'Test metric',
+            levels: [SymbolLevel::Class_],
+        )]);
+
+        self::assertCount(1, $logger->records);
+        self::assertSame(
+            'Computed metric published no value for symbols lacking a metric its formula reads without a "??" fallback',
+            $logger->records[0]['message'],
+        );
+        self::assertSame(7, $logger->records[0]['context']['skipped']);
+        self::assertSame('App\\Bare1, App\\Bare2, App\\Bare3, App\\Bare4, App\\Bare5 (and 2 more)', $logger->records[0]['context']['symbols']);
+        self::assertSame('cohesion.tcc', $logger->records[0]['context']['missing']);
+    }
+
+    /**
+     * A null the inner `??` hands on is caught by the outer one: nothing in
+     * `(a ?? b) ?? 0` is ever read as null by the arithmetic.
+     */
+    #[Test]
+    public function itTreatsAParenthesisedFallbackChainAsGuardedToItsLastLink(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $bare = SymbolPath::forClass('App', 'Bare');
+        $rich = SymbolPath::forClass('App', 'Rich');
+        $repo->add($bare, MetricBag::fromArray(['size.loc' => 3]), RelativePath::fromString('src/Bare.php'), 1);
+        $repo->add($rich, MetricBag::fromArray(['cohesion.lcc' => 0.7]), RelativePath::fromString('src/Rich.php'), 1);
+
+        $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
+            name: 'computed.probe',
+            formulas: ['class' => '((m["cohesion.tcc"] ?? m["cohesion.lcc"]) ?? 0) + 1'],
+            description: 'Test metric',
+            levels: [SymbolLevel::Class_],
+        )]);
+
+        self::assertSame(1.0, $repo->get($bare)->get('computed.probe'));
+        self::assertSame(1.7, $repo->get($rich)->get('computed.probe'));
+        self::assertSame([], $logger->records);
+    }
+
+    /**
+     * A key only the branch not taken reads is never read. Requiring it
+     * skipped a class with one method, which publishes no TCC, although the
+     * formula takes the literal branch there — and where no class at the
+     * level carried the key, the whole run was refused.
+     */
+    #[Test]
+    public function itPublishesTheBranchATernaryTakesWithoutTheKeyOnlyTheOtherBranchReads(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $single = SymbolPath::forClass('App', 'Single');
+        $empty = SymbolPath::forClass('App', 'Empty');
+        $repo->add($single, MetricBag::fromArray(['size.method-count' => 1]), RelativePath::fromString('src/Single.php'), 1);
+        $repo->add($empty, MetricBag::fromArray(['size.method-count' => 0, 'cohesion.tcc' => 0.25]), RelativePath::fromString('src/Empty.php'), 1);
+
+        $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
+            name: 'computed.probe',
+            formulas: ['class' => 'm["size.method-count"] > 0 ? 7 : m["cohesion.tcc"]'],
+            description: 'Test metric',
+            levels: [SymbolLevel::Class_],
+        )]);
+
+        self::assertSame(7.0, $repo->get($single)->get('computed.probe'));
+        self::assertSame(0.25, $repo->get($empty)->get('computed.probe'));
+        self::assertSame([], $logger->records);
+    }
+
+    #[Test]
+    public function itDoesNotRefuseAKeyNoSymbolCarriesWhereOnlyABranchReadsIt(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $single = SymbolPath::forClass('App', 'Single');
+        $repo->add($single, MetricBag::fromArray(['size.method-count' => 1]), RelativePath::fromString('src/Single.php'), 1);
+
+        $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
+            name: 'computed.probe',
+            formulas: ['class' => 'm["size.method-count"] > 0 ? 7 : m["cohesion.tcc"]'],
+            description: 'Test metric',
+            levels: [SymbolLevel::Class_],
+        )]);
+
+        self::assertSame(7.0, $repo->get($single)->get('computed.probe'));
+        self::assertSame([], $logger->records);
+    }
+
+    /**
+     * The branch the evaluation took reads an absent key: its `null` reached
+     * the arithmetic and the result is not a measurement. Judged by the branch
+     * the evaluation actually ran, so the level carrying the key nowhere is a
+     * per-symbol skip with its warning, not a refusal.
+     */
+    #[Test]
+    public function itPublishesNoValueWhereTheTakenBranchReadsAnAbsentKey(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $guarded = SymbolPath::forClass('App', 'Guarded');
+        $reached = SymbolPath::forClass('App', 'Reached');
+        $repo->add($guarded, MetricBag::fromArray(['size.method-count' => 0]), RelativePath::fromString('src/Guarded.php'), 1);
+        $repo->add($reached, MetricBag::fromArray(['size.method-count' => 4]), RelativePath::fromString('src/Reached.php'), 1);
+
+        $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
+            name: 'computed.probe',
+            formulas: ['class' => 'm["size.method-count"] > 0 ? m["cohesion.tcc"] / m["size.method-count"] : 0'],
+            description: 'Test metric',
+            levels: [SymbolLevel::Class_],
+        )]);
+
+        self::assertSame(0.0, $repo->get($guarded)->get('computed.probe'));
+        self::assertNull($repo->get($reached)->get('computed.probe'));
+        self::assertCount(1, $logger->records);
+        self::assertSame(1, $logger->records[0]['context']['skipped']);
+        self::assertSame('App\\Reached', $logger->records[0]['context']['symbols']);
+        self::assertSame('cohesion.tcc', $logger->records[0]['context']['missing']);
+    }
+
+    /**
+     * The same judgement for the right side of `and`: it runs only where the
+     * left is true.
+     */
+    #[Test]
+    public function itJudgesTheRightSideOfAndByWhetherTheEvaluationReachedIt(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $shortCircuited = SymbolPath::forClass('App', 'ShortCircuited');
+        $reached = SymbolPath::forClass('App', 'Reached');
+        $repo->add($shortCircuited, MetricBag::fromArray(['size.method-count' => 0]), RelativePath::fromString('src/ShortCircuited.php'), 1);
+        $repo->add($reached, MetricBag::fromArray(['size.method-count' => 4]), RelativePath::fromString('src/Reached.php'), 1);
+
+        $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
+            name: 'computed.probe',
+            formulas: ['class' => '(m["size.method-count"] > 0 and m["cohesion.tcc"] < 0.5) ? 1 : 0'],
+            description: 'Test metric',
+            levels: [SymbolLevel::Class_],
+        )]);
+
+        self::assertSame(0.0, $repo->get($shortCircuited)->get('computed.probe'));
+        self::assertNull($repo->get($reached)->get('computed.probe'));
+        self::assertCount(1, $logger->records);
+        self::assertSame('App\\Reached', $logger->records[0]['context']['symbols']);
+    }
+
+    /**
+     * The condition always runs: `null > 0` is false, so an absent key there
+     * would choose a branch on nothing.
+     */
+    #[Test]
+    public function itPublishesNoValueWhereTheConditionReadsAnAbsentKey(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $rich = SymbolPath::forClass('App', 'Rich');
+        $bare = SymbolPath::forClass('App', 'Bare');
+        $repo->add($rich, MetricBag::fromArray(['cohesion.tcc' => 0.75]), RelativePath::fromString('src/Rich.php'), 1);
+        $repo->add($bare, MetricBag::fromArray(['size.loc' => 3]), RelativePath::fromString('src/Bare.php'), 1);
+
+        $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
+            name: 'computed.probe',
+            formulas: ['class' => 'm["cohesion.tcc"] > 0.5 ? 1 : 0'],
+            description: 'Test metric',
+            levels: [SymbolLevel::Class_],
+        )]);
+
+        self::assertSame(1.0, $repo->get($rich)->get('computed.probe'));
+        self::assertNull($repo->get($bare)->get('computed.probe'));
+        self::assertSame('cohesion.tcc', $logger->records[0]['context']['missing']);
+    }
+
+    /**
+     * A `null` the taken branch hands to an enclosing `??` is caught there,
+     * the same as a read on the left of `??`.
+     */
+    #[Test]
+    public function itLetsAnEnclosingFallbackCatchTheNullOfTheTakenBranch(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $bare = SymbolPath::forClass('App', 'Bare');
+        $repo->add($bare, MetricBag::fromArray(['size.method-count' => 4]), RelativePath::fromString('src/Bare.php'), 1);
+
+        $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
+            name: 'computed.probe',
+            formulas: ['class' => '(m["size.method-count"] > 0 ? m["cohesion.tcc"] : 1) ?? 5'],
+            description: 'Test metric',
+            levels: [SymbolLevel::Class_],
+        )]);
+
+        self::assertSame(5.0, $repo->get($bare)->get('computed.probe'));
+        self::assertSame([], $logger->records);
+    }
+
+    /**
+     * The branch is judged when the evaluation enters it, before it runs: a
+     * `null` handed to a PHP function there is a deprecation printed into the
+     * report's own output, and a result nobody may publish.
+     */
+    #[Test]
+    public function itNeverRunsTheBranchItEntersWithAnAbsentKey(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $reached = SymbolPath::forClass('App', 'Reached');
+        $repo->add($reached, MetricBag::fromArray(['size.method-count' => 4]), RelativePath::fromString('src/Reached.php'), 1);
+
+        $raised = [];
+        set_error_handler(static function (int $severity, string $message) use (&$raised): bool {
+            $raised[] = $message;
+
+            return true;
+        });
+
+        try {
+            $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
+                name: 'computed.probe',
+                formulas: ['class' => 'm["size.method-count"] > 0 ? sqrt(m["cohesion.tcc"]) : 0'],
+                description: 'Test metric',
+                levels: [SymbolLevel::Class_],
+            )]);
+        } finally {
+            restore_error_handler();
+        }
+
+        self::assertSame([], $raised);
+        self::assertNull($repo->get($reached)->get('computed.probe'));
+        self::assertSame('cohesion.tcc', $logger->records[0]['context']['missing']);
+    }
+
+    /**
+     * A ternary inside the entered branch whose every branch reads the absent
+     * key stops the evaluation at the outer entry; the key is still named.
+     */
+    #[Test]
+    public function itNamesTheKeyANestedTernaryReadsOnEveryPath(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $reached = SymbolPath::forClass('App', 'Reached');
+        $repo->add($reached, MetricBag::fromArray(['size.method-count' => 4, 'size.loc' => 10]), RelativePath::fromString('src/Reached.php'), 1);
+
+        $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
+            name: 'computed.probe',
+            formulas: ['class' => 'm["size.method-count"] > 0 ? (m["size.loc"] > 5 ? m["cohesion.tcc"] * 2 : m["cohesion.tcc"] * 3) : 0'],
+            description: 'Test metric',
+            levels: [SymbolLevel::Class_],
+        )]);
+
+        self::assertNull($repo->get($reached)->get('computed.probe'));
+        self::assertCount(1, $logger->records);
+        self::assertSame('cohesion.tcc', $logger->records[0]['context']['missing']);
     }
 
     #[Test]
@@ -714,6 +1118,32 @@ final class ComputedMetricEvaluatorTest extends TestCase
         (new ComputedMetricEvaluator($catalog, $profiler))->evaluate(new InMemoryMetricRepository(), 1);
         self::assertSame(['computed', 'pipeline'], $starts[0]);
         self::assertSame(['computed.computed.test', 'computed'], $stops);
+    }
+
+    /**
+     * @param list<ComputedMetricDefinition> $definitions
+     *
+     * @return object{records: list<array{message: string, context: array<string, mixed>}>}
+     */
+    private function evaluateLogging(MetricRepositoryInterface $repository, array $definitions): object
+    {
+        $logger = new class extends AbstractLogger {
+            /** @var list<array{message: string, context: array<string, mixed>}> */
+            public array $records = [];
+
+            /** @param array<mixed> $context */
+            public function log($level, string|Stringable $message, array $context = []): void
+            {
+                $this->records[] = ['message' => (string) $message, 'context' => $context];
+            }
+        };
+
+        $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $catalog->method('all')->willReturn($definitions);
+        (new ComputedMetricEvaluator($catalog, self::createStub(ProfilerInterface::class), $logger))
+            ->evaluate($repository, 1);
+
+        return $logger;
     }
 
     /** @param list<ComputedMetricDefinition> $definitions */

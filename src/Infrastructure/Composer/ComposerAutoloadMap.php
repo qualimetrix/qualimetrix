@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Composer;
 
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface;
 
 /**
@@ -28,10 +30,18 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
     /** @var list<string> */
     private array $roots = [];
 
+    private readonly GeneratedClassmap $generatedClassmap;
+
     public function __construct(
         private readonly InstallLocator $locator = new InstallLocator(),
-        private readonly GeneratedClassmap $generatedClassmap = new GeneratedClassmap(),
-    ) {}
+        ?GeneratedClassmap $generatedClassmap = null,
+        private readonly LoggerInterface $logger = new NullLogger(),
+    ) {
+        // Built here rather than defaulted in the signature so the classmap
+        // reader reports through the same channel as this one: a default in
+        // the signature cannot see another parameter.
+        $this->generatedClassmap = $generatedClassmap ?? new GeneratedClassmap(logger: $this->logger);
+    }
 
     /**
      * @param list<string> $analysedPaths
@@ -178,13 +188,51 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
     }
 
     /**
+     * One manifest, and what it cost to not get one.
+     *
+     * The three ways of ending up with nothing are not the same answer, and
+     * collapsing them is what made a damaged manifest indistinguishable from a
+     * project that simply has none. Absent is legitimate and stays silent: the
+     * run already says it found no install to follow classes through. Present
+     * but unopenable, and present but not JSON, are states of the analysed
+     * tree that change published metrics — DIT stops one link early and the
+     * class becomes external coupling — while every message downstream names a
+     * different cause. Each is reported here, where the cause is still known.
+     *
      * @return array<string, mixed>
      */
     private function decode(string $file): array
     {
-        $raw = is_file($file) ? @file_get_contents($file) : false;
-        $decoded = $raw === false ? null : json_decode($raw, true);
+        if (!is_file($file)) {
+            return [];
+        }
 
-        return \is_array($decoded) ? $decoded : [];
+        $raw = @file_get_contents($file);
+
+        if ($raw === false) {
+            $this->logger->warning(\sprintf(
+                'Cannot read "%s": the file exists but could not be opened. '
+                . 'Classes it would place are treated as if the file declared nothing.',
+                $file,
+            ));
+
+            return [];
+        }
+
+        $decoded = json_decode($raw, true);
+
+        if (\is_array($decoded)) {
+            return $decoded;
+        }
+
+        $this->logger->warning(\sprintf(
+            'Cannot use "%s": %s. Classes it would place are treated as if the file declared nothing.',
+            $file,
+            json_last_error() === \JSON_ERROR_NONE
+                ? 'the top-level value is not a JSON object'
+                : 'invalid JSON — ' . json_last_error_msg(),
+        ));
+
+        return [];
     }
 }

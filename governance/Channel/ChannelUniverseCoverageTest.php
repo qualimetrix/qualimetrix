@@ -71,7 +71,7 @@ final class ChannelUniverseCoverageTest extends TestCase
      * literal. This file is where it is derived: against the tracked fixture
      * and against the rule classes read directly.
      */
-    public const int DECLARED_CHANNEL_COUNT = 58;
+    public const int DECLARED_CHANNEL_COUNT = 59;
 
     /**
      * Nine subclasses of `AbstractCodeSmellRule`, three of

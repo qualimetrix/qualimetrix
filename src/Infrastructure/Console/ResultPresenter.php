@@ -9,7 +9,6 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
@@ -19,6 +18,7 @@ use Qualimetrix\Reporting\Contract\OutputFormat;
 use Qualimetrix\Reporting\CoverageFailure;
 use Qualimetrix\Reporting\DrillDown\DrillDownBinding;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
+use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\SuppressionCompositionBuilder;
@@ -27,6 +27,7 @@ use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
 use Qualimetrix\Reporting\ReportBuilder;
 use Qualimetrix\Reporting\ReportCoverage;
+use Qualimetrix\Reporting\ReportProjectScope;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -78,6 +79,7 @@ final class ResultPresenter
         ?FindingProjectionResult $filterResult = null,
         ?FindingProjectionOptions $projectionOptions = null,
         ?NamespacePattern $namespacePattern = null,
+        ?ReportProjectScope $projectScope = null,
     ): int {
         $profiler = $this->profiler;
         $profiler->start('reporting', 'pipeline');
@@ -119,6 +121,39 @@ final class ResultPresenter
             ->namespaceTree($analysisResult->namespaceTree)
             ->coverage($coverage);
 
+        if ($context->namespace !== null || $context->class !== null) {
+            $reportBuilder->outOfScope(OutOfScopeFindings::between($findings, $filteredFindings));
+        }
+        if ($projectScope !== null) {
+            $reportBuilder->projectScope($projectScope);
+        }
+
+        $this->attachSuppressionComposition($reportBuilder, $format, $input, $analysisResult, $filterResult, $projectionOptions);
+
+        $report = $reportBuilder->build();
+        $report = $this->summaryEnricher->enrich($report);
+        $formattedOutput = $formatter->format($report, $context);
+
+        $this->writeOutput($formattedOutput, $format, $input, $output);
+
+        $profiler->stop('reporting');
+
+        return $this->exitCodeResolver->resolve($findings, $coverage, $exitPolicy);
+    }
+
+    /**
+     * Builds what the `suppressed` format and `--show-suppressed` publish;
+     * left out of every other run, because the per-rule ledger it reads costs
+     * memory only those two ask for.
+     */
+    private function attachSuppressionComposition(
+        ReportBuilder $reportBuilder,
+        string $format,
+        InputInterface $input,
+        AnalysisResult $analysisResult,
+        ?FindingProjectionResult $filterResult,
+        ?FindingProjectionOptions $projectionOptions,
+    ): void {
         $showSuppressed = $input->hasOption('show-suppressed') && $input->getOption('show-suppressed') === true;
         if (
             ($format === 'suppressed' || $showSuppressed)
@@ -134,21 +169,25 @@ final class ResultPresenter
                 $analysisResult->suppressions,
             ));
         }
-
-        $report = $reportBuilder->build();
-        $report = $this->summaryEnricher->enrich($report);
-        $formattedOutput = $formatter->format($report, $context);
-
-        $this->writeOutput($formattedOutput, $format, $input, $output);
-
-        $profiler->stop('reporting');
-
-        return $this->exitCodeResolver->resolve($findings, $coverage, $exitPolicy);
     }
 
-    public function prepareNamespaceDrillDown(InputInterface $input): ?NamespacePattern
+    /**
+     * The presentation door the command opens before the analysis: it binds
+     * every output option whose value can be judged without the run
+     * ({@see FormatterContextFactory::bindBeforeAnalysis()}), so a mistyped
+     * `--detail`, `--top`, `--group-by` or `--format-opt` value costs no
+     * analysis, and answers with the `--namespace` pattern the report is
+     * drilled down to.
+     */
+    public function bindOutputOptions(InputInterface $input): ?NamespacePattern
     {
-        return $this->formatterContextFactory->namespacePattern($input);
+        return $this->formatterContextFactory->bindBeforeAnalysis($input);
+    }
+
+    /** The half of {@see self::bindOutputOptions()} that needs the resolved format a configuration may select. */
+    public function bindOutputFormat(InputInterface $input, OutputFormat $outputFormat): void
+    {
+        $this->formatterContextFactory->bindFormatBeforeAnalysis($input, $outputFormat->value);
     }
 
     /**
@@ -208,14 +247,9 @@ final class ResultPresenter
     {
         return new CoverageFailure(
             $failure->path->value(),
-            $this->failureKind($failure->kind),
+            $failure->kind->value,
             $this->relativizeFailureMessage($failure->message, $projectRoot),
         );
-    }
-
-    private function failureKind(AnalysisFailureKind $kind): string
-    {
-        return $kind->value;
     }
 
     private function relativizeFailureMessage(string $message, AbsolutePath $projectRoot): string
@@ -246,62 +280,31 @@ final class ResultPresenter
     }
 
     /**
-     * Refuses an unwritable `--output` target before analysis runs. This is
-     * not a guarantee: the path can still
-     * become unwritable between this check and the write, which
-     * {@see self::writeOutput()} catches on its own.
+     * Refuses an `--output` target the report cannot be written to, before
+     * analysis runs; {@see ArtifactFile} judges it by the write it makes.
      */
     public function assertOutputIsWritable(InputInterface $input): void
     {
-        $target = self::outputTarget($input);
-        if ($target === null) {
-            return;
-        }
-
-        if (file_exists($target)) {
-            if (!is_writable($target)) {
-                throw self::outputRefusal(\sprintf('Path "%s" is not writable.', $target));
-            }
-
-            return;
-        }
-
-        $directory = \dirname($target);
-        if (!is_dir($directory) || !is_writable($directory)) {
-            throw self::outputRefusal(\sprintf(
-                'Directory "%s" for output path "%s" does not exist or is not writable.',
-                $directory,
-                $target,
-            ));
-        }
+        self::outputTarget($input)?->refuseUnwritable();
     }
 
-    private static function outputTarget(InputInterface $input): ?string
+    private static function outputTarget(InputInterface $input): ?ArtifactFile
     {
-        /** @var string|null $outputPath */
-        $outputPath = $input->hasOption('output') ? $input->getOption('output') : null;
+        // `--output=` never reaches here: the configuration adapter refuses
+        // an option written empty before the command reads this one.
+        $path = CommandLineSpelling::option($input, 'output');
 
-        return \is_string($outputPath) && $outputPath !== '' ? $outputPath : null;
-    }
-
-    private static function outputRefusal(string $summary): ConfigurationRefusal
-    {
-        return ConfigurationRefusal::aboutCommandLineInput(
-            '--output',
-            $summary,
-        );
+        return $path === null ? null : new ArtifactFile($path, '--output');
     }
 
     /**
      * Writes formatted output to file (--output) or stdout.
      *
-     * A write that fails here — the precheck passed but the target became
-     * unwritable in the race, or `rename()` itself failed — carries a
+     * A write that fails here, after the precheck passed, carries a
      * {@see ConfigurationRefusal} rather than reporting success with an
-     * undelivered report: the refusal beats whatever exit code the analysis
-     * findings would otherwise have produced,
-     * which is why this method throws instead of returning a status for the
-     * caller to reconcile with `ExitCodeResolver`.
+     * undelivered report: the refusal beats whatever exit code the findings
+     * would have produced, which is why this throws instead of returning a
+     * status for the caller to reconcile with `ExitCodeResolver`.
      */
     private function writeOutput(
         string $formattedOutput,
@@ -309,28 +312,14 @@ final class ResultPresenter
         InputInterface $input,
         OutputInterface $output,
     ): void {
-        $outputPath = self::outputTarget($input);
+        $target = self::outputTarget($input);
 
-        if ($outputPath !== null) {
-            // Atomic write: tmp file + rename
-            $tmpFile = $outputPath . '.tmp.' . getmypid();
-            $writeResult = @file_put_contents($tmpFile, $formattedOutput);
-
-            if ($writeResult === false) {
-                throw self::outputRefusal(\sprintf('Failed to write output to %s', $outputPath));
-            }
-
-            if (!rename($tmpFile, $outputPath)) {
-                if (file_exists($tmpFile)) {
-                    unlink($tmpFile);
-                }
-
-                throw self::outputRefusal(\sprintf('Failed to rename temporary file to %s', $outputPath));
-            }
+        if ($target !== null) {
+            $target->write($formattedOutput);
 
             $this->errorStream->write(
                 $output,
-                \sprintf('<info>Report written to %s</info>', $outputPath),
+                \sprintf('<info>Report written to %s</info>', $target->path),
             );
 
             return;
@@ -349,10 +338,6 @@ final class ResultPresenter
 
     private function isOutputTty(OutputInterface $output): bool
     {
-        if ($output instanceof \Symfony\Component\Console\Output\StreamOutput) {
-            return stream_isatty($output->getStream());
-        }
-
-        return false;
+        return $output instanceof \Symfony\Component\Console\Output\StreamOutput && stream_isatty($output->getStream());
     }
 }

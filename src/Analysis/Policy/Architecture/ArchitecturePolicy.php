@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture;
 
+use Closure;
 use LogicException;
+use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\Design\Inheritance\Contract\ExternalParentSourceInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
@@ -17,6 +20,8 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInte
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowing;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /** Instance-owned declared-layer policy configuration and prepared state. */
@@ -28,16 +33,26 @@ final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterfac
 
     private readonly LayerExpansionStage $expansionStage;
 
+    /**
+     * @param ExternalParentSourceInterface|null $install The analysed project's own composer install,
+     *                                                    read as data through the port DIT's ancestor
+     *                                                    walk reads it by. It answers only whether a
+     *                                                    type a criterion names exists at all — see
+     *                                                    {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\KnownTypes};
+     *                                                    membership is still decided from what the run
+     *                                                    analysed. Null reads as "no install found".
+     */
     public function __construct(
         private readonly ArchitectureConfigurationFactory $factory = new ArchitectureConfigurationFactory(),
         ?LayerExpansionStage $expansionStage = null,
+        private readonly ?ExternalParentSourceInterface $install = null,
     ) {
         $this->expansionStage = $expansionStage ?? new LayerExpansionStage();
     }
 
     public function resolve(ConfigurationDocument $document): ResolvedArchitecturePolicyInterface
     {
-        return $this->factory->fromContributions($document->contributions('architecture'));
+        return $this->factory->fromContributions($document->contributions(ConfigSchema::ARCHITECTURE));
     }
 
     public function replace(ResolvedArchitecturePolicyInterface $policy): void
@@ -66,16 +81,27 @@ final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterfac
 
         $configuration = $this->configured;
 
+        // Materialised once, before the binding: the universe is read twice
+        // from here — once as the set of declarations this run analysed, once
+        // as the classes template observation walks — and a generator handed in
+        // by a caller would be empty by the second read.
+        $analysedClasses = \is_array($classUniverse)
+            ? array_values($classUniverse)
+            : iterator_to_array($classUniverse, false);
+
         // The run's single binding point: every reader of a class context,
-        // template observation included, runs after this line.
-        $configuration->registry()->bindGraph($graph);
+        // template observation included, runs after this line. The universe
+        // goes in with the graph, because a context that knows the graph but
+        // not the universe cannot tell an inheritance chain that ended from one
+        // that was cut at the edge of the analysed set.
+        $configuration->registry()->bindGraph($graph, $analysedClasses, $this->installDeclares());
 
         if ($configuration->hasTemplates()) {
             // One factory for the whole run. Observation and membership
             // matching must read the same contexts, or a layer is derived
             // from facts it is then matched against different ones.
             $classes = new ClassSet(
-                \is_array($classUniverse) ? array_values($classUniverse) : iterator_to_array($classUniverse, false),
+                $analysedClasses,
                 $configuration->registry()->contextFactory(),
             );
             $expansion = $this->expansionStage->expand($configuration->entries(), $classes, $configuration->maxExpandedLayers());
@@ -91,24 +117,51 @@ final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterfac
         $configuration = $this->prepared
             ?? throw new LogicException('ArchitecturePolicy::inspect() reached an unprepared policy after prepare() returned.');
 
-        $matches = $configuration->registry()->resolveAll($subject);
-        return new LayerAssignment(
-            array_map(
-                static function ($match): LayerAssignmentMatch {
-                    $criteria = array_map(
-                        static fn($criterion): string => $criterion->describe(),
-                        $match->matchedCriteria,
-                    );
-                    if ($criteria === []) {
-                        throw new LogicException('A layer assignment match requires at least one criterion.');
-                    }
+        $registry = $configuration->registry();
+        $established = $registry->establishedMatches($subject);
 
-                    return new LayerAssignmentMatch($match->layerName, $criteria);
-                },
-                $matches,
-            ),
+        return new LayerAssignment(
+            array_map(self::assignmentMatch(...), $registry->resolveAll($subject)),
             !$configuration->isEmpty(),
+            $registry->undecidedLayers($subject),
+            $registry->chainStopsAt($subject),
+            $registry->contenders($subject),
+            ($established[0] ?? null)?->layerName,
+            array_map(
+                static fn(LayerMatch $match): string => $match->layerName,
+                LayerShadowing::reportableShadows($established),
+            ),
         );
+    }
+
+    /**
+     * Asked per run rather than once: the install is aimed at each run's
+     * project root before the pipeline starts, and a run that found none
+     * reads as one with no install to consult.
+     *
+     * @return (Closure(string): bool)|null
+     */
+    private function installDeclares(): ?Closure
+    {
+        $install = $this->install;
+        if ($install === null || !$install->isConfigured()) {
+            return null;
+        }
+
+        return static fn(string $fqn): bool => $install->parentOf($fqn)->placed;
+    }
+
+    private static function assignmentMatch(LayerMatch $match): LayerAssignmentMatch
+    {
+        $criteria = array_map(
+            static fn($criterion): string => $criterion->describe(),
+            $match->matchedCriteria,
+        );
+        if ($criteria === []) {
+            throw new LogicException('A layer assignment match requires at least one criterion.');
+        }
+
+        return new LayerAssignmentMatch($match->layerName, $criteria);
     }
 
     /**

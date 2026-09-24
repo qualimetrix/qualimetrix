@@ -17,7 +17,7 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
  * {@code architecture.potential-shadow} diagnostic can report WHICH criterion
  * caught the class.
  *
- * When {@see MembershipSpec::$exclude} is declared (Phase 2 direction 3), the
+ * When {@see MembershipSpec::$exclude} is declared, the
  * exclude clause is evaluated as a hard filter AFTER the positive match
  * succeeds. If the exclude criteria combine (per their own
  * {@see ExcludeSpec::$mode}) into a hit, {@see matches()} returns
@@ -40,15 +40,15 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 final readonly class LayerDefinition
 {
     /**
-     * Strict regex applied to names declared directly in YAML (Phase-1
-     * shape: lowercase, hyphens, underscores, digits). Keeps user-written
+     * Strict regex applied to names declared directly in YAML (lowercase,
+     * hyphens, underscores, digits). Keeps user-written
      * layer names predictable and grep-friendly.
      */
     private const string NAME_REGEX = '/^[a-z][a-z0-9_-]*$/';
 
     /**
-     * Relaxed regex applied to names produced by template expansion (Phase 2
-     * direction 2). Binding values are typically PascalCase namespace
+     * Relaxed regex applied to names produced by template expansion.
+     * Binding values are typically PascalCase namespace
      * segments ({@code Order}, {@code Audit}); requiring authors to
      * lowercase them in YAML would defeat the ergonomic point of templates.
      * Expansion-produced names still must start with a letter and contain
@@ -173,6 +173,16 @@ final readonly class LayerDefinition
      * `architecture.unmatched-exclude` can tell a clause that removed
      * something from one that removed nothing.
      *
+     * Both combinations are three-valued: a positive kind the run has no facts
+     * to decide ({@see CriterionOutcome::Undecidable}) neither makes the layer
+     * match nor lets it report a non-match, and the result is
+     * {@see MembershipResult::undecided()} — a non-member the run never
+     * actually established. An exclude clause the run cannot decide does not
+     * withdraw a match the positive criteria made: the result is
+     * {@see MembershipResult::doubtedMatch()}, a member with the doubt
+     * attached. See {@see CriteriaEvaluation::outcome()} for the rule and
+     * {@see CriterionOutcome} for what produces the third state.
+     *
      * An empty FQN is always a non-match. A {@see MembershipSpec} with all
      * five positive criterion lists empty cannot exist (constructor invariant).
      */
@@ -182,76 +192,93 @@ final readonly class LayerDefinition
             return MembershipResult::noMatch();
         }
 
-        $matched = LayerCriteriaMatcher::collectMatches(
-            $context,
-            $this->membership->patterns,
-            $this->membership->suffix,
-            $this->membership->attributes,
-            $this->membership->implements,
-            $this->membership->extends,
-        );
-
-        if ($matched === []) {
-            return MembershipResult::noMatch();
-        }
-
-        if ($this->membership->mode === MatchMode::All) {
-            $declaredKinds = LayerCriteriaMatcher::declaredKindCount(
+        $evaluation = self::evaluateMembership($context, $this->membership);
+        $outcome = $evaluation->outcome(
+            $this->membership->mode,
+            LayerCriteriaMatcher::declaredKindCount(
                 $this->membership->patterns,
                 $this->membership->suffix,
                 $this->membership->attributes,
                 $this->membership->implements,
                 $this->membership->extends,
-            );
-            if (\count($matched) !== $declaredKinds) {
-                return MembershipResult::noMatch();
-            }
+            ),
+        );
+
+        if ($outcome !== CriterionOutcome::Matches) {
+            return $outcome === CriterionOutcome::Undecidable
+                ? MembershipResult::undecided()
+                : MembershipResult::noMatch();
         }
 
-        if ($this->exclusionFires($context)) {
-            return MembershipResult::excluded();
-        }
-
-        return MembershipResult::match($matched);
+        return match ($this->exclusionOutcome($context)) {
+            CriterionOutcome::Matches => MembershipResult::excluded(),
+            // The positive criteria caught the class and the clause that would
+            // remove it cannot be answered. The match stands and carries the
+            // doubt, as an unanswered earlier layer does beside a later match.
+            CriterionOutcome::Undecidable => MembershipResult::doubtedMatch($evaluation->matched),
+            CriterionOutcome::DoesNotMatch => MembershipResult::match($evaluation->matched),
+        };
     }
 
     /**
-     * Returns true when the exclude clause is declared AND its criteria
-     * combine into a hit under {@see ExcludeSpec::$mode}.
+     * Evaluates the positive criteria of an arbitrary membership spec.
+     *
+     * Public because template observation asks the same question of the same
+     * spec before any concrete layer exists, and a second implementation of it
+     * is how observation and matching drifted apart once already.
+     *
+     * @internal Consumed by {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\TupleExtractor}.
      */
-    private function exclusionFires(ClassContext $context): bool
+    public static function evaluateMembership(ClassContext $context, MembershipSpec $membership): CriteriaEvaluation
+    {
+        return LayerCriteriaMatcher::evaluate(
+            $context,
+            $membership->patterns,
+            $membership->suffix,
+            $membership->attributes,
+            $membership->implements,
+            $membership->extends,
+        );
+    }
+
+    /**
+     * Whether the exclude clause fires, does not fire, or cannot be told
+     * apart.
+     *
+     * @param list<string> $patterns Exclude patterns as the caller wants them
+     *                               evaluated. Template observation passes the
+     *                               substituted forms; a concrete layer passes
+     *                               what the spec carries.
+     *
+     * @internal Consumed by {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\TupleExtractor}.
+     */
+    public static function excludeOutcome(ClassContext $context, ExcludeSpec $exclude, array $patterns): CriterionOutcome
+    {
+        $evaluation = LayerCriteriaMatcher::evaluate(
+            $context,
+            $patterns,
+            $exclude->suffix,
+            $exclude->attributes,
+            $exclude->implements,
+            $exclude->extends,
+        );
+
+        return $evaluation->outcome($exclude->mode, LayerCriteriaMatcher::declaredKindCount(
+            $exclude->patterns,
+            $exclude->suffix,
+            $exclude->attributes,
+            $exclude->implements,
+            $exclude->extends,
+        ));
+    }
+
+    private function exclusionOutcome(ClassContext $context): CriterionOutcome
     {
         $exclude = $this->membership->exclude;
-        if ($exclude === null) {
-            return false;
-        }
 
-        $matched = LayerCriteriaMatcher::collectMatches(
-            $context,
-            $exclude->patterns,
-            $exclude->suffix,
-            $exclude->attributes,
-            $exclude->implements,
-            $exclude->extends,
-        );
-
-        if ($matched === []) {
-            return false;
-        }
-
-        if ($exclude->mode === MatchMode::Any) {
-            return true;
-        }
-
-        $declaredKinds = LayerCriteriaMatcher::declaredKindCount(
-            $exclude->patterns,
-            $exclude->suffix,
-            $exclude->attributes,
-            $exclude->implements,
-            $exclude->extends,
-        );
-
-        return \count($matched) === $declaredKinds;
+        return $exclude === null
+            ? CriterionOutcome::DoesNotMatch
+            : self::excludeOutcome($context, $exclude, $exclude->patterns);
     }
 
     private function validateName(string $name, bool $expanded): void

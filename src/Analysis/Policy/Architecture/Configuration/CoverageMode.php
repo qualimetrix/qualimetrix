@@ -17,9 +17,9 @@ use InvalidArgumentException;
  * The enum carries the user-facing string representation as its case value so that
  * configuration can round-trip without a separate mapping table.
  *
- * Lives in {@code Qualimetrix\Analysis\Policy\Architecture\Configuration} (the vertical slice's
- * pure-domain layer per ADR 0010) so it stays free of Configuration and
- * Rules dependencies — both reach it through the slice's own surfaces.
+ * Lives under {@code Qualimetrix\Analysis\Policy\Architecture\Configuration} because the mode is
+ * part of this capability's own configuration subject (ADR 0016, ADR 0022);
+ * every consumer reaches it through the capability's own surfaces.
  */
 enum CoverageMode: string
 {

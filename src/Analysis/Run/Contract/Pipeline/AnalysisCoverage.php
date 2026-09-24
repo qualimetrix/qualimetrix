@@ -92,6 +92,24 @@ final readonly class AnalysisCoverage
         return $this->failures === [];
     }
 
+    /**
+     * Records an entry that never became a unit of analysis — a directory
+     * symlink, a non-regular file, a directory that could not be listed.
+     *
+     * It lands among the failures rather than in a bucket of its own so that
+     * it reaches every reader that already reports incompleteness: the exit
+     * code, the machine formats and the text report. A skip that only a new
+     * field knows about is the same silence with a different name.
+     */
+    public function withSkipped(RelativePath $path, AnalysisFailureKind $reason, string $detail): self
+    {
+        return new self(
+            $this->analyzedFiles,
+            $this->generatedExcludedFiles,
+            [...$this->failures, new AnalysisFailure($path, $reason, $detail)],
+        );
+    }
+
     public function merge(self $other): self
     {
         return new self(

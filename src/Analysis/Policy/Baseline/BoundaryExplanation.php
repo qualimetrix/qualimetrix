@@ -6,7 +6,7 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 
 /**
  * What `bin/qmx baseline:explain <symbol>` prints, before printing: every
- * boundary bearing on the symbol, one per applicable identity (ADR 0017). This type carries data only — formatting it is
+ * boundary bearing on the symbol, one per identity the file or the run names (ADR 0017). This type carries data only — formatting it is
  * the command's job, not {@see BoundaryExplanationService}'s.
  */
 final readonly class BoundaryExplanation
@@ -18,10 +18,14 @@ final readonly class BoundaryExplanation
      *                                            every baseline entry and every currently-firing
      *                                            channel for this symbol, narrowed to a single
      *                                            channel when the caller asked for one
+     * @param list<InertBaselineEntry> $unidentifiedEntries lines of the file about this subject
+     *                                                      whose identity could not be read, so
+     *                                                      no boundary exists for them
      */
     public function __construct(
         public string $subjectKey,
         public array $boundaries,
         public BoundaryExplanationStatus $status,
+        public array $unidentifiedEntries,
     ) {}
 }

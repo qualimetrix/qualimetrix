@@ -18,7 +18,7 @@ finding-gate/
 │   ├── case.json          # run definition (schema below)
 │   ├── qmx.yaml           # the configuration that makes the channels fire
 │   ├── composer.json      # the case's own project root: without it a run warns
-│   │                      # `No composer.json found`. It does NOT set the
+│   │                      # `No composer.json found`. Its `name` is the
 │   │                      # reported project name — see the HTML note below
 │   └── src/**.php         # the fixtures
 ├── maps/                  # what a step declares it renamed; empty = renames nothing
@@ -261,6 +261,36 @@ a shorthand below and a graduated key above — the reverse direction, and the
 `~`-above-a-written-value rule, are closed by tests
 rather than here.
 
+### Named gap: no case runs an incomplete analysis
+
+Every case here analyses a tree the product can read in full, so exit 4 and the
+three `kind` values that name an entry the run never read
+(`directory-symlink`, `not-regular-file`, `unreadable-directory`) are outside
+every compared surface. A GREEN run is therefore evidence about complete runs
+only, and says nothing about how an incomplete one is published.
+
+The gap is structural, not an oversight, and closing it needs the gate itself to
+change in three places:
+
+- **`baseline:generate` refuses an incomplete run** (ADR 0018) and writes no
+  file — measured: exit 4, no file. `Gate::checkBaselineSurface` holds every
+  case to exit 0 *and* to a non-empty baseline, deliberately, so that an absent
+  surface cannot read as one that agrees. A case that is incomplete by design
+  is `run-failed` on both sides.
+- **`channels` may not be empty**, so such a case has to claim a pair some
+  fixture of its own fires, and the pairs are all owned — it would be
+  `coverage: auxiliary`.
+- **Only one of the three entries is storable in git.** A symbolic link is
+  (this repository already tracks two, mode `120000`); a FIFO and a directory's
+  permissions are not, so those two need the entry created before the run and
+  removed after it.
+
+The shape that would close it: a `case.json` key declaring the case incomplete —
+added to `CaseDefinition::KNOWN_KEYS` — that switches `checkBaselineSurface`
+from "exit 0 and a file" to "exit 4 and no file", keeping both facts compared on
+each side rather than skipped, plus a preparation step owned by the gate for the
+two entries git cannot carry.
+
 Every run uses the case directory as its working directory, so no path in any
 artifact depends on where the tree is checked out. The `check` runs add
 `--workers=0 --no-cache --no-ansi --fail-on=error`. `baseline:generate` and
@@ -274,11 +304,13 @@ the baseline surfaces would be compared against themselves. The
 where the gate had just cleared one: if the product ever caches somewhere else,
 this isolation must fail loudly rather than quietly guard nothing.
 
-HTML's `project.name` (`qualimetrix/qualimetrix`) and `qmxVersion` come from
-`Composer\InstalledVersions`, i.e. from our own repository rather than from the
-case. They are **not** normalized and cannot be: both sides run against the same
-cloned `vendor/`, so both read the same value and it stays compared like any
-other field.
+HTML's `project.name` is the analysed project's: the `project-name` format
+option, else the case's `composer.json` `name`, else the case directory's name.
+`qmxVersion` comes from `Composer\InstalledVersions`, i.e. from our own
+repository rather than from the case. Neither is normalized, and neither needs
+to be: both sides analyse the same case files against the same cloned
+`vendor/`, so both read the same values and they stay compared like any other
+field.
 
 ## Surfaces
 
@@ -931,6 +963,86 @@ nor a channel added silently narrows what the gate proves. A channel reporting a
 more than one level needs a fixture *and* a claim line **per declared level**:
 coverage counts pairs, so a level with no fixture anywhere is a shortfall even
 while the channel fires.
+
+### Named gap: a step that withdraws one finding and introduces another
+
+The paragraph above holds for a channel whose findings the reference also
+publishes. It does not hold for a channel **new in the step**, and the gate has
+no form that declares one against the step's own parent.
+
+Such a step must carry the fixture anyway. Two consumers hold it to that, and
+neither is the gate's comparison:
+
+- **coverage**, whose declared side is derived from the candidate: both
+  witnesses carry the new channel, so without a fixture the run is
+  `coverage-shortfall` on its pair, and only `--incomplete-corpus` — a `PARTIAL`
+  run — downgrades it;
+- **`governance/Channel/ChannelLevelDeclarationDriftTest.php`**, inside
+  `composer check`, whose oracle `governance/Channel/Fixtures/observed-levels.tsv`
+  lists the channel: it runs the product over every case here and fails when a
+  listed channel fires nothing.
+
+With the fixture, the reference cannot fire the channel, so the candidate
+publishes a record the reference does not. Where that record lands on a diff
+line the other side fills with nothing, or with a record of another shape, the
+line publishes a different *number* of values of a compared field, and
+`Gate::overreachingLines()` refuses it outright — before a split or a
+`declared-field-moves.tsv` row is consulted. On the identity-ordered surfaces
+(`format:json`, the baseline file) the new record also shifts its neighbours, so
+positional pairing reports moves of `rule`, `file` and `line` between records
+that did not move at all. Only where the withdrawn and the introduced record
+happen to share a line, as on `format:checkstyle` and `format:gitlab`, is the
+refusal a value move a `declared-field-moves.tsv` row could name. When the
+record count differs as well, `finding-count-mismatch` is reported beside them.
+
+So the step that introduces a channel is red against its parent, and only on
+the fixture case: `delta-overreach` on that case's surfaces, which carry
+declared deltas derived as usual. It lasts one step. The next step's reference
+already publishes the channel, the fixture fires on both sides, the fixture
+case's deltas become `delta-stale` and are removed, and that step can be
+`GREEN`. A step in this position cites the red run with each failure attributed
+to the fixture case; it does not cite `GREEN`, and it does not cite a `PARTIAL`
+run in its place.
+
+The shape the stage-B review met is this gap with one more feature, and the
+feature is what makes it look expressible. `architecture.doubted-assignment`
+reports an assignment that stands while a layer could not answer about it, and
+the same step stopped `architecture.unmatched-exclude` from reporting an
+`exclude:` clause that could not answer. The `layers` fixture — a layer whose
+own `exclude:` reads an interface outside the corpus — therefore takes one
+finding away from the older channel and gives one to the new channel, and the
+count stays equal. Measured against the stage-A reference: 60 `delta-overreach`
+failures across the baseline file, `format:json`, `format:sarif`,
+`format:checkstyle` and `format:gitlab` of `case:layers`, and nothing anywhere
+else. 40 of them are refused on value counts (34 on `format:json`, 3 on the
+baseline file, 3 on `format:sarif`) and could not be licensed by anything; the
+other 20 are value moves (8 on `format:json`, 4 on each of the other three), and
+most of those are the neighbour shift above. Without the fixture the same run
+was `coverage-shortfall` on exactly one pair,
+`architecture.doubted-assignment@project`.
+
+It is **not** a split, and no map row states it:
+
+- the two findings are different identities. The reference's carries an
+  `occurrence` (the clause it named); the new channel's finding carries none and
+  names three symbols, two of which no `exclude:` clause produced. A split is
+  explained record by record through `(subject, occurrence, edge)`
+  (`ChannelSplit::identity()`), so even a declarable split would be
+  `split-unmapped` here;
+- the older channel keeps firing in the same case for another clause, so a
+  whole-name row `architecture.unmatched-exclude -> architecture.doubted-assignment`
+  would translate a finding that did not move;
+- the identity branch that would keep it — a second row from the same name to
+  itself — is refused when the map loads by either of two checks: a row that
+  renames nothing, and two rows renaming one name (`RenameMaps::validate()`).
+
+The form the gate lacks is a declaration that **one record is withdrawn and
+another is introduced**: the reference record by its full identity, the
+candidate record by its full identity, and a reason — judged against the
+measured findings, so that an unmatched declaration is stale like every other
+row, and so that the `format:json` finding set rather than a diff line decides
+it. With that form, the step introducing a channel could be `GREEN` against its
+own parent.
 
 ## The controls
 

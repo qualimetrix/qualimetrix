@@ -34,6 +34,18 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
  * dependency graph. Both carry three empty lists, but the first is an answer
  * and the second is the absence of one, and only the flag can tell an
  * evaluator which it is holding.
+ *
+ * {@see $declarationAnalysed} and {@see $ancestryCuts} separate a third case
+ * that a bound graph does NOT rule out: the three lists are built from the
+ * run's own declaration edges, so they say nothing about a symbol the run never
+ * analysed, and the transitive walks stop wherever the next link was not
+ * analysed. Both states used to read as a complete answer. See
+ * {@see CriterionOutcome}.
+ *
+ * The cuts are kept in two lists because they reach different criteria. An
+ * unread parent class may extend anything and implement anything, so it leaves
+ * both `extends` and `implements` open. An unread interface can only hide
+ * interfaces: no interface declares a parent class.
  */
 final readonly class ClassContext
 {
@@ -64,6 +76,18 @@ final readonly class ClassContext
     public array $parentClassSet;
 
     /**
+     * Whether the run read this symbol's OWN declaration.
+     *
+     * Derived rather than passed, because the two facts are one: the subject's
+     * own FQN appears in the parent-chain cuts exactly when the run
+     * did not read it. False means {@see $attributeFqns} is silence rather than
+     * an empty answer — attributes sit on the class itself and reach no
+     * further, so this, and not the whole list, is what decides the
+     * {@code attributes} criterion.
+     */
+    public bool $declarationAnalysed;
+
+    /**
      * @param string $fqn Fully-qualified class name without a leading
      *                    backslash (e.g. {@code App\Service\UserService}).
      *                    Empty string is permitted; {@see LayerDefinition::matches()}
@@ -85,6 +109,13 @@ final readonly class ClassContext
      *                          has no attributes, interfaces or parents.
      *                          Evaluating a graph-backed criterion against such
      *                          a context is a lifecycle error, not a non-match.
+     * @param array{parentChain: list<string>, interfaces: list<string>} $ancestryCuts
+     *                                                                                 Where the walks stopped at a declaration the run did not read.
+     *                                                                                 `parentChain` holds the subject's own FQN when the run did not
+     *                                                                                 read it and every parent class reached without facts of its own;
+     *                                                                                 `interfaces` every such interface. Past a cut
+     *                                                                                 {@see $parentClasses} and {@see $interfaces} are truncated, so a
+     *                                                                                 missing entry proves nothing; a present one still does.
      */
     public function __construct(
         public string $fqn,
@@ -93,9 +124,42 @@ final readonly class ClassContext
         public array $interfaces = [],
         public array $parentClasses = [],
         public bool $graphBacked = true,
+        public array $ancestryCuts = ['parentChain' => [], 'interfaces' => []],
     ) {
+        $this->declarationAnalysed = !\in_array($fqn, $ancestryCuts['parentChain'], true);
+
         $this->attributeFqnSet = $attributeFqns === [] ? [] : array_fill_keys($attributeFqns, true);
         $this->interfaceSet = $interfaces === [] ? [] : array_fill_keys($interfaces, true);
         $this->parentClassSet = $parentClasses === [] ? [] : array_fill_keys($parentClasses, true);
+    }
+
+    /**
+     * Whether a parent class missing from {@see $parentClasses} proves the
+     * class does not extend it.
+     */
+    public function parentChainKnown(): bool
+    {
+        return $this->ancestryCuts['parentChain'] === [];
+    }
+
+    /**
+     * Whether an interface missing from {@see $interfaces} proves the class
+     * does not implement it — which needs the parent chain too, since an
+     * unread parent may implement anything.
+     */
+    public function interfacesKnown(): bool
+    {
+        return $this->parentChainKnown() && $this->ancestryCuts['interfaces'] === [];
+    }
+
+    /**
+     * Where the walks stopped at a declaration the run did not read, each FQN
+     * once.
+     *
+     * @return list<string>
+     */
+    public function chainStopsAt(): array
+    {
+        return array_values(array_unique([...$this->ancestryCuts['parentChain'], ...$this->ancestryCuts['interfaces']]));
     }
 }

@@ -59,12 +59,12 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition'
         - 'Qualimetrix\Analysis\Configuration\Discovery\ComposerReader'
         - 'Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface'
+        - 'Qualimetrix\Analysis\Configuration\Loader\DocumentKeyNormalizer'
         - 'Qualimetrix\Analysis\Configuration\Loader\RootContainerShapes'
         - 'Qualimetrix\Analysis\Configuration\Loader\SectionNormalizationPolicy'
         - 'Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader'
         - 'Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer'
         - 'Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer'
-        - 'Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationMerger'
         - 'Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline'
         - 'Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface'
         - 'Qualimetrix\Analysis\Configuration\Pipeline\RuleNameValidator'
@@ -98,6 +98,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellVisitor'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionOptions'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionRule'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\ControlFlow\ChainOfAttempts'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\ControlFlow\ControlFlowSmells'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\CountInLoopRule'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\DebugCodeRule'
@@ -118,6 +119,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionCollector'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionFinding'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionVisitor'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IfChain'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\RepeatedConditions'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\RepeatedExpressions'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\SuperglobalsRule'
@@ -195,8 +197,10 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricBranchTrace'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricReads'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\MetricLookup'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\ComputedMetricFindingBuilder'
@@ -229,6 +233,7 @@ architecture:
     - name: analysis-evidence-coupling
       patterns:
         - 'Qualimetrix\Analysis\Evidence\Coupling\AbstractnessCollector'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\CboFindingText'
         - 'Qualimetrix\Analysis\Evidence\Coupling\CboOptions'
         - 'Qualimetrix\Analysis\Evidence\Coupling\CboRule'
         - 'Qualimetrix\Analysis\Evidence\Coupling\ClassCboOptions'
@@ -238,6 +243,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule'
         - 'Qualimetrix\Analysis\Evidence\Coupling\ClassRfcData'
         - 'Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\CoupledNamespaces'
         - 'Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis'
         - 'Qualimetrix\Analysis\Evidence\Coupling\CouplingCollector'
         - 'Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector'
@@ -262,7 +268,6 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder'
-        - 'Qualimetrix\Analysis\Evidence\DependencyModel\EmptyDependencyGraph'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyLocation'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor'
@@ -277,6 +282,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\StaticAccessHandler'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\TraitUseHandler'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\TypeDependencyHelper'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\NamespaceCouplings'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\StringSet'
     - name: analysis-evidence-design
       patterns:
@@ -320,6 +326,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlock'
         - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlockFinder'
         - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateLocation'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateMatchCandidates'
         - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateSearchRequest'
         - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector'
         - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider'
@@ -415,6 +422,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Security\CommandInjectionRule'
         - 'Qualimetrix\Analysis\Evidence\Security\Credential\CredentialLiterals'
         - 'Qualimetrix\Analysis\Evidence\Security\Credential\CredentialLocation'
+        - 'Qualimetrix\Analysis\Evidence\Security\Credential\CredentialValue'
         - 'Qualimetrix\Analysis\Evidence\Security\Credential\HardcodedCredentialsCollector'
         - 'Qualimetrix\Analysis\Evidence\Security\Credential\HardcodedCredentialsVisitor'
         - 'Qualimetrix\Analysis\Evidence\Security\HardcodedCredentialsOptions'
@@ -463,6 +471,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelPresentation'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface'
+        - 'Qualimetrix\Analysis\Finding\Contract\ChannelPublication'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelShape'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface'
@@ -594,6 +603,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DeclaredLayerReachability'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DiagnosticSampleList'
+        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DoubtedAssignmentDiagnostic'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerRoutingGuidance'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFinding'
@@ -606,23 +616,28 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\ShadowedClass'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\OwnedLayerTargets'
+        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\PotentialShadowDiagnostic'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassMode'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassSummary'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnmatchedExcludeDiagnostic'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Layer\AnalysedDeclarations'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePatternCompiler'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Layer\CriteriaEvaluation'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\CriterionListValidator'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Layer\CriterionOutcome'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionResult'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerInstantiator'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\TupleExtractor'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\InvalidLayerDefinitionException'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Layer\KnownTypes'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerCriteriaMatcher'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle'
@@ -662,8 +677,6 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineLoader'
-        - 'Qualimetrix\Analysis\Policy\Baseline\BaselineMigrator'
-        - 'Qualimetrix\Analysis\Policy\Baseline\BaselineMigratorResult'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateDisposition'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateRefusalReason'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateResult'
@@ -686,20 +699,18 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Baseline\GroupAcceptance'
         - 'Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry'
         - 'Qualimetrix\Analysis\Policy\Baseline\InertEntryReason'
-        - 'Qualimetrix\Analysis\Policy\Baseline\MigrationReport'
-        - 'Qualimetrix\Analysis\Policy\Baseline\MigrationReportDroppedEntry'
+        - 'Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage'
         - 'Qualimetrix\Analysis\Policy\Baseline\RunScope'
         - 'Qualimetrix\Analysis\Policy\Baseline\UncapturedGroup'
         - 'Qualimetrix\Analysis\Policy\Baseline\UncapturedReason'
-        - 'Qualimetrix\Analysis\Policy\Baseline\V5Baseline'
-        - 'Qualimetrix\Analysis\Policy\Baseline\V5BaselineReader'
-        - 'Qualimetrix\Analysis\Policy\Baseline\V5Entry'
-        - 'Qualimetrix\Analysis\Policy\Baseline\V5UnreadableRecord'
     - name: analysis-policy-inline
       patterns:
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult'
+        - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect'
+        - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusal'
+        - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusalReason'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason'
@@ -707,6 +718,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface'
+        - 'Qualimetrix\Analysis\Policy\Inline\Contract\DocumentationRegions'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\SourceControlExtractorInterface'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\SourceControls'
@@ -734,14 +746,17 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule'
         - 'Qualimetrix\Analysis\Policy\Inline\Extraction\DeclarationControlBindings'
         - 'Qualimetrix\Analysis\Policy\Inline\Extraction\SourceControlExtractor'
+        - 'Qualimetrix\Analysis\Policy\Inline\Extraction\UnattachedComments'
         - 'Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter'
         - 'Qualimetrix\Analysis\Policy\Inline\ThresholdOverrideExtractionResult'
     - name: analysis-run
       patterns:
         - 'Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator'
+        - 'Qualimetrix\Analysis\Run\Collection\CollectionPhaseFold'
         - 'Qualimetrix\Analysis\Run\Collection\FileProcessor'
         - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage'
         - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeMeasurement'
+        - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeState'
         - 'Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput'
@@ -752,12 +767,15 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ParallelCapableInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\SuccessfulFileProcessing'
+        - 'Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface'
+        - 'Qualimetrix\Analysis\Run\Contract\Discovery\SkipReportingDiscoveryInterface'
+        - 'Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry'
         - 'Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage'
         - 'Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure'
@@ -772,11 +790,14 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface'
         - 'Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery'
         - 'Qualimetrix\Analysis\Run\Discovery\DirectoryPruner'
+        - 'Qualimetrix\Analysis\Run\Discovery\DirectoryWalk'
         - 'Qualimetrix\Analysis\Run\Discovery\DiscoveredAnalysisFiles'
         - 'Qualimetrix\Analysis\Run\Discovery\FileDiscoveryFactory'
         - 'Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery'
         - 'Qualimetrix\Analysis\Run\Discovery\GeneratedFileFilter'
         - 'Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeBindingProbe'
+        - 'Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeBindingVerdict'
+        - 'Qualimetrix\Analysis\Run\ExcludeBinding\UnjudgedExcludeFinding'
         - 'Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit'
         - 'Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeOptions'
         - 'Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeRule'
@@ -823,6 +844,7 @@ architecture:
         - 'Qualimetrix\Core\Symbol\LogicalClassPath'
         - 'Qualimetrix\Core\Symbol\MetricSubject'
         - 'Qualimetrix\Core\Symbol\MetricSubjectCodec'
+        - 'Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy'
         - 'Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry'
         - 'Qualimetrix\Core\Symbol\SymbolInfo'
         - 'Qualimetrix\Core\Symbol\SymbolLevel'
@@ -834,6 +856,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Ast\CachedFileParser'
         - 'Qualimetrix\Infrastructure\Ast\FileParserFactory'
         - 'Qualimetrix\Infrastructure\Ast\PhpFileParser'
+        - 'Qualimetrix\Infrastructure\Ast\WorkerParserFactory'
     - name: infrastructure-cache
       patterns:
         - 'Qualimetrix\Infrastructure\Cache\CacheConfigurationResolver'
@@ -860,6 +883,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition'
         - 'Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator'
         - 'Qualimetrix\Infrastructure\Console\Application'
+        - 'Qualimetrix\Infrastructure\Console\ArtifactFile'
         - 'Qualimetrix\Infrastructure\Console\ChannelExclusionKeyHints'
         - 'Qualimetrix\Infrastructure\Console\ChannelExclusionKeyValidator'
         - 'Qualimetrix\Infrastructure\Console\CheckCommandDefinition'
@@ -868,6 +892,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\CheckScopeResolver'
         - 'Qualimetrix\Infrastructure\Console\CliOptionsParser'
         - 'Qualimetrix\Infrastructure\Console\CliSelectorDecoder'
+        - 'Qualimetrix\Infrastructure\Console\CommandLineSpelling'
         - 'Qualimetrix\Infrastructure\Console\Command\AbstractHookCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineCaptureReporter'
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand'
@@ -875,6 +900,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineCommandDefinition'
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds'
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand'
+        - 'Qualimetrix\Infrastructure\Console\Command\BaselineExplanationRenderer'
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineRenameChannelsCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineRun'
@@ -899,6 +925,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\ExitPolicy'
         - 'Qualimetrix\Infrastructure\Console\FilteredInputDefinition'
         - 'Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator'
+        - 'Qualimetrix\Infrastructure\Console\FormatOptionPairs'
         - 'Qualimetrix\Infrastructure\Console\FormatterContextFactory'
         - 'Qualimetrix\Infrastructure\Console\Hook\PreCommitHook'
         - 'Qualimetrix\Infrastructure\Console\LayerAssignmentResolver'
@@ -931,6 +958,8 @@ architecture:
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\CollectorCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationStageCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationValidatorCompilerPass'
+        - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConsumerBoundPassInterface'
+        - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConsumerRegistrationCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FileSetInspectionParticipantCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FormatterCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\GlobalCollectorCompilerPass'
@@ -968,19 +997,23 @@ architecture:
       patterns:
         - 'Qualimetrix\Infrastructure\Git\ChangeStatus'
         - 'Qualimetrix\Infrastructure\Git\ChangedFile'
-        - 'Qualimetrix\Infrastructure\Git\Exception\NotAGitRepositoryException'
-        - 'Qualimetrix\Infrastructure\Git\Exception\UnresolvedGitReferenceException'
         - 'Qualimetrix\Infrastructure\Git\GitClient'
         - 'Qualimetrix\Infrastructure\Git\GitRepositoryLocator'
         - 'Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface'
         - 'Qualimetrix\Infrastructure\Git\GitScope'
         - 'Qualimetrix\Infrastructure\Git\GitScopeParser'
+        - 'Qualimetrix\Infrastructure\Git\GitScopeRefusedException'
         - 'Qualimetrix\Infrastructure\Git\GitScopeResolution'
         - 'Qualimetrix\Infrastructure\Git\GitScopeResolver'
+        - 'Qualimetrix\Infrastructure\Git\NameStatusListing'
+        - 'Qualimetrix\Infrastructure\Git\NameStatusRecord'
+        - 'Qualimetrix\Infrastructure\Git\NotAGitRepositoryException'
         - 'Qualimetrix\Infrastructure\Git\ReportingGitScopeQuery'
+        - 'Qualimetrix\Infrastructure\Git\UnresolvedGitReferenceException'
     - name: infrastructure-logging
       patterns:
         - 'Qualimetrix\Infrastructure\Logging\ConsoleLogger'
+        - 'Qualimetrix\Infrastructure\Logging\Contract\LogFileUnavailable'
         - 'Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface'
         - 'Qualimetrix\Infrastructure\Logging\DelegatingLogger'
         - 'Qualimetrix\Infrastructure\Logging\FileLogger'
@@ -1001,6 +1034,8 @@ architecture:
         - 'Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector'
         - 'Qualimetrix\Infrastructure\Parallel\Strategy\WorkerCountDetector'
         - 'Qualimetrix\Infrastructure\Parallel\WorkerBootstrap'
+        - 'Qualimetrix\Infrastructure\Parallel\WorkerComposition'
+        - 'Qualimetrix\Infrastructure\Parallel\WorkerPool'
     - name: infrastructure-profiler
       patterns:
         - 'Qualimetrix\Infrastructure\Profiler\Contract\ProfileFormat'
@@ -1037,6 +1072,7 @@ architecture:
         - 'Qualimetrix\Reporting\CoverageFailure'
         - 'Qualimetrix\Reporting\DrillDown\DrillDownBinding'
         - 'Qualimetrix\Reporting\DrillDown\FindingFilter'
+        - 'Qualimetrix\Reporting\DrillDown\OutOfScopeFindings'
         - 'Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface'
@@ -1063,6 +1099,7 @@ architecture:
         - 'Qualimetrix\Reporting\Formatter\Detail\DetailedFindingRenderer'
         - 'Qualimetrix\Reporting\Formatter\Detail\FindingDetailRenderer'
         - 'Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface'
+        - 'Qualimetrix\Reporting\Formatter\FormatOptionValue'
         - 'Qualimetrix\Reporting\Formatter\FormatterInterface'
         - 'Qualimetrix\Reporting\Formatter\FormatterRegistry'
         - 'Qualimetrix\Reporting\Formatter\FormatterRegistryInterface'
@@ -1074,6 +1111,7 @@ architecture:
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlFindingPartitioner'
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlFormatter'
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlMetricAggregator'
+        - 'Qualimetrix\Reporting\Formatter\Html\HtmlProjectMetadata'
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder'
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlTreeNode'
         - 'Qualimetrix\Reporting\Formatter\Json\JsonFindingSection'
@@ -1083,6 +1121,8 @@ architecture:
         - 'Qualimetrix\Reporting\Formatter\Json\JsonSanitizer'
         - 'Qualimetrix\Reporting\Formatter\MetricsJsonFormatter'
         - 'Qualimetrix\Reporting\Formatter\Ordering\FindingSorter'
+        - 'Qualimetrix\Reporting\Formatter\PublishedFinding'
+        - 'Qualimetrix\Reporting\Formatter\PublishedUtf8'
         - 'Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter'
         - 'Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector'
         - 'Qualimetrix\Reporting\Formatter\Summary\FindingSummaryRenderer'
@@ -1101,6 +1141,7 @@ architecture:
         - 'Qualimetrix\Reporting\Report'
         - 'Qualimetrix\Reporting\ReportBuilder'
         - 'Qualimetrix\Reporting\ReportCoverage'
+        - 'Qualimetrix\Reporting\ReportProjectScope'
     - name: reporting-graphprojection
       patterns:
         - 'Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface'
@@ -1236,6 +1277,7 @@ architecture:
     analysis-policy-architecture:
       - analysis-configuration
       - analysis-evidence-dependencymodel
+      - analysis-evidence-design
       - analysis-finding
       - core-neutral
       - core-symbol
@@ -1396,6 +1438,7 @@ architecture:
       - analysis-evidence-dependencymodel
       - core-neutral
       - core-symbol
+      - reporting
       - external
     external: []
 
@@ -1457,11 +1500,9 @@ rules:
       - subtree: Qualimetrix\Core\Path
     suppress_namespace_channels:
       coupling.cbo:namespace:
-        # This exact public-contract namespace replaces four broad historical
-        # consumer namespaces with five mandatory ADR 0022 named capability
-        # consumers. Namespace-union granularity raises CBO by one although
-        # executable importer count falls; declaration-level class CBO remains active.
-        - exact: 'Qualimetrix\Analysis\Configuration\Contract'
+        # Re-measured 2026-09-24 over the classes the namespace declares itself
+        # (`coupling.cbo-own`, the scope the rule judges): union 19, the same as
+        # at ddc4dff9. Numbers further down are from when the entry was written.
         # Raw 18 is the required union of eight inbound and twelve outbound
         # Inline contract dependencies. Exact channel scope keeps declaration
         # CBO, children, and every other coupling channel active.
@@ -1477,6 +1518,9 @@ rules:
         # union is 16 after FormatterContext gained the bound selector; class
         # CBO and every other coupling channel remain active.
         - exact: 'Qualimetrix\Reporting\Formatter\Summary'
+        # Re-measured 2026-09-24 over the classes the namespace declares itself
+        # (`coupling.cbo-own`, the scope the rule judges): union 17, the same as
+        # at ddc4dff9. Numbers further down are from when the entry was written.
         # The Reporting vocabulary root, 16 against an inclusive 16. This is
         # the same namespace-granularity artefact the
         # `Analysis\Configuration\Contract` entry in this list records, and
@@ -1502,6 +1546,9 @@ rules:
         # this root besides. Exact channel scope keeps declaration-level class
         # CBO, every child namespace, and every other coupling channel active.
         - exact: 'Qualimetrix\Reporting'
+        # Re-measured 2026-09-24 over the classes the namespace declares itself
+        # (`coupling.cbo-own`, the scope the rule judges): union 20, the same as
+        # at ddc4dff9. Numbers further down are from when the entry was written.
         # The configuration hub, union 16 against an inclusive 16. The one edge
         # that moved it from 15 is afferent, and it is X18's own cure:
         # `Evidence\Coupling\CouplingAnalysis` stopped throwing a bare
@@ -1519,6 +1566,9 @@ rules:
         # Exact channel scope keeps declaration-level class CBO, every child
         # namespace and every other coupling channel measured.
         - exact: 'Qualimetrix\Analysis\Configuration'
+        # Re-measured 2026-09-24 over the classes the namespace declares itself
+        # (`coupling.cbo-own`, the scope the rule judges): union 20, the same as
+        # at ddc4dff9. Numbers further down are from when the entry was written.
         # The formatter namespace, union 16 against an inclusive 16, and the
         # same shape: the edge that moved it from 15 is afferent, from
         # `Reporting\Configuration\OutputFormatResolver`, which now names
@@ -1715,6 +1765,15 @@ rules:
         # what it judges, and a namespace channel is not addressable by
         # `@qmx-threshold`.
         - exact: 'Qualimetrix\Analysis\Evidence\Coupling'
+        # Ca=2 / Ce=22 (I=0.916667). Unmeasured until its second afferent edge:
+        # `Infrastructure\DependencyInjection\Configurator` now names
+        # `UnboundSuppressionRule` by `::class` so the architecture manifest can
+        # bind the registration, which lifts Ca over `min_afferent: 2` below.
+        # Ce did not move. The namespace is the unbound-suppression audit and
+        # its rule, a leaf that reads the Finding and Configuration vocabularies
+        # and is read back only by the console and the container, and a
+        # namespace channel is not addressable by `@qmx-threshold`.
+        - exact: 'Qualimetrix\Analysis\Finding\SuppressionBinding'
     suppress_paths:
       # Note: visitors and DI configurators are NOT listed here. They are indeed
       # inherently unstable, but `min_afferent: 2` below already filters them out
@@ -1751,19 +1810,19 @@ rules:
   # to what the justification actually says. Two methods that genuinely measure table
   # size rather than decision depth carry a per-symbol `@qmx-threshold` instead
   # (SarifRuleCollector::getRuleDescription, MetricEnricher::enrich).
-  # The two exact trait paths do the same AST node-type dispatch without carrying
+  # The exact trait path does the same AST node-type dispatch without carrying
   # the Visitor suffix.
   complexity.npath:
     suppress_paths:
       - regex: 'src/Analysis/Evidence/CodeSmell/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Cohesion/.*Visitor\.php'
-      - regex: 'src/Analysis/Evidence/Complexity/.*Visitor\.php'
+      # No Complexity root: no visitor there branches on node types past the
+      # bound, and an entry that suppresses nothing would hide the first one that does.
       - regex: 'src/Analysis/Evidence/Coupling/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Design/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Maintainability/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Security/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Size/.*Visitor\.php'
-      - exact: src/Analysis/Evidence/CodeSmell/UsageTrackingTrait.php
       - exact: src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php
 
   # Code duplication: Options classes share fromArray/threshold patterns by convention.
@@ -1793,10 +1852,10 @@ rules:
       # mechanism that put the eight capability roots above on this list. There
       # is no behaviour in the window to extract: a shared base class would hold
       # the interface's own signatures.
-      # Only the reported side is listed, the same rule the CboRule entry below
-      # states: the detector reports the pair once, and an entry for
-      # `Run/ExcludeBinding` beside it was measured inert and left out.
+      # Both sides are listed because each copy of a block is a finding of its
+      # own (ADR 0085): an entry for one side leaves the other reported.
       - regex: 'src/Analysis/Finding/SuppressionBinding/.*Options\.php'
+      - regex: 'src/Analysis/Run/ExcludeBinding/.*Options\.php'
       # CboRule and InstabilityRule match on 34 lines that hold no behaviour: the
       # class line, the five metadata constants every rule must declare, and the
       # name/description/supported-levels accessors the rule interface mandates.
@@ -1808,9 +1867,9 @@ rules:
       # hierarchical rules, so no base class can hold it. The window opened when
       # the retired `requires()` metadata, which used to differ between the two,
       # was deleted; nothing was copied.
-      # Only CboRule is listed: the detector reports the pair once, on this side.
-      # An InstabilityRule entry beside it was measured as inert and removed.
+      # Both rules are listed, for the reason given above the ExcludeBinding entry.
       - exact: src/Analysis/Evidence/Coupling/CboRule.php
+      - exact: src/Analysis/Evidence/Coupling/InstabilityRule.php
 
   complexity.ccn:
     suppress_paths:
@@ -1820,9 +1879,9 @@ rules:
       - regex: 'src/Analysis/Evidence/Coupling/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Design/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Maintainability/.*Visitor\.php'
-      - regex: 'src/Analysis/Evidence/Security/.*Visitor\.php'
+      # No Security root: no visitor there branches on node types past the bound,
+      # and an entry that suppresses nothing would hide the first one that does.
       - regex: 'src/Analysis/Evidence/Size/.*Visitor\.php'
-      - exact: src/Analysis/Evidence/CodeSmell/UsageTrackingTrait.php
       - exact: src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php
 
   complexity.wmc:
@@ -1840,7 +1899,7 @@ rules:
     suppress_paths:
       - regex: 'src/Analysis/Evidence/CodeSmell/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Cohesion/.*Visitor\.php'
-      - regex: 'src/Analysis/Evidence/Complexity/.*Visitor\.php'
+      # No Complexity root, for the reason given under complexity.npath.
       - regex: 'src/Analysis/Evidence/Coupling/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Design/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Maintainability/.*Visitor\.php'

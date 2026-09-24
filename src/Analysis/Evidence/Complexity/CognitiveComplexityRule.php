@@ -161,25 +161,41 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
             $severity = $effectiveMethodOptions->getSeverity($cognitiveValue);
 
             if ($severity !== null) {
-                $threshold = $severity === Severity::Error ? $effectiveMethodOptions->error : $effectiveMethodOptions->warning;
-                $breakdown = $this->formatBreakdown($metrics->entries('cognitive-complexity.increments'));
-
-                $findings[] = new Finding(
-                    location: new Location($methodInfo->file, $methodInfo->line),
-                    subject: $subject,
-                    symbolPath: $subject->toSymbolPath(),
-                    ruleName: $this->getName(),
-                    code: self::NAME,
-                    message: \sprintf('Cognitive complexity is %d, exceeds threshold of %d.%s Reduce nesting and break into smaller methods', $cognitiveValue, $threshold, $breakdown !== '' ? " {$breakdown}." : ''),
-                    severity: $severity,
-                    metricValue: $cognitiveValue,
-                    recommendation: \sprintf('Cognitive complexity: %d (threshold: %d)%s — deeply nested, hard to follow', $cognitiveValue, $threshold, $breakdown !== '' ? ". {$breakdown}" : ''),
-                    threshold: $threshold,
+                $findings[] = $this->callableFinding(
+                    $methodInfo,
+                    $subject,
+                    $this->formatBreakdown($metrics->entries('cognitive-complexity.increments')),
+                    $cognitiveValue,
+                    $severity,
+                    $severity === Severity::Error ? $effectiveMethodOptions->error : $effectiveMethodOptions->warning,
                 );
             }
         }
 
         return $findings;
+    }
+
+    private function callableFinding(
+        SymbolInfo $methodInfo,
+        MetricSubject $subject,
+        string $breakdown,
+        int $cognitiveValue,
+        Severity $severity,
+        int $threshold,
+    ): Finding {
+
+        return new Finding(
+            location: new Location($methodInfo->file, $methodInfo->line),
+            subject: $subject,
+            symbolPath: $subject->toSymbolPath(),
+            ruleName: $this->getName(),
+            code: self::NAME,
+            message: \sprintf('Cognitive complexity is %d, exceeds threshold of %d.%s Reduce nesting and break into smaller methods', $cognitiveValue, $threshold, $breakdown !== '' ? " {$breakdown}." : ''),
+            severity: $severity,
+            metricValue: $cognitiveValue,
+            recommendation: \sprintf('Cognitive complexity: %d (threshold: %d)%s — deeply nested, hard to follow', $cognitiveValue, $threshold, $breakdown !== '' ? ". {$breakdown}" : ''),
+            threshold: $threshold,
+        );
     }
 
     /**
@@ -284,7 +300,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
     private function formatIncrementLabel(string $type, int $points): string
     {
         // These structure types receive nesting bonus (1 + nestingLevel)
-        $nestingTypes = ['if', 'for', 'foreach', 'while', 'do', 'catch', 'switch', 'match'];
+        $nestingTypes = ['if', 'for', 'foreach', 'while', 'do', 'catch', 'switch', 'match', 'ternary'];
 
         if ($points > 1 && \in_array($type, $nestingTypes, true)) {
             return 'nested ' . $type;

@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalPa
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\SkipReportingDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
@@ -76,9 +77,24 @@ final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerI
             }
         }
 
+        $coverage = new AnalysisCoverage($analyzedFiles, [], $failures);
+
+        // The graph export answers the same question about its own input as a
+        // check run does: an entry discovery refused is a hole in the graph,
+        // and `graph:export` already refuses to publish an incomplete one.
+        if ($this->fileDiscovery instanceof SkipReportingDiscoveryInterface) {
+            foreach ($this->fileDiscovery->skippedEntries() as $skip) {
+                $coverage = $coverage->withSkipped(
+                    $skip->relativeTo($projectRoot),
+                    $skip->reason,
+                    $skip->detail,
+                );
+            }
+        }
+
         return new DependencyGraphAnalysisResult(
             $this->graphBuilder->build($dependencies, array_values($logicalClassUniverse)),
-            new AnalysisCoverage($analyzedFiles, [], $failures),
+            $coverage,
         );
     }
 

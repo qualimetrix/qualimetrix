@@ -145,13 +145,20 @@ final class LayerRegistryTest extends TestCase
         self::assertIsArray($cache);
         self::assertArrayHasKey($symbol->toCanonical(), $cache);
 
-        // One cache entry carries BOTH outputs of the single walk: the match
-        // list and the layers an `exclude:` clause removed the class from.
+        // One cache entry carries EVERY output of the single walk: the match
+        // list, the layers an `exclude:` clause removed the class from, the
+        // layers the run could not answer that bear on its assignment, the
+        // matching layers whose `exclude:` could not answer, the layers that
+        // could still own it, the matches the run established, and where its
+        // chain stopped.
         $entry = $cache[$symbol->toCanonical()];
-        self::assertSame(['matches', 'excluded'], array_keys($entry));
+        self::assertSame(['matches', 'excluded', 'undecided', 'unansweredExcludes', 'contenders', 'established', 'chainStopsAt'], array_keys($entry));
+        self::assertSame($entry['matches'], $entry['established']);
         self::assertCount(1, $entry['matches']);
         self::assertSame('service', $entry['matches'][0]->layerName);
         self::assertSame([], $entry['excluded']);
+        self::assertSame([], $entry['undecided']);
+        self::assertSame([], $entry['chainStopsAt']);
 
         $registry->resolveLayer(SymbolPath::forClass('Other\\Place', 'Foo'));
         $cache = $reflection->getValue($registry);
@@ -702,6 +709,16 @@ final class LayerRegistryTest extends TestCase
                 return 0;
             }
 
+            public function getNamespaceOwnCe(SymbolPath $namespace): int
+            {
+                return 0;
+            }
+
+            public function getNamespaceOwnCa(SymbolPath $namespace): int
+            {
+                return 0;
+            }
+
             public function getAllClasses(): array
             {
                 return [];
@@ -713,6 +730,11 @@ final class LayerRegistryTest extends TestCase
             }
 
             public function getAllDependencies(): array
+            {
+                return $this->deps;
+            }
+
+            public function getDeclarationDependencies(): array
             {
                 return $this->deps;
             }

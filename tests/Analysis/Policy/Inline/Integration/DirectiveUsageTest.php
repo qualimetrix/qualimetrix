@@ -18,7 +18,9 @@ use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusal;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
@@ -288,6 +290,75 @@ final class DirectiveUsageTest extends TestCase
     }
 
     /** @return array<string, list<Suppression>> */
+    /**
+     * A directive the extractor refused is carried to the store so that it can
+     * be reported at all. The audit must not then judge it: `check` has already
+     * named the line, and a second answer would either credit a dead tag or
+     * demand the author delete an annotation whose question nobody could ask.
+     */
+    #[Test]
+    public function itRefusesToJudgeADirectiveTheExtractorRefused(): void
+    {
+        $refused = [self::FILE => [new Suppression(
+            self::CHANNEL,
+            null,
+            3,
+            SuppressionType::Symbol,
+            refusal: DirectiveRefusal::noDeclarationToBind(),
+        )]];
+
+        $verdicts = self::usage()->verdicts($refused, [self::finding()], LevelActivity::empty());
+
+        self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
+        self::assertSame(DirectiveUnmeasurableReason::AlreadyRefused, self::single($verdicts)->reason);
+    }
+
+    /** A report that named an unreadable tag as one of the four real ones would send its author to the wrong line. */
+    #[Test]
+    public function itReportsAnUnreadableTagUnderTheFormItWasWrittenAs(): void
+    {
+        $refused = [self::FILE => [new Suppression(
+            self::CHANNEL,
+            null,
+            3,
+            SuppressionType::Symbol,
+            refusal: DirectiveRefusal::formNotRecognised('ignore-lines'),
+        )]];
+
+        $verdicts = self::usage()->verdicts($refused, [], LevelActivity::empty());
+
+        self::assertSame('ignore-lines', self::single($verdicts)->site->form);
+        self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
+    }
+
+    /**
+     * Two refusals of different tags naming one channel on one line are two
+     * mistakes, and the author has to fix both. The authored-site key named
+     * the type, which every refusal shares, instead of the form it was
+     * written as — so the store kept one and the report judged one.
+     */
+    #[Test]
+    public function itKeepsTwoRefusalsOfDifferentFormsOnOneLineApart(): void
+    {
+        $directives = [self::FILE => [
+            new Suppression(self::CHANNEL, null, 3, SuppressionType::Symbol, refusal: DirectiveRefusal::formNotRecognised('ignore-lines')),
+            new Suppression(self::CHANNEL, null, 3, SuppressionType::Symbol, refusal: DirectiveRefusal::formNotRecognised('ignore-lins')),
+            new Suppression(self::CHANNEL, null, 3, SuppressionType::Symbol, refusal: DirectiveRefusal::noDeclarationToBind()),
+        ]];
+
+        $policy = new InlineDirectivePolicy(self::usage());
+        $policy->prepare($directives, [], []);
+        $judged = array_map(
+            static fn(DirectiveVerdict $verdict): string => $verdict->site->form,
+            self::usage()->verdicts($directives, [], LevelActivity::empty()),
+        );
+        sort($judged);
+
+        self::assertCount(3, $policy->authoredSuppressions()[self::FILE]);
+        self::assertSame(['ignore-lines', 'ignore-lins', 'symbol'], $judged);
+    }
+
+    /** @return array<string, list<Suppression>> */
     private static function fileDirective(string $authored): array
     {
         return [self::FILE => [new Suppression($authored, 'reason', 3, SuppressionType::File)]];
@@ -322,8 +393,7 @@ final class DirectiveUsageTest extends TestCase
                 'reason',
                 4,
                 SuppressionType::Symbol,
-                subject: $subject,
-                controlScope: ControlScope::Class_,
+                binding: new DeclarationBinding($subject, ControlScope::Class_),
             ),
             $subjects,
         );

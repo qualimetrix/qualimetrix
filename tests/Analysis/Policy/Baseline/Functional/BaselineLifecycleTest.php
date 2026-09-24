@@ -42,8 +42,12 @@ final class BaselineLifecycleTest extends TestCase
         }
     }
 
+    /**
+     * Each copy of a block is an entry of its own, so repairing one copy
+     * leaves its entry stale and the other copies accepted.
+     */
     #[Test]
-    public function itKeepsADuplicateAcceptedWhenThePrimaryCopyChanges(): void
+    public function itReportsARepairedCopyAsStaleAndKeepsTheOtherCopiesAccepted(): void
     {
         $project = BaselineCliFixture::from('duplication');
 
@@ -71,7 +75,7 @@ final class BaselineLifecycleTest extends TestCase
 
             $checked = $project->checkWithSeparatedDiagnostics($paths, ['--baseline' => $project->baselinePath]);
             self::assertSame(Command::SUCCESS, $checked->getStatusCode(), $checked->getDisplay());
-            self::assertStringNotContainsString('baseline entries did not appear in this run', $checked->getDisplay());
+            self::assertStringContainsString('1 baseline entries did not appear in this run', $checked->getErrorOutput());
             self::assertStringContainsString('No violations found', $checked->getDisplay());
         } finally {
             $project->remove();
@@ -79,8 +83,89 @@ final class BaselineLifecycleTest extends TestCase
     }
 
     /**
-     * A normal repair removes one of two copies. It must not turn a clean
-     * baseline run red merely because a group became smaller.
+     * The block's identity is its whole matched token sequence, so an edit
+     * that lengthens the match in every copy is a new block: every accepted
+     * copy's entry goes stale and each copy reports afresh.
+     */
+    #[Test]
+    public function itReKeysADuplicateWhoseMatchedTokensChangeInEveryCopy(): void
+    {
+        $project = BaselineCliFixture::from('duplication');
+
+        try {
+            $paths = [$project->root];
+            $generated = $project->generate($paths);
+            self::assertSame(Command::SUCCESS, $generated->getStatusCode(), $generated->getDisplay());
+
+            foreach (['A.php', 'B.php', 'C.php'] as $file) {
+                $path = $project->root . '/' . $file;
+                $source = (string) file_get_contents($path);
+                $grown = str_replace(
+                    "        return \$fourth * 5;\n",
+                    "        \$fifth = \$fourth - 6;\n        return \$fifth * 5;\n",
+                    $source,
+                );
+                self::assertNotSame($source, $grown);
+                file_put_contents($path, $grown);
+            }
+
+            $checked = $project->checkWithSeparatedDiagnostics($paths, ['--baseline' => $project->baselinePath]);
+            self::assertStringContainsString('3 violations (3 warnings)', $checked->getDisplay());
+            self::assertStringContainsString('3 baseline entries did not appear in this run', $checked->getErrorOutput());
+        } finally {
+            $project->remove();
+        }
+    }
+
+    /**
+     * A copy-paste of an accepted block is more of the same debt, and the
+     * baseline has to see it: each copy is a finding of its own, so a fourth
+     * copy of a block accepted with three is a new finding, reported on the
+     * new copy alone and at the copy's own severity, while the three accepted
+     * copies stay accepted.
+     */
+    #[Test]
+    public function itReportsANewCopyOfAnAcceptedDuplicateBlock(): void
+    {
+        $project = BaselineCliFixture::from('duplication');
+
+        try {
+            $paths = [$project->root];
+            $generated = $project->generate($paths);
+            self::assertSame(Command::SUCCESS, $generated->getStatusCode(), $generated->getDisplay());
+
+            file_put_contents(
+                $project->root . '/D.php',
+                str_replace('class Beta', 'class Delta', (string) file_get_contents($project->root . '/B.php')),
+            );
+
+            $checked = $project->checkWithSeparatedDiagnostics($paths, [
+                '--baseline' => $project->baselinePath,
+                '--format' => 'json',
+                '--fail-on' => 'warning',
+            ]);
+            self::assertSame(1, $checked->getStatusCode(), $checked->getDisplay());
+
+            /** @var array{summary: array{errorCount: int, warningCount: int}, violations: list<array{rule: string, file: string, severity: string, message: string, acceptedLevel: mixed}>} $report */
+            $report = json_decode($checked->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+            self::assertSame([0, 1], [$report['summary']['errorCount'], $report['summary']['warningCount']], 'exit 1 is the warning');
+            self::assertCount(1, $report['violations'], $checked->getDisplay());
+            [$newCopy] = $report['violations'];
+            self::assertSame('D.php', basename($newCopy['file']));
+            self::assertSame('duplication.clone', $newCopy['rule']);
+            self::assertSame('warning', $newCopy['severity']);
+            self::assertNull($newCopy['acceptedLevel']);
+            self::assertStringContainsString('4 occurrences', $newCopy['message']);
+            self::assertStringNotContainsString('baseline entries did not appear in this run', $checked->getErrorOutput());
+        } finally {
+            $project->remove();
+        }
+    }
+
+    /**
+     * A normal repair removes one of two copies, which leaves the other one
+     * no duplicate either. It must not turn a clean baseline run red; the
+     * entries of the repaired block's two copies are reported stale.
      */
     #[Test]
     public function itKeepsTheBuildGreenAfterDeletingOneOfTwoBaselinedDuplicateBlocks(): void
@@ -93,8 +178,8 @@ final class BaselineLifecycleTest extends TestCase
             self::assertSame(Command::SUCCESS, $generated->getStatusCode(), $generated->getDisplay());
 
             $captured = self::aggregateForChannel($project->baselinePath, 'duplication.clone');
-            self::assertSame(2, $captured['count']);
-            self::assertSame([11, 15], $captured['magnitudes']);
+            self::assertSame(4, $captured['count']);
+            self::assertSame([12, 12, 15, 15], $captured['magnitudes']);
 
             file_put_contents($project->root . '/Three.php', self::uniqueClass('Three'));
 
@@ -102,12 +187,12 @@ final class BaselineLifecycleTest extends TestCase
             $measured = $project->generateAt($currentBaseline, $paths);
             self::assertSame(Command::SUCCESS, $measured->getStatusCode(), $measured->getDisplay());
             $survivor = self::aggregateForChannel($currentBaseline, 'duplication.clone');
-            self::assertSame(1, $survivor['count']);
-            self::assertSame([15], $survivor['magnitudes']);
+            self::assertSame(2, $survivor['count']);
+            self::assertSame([15, 15], $survivor['magnitudes']);
 
-            $checked = $project->check($paths, ['--baseline' => $project->baselinePath]);
+            $checked = $project->checkWithSeparatedDiagnostics($paths, ['--baseline' => $project->baselinePath]);
             self::assertSame(Command::SUCCESS, $checked->getStatusCode(), $checked->getDisplay());
-            self::assertStringNotContainsString('baseline entries did not appear in this run', $checked->getDisplay());
+            self::assertStringContainsString('2 baseline entries did not appear in this run', $checked->getErrorOutput());
             self::assertStringContainsString('No violations found', $checked->getDisplay());
         } finally {
             $project->remove();
@@ -151,6 +236,117 @@ final class BaselineLifecycleTest extends TestCase
         } finally {
             $project->remove();
         }
+    }
+
+    /**
+     * A selector narrowed to one level leaves the rule running everywhere
+     * else, and the entry's own level decides whether its absence was
+     * measured. The deleted class is the legitimate neighbour: its class-level
+     * entries were measured and are gone, and must still read so.
+     */
+    #[Test]
+    public function itSaysAnEntryWasNotMeasuredWhenASelectorSwitchedItsLevelOff(): void
+    {
+        $project = BaselineCliFixture::from('level-narrowed');
+
+        try {
+            $paths = [$project->root];
+            $generated = $project->generate($paths);
+            self::assertSame(Command::SUCCESS, $generated->getStatusCode(), $generated->getDisplay());
+
+            self::removeTree($project->root . '/Gone');
+
+            $cleanup = $project->cleanup($paths, ['--disable-rule' => ['health.maintainability:namespace']]);
+            self::assertSame(Command::SUCCESS, $cleanup->getStatusCode(), $cleanup->getDisplay());
+
+            self::assertSame([
+                'declaration:callable:LevelFixture\Gone\Third::pick@Gone/Third.php complexity.ccn' => self::NOTHING_REPORTED,
+                'declaration:class:LevelFixture\Gone\Third@Gone/Third.php complexity.ccn' => self::NOTHING_REPORTED,
+                'declaration:class:LevelFixture\Gone\Third@Gone/Third.php health.maintainability' => self::NOTHING_REPORTED,
+                'ns:LevelFixture health.maintainability' => self::NOT_MEASURED,
+                'ns:LevelFixture\Gone health.maintainability' => self::NOT_MEASURED,
+                'ns:LevelFixture\Kept health.maintainability' => self::NOT_MEASURED,
+            ], self::candidateReasons($cleanup->getDisplay()));
+
+            $projectNarrowed = $project->cleanup($paths, ['--disable-rule' => ['health.maintainability:project']]);
+            self::assertSame(Command::SUCCESS, $projectNarrowed->getStatusCode(), $projectNarrowed->getDisplay());
+
+            self::assertSame([
+                'declaration:callable:LevelFixture\Gone\Third::pick@Gone/Third.php complexity.ccn' => self::NOTHING_REPORTED,
+                'declaration:class:LevelFixture\Gone\Third@Gone/Third.php complexity.ccn' => self::NOTHING_REPORTED,
+                'declaration:class:LevelFixture\Gone\Third@Gone/Third.php health.maintainability' => self::NOTHING_REPORTED,
+                'ns:LevelFixture\Gone health.maintainability' => self::NOTHING_REPORTED,
+                'project: health.maintainability' => self::NOT_MEASURED,
+            ], self::candidateReasons($projectNarrowed->getDisplay()));
+        } finally {
+            $project->remove();
+        }
+    }
+
+    /**
+     * The same question when configuration, not a selector, switched the
+     * level off: `class: { enabled: false }` leaves the callable level
+     * running and still reporting.
+     */
+    #[Test]
+    public function itSaysAnEntryWasNotMeasuredWhenConfigurationSwitchedItsLevelOff(): void
+    {
+        $project = BaselineCliFixture::from('level-narrowed');
+
+        try {
+            $paths = [$project->root];
+            $generated = $project->generate($paths);
+            self::assertSame(Command::SUCCESS, $generated->getStatusCode(), $generated->getDisplay());
+
+            $config = $project->root . '/qmx.yaml';
+            file_put_contents($config, str_replace(
+                "      max_error: 99\n",
+                "      max_error: 99\n      enabled: false\n",
+                (string) file_get_contents($config),
+            ));
+
+            $cleanup = $project->cleanup($paths);
+            self::assertSame(Command::SUCCESS, $cleanup->getStatusCode(), $cleanup->getDisplay());
+
+            self::assertSame([
+                'declaration:class:LevelFixture\Gone\Third@Gone/Third.php complexity.ccn' => self::NOT_MEASURED,
+                'declaration:class:LevelFixture\Kept\First@Kept/First.php complexity.ccn' => self::NOT_MEASURED,
+                'declaration:class:LevelFixture\Kept\Second@Kept/Second.php complexity.ccn' => self::NOT_MEASURED,
+            ], self::candidateReasons($cleanup->getDisplay()));
+        } finally {
+            $project->remove();
+        }
+    }
+
+    private const string NOTHING_REPORTED = 'nothing reported for this identity';
+    private const string NOT_MEASURED = 'not measured: this invocation did not run the rule for this channel at this level';
+
+    /**
+     * Each listed candidate's description mapped to the reason it is listed
+     * under, in listing order. A declaration subject names its file relative
+     * to the working directory, so the temporary root is cut off it.
+     *
+     * @return array<string, string>
+     */
+    private static function candidateReasons(string $display): array
+    {
+        preg_match_all('~^\s+[0-9a-f]{12}\s+(.+?)\s+\((.+)\)$~m', $display, $matches, \PREG_SET_ORDER);
+
+        $reasons = [];
+        foreach ($matches as $match) {
+            $reasons[(string) preg_replace('~@\S*?/((?:Gone|Kept)/)~', '@$1', $match[1])] = $match[2];
+        }
+
+        return $reasons;
+    }
+
+    private static function removeTree(string $directory): void
+    {
+        foreach ((array) glob($directory . '/*') as $file) {
+            unlink((string) $file);
+        }
+
+        rmdir($directory);
     }
 
     /**

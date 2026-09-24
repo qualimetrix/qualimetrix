@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Core\Symbol;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
@@ -13,6 +14,7 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevelProjection;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(MetricSubject::class)]
@@ -121,6 +123,67 @@ final class MetricSubjectTest extends TestCase
 
         self::assertTrue($subject()->equals($subject()));
         self::assertFalse($subject()->equals(MetricSubject::aggregate(SymbolPath::forNamespace('App'))));
+    }
+
+    /**
+     * The reverse reading must agree with the forward one for every kind a
+     * subject can be built as, the second ordinal and the global namespace
+     * included — a level read off a string is only worth what this pins.
+     *
+     * @return iterable<string, array{MetricSubject}>
+     */
+    public static function provideEverySubjectKind(): iterable
+    {
+        $file = RelativePath::fromString('src/Service.php');
+
+        yield 'declared class' => [MetricSubject::declaration(
+            DeclarationPath::of(SymbolPath::forClass('App', 'Service'), $file, DeclarationOrdinal::fromRank(0)),
+        )];
+        yield 'second declared class of one name' => [MetricSubject::declaration(
+            DeclarationPath::of(SymbolPath::forClass('App', 'Service'), $file, DeclarationOrdinal::fromRank(1)),
+        )];
+        yield 'declared method' => [MetricSubject::declaration(
+            DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'handle'), $file, DeclarationOrdinal::fromRank(0)),
+        )];
+        yield 'declared namespaced function' => [MetricSubject::declaration(
+            DeclarationPath::of(SymbolPath::forGlobalFunction('App', 'helper'), $file, DeclarationOrdinal::fromRank(0)),
+        )];
+        yield 'declared global function' => [MetricSubject::declaration(
+            DeclarationPath::of(SymbolPath::forGlobalFunction('', 'helper'), $file, DeclarationOrdinal::fromRank(0)),
+        )];
+        yield 'logical class' => [MetricSubject::logicalClass(new LogicalClassPath(SymbolPath::forClass('App', 'Service')))];
+        yield 'file' => [MetricSubject::aggregate(SymbolPath::forFile($file))];
+        yield 'namespace' => [MetricSubject::aggregate(SymbolPath::forNamespace('App\\Service'))];
+        yield 'global namespace' => [MetricSubject::aggregate(SymbolPath::forNamespace(''))];
+        yield 'project' => [MetricSubject::aggregate(SymbolPath::forProject())];
+    }
+
+    #[Test]
+    #[DataProvider('provideEverySubjectKind')]
+    public function itReadsTheLevelBackOffTheCanonicalForm(MetricSubject $subject): void
+    {
+        self::assertSame(
+            SymbolLevelProjection::ofDeclaration($subject->toSymbolPath()->getType()),
+            MetricSubject::levelOfCanonical($subject->toCanonical()),
+        );
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function provideStringsNoSubjectWrites(): iterable
+    {
+        yield 'no prefix' => ['App\\Service'];
+        yield 'unknown prefix' => ['method:App\\Service::handle'];
+        yield 'declaration of an aggregate' => ['declaration:ns:App@src/Service.php'];
+        yield 'bare declaration prefix' => ['declaration:'];
+    }
+
+    #[Test]
+    #[DataProvider('provideStringsNoSubjectWrites')]
+    public function itRefusesAStringNoSubjectWrites(string $canonical): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        MetricSubject::levelOfCanonical($canonical);
     }
 
     /**

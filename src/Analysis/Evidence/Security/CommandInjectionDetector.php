@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Security;
 
 use PhpParser\Node\Expr\FuncCall;
+use PhpParser\Node\Expr\ShellExec;
 use PhpParser\Node\Name;
-use PhpParser\Node\Scalar\InterpolatedString;
 
 /**
- * Detects command injection patterns: superglobals in command execution functions.
+ * Detects command injection patterns: a superglobal reaching a command
+ * execution function's argument or a backtick command.
  *
- * Detection vectors:
- * - Direct superglobal usage in exec/system/passthru/shell_exec/proc_open/popen
- * - Interpolated strings containing superglobals in command function arguments
- * - Concatenations containing unsanitized superglobals in command function arguments
+ * Which wrappers carry the superglobal's value, and which (`escapeshellarg()`,
+ * `escapeshellcmd()`, any other call, `(int)`/`(float)` casts) end the
+ * search, is decided by {@see SuperglobalAnalyzer}.
  */
 final readonly class CommandInjectionDetector
 {
@@ -28,12 +28,6 @@ final readonly class CommandInjectionDetector
         'popen',
     ];
 
-    /** @var list<string> Command injection sanitization functions */
-    private const COMMAND_SANITIZERS = [
-        'escapeshellarg',
-        'escapeshellcmd',
-    ];
-
     public function __construct(
         private SuperglobalAnalyzer $superglobalAnalyzer,
     ) {}
@@ -45,7 +39,7 @@ final readonly class CommandInjectionDetector
      */
     public function detectInFuncCall(FuncCall $node): array
     {
-        if (!$node->name instanceof Name) {
+        if (!$node->name instanceof Name || $node->isFirstClassCallable()) {
             return [];
         }
 
@@ -56,9 +50,8 @@ final readonly class CommandInjectionDetector
         }
 
         foreach ($node->getArgs() as $arg) {
-            if ($this->superglobalAnalyzer->isUnsanitizedSuperglobal($arg->value, self::COMMAND_SANITIZERS)) {
-                $varName = $this->superglobalAnalyzer->getSuperglobalName($arg->value);
-
+            $varName = $this->superglobalAnalyzer->findSuperglobal($arg->value);
+            if ($varName !== null) {
                 return [
                     new SecurityPatternLocation(
                         type: 'command_injection',
@@ -67,36 +60,30 @@ final readonly class CommandInjectionDetector
                     ),
                 ];
             }
-
-            // Check interpolated strings for unsanitized superglobals
-            if ($arg->value instanceof InterpolatedString) {
-                $varName = $this->superglobalAnalyzer->findSuperglobalInInterpolatedString($arg->value);
-                if ($varName !== null) {
-                    return [
-                        new SecurityPatternLocation(
-                            type: 'command_injection',
-                            line: $node->getStartLine(),
-                            context: "\${$varName} in {$functionName}() call",
-                        ),
-                    ];
-                }
-            }
-
-            // Also check concatenation containing unsanitized superglobal
-            if ($this->superglobalAnalyzer->containsUnsanitizedSuperglobalInExpr($arg->value, self::COMMAND_SANITIZERS)) {
-                $varName = $this->superglobalAnalyzer->findUnsanitizedSuperglobalName($arg->value, self::COMMAND_SANITIZERS);
-                if ($varName !== null) {
-                    return [
-                        new SecurityPatternLocation(
-                            type: 'command_injection',
-                            line: $node->getStartLine(),
-                            context: "\${$varName} in {$functionName}() call",
-                        ),
-                    ];
-                }
-            }
         }
 
         return [];
+    }
+
+    /**
+     * Detect command injection in a backtick command, which PHP runs
+     * exactly like `shell_exec()`.
+     *
+     * @return list<SecurityPatternLocation>
+     */
+    public function detectInShellExec(ShellExec $node): array
+    {
+        $varName = $this->superglobalAnalyzer->findSuperglobal(...$node->parts);
+        if ($varName === null) {
+            return [];
+        }
+
+        return [
+            new SecurityPatternLocation(
+                type: 'command_injection',
+                line: $node->getStartLine(),
+                context: "\${$varName} in backtick command",
+            ),
+        ];
     }
 }

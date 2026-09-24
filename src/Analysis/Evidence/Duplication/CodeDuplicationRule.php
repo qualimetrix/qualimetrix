@@ -21,8 +21,12 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 /**
  * Detects duplicated code blocks across files.
  *
- * Generates one finding per duplicate block, pointing to the primary location.
- * Related locations (other copies) are included in the message.
+ * Generates one finding per copy of a duplicated block, located on that copy
+ * and naming the other copies as its related locations. Each copy has an
+ * identity of its own — see {@see copyOccurrenceKey()} — so a new copy of a
+ * block the detector still finds is a new finding to a baseline, to a
+ * fingerprint-matching consumer and to a git scope alike, and the copies
+ * already there keep theirs.
  */
 final class CodeDuplicationRule extends AbstractRule
 {
@@ -39,6 +43,17 @@ final class CodeDuplicationRule extends AbstractRule
     public const int REMEDIATION_MINUTES = 15;
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
+
+    /**
+     * How many other copies one copy's finding names, in its message and as
+     * its related locations; the message counts the rest. Every copy is
+     * reported by a finding of its own, so a bound here drops no copy from the
+     * report — without it a block copied N times would carry N² related
+     * locations, which a thousand copies turn into a SARIF report that
+     * exhausts memory.
+     */
+    private const int NAMED_COPY_LIMIT = 10;
+
     public function __construct(
         RuleOptionsInterface $options,
         private readonly DuplicationResultProvider $resultProvider,
@@ -65,7 +80,7 @@ final class CodeDuplicationRule extends AbstractRule
         $findings = [];
 
         foreach ($this->resultProvider->all() as $block) {
-            $findings[] = $this->createFinding($context, $block);
+            array_push($findings, ...$this->copyFindings($context, $block));
         }
 
         return $findings;
@@ -77,18 +92,16 @@ final class CodeDuplicationRule extends AbstractRule
     }
 
     /**
-     * `duplication.clone` reports the duplicated block's line
-     * count (`$block->lines` — see the emission above) as `metricValue`,
-     * judged worse the higher it goes:
-     * {@see CodeDuplicationOptions::getSeverity()}'s `$value >=
-     * $this->error` (line 58) / `$value >= $this->warning` (line 62).
-     * Emission itself is unconditional — every `DuplicateBlock` produces a
-     * `Finding` regardless of size (`$severity ?? Severity::Warning` at
-     * line 102 is only ever a fallback) — but that does not change the
-     * direction question: the threshold comparison genuinely gates
-     * *severity*, and severity is monotone in `$block->lines`, so `higher`
-     * is a real fact about the code, not an inference from the channel's
-     * unconditional trigger.
+     * `duplication.clone` reports the lines one copy spans as its
+     * `metricValue`, judged worse the higher it goes:
+     * {@see CodeDuplicationOptions::getSeverity()} compares that number with
+     * `warning` and `error`. Emission itself is unconditional — every copy of
+     * every `DuplicateBlock` produces a `Finding` whatever its size, with
+     * `Severity::Warning` as the fallback below `warning`, which a copy
+     * shorter than `min_lines` in a block admitted by its longest copy
+     * reaches — but the threshold comparison genuinely gates *severity*, and
+     * severity is monotone in the copy's line span, so `higher` is a real
+     * fact about the code.
      *
      * @return array<string, ChannelDeclaration>
      */
@@ -99,51 +112,107 @@ final class CodeDuplicationRule extends AbstractRule
         ];
     }
 
-    private function createFinding(AnalysisContext $context, DuplicateBlock $block): Finding
+    /**
+     * The block's copies are turned into locations once and every finding
+     * shares them rather than building its own.
+     *
+     * A copy's value is the lines that copy spans, not the block's longest
+     * copy: comments and blank lines are no tokens, so one copy can widen
+     * without changing the block, and a value shared by every copy would move
+     * copies in files nobody touched — a baseline would then promote them
+     * past what it accepted. Every copy of an admitted block is reported,
+     * one shorter than `min_lines` too: judged by its own lines, a copy
+     * pasted without its blank lines would be seen nowhere but in the files
+     * it was copied from.
+     *
+     * @return list<Finding>
+     */
+    private function copyFindings(AnalysisContext $context, DuplicateBlock $block): array
     {
-        $primary = $block->primaryLocation();
-        $related = $block->relatedLocations();
-
-        $otherLocations = implode(', ', array_map(
-            static fn($loc) => $loc->toString(),
-            $related,
-        ));
-
-        $hintPart = $block->hint !== null
-            ? \sprintf(': "%s"', $block->hint)
-            : '';
-
-        $message = \sprintf(
-            'Duplicated code block (%d lines, %d occurrences)%s — also at %s',
-            $block->lines,
-            $block->occurrences(),
-            $hintPart,
-            $otherLocations,
-        );
-
         $projectPath = SymbolPath::forProject();
         $subject = MetricSubject::aggregate($projectPath);
-        $severity = $this->getEffectiveSeverity($context, $this->options, $subject, $block->lines);
+        $hintPart = $block->hint !== null ? \sprintf(': "%s"', $block->hint) : '';
 
-        // Build related locations for SARIF support
-        $relatedFindingLocations = array_map(
-            static fn($loc) => new Location($loc->file, $loc->startLine, precise: true),
-            $related,
+        $locations = array_map(
+            static fn(DuplicateLocation $copy): Location => new Location($copy->file, $copy->startLine, precise: true),
+            $block->locations,
         );
 
-        return new Finding(
-            location: new Location($primary->file, $primary->startLine, precise: true),
-            subject: $subject,
-            symbolPath: $projectPath,
-            ruleName: $this->getName(),
-            code: $this->getName(),
-            message: $message,
-            severity: $severity ?? Severity::Warning,
-            metricValue: $block->lines,
-            relatedLocations: $relatedFindingLocations,
-            recommendation: 'Extract duplicated code into a shared method or class.',
-            occurrenceKey: OccurrenceKey::semantic(self::OCCURRENCE_KIND, ['contentHash' => $block->contentHash]),
-        );
+        $findings = [];
+        $copiesInFile = [];
+
+        foreach ($locations as $index => $location) {
+            $copy = $block->locations[$index];
+            $file = $copy->pathString();
+            $lines = $copy->lineCount();
+            $copyInFile = $copiesInFile[$file] = ($copiesInFile[$file] ?? -1) + 1;
+            $named = self::namedOthers($block->occurrences(), $index);
+            $unnamed = $block->occurrences() - 1 - \count($named);
+
+            $findings[] = new Finding(
+                location: $location,
+                subject: $subject,
+                symbolPath: $projectPath,
+                ruleName: $this->getName(),
+                code: $this->getName(),
+                message: \sprintf(
+                    'Duplicated code block (%d lines, %d occurrences)%s — also at %s%s',
+                    $lines,
+                    $block->occurrences(),
+                    $hintPart,
+                    implode(', ', array_map(static fn(int $other): string => $block->locations[$other]->toString(), $named)),
+                    $unnamed > 0 ? \sprintf(' and %d more', $unnamed) : '',
+                ),
+                severity: $this->getEffectiveSeverity($context, $this->options, $subject, $lines) ?? Severity::Warning,
+                metricValue: $lines,
+                relatedLocations: array_map(static fn(int $other): Location => $locations[$other], $named),
+                recommendation: 'Extract duplicated code into a shared method or class.',
+                occurrenceKey: self::copyOccurrenceKey($block->contentHash, $file, $copyInFile),
+            );
+        }
+
+        return $findings;
+    }
+
+    /**
+     * A copy is the block's content, the file holding the copy and the
+     * copy's place among the block's copies in that file, counted in line
+     * order. No line number enters it, so lines added or removed outside the
+     * matched tokens re-key nothing while the detector finds the same block.
+     *
+     * The block is the longest token run all of its copies agree on, and the
+     * match takes in whatever context the copies share around the copied
+     * code. A copy that agrees with only part of the block, an edit inside
+     * one copy, or code inserted between a copy and that shared context
+     * changes the blocks the detector finds: each copy of a new block is a
+     * new finding, in untouched files too, and an entry whose block is gone
+     * goes stale.
+     *
+     * A copy moved to another file, or a file renamed, is a new copy and
+     * leaves a stale one behind; a copy pasted above another in the same file
+     * takes the lower place, and the one it displaced reads as the new copy —
+     * the count of new copies stays right.
+     */
+    private static function copyOccurrenceKey(string $contentHash, string $file, int $copyInFile): OccurrenceKey
+    {
+        return OccurrenceKey::semantic(self::OCCURRENCE_KIND, [
+            'contentHash' => $contentHash,
+            'file' => $file,
+            'copyInFile' => $copyInFile,
+        ]);
+    }
+
+    /**
+     * The first {@see NAMED_COPY_LIMIT} copies other than `$index`, in the
+     * block's order.
+     *
+     * @return list<int>
+     */
+    private static function namedOthers(int $copies, int $index): array
+    {
+        $candidates = range(0, min($copies, self::NAMED_COPY_LIMIT + 1) - 1);
+
+        return \array_slice(array_values(array_diff($candidates, [$index])), 0, self::NAMED_COPY_LIMIT);
     }
 
     /**

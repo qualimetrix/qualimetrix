@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Evidence\DependencyModel;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
@@ -25,10 +26,11 @@ final class DependencyGraph implements DependencyGraphInterface
      * @param array<string, array<Dependency>> $byTarget Dependencies indexed by target canonical key
      * @param array<SymbolPath> $classes All unique class SymbolPaths
      * @param array<SymbolPath> $namespaces All unique namespace SymbolPaths
-     * @param array<string, StringSet> $namespaceCe External classes each namespace depends on
-     * @param array<string, StringSet> $namespaceCa External classes that depend on each namespace
      * @param array<string, int> $classCe Precomputed efferent coupling per class (canonical key -> count)
      * @param array<string, int> $classCa Precomputed afferent coupling per class (canonical key -> count)
+     * @param list<Dependency> $declarationDependencies The declaration edges, including those to PHP's own
+     *                                                  classes. Not derived from `$dependencies`: those have
+     *                                                  already lost every such edge but `extends`
      */
     public function __construct(
         private readonly array $dependencies,
@@ -36,11 +38,27 @@ final class DependencyGraph implements DependencyGraphInterface
         private readonly array $byTarget,
         private readonly array $classes,
         private readonly array $namespaces,
-        private readonly array $namespaceCe,
-        private readonly array $namespaceCa,
+        private readonly NamespaceCouplings $namespaceCouplings,
         private readonly array $classCe,
         private readonly array $classCa,
+        private readonly array $declarationDependencies,
     ) {}
+
+    /**
+     * @param array<Dependency> $dependencies
+     *
+     * @return list<Dependency>
+     */
+    public static function declarationsAmong(array $dependencies): array
+    {
+        return array_values(array_filter(
+            $dependencies,
+            static fn(Dependency $dependency): bool => match ($dependency->type) {
+                DependencyType::Extends, DependencyType::Implements, DependencyType::TraitUse, DependencyType::Attribute => true,
+                default => false,
+            },
+        ));
+    }
 
     public function getClassDependencies(SymbolPath $class): array
     {
@@ -64,12 +82,22 @@ final class DependencyGraph implements DependencyGraphInterface
 
     public function getNamespaceCe(SymbolPath $namespace): int
     {
-        return ($this->namespaceCe[$namespace->toCanonical()] ?? new StringSet())->count();
+        return $this->namespaceCouplings->subtreeCe($namespace);
     }
 
     public function getNamespaceCa(SymbolPath $namespace): int
     {
-        return ($this->namespaceCa[$namespace->toCanonical()] ?? new StringSet())->count();
+        return $this->namespaceCouplings->subtreeCa($namespace);
+    }
+
+    public function getNamespaceOwnCe(SymbolPath $namespace): int
+    {
+        return $this->namespaceCouplings->ownCe($namespace);
+    }
+
+    public function getNamespaceOwnCa(SymbolPath $namespace): int
+    {
+        return $this->namespaceCouplings->ownCa($namespace);
     }
 
     public function getAllClasses(): array
@@ -85,5 +113,10 @@ final class DependencyGraph implements DependencyGraphInterface
     public function getAllDependencies(): array
     {
         return $this->dependencies;
+    }
+
+    public function getDeclarationDependencies(): array
+    {
+        return $this->declarationDependencies;
     }
 }

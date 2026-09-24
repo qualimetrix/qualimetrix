@@ -104,13 +104,34 @@ final class ValueScopeJudgementTest extends TestCase
         self::assertFalse($this->judgement(['src'])->judgesPathValue($this->subtreePath('{legacy}/Gone')));
     }
 
+    /**
+     * A project that declares no production autoload has nothing to locate a
+     * namespace through, even when a development map is at hand: no namespace
+     * value is judged, literal or regex, on a slice or on the whole tree. The
+     * path value beside it keeps its on-disk anchor and stays judged.
+     */
+    #[Test]
+    public function itJudgesNoNamespaceValueWhereTheProjectDeclaresNoAutoload(): void
+    {
+        foreach ([['src'], ['']] as $paths) {
+            $undeclared = $this->judgement($paths, projectDeclared: false);
+
+            self::assertFalse($undeclared->judgesNamespaceValue($this->subtreeNamespace('Acme\\Gone')));
+            self::assertFalse($undeclared->judgesNamespaceValue($this->regexNamespace('Acme\\.*')));
+            self::assertTrue($undeclared->judgesPathValue($this->subtreePath('src/Gone')));
+        }
+
+        self::assertTrue($this->judgement(['src'])->judgesNamespaceValue($this->subtreeNamespace('Acme\\Gone')));
+    }
+
     /** @param list<string> $analyzedPaths relative to the fixture root */
-    private function judgement(array $analyzedPaths): ValueScopeJudgement
+    private function judgement(array $analyzedPaths, bool $projectDeclared = true): ValueScopeJudgement
     {
         return new ValueScopeJudgement(
             $this->root,
             ['Acme\\' => ['src'], 'Acme\Tests\\' => ['tests']],
             array_map(fn(string $path): string => rtrim($this->root . '/' . $path, '/'), $analyzedPaths),
+            $projectDeclared,
         );
     }
 

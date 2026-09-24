@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Integration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
@@ -181,6 +182,10 @@ final class UnmatchedLayerExcludeIntegrationTest extends TestCase
      * configuration error" — it passes the gate under `none` and trips it
      * under `warning`. A validator channel would trip it under both, so it is
      * the pair that carries the proof, not either run alone.
+     *
+     * The exit code is the warning's own, and the finding is the only one at
+     * or above the gate: an exit taken from an unrelated error in the fixture
+     * would pass without this channel reaching the gate at all.
      */
     #[Test]
     public function itFailsTheRunUnderFailOnWarning(): void
@@ -190,7 +195,16 @@ final class UnmatchedLayerExcludeIntegrationTest extends TestCase
             ['--fail-on' => 'warning'],
         );
 
-        self::assertSame(2, $tester->getStatusCode(), 'Findings at or above --fail-on exit 2.');
+        $gating = array_values(array_filter(
+            $this->allFindings($tester),
+            static fn(array $finding): bool => \in_array($finding['severity'] ?? null, ['warning', 'error'], true),
+        ));
+
+        self::assertSame(
+            [LayerViolationRule::UNMATCHED_EXCLUDE_NAME],
+            array_map(static fn(array $finding): mixed => $finding['rule'] ?? null, $gating),
+        );
+        self::assertSame(Severity::Warning->getExitCode(), $tester->getStatusCode(), $tester->getErrorOutput());
     }
 
     /**
@@ -291,21 +305,30 @@ final class UnmatchedLayerExcludeIntegrationTest extends TestCase
      */
     private function findingsOn(CommandTester $tester, string $channel): array
     {
+        return array_values(array_filter(
+            $this->allFindings($tester),
+            static fn(array $violation): bool => ($violation['rule'] ?? null) === $channel,
+        ));
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function allFindings(CommandTester $tester): array
+    {
         $payload = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertIsArray($payload);
         self::assertArrayHasKey('violations', $payload);
         $violations = $payload['violations'];
         self::assertIsList($violations);
 
-        $matched = [];
+        $all = [];
         foreach ($violations as $violation) {
             self::assertIsArray($violation);
-            if (($violation['rule'] ?? null) === $channel) {
-                $matched[] = $violation;
-            }
+            $all[] = $violation;
         }
 
-        return $matched;
+        return $all;
     }
 
     /**

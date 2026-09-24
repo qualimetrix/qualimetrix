@@ -9,17 +9,21 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\ChannelPresentationView;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * `ChannelPresentationView` joins {@see ChannelIdentityInterface::producerOf()}
- * with the producing rule's own {@see RuleMetadata} and its declared
- * documentation page.
+ * with the channel's own declared description, the producing rule's own
+ * {@see RuleMetadata} and its declared documentation page.
  *
  * The `computed.*` / `health.*` description preference is layered on separately by
  * {@see \Qualimetrix\Infrastructure\Rule\ComputedMetricChannelPresentation}
@@ -44,6 +48,39 @@ final class ChannelPresentationViewTest extends TestCase
         self::assertNotNull($presentation);
         self::assertSame('Flags overly complex callables.', $presentation->description);
         self::assertSame('rules/complexity.md', $presentation->docsPage);
+    }
+
+    /**
+     * A channel not named after its producer carries its own description, and
+     * that text — not the producer's — is the channel's display text. The
+     * page stays the producer's: the channel is documented on its producer's
+     * page.
+     */
+    #[Test]
+    public function itPrefersTheChannelsOwnDeclaredDescriptionOverItsProducers(): void
+    {
+        $view = $this->view(
+            producerByCode: [
+                'architecture.layer-violation' => 'architecture.layer-violation',
+                'architecture.doubted-assignment' => 'architecture.layer-violation',
+            ],
+            rules: [$this->rule('architecture.layer-violation', 'Detects forbidden layer dependencies.')],
+            docsPageByRule: ['architecture.layer-violation' => 'rules/architecture.md'],
+            declarationByCode: [
+                'architecture.layer-violation' => ChannelDeclaration::occurrence(SymbolLevel::Class_),
+                'architecture.doubted-assignment' => ChannelDeclaration::occurrence(SymbolLevel::Project)
+                    ->describedAs('Counts assignments in doubt.'),
+            ],
+        );
+
+        $own = $view->presentationFor('architecture.doubted-assignment');
+        self::assertNotNull($own);
+        self::assertSame('Counts assignments in doubt.', $own->description);
+        self::assertSame('rules/architecture.md', $own->docsPage);
+
+        $producers = $view->presentationFor('architecture.layer-violation');
+        self::assertNotNull($producers);
+        self::assertSame('Detects forbidden layer dependencies.', $producers->description);
     }
 
     #[Test]
@@ -98,12 +135,23 @@ final class ChannelPresentationViewTest extends TestCase
      * @param array<string, string> $producerByCode finding code => producing rule name
      * @param list<RuleMetadata> $rules
      * @param array<string, string> $docsPageByRule
+     * @param array<string, ChannelDeclaration> $declarationByCode
      */
-    private function view(array $producerByCode, array $rules, array $docsPageByRule): ChannelPresentationView
-    {
-        $identity = self::createStub(ChannelIdentityInterface::class);
+    private function view(
+        array $producerByCode,
+        array $rules,
+        array $docsPageByRule,
+        array $declarationByCode = [],
+    ): ChannelPresentationView {
+        $identity = self::createStubForIntersectionOfInterfaces([
+            ChannelIdentityInterface::class,
+            ChannelDeclarationRegistryInterface::class,
+        ]);
         $identity->method('producerOf')->willReturnCallback(
             static fn(string $code): ?string => $producerByCode[$code] ?? null,
+        );
+        $identity->method('declarationFor')->willReturnCallback(
+            static fn(FindingChannel $channel): ?ChannelDeclaration => $declarationByCode[$channel->code] ?? null,
         );
 
         $ruleExecution = self::createStub(RuleExecutionInterface::class);

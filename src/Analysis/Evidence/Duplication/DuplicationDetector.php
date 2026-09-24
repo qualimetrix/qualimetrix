@@ -21,11 +21,10 @@ use SplFileInfo;
  *    cannot remove a real repeated hash.
  * 2. {@see retokenizeNeeded()} re-tokenizes only the files that participate
  *    in a hash match
- * 3. {@see DuplicateBlockFinder} verifies token matches, extends blocks,
- *    computes line ranges, and applies the data-table / self-duplication
- *    filters
- * 4. {@see filterAndDeduplicate()} drops blocks shorter than minLines and
- *    removes nested/overlapping blocks
+ * 3. {@see DuplicateBlockFinder} verifies token matches, extends every
+ *    group of copies into one match, computes line ranges, applies the
+ *    data-table / self-duplication / minLines filters, and drops every
+ *    match whose copies all lie inside a longer one
  *
  * Memory optimizations:
  * - Two-pass avoids holding all tokens + full hash index simultaneously
@@ -100,7 +99,7 @@ final class DuplicationDetector implements FileSetInspectionParticipantInterface
 
         $retokenized = $this->retokenizeNeeded($indexResult->ioPaths, $indexResult->neededFileIndices());
 
-        $rawBlocks = $this->blockFinder->find(new DuplicateSearchRequest(
+        $blocks = $this->blockFinder->find(new DuplicateSearchRequest(
             hashIndex: $indexResult->hashIndex,
             retokenized: $retokenized,
             filePaths: $indexResult->filePaths,
@@ -108,10 +107,9 @@ final class DuplicationDetector implements FileSetInspectionParticipantInterface
             minLines: $this->minLines,
         ));
 
-        // Free large structures before dedup sort
         unset($indexResult, $retokenized);
 
-        $this->resultProvider->replace($this->filterAndDeduplicate($rawBlocks));
+        $this->resultProvider->replace($blocks);
     }
 
     private function loadOptions(): void
@@ -145,66 +143,5 @@ final class DuplicationDetector implements FileSetInspectionParticipantInterface
         }
 
         return new RetokenizedFiles($fileTokens, $fileSources);
-    }
-
-    /**
-     * Filters out blocks below thresholds and removes nested/overlapping blocks.
-     *
-     * @param list<DuplicateBlock> $blocks
-     *
-     * @return list<DuplicateBlock>
-     */
-    private function filterAndDeduplicate(array $blocks): array
-    {
-        if ($blocks === []) {
-            return [];
-        }
-
-        // Sort by token count descending (prefer larger blocks)
-        usort($blocks, static fn(DuplicateBlock $a, DuplicateBlock $b) => $b->tokens <=> $a->tokens);
-
-        /** @var array<string, list<array{start: int, end: int}>> $covered file => covered ranges */
-        $covered = [];
-        $result = [];
-
-        foreach ($blocks as $block) {
-            $isSubsumed = true;
-
-            foreach ($block->locations as $loc) {
-                if (!$this->isRangeCovered($covered[$loc->pathString()] ?? [], $loc->startLine, $loc->endLine)) {
-                    $isSubsumed = false;
-
-                    break;
-                }
-            }
-
-            if ($isSubsumed) {
-                continue;
-            }
-
-            $result[] = $block;
-
-            foreach ($block->locations as $loc) {
-                $covered[$loc->pathString()][] = ['start' => $loc->startLine, 'end' => $loc->endLine];
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * Checks if a line range is fully covered by existing ranges.
-     *
-     * @param list<array{start: int, end: int}> $ranges
-     */
-    private function isRangeCovered(array $ranges, int $start, int $end): bool
-    {
-        foreach ($ranges as $range) {
-            if ($range['start'] <= $start && $range['end'] >= $end) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

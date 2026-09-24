@@ -77,7 +77,7 @@ Top issues by impact
          complexity.ccn: Cyclomatic complexity: 13 (threshold: 10) — too many code paths (OrderRepository::findByCriteria)
 82 violations (19 errors, 63 warnings) | Tech debt: 6h 20min (54.3 min/kLOC to fix)
 
-Hints: --detail to see violations (top 200) | --namespace='subtree:App\Billing\Invoice' to drill down | --format=html -o report.html for full report
+Hints: --detail to list violations (up to 200; --detail=all for every one) | --namespace='subtree:App\Billing\Invoice' to drill down | --format=html -o report.html for full report
 Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
@@ -93,6 +93,36 @@ bin/qmx check src/ --namespace='subtree:App\Service'
 bin/qmx check src/ --class=App\\Service\\UserService
 ```
 
+A drill-down narrows what the report shows, not what decides the exit code.
+The finding-count line therefore speaks about the selection ("… in this
+scope"), names the violations outside it that decide the exit code, and takes
+its colour from the whole run: a clean subtree of a failing project prints
+`No violations in this scope. 9 outside it (5 errors, 4 warnings) decide the exit code`,
+never a green `No violations found.`. `--format=text` does the same in its
+closing summary line.
+
+The structured formats list only the selection too, and each says what it left
+out in the channel it already uses for diagnostics about the document itself.
+A format with no such channel refuses the selection instead:
+
+| Format       | What the selection left out                                                                                     |
+| ------------ | --------------------------------------------------------------------------------------------------------------- |
+| `json`       | Top-level `outOfScope` object: `violationCount`, `errorCount`, `warningCount`, `infoCount`                      |
+| `metrics`    | Top-level `outOfScope` object: `violations`, `errors`, `warnings`, `info`                                       |
+| `sarif`      | A `note` in `runs[0].invocations[0].toolExecutionNotifications[]` with descriptor `QMX-DRILL-DOWN-OUT-OF-SCOPE` |
+| `gitlab`     | Refused with exit 3 before the analysis: the merge-request widget counts every entry as an issue                |
+| `checkstyle` | Refused with exit 3 before the analysis: a Checkstyle reader counts every entry as an error                     |
+| `github`     | A `::notice title=drill-down.out-of-scope::` line                                                               |
+| `html`       | A banner above the report                                                                                       |
+| `suppressed` | Nothing: its document is the run's suppression composition, which a selection does not narrow                   |
+
+`json` and `metrics` carry `outOfScope` in every document: `null` without a
+selection, and zero counts when the selection left nothing out. `sarif`,
+`github` and `html` add their entry only when something lies outside the
+selection. The
+exit code is resolved over the selection and `outOfScope` together, so a clean
+selection can exit 2.
+
 **Detail mode with `--detail`:**
 
 ```bash
@@ -105,6 +135,13 @@ bin/qmx check src/ --detail=all
 # Custom limit
 bin/qmx check src/ --detail=50
 ```
+
+`--detail` switches the violation list on, with an optional cap; it does not
+rank. `--detail=N` lists the first N violations in the order the list is printed
+(by file, unless `--group-by` says otherwise), so they are always the first N
+that `--detail=all` would print. `--detail=0` is the same as `--detail=all`. Any
+other value (`--detail=abc`, `--detail=-1`) is refused with exit code 3 before
+the analysis runs. The ranked `Top issues by impact` section is `--top`'s.
 
 !!! note
     `--detail` is auto-enabled when using `--namespace` or `--class`. It also works with `--format=text` to append a grouped violation list after the one-line-per-violation output.
@@ -120,15 +157,14 @@ Compact, one-line-per-violation output. Compatible with GCC/Clang error format, 
 **Example output:**
 
 ```
-src/Repository/OrderRepository.php: error[coupling.class-rank]: ClassRank is 0.5000, exceeds threshold of 0.3536 (scaled for 2 classes). This class is a critical hub — changes have wide impact (OrderRepository)
-src/Service/UserService.php: error[coupling.class-rank]: ClassRank is 0.5000, exceeds threshold of 0.3536 (scaled for 2 classes). This class is a critical hub — changes have wide impact (UserService)
+src/Repository/OrderRepository.php: error[coupling.class-rank]: ClassRank is 0.6491, exceeds threshold of 0.3536 (scaled for 2 classes). This class is a critical hub — changes have wide impact (OrderRepository)
 src/Repository/OrderRepository.php: warning[complexity.ccn]: Cyclomatic complexity is 10, exceeds threshold of 10. Consider extracting methods or simplifying conditions (OrderRepository::findByCriteria)
 src/Service/UserService.php:9: warning[code-smell.error-suppression]: Error suppression (@) on file_get_contents() - handle errors explicitly
 src/Service/UserService.php: warning[complexity.ccn]: Cyclomatic complexity is 14, exceeds threshold of 10. Consider extracting methods or simplifying conditions (UserService::calculate)
 
-Qualimetrix 0.26.0: 2 error(s), 3 warning(s) in 2 file(s)
+Qualimetrix 0.26.0: 1 error(s), 3 warning(s) in 2 file(s)
 Analysis complete: 2 analyzed, 0 generated file(s) excluded.
-Technical debt: 2h 10min
+Technical debt: 1h 40min
 Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
@@ -163,7 +199,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
 
 **When to use:** Custom scripts, dashboards, programmatic processing.
 
-**Top-level keys:** `meta`, `summary`, `coverage`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, plus `violationGroups` when `--group-by` is passed — without it, the key is absent entirely, not an empty object.
+**Top-level keys:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (see [Project scope in every format](#project-scope-in-every-format)), `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, plus `violationGroups` when `--group-by` is passed — without it, the key is absent entirely, not an empty object.
 
 `meta` identifies the tool that wrote the document: `version`, `package`, `timestamp`, and two documentation addresses — `docs`, the documentation site, and `llmsTxt`, the index written for AI agents. Every JSON report with an envelope object carries the same two addresses; see the exceptions in [Documentation addresses in JSON reports](#documentation-addresses).
 
@@ -190,6 +226,8 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
         "techDebtMinutes": 270,
         "debtPer1kLoc": 2.1
     },
+    "outOfScope": null,
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
     "health": {
         "complexity": {
             "score": 78.0,
@@ -270,6 +308,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
             "rule": "complexity.ccn",
             "severity": "error",
             "message": "Cyclomatic complexity: 15 (threshold: 10) — too many code paths",
+            "recommendation": null,
             "impactScore": 3.71,
             "coupling.class-rank": 0.1237,
             "debtMinutes": 30
@@ -337,7 +376,27 @@ whatever the rule would otherwise have reported.
 `violationsMeta`
 also reports `shown` — the number of violations actually included in this
 payload, which can be lower than `total` when `--format-opt=violations=N`
-truncates the list.
+truncates the list. A truncated list is the first N in the identity order
+described below.
+
+`message` and `recommendation` mean the same in `violations` and in
+`topIssues`: the finding's message, and its recommendation or `null`. Under
+`--namespace`/`--class` the `summary` object keeps all its keys and counts only
+the selection; `debtPer1kLoc` is `null` there, because the selection's debt
+over the whole project's lines would mix two scopes. The findings the
+selection left out are counted in `outOfScope`, which is `null` without a
+selection, as the drill-down table under `summary` above shows for every format.
+
+When a symbol name from the analysed source is not valid UTF-8 (the parser
+accepts any byte above 0x7F in an identifier), each invalid byte is published
+as U+FFFD and the document gains a top-level `invalidUtf8Replaced` key counting
+the repaired strings. `metrics`, `suppressed` and the `html` payload do the
+same; `sarif` reports it as a `QMX-PUBLICATION-INVALID-UTF8` tool notification,
+`gitlab` as a `publication.invalid-utf8` issue, and `checkstyle` as an error
+under the synthetic file `[publication]`. A file path that is not valid UTF-8
+is repaired and reported the same way; `sarif` repairs it before
+percent-encoding it, so the artifact URI carries `%EF%BF%BD` and never a bare
+`%FF`.
 
 For machine identity, use `channel + subject + optional occurrence + optional
 edge`. `symbol` is the logical display projection; source line, message, and
@@ -353,7 +412,7 @@ unchanged.
 
 When using `--group-by=class` or `--group-by=namespace`, violations are organized into a `violationGroups` object. Each group is `{count, violations}` — a violation count and the violations array; it does not carry its own `errorCount`, `warningCount`, or `violationDensity`.
 
-The group keys are not always a class FQCN or namespace. For `--group-by=class`: the key is the class FQCN for a class-scoped finding, the file path for a file-level finding with no class context, and an empty string `""` for a project-level finding (which has neither a class nor a file). For `--group-by=namespace`: the key is the namespace for a namespaced class, `<global>` for a class with no namespace, and `__PROJECT__` for a project-level finding.
+The group keys are not always a class FQCN or namespace. For `--group-by=class`: the key is the class FQCN for a class-scoped finding, the file path for a file-level finding with no class context, and an empty string `""` for a project-level finding (which has neither a class nor a file). For `--group-by=namespace`: the key is the namespace for a namespaced class, `<global>` for a class with no namespace, and `(project)` for a project-level finding.
 
 <!-- llms:skip-begin -->
 ```json
@@ -376,7 +435,18 @@ bin/qmx check src/ --format=json --format-opt=violations=50
 
 # Control number of worst offenders (default: 10)
 bin/qmx check src/ --format=json --format-opt=top=20
+```
 
+Every `--format-opt` value is parsed before the analysis runs, by one grammar
+per key whichever format reads it: `violations` and `limit` take a whole number
+or `all`, `top` a whole number of 1 or more, `contributors` a whole number,
+`rank-by` `count` or `density`, `project-name` a non-empty name. A value that
+does not parse is refused with exit code 3 instead of falling back to a
+default. `violations` and `limit` bound the same list — `violations=0` shows
+none, `limit=0` shows all — so writing both, or `limit` beside `--all`, is
+refused with exit code 3 rather than one of them being ignored.
+
+```bash
 # Group violations by class or namespace
 bin/qmx check src/ --format=json --group-by=class
 bin/qmx check src/ --format=json --group-by=namespace
@@ -396,7 +466,7 @@ Raw metric values for every symbol (file, class, namespace, method, function, pr
 
 **When to use:** Custom dashboards, trend analysis, data science pipelines, or building your own quality gates on raw metrics.
 
-**Top-level keys:** `version`, `toolVersion`, `package`, `timestamp`, `docs`, `llmsTxt`, `symbols[]` (each with `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`. There is no `callable` type; a single `project` entry aggregates project-wide statistical metrics (min/max/avg/p95 across all symbols) and has a `null` `line`. Here `version` is the version of this export format and `toolVersion` the version of Qualimetrix; `docs` and `llmsTxt` are the documentation addresses `json` carries in its `meta`.
+**Top-level keys:** `version`, `toolVersion`, `package`, `timestamp`, `docs`, `llmsTxt`, `symbols[]` (each with `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `outOfScope`, `projectScope`, `coverage`, `summary`. Under `--namespace`/`--class` the `summary` counts only the selection and `outOfScope` counts what it left out; `symbols[]` is never narrowed. There is no `callable` type; a single `project` entry aggregates project-wide statistical metrics (min/max/avg/p95 across all symbols) and has a `null` `line`. Here `version` is the version of this export format and `toolVersion` the version of Qualimetrix; `docs` and `llmsTxt` are the documentation addresses `json` carries in its `meta`.
 
 <!-- llms:skip-begin -->
 **Example output (abbreviated):**
@@ -450,6 +520,7 @@ Raw metric values for every symbol (file, class, namespace, method, function, pr
             }
         }
     ],
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
     "summary": {
         "filesAnalyzed": 45,
         "filesSkipped": 0,
@@ -458,7 +529,8 @@ Raw metric values for every symbol (file, class, namespace, method, function, pr
         "errors": 2,
         "warnings": 1,
         "info": 0
-    }
+    },
+    "outOfScope": null
 }
 ```
 <!-- llms:skip-end -->
@@ -472,6 +544,9 @@ bin/qmx check src/ --format=metrics --no-progress > metrics.json
 !!! note
     The `metrics` format exports **all collected metrics**, not just those that triggered violations. This makes it useful for tracking metric trends over time, even for code that passes all rules.
 
+!!! info "Line counts at namespace and project level measure different lines"
+    `size.loc`, `size.lloc` and `size.cloc` count different populations at the two aggregate levels. A namespace counts the lines inside its `namespace` statement; the project counts every analysed file in full, including the opening tag, file header comments and `declare` above the namespace. The project's `size.loc.sum` is therefore larger than the sum of the namespaces' `size.loc`, and it is not a rounding or aggregation error. Within the namespace tree the sums do add up: a namespace's `size.loc.sum` equals its own `size.loc` plus its children's `size.loc.sum`.
+
 ---
 
 ## checkstyle
@@ -481,6 +556,10 @@ Checkstyle XML format. Widely supported by CI tools.
 **When to use:** Jenkins, SonarQube, or any tool that accepts Checkstyle XML.
 
 Checkstyle 3.0 XML: `<file name="...">` with nested `<error line="" severity="error|warning|info" message="" source="qmx.<rule>"/>`.
+
+A `--namespace`/`--class` selection is refused with this format (exit 3): every
+`<error>` is an error to its reader, so nothing could say the report lists only
+part of the run.
 
 <!-- llms:skip-begin -->
 **Example output:**
@@ -518,7 +597,7 @@ SARIF (Static Analysis Results Interchange Format) 2.1.0. A standard for static 
 
 SARIF 2.1.0 spec — `runs[].results[]` entries with `ruleId`, `ruleIndex` (position of the rule in `tool.driver.rules`), `level` (error/warning/note), `message.text`, `partialFingerprints.primaryLocationLineHash`, and `locations[].physicalLocation.{artifactLocation.{uri,uriBaseId}, region.{startLine,startColumn}}`. `locations` is not present on every result: a project-level finding with no source position (e.g. `architecture.unreachable-layer`) has no `locations` array at all.
 
-`runs[].invocations[0]` reports `executionSuccessful` (see the coverage table below), and `runs[].originalUriBaseIds` declares the `%SRCROOT%` base referenced by every `artifactLocation.uriBaseId`, resolving it to the analyzed project root as a `file://` URI.
+`runs[].invocations[0]` reports `executionSuccessful` (see the coverage table below), and `runs[].originalUriBaseIds` declares the `%SRCROOT%` base referenced by every `artifactLocation.uriBaseId`, resolving it to the analyzed project root as a `file://` URI. Every `artifactLocation.uri` is a percent-encoded relative reference (a space is `%20`, `#` is `%23`), encoded the same way as that base. A related location without a file carries its `message` and no `physicalLocation`.
 
 `runs[].tool.driver` describes the tool itself: `name`, `version`,
 `informationUri` (the documentation site, `https://qualimetrix.dev`), a
@@ -617,6 +696,10 @@ GitLab Code Quality JSON format. Shows violations directly in Merge Request diff
 
 Array of objects with `description`, `check_name`, `fingerprint`, `severity` (critical/major/info), `location.{path,lines.begin}`. Severity mapping: error → critical, warning → major, info → info.
 
+A `--namespace`/`--class` selection is refused with this format (exit 3): every
+entry is an issue in the merge-request widget, so nothing could say the report
+lists only part of the run.
+
 <!-- llms:skip-begin -->
 **Example output (abbreviated):**
 
@@ -702,6 +785,7 @@ Text table of health scores for terminal output. Shows each dimension with its s
 - Status labels with color coding (green/yellow/red)
 - Threshold visibility (warning and error levels)
 - Decomposition breakdown for each dimension
+- A `Coverage` column, and one `Computed over N of M ...` line per dimension in the decomposition — the share of the subject that score speaks for (see [What a Score Covers](../reference/health-scores.md#what-a-score-covers))
 - Supports `--namespace` and `--class` drill-down
 
 **Worst contributors per dimension:**
@@ -733,6 +817,9 @@ Interactive treemap report with D3.js visualization. Generates a self-contained 
 - Color-coded health scores per node
 - Click to drill down into namespaces
 - Detail panel with metrics, violations, and decomposition
+- Health coverage beside each project health bar (`n/a` when coverage is undefined), from the `summary.healthCoverage` object the payload carries next to `summary.healthScores`
+- Every violation of the report sits on a node of the tree, so the tree's counts agree with `summary.totalViolations`: a violation with no class or namespace node of its own — a project-level finding, a file-level one in a file that declares no class or several, a global function outside any namespace — is listed on the project root
+- The report is named after the analysed project: `--format-opt=project-name=...`, else the `name` in its `composer.json`, else its directory name
 - Self-contained single HTML file (no external dependencies)
 
 **Usage:**
@@ -800,9 +887,19 @@ deleted file is indistinguishable from one that was never written.
 
 `meta` is the same block `json` carries, including `docs` and `llmsTxt`.
 
-**Top-level keys:** `meta`, `note`, `mechanisms` (all seven, always present),
-`byMechanism` (count per mechanism, including zero), `suppressed` (the
-multiset), `neverMatched`.
+**Top-level keys:** `meta`, `note`, `coverage` (the same object `json`
+carries, so an audit of an incomplete run says so), `projectScope` (the same
+object `json` carries, so an audit of a narrowed run names the suppression
+channels it did not judge), `mechanisms` (all seven,
+always present), `byMechanism` (count per mechanism, including zero),
+`suppressed` (the multiset), `neverMatched`.
+
+Each `suppressed` entry carries the identity `json` publishes — `channel`
+(here the finding's code), `subject`, `occurrence`, `edge` — so it can be
+joined to a `json` record by machine, and the finding's `message` and
+`recommendation` under the same keys as `json`. It does not carry `metricValue`,
+`threshold`, `techDebtMinutes` or `acceptedLevel`: the format audits what held
+a finding back, and the identity leads to the finding's own record.
 
 <!-- llms:skip-begin -->
 **Example output (abbreviated, from this project's own self-analysis):**
@@ -817,6 +914,15 @@ multiset), `neverMatched`.
         "llmsTxt": "https://qualimetrix.dev/llms.txt"
     },
     "note": "suppressed is a multiset of mechanism x finding, not a set of findings: one finding can appear under more than one mechanism, so byMechanism counts do not sum to the number of distinct findings suppressed.",
+    "coverage": {
+        "complete": true,
+        "discovered": 1204,
+        "analyzed": 1204,
+        "generatedExcluded": 0,
+        "failed": 0,
+        "failures": []
+    },
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
     "mechanisms": [
         "suppression",
         "path-suppression",
@@ -841,22 +947,30 @@ multiset), `neverMatched`.
             "suppressor": "src/Infrastructure/Ast/CachedFileParser.php:15",
             "rule": "code-smell.empty-catch",
             "channel": "code-smell.empty-catch",
+            "subject": "aggregate:file:src/Infrastructure/Ast/CachedFileParser.php",
+            "occurrence": "6f1c0e9b2a4d7e35",
+            "edge": null,
             "file": "src/Infrastructure/Ast/CachedFileParser.php",
             "line": 73,
             "symbol": "src/Infrastructure/Ast/CachedFileParser.php",
             "severity": "error",
-            "message": "Log the exception or add a comment explaining why it is safe to ignore."
+            "message": "Empty catch block detected - exceptions should not be silently ignored",
+            "recommendation": "Log or rethrow the exception, or handle it explicitly. A comment alone does not clear this finding; suppress an intentional ignore with `@qmx-ignore code-smell.empty-catch` and a reason."
         },
         {
             "mechanism": "rule-path-suppression",
             "suppressor": "code-smell.constructor-overinjection",
             "rule": "code-smell.constructor-overinjection",
             "channel": "code-smell.constructor-overinjection",
+            "subject": "declaration:callable:Qualimetrix\\Analysis\\Run\\Contract\\Collection\\SuccessfulFileProcessing::__construct@src/Analysis/Run/Contract/Collection/SuccessfulFileProcessing.php",
+            "occurrence": null,
+            "edge": null,
             "file": "src/Analysis/Run/Contract/Collection/SuccessfulFileProcessing.php",
             "line": 28,
             "symbol": "Qualimetrix\\Analysis\\Run\\Contract\\Collection\\SuccessfulFileProcessing::__construct",
             "severity": "warning",
-            "message": "Constructor parameters: 8 (threshold: 8) — consider splitting responsibilities"
+            "message": "Constructor of SuccessfulFileProcessing has 8 parameters (threshold 8). Consider using a parameter object or splitting responsibilities",
+            "recommendation": "Constructor parameters: 8 (threshold: 8) — consider splitting responsibilities"
         }
     ],
     "neverMatched": [
@@ -909,15 +1023,23 @@ format, not the tool's) the way `metrics` keeps its own.
 
 Not every JSON output carries the addresses. `gitlab` is a bare array with no
 object to hold them; `graph:export`'s DOT output has no envelope at all; a
-refusal is always exactly `{"error": ..., "exit_code": ...}`; and the baseline
+refusal is always exactly `{"error": ..., "exit_code": ..., "position": ...}`,
+`position` being `null` unless the refusal was raised at a place in a
+configuration document — a command-line value, a whole file and a merged value
+such as `memory_limit: 010M` carry `null` even when the message names the key.
+When present, `position` locates the refused spot as the check found it: for a
+required key that was left out, `path` ends at that key and `written` names it;
+and the baseline
 file — written by `baseline:generate`, `update`, `cleanup`, and rewritten in
 place by `baseline:rename-channels` — is a versioned input artifact the tool
 reads back, with its own schema, not a report.
 
 ## Analysis coverage in every format
 
-Every discovered PHP file is classified as analyzed, intentionally excluded as
-generated, or failed during parsing/processing. Generated exclusions are a
+Every discovered entry is classified as analyzed, intentionally excluded as
+generated, or failed. An entry is a PHP file the run measured, a PHP file it
+could not read, or a filesystem entry it never opened at all — a directory it
+may not list, a link it does not descend into. Generated exclusions are a
 complete run; any failure makes the analysis incomplete and the policy result
 non-authoritative. Zero discovered files still pass through the selected
 formatter instead of being replaced with command prose.
@@ -935,11 +1057,91 @@ formatter instead of being replaced with command prose.
 | `checkstyle`   | Failed files are errors under synthetic file `[analysis]`, with source `qmx.analysis.<kind>`                   |
 | `github`       | One `::error` annotation per failed file; complete zero-finding runs emit no annotation                        |
 | `html`         | Embedded `coverage` data; incomplete runs also show a visible warning banner                                   |
-| `suppressed`   | Not represented — this format publishes a suppression composition, not a `coverage` object                     |
+| `suppressed`   | Top-level `coverage` object: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `failed`, `failures[]` |
 
-For `json` and `metrics`, each `failures[]` item has `path`, `kind` (`parse` or
-`processing`), and `message`. Human formats distinguish no discovered files,
-generated-only input, complete analysis, and incomplete analysis.
+For `json` and `metrics`, each `failures[]` item has `path`, `kind`, and
+`message`. Human formats distinguish no discovered files, generated-only input,
+complete analysis, and incomplete analysis.
+
+`kind` is one of five values:
+
+| `kind`                 | The entry                                                                                            |
+| ---------------------- | ---------------------------------------------------------------------------------------------------- |
+| `parse`                | a PHP file that could not be parsed                                                                  |
+| `processing`           | a PHP file that failed while being measured                                                          |
+| `directory-symlink`    | a symbolic link to a directory, found inside a scanned tree and not followed                         |
+| `not-regular-file`     | a `*.php` entry that is not a regular file — a FIFO, a socket, a device, a link whose target is gone |
+| `unreadable-directory` | a directory the process may not list                                                                 |
+
+The last three name an entry that never became a unit of analysis, so they carry
+the path of that entry rather than of a PHP file. Treat a value you do not
+recognize as an entry the run did not read: the list can grow, and refusing the
+whole document to learn that is a worse trade than reporting the run as
+incomplete.
+
+## Project scope in every format {#project-scope-in-every-format}
+
+Some channels say that a configured value matches nothing in the project — a
+layer no class belongs to, an `exclude:` that removed no directory, a
+suppression that names nothing. A run over part of the project cannot say
+that about code it did not analyse, so those channels speak only when the
+analysed paths cover everything `composer.json` declares under `autoload`
+(and under `autoload-dev` with
+[`--include-autoload-dev`](cli-options.md#--include-autoload-dev)). The report
+says which of three states the run was in:
+
+| State      | When                                                                                                                       | Whole-project channels                                                                                                               |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `covered`  | the analysed paths contain every declared autoload target                                                                  | judged                                                                                                                               |
+| `narrowed` | some declared target lies outside the analysed paths                                                                       | not judged; the report names them and the targets left out                                                                           |
+| `unknown`  | `composer.json` is missing, does not parse, or declares no production autoload outside `vendor`, `node_modules` and `.git` | judged, taking the analysed paths as the whole project — except namespace values of the suppression channels, which the report names |
+
+The channels judged only on a whole-project run are
+`architecture.unreachable-layer`, `architecture.empty-template`,
+`architecture.unmatched-exclude`, `coupling.unmatched-framework-namespace`,
+`discovery.unmatched-exclude`, `suppression.unmatched-path`,
+`suppression.unmatched-namespace` and `suppression.unmatched-rule-ledger`. A
+narrowed report lists all of them, whether or not this run enabled them.
+
+`covered` is a statement about the autoload targets, not about every configured
+value. The suppression channels also judge each value against the place it
+names, and a value naming a place outside the analysed paths is skipped:
+`suppress_paths: [{subtree: tests/Legacy}]` on `qmx check src/`, with `tests/`
+declared only under `autoload-dev`, is not judged on that `covered` run. The
+report names every skipped value in `unjudgedValues`, and its channel in
+`unjudgedChannels`, so "judged and bound" and "not looked at" read differently.
+See [Suppression rules](../rules/suppression.md#scope-and-severity).
+
+On an `unknown` project, run the check over all of its code: a narrower run
+there is judged as if it were the whole project, and a layer whose classes lie
+outside the paths you named is reported as matching nothing. Namespace values
+of the global `suppress_namespaces` and of per-rule `suppress_namespaces` and
+`suppress_namespace_channels` are the exception: with no declared autoload a namespace
+has no location, so they are not judged on any run of such a project, and the
+report lists each such value in `unjudgedValues` and its channel —
+`suppression.unmatched-namespace` or `suppression.unmatched-rule-ledger` — in
+`unjudgedChannels`.
+
+| Format                                      | Project scope representation                                                                                                       |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `json`, `metrics`, `suppressed`             | Top-level `projectScope` object in every document: `state`, `uncoveredAutoloadTargets[]`, `unjudgedChannels[]`, `unjudgedValues[]` |
+| `sarif`                                     | A `note` in `runs[0].invocations[0].toolExecutionNotifications[]` with descriptor `QMX-RUN-PROJECT-SCOPE`                          |
+| `github`                                    | A `::notice title=run.project-scope::` line                                                                                        |
+| `html`                                      | A banner above the report                                                                                                          |
+| `summary`, `text`, `text-verbose`, `health` | A `Project scope …` line beside the coverage sentence                                                                              |
+| `gitlab`, `checkstyle`                      | Nothing: their consumers count every entry as a finding, and narrowing the run is not a defect of it                               |
+
+`projectScope` has the same keys in every state. `uncoveredAutoloadTargets`
+is empty unless the state is `narrowed`. `unjudgedValues` lists every
+configured suppression value a `covered` or `unknown` run skipped, each as
+`{"option", "pattern"}` — `option` is `suppress_paths`, `suppress_namespaces`
+or `rules.<rule>.<option>`, the key to look under, and `pattern` the authored
+selector (`subtree:tests/Legacy`). `unjudgedChannels` names every
+whole-project channel for `narrowed`, where no value was judged and
+`unjudgedValues` is empty, and otherwise the channels of the skipped values.
+Every other format adds its entry for `narrowed`, for `unknown`, and for a
+`covered` run that skipped a value. The console also prints a warning on
+stderr naming the autoload targets a narrowed run left out.
 
 ## Comparison table
 
@@ -971,6 +1173,10 @@ All formats use the same exit codes:
 | 4         | Analysis incomplete; policy result is not authoritative               |
 
 By default (`--fail-on=error`), warnings no longer cause exit code 1 — only errors trigger a non-zero exit. Use `--fail-on=warning` for the stricter behavior where warnings also fail. Exit 4 takes precedence over warning/error policy codes.
+
+A run is incomplete when it could not read part of the tree it was pointed at: a file it failed to parse, a directory it may not list, a symbolic link to a directory found inside the tree, or a `*.php` entry that is not a regular file. Such an entry used to be dropped silently, so these runs used to answer 0 or 2.
+
+A symbolic link **named as a scanned path** is the one exception: `qmx check src/linked` analyzes what the link points at and the run is complete, while the same link met while walking `src/` is reported as an entry that was not read. Naming a path is a request to analyze what is behind it; a link met inside a tree was never asked for, and following it would change which files the run measures, could leave the project root, and would not terminate on a cycle.
 
 !!! note
     All `check` diagnostics outside the selected report payload (configuration notices and errors, deprecation messages, logging, and output-file notices) are written to **stderr**, not stdout. This means you can safely pipe the analysis output to a file or another tool without interference: `bin/qmx check src/ --format=json > results.json`.

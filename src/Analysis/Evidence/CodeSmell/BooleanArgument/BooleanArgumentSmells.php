@@ -9,6 +9,7 @@ use PhpParser\Node;
 use PhpParser\Node\Expr\ArrowFunction;
 use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\Expr\Variable;
+use PhpParser\Node\Param;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Function_;
 use Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellLocation;
@@ -22,12 +23,16 @@ final class BooleanArgumentSmells
         $locations = [];
         foreach ($node->params as $parameter) {
             if ($parameter->type !== null && $this->isBoolType($parameter->type)) {
-                $name = $parameter->var instanceof Variable && \is_string($parameter->var->name) ? $parameter->var->name : '?';
-                $locations[] = new CodeSmellLocation('boolean_argument', $parameter->getStartLine(), $parameter->getStartTokenPos(), $subjectId, $name, $parameter->flags !== 0);
+                $locations[] = new CodeSmellLocation('boolean_argument', $parameter->getStartLine(), $parameter->getStartTokenPos(), $subjectId, self::name($parameter), $parameter->flags !== 0);
             }
         }
 
         return $locations;
+    }
+
+    private static function name(Param $parameter): string
+    {
+        return $parameter->var instanceof Variable && \is_string($parameter->var->name) ? $parameter->var->name : '?';
     }
 
     private function isBoolType(Node $type): bool

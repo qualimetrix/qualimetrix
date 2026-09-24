@@ -22,6 +22,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleShapeReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader;
+use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -32,8 +33,8 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * service and injects it into {@see ChannelUniverse}. Also builds the rule
  * name => documentation page map and injects it into
  * {@see ChannelPresentationView}, the composing service that joins a
- * channel's producer to that producer's own description and declared page,
- * and the rule name => remediation minutes map into
+ * channel to its display text and to its producer's declared page, and the
+ * rule name => remediation minutes map into
  * {@see RemediationTimeRegistry}, which no longer keeps that fact itself.
  *
  * Six facts are read off each rule class, none of which instantiates it: its
@@ -69,7 +70,8 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * (the channel's own name, per {@see ChannelDeclarationReader}), so this pass
  * does no pairing of its own. It enforces two integrity properties instead:
  * no key declared twice, and no finding code declared by two different
- * producers. The second is what makes the reverse lookup
+ * producers. It also refuses a channel whose display text would be wrong or
+ * ambiguous ({@see assertDescribedOnce()}). The second is what makes the reverse lookup
  * ({@see \Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface::producerOf()})
  * a function at all — without it, a "did you mean" answer would depend on
  * service iteration order.
@@ -129,14 +131,22 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * "rule metadata" read, cutting this file's own efferent count rather than
  * moving the read elsewhere; no such step is planned.
  */
-final class ChannelDeclarationCompilerPass implements CompilerPassInterface
+final class ChannelDeclarationCompilerPass implements CompilerPassInterface, ConsumerBoundPassInterface
 {
     private const string RULE_INTERFACE = 'Qualimetrix\\Analysis\\Finding\\Rule\\RuleInterface';
 
     private const string VALIDATOR_INTERFACE = 'Qualimetrix\\Analysis\\Finding\\Contract\\ConfigurationValidatorInterface';
 
-    /** Named by literal, not imported: it is a Finding internal, as in {@see RuleCompilerPass}. */
-    private const string RULE_EXECUTION = 'Qualimetrix\\Analysis\\Finding\\RuleExecution';
+    public static function consumerServiceIds(): array
+    {
+        return [
+            ChannelUniverse::class,
+            KnownRuleNamesAdapter::class,
+            RuleExecution::class,
+            ChannelPresentationView::class,
+            RemediationTimeRegistry::class,
+        ];
+    }
 
     public function process(ContainerBuilder $container): void
     {
@@ -184,8 +194,8 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
                 ->setArgument('$ruleNames', array_keys($thresholdOverrideSupport));
         }
 
-        if ($container->hasDefinition(self::RULE_EXECUTION)) {
-            $container->getDefinition(self::RULE_EXECUTION)
+        if ($container->hasDefinition(RuleExecution::class)) {
+            $container->getDefinition(RuleExecution::class)
                 ->setArgument('$classlessProducers', $classlessProducers);
         }
 
@@ -485,6 +495,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
 
             JudgedMetricDeclarationGuard::assertDeclarable($key, $class, $producerRuleName, $shapeByRule[$producerRuleName], $declaration);
             $this->assertShapeAgreesWithDirection($key, $class, $producerRuleName, $shapeByRule[$producerRuleName], $declaration);
+            self::assertDescribedOnce($key, $class, $producerRuleName, $declaration);
 
             $channel = new FindingChannel($key);
             $code = $channel->code;
@@ -595,6 +606,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
             $this->assertUnclaimed($key, $class, $declarations, $producerByCode, $producerRuleName);
             JudgedMetricDeclarationGuard::assertDeclarable($key, $class, $producerRuleName, $shape, $declaration);
             $this->assertShapeAgreesWithDirection($key, $class, $producerRuleName, $shape, $declaration);
+            self::assertDescribedOnce($key, $class, $producerRuleName, $declaration);
 
             $channel = new FindingChannel($key);
             $minutesByRule[$channel->code] ??= $minutesByRule[$producerRuleName];
@@ -632,6 +644,49 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
                 $channelIsMagnitude ? 'a direction' : 'no direction',
                 $producerRuleName,
                 $declaredShape->value,
+            ));
+        }
+    }
+
+    /**
+     * Exactly one description reaches a channel's display text (ADR 0081).
+     *
+     * The channel named after its producer is described by the producer's own
+     * `getDescription()`, so it may not declare a second text beside it. Every
+     * other channel must declare its own: the producer's text describes the
+     * producer, and published under another channel's name it would describe
+     * the wrong finding — as it did for every `architecture.*` diagnostic in
+     * SARIF, where each carried the description of forbidden layer
+     * dependencies.
+     *
+     * @param class-string $class
+     */
+    private static function assertDescribedOnce(
+        string $key,
+        string $class,
+        string $producerRuleName,
+        ChannelDeclaration $declaration,
+    ): void {
+        $isNamedAfterProducer = $key === $producerRuleName;
+
+        if (!$isNamedAfterProducer && $declaration->description === null) {
+            throw new LogicException(\sprintf(
+                'Channel "%s" declared by %s is not named after its producer "%s" and declares no description.'
+                . ' The producer\'s own description would be published for it; state what the channel reports'
+                . ' with ChannelDeclaration::describedAs().',
+                $key,
+                $class,
+                $producerRuleName,
+            ));
+        }
+
+        if ($isNamedAfterProducer && $declaration->description !== null) {
+            throw new LogicException(\sprintf(
+                'Channel "%s" declared by %s is named after its producer, which describes it through'
+                . ' getDescription(); a description declared on the channel as well would be a second text'
+                . ' with no rule about which one is published.',
+                $key,
+                $class,
             ));
         }
     }

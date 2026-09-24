@@ -61,16 +61,35 @@ final readonly class RuleOptionShape
         return new self(RuleOptionValueForm::Boolean);
     }
 
-    /** A whole number: the form of every threshold read through an `(int)` cast. */
+    /**
+     * A whole number, 0 or more: the form of every threshold and count read
+     * through an `(int)` cast. The floor is part of the form — see
+     * {@see RuleOptionValueForm} for why a negative boundary is refused.
+     */
     public static function integer(): self
     {
         return new self(RuleOptionValueForm::WholeNumber);
     }
 
-    /** An integer or a fraction: the form of every threshold read through a `(float)` cast. */
+    /**
+     * An integer or a fraction, 0 or more: the form of every threshold read
+     * through a `(float)` cast.
+     */
     public static function number(): self
     {
         return new self(RuleOptionValueForm::Number);
+    }
+
+    /**
+     * An integer or a fraction of either sign — for a boundary on a value the
+     * user defines, such as a computed metric's formula, where nothing makes
+     * a negative value impossible. Not for a boundary on a built-in
+     * measurement: there {@see self::number()}'s floor is what refuses an
+     * inverted rule.
+     */
+    public static function signedNumber(): self
+    {
+        return new self(RuleOptionValueForm::SignedNumber);
     }
 
     /** A string, the empty one included — the reading code accepts it. */
@@ -249,7 +268,9 @@ final readonly class RuleOptionShape
      */
     public function describeWritten(mixed $written): string
     {
-        return $this->words->describeWritten($written) ?? RuleOptionValueForm::describeWritten($written);
+        return $this->words->describeWritten($written)
+            ?? $this->describeOutOfRange($written)
+            ?? RuleOptionValueForm::describeWritten($written);
     }
 
     /** @throws LogicException when asked of a container, which has no plain form */

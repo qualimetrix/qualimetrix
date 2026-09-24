@@ -53,12 +53,11 @@ use SplFileInfo;
  *   the region out instead shortens the docblock by however many lines it
  *   spanned, and every directive below it is then reported on the wrong line.
  *
- * One divergence is left open and is not this measure's to close: the product's
- * separator between the directive and its target is `\s+`, which crosses a line
- * break, so `@qmx-threshold` alone at the end of a line takes the next line's
- * docblock star as its target. A target of `*` is not something an author
- * wrote; teaching this scan to reproduce it would be copying a defect into the
- * witness of it.
+ * One divergence is left open. The product decides backtick regions line by
+ * line, and a backtick written directly before the tag always opens a quote;
+ * this scan pairs backticks across the whole comment. The two disagree when a
+ * stray backtick precedes a quoted tag on the same line, and the agreement
+ * fixture carries no such row.
  */
 final class ThresholdDirectiveScan
 {

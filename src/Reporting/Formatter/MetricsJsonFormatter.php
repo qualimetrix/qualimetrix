@@ -109,6 +109,7 @@ final class MetricsJsonFormatter implements FormatterInterface
             'llmsTxt' => $identity['llmsTxt'],
             'symbols' => $symbols,
             'coverage' => $report->coverage?->toArray(),
+            'projectScope' => $report->projectScope?->toArray(),
             'summary' => [
                 'filesAnalyzed' => $report->filesAnalyzed,
                 'filesSkipped' => $report->filesSkipped,
@@ -118,9 +119,28 @@ final class MetricsJsonFormatter implements FormatterInterface
                 'warnings' => $report->warningCount,
                 'info' => $report->infoCount,
             ],
+            'outOfScope' => self::outOfScope($report),
         ];
 
-        return json_encode($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
+        return PublishedUtf8::encodeJsonObject($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES);
+    }
+
+    /**
+     * What a `--namespace`/`--class` selection left out of `summary`, which
+     * counts only the selection; the key stays, as null, without one.
+     *
+     * @return array{violations: int, errors: int, warnings: int, info: int}|null
+     */
+    private static function outOfScope(Report $report): ?array
+    {
+        $outOfScope = $report->outOfScope;
+
+        return $outOfScope === null ? null : [
+            'violations' => $outOfScope->total(),
+            'errors' => $outOfScope->errorCount,
+            'warnings' => $outOfScope->warningCount,
+            'info' => $outOfScope->infoCount,
+        ];
     }
 
     public function getName(): string

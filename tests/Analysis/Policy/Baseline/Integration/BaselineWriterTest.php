@@ -9,10 +9,13 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentWriter;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEdge;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
@@ -29,6 +32,7 @@ use RuntimeException;
 
 #[CoversClass(BaselineWriter::class)]
 #[CoversClass(BaselineConflictException::class)]
+#[CoversClass(BaselineDocumentWriter::class)]
 final class BaselineWriterTest extends TestCase
 {
     private BaselineWriter $writer;
@@ -186,6 +190,72 @@ final class BaselineWriterTest extends TestCase
 
         $leftovers = glob($this->tempDir . '/occupied.tmp.*');
         self::assertSame([], $leftovers === false ? [] : $leftovers);
+    }
+
+    /**
+     * A baseline path the user named that cannot be written is their input
+     * to fix: refused as the baseline file, with the system's reason, and
+     * without the PHP warning that `display_errors=1` printed into stdout
+     * ahead of it. Each case below fails at a different call on the way to
+     * the file.
+     */
+    #[Test]
+    public function itRefusesADirectoryItCannotCreateWithoutAPhpDiagnostic(): void
+    {
+        touch($this->tempDir . '/file');
+        $path = $this->tempDir . '/file/sub/baseline.json';
+
+        $refusal = $this->refusalWithoutDiagnostics($path);
+
+        self::assertSame(ConfigurationSource::BaselineFile, $refusal->origin()->source());
+        self::assertSame($path, $refusal->origin()->locator());
+        self::assertSame(
+            \sprintf('Cannot create the baseline directory %s: Not a directory', $this->tempDir . '/file/sub'),
+            $refusal->summary(),
+        );
+    }
+
+    #[Test]
+    public function itRefusesALockFileItCannotOpenWithoutAPhpDiagnostic(): void
+    {
+        $path = $this->tempDir . '/baseline.json';
+        mkdir($path . '.lock');
+
+        $refusal = $this->refusalWithoutDiagnostics($path);
+
+        self::assertSame(
+            \sprintf('Cannot open the baseline lock file %s: Failed to open stream: Is a directory', $path . '.lock'),
+            $refusal->summary(),
+        );
+    }
+
+    #[Test]
+    public function itRefusesADirectoryItCannotWriteIntoWithoutAPhpDiagnostic(): void
+    {
+        self::skipAsRoot();
+        $directory = $this->tempDir . '/read-only';
+        mkdir($directory, 0555);
+
+        try {
+            $refusal = $this->refusalWithoutDiagnostics($directory . '/baseline.json');
+        } finally {
+            chmod($directory, 0755);
+        }
+
+        self::assertStringEndsWith(': Failed to open stream: Permission denied', $refusal->summary());
+    }
+
+    #[Test]
+    public function itRefusesATargetThatIsADirectoryWithoutAPhpDiagnostic(): void
+    {
+        $path = $this->tempDir . '/occupied';
+        mkdir($path);
+        touch($path . '/keep-me');
+
+        $refusal = $this->refusalWithoutDiagnostics($path);
+
+        self::assertStringStartsWith(\sprintf('Cannot move the baseline into place at %s: ', $path), $refusal->summary());
+        self::assertFileExists($path . '/keep-me');
     }
 
     #[Test]
@@ -675,6 +745,43 @@ final class BaselineWriterTest extends TestCase
         $this->writer->write($this->loader->load($path), $path, $this->projectRoot);
 
         self::assertSame($first, (string) file_get_contents($path));
+    }
+
+    private function refusalWithoutDiagnostics(string $path): ConfigurationRefusal
+    {
+        $diagnostics = [];
+        // What `display_errors` would print: a diagnostic the code silenced
+        // with `@` is out of `error_reporting()` and never reaches a stream.
+        // PHPUnit narrows the level to fatal errors while its own handler is
+        // installed, which would hide every warning from the filter below,
+        // so the run gets the level a real process has.
+        $level = error_reporting(\E_ALL);
+        set_error_handler(static function (int $level, string $message) use (&$diagnostics): bool {
+            if ((error_reporting() & $level) !== 0) {
+                $diagnostics[] = $message;
+            }
+
+            return true;
+        });
+
+        try {
+            $this->writer->write($this->baseline(), $path, $this->projectRoot);
+        } catch (ConfigurationRefusal $refusal) {
+            return $refusal;
+        } finally {
+            restore_error_handler();
+            error_reporting($level);
+            self::assertSame([], $diagnostics);
+        }
+
+        self::fail('The writer accepted a path it cannot write.');
+    }
+
+    private static function skipAsRoot(): void
+    {
+        if (posix_getuid() === 0) {
+            self::markTestSkipped('Root ignores permission bits, so nothing here is refused to run as root.');
+        }
     }
 
     private function write(Baseline $baseline, string $name = 'baseline.json'): string

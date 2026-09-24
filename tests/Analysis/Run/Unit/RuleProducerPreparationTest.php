@@ -160,6 +160,118 @@ final class RuleProducerPreparationTest extends TestCase
         );
     }
 
+    /**
+     * A rule switched off by its own options produced nothing and was prepared
+     * in full anyway: the gate read the selectors alone, so `--disable-rule`
+     * skipped the traversal and `rules: {…: {enabled: false}}` paid for it.
+     *
+     * @param array<string, mixed> $ruleOptions
+     */
+    #[Test]
+    #[TestWith([[CircularDependencyPreparationInterface::PRODUCER_RULE_NAME => ['enabled' => false]]])]
+    #[TestWith([[CircularDependencyPreparationInterface::PRODUCER_RULE_NAME => false]])]
+    public function itSkipsCircularDependencyPreparationWhenItsOwnOptionsSwitchTheRuleOff(array $ruleOptions): void
+    {
+        $circular = $this->createMock(CircularDependencyPreparationInterface::class);
+        $circular->expects(self::never())->method('prepare');
+        $circular->expects(self::once())->method('reset');
+        $profiler = $this->createMock(ProfilerInterface::class);
+        $profiler->expects(self::never())->method('start');
+
+        $this->preparation(circular: $circular, ruleOptions: $ruleOptions)->prepareCircularDependencies(
+            self::createStub(DependencyGraphInterface::class),
+            $profiler,
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $ruleOptions
+     */
+    #[Test]
+    #[TestWith([[
+        LayerPolicyPreparationInterface::PRODUCER_RULE_NAME => ['enabled' => false],
+        LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME => false,
+    ]])]
+    #[TestWith([[
+        LayerPolicyPreparationInterface::PRODUCER_RULE_NAME => false,
+        LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME => ['enabled' => false],
+    ]])]
+    public function itSkipsArchitecturePreparationWhenBothProducersAreSwitchedOffByTheirOptions(array $ruleOptions): void
+    {
+        $architecture = $this->createMock(LayerPolicyPreparationInterface::class);
+        $architecture->expects(self::never())->method('prepare');
+        $architecture->expects(self::once())->method('reset');
+        $profiler = $this->createMock(ProfilerInterface::class);
+        $profiler->expects(self::never())->method('start');
+
+        $this->preparation(architecture: $architecture, ruleOptions: $ruleOptions)->prepareArchitecture(
+            self::createStub(DependencyGraphInterface::class),
+            [],
+            $profiler,
+        );
+    }
+
+    /**
+     * The edge this gate does not reach, asserted rather than left to be
+     * rediscovered: `architecture.unassigned-class` has no `enabled` option —
+     * `mode` is its only switch and `mode: ignore` is its default — so the
+     * gate answers "active" for it and the policy is still prepared. The
+     * selectors have always answered the same way, so the two spellings agree;
+     * what neither reaches is a producer that is off by its own default.
+     */
+    #[Test]
+    public function itStillPreparesArchitecturePolicyWhenOnlyTheLayerViolationRuleIsSwitchedOff(): void
+    {
+        $architecture = $this->createMock(LayerPolicyPreparationInterface::class);
+        $architecture->expects(self::once())->method('prepare');
+
+        $this->preparation(
+            architecture: $architecture,
+            ruleOptions: [LayerPolicyPreparationInterface::PRODUCER_RULE_NAME => ['enabled' => false]],
+        )->prepareArchitecture(
+            self::createStub(DependencyGraphInterface::class),
+            [],
+            self::createStub(ProfilerInterface::class),
+        );
+    }
+
+    #[Test]
+    public function itSkipsFileSetInspectionWhenTheParticipantsOwnOptionsSwitchTheProducerOff(): void
+    {
+        $participant = new class implements FileSetInspectionParticipantInterface {
+            public int $resetCalls = 0;
+            public int $inspectCalls = 0;
+
+            public static function participantId(): string
+            {
+                return 'options-gated-participant';
+            }
+
+            public static function producerRuleName(): string
+            {
+                return 'duplication.clone';
+            }
+
+            public function resetForRun(): void
+            {
+                ++$this->resetCalls;
+            }
+
+            public function inspect(array $eligibleFiles, AbsolutePath $projectRoot): void
+            {
+                ++$this->inspectCalls;
+            }
+        };
+
+        $this->preparation(
+            participants: [$participant],
+            ruleOptions: ['duplication.clone' => ['enabled' => false]],
+        )->inspectFiles([], AbsolutePath::fromString('/project'));
+
+        self::assertSame(1, $participant->resetCalls);
+        self::assertSame(0, $participant->inspectCalls);
+    }
+
     #[Test]
     public function itPreparesTheArchitectureProducerWhenOnlyADiagnosticChannelIsSelected(): void
     {
@@ -226,6 +338,7 @@ final class RuleProducerPreparationTest extends TestCase
      * @param (LayerPolicyPreparationInterface&MockObject)|null $architecture
      * @param (CircularDependencyPreparationInterface&MockObject)|null $circular
      * @param list<FileSetInspectionParticipantInterface> $participants
+     * @param array<string, mixed> $ruleOptions
      */
     private function preparation(
         ?LayerPolicyPreparationInterface $architecture = null,
@@ -234,10 +347,16 @@ final class RuleProducerPreparationTest extends TestCase
         ?RuleSelection $selection = null,
         array $participants = [],
         ?ThresholdDirectiveAuditInterface $thresholdAudit = null,
+        array $ruleOptions = [],
     ): RuleProducerPreparation {
         $selector ??= new RuleSelector(new InMemoryRuleChannelRegistry());
         $registry = new RuleOptionsRegistry();
         $registry->configureSelection($selection ?? new RuleSelection());
+        $registry->setConfigFileOptions($ruleOptions);
+
+        // One gate, handed to both collaborators, exactly as the container
+        // composes them.
+        $producerGate = new RuleSelectorProducerGate($selector);
 
         return new RuleProducerPreparation(
             $architecture ?? self::createStub(LayerPolicyPreparationInterface::class),
@@ -246,10 +365,10 @@ final class RuleProducerPreparationTest extends TestCase
             $thresholdAudit ?? self::createStub(ThresholdDirectiveAuditInterface::class),
             new FileSetInspectionComposite(
                 $participants,
-                new RuleSelectorProducerGate($selector),
+                $producerGate,
                 self::createStub(ProfilerInterface::class),
             ),
-            $selector,
+            $producerGate,
             $registry,
         );
     }

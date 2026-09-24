@@ -206,4 +206,49 @@ final class ChannelDeclarationTest extends TestCase
             ChannelDeclaration::occurrence(SymbolLevel::Project, SymbolLevel::Class_, SymbolLevel::Namespace_)->levels,
         );
     }
+
+    #[Test]
+    public function itStatesNoDescriptionUntilOneIsDeclared(): void
+    {
+        self::assertNull(ChannelDeclaration::occurrence(SymbolLevel::Project)->description);
+    }
+
+    /**
+     * The wither changes the text and nothing else — in either order with the
+     * configuration-error stamp, which is the one other wither and must carry
+     * the text across.
+     */
+    #[Test]
+    public function itKeepsEveryOtherFactWhenADescriptionIsDeclared(): void
+    {
+        $plain = ChannelDeclaration::judging(
+            WorseDirection::Lower,
+            JudgedMetrics::of(MetricName::MAINTAINABILITY_MI),
+            SymbolLevel::Callable,
+        );
+
+        $described = $plain->describedAs('Reports a fixture.');
+
+        self::assertSame('Reports a fixture.', $described->description);
+        self::assertSame($plain->direction, $described->direction);
+        self::assertSame($plain->levels, $described->levels);
+        self::assertEquals($plain->judges, $described->judges);
+        self::assertFalse($described->isConfigurationError());
+
+        $stamped = $described->asConfigurationError();
+        self::assertTrue($stamped->isConfigurationError());
+        self::assertSame('Reports a fixture.', $stamped->description);
+
+        self::assertSame('Reports a fixture.', $plain->asConfigurationError()->describedAs('Reports a fixture.')->description);
+        self::assertTrue($plain->asConfigurationError()->describedAs('Reports a fixture.')->isConfigurationError());
+    }
+
+    #[Test]
+    public function itRefusesABlankDescription(): void
+    {
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('must not be blank');
+
+        ChannelDeclaration::occurrence(SymbolLevel::Project)->describedAs("  \t");
+    }
 }

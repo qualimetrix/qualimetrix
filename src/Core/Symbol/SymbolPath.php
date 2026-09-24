@@ -9,16 +9,21 @@ use Qualimetrix\Core\Path\RelativePath;
 final readonly class SymbolPath
 {
     /**
-     * Sentinel value used internally to represent project-level SymbolPath.
-     * Must never appear as an actual PHP namespace.
+     * What the project aggregate carries in its namespace field.
+     *
+     * Parentheses cannot occur in a PHP namespace name, so no analysed
+     * namespace publishes this value. It is shown, never compared: the project
+     * is told apart by {@see self::$project}, so a namespace a user or a file
+     * names this way stays a namespace.
      */
-    private const string PROJECT_SENTINEL = '__PROJECT__';
+    private const string PROJECT_NAMESPACE = '(project)';
 
     private function __construct(
         public ?string $namespace,
         public ?string $type,
         public ?string $member,
         public ?RelativePath $filePath = null,
+        private bool $project = false,
     ) {}
 
     public static function forMethod(string $namespace, string $class, string $method): self
@@ -54,9 +59,10 @@ final readonly class SymbolPath
     public static function forProject(): self
     {
         return new self(
-            namespace: self::PROJECT_SENTINEL,
+            namespace: self::PROJECT_NAMESPACE,
             type: null,
             member: null,
+            project: true,
         );
     }
 
@@ -114,7 +120,7 @@ final readonly class SymbolPath
             return SymbolType::File;
         }
 
-        if ($this->namespace === self::PROJECT_SENTINEL && $this->type === null && $this->member === null) {
+        if ($this->project) {
             return SymbolType::Project;
         }
 
@@ -156,12 +162,12 @@ final readonly class SymbolPath
         $type = $this->getType();
 
         return match ($type) {
-            SymbolType::File => 'file:' . ($this->filePath?->value() ?? ''),
-            SymbolType::Project => 'project:',
+            SymbolType::File => $type->canonicalPrefix() . ($this->filePath?->value() ?? ''),
+            SymbolType::Project => $type->canonicalPrefix(),
             SymbolType::Function_ => $this->buildFunctionCanonical(),
             SymbolType::Method => $this->buildMethodCanonical(),
             SymbolType::Class_ => $this->buildClassCanonical(),
-            SymbolType::Namespace_ => 'ns:' . ($this->namespace ?? ''),
+            SymbolType::Namespace_ => $type->canonicalPrefix() . ($this->namespace ?? ''),
         };
     }
 
@@ -220,21 +226,21 @@ final readonly class SymbolPath
      */
     private function hasNamespace(): bool
     {
-        return $this->namespace !== null && $this->namespace !== '' && $this->namespace !== self::PROJECT_SENTINEL;
+        return $this->namespace !== null && $this->namespace !== '';
     }
 
     private function buildFunctionCanonical(): string
     {
         if ($this->hasNamespace()) {
-            return 'func:' . $this->namespace . '::' . $this->member;
+            return SymbolType::Function_->canonicalPrefix() . $this->namespace . '::' . $this->member;
         }
 
-        return 'func::' . $this->member;
+        return SymbolType::Function_->canonicalPrefix() . ':' . $this->member;
     }
 
     private function buildMethodCanonical(): string
     {
-        $parts = ['callable:'];
+        $parts = [SymbolType::Method->canonicalPrefix()];
 
         if ($this->hasNamespace()) {
             $parts[] = $this->namespace;
@@ -250,7 +256,7 @@ final readonly class SymbolPath
 
     private function buildClassCanonical(): string
     {
-        $parts = ['class:'];
+        $parts = [SymbolType::Class_->canonicalPrefix()];
 
         if ($this->hasNamespace()) {
             $parts[] = $this->namespace;

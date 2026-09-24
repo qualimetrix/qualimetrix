@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Discovery\DirectoryPruner;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -46,7 +47,16 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * stale, and that is the one this channel names.
  *
  * The second probe is paid for only by a run that would otherwise have
- * reported: it walks at all only when the first walk left a pattern unbound.
+ * reported: it walks at all only when the first walk left a pattern unsettled.
+ *
+ * **What it cannot judge, it says rather than swallows.** A directory this
+ * process may not list hides whatever it holds, so a pattern that could have
+ * matched inside it is not called stale. That verdict used to leave the run
+ * with the same output as a pattern that bound — no finding, no message,
+ * nothing — and for the second walk, which covers tree the run never
+ * discovered, there was no other channel it could surface on either. So the
+ * unjudged pattern gets a finding of its own, naming the directory that
+ * stopped the walk.
  */
 final readonly class UnmatchedExcludeAudit
 {
@@ -68,7 +78,8 @@ final readonly class UnmatchedExcludeAudit
     ) {}
 
     /**
-     * One finding per authored pattern this run's paths hold no directory for.
+     * One finding per authored pattern this run could not confirm: the ones
+     * the project holds no directory for, and the ones no walk could settle.
      *
      * Every project-wide gate is asked before the walk, so a run that cannot
      * report pays nothing for the measurement: the rule switched off, no
@@ -86,24 +97,63 @@ final readonly class UnmatchedExcludeAudit
         }
 
         $pruner = new DirectoryPruner($configuration->projectRoot, $configuration->pathExcludes);
-        $unboundInRun = $this->probe->unboundPatterns(
+        $inRun = $this->probe->judge(
             $configuration->paths,
             $configuration->authoredPathExcludes,
             $pruner,
         );
 
-        if ($unboundInRun === []) {
+        // The same question against the whole tree: a pattern that binds
+        // somewhere the run did not look names code that exists, and this run
+        // cannot tell that from a pattern whose directory is gone. A pattern
+        // the run could not judge is asked again for the same reason — the
+        // subtree that blocked it may not be the only place it could bind.
+        $unsettled = self::unsettled($configuration->authoredPathExcludes, $inRun);
+        if ($unsettled === []) {
             return [];
         }
 
-        // The same question against the whole tree: a pattern that binds
-        // somewhere the run did not look names code that exists, and this run
-        // cannot tell that from a pattern whose directory is gone.
-        return array_map(self::finding(...), $this->probe->unboundPatterns(
-            [$configuration->projectRoot],
-            $unboundInRun,
-            $pruner,
+        $inProject = $this->probe->judge([$configuration->projectRoot], $unsettled, $pruner);
+
+        return [
+            ...array_map(self::finding(...), $inProject->unbound),
+            ...self::unjudgedFindings($inProject->unlistable, $configuration->projectRoot),
+        ];
+    }
+
+    /**
+     * The patterns the run left without a settled answer, in authored order.
+     *
+     * @param list<PathPattern> $authored
+     *
+     * @return list<PathPattern>
+     */
+    private static function unsettled(array $authored, ExcludeBindingVerdict $verdict): array
+    {
+        $open = array_fill_keys(array_keys($verdict->unlistable), true);
+        foreach ($verdict->unbound as $pattern) {
+            $open[$pattern->definition->display()] = true;
+        }
+
+        return array_values(array_filter(
+            $authored,
+            static fn(PathPattern $pattern): bool => isset($open[$pattern->definition->display()]),
         ));
+    }
+
+    /**
+     * @param array<string, AbsolutePath> $unlistable
+     *
+     * @return list<Finding>
+     */
+    private static function unjudgedFindings(array $unlistable, AbsolutePath $projectRoot): array
+    {
+        $findings = [];
+        foreach ($unlistable as $display => $directory) {
+            $findings[] = UnjudgedExcludeFinding::forPattern($display, $directory, $projectRoot);
+        }
+
+        return $findings;
     }
 
     private static function finding(PathPattern $pattern): Finding

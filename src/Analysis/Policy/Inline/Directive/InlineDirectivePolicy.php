@@ -79,7 +79,7 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
     {
         return self::onePerAuthoredSite(
             $this->suppressions,
-            static fn(Suppression $s): string => $s->line . "\0" . $s->type->value . "\0" . $s->rule,
+            static fn(Suppression $s): string => $s->authoredSite(),
         );
     }
 

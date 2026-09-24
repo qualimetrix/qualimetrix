@@ -59,7 +59,7 @@ final class ErrorStreamOwnershipTest extends TestCase
     }
 
     #[Test]
-    public function itKeepsAProfileSummaryAboveTheFrame(): void
+    public function itKeepsAProfileExportLineAboveTheFrame(): void
     {
         $output = self::terminalOutput();
         $errorStream = new ErrorStream();
@@ -67,13 +67,18 @@ final class ErrorStreamOwnershipTest extends TestCase
 
         $report = self::createStub(ProfileReportInterface::class);
         $report->method('isEnabled')->willReturn(true);
+        $target = sys_get_temp_dir() . '/qmx-profile-frame-' . bin2hex(random_bytes(6)) . '.json';
 
-        (new ProfilePresenter($report, errorStream: $errorStream))->present(
-            self::input(['profile-format' => 'nonsense'], ['profile' => 'file']),
-            $output,
-        );
+        try {
+            (new ProfilePresenter($report, errorStream: $errorStream))->present(
+                self::input(['profile-format' => 'json'], ['profile' => $target]),
+                $output,
+            );
 
-        self::assertSurvivesAboveFrame($output, $frame, 'Invalid profile format: nonsense');
+            self::assertSurvivesAboveFrame($output, $frame, 'Profile exported to');
+        } finally {
+            @unlink($target);
+        }
     }
 
     #[Test]

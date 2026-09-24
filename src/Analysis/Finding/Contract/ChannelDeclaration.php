@@ -33,6 +33,15 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * exception is argued in ADR 0046, which also names the six channels the
  * resulting check does not cover.
  *
+ * **The channel's own description belongs here too (ADR 0081)**, through
+ * {@see describedAs()}. A producer's `getDescription()` describes the
+ * producer, which is the right text for the one channel named after it and
+ * the wrong text for every other: `architecture.doubted-assignment` is not a
+ * forbidden dependency between layers. So a channel whose name is not its
+ * producer's name states what it reports, and registry assembly refuses one
+ * that does not — and refuses the channel named after its producer that
+ * states a second description beside the producer's own.
+ *
  * Nothing else belongs here: no axis name, no threshold binding, no
  * epsilon. A channel that declares no {@see ChannelDeclaration} at all is
  * not an error state — it is simply not baselineable (see
@@ -78,6 +87,7 @@ final readonly class ChannelDeclaration
         public bool $configurationError,
         public ?JudgedMetrics $judges,
         array $levels,
+        public ?string $description = null,
     ) {
         $this->levels = self::canonicalLevels($levels);
     }
@@ -167,7 +177,27 @@ final readonly class ChannelDeclaration
      */
     public function asConfigurationError(): self
     {
-        return new self($this->direction, true, $this->judges, $this->levels);
+        return new self($this->direction, true, $this->judges, $this->levels, $this->description);
+    }
+
+    /**
+     * The same declaration, stating what this channel reports in one sentence
+     * of display text — published, for example, as a SARIF rule's
+     * `shortDescription`.
+     *
+     * Required of every channel whose name differs from its producer's and
+     * refused on the channel named after its producer, which is described by
+     * the producer itself; both halves are checked where the registry is
+     * assembled, because only there are the channel and its producer's name
+     * known together.
+     */
+    public function describedAs(string $description): self
+    {
+        if (trim($description) === '') {
+            throw new InvalidArgumentException('A channel description must not be blank.');
+        }
+
+        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $description);
     }
 
     /**

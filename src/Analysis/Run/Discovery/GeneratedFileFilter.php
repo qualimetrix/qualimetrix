@@ -58,12 +58,19 @@ final class GeneratedFileFilter implements GeneratedFileFilterInterface
      * Checks if a file is marked as generated.
      *
      * Reads the first 2KB and looks for `@generated` as a comment annotation.
+     *
+     * Readability is not enough to justify reading. `fopen()` succeeds on a
+     * directory and `fread()` then raises a PHP notice, which the CLI writes to
+     * **stdout** — in front of the JSON, SARIF or Checkstyle document the
+     * caller is parsing. This is the only place a file's bytes are read before
+     * the parser sees it, so the regular-file question is asked here too and
+     * not left to whoever hands the list over.
      */
     public function isGenerated(SplFileInfo $file): bool
     {
         $path = $file->getPathname();
 
-        if (!is_readable($path)) {
+        if (!is_file($path) || !is_readable($path)) {
             return false;
         }
 

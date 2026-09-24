@@ -72,7 +72,10 @@ final class HintRendererTest extends TestCase
         $this->renderer->render($report, $context, $this->color, $lines);
 
         $output = implode("\n", $lines);
-        self::assertStringContainsString('--detail to see violations', $output);
+        // `--detail` switches the section on under a cap; "top" would claim a
+        // ranking, and `--top` is a different option that does rank.
+        self::assertStringContainsString('--detail to list violations (up to 200; --detail=all for every one)', $output);
+        self::assertStringNotContainsString('top', $output);
     }
 
     #[Test]

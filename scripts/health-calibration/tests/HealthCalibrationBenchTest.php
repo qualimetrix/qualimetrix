@@ -86,14 +86,50 @@ final class HealthCalibrationBenchTest extends TestCase
 
         $derived = $evaluation->derived[0];
 
-        self::assertSame('coupling.distance', $derived->base);
+        self::assertSame('coupling.distance-own', $derived->base);
         // (0.2 + 0.6 + 1.0) / 3 over all three leaves — the global namespace is
         // a leaf like any other under the current scheme; the captured 0.999
         // is discarded.
-        self::assertEqualsWithDelta(0.6, $derived->values['coupling.distance.avg'], 1.0e-12);
-        self::assertSame(3.0, $derived->values['coupling.distance.count']);
+        self::assertEqualsWithDelta(0.6, $derived->values['coupling.distance-own.avg'], 1.0e-12);
+        self::assertSame(3.0, $derived->values['coupling.distance-own.count']);
         self::assertSame(['App\A', 'App\B', '(global)'], $derived->contributors);
-        self::assertSame(['coupling.distance.avg' => 0.999], $derived->publishedBefore);
+        self::assertSame(['coupling.distance-own.avg' => 0.999], $derived->publishedBefore);
+    }
+
+    /**
+     * The pooled key is an own-scope value, so a namespace that both declares
+     * types and has sub-namespaces carries one of its own — and the product
+     * pools it. A bench left on the leaf rule drops those namespaces, and every
+     * disagreement it then reports is its own.
+     */
+    #[Test]
+    public function itPoolsAParentThatCarriesTheKeyAndTheLeafRuleDrops(): void
+    {
+        $capture = new Capture('parent-and-leaf', [
+            new Subject('', SymbolLevel::Project, [], [], null),
+            self::namespaceSubject('App', ['coupling.distance-own' => 0.2], 100),
+            self::namespaceSubject('App\Sub', ['coupling.distance-own' => 1.0], 100),
+        ]);
+
+        $current = (new Bench())->run(
+            $capture,
+            self::defaultDefinitions(),
+            [SymbolLevel::Project],
+            AggregationScheme::current(),
+        );
+        $leafOnly = (new Bench())->run(
+            $capture,
+            self::defaultDefinitions(),
+            [SymbolLevel::Project],
+            new AggregationScheme(AggregationScheme::MEMBERS_LEAVES, AggregationScheme::WEIGHT_NONE),
+        );
+
+        self::assertSame(['App', 'App\Sub'], $current->derived[0]->contributors);
+        self::assertEqualsWithDelta(0.6, $current->derived[0]->values['coupling.distance-own.avg'], 1.0e-12);
+        self::assertSame(2.0, $current->derived[0]->values['coupling.distance-own.count']);
+
+        self::assertSame(['App\Sub'], $leafOnly->derived[0]->contributors);
+        self::assertEqualsWithDelta(1.0, $leafOnly->derived[0]->values['coupling.distance-own.avg'], 1.0e-12);
     }
 
     #[Test]
@@ -109,7 +145,7 @@ final class HealthCalibrationBenchTest extends TestCase
         $mismatches = SelfTest::run([$evaluation], 0.1);
         $keys = array_map(static fn(object $mismatch): string => $mismatch->key, $mismatches);
 
-        self::assertContains('coupling.distance.avg', $keys);
+        self::assertContains('coupling.distance-own.avg', $keys);
     }
 
     #[Test]
@@ -124,7 +160,7 @@ final class HealthCalibrationBenchTest extends TestCase
 
         $aggregateMismatches = array_filter(
             SelfTest::run([$evaluation], 0.1),
-            static fn(object $mismatch): bool => $mismatch->key === 'coupling.distance.avg',
+            static fn(object $mismatch): bool => $mismatch->key === 'coupling.distance-own.avg',
         );
 
         self::assertSame([], $aggregateMismatches);
@@ -141,12 +177,12 @@ final class HealthCalibrationBenchTest extends TestCase
         );
 
         // (0.2 + 0.6 + 1.0) / 3 — the global namespace now carries its own weight.
-        self::assertEqualsWithDelta(0.6, $evaluation->derived[0]->values['coupling.distance.avg'], 1.0e-12);
-        self::assertSame(3.0, $evaluation->derived[0]->values['coupling.distance.count']);
+        self::assertEqualsWithDelta(0.6, $evaluation->derived[0]->values['coupling.distance-own.avg'], 1.0e-12);
+        self::assertSame(3.0, $evaluation->derived[0]->values['coupling.distance-own.count']);
     }
 
     /**
-     * C4 compares two aggregation schemes, and only `coupling.distance` is
+     * C4 compares two aggregation schemes, and only `coupling.distance-own` is
      * re-derived between them — every other project input is read from the
      * capture verbatim, so its drift is zero by construction. A zero printed
      * for those would be read as "this dimension is insensitive to the
@@ -203,15 +239,15 @@ final class HealthCalibrationBenchTest extends TestCase
         );
 
         // loc 100 and 300: (0.2*100 + 0.6*300) / 400.
-        self::assertEqualsWithDelta(0.5, $byLoc->derived[0]->values['coupling.distance.avg'], 1.0e-12);
+        self::assertEqualsWithDelta(0.5, $byLoc->derived[0]->values['coupling.distance-own.avg'], 1.0e-12);
         // classes 1 and 9: (0.2*1 + 0.6*9) / 10.
-        self::assertEqualsWithDelta(0.56, $byClasses->derived[0]->values['coupling.distance.avg'], 1.0e-12);
+        self::assertEqualsWithDelta(0.56, $byClasses->derived[0]->values['coupling.distance-own.avg'], 1.0e-12);
     }
 
     /**
      * Deriving the aggregate is worth nothing if the SCORE still reads the
      * captured one, so the score is asserted, not only the derivation: under
-     * the current scheme `coupling.distance.avg` is 0.6 (all three leaves,
+     * the current scheme `coupling.distance-own.avg` is 0.6 (all three leaves,
      * global included) and the project formula gives 18/(18+3.6); the captured
      * 0.999 would give 18/(18+5.994), and the `leaves-no-global` scheme, which
      * derives 0.4 from the two non-global leaves, gives 18/(18+2.4) — proof
@@ -272,7 +308,7 @@ final class HealthCalibrationBenchTest extends TestCase
     public function itPublishesNoAggregateWhenNoAdmittedNamespaceCarriesTheMetric(): void
     {
         // `App` is admitted under the current scheme — it is a leaf — but it
-        // does not carry `coupling.distance` at all, distinct from a namespace
+        // does not carry `coupling.distance-own` at all, distinct from a namespace
         // the scheme excludes (that case is
         // itCountsAClassUnderAnExcludedNamespaceAsUncovered): no contributor
         // exists, not merely one the scheme declined.
@@ -293,7 +329,7 @@ final class HealthCalibrationBenchTest extends TestCase
         $coupling = $evaluation->outcome($capture->symbols[0], 'health.coupling');
 
         self::assertNotNull($coupling);
-        self::assertContains('coupling.distance.avg', $coupling->absentKeys);
+        self::assertContains('coupling.distance-own.avg', $coupling->absentKeys);
     }
 
     /**
@@ -583,6 +619,43 @@ final class HealthCalibrationBenchTest extends TestCase
         self::assertSame('ns=0/1', $excluded->note);
     }
 
+    /**
+     * The coverage of a namespace-collected key asks the same scheme the
+     * aggregate does. A parent carrying the key is a contributor under the
+     * current rule and not under the leaf rule, so the two answer differently
+     * about the classes that sit in it — without this the calculator's own
+     * membership call could stay on the superseded rule unnoticed.
+     */
+    #[Test]
+    public function itCountsAClassUnderACarryingParentAsCoveredOnlyUnderTheCurrentScheme(): void
+    {
+        $capture = new Capture('parent-and-leaf-coverage', [
+            new Subject('', SymbolLevel::Project, [], [], null),
+            self::namespaceSubject('App', ['coupling.distance-own' => 0.2]),
+            self::namespaceSubject('App\\Sub', ['coupling.distance-own' => 0.4]),
+            new Subject('App\\InParent', SymbolLevel::Class_, [], [], 10),
+            new Subject('App\\Sub\\InLeaf', SymbolLevel::Class_, [], [], 10),
+        ]);
+
+        $current = CoverageCalculator::forKey(
+            $capture,
+            $capture->symbols[0],
+            'coupling.distance-own.avg',
+            AggregationScheme::current(),
+        );
+        $leafOnly = CoverageCalculator::forKey(
+            $capture,
+            $capture->symbols[0],
+            'coupling.distance-own.avg',
+            new AggregationScheme(AggregationScheme::MEMBERS_LEAVES, AggregationScheme::WEIGHT_NONE),
+        );
+
+        self::assertSame(2, $current->carriers);
+        self::assertSame('ns=2/2', $current->note);
+        self::assertSame(1, $leafOnly->carriers);
+        self::assertSame('ns=1/2', $leafOnly->note);
+    }
+
     #[Test]
     public function itInterpolatesTheQuartilesItReports(): void
     {
@@ -614,13 +687,13 @@ final class HealthCalibrationBenchTest extends TestCase
             new Subject(
                 '',
                 SymbolLevel::Project,
-                ['coupling.distance.avg' => $publishedAggregate, 'coupling.cbo.avg' => 4.0],
+                ['coupling.distance-own.avg' => $publishedAggregate, 'coupling.cbo.avg' => 4.0],
                 [],
                 null,
             ),
-            self::namespaceSubject('App\A', ['coupling.distance' => 0.2, 'size.class-count.sum' => 1.0], 100),
-            self::namespaceSubject('App\B', ['coupling.distance' => 0.6, 'size.class-count.sum' => 9.0], 300),
-            self::namespaceSubject('(global)', ['coupling.distance' => 1.0, 'size.class-count.sum' => 5.0], 500),
+            self::namespaceSubject('App\A', ['coupling.distance-own' => 0.2, 'size.class-count.sum' => 1.0], 100),
+            self::namespaceSubject('App\B', ['coupling.distance-own' => 0.6, 'size.class-count.sum' => 9.0], 300),
+            self::namespaceSubject('(global)', ['coupling.distance-own' => 1.0, 'size.class-count.sum' => 5.0], 500),
         ]);
     }
 

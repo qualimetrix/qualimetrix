@@ -64,6 +64,27 @@ final readonly class MetricSubject
     }
 
     /**
+     * The level a {@see toCanonical()} string measures at, for a holder of the
+     * string alone — a baseline file keys its entries by it.
+     *
+     * @throws InvalidArgumentException when no subject kind writes this string
+     */
+    public static function levelOfCanonical(string $canonical): SymbolLevel
+    {
+        $logical = str_starts_with($canonical, DeclarationPath::CANONICAL_PREFIX)
+            ? substr($canonical, \strlen(DeclarationPath::CANONICAL_PREFIX))
+            : $canonical;
+        $type = SymbolType::ofCanonical($logical);
+
+        $declarationKinds = [SymbolType::Class_, SymbolType::Method, SymbolType::Function_];
+        if ($type === null || ($logical !== $canonical && !\in_array($type, $declarationKinds, true))) {
+            throw new InvalidArgumentException(\sprintf('"%s" is not a canonical metric subject.', $canonical));
+        }
+
+        return SymbolLevelProjection::ofDeclaration($type);
+    }
+
+    /**
      * Value equality, decided by the canonical form.
      *
      * Structural `==` is not used: the identity components carry nullable

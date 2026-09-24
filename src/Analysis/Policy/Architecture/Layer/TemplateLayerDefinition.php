@@ -18,12 +18,31 @@ use InvalidArgumentException;
  * contains a `{var}` placeholder). A variable that appears only in the name
  * has no source of binding values — expansion would be non-deterministic.
  *
- * **Capture-filter invariant (see ADR 0059).** Capture-producing criteria are
- * combined per {@see MembershipSpec::$mode} ({@code match: any|all}).
- * Non-capturing criteria (suffix, attributes, implements, extends, and any
- * non-capture patterns) ALWAYS act as an AND-filter, regardless of the
- * declared match mode. The mode controls only how capture-producing criteria
- * combine to produce binding tuples.
+ * **How the criteria combine.** Exactly as they do for a static layer:
+ * {@see MembershipSpec::$mode} governs cross-kind combination, and
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\CriteriaEvaluation::outcome()}
+ * is the one place that applies it — for template observation and for runtime
+ * membership alike. An earlier docblock here claimed an invariant in the
+ * opposite direction, that non-capturing criteria always AND regardless of
+ * mode, and attributed it to ADR 0059; the ADR says nothing about criterion
+ * combination, the implementation has been mode-aware since 0.18, and the
+ * website documents the mode-aware behaviour as the change it was.
+ *
+ * What IS specific to a template: only {@see MembershipSpec::$patterns} carries
+ * capture variables, so only patterns can be bound to a produced instance. A
+ * non-pattern criterion under {@code match: any} would therefore be OR-ed into
+ * every instance as one project-wide net, and
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\LayersValidator}
+ * refuses that combination rather than picking a reading for the author. Under
+ * {@code match: all} the criterion narrows each instance inside the scope the
+ * substituted pattern already fixes, which is bound, and is accepted.
+ *
+ * A residue worth knowing before the next change here: a NON-capture pattern
+ * listed beside a capture-producing one acts as an AND-filter during
+ * observation ({@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\TupleExtractor}
+ * skips a class that fails it) while at runtime both live in the single
+ * {@code patterns} kind, whose entries are OR-ed. Observation is therefore
+ * narrower than matching in that one shape.
  *
  * **Captures are allowed only in patterns and the name template.** Suffix,
  * attribute, implements, and extends entries are fixed strings — adding

@@ -107,6 +107,11 @@ file is resolved from the dependency graph, and `design.dit.avg`, `.max` and
 A subclass declared in more than one file counts once: NOC counts distinct
 child names, not `extends` edges.
 
+NOC is published for the same population as DIT -- named classes -- so the two
+aggregates divide by the same count. An interface, a trait or an enum carries no
+`design.noc`, not even 0, and `interface B extends A` does not make `B` a child
+of `A`: an interface hierarchy is a contract hierarchy, not subclassing.
+
 <!-- llms:skip-end -->
 
 ### Configuration
@@ -269,11 +274,11 @@ The warning therefore says where the walk stopped and leaves the interpretation
 to you.
 
 It goes to the error stream, so `--format=json` and the other machine formats
-stay parseable. `-q` silences it; `--log-level=error` does so only together with
-`-v`, because without `-v` the console level is pinned at `WARNING`. It is a
-statement about what this run could follow, not about your code: analysing a
-project without running `composer install` is a normal thing to do, and this is
-what it costs.
+stay parseable. `-q` silences it, and so does `--log-level=error`, with or
+without `-v`; without `-v` a written level can only make the console quieter
+than `WARNING`, never louder. It is a statement about what this run could
+follow, not about your code: analysing a project without running
+`composer install` is a normal thing to do, and this is what it costs.
 
 Depth derived from the analysed path itself is unaffected: when the whole chain
 is inside what you analysed, the value does not depend on the install.

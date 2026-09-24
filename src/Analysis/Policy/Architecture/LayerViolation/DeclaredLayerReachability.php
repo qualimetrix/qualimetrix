@@ -10,18 +10,19 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\ShadowedClass;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
- * Builds the five diagnostics that compare the declared layer policy against
- * what the run actually reached.
+ * Builds four of the five diagnostics that compare the declared layer policy
+ * against what the run actually reached. The fifth,
+ * `architecture.potential-shadow`, renders shadow evidence no other verdict
+ * reads, and is built by {@see PotentialShadowDiagnostic}.
  *
  * They share one question — "does the declaration still describe the code?" —
  * and one answer shape: a project-subject finding that reports a mistake in
  * the configuration rather than debt in the code. None of them can be
- * accepted by a baseline. Four of the five also share {@see DIAGNOSTIC_SEVERITY}
+ * accepted by a baseline. The three besides `coverage()` share {@see DIAGNOSTIC_SEVERITY}
  * instead of taking a severity option; `coverage()` is the exception, because
  * its severity has always come from the three-state `coverage-gap:` mode
  * (`ignore`/`warn`/`error`) rather than a fixed value.
@@ -32,15 +33,20 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  *   unusable as a gate on one's own code — see `architecture.unassigned-class`
  *   in {@see UnassignedClassSummary} for the narrower one.
  * - `architecture.unreachable-layer` — a declared layer that was ASSIGNED
- *   nothing: no class and no dependency-edge end landed in it.
+ *   nothing and could not have been: no class and no dependency-edge end
+ *   landed in it, and no analysed class would once the run answered what it
+ *   could not.
  * - `architecture.pending-layer-matched` — the opposite reading of the same
  *   evidence for a layer declared `pending: true`. Its predicate is MATCHED,
  *   not assigned, and {@see pendingLayersMatched()} explains why the
  *   difference is the whole point of the channel.
- * - `architecture.potential-shadow` — a layer that can never win in its own
- *   area because a broader one is declared earlier.
  * - `architecture.empty-template` — a template that expanded to no layers at
  *   all.
+ *
+ * `architecture.doubted-assignment`, the rule's count of what the run could
+ * not decide, reads the same population `coverage()` prints its undecided
+ * sentences from, and is built by {@see DoubtedAssignmentDiagnostic}: it is
+ * the rule's channel, not a configuration error.
  *
  * Extracted from {@see LayerViolationRule}: the rule carries seven channels,
  * and the per-edge policy decision is the only one that needs the rule's own
@@ -51,8 +57,6 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  */
 final class DeclaredLayerReachability
 {
-    private const int SHADOW_SAMPLE_LIMIT = 5;
-
     /**
      * The `architecture.coverage-gap` diagnostic, or none when the mode declines
      * it or nothing was left out of a layer.
@@ -65,7 +69,28 @@ final class DeclaredLayerReachability
      * back to a stale default (fixed: `warn` used to report `Severity::Info`,
      * so `fail_on: warning` never caught it).
      *
-     * @param array{sourceEdges: int, targetEdges: int, classes: array<string, string>} $state
+     * **Why the message can carry a second number.** A class outside every
+     * layer used to mean one thing: no declared criterion caught it, and
+     * writing a layer closes the gap. It now means two, and the difference
+     * matters to the reader who acts on it — a class whose `extends` or
+     * `implements` chain leaves the analysed set, or one seen only as the far
+     * end of a dependency edge, is outside every layer because the run could
+     * not answer, and no `layers:` entry the author writes will change that.
+     * The clause appears only when such a class exists, so a project with none
+     * reads exactly the sentence it always did.
+     *
+     * **Why an assignment in doubt names itself here but never causes the
+     * finding.** A class that stands assigned while a layer bearing on its
+     * assignment went unanswered is not a hole in the declaration: it is in a
+     * layer, its edges are judged, and no `layers:` entry is missing. This
+     * channel is a configuration error that fails the run whatever its
+     * severity, so letting a doubt raise it failed every fully covered project
+     * whose earlier `extends`/`implements` layer met a vendor class at the far
+     * end of an edge. The doubt is counted in the text when the gap exists for
+     * its own reasons, and is published on its own, at a severity that never
+     * gates, by {@see DoubtedAssignmentDiagnostic}.
+     *
+     * @param array{sourceEdges: int, targetEdges: int, classes: array<string, string>, undecidable: array<string, string>, undecidableOutsidePaths: array<string, string>, doubted: array<string, string>, doubtedOutsidePaths: array<string, string>} $state
      *
      * @return list<Finding>
      */
@@ -76,6 +101,7 @@ final class DeclaredLayerReachability
         }
 
         $unmatched = array_values($state['classes']);
+        $doubted = array_values($state['doubted']);
         if ($state['sourceEdges'] + $state['targetEdges'] === 0 && $unmatched === []) {
             return [];
         }
@@ -85,7 +111,7 @@ final class DeclaredLayerReachability
             CoverageMode::Error => Severity::Error,
         };
 
-        $sampleList = DiagnosticSampleList::format($unmatched);
+        $undecidable = array_values($state['undecidable']);
 
         return [new Finding(
             location: Location::none(),
@@ -94,16 +120,113 @@ final class DeclaredLayerReachability
             ruleName: LayerPolicyPreparationInterface::COVERAGE_DIAGNOSTIC_NAME,
             code: LayerPolicyPreparationInterface::COVERAGE_DIAGNOSTIC_NAME,
             message: \sprintf(
-                'Architecture coverage-gap: %d edge(s) with unmatched source layer, %d edge(s) with unmatched target layer, %d class(es) outside all declared layers.',
+                'Architecture coverage-gap: %d edge(s) with unmatched source layer, %d edge(s) with unmatched target layer, %d class(es) outside all declared layers.%s',
                 $state['sourceEdges'],
                 $state['targetEdges'],
                 \count($unmatched),
+                self::sampledSentence(
+                    ' %d of them could not be decided: a declared "extends"/"implements"/"attributes" criterion'
+                    . ' reads facts this run did not collect, because the symbol or a link in its inheritance chain'
+                    . ' is outside the analysed paths — for example %s.',
+                    $undecidable,
+                ) . self::sampledSentence(
+                    ' %d assigned class(es) rest on a layer the run could not fully decide — for example %s.',
+                    $doubted,
+                ),
             ),
             severity: $severity,
-            recommendation: $sampleList === null
-                ? 'Declare layers covering the remaining classes or accept the gap by leaving coverage-gap on "ignore".'
-                : 'Examples of unclassified classes: ' . $sampleList . '. Declare layers covering these classes or accept the gap by leaving coverage-gap on "ignore".',
+            recommendation: self::decidedRecommendation(array_values(array_diff_key($state['classes'], $state['undecidable'])))
+                . self::undecidableRecommendation(\count($undecidable), \count($state['undecidableOutsidePaths']))
+                . ($doubted === [] ? '' : ' The assignments in doubt are not part of the gap and do not fail the run:'
+                    . ' each stands and its edges are judged against its layer\'s allow-list;'
+                    . ' architecture.doubted-assignment names them and what settles each.'),
         )];
+    }
+
+    /**
+     * The recommendation for the classes every declared criterion answered
+     * "no" about — the only share of the gap that declaring a layer closes
+     * outright. When there are none, the sentence says only how to accept the
+     * gap, because advising a layer "covering these classes" would be advice
+     * for a case the reader does not have.
+     *
+     * @param list<string> $decided
+     */
+    private static function decidedRecommendation(array $decided): string
+    {
+        $sampleList = DiagnosticSampleList::format($decided);
+
+        return $sampleList === null
+            ? 'Leaving coverage-gap on "ignore" accepts the gap.'
+            : 'Examples of unclassified classes: ' . $sampleList . '. Declare layers covering these classes or accept the gap by leaving coverage-gap on "ignore".';
+    }
+
+    /**
+     * `3 analysed class(es), 2 outside the analysed paths`, naming only the
+     * labels whose count is not zero.
+     *
+     * @param array<string, int> $counts label => count
+     */
+    private static function presentCounts(array $counts): string
+    {
+        $present = array_filter($counts, static fn(int $count): bool => $count !== 0);
+
+        return implode(', ', array_map(
+            static fn(string $label, int $count): string => $count . ' ' . $label,
+            array_keys($present),
+            $present,
+        ));
+    }
+
+    /**
+     * A sentence counting a set of symbols and naming a sample of them, or the
+     * empty string when the set is empty. Two sentences of the gap take this
+     * shape: the undecided share, and the assignments in doubt — each only
+     * when such a symbol exists, so a project with none reads exactly the
+     * sentence it always did.
+     *
+     * @param string $format `sprintf` format taking the count and the sample.
+     * @param list<string> $fqns
+     */
+    private static function sampledSentence(string $format, array $fqns): string
+    {
+        if ($fqns === []) {
+            return '';
+        }
+
+        return \sprintf($format, \count($fqns), DiagnosticSampleList::format($fqns));
+    }
+
+    /**
+     * What each edit does to the undecided share. A later layer is named
+     * because it does cover these classes — an unanswered layer does not
+     * withdraw a later match — and because what it covers them with is a
+     * guess the reader has to know about. What decides them differs by kind,
+     * so each kind present gets its own sentence and an absent kind gets
+     * none: an analysed class is decided by completing its chain, which
+     * `debug:layer-assignment` locates, while a symbol outside the paths
+     * cannot be inspected there at all — the command refuses a class the run
+     * did not analyse — and is decided only by a layer reading its name.
+     */
+    private static function undecidableRecommendation(int $undecidable, int $outside): string
+    {
+        if ($undecidable === 0) {
+            return '';
+        }
+
+        $recommendation = ' For the undecided ones, a layer declared after the one that could not answer (a catch-all'
+            . ' included) covers them, but as a guess: each may belong to the unanswered layer.';
+        if ($undecidable > $outside) {
+            $recommendation .= ' For an analysed class, widening paths to include the declaration where its chain stops'
+                . ' decides it — "qmx debug:layer-assignment <class>" names that declaration.';
+        }
+        if ($outside > 0) {
+            $recommendation .= ' A symbol outside the analysed paths is decided by analysing it when it is your own code'
+                . ' — widening paths to include it — and otherwise by a patterns layer for its namespace declared before'
+                . ' the layer that could not answer.';
+        }
+
+        return $recommendation;
     }
 
     /**
@@ -115,35 +238,96 @@ final class DeclaredLayerReachability
      * not a mistake. {@see pendingLayersMatched()} is the counterpart that
      * keeps that declaration honest.
      *
+     * So is a layer that could still own an analysed class whose assignment
+     * the run could not decide — one a match with an unanswered `exclude:`
+     * stands in front of, or one it could not answer about while a type its
+     * criteria name is one the run met. "Matches no class" and "shadowed" are
+     * conclusions the run did not reach there, and this channel fails the
+     * run; `architecture.doubted-assignment` names the layer instead.
+     * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidence::reachedCounts()} decides which contests count.
+     *
+     * A contest that does not count is said in the finding rather than
+     * dropped, in the words that are true of it: a layer that could not
+     * answer is told which of the types it names the run never met — a typo,
+     * or a type reachable only through unanalysed code — and a layer whose
+     * criteria matched symbols outside the paths is told that an earlier
+     * layer holds them through an `exclude:` no run can answer.
+     *
      * @param list<LayerDefinition> $definitions In declaration order.
-     * @param array<string, int> $assignedHits Local map (NOT a field) of layerName → hit
-     *                                         count, merged by the caller from the
-     *                                         per-class and the per-edge walk.
+     * @param array<string, int> $reachedCounts Layer name → number of symbols assigned to the
+     *                                          layer or analysed classes it could still own,
+     *                                          from {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidence::reachedCounts()}.
+     * @param array<string, array{matchedAnalysed: int, matchedOutside: int, unansweredAnalysed: int, unansweredOutside: int, unmetTypes: list<string>, installConsulted: bool}> $contests
+     *                                                                                                                                                                                     Every declared layer → what it could still own, from
+     *                                                                                                                                                                                     {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidence::contests()}.
      *
      * @return list<Finding>
      */
-    public static function unreachableLayers(array $definitions, array $assignedHits): array
+    public static function unreachableLayers(array $definitions, array $reachedCounts, array $contests): array
     {
         $findings = [];
 
         foreach ($definitions as $definition) {
             $layerName = $definition->name();
-            if ($definition->lifecycle->isPending() || ($assignedHits[$layerName] ?? 0) > 0) {
+            if ($definition->lifecycle->isPending() || ($reachedCounts[$layerName] ?? 0) > 0) {
                 continue;
             }
 
             $findings[] = self::projectDiagnostic(
                 LayerPolicyPreparationInterface::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
                 \sprintf(
-                    'Layer "%s" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the declared criteria (%s) match no class in the analysed codebase. Run "qmx debug:layer-assignment <class>" to inspect specific classes.',
+                    'Layer "%s" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the declared criteria (%s) match no class in the analysed codebase.%s Run "qmx debug:layer-assignment <class>" to inspect specific classes.',
                     $layerName,
                     $definition->membership()->describe(),
+                    self::uncountedContest($contests[$layerName]),
                 ),
                 'Move the layer above any broader layer that captures its classes, remove the layer if its pattern intentionally covers no class, or declare "pending: true" if the code it describes has not been written yet.',
             );
         }
 
         return $findings;
+    }
+
+    /**
+     * What an unreachable layer could still own, which did not keep it out of
+     * the channel, said in the words that hold for each share.
+     *
+     * @param array{matchedAnalysed: int, matchedOutside: int, unansweredAnalysed: int, unansweredOutside: int, unmetTypes: list<string>, installConsulted: bool} $contest
+     */
+    private static function uncountedContest(array $contest): string
+    {
+        $text = '';
+        if ($contest['unansweredAnalysed'] + $contest['unansweredOutside'] > 0) {
+            $text .= \sprintf(
+                ' The run could not answer the criteria about %s (architecture.doubted-assignment names them), and a'
+                . ' doubt does not show that they match anything.',
+                self::presentCounts([
+                    'analysed class(es)' => $contest['unansweredAnalysed'],
+                    'symbol(s) outside the analysed paths' => $contest['unansweredOutside'],
+                ]),
+            );
+        }
+        $text .= self::sampledSentence(
+            $contest['installConsulted']
+                ? ' None of the %d type(s) the criteria name (%s) is declared in the analysed paths, built into PHP,'
+                    . ' met at either end of a dependency edge or placed by the analysed project\'s composer install:'
+                    . ' a name is most likely mistyped, or the package declaring it is not installed.'
+                : ' None of the %d type(s) the criteria name (%s) is declared in the analysed paths, built into PHP or met at'
+                    . ' either end of a dependency edge, and the run found no composer install to look it up in: either a'
+                    . ' name is mistyped, or the type is reachable only through code the run did not analyse, and'
+                    . ' installing the project\'s dependencies or widening paths to include that code decides it.',
+            $contest['unmetTypes'],
+        );
+        if ($contest['matchedOutside'] > 0) {
+            $text .= \sprintf(
+                ' Its criteria match %d symbol(s) outside the analysed paths, which an earlier layer holds through an'
+                . ' "exclude" the run cannot answer about them (architecture.doubted-assignment names them); the run'
+                . ' never reads such a symbol, so that clause stays unanswered in every run.',
+                $contest['matchedOutside'],
+            );
+        }
+
+        return $text;
     }
 
     /**
@@ -205,7 +389,7 @@ final class DeclaredLayerReachability
 
     /**
      * Emits one diagnostic per template name that produced zero concrete
-     * layers during expansion (Phase 2 direction 2).
+     * layers during expansion.
      *
      * The list is populated by
      * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage} and
@@ -247,97 +431,7 @@ final class DeclaredLayerReachability
     }
 
     /**
-     * Emits one diagnostic per (assigned, shadowed) layer pair observed
-     * during the class iteration.
-     *
-     * Determinism: `metrics->all()` iteration order is not stable under
-     * parallel collection. The per-pair sample is sorted lexicographically by
-     * FQN and the pair list is sorted by (assigned, shadowed) before emission
-     * so CI diffs are stable across runs.
-     *
-     * Each evidence entry already carries the primary criterion that matched
-     * on each side (recorded during the rule's class walk), so no second walk
-     * over the layer list is necessary at emission time.
-     *
-     * @param array<string, array<string, list<ShadowedClass>>> $shadowEvidence
-     *
-     * @return list<Finding>
-     */
-    public static function potentialShadows(array $shadowEvidence): array
-    {
-        $findings = [];
-
-        foreach (self::sortedShadowPairs($shadowEvidence) as $pair) {
-            $assignedLayer = $pair['assigned'];
-            $shadowedLayer = $pair['shadowed'];
-            $entries = $pair['entries'];
-
-            $sample = \array_slice($entries, 0, self::SHADOW_SAMPLE_LIMIT);
-            $remaining = \count($entries) - \count($sample);
-
-            $sampleList = implode(', ', array_map(static fn(ShadowedClass $entry): string => $entry->fqn, $sample));
-            if ($remaining > 0) {
-                $sampleList .= \sprintf(' ...and %d more', $remaining);
-            }
-
-            $findings[] = self::projectDiagnostic(
-                LayerPolicyPreparationInterface::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
-                \sprintf(
-                    'Layer "%s" (%s) shadows layer "%s" (%s) for %d class(es) including %s. Run "qmx debug:layer-assignment <class>" to inspect specific cases.',
-                    $assignedLayer,
-                    $sample[0]->assignedCriterion->describe(),
-                    $shadowedLayer,
-                    $sample[0]->shadowedCriterion->describe(),
-                    \count($entries),
-                    $sampleList,
-                ),
-                \sprintf(
-                    'If layer "%s" should own these classes, declare it BEFORE "%s" (declaration order, first match wins). Otherwise tighten the patterns so the layers no longer overlap.',
-                    $shadowedLayer,
-                    $assignedLayer,
-                ),
-            );
-        }
-
-        return $findings;
-    }
-
-    /**
-     * Flattens the evidence map into pairs ordered by (assigned, shadowed),
-     * each with its own sample ordered by FQN.
-     *
-     * @param array<string, array<string, list<ShadowedClass>>> $shadowEvidence
-     *
-     * @return list<array{assigned: string, shadowed: string, entries: non-empty-list<ShadowedClass>}>
-     */
-    private static function sortedShadowPairs(array $shadowEvidence): array
-    {
-        $pairs = [];
-        foreach ($shadowEvidence as $assigned => $shadowedMap) {
-            foreach ($shadowedMap as $shadowed => $entries) {
-                // A pair exists only once a reportable shadow was recorded
-                // for it, so the entry list is non-empty by construction.
-                \assert($entries !== []);
-                usort($entries, static fn(ShadowedClass $a, ShadowedClass $b): int => strcmp($a->fqn, $b->fqn));
-                $pairs[] = [
-                    'assigned' => (string) $assigned,
-                    'shadowed' => (string) $shadowed,
-                    'entries' => $entries,
-                ];
-            }
-        }
-
-        usort($pairs, static function (array $a, array $b): int {
-            $cmp = strcmp($a['assigned'], $b['assigned']);
-
-            return $cmp !== 0 ? $cmp : strcmp($a['shadowed'], $b['shadowed']);
-        });
-
-        return $pairs;
-    }
-
-    /**
-     * All four diagnostics judge the declaration as a whole, so they carry
+     * All three diagnostics judge the declaration as a whole, so they carry
      * the project subject and no location — there is no single line to point
      * at, and pointing at one would make the finding look file-scoped when
      * {@see LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS} says it is not.

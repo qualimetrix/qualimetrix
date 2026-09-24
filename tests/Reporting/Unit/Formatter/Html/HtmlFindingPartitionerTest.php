@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Reporting\Unit\Formatter\Html;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
@@ -105,9 +108,10 @@ final class HtmlFindingPartitionerTest extends TestCase
     }
 
     #[Test]
-    public function itSkipsFileFindingDuringPartition(): void
+    public function itPutsAFileFindingWithoutASoleClassOnTheRoot(): void
     {
         $classNode = new HtmlTreeNode('Service', 'App\\Service', 'class');
+        $root = new HtmlTreeNode('<project>', HtmlFindingPartitioner::ROOT, 'project');
 
         $finding = self::finding(
             location: new Location(RelativePath::fromString('src/helpers.php'), 1),
@@ -118,9 +122,14 @@ final class HtmlFindingPartitionerTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $result = $this->partitioner->partition([$finding], ['App\\Service' => $classNode]);
+        $result = $this->partitioner->partition([$finding], ['App\\Service' => $classNode, '' => $root]);
 
-        self::assertSame([], $result);
+        self::assertSame(['' => [$finding]], $result);
+        self::assertSame(
+            ['App\\Service' => [$finding]],
+            $this->partitioner->partition([$finding], ['App\\Service' => $classNode, '' => $root], $this->soleClassIn('src/helpers.php', 'App', 'Service')),
+            'a file declaring one class shows its file findings on that class',
+        );
     }
 
     #[Test]
@@ -165,8 +174,16 @@ final class HtmlFindingPartitionerTest extends TestCase
         self::assertArrayHasKey('App', $result);
     }
 
+    private function soleClassIn(string $file, string $namespace, string $class): InMemoryMetricRepository
+    {
+        $metrics = new InMemoryMetricRepository();
+        $metrics->add(SymbolPath::forClass($namespace, $class), MetricBag::fromArray([]), RelativePath::fromString($file), 1);
+
+        return $metrics;
+    }
+
     #[Test]
-    public function itDropsMethodFindingWhenNoClassAndNoNamespaceNode(): void
+    public function itPutsAMethodFindingWithoutClassOrNamespaceNodeOnTheRoot(): void
     {
         $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
@@ -177,9 +194,26 @@ final class HtmlFindingPartitionerTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $result = $this->partitioner->partition([$finding], []);
+        $root = new HtmlTreeNode('<project>', HtmlFindingPartitioner::ROOT, 'project');
 
-        self::assertSame([], $result);
+        self::assertSame(['' => [$finding]], $this->partitioner->partition([$finding], ['' => $root]));
+    }
+
+    #[Test]
+    public function itRefusesToDropAFindingWhenNotEvenTheRootNodeExists(): void
+    {
+        $finding = self::finding(
+            location: new Location(RelativePath::fromString('src/Service.php'), 10),
+            symbolPath: SymbolPath::forMethod('App', 'Service', 'calculate'),
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
+            message: 'Too complex',
+            severity: Severity::Warning,
+        );
+
+        $this->expectException(LogicException::class);
+
+        $this->partitioner->partition([$finding], []);
     }
 
     #[Test]
@@ -377,7 +411,7 @@ final class HtmlFindingPartitionerTest extends TestCase
     }
 
     #[Test]
-    public function itSkipsUnknownNodePathsOnAttach(): void
+    public function itRefusesToAttachToAPathThatIsNotANode(): void
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
@@ -390,17 +424,17 @@ final class HtmlFindingPartitionerTest extends TestCase
             severity: Severity::Warning,
         );
 
+        $this->expectException(LogicException::class);
+
         $this->partitioner->attach(
             ['App\\Service' => $node],
             ['App\\Other' => [$finding]],
             new FormatterContext(),
         );
-
-        self::assertSame([], $node->findings);
     }
 
     #[Test]
-    public function itProducesEmptyFileWhenAttachingLocationNone(): void
+    public function itPublishesNullFileWhenAttachingLocationNoneLikeTheJsonReport(): void
     {
         $node = new HtmlTreeNode('NS', 'App', 'namespace');
 
@@ -420,7 +454,7 @@ final class HtmlFindingPartitionerTest extends TestCase
         );
 
         self::assertCount(1, $node->findings);
-        self::assertSame('', $node->findings[0]['file']);
+        self::assertNull($node->findings[0]['file']);
         self::assertNull($node->findings[0]['line']);
     }
 

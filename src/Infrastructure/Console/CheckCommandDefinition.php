@@ -97,6 +97,12 @@ final class CheckCommandDefinition
                 'Include files marked with @generated annotation (skipped by default)',
             )
             ->addOption(
+                'include-autoload-dev',
+                null,
+                InputOption::VALUE_NONE,
+                'Count composer.json autoload-dev code as part of the project: analysed when no paths are given, and part of the scope a run is judged against (left out by default)',
+            )
+            ->addOption(
                 'config',
                 'c',
                 InputOption::VALUE_REQUIRED,
@@ -117,7 +123,7 @@ final class CheckCommandDefinition
                 'output',
                 'o',
                 InputOption::VALUE_REQUIRED,
-                'Write output to file instead of stdout (atomic write)',
+                'Write output to file instead of stdout; an existing file is written in place',
             )
             ->addOption(
                 'fail-on',
@@ -241,8 +247,9 @@ final class CheckCommandDefinition
                 'log-level',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Minimum log level (debug, info, warning, error). Refused when the value is none of them',
-                'info',
+                'Minimum log level (debug, info, warning, error) for --log-file and, with -v or more, the console; '
+                . 'without -v it can only narrow the console below warnings. Not given: the console shows warnings, '
+                . 'info with -v, debug with -vv, and the log file takes info. Refused when the value is none of them',
             )
             ->addOption(
                 'no-progress',
@@ -265,14 +272,14 @@ final class CheckCommandDefinition
                 'profile',
                 null,
                 InputOption::VALUE_OPTIONAL,
-                'Enable profiling and export to file (or show summary if no file specified)',
+                'Enable profiling and export to file (or show summary if no file specified). Refused before analysis when the file cannot be written',
                 false,
             )
             ->addOption(
                 'profile-format',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Profile export format (json or chrome-tracing)',
+                'Profile export format: json or chrome-tracing. Refused before analysis when it is anything else',
                 'json',
             );
     }
@@ -297,7 +304,7 @@ final class CheckCommandDefinition
                 'detail',
                 null,
                 InputOption::VALUE_OPTIONAL,
-                'Show detailed violations (default: 200, --detail=all for unlimited, --detail=N for custom limit)',
+                'Add the grouped violation list after the summary, capped at 200 entries: --detail=N caps it at N, --detail=all or --detail=0 removes the cap. Omitted, the list is not shown unless --namespace or --class is used',
                 false, // false = not passed, null = passed without value
             )
             ->addOption(
@@ -366,21 +373,30 @@ final class CheckCommandDefinition
             $reflection = new ReflectionClass($optionsClass);
 
             foreach ($aliases as $alias => $optionName) {
-                // Option name may be nested (e.g., 'callable.warning'), use the leaf
-                $leafName = str_contains($optionName, '.') ? substr($optionName, (int) strrpos($optionName, '.') + 1) : $optionName;
-
-                if ($reflection->hasProperty($leafName)) {
-                    $property = $reflection->getProperty($leafName);
-                    $type = $property->getType();
-
-                    if ($type instanceof ReflectionNamedType && $type->getName() === 'bool') {
-                        $booleanAliases[] = $alias;
-                    }
+                if (self::isBooleanOption($reflection, $optionName)) {
+                    $booleanAliases[] = $alias;
                 }
             }
         }
 
         return $booleanAliases;
+    }
+
+    /**
+     * @param ReflectionClass<covariant object> $options
+     */
+    private static function isBooleanOption(ReflectionClass $options, string $optionName): bool
+    {
+        // Option name may be nested (e.g., 'callable.warning'), use the leaf
+        $leafName = str_contains($optionName, '.') ? substr($optionName, (int) strrpos($optionName, '.') + 1) : $optionName;
+
+        if (!$options->hasProperty($leafName)) {
+            return false;
+        }
+
+        $type = $options->getProperty($leafName)->getType();
+
+        return $type instanceof ReflectionNamedType && $type->getName() === 'bool';
     }
 
     private static function addHealthOptions(Command $command): void
@@ -402,13 +418,13 @@ final class CheckCommandDefinition
                 'disable-rule',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Disable a rule or group by prefix (e.g., complexity, size.class-count). Disabling duplication.clone also skips the memory-intensive detection phase',
+                'Disable a rule or channel by exact name, or every rule under a group with NAME.* (e.g., complexity.*, size.class-count). Disabling duplication.clone also skips the memory-intensive detection phase',
             )
             ->addOption(
                 'only-rule',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Run only specified rules or group by prefix (e.g., complexity, code-smell)',
+                'Run only the named rule or channel, or every rule under a group with NAME.* (e.g., complexity.*, code-smell.*)',
             )
             ->addOption(
                 'rule-opt',

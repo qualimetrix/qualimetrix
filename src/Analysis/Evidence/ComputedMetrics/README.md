@@ -48,13 +48,43 @@ the *narrowest* of its inputs' ratios, because a score is only as much a
 statement about the project as its least-covered term — a cohesion score whose
 TCC term saw a third of the classes is a statement about that third, however
 completely LCOM saw the rest. Populations are symbol counts
-(`size.symbol-class-count`, `size.symbol-method-count`, and the leaf namespaces
-a namespace-collected aggregate is offered), never the `.count` of a
-neighbouring metric: a denominator that is itself a measurement shrinks when
-that measurement fails and hides the very gap being reported. Where no input is
+(`size.symbol-class-count`, `size.symbol-method-count`,
+`size.symbol-declaring-namespace-count`), never the `.count` of a
+neighbouring metric and never the walk an aggregate makes: a denominator that
+is itself a measurement shrinks when that measurement fails and hides the very
+gap being reported. The namespace population used to be the tree's leaves — the
+exact set `NamespaceToProjectAggregator` visits — so a namespace the walk
+dropped left both sides of the ratio and the line read 100%. Where no input is
 an aggregate over symbols — `health.overall`, `health.typing`, a class score, a
 namespace-filtered subtree — the coverage is an explicit "not applicable" with
 a reason, never a zero. Scores are never damped by coverage (ADR 0062).
+
+An input line declares only the population; the `.count` is derived from the
+line's own key, because it is the sample size of the very aggregate the line
+displays. Declared beside the key it was a second spelling of one fact, and a
+retargeted key with a stale count published "0 of 168 (0%)" in the tone of a
+measurement. An absent `.count` at runtime is a genuine measured zero — the
+aggregator publishes no key when nothing contributed — so it cannot be refused
+there; an absent population is refused, since every run writes all three from
+its own symbol list.
+
+A ratio below 100% is not automatically a defect. `namespaces declaring a type`
+carries a permanent gap: a namespace of bare enums declares a type but has no
+abstractness of its own, so it is in the denominator and in no numerator. Two
+such namespaces make this repository read 99%. Narrowing the denominator to the
+namespaces the aggregate reached would print 100% and would be the same defect
+the leaf-only population was.
+
+Coverage is published on every surface that publishes a score: `json` and the
+HTML payload carry the full record, `--format=health` a `Coverage` column on
+every row including `overall` and at every terminal width, and the default
+`summary` one dimmed line per dimension. A surface that shows the score and not
+the share is a score over an unstated part of the subject.
+
+`--exclude-health` renormalizes the remaining weights and hands the rounding
+remainder to the widest share, so the printed weights sum to exactly one.
+Rounding each on its own left the scale at 0.9999 and a subject scoring 100
+everywhere published 99.99.
 
 Namespace drill-down receives a bound `NamespacePattern`. `exact` aggregates
 only the named namespace; `subtree` and `regex` aggregate every matched
@@ -78,6 +108,8 @@ ComputedMetrics/
 │   ├── Configuration/                # runtime configuration and Health exclusion promises
 │   ├── Definition/                   # definitions, dimensions, and immutable resolved snapshot
 │   ├── Evaluation/                   # concrete evaluation service consumed by Run
+│   │   ├── ComputedMetricReads.php       # which absent keys a formula reads where it cannot use null
+│   │   └── ComputedMetricBranchTrace.php # the conditional operands one evaluation entered
 │   └── Finding/                      # computed finding channel family
 ├── Configuration/
 │   ├── ComputedMetricContributionReader.php
@@ -123,6 +155,27 @@ Measurement aggregation and before CircularDependency preparation. Evaluation
 reads the replaced immutable definition token, mutates only
 `MetricRepositoryInterface`, owns the `computed` profiler span, and is a no-op
 when no files or definitions exist.
+
+Which absent keys a formula would read as `null` is one query,
+`ComputedMetricExpression::missingKeysOf()`, asked against three presence
+sets. `ComputedMetricFormulaValidator` asks it with every referenced computed
+metric present only at its own `levels:`, so a bare cross-level read is a
+configuration refusal before the run. The evaluator asks it with the union of
+keys the level carries (a miss is the same refusal, after measurement) and then
+per symbol through `evaluateOn()` (a miss publishes no value, counted in one
+warning per metric and level). The right side of `??` counts only where its
+left side is absent.
+
+A ternary branch and the right side of `and`/`or` run only on a value the
+symbol carries, so before a run only a key every path reads counts; the
+condition always runs and counts in full. Per symbol, `ComputedMetricBranchTrace`
+runs the formula as a copy whose conditional operands report their entry, and
+the operands the evaluation entered decide. Entering one that would read an
+absent key where no enclosing `??` catches it stops the run before the `null`
+reaches the arithmetic or a PHP function. Which branch runs is taken from the
+evaluation itself and never computed beside it; the trace relies only on
+Expression Language evaluating one branch of `?:` and short-circuiting
+`and`/`or`, not on how it marks the left side of `??`.
 
 ## Public contracts and named consumers
 

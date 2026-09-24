@@ -12,6 +12,8 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupReason;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Analysis\Policy\Baseline\EntrySelector;
+use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
+use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -48,6 +50,7 @@ final class BaselineCleanupCommand extends BaselineCommand
         private readonly BaselineCleaner $cleaner,
         private readonly BaselineWriter $writer,
         private readonly ChannelDeclarationRegistryInterface $declarations,
+        private readonly RunRuleCoverage $ruleCoverage,
     ) {
         parent::__construct();
     }
@@ -71,17 +74,24 @@ final class BaselineCleanupCommand extends BaselineCommand
             'Without --remove the command only reports: no entry is removed and the'
             . "\n" . 'file is not touched.' . "\n\n"
             . 'An entry is listed when the run reported nothing for its identity, or'
-            . "\n" . 'when no rule declares its channel any more, or when the entry could'
-            . "\n" . 'not be read at all. None of those proves the debt is gone — a'
-            . "\n" . 'loosened threshold silences a finding just as effectively as a fix —'
-            . "\n" . 'so removal is always yours to assert, one selector at a time.',
+            . "\n" . 'when the run did not measure its channel at the level of its subject'
+            . "\n" . '(--only-rule, --disable-rule, including a selector narrowed to one'
+            . "\n" . 'level such as X:namespace, enabled: false, or a level switched off in'
+            . "\n" . 'the rule\'s options), or when no rule declares its channel any more,'
+            . "\n" . 'or when the entry could not be read at all. None of those proves the'
+            . "\n" . 'debt is gone — a loosened threshold silences a finding just as'
+            . "\n" . 'effectively as a fix — so removal is always yours to assert, one'
+            . "\n" . 'selector at a time.',
         ));
     }
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        /** @var string $baselinePath */
-        $baselinePath = $input->getArgument('baseline');
+        $baselinePath = CommandLineSpelling::requiredArgument($input, 'baseline');
+        // Spelled before the run, parsed after it: a value no command line can
+        // write is refused before any work, and a malformed selector is
+        // refused beside the candidates it should have been copied from.
+        $written = CommandLineSpelling::options($input, 'remove');
 
         $measured = $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $baselinePath);
 
@@ -92,10 +102,18 @@ final class BaselineCleanupCommand extends BaselineCommand
         $context = $measured->context;
         $baseline = $measured->baseline;
 
-        $candidates = $this->cleaner->candidates($baseline, $context->findings(), $this->declarations);
+        $candidates = $this->cleaner->candidates(
+            $baseline,
+            $context->findings(),
+            $this->declarations,
+            $this->ruleCoverage->unmeasured(array_map(
+                static fn($entry) => $entry->identity,
+                $baseline->entries,
+            )),
+        );
         self::reportCandidates($candidates, $output);
 
-        $selectors = $this->readSelectors($input);
+        $selectors = self::readSelectors($written);
 
         if ($selectors === []) {
             $output->writeln('<info>Nothing removed: pass --remove=SELECTOR for each entry you want gone.</info>');
@@ -144,13 +162,12 @@ final class BaselineCleanupCommand extends BaselineCommand
      * the subset that parsed is how a typo turns into "it worked" over a file
      * that lost the wrong lines.
      *
+     * @param list<string> $raw the `--remove` values as written
+     *
      * @return list<EntrySelector>
      */
-    private function readSelectors(InputInterface $input): array
+    private static function readSelectors(array $raw): array
     {
-        /** @var list<string> $raw */
-        $raw = $input->getOption('remove');
-
         $selectors = [];
         $invalid = [];
 
@@ -211,6 +228,8 @@ final class BaselineCleanupCommand extends BaselineCommand
     {
         return match ($candidate->reason) {
             BaselineCleanupReason::Stale => 'nothing reported for this identity',
+            BaselineCleanupReason::ProducerDidNotRun => 'not measured: this invocation did not run the rule for'
+                . ' this channel at this level',
             BaselineCleanupReason::ChannelNotDeclared => 'no rule declares this channel',
             BaselineCleanupReason::ChannelIsConfigurationError => 'this channel reports a configuration error and'
                 . ' cannot be accepted as debt',

@@ -5,6 +5,7 @@ annotation.unsupported-threshold#annotation.unsupported-threshold	file
 annotation.unused-directive#annotation.unused-directive	file
 architecture.circular-dependency#architecture.circular-dependency	project
 architecture.coverage-gap#architecture.coverage-gap	project
+architecture.doubted-assignment#architecture.doubted-assignment	project
 architecture.empty-template#architecture.empty-template	project
 architecture.layer-violation#architecture.layer-violation	class
 architecture.pending-layer-matched#architecture.pending-layer-matched	project

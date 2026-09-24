@@ -115,20 +115,23 @@ final class UnboundSuppressionRule extends AbstractRule
      * and belongs to no declaration — it is a fact about the run's
      * configuration, the way `discovery.unmatched-exclude` is.
      *
-     * Project level is also what keeps a finding about `suppress_paths` from
-     * being removed by the very pattern it reports: the global path and
-     * namespace filters exempt channels their owner declared project-scoped
-     * (`ChannelFileScope`), which is a declared property rather than a
-     * spelling.
+     * Project level is also what keeps a finding about a pattern from being
+     * removed by the very pattern it reports. These channels are not declared
+     * project-scoped (`ChannelFileScope`); the global filters pass them
+     * because a project finding has no file for a path pattern to match and
+     * no namespace for a namespace pattern to compare.
      *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
-            UnboundSuppressionOptions::UNMATCHED_PATH => ChannelDeclaration::occurrence(SymbolLevel::Project),
-            UnboundSuppressionOptions::UNMATCHED_NAMESPACE => ChannelDeclaration::occurrence(SymbolLevel::Project),
-            UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER => ChannelDeclaration::occurrence(SymbolLevel::Project),
+            UnboundSuppressionOptions::UNMATCHED_PATH => ChannelDeclaration::occurrence(SymbolLevel::Project)
+                ->describedAs('Reports a global suppress_paths value that matches no analysed file.'),
+            UnboundSuppressionOptions::UNMATCHED_NAMESPACE => ChannelDeclaration::occurrence(SymbolLevel::Project)
+                ->describedAs('Reports a global suppress_namespaces value that matches no declared namespace.'),
+            UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER => ChannelDeclaration::occurrence(SymbolLevel::Project)
+                ->describedAs('Reports a suppression value configured under a rule that names nothing the run contains.'),
         ];
     }
 

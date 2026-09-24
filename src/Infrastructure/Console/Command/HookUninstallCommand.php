@@ -30,11 +30,7 @@ final class HookUninstallCommand extends AbstractHookCommand
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        // Find .git directory
-        $hookPath = $this->hookPath($output);
-        if ($hookPath === null) {
-            return self::FAILURE;
-        }
+        $hookPath = $this->hookPath();
 
         if (!self::hookExists($hookPath)) {
             $output->writeln('<comment>Pre-commit hook not found. Nothing to uninstall.</comment>');
@@ -42,13 +38,12 @@ final class HookUninstallCommand extends AbstractHookCommand
             return self::SUCCESS;
         }
 
-        $removeResult = $this->removeHookFile($hookPath, $output);
-        if ($removeResult !== self::SUCCESS) {
-            return $removeResult;
-        }
+        $this->removeHookFile($hookPath, $output);
 
         if ($input->getOption('restore-backup') === true) {
-            return $this->restoreBackup($hookPath, $output);
+            $this->restoreBackup($hookPath, $output);
+
+            return self::SUCCESS;
         }
 
         $this->notifyBackupExists($hookPath, $output);
@@ -56,7 +51,7 @@ final class HookUninstallCommand extends AbstractHookCommand
         return self::SUCCESS;
     }
 
-    private function removeHookFile(string $hookPath, OutputInterface $output): int
+    private function removeHookFile(string $hookPath, OutputInterface $output): void
     {
         // A link leading nowhere has no contents, so the only test for
         // ownership there is cannot be applied. Guessing from the link target
@@ -64,64 +59,56 @@ final class HookUninstallCommand extends AbstractHookCommand
         // saying so and letting the user decide costs nothing and is never
         // wrong about someone else's hook.
         if (is_link($hookPath) && !file_exists($hookPath)) {
-            $output->writeln('<error>Pre-commit hook is a symlink that leads nowhere.</error>');
-            $output->writeln('Nothing identifies it, so it is left alone.');
-            $output->writeln(\sprintf('Replace it with a working hook: %s hook:install --force', $this->runningBinaryLocator->hint()));
-            $output->writeln('Or remove it by hand: rm ' . $hookPath);
-
-            return self::FAILURE;
+            throw $this->refusal(\sprintf(
+                'Pre-commit hook %s is a symlink that leads nowhere. Nothing identifies it, so it is left alone. '
+                . 'Replace it with a working hook: %s hook:install --force. Or remove it by hand: rm %s',
+                $hookPath,
+                $this->runningBinaryLocator->hint(),
+                $hookPath,
+            ));
         }
 
-        $content = file_get_contents($hookPath);
+        $content = @file_get_contents($hookPath);
         if ($content === false) {
-            $output->writeln('<error>Failed to read hook file</error>');
-
-            return self::FAILURE;
+            throw $this->refusal(\sprintf('Failed to read hook file: %s', $hookPath));
         }
 
         if (!PreCommitHook::isOurs($content)) {
-            $output->writeln('<error>Pre-commit hook exists but is not an Qualimetrix hook.</error>');
-            $output->writeln('Will not remove third-party hook. Remove it manually if needed.');
-
-            return self::FAILURE;
+            throw $this->refusal(\sprintf(
+                'Pre-commit hook %s is not a Qualimetrix hook, so it is left alone. Remove it by hand if it is no longer wanted.',
+                $hookPath,
+            ));
         }
 
-        if (!unlink($hookPath)) {
-            $output->writeln('<error>Failed to remove hook file</error>');
-
-            return self::FAILURE;
+        [$removed, $reason] = self::attempt(static fn(): bool => unlink($hookPath));
+        if (!$removed) {
+            throw $this->refusal(\sprintf('Failed to remove hook file: %s: %s', $hookPath, $reason));
         }
 
         $output->writeln('<info>✓ Pre-commit hook removed</info>');
-
-        return self::SUCCESS;
     }
 
-    private function restoreBackup(string $hookPath, OutputInterface $output): int
+    private function restoreBackup(string $hookPath, OutputInterface $output): void
     {
         $backupPath = $hookPath . '.backup';
 
         if (!file_exists($backupPath)) {
             $output->writeln('<comment>No backup found to restore</comment>');
 
-            return self::SUCCESS;
+            return;
         }
 
-        if (!copy($backupPath, $hookPath)) {
-            $output->writeln('<error>Failed to restore backup</error>');
-
-            return self::FAILURE;
+        [$copied, $reason] = self::attempt(static fn(): bool => copy($backupPath, $hookPath));
+        if (!$copied) {
+            throw $this->refusal(\sprintf('Failed to restore backup %s to %s: %s', $backupPath, $hookPath, $reason));
         }
 
-        if (!chmod($hookPath, 0755)) {
-            $output->writeln('<error>Failed to make restored hook executable</error>');
-
-            return self::FAILURE;
+        [$executable, $reason] = self::attempt(static fn(): bool => chmod($hookPath, 0755));
+        if (!$executable) {
+            throw $this->refusal(\sprintf('Failed to make restored hook executable: %s: %s', $hookPath, $reason));
         }
 
         $output->writeln('<info>✓ Backup restored</info>');
-
-        return self::SUCCESS;
     }
 
     private function notifyBackupExists(string $hookPath, OutputInterface $output): void

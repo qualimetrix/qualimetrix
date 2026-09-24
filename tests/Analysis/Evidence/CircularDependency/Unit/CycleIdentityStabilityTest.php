@@ -282,10 +282,8 @@ final class CycleIdentityStabilityTest extends TestCase
      */
     private function findingFor(array $adjacencyList): Finding
     {
-        $cycles = (new CircularDependencyDetector())->detect($this->buildGraph($adjacencyList));
-
         $analysis = new CircularDependencyAnalysis(new CircularDependencyDetector());
-        $analysis->replace($cycles);
+        $analysis->prepare($this->buildGraph($adjacencyList));
         $rule = new CircularDependencyRule(new CircularDependencyOptions(), $analysis);
         $findings = $rule->analyze(new AnalysisContext(
             metrics: new InMemoryMetricRepository(),

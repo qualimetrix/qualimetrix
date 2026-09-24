@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCo
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Formatter\Health\HealthCoverageNarrator;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
 use Qualimetrix\Reporting\Report;
@@ -120,25 +121,14 @@ final class JsonHealthSection
     }
 
     /**
-     * What share of the subject the score was computed over.
-     *
-     * The two states carry the same keys, so a consumer reads `state` instead
-     * of inferring absence from a zero: an undefined coverage and a coverage
-     * of nothing are different claims about the subject.
-     *
      * @return array<string, mixed>
      */
     private function formatCoverage(HealthCoverage $coverage): array
     {
-        return [
-            'state' => $coverage->applicable ? 'measured' : 'not-applicable',
-            'measured' => $coverage->measured,
-            'eligible' => $coverage->eligible,
-            'ratio' => $coverage->ratio !== null ? $this->sanitizer->sanitizeFloat($coverage->ratio) : null,
-            'unit' => $coverage->unit?->value,
-            'basis' => $coverage->basis,
-            'reason' => $coverage->reason,
-        ];
+        $record = HealthCoverageNarrator::record($coverage);
+        $record['ratio'] = $record['ratio'] !== null ? $this->sanitizer->sanitizeFloat($record['ratio']) : null;
+
+        return $record;
     }
 
     /**

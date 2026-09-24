@@ -29,14 +29,20 @@ use Symfony\Component\DependencyInjection\Reference;
  *
  * Must run BEFORE RuleCompilerPass so Options are available when Rules are collected.
  */
-final class RuleOptionsCompilerPass implements CompilerPassInterface
+final class RuleOptionsCompilerPass implements CompilerPassInterface, ConsumerBoundPassInterface
 {
     private const string RULE_INTERFACE = 'Qualimetrix\\Analysis\\Finding\\Rule\\RuleInterface';
 
+    public static function consumerServiceIds(): array
+    {
+        return [RuleOptionsFactory::class];
+    }
+
     public function process(ContainerBuilder $container): void
     {
-        // RuleOptionsFactory is synthetic, so use has() instead of hasDefinition()
-        if (!$container->has(RuleOptionsFactory::class)) {
+        // hasDefinition(), not has(): the check ConsumerRegistrationCompilerPass
+        // makes on the product container must be this very question.
+        if (!$container->hasDefinition(RuleOptionsFactory::class)) {
             return;
         }
 

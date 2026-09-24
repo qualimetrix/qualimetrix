@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules;
 
 use LogicException;
-
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -35,6 +34,7 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\OwnedLayerTargets;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
@@ -82,13 +82,14 @@ final class LayerViolationRuleTest extends TestCase
             'layer-violation' => 'enabled',
             'layer-violation-severity' => 'severity',
         ], CliAliasReader::read(LayerViolationRule::class));
-        // Two channels, and the second one is the rule's rather than the
-        // configuration validator's on purpose: an `exclude:` clause that
+        // Three channels, and the second and third are the rule's rather than
+        // the configuration validator's on purpose: an `exclude:` clause that
         // removed nothing leaves the run's conclusions wider than asked for,
-        // which is debt a project may accept — not a declaration that cannot
-        // be honoured.
+        // which is debt a project may accept, and an assignment in doubt is
+        // information that must never gate — neither is a declaration that
+        // cannot be honoured.
         self::assertSame(
-            ['architecture.layer-violation', 'architecture.unmatched-exclude'],
+            ['architecture.layer-violation', 'architecture.unmatched-exclude', 'architecture.doubted-assignment'],
             array_keys(LayerViolationRule::channelDeclarations()),
         );
         self::assertStringContainsString('layer', strtolower($rule->getDescription()));
@@ -510,8 +511,7 @@ final class LayerViolationRuleTest extends TestCase
             reason: 'Only the first exact source declaration is accepted.',
             line: 1,
             type: SuppressionType::Symbol,
-            subject: $firstSubject,
-            controlScope: ControlScope::Class_,
+            binding: new DeclarationBinding($firstSubject, ControlScope::Class_),
         )]]);
         self::assertSame([false, true], array_map(
             static fn($finding): bool => \in_array($finding, $result->retained, true),
@@ -719,8 +719,7 @@ final class LayerViolationRuleTest extends TestCase
             reason: 'Source declaration is independently controlled.',
             line: 1,
             type: SuppressionType::Symbol,
-            subject: $sourceSubject,
-            controlScope: ControlScope::Class_,
+            binding: new DeclarationBinding($sourceSubject, ControlScope::Class_),
         )]];
         $result = $filter->apply($findings, $suppressions);
         self::assertSame([true, true], array_map(static fn($v): bool => \in_array($v, $result->retained, true), $findings));
@@ -730,8 +729,7 @@ final class LayerViolationRuleTest extends TestCase
             reason: 'Target declaration control is independent.',
             line: 1,
             type: SuppressionType::Symbol,
-            subject: $firstTargetSubject,
-            controlScope: ControlScope::Class_,
+            binding: new DeclarationBinding($firstTargetSubject, ControlScope::Class_),
         )];
         $result = $filter->apply($findings, $suppressions);
         self::assertSame([false, true], array_map(static fn($v): bool => \in_array($v, $result->retained, true), $findings));

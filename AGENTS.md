@@ -71,7 +71,7 @@ live in `docs/internal/generated/modular-architecture/`, never in prose.
 
 ```
 src/
-├── Core/              # Cross-cutting primitives (no dependencies)
+├── Core/              # Cross-cutting primitives (no project imports; PHP, PhpParser\Node, Composer\InstalledVersions)
 ├── Analysis/          # Orchestration plus taxonomy-only capability grouping
 │   ├── Configuration/       # ordered configuration document resolution
 │   ├── Finding/             # rule language, execution, findings and filtering
@@ -229,10 +229,10 @@ the command into the Architecture slice would force the slice to depend on
 ## Key Features
 
 ### Metrics and Rules
-- **Complexity**: Cyclomatic (CCN), Cognitive Complexity, NPATH Complexity
+- **Complexity**: Cyclomatic (CCN), Cognitive Complexity, NPATH Complexity, WMC (Weighted Methods per Class)
 - **Maintainability**: Halstead, Maintainability Index
 - **Coupling**: CBO (Coupling Between Objects), Distance from Main Sequence, Instability, Abstractness, ClassRank (PageRank)
-- **Cohesion**: TCC/LCC (Tight/Loose Class Cohesion), LCOM4, WMC (Weighted Methods per Class)
+- **Cohesion**: TCC/LCC (Tight/Loose Class Cohesion), LCOM4
 - **Size**: LOC, Class Count, Namespace Size, Property Count, Method Count
 - **Design**: DIT (Depth of Inheritance Tree), NOC (Number of Children), Type Coverage
 - **Architecture**: Layer Policy Enforcement (multi-criterion membership, template layers, `exclude:`, `relations:` whitelist — deptrac replacement), Circular Dependency Detection, Dependency Graph Export (DOT)
@@ -309,8 +309,10 @@ When documenting deviations: use `!!! info "Deviation from original spec"` block
 
 - **Leaf capabilities** depend only on declared public contracts; sibling
   internals and taxonomy parents are not approved targets for new imports.
-- **Core** contains neutral primitives only and has no project dependencies
-  (PHP and php-parser types are allowed).
+- **Core** contains neutral primitives only and imports nothing from the
+  project outside `Core`; its only external types are `PhpParser\Node` and
+  `Composer\InstalledVersions`. No control enforces that list — a new external
+  import in Core is a review decision (see `src/Core/README.md`).
 - **Analysis\Run phase ports** are limited to the FileSet inspection
   participant. Graph preparation and metric derivation remain unapproved ports.
 - **Infrastructure** may depend on capabilities for delivery/composition;
@@ -737,6 +739,10 @@ Run `bin/qmx check src/` after modifying metric collection or aggregation logic 
 
 **How to interpret findings:**
 - **Invariant test failure** (e.g., parent.sum ≠ Σ children): **Bug** — fix immediately, add regression test
+  - Not an instance: for `size.loc`/`size.lloc`/`size.cloc` the project level counts whole files and the
+    namespace level counts lines inside the `namespace` statement, so project `size.loc.sum` ≠ Σ namespaces
+    is two quantities, not a broken invariant. Within the namespace tree it holds: a namespace's
+    `size.loc.sum` = its own `size.loc` + its children's `size.loc.sum`.
 - **Golden file test failure after intentional algorithm change**: Update expected values in `tests/Analysis/Evidence/Measurement/Integration/Aggregation/GoldenFileAggregationTest.php` after verifying new values are correct
 - **Coupling findings** (high CBO, circular dependencies): **Architecture issue** — evaluate refactoring vs. threshold adjustment
 - **Complexity findings** (CCN > threshold): **Code quality signal** — normal for complex algorithms, investigate only if unexpected

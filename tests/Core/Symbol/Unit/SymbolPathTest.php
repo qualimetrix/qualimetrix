@@ -217,6 +217,62 @@ final class SymbolPathTest extends TestCase
         self::assertSame('(project)', SymbolPath::forProject()->toString());
     }
 
+    /**
+     * `__PROJECT__` is a legal PHP namespace name. It used to be the project
+     * sentinel as well, so the namespace canonicalized to `project:` and was
+     * typed as the project aggregate.
+     */
+    #[Test]
+    public function itKeepsANamespaceNamedLikeTheFormerSentinelANamespace(): void
+    {
+        $namespace = SymbolPath::forNamespace('__PROJECT__');
+
+        self::assertSame(SymbolType::Namespace_, $namespace->getType());
+        self::assertSame('ns:__PROJECT__', $namespace->toCanonical());
+        self::assertSame('__PROJECT__', $namespace->toString());
+        self::assertNotEquals(SymbolPath::forProject(), $namespace);
+    }
+
+    #[Test]
+    public function itKeepsTheNamespaceOfDeclarationsInANamespaceNamedLikeTheFormerSentinel(): void
+    {
+        self::assertSame('class:__PROJECT__\Foo', SymbolPath::forClass('__PROJECT__', 'Foo')->toCanonical());
+        self::assertSame('__PROJECT__\Foo', SymbolPath::forClass('__PROJECT__', 'Foo')->toString());
+        self::assertSame('callable:__PROJECT__\Foo::bar', SymbolPath::forMethod('__PROJECT__', 'Foo', 'bar')->toCanonical());
+        self::assertSame('func:__PROJECT__::helper', SymbolPath::forGlobalFunction('__PROJECT__', 'helper')->toCanonical());
+    }
+
+    /**
+     * The project is told apart by construction, not by the string it shows,
+     * so no namespace string -- not even the one the project publishes --
+     * turns a namespace into the project aggregate.
+     */
+    #[Test]
+    public function itNeverTypesANamespaceAsTheProject(): void
+    {
+        $project = SymbolPath::forProject();
+        $lookalike = SymbolPath::forNamespace((string) $project->namespace);
+
+        self::assertSame(SymbolType::Namespace_, $lookalike->getType());
+        self::assertNotSame($project->toCanonical(), $lookalike->toCanonical());
+        self::assertNotEquals($project, $lookalike);
+        self::assertEquals(SymbolPath::forProject(), $project);
+    }
+
+    /**
+     * What the project publishes in its namespace field is a form the PHP
+     * grammar does not admit as a namespace name, so no analysed namespace
+     * can publish the same value.
+     */
+    #[Test]
+    public function itPublishesAProjectNamespaceNoPhpNamespaceCanSpell(): void
+    {
+        $namespace = SymbolPath::forProject()->namespace;
+
+        self::assertSame('(project)', $namespace);
+        self::assertDoesNotMatchRegularExpression('/^[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*(\\\\[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*)*$/', $namespace);
+    }
+
     #[Test]
     public function itForGlobalNamespaceToString(): void
     {

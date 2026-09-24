@@ -21,7 +21,8 @@ use PhpParser\NodeFinder;
  *
  * When a class uses a trait defined in the same file, this resolver scans the trait's
  * method bodies for member references ($this->method(), $this->prop, self::CONST, etc.)
- * and records them in the class's usage sets to prevent false positives.
+ * and records them in the class's usage sets to prevent false positives. A magic method the trait
+ * declares (__call, __get, ...) switches the class's magic-access protection on.
  *
  * Supports recursive trait resolution (trait using another trait in the same file)
  * with cycle detection. Cross-file trait resolution is not supported.
@@ -128,6 +129,8 @@ final readonly class TraitUsageResolver
             if (!$stmt instanceof ClassMethod) {
                 continue;
             }
+
+            $data->noteMethodDeclaration($stmt->name->toString());
 
             if ($stmt->stmts === null) {
                 continue;

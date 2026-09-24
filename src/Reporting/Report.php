@@ -10,17 +10,19 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
 
 /**
  * Value Object representing the analysis report.
  *
- * @qmx-threshold coupling.cbo warning=31 error=31 -- Report is the transport VO every formatter's
+ * @qmx-threshold coupling.cbo warning=32 error=32 -- Report is the transport VO every formatter's
  *                `format(Report, FormatterContext)` signature depends on, and the type every
  *                pipeline consumer that builds one depends on in turn; the `SuppressionComposition`
  *                field and its eleventh formatter consumer (`SuppressedFormatter`) are the intentional
- *                cause of the two-point rise from the previously baseline-accepted 28. A point
+ *                cause of the two-point rise from the previously baseline-accepted 28, and the
+ *                `ReportProjectScope` field of one more: a fact about the run every format publishes
+ *                travels on the one object every format reads. A point
  *                threshold replaces that baseline entry rather than raising it, per the same reasoning
  *                already applied to the sibling hub {@see FormatterContext}.
  */
@@ -41,6 +43,11 @@ final readonly class Report
      *                                                        Absent from every other formatter's
      *                                                        payload, so its presence never moves
      *                                                        `check`'s own output.
+     * @param ?OutOfScopeFindings $outOfScope What a `--namespace`/`--class` selection left out
+     *                                        of `$findings`; `null` when no selection is active,
+     *                                        so `$findings` is then the whole run.
+     * @param ?ReportProjectScope $projectScope Whether the run's paths covered the project;
+     *                                          `null` only for a report no run measured
      */
     public function __construct(
         public array $findings,
@@ -60,6 +67,8 @@ final readonly class Report
         public int $infoCount = 0,
         public ?ReportCoverage $coverage = null,
         public ?SuppressionComposition $suppressionComposition = null,
+        public ?OutOfScopeFindings $outOfScope = null,
+        public ?ReportProjectScope $projectScope = null,
     ) {}
 
     /**
@@ -76,18 +85,5 @@ final readonly class Report
     public function getTotalFindings(): int
     {
         return \count($this->findings);
-    }
-
-    /**
-     * Returns findings filtered by severity.
-     *
-     * @return list<Finding>
-     */
-    public function getFindingsBySeverity(Severity $severity): array
-    {
-        return array_values(array_filter(
-            $this->findings,
-            static fn(Finding $v): bool => $v->severity === $severity,
-        ));
     }
 }

@@ -18,8 +18,13 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * The Extractor itself is registered separately in the DI configurator;
  * this pass only supplies its `$validators` constructor argument.
  */
-final class ThresholdValidatorMapCompilerPass implements CompilerPassInterface
+final class ThresholdValidatorMapCompilerPass implements CompilerPassInterface, ConsumerBoundPassInterface
 {
+    public static function consumerServiceIds(): array
+    {
+        return [ThresholdOverrideExtractor::class];
+    }
+
     public function process(ContainerBuilder $container): void
     {
         if (!$container->hasDefinition(ThresholdOverrideExtractor::class)) {

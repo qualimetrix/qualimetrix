@@ -9,7 +9,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -155,6 +154,34 @@ final class AggregationHelper
     }
 
     /**
+     * Adds the number of namespaces that declare at least one type.
+     *
+     * This is the population a namespace-collected aggregate is offered, and
+     * Health reads it as a coverage denominator. It is counted from the symbols
+     * because the alternative — the walk the aggregate itself makes — cannot
+     * show a namespace that walk never reached, which is the only thing the
+     * ratio is there to show.
+     *
+     * Project-level only: on a namespace bag the answer is always one.
+     *
+     * @param list<SymbolInfo> $symbolInfos
+     */
+    public static function addDeclaringNamespaceCount(MetricBag $bag, array $symbolInfos): MetricBag
+    {
+        $declaring = [];
+
+        foreach ($symbolInfos as $info) {
+            $path = $info->symbolPath;
+
+            if ($path->type !== null && $path->member === null) {
+                $declaring[$path->namespace ?? ''] = true;
+            }
+        }
+
+        return $bag->with(MetricName::SIZE_SYMBOL_DECLARING_NAMESPACE_COUNT, \count($declaring));
+    }
+
+    /**
      * Collects all metric definitions from all collectors.
      *
      * @param list<MetricCollectorInterface> $collectors
@@ -172,39 +199,5 @@ final class AggregationHelper
         }
 
         return $definitions;
-    }
-
-    /**
-     * Collects raw metric values from symbols.
-     *
-     * @param list<SymbolInfo> $symbolInfos
-     * @param list<MetricDefinition> $definitions
-     *
-     * @return array<string, list<int|float>> metric name => values
-     */
-    public static function collectMetricValues(
-        MetricRepositoryInterface $repository,
-        array $symbolInfos,
-        array $definitions,
-    ): array {
-        $values = [];
-
-        foreach ($definitions as $definition) {
-            $values[$definition->name] = [];
-        }
-
-        foreach ($symbolInfos as $info) {
-            $bag = $repository->get($info->symbolPath);
-
-            foreach ($definitions as $definition) {
-                $value = $bag->get($definition->name);
-
-                if ($value !== null) {
-                    $values[$definition->name][] = $value;
-                }
-            }
-        }
-
-        return $values;
     }
 }

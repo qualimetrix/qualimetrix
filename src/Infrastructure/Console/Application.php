@@ -157,26 +157,45 @@ final class Application extends BaseApplication
      *
      * Once caught here, Symfony's own `run()` never sees the throwable and
      * therefore never calls {@see self::renderThrowable()} — this ladder
-     * prints instead, through the presenter, with `format: null` because the
-     * output format is not known at this level.
+     * prints instead, through the presenter, in the format the command line
+     * asked for ({@see self::requestedFormat()}), so a JSON consumer receives
+     * the same envelope whether the refusal came from inside a command or
+     * from here.
      */
     public function doRun(InputInterface $input, OutputInterface $output): int
     {
+        $format = self::requestedFormat($input);
+
         try {
             self::applyWorkingDirOption($input);
 
             return parent::doRun($input, $output);
         } catch (ConfigurationRefusal $refusal) {
-            return $this->refusalPresenter->refusal($output, null, $refusal);
+            return $this->refusalPresenter->refusal($output, $format, $refusal);
         } catch (ConsoleLogicException $e) {
-            return $this->refusalPresenter->internalError($output, null, $e);
+            return $this->refusalPresenter->internalError($output, $format, $e);
         } catch (ConsoleExceptionInterface $e) {
-            return $this->refusalPresenter->fallbackRefusal($output, null, $e);
+            return $this->refusalPresenter->fallbackRefusal($output, $format, $e);
         } catch (InvalidArgumentException $e) {
-            return $this->refusalPresenter->fallbackRefusal($output, null, $e);
+            return $this->refusalPresenter->fallbackRefusal($output, $format, $e);
         } catch (Throwable $e) {
-            return $this->refusalPresenter->internalError($output, null, $e);
+            return $this->refusalPresenter->internalError($output, $format, $e);
         }
+    }
+
+    /**
+     * `--format`, read off the raw tokens: the refusals this ladder catches
+     * are mostly binding failures, so no bound value exists yet.
+     *
+     * The long form only. `-f` is not `--format` on every command —
+     * `hook:install` spells `--force` that way — and which command owns the
+     * token is exactly what an unknown command or option leaves undecided.
+     */
+    private static function requestedFormat(InputInterface $input): ?string
+    {
+        $value = $input->getParameterOption('--format', null);
+
+        return \is_string($value) ? $value : null;
     }
 
     /**

@@ -11,7 +11,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
  *
  * Carries the target's {@see LayerSelector} plus two optional fields:
  *
- * - {@code $relations} — null by default (no relation filter). Step G
+ * - {@code $relations} — null by default (no relation filter).
  *   ({@code relations: [method_call, ...]} long-form key) populates it with a
  *   non-empty list of {@see DependencyType} values; {@see LayerPolicy::isAllowed()}
  *   gains a {@code DependencyType} overload that consults this list.
@@ -34,7 +34,7 @@ final readonly class AllowTarget
     /**
      * @param list<DependencyType>|null $relations Optional whitelist of dependency
      *                                             types (null = "all relations").
-     *                                             Wired in Step G.
+     *                                             Read by {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy::isAllowed()}.
      * @param bool $allowCrossInstance When true, the policy passes an empty
      *                                 binding into the target's
      *                                 {@see LayerSelector::matchesTarget()}

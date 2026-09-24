@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\Wors
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
+use Qualimetrix\Reporting\Formatter\FormatOptionValue;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Report;
 
@@ -126,18 +127,14 @@ final class OffenderListRenderer
      */
     private function rankOffenders(array $offenders, FormatterContext $context): array
     {
-        return WorstOffender::rankByDensity($offenders, $context->getOption('rank-by', 'count'));
+        return WorstOffender::rankByDensity($offenders, FormatOptionValue::rankBy($context->getOption('rank-by', 'count')));
     }
 
     private function getTopN(FormatterContext $context): int
     {
-        $topOpt = $context->options['top'] ?? null;
+        $topOpt = $context->getOption('top');
 
-        if ($topOpt !== null && is_numeric($topOpt) && (int) $topOpt > 0) {
-            return (int) $topOpt;
-        }
-
-        return self::MAX_WORST_OFFENDERS;
+        return $topOpt !== '' ? FormatOptionValue::positive('top', $topOpt) : self::MAX_WORST_OFFENDERS;
     }
 
     /**

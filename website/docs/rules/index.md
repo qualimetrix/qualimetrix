@@ -127,7 +127,7 @@ These rules detect common bad practices that are almost always wrong, regardless
 | ------------------------------------------- | -------------------------------------- | --------------------------------------------------------------- |
 | [Boolean Argument](code-smell.md)           | `code-smell.boolean-argument`          | `bool` parameters in method signatures                          |
 | [Count in Loop](code-smell.md)              | `code-smell.count-in-loop`             | Calling `count()` in a loop condition                           |
-| [Debug Code](code-smell.md)                 | `code-smell.debug-code`                | `var_dump`, `print_r`, `debug_backtrace`, etc.                  |
+| [Debug Code](code-smell.md)                 | `code-smell.debug-code`                | `var_dump`, `print_r`, `debug_print_backtrace`, etc.            |
 | [Empty Catch](code-smell.md)                | `code-smell.empty-catch`               | `catch` blocks with no body                                     |
 | [Error Suppression](code-smell.md)          | `code-smell.error-suppression`         | The `@` error suppression operator                              |
 | [Eval](code-smell.md)                       | `code-smell.eval`                      | Use of `eval()`                                                 |
@@ -170,9 +170,9 @@ This rule validates the `@qmx-ignore` / `@qmx-threshold` annotations written in 
 
 This rule reports on the run's own file selection rather than on the code: an `--exclude` value or an `exclude:` entry that matched no directory. The report then covers files the author meant to leave out, and without this channel a missed exclusion and no exclusion at all produce byte-identical output.
 
-| Rule                              | ID                            | What it detects                              |
-| --------------------------------- | ----------------------------- | -------------------------------------------- |
-| [Unmatched exclude](discovery.md) | `discovery.unmatched-exclude` | An exclude pattern that removed no directory |
+| Rule                              | ID                            | What it detects                                                              |
+| --------------------------------- | ----------------------------- | ---------------------------------------------------------------------------- |
+| [Unmatched exclude](discovery.md) | `discovery.unmatched-exclude` | An exclude pattern that removed no directory, or one the run could not check |
 
 [Read more about Discovery rules --&gt;](discovery.md)
 

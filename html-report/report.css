@@ -310,6 +310,16 @@ header {
   font-family: var(--font-mono);
 }
 
+/* The share of the subject the score speaks for, beside the score itself. */
+.health-bar-coverage {
+  font-size: 11px;
+  width: 34px;
+  text-align: right;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  cursor: help;
+}
+
 /* Tables */
 h3 {
   font-size: 13px;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Subprocess\ChildProcess;
@@ -81,6 +82,114 @@ YAML);
         );
     }
 
+    /**
+     * 99 and 100 copies of one class exhausted a 128M limit while blocks
+     * were kept per pair of copies, and 101 copies were skipped without a
+     * trace; every one of these runs must now complete and report each copy.
+     *
+     * @return iterable<string, array{int}>
+     */
+    public static function provideCopyCountsAroundTheFormerBucketLimit(): iterable
+    {
+        yield '99 copies' => [99];
+        yield '100 copies' => [100];
+        yield '101 copies' => [101];
+    }
+
+    #[Test]
+    #[DataProvider('provideCopyCountsAroundTheFormerBucketLimit')]
+    public function itReportsEveryCopyOfABlockUnderTheDefaultMemoryLimit(int $copies): void
+    {
+        for ($copy = 0; $copy < $copies; $copy++) {
+            file_put_contents($this->tmpDir . "/src/Copy{$copy}.php", $this->copiedClass("Copy{$copy}"));
+        }
+        $configPath = $this->tmpDir . '/qmx.yaml';
+        file_put_contents($configPath, "onlyRules: ['duplication.clone']\nfailOn: none\n");
+
+        [$exitCode, $stdout, $stderr] = $this->runQmx($configPath, '128M');
+
+        self::assertSame(0, $exitCode, $stderr . "\n" . $stdout);
+
+        /** @var array{coverage?: array{complete?: bool}, violations?: list<array{rule?: string, file?: string, message?: string}>} $report */
+        $report = json_decode($stdout, true, flags: \JSON_THROW_ON_ERROR);
+        self::assertTrue($report['coverage']['complete'] ?? false, $stdout);
+        $findings = $report['violations'] ?? [];
+        self::assertCount($copies, $findings, $stdout);
+        self::assertSame($copies, \count(array_unique(array_column($findings, 'file'))), 'one finding on each copy');
+
+        foreach ($findings as $finding) {
+            self::assertSame('duplication.clone', $finding['rule'] ?? null);
+            self::assertStringContainsString("{$copies} occurrences", $finding['message'] ?? '');
+        }
+    }
+
+    /**
+     * Runs of one repeated statement, each of its own length, match one
+     * another at every offset, and the matches stop agreeing at every run's
+     * end: 20 files of ten runs yield 13 788 matches with 167 510 copies, of
+     * which 214 blocks with 2 141 copies survive. Holding every match as a
+     * block until the longer ones were known exhausted a 64M limit; the same
+     * 2 141 copies must now be reported within it.
+     */
+    #[Test]
+    public function itReportsRunsOfARepeatedStatementUnderALowMemoryLimit(): void
+    {
+        for ($file = 0; $file < 20; $file++) {
+            $methods = [];
+            for ($run = 0; $run < 10; $run++) {
+                $statements = implode("\n", array_map(
+                    static fn(int $statement): string => "        echo {$statement};",
+                    range(0, $file * 10 + $run),
+                ));
+                $methods[] = "    public function run{$run}(): void\n    {\n{$statements}\n    }\n";
+            }
+            file_put_contents(
+                $this->tmpDir . \sprintf('/src/Runs%02d.php', $file),
+                \sprintf("<?php\n\nfinal class Runs%02d\n{\n%s}\n", $file, implode("\n", $methods)),
+            );
+        }
+        $configPath = $this->tmpDir . '/qmx.yaml';
+        file_put_contents($configPath, "onlyRules: ['duplication.clone']\nfailOn: none\n");
+
+        [$exitCode, $stdout, $stderr] = $this->runQmx($configPath, '64M');
+
+        self::assertSame(0, $exitCode, $stderr . "\n" . $stdout);
+
+        /** @var array{coverage?: array{complete?: bool}, violations?: list<array{rule?: string}>} $report */
+        $report = json_decode($stdout, true, flags: \JSON_THROW_ON_ERROR);
+        self::assertTrue($report['coverage']['complete'] ?? false, $stdout);
+        self::assertCount(2141, $report['violations'] ?? []);
+    }
+
+    private function copiedClass(string $className): string
+    {
+        return <<<PHP
+<?php
+
+final class {$className}
+{
+    public function run(array \$rows, int \$limit): array
+    {
+        \$out = [];
+        foreach (\$rows as \$key => \$row) {
+            if (\$row['status'] === 'active' && \$row['score'] > \$limit) {
+                \$out[\$key] = [
+                    'name' => strtoupper(\$row['name']),
+                    'score' => \$row['score'] * 2 + \$limit,
+                    'tags' => array_values(array_filter(\$row['tags'])),
+                ];
+            } elseif (\$row['status'] === 'pending') {
+                \$out[\$key] = null;
+            }
+        }
+        ksort(\$out);
+        return array_filter(\$out, static fn (\$v) => \$v !== null);
+    }
+}
+
+PHP;
+    }
+
     private function createHashIndexProbe(): string
     {
         $probePath = $this->tmpDir . '/hash-index-probe.php';
@@ -149,14 +258,16 @@ PHP;
     /**
      * @return array{int, string, string}
      */
-    private function runQmx(string $configPath): array
+    private function runQmx(string $configPath, string $memoryLimit = '128M'): array
     {
         $projectRoot = $this->projectRoot();
 
         return $this->runProcess([
             \PHP_BINARY,
             '-d',
-            'memory_limit=128M',
+            'memory_limit=' . $memoryLimit,
+            '-d',
+            'xdebug.mode=off',
             $projectRoot . '/bin/qmx',
             'check',
             $this->tmpDir . '/src',
@@ -165,7 +276,7 @@ PHP;
             '--no-progress',
             '--no-cache',
             '--workers=0',
-            '--memory-limit=128M',
+            '--memory-limit=' . $memoryLimit,
         ]);
     }
 

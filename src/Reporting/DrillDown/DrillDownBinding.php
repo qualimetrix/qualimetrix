@@ -53,9 +53,9 @@ final readonly class DrillDownBinding
      * Levels whose subjects carry a source namespace — the strings
      * `FindingFilter::filterFindings()` compares a finding by.
      *
-     * `Project` is excluded deliberately: its symbol path holds an internal
-     * sentinel where a namespace would be, which a glob value would otherwise
-     * bind to. `File` is absent because a File symbol path has no namespace at
+     * `Project` is excluded deliberately: its symbol path holds a display
+     * value, `(project)`, where a namespace would be, which a pattern value
+     * would otherwise bind to. `File` is absent because a File symbol path has no namespace at
      * all, so the level contributes nothing to either half of the universe —
      * listing it said the opposite of what the code did.
      */

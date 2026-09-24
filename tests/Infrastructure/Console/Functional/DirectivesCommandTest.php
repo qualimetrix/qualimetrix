@@ -14,15 +14,20 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Command\DirectivesCommand;
 use Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use ReflectionMethod;
+use ReflectionProperty;
+use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -643,32 +648,21 @@ final class DirectivesCommandTest extends TestCase
     }
 
     /**
-     * `duplication.clone` reports one project-wide finding per
-     * duplicate block ({@see \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule::channelDeclarations()}
+     * `duplication.clone` reports one finding on each copy of a duplicate
+     * block, each copy under a project-level identity of its own
+     * ({@see \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule::channelDeclarations()}
      * declares {@see \Qualimetrix\Core\Symbol\SymbolLevel::Project} and
-     * nothing else), and no directive form binds to a project aggregate: a
-     * symbol directive binds to the declaration it decorates, never the
-     * project, and a file or next-line directive is judged by
-     * {@see \Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter}
-     * against the finding's `Location`, which the rule sets to whichever copy
-     * the duplicate scan visits first — not the file the directive happens to
-     * be written in.
+     * nothing else). A symbol directive binds to the declaration it
+     * decorates, never the project; a file or next-line directive would
+     * silence the copy it is written beside while the other copy still
+     * reports the block. {@see DirectiveChannelBan} refuses every form where
+     * it is written, and `check` and `directives` are asked about the same
+     * fixture so a form one command refused and the other still judged would
+     * be caught here.
      *
-     * On this two-file shape, a symbol directive never suppressed the finding
-     * regardless of which copy
-     * carried it; a file or next-line directive suppressed it only when
-     * placed in whichever copy happened to be the first occurrence, and did
-     * nothing — silently, reported as `annotation.unused-directive` — when
-     * placed in the other. The ban refuses every form where it is written
-     * instead, so the outcome no longer depends on which copy the scan visits
-     * first, and `check` and `directives` are asked about the same fixture so
-     * a form one command refused and the other still judged would be caught
-     * here.
-     *
-     * The underlying `duplication.clone` finding is never
-     * suppressible by any directive ({@see DirectiveChannelBan::covers()}
-     * short-circuits {@see SuppressionFilter::applies()} for it), so it stays
-     * in the report beside the refusal — two violations, not one.
+     * No directive suppresses the channel ({@see DirectiveChannelBan::covers()}
+     * short-circuits {@see SuppressionFilter::applies()} for it), so both
+     * copies stay in the report beside the refusal — three violations.
      */
     #[Test]
     #[DataProvider('provideFormsThatReachTheDuplicationBan')]
@@ -687,15 +681,21 @@ final class DirectivesCommandTest extends TestCase
         $report = self::decode($check->getDisplay());
 
         self::assertSame(2, $check->getStatusCode(), $check->getDisplay());
-        self::assertCount(2, $report['violations'], $check->getDisplay());
+        self::assertCount(3, $report['violations'], $check->getDisplay());
 
         $byChannel = [];
+        $copies = [];
         foreach ($report['violations'] as $violation) {
             $byChannel[(string) $violation['channel']] = $violation;
+
+            if ($violation['channel'] === 'duplication.clone') {
+                $copies[] = basename((string) $violation['file']);
+            }
         }
 
         self::assertArrayHasKey('annotation.unresolved-directive', $byChannel);
-        self::assertArrayHasKey('duplication.clone', $byChannel);
+        sort($copies);
+        self::assertSame(['DupA.php', 'DupB.php'], $copies);
         self::assertSame($line, $byChannel['annotation.unresolved-directive']['line']);
         self::assertStringContainsString(
             'duplication.clone',
@@ -734,15 +734,11 @@ final class DirectivesCommandTest extends TestCase
     }
 
     /**
-     * The complaint the ban closes, reproduced directly: before the ban
-     * existed, a file directive written on the copy the scan does not visit
-     * first did nothing and was reported as `annotation.unused-directive` —
-     * the report's evidence that the directive did nothing further, and the
-     * scan visiting `DupA.php` first is exactly this shape (`DupA` sorts
-     * before `DupB`, and the provider builds the hash index in path order).
-     * Now the same directive is refused before either file is judged for
-     * suppression, so the channel that used to (and, on the other copy,
-     * still could) hide the mistake never appears at all.
+     * A directive on the copy that sorts second is refused like one on the
+     * first: it is reported as a refusal where it is written, never judged
+     * for suppression and never left to read as
+     * `annotation.unused-directive`, the answer it got when the channel's one
+     * finding sat on the first copy only.
      */
     #[Test]
     public function itNoLongerLetsTheNonPrimaryCopyProduceAnUnusedDirectiveInstead(): void
@@ -930,39 +926,105 @@ final class DirectivesCommandTest extends TestCase
     }
 
     /**
-     * Route 28 (`m6-routes-merged.md`), verified as still distinct from route
-     * 27 by a live run rather than by reading the two `catch` clauses alone:
-     * `catch (ConfigurationRefusal)` (route 27) answers exit 3 and
-     * `catch (Exception)` (route 28, the fallback below it) answers exit 1 —
-     * the ladder never unified the two. An unreadable scanned path is not
-     * wrapped into a {@see \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal}
-     * anywhere in discovery: `RecursiveDirectoryIterator` throws a bare
-     * `UnexpectedValueException` (a `RuntimeException`, so neither of the
-     * two named clauses above it), landing in the generic `catch (Exception)`
-     * branch, which hands the throwable to
-     * {@see \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter::internalError()}
-     * instead of a local `reportError()` — same
-     * "Internal error:" wording and stream every other command's internal
-     * error uses, not a `DirectivesCommand`-only dialect.
+     * A directory inside the scanned tree that this process may not list is
+     * part of the tree the run did not read, so the run is incomplete and says
+     * so — it is not an internal failure of the tool.
+     *
+     * This case used to be the product's only way of producing an
+     * unrecognised exception, and so was route 28's witness. It is no longer
+     * either: discovery records the unread subtree instead of letting
+     * `RecursiveDirectoryIterator` throw, and the verdict moved from exit 1 to
+     * exit 4. The ladder's fallback keeps its own witness below.
      */
     #[Test]
-    public function itAnswersExitOneForAnUnrecognisedExceptionFromAnUnreadablePath(): void
+    public function itAnswersExitFourWhenAScannedDirectoryCannotBeRead(): void
     {
         if (posix_getuid() === 0) {
             self::markTestSkipped('Root ignores directory permission bits.');
         }
 
-        chmod($this->tempDir . '/src', 0o000);
+        $this->writeSource('Live.php', self::sevenParameterMethod(
+            '@qmx-threshold code-smell.long-parameter-list warning=9 error=12 — live',
+        ));
+        mkdir($this->tempDir . '/src/blocked');
+        chmod($this->tempDir . '/src/blocked', 0o000);
 
         try {
             $tester = $this->audit(['paths' => [$this->tempDir . '/src']]);
         } finally {
-            chmod($this->tempDir . '/src', 0o755);
+            chmod($this->tempDir . '/src/blocked', 0o755);
         }
+
+        self::assertSame(4, $tester->getStatusCode());
+        self::assertStringContainsString('no directive can be called dead by this run', $tester->getDisplay());
+    }
+
+    /**
+     * Route 28 (`m6-routes-merged.md`): the ladder's last clause, which answers
+     * exit 1 and `Internal error:` for a throwable neither
+     * `catch (ConfigurationRefusal)` (route 27, exit 3) nor
+     * `catch (InvalidArgumentException)` recognises, and hands it to
+     * {@see \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter::internalError()}
+     * rather than to a `DirectivesCommand`-only dialect.
+     *
+     * **The exception is planted rather than provoked, because nothing this
+     * command can be given provokes one.** Eight inputs were measured against
+     * the built binary: an unlistable scanned directory, an unreadable regular
+     * `*.php` file and a symlink cycle all answer exit 4 through coverage; a
+     * cache directory that cannot be created or written, a computed metric
+     * naming an unknown variable, a malformed configuration file and a
+     * `--config` that is a directory are all refused as configuration, exit 3;
+     * and a cache entry that cannot be written is swallowed by the cache. That
+     * is the point of a fallback clause — it exists for what the product did
+     * not anticipate, so a witness standing on a specific anticipated failure
+     * dies the day that failure is handled properly, which is exactly what
+     * happened to the witness this one replaces.
+     *
+     * Only the audit is a stub. The preflight, the presenter and the run's own
+     * configuration are the container's, so what is measured is the command's
+     * real ladder and the real error envelope.
+     */
+    #[Test]
+    public function itAnswersExitOneForAnUnrecognisedExceptionFromTheAudit(): void
+    {
+        $this->writeSource('Live.php', self::sevenParameterMethod(
+            '@qmx-threshold code-smell.long-parameter-list warning=9 error=12 — live',
+        ));
+
+        $audit = self::createStub(DirectiveAuditInterface::class);
+        $audit->method('auditDirectives')
+            ->willThrowException(new RuntimeException('the audit collaborator failed in a way nobody named'));
+
+        $tester = new CommandTester($this->commandWithAudit($audit));
+        $tester->execute(
+            ['paths' => [$this->tempDir . '/src'], '--config' => $this->writeConfig("paths: []\n")],
+            ['capture_stderr_separately' => true],
+        );
 
         self::assertSame(1, $tester->getStatusCode());
         self::assertSame('', $tester->getDisplay());
         self::assertStringContainsString('Internal error:', $tester->getErrorOutput());
+    }
+
+    /**
+     * The production command with one collaborator replaced. The preflight is
+     * not a public service, so it is borrowed from the container's own
+     * instance rather than rebuilt here — a second construction of it would be
+     * a second definition of what the command runs.
+     */
+    private function commandWithAudit(DirectiveAuditInterface $audit): DirectivesCommand
+    {
+        $container = (new ContainerFactory())->create();
+        $composed = $container->get(DirectivesCommand::class);
+        self::assertInstanceOf(DirectivesCommand::class, $composed);
+
+        $preflight = (new ReflectionProperty(DirectivesCommand::class, 'preflight'))->getValue($composed);
+        self::assertInstanceOf(AnalysisPreflight::class, $preflight);
+
+        $presenter = $container->get(RefusalPresenter::class);
+        self::assertInstanceOf(RefusalPresenter::class, $presenter);
+
+        return new DirectivesCommand($audit, $preflight, $presenter);
     }
 
     #[Test]

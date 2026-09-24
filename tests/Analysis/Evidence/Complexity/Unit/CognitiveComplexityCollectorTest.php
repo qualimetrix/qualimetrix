@@ -107,11 +107,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // Method itself: Cognitive = +1 (closure B1 lambda increment)
-        self::assertSame(1, $metrics->get('complexity.cognitive:App\ClosureTest::withClosure'));
-
-        // Closure: Cognitive = +1 (if)
-        self::assertSame(1, $metrics->get('complexity.cognitive:App\ClosureTest::{closure#1}'));
+        // The closure adds nothing to the method; its own if runs at nesting=1
+        self::assertSame(0, $metrics->get('complexity.cognitive:App\ClosureTest::withClosure'));
+        self::assertSame(2, $metrics->get('complexity.cognitive:App\ClosureTest::{closure#1}'));
     }
 
     #[Test]
@@ -215,13 +213,13 @@ class ComplexService
             }
 
             try {
-                $value = $item['value'] ?? 0;           // +1 (null coalescing)
+                $value = $item['value'] ?? 0;           // +0 (null coalescing is ignored)
 
                 if ($value > 100 || $value < 0) {       // +2 (nesting=1) + 1 (logical) = 3
                     throw new \InvalidArgumentException('Invalid value');
                 }
 
-                $result[$key] = $value > 50 ? 'high' : 'low'; // +1 (ternary)
+                $result[$key] = $value > 50 ? 'high' : 'low'; // +2 (nesting=1)
             } catch (\InvalidArgumentException $e) {    // +2 (nesting=1)
                 $result[$key] = 'error';
             } catch (\RuntimeException $e) {            // +2 (nesting=1)
@@ -237,7 +235,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Cognitive = +1 (if empty) + 1 (foreach) + 2 (if validate) + 1 (&&)
-        //           + 1 (??) + 2 (if value) + 1 (||) + 1 (ternary) + 2 (first catch) + 2 (second catch)
+        //           + 2 (if value) + 1 (||) + 2 (ternary) + 2 (first catch) + 2 (second catch)
         //           = 14
         self::assertSame(14, $metrics->get('complexity.cognitive:App\Service\ComplexService::process'));
     }

@@ -416,6 +416,31 @@ final class TopIssuesRendererTest extends TestCase
         self::assertStringNotContainsString('LCOM4 value 3 exceeds threshold', $output);
     }
 
+    /**
+     * The drill-down rule lives in one place, `FindingFilter`, applied by the
+     * presenter before the ranking is computed. This renderer trusts the
+     * report instead of re-applying a copy of the rule that could drift.
+     */
+    #[Test]
+    public function itRendersTheRankingItIsGivenWithoutReapplyingTheDrillDown(): void
+    {
+        $report = new Report(
+            findings: [],
+            filesAnalyzed: 10,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 1,
+            warningCount: 0,
+            topIssues: [$this->createRankedIssue(150.0, Severity::Error, 'Ranked', '/project/src/Ranked.php', 1, 60)],
+        );
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Elsewhere'));
+
+        $lines = [];
+        $this->renderer->render($report, $context, $this->color, $lines);
+
+        self::assertStringContainsString('(Ranked::process)', implode("\n", $lines));
+    }
+
     private function createRankedIssue(
         float $score,
         Severity $severity,

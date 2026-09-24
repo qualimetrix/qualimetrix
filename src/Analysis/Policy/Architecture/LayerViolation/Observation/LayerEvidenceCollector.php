@@ -130,20 +130,30 @@ final class LayerEvidenceCollector
 
         $coverageState = $edgeWalk->coverageState;
         $coverageState['classes'] += $classWalk->uncoveredClasses;
+        // The class walk books every analysed class that is undecided or in
+        // doubt, whatever the coverage mode, so an edge end it did not book
+        // was not analysed. Taken before the merges below, which are what
+        // erase the difference.
+        $coverageState['undecidableOutsidePaths'] = array_diff_key($coverageState['undecidable'], $classWalk->undecidableClasses);
+        $coverageState['undecidable'] += $classWalk->undecidableClasses;
+        $coverageState['doubtedOutsidePaths'] = array_diff_key($coverageState['doubted'], $classWalk->doubtedClasses);
+        $coverageState['doubted'] += $classWalk->doubtedClasses;
 
         // A layer matched only as one end of a dependency edge (e.g. a vendor
         // namespace outside `paths:`, never a class in the analysed set) is
         // still "reached" — merge edge-side hits into the class-side hit maps
         // so `architecture.unreachable-layer` doesn't contradict
         // `architecture.layer-violation` about the very same layer.
+        $symbolSets = $classWalk->symbolSets;
+        foreach ($symbolSets as $column => $sets) {
+            $symbolSets[$column] = self::mergeMatchedSymbols($sets, $edgeWalk->symbolSets[$column]);
+        }
+
         return new LayerEvidence(
             architecture: $architecture,
             forbiddenEdges: $edgeWalk->forbiddenEdges,
             assignedHits: self::mergeHits($classWalk->assignedHits, $edgeWalk->assignedHits),
-            symbolSets: [
-                'matched' => self::mergeMatchedSymbols($classWalk->matchedSymbols, $edgeWalk->matchedSymbols),
-                'excluded' => self::mergeMatchedSymbols($classWalk->excludedSymbols, $edgeWalk->excludedSymbols),
-            ],
+            symbolSets: $symbolSets,
             shadowEvidence: $classWalk->shadowEvidence,
             unassigned: ['classes' => $classWalk->uncoveredClasses, 'analysed' => $classWalk->analysedDeclarations],
             coverageState: $coverageState,
@@ -186,13 +196,13 @@ final class LayerEvidenceCollector
      * shape they do:
      *
      * 1. `assignedHits` — per-layer count of classes that ended up in that
-     *    layer (feeds `architecture.unreachable-layer`), and `matchedSymbols`
-     *    — per-layer set of the distinct classes whose criteria the layer
+     *    layer (feeds `architecture.unreachable-layer`), and the `matched`
+     *    column of `symbolSets` — per-layer set of the distinct classes whose criteria the layer
      *    matched at all, winning or not (feeds
      *    `architecture.pending-layer-matched`, which is silent exactly where
      *    a layer matched nothing — see
      *    {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DeclaredLayerReachability::pendingLayersMatched()}).
-     * 2. `excludedSymbols` — per-layer set of the distinct classes the
+     * 2. The `excluded` column of `symbolSets` — per-layer set of the distinct classes the
      *    layer's `exclude:` clause removed (feeds
      *    `architecture.unmatched-exclude`).
      * 3. `shadowEvidence` — per (assigned, shadowed) pair, list of evidence
@@ -211,6 +221,31 @@ final class LayerEvidenceCollector
      * 5. `analysedDeclarations` — how many class-like declarations the walk
      *    saw, the denominator `architecture.unassigned-class` reports its
      *    percentage against.
+     * 6. `undecidableClasses` — the subset of `uncoveredClasses` that is
+     *    outside every layer only because the run could not answer some
+     *    layer's criteria about it: a chain that left the analysed set, or a
+     *    symbol whose own declaration the run never read. Kept apart because
+     *    the two gaps ask different things of the reader — one is closed by
+     *    declaring a layer, the other is not closed by anything the author
+     *    writes in `layers:`.
+     * 7. `doubtedClasses` — analysed classes that ARE assigned while a layer
+     *    bearing on the assignment could not be answered
+     *    ({@see \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry::undecidedLayers()}
+     *    decides which do): the assignment stands and the doubt is published
+     *    beside it.
+     *
+     * 6 and 7 are booked whatever the coverage mode, unlike 4: they are the
+     * size of the doubt rather than of the unclassified codebase, and
+     * `architecture.doubted-assignment` reads them in every mode.
+     *
+     * The per-layer symbol sets travel as one array of six columns —
+     * `matched`, `excluded`, `unanswered` (the symbols whose `exclude:` the
+     * layer could not answer), `undecided` (the symbols the layer could not
+     * answer about while it bore on their assignment), `contended` (the
+     * symbols the layer could still own once that is answered) and
+     * `ownsIfExcluded` (the symbols the layer would own if an unanswered
+     * `exclude:` in front of it removed them) — because they are filled and
+     * merged the same way.
      *
      * `metrics->all(SymbolLevel::Class_)` enumerates what the collectors
      * recorded, and class scope opens on every `ClassLike` — interfaces,
@@ -228,15 +263,22 @@ final class LayerEvidenceCollector
         $assignedHits = [];
         $matchedSymbols = [];
         $excludedSymbols = [];
+        $unansweredSymbols = [];
+        $undecidedSymbols = [];
+        $contendedSymbols = [];
+        $ownsIfExcludedSymbols = [];
         foreach ($registry->layerNames() as $layerName) {
             $assignedHits[$layerName] = 0;
             $matchedSymbols[$layerName] = [];
             $excludedSymbols[$layerName] = [];
+            $unansweredSymbols[$layerName] = [];
         }
 
         /** @var array<string, array<string, list<ShadowedClass>>> $shadowEvidence */
         $shadowEvidence = [];
         $uncoveredClasses = [];
+        $undecidableClasses = [];
+        $doubtedClasses = [];
         $analysedDeclarations = 0;
 
         foreach ($context->metrics->all(SymbolLevel::Class_) as $classSymbol) {
@@ -253,30 +295,49 @@ final class LayerEvidenceCollector
                 $registry->excludedLayers($classSymbol->symbolPath),
                 $classSymbol->symbolPath->toCanonical(),
             );
+            $unansweredSymbols = self::tallyExcludedEnd(
+                $unansweredSymbols,
+                $registry->unansweredExcludeLayers($classSymbol->symbolPath),
+                $classSymbol->symbolPath->toCanonical(),
+            );
+            $undecidedLayers = $registry->undecidedLayers($classSymbol->symbolPath);
+            $undecidedSymbols = self::tallyExcludedEnd($undecidedSymbols, $undecidedLayers, $classSymbol->symbolPath->toCanonical());
+            $contendedSymbols = self::tallyExcludedEnd(
+                $contendedSymbols,
+                $registry->contenders($classSymbol->symbolPath),
+                $classSymbol->symbolPath->toCanonical(),
+            );
 
             if ($matches === []) {
                 if ($materializeUncovered) {
                     $uncoveredClasses[$classSymbol->symbolPath->toCanonical()] = $classSymbol->symbolPath->toString();
                 }
+                $undecidableClasses = self::tallyUnansweredEnd($undecidableClasses, $undecidedLayers, $classSymbol->symbolPath->toCanonical(), $classSymbol->symbolPath->toString());
 
                 continue;
             }
 
             $assigned = $matches[0];
+            $doubtedClasses = self::tallyUnansweredEnd($doubtedClasses, $undecidedLayers, $classSymbol->symbolPath->toCanonical(), $classSymbol->symbolPath->toString());
             $assignedHits[$assigned->layerName] = ($assignedHits[$assigned->layerName] ?? 0) + 1;
             $matchedSymbols = self::tallyMatchedEnd($matchedSymbols, $matches, $classSymbol->symbolPath->toCanonical());
 
-            $matchCount = \count($matches);
-            if ($matchCount === 1) {
+            $established = $registry->establishedMatches($classSymbol->symbolPath);
+            $ownsIfExcludedSymbols = self::tallyOwnerIfExcluded(
+                $ownsIfExcludedSymbols,
+                $assigned,
+                $established,
+                $classSymbol->symbolPath->toCanonical(),
+            );
+            $shadowing = $established[0] ?? null;
+            if ($shadowing === null) {
                 continue;
             }
-
             $classFqn = $classSymbol->symbolPath->toString();
-            $assignedCriterion = $assigned->primaryCriterion();
-            foreach (LayerShadowing::reportableShadows($matches) as $shadowed) {
-                $shadowEvidence[$assigned->layerName][$shadowed->layerName][] = new ShadowedClass(
+            foreach (LayerShadowing::reportableShadows($established) as $shadowed) {
+                $shadowEvidence[$shadowing->layerName][$shadowed->layerName][] = new ShadowedClass(
                     $classFqn,
-                    $assignedCriterion,
+                    $shadowing->primaryCriterion(),
                     $shadowed->primaryCriterion(),
                 );
             }
@@ -284,21 +345,78 @@ final class LayerEvidenceCollector
 
         return new ClassWalkEvidence(
             assignedHits: $assignedHits,
-            matchedSymbols: $matchedSymbols,
-            excludedSymbols: $excludedSymbols,
+            symbolSets: [
+                'matched' => $matchedSymbols,
+                'excluded' => $excludedSymbols,
+                'unanswered' => $unansweredSymbols,
+                'undecided' => $undecidedSymbols,
+                'contended' => $contendedSymbols,
+                'ownsIfExcluded' => $ownsIfExcludedSymbols,
+            ],
             shadowEvidence: $shadowEvidence,
             uncoveredClasses: $uncoveredClasses,
             analysedDeclarations: $analysedDeclarations,
+            undecidableClasses: $undecidableClasses,
+            doubtedClasses: $doubtedClasses,
         );
+    }
+
+    /**
+     * Records the symbol under the first match the run established when that
+     * is not the assigned layer — the layer that would own the symbol if the
+     * unanswered `exclude:` of every match in front of it removed it. The
+     * assigned layer is that match whenever no such clause stands in front
+     * of it, and then there is nothing to record.
+     *
+     * @param array<string, array<string, true>> $map layer name => set of canonical symbols
+     * @param list<LayerMatch> $established As returned by
+     *                                      {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry::establishedMatches()}.
+     *
+     * @return array<string, array<string, true>>
+     */
+    private static function tallyOwnerIfExcluded(array $map, LayerMatch $assigned, array $established, string $symbolKey): array
+    {
+        $owner = $established[0] ?? null;
+        if ($owner !== null && $owner->layerName !== $assigned->layerName) {
+            $map[$owner->layerName][$symbolKey] = true;
+        }
+
+        return $map;
+    }
+
+    /**
+     * Records a symbol some layer bearing on its assignment could not answer
+     * about: into the undecidable map for a symbol no layer claims, into the
+     * doubted map for one that stands assigned. Which unanswered layers bear
+     * on the assignment is {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry::undecidedLayers()}'s
+     * to say, so the two maps differ only in which symbols the caller hands
+     * in.
+     *
+     * Empty {@code $undecidedLayers} leaves the map untouched: a class every
+     * layer decided against is an ordinary coverage gap, and a class every
+     * layer bearing on it answered is an assignment with nothing in doubt.
+     *
+     * @param array<string, string> $map canonical key => display FQN
+     * @param list<string> $undecidedLayers
+     *
+     * @return array<string, string>
+     */
+    private static function tallyUnansweredEnd(array $map, array $undecidedLayers, string $canonical, string $display): array
+    {
+        if ($undecidedLayers !== []) {
+            $map[$canonical] = $display;
+        }
+
+        return $map;
     }
 
     /**
      * Walks the dependency graph into an {@see EdgeWalkEvidence}: the edges the
      * allow-list rejects, the coverage-state struct used by
      * `architecture.coverage-gap` (counts of unmatched ends + the set of
-     * unclassified class FQNs), a per-layer assignment count, and per-layer
-     * sets of the distinct symbols matched, and removed by `exclude:`, at
-     * either end of an edge.
+     * unclassified class FQNs, and the undecidable and doubted ends), a
+     * per-layer assignment count, and the same six per-layer symbol-set
+     * columns the class walk fills, at either end of an edge.
      *
      * The hit map exists because {@see collectClassEvidence()} only walks
      * `metrics->all(SymbolLevel::Class_)` — classes in the analysed path set.
@@ -310,6 +428,10 @@ final class LayerEvidenceCollector
      * Merging edge-side hits into the class-side count in {@see walk()}
      * fixes that without weakening unreachable-layer's typo-detection case:
      * a layer matching neither a class nor an edge end still gets zero hits.
+     * The same holds for the `contended` column, which the edge walk also
+     * fills: {@see LayerEvidence::reachedCounts()} decides which of it counts,
+     * because a criterion goes unanswered about a symbol the run never reads
+     * in every run, typo or not.
      */
     private function collectEdgeEvidence(ArchitectureConfiguration $architecture, AnalysisContext $context): EdgeWalkEvidence
     {
@@ -317,13 +439,24 @@ final class LayerEvidenceCollector
         $sourceEdges = 0;
         $targetEdges = 0;
         $classes = [];
+        $undecidable = [];
+        $doubted = [];
         $assignedHits = [];
         $matchedSymbols = [];
         $excludedSymbols = [];
+        $unansweredSymbols = [];
+        $undecidedSymbols = [];
+        $contendedSymbols = [];
+        $ownsIfExcludedSymbols = [];
 
         $graph = $context->dependencyGraph;
         if ($graph === null) {
-            return new EdgeWalkEvidence($forbidden, ['sourceEdges' => 0, 'targetEdges' => 0, 'classes' => []], $assignedHits, $matchedSymbols, $excludedSymbols);
+            return new EdgeWalkEvidence(
+                forbiddenEdges: $forbidden,
+                coverageState: ['sourceEdges' => 0, 'targetEdges' => 0, 'classes' => [], 'undecidable' => [], 'doubted' => []],
+                assignedHits: $assignedHits,
+                symbolSets: ['matched' => [], 'excluded' => [], 'unanswered' => [], 'undecided' => [], 'contended' => [], 'ownsIfExcluded' => []],
+            );
         }
 
         $registry = $architecture->registry();
@@ -338,9 +471,31 @@ final class LayerEvidenceCollector
             // the same reason the class walk books before its own.
             $excludedSymbols = self::tallyExcludedEnd($excludedSymbols, $registry->excludedLayers($dependency->sourceLogical()), $dependency->sourceLogical()->toCanonical());
             $excludedSymbols = self::tallyExcludedEnd($excludedSymbols, $registry->excludedLayers($dependency->targetLogical()), $dependency->targetLogical()->toCanonical());
+            $unansweredSymbols = self::tallyExcludedEnd($unansweredSymbols, $registry->unansweredExcludeLayers($dependency->sourceLogical()), $dependency->sourceLogical()->toCanonical());
+            $unansweredSymbols = self::tallyExcludedEnd($unansweredSymbols, $registry->unansweredExcludeLayers($dependency->targetLogical()), $dependency->targetLogical()->toCanonical());
 
             $fromMatch = self::tallyEnd($fromMatches, $dependency->sourceLogical()->toCanonical(), $dependency->sourceLogical()->toString(), $assignedHits, $classes, $sourceEdges);
             $toMatch = self::tallyEnd($toMatches, $dependency->targetLogical()->toCanonical(), $dependency->targetLogical()->toString(), $assignedHits, $classes, $targetEdges);
+
+            // Each end on its own, before the unassigned-end return below: the
+            // doubt about one end is a fact about that end, and an edge whose
+            // other end no layer claims is still an edge that reached it.
+            foreach ([[$fromMatch, $dependency->sourceLogical()], [$toMatch, $dependency->targetLogical()]] as [$match, $end]) {
+                $undecidedLayers = $registry->undecidedLayers($end);
+                $undecidedSymbols = self::tallyExcludedEnd($undecidedSymbols, $undecidedLayers, $end->toCanonical());
+                $contendedSymbols = self::tallyExcludedEnd($contendedSymbols, $registry->contenders($end), $end->toCanonical());
+                if ($match === null) {
+                    $undecidable = self::tallyUnansweredEnd($undecidable, $undecidedLayers, $end->toCanonical(), $end->toString());
+                } else {
+                    $doubted = self::tallyUnansweredEnd($doubted, $undecidedLayers, $end->toCanonical(), $end->toString());
+                    $ownsIfExcludedSymbols = self::tallyOwnerIfExcluded(
+                        $ownsIfExcludedSymbols,
+                        $match,
+                        $registry->establishedMatches($end),
+                        $end->toCanonical(),
+                    );
+                }
+            }
 
             if ($fromMatch === null || $toMatch === null) {
                 continue;
@@ -355,10 +510,16 @@ final class LayerEvidenceCollector
 
         return new EdgeWalkEvidence(
             forbiddenEdges: $forbidden,
-            coverageState: ['sourceEdges' => $sourceEdges, 'targetEdges' => $targetEdges, 'classes' => $classes],
+            coverageState: ['sourceEdges' => $sourceEdges, 'targetEdges' => $targetEdges, 'classes' => $classes, 'undecidable' => $undecidable, 'doubted' => $doubted],
             assignedHits: $assignedHits,
-            matchedSymbols: $matchedSymbols,
-            excludedSymbols: $excludedSymbols,
+            symbolSets: [
+                'matched' => $matchedSymbols,
+                'excluded' => $excludedSymbols,
+                'unanswered' => $unansweredSymbols,
+                'undecided' => $undecidedSymbols,
+                'contended' => $contendedSymbols,
+                'ownsIfExcluded' => $ownsIfExcludedSymbols,
+            ],
         );
     }
 
@@ -422,7 +583,9 @@ final class LayerEvidenceCollector
     }
 
     /**
-     * Records the symbol under every layer whose `exclude:` clause removed it.
+     * Records the symbol under every named layer — those whose `exclude:`
+     * clause removed it, those whose clause could not answer about it, those
+     * that could not answer about it at all, or those that could still own it.
      *
      * A set for the same reason {@see tallyMatchedEnd()} keeps one: the same
      * symbol is seen once by the class walk and once per dependency edge it

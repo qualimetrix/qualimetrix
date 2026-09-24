@@ -2,8 +2,17 @@
 
 ## Overview
 
-Core contains neutral primitives with no natural capability owner. Core has no
-dependencies except PHP and php-parser (only for Node types).
+Core contains neutral primitives with no natural capability owner. It imports
+nothing from the project outside `Core`, and outside PHP itself it names two
+external types: `PhpParser\Node` (`Ast/FileParserInterface.php`) and
+`Composer\InstalledVersions` (`Version.php`, served by the declared
+`composer-runtime-api` platform package).
+
+No control holds Core to that list. The generated `qmx.yaml` lets every owner
+reach its `external` layer, and
+`governance/DeclaredDependencies/ShippedCodeReachesOnlyDeclaredPackagesTest`
+checks only that shipped code reaches declared packages, wherever it sits. A new
+external import in Core is a review decision, and this paragraph is its record.
 
 > **Note.** Layer primitives, allow-list types, capture grammar, registry, and
 > declared-layer policy now belong to
@@ -47,7 +56,11 @@ Core/
 │   ├── LogicalClassPath.php               # Validated class-level logical identity
 │   ├── MetricSubject.php                  # Declaration, class, or aggregate metric subject
 │   ├── MetricSubjectCodec.php             # Scalar wire codec for metric subjects
-│   ├── PhpBuiltinClassRegistry.php        # Single source of truth for PHP built-in classes
+│   ├── PhpBuiltinClassHierarchy.php       # Parent, interfaces and attributes of each registered
+│   │                                      # name (static; PhpBuiltinClassHierarchyCensusTest
+│   │                                      #  compares every name the running PHP declares)
+│   ├── PhpBuiltinClassRegistry.php        # Single source of truth for PHP built-in classes,
+│   │                                      # answered in any ASCII case spelling
 │   │                                      # (hand-written; PhpBuiltinClassRegistryCensusTest
 │   │                                      #  compares it against the loaded extensions)
 │   ├── SymbolInfo.php
@@ -497,9 +510,14 @@ has lists nothing and exits 0.
 Stable symbol identifier for baseline. Does not depend on line number. Located in `Core\Symbol` namespace.
 
 **Fields:**
-- `namespace: ?string` — `App\Service`
+- `namespace: ?string` — `App\Service`; `(project)` for the project aggregate
 - `type: ?string` — `UserService` (class/interface/trait/enum)
 - `member: ?string` — `calculateTotal` (method/function)
+
+The project aggregate is typed by construction, not by its namespace string:
+only `forProject()` yields `SymbolType::Project`. `(project)` is what it shows
+in the namespace field, a form no PHP namespace can take; a namespace a file
+declares or a user names is never read as the project, whatever it is called.
 
 **Methods:**
 - `toCanonical(): string` — canonical format for baseline
@@ -508,7 +526,7 @@ Stable symbol identifier for baseline. Does not depend on line number. Located i
 - `forMethod(namespace, class, method): self`
 - `forClass(namespace, class): self`
 - `forNamespace(namespace): self` — use empty string for global PHP namespace
-- `forProject(): self` — project-level (aggregated from all namespaces)
+- `forProject(): self` — project-level (aggregated from all namespaces); canonical `project:`
 - `forFile(path): self`
 - `forGlobalFunction(namespace, function): self`
 
@@ -549,6 +567,15 @@ The one projection of "what kind of declaration is this?" (`SymbolType`) onto
 The collapse is stated here once. Do not re-derive it at a call site, and do not
 project a level back onto a declaration kind — a consumer that needs the kind
 reads it off the symbol it was handed.
+
+A holder of a canonical subject string alone — a baseline file keys its entries
+by it — asks `MetricSubject::levelOfCanonical(string): SymbolLevel`, which
+strips `DeclarationPath::CANONICAL_PREFIX`, reads the kind with
+`SymbolType::ofCanonical()` — the reverse of `SymbolType::canonicalPrefix()`,
+the one prefix table `SymbolPath::toCanonical()` writes with — and projects it
+here. A string no subject is
+written as is refused with `InvalidArgumentException`, never given a default
+level.
 
 ### MetricSubjectCodec
 

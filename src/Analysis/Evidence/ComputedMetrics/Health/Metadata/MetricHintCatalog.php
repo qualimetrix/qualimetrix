@@ -197,11 +197,43 @@ final class MetricHintCatalog
             'badExplanation' => 'poor balance of abstraction and stability',
             'goodExplanation' => 'well-balanced design',
         ],
+        // The own-scope siblings need entries of their own: a hint resolves
+        // through the base key, and `coupling.distance-own` is a base, not a
+        // suffix of `coupling.distance`. Without them the report printed the
+        // raw key and an empty target where a label and a threshold belong.
+        MetricName::COUPLING_CBO_OWN => [
+            'label' => 'CBO (own)',
+            'direction' => 'lower_is_better',
+            'goodValue' => 'below 7',
+            'badExplanation' => 'the namespace\'s own classes are coupled to too many others',
+            'goodExplanation' => 'its own classes are well-isolated',
+        ],
+        MetricName::COUPLING_INSTABILITY_OWN => [
+            'label' => 'Instability (own)',
+            'direction' => 'range',
+            'goodValue' => '0.3 – 0.7',
+            'badExplanation' => 'the namespace\'s own classes are highly unstable',
+            'goodExplanation' => 'balanced stability of its own classes',
+        ],
+        MetricName::COUPLING_ABSTRACTNESS_OWN => [
+            'label' => 'Abstractness (own)',
+            'direction' => 'range',
+            'goodValue' => '0.3 – 0.7',
+            'badExplanation' => 'the namespace\'s own classes are too abstract/concrete',
+            'goodExplanation' => 'balanced abstraction of its own classes',
+        ],
+        MetricName::COUPLING_DISTANCE_OWN => [
+            'label' => 'Distance (own)',
+            'direction' => 'lower_is_better',
+            'goodValue' => 'below 0.3',
+            'badExplanation' => 'poor balance of abstraction and stability in its own classes',
+            'goodExplanation' => 'well-balanced design of its own classes',
+        ],
         MetricName::COUPLING_CLASS_RANK => [
             'label' => 'ClassRank',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 0.02',
-            'badExplanation' => 'coupling hotspot, many depend on this',
+            'badExplanation' => 'coupling hotspot, much of the dependency graph leads here',
             'goodExplanation' => 'peripheral, low risk',
         ],
         MetricName::DESIGN_DIT => [
@@ -466,6 +498,30 @@ final class MetricHintCatalog
             ['above' => true, 'text' => 'All abstract'],
         ],
         MetricName::COUPLING_DISTANCE => [
+            ['max' => 0.1, 'text' => 'On main sequence'],
+            ['max' => 0.3, 'text' => 'Acceptable balance'],
+            ['above' => true, 'text' => 'Off balance'],
+        ],
+        MetricName::COUPLING_CBO_OWN => [
+            ['max' => 7, 'text' => 'Normal coupling'],
+            ['max' => 14, 'text' => 'Moderate coupling'],
+            ['max' => 20, 'text' => 'High coupling'],
+            ['above' => true, 'text' => 'Very high coupling'],
+        ],
+        MetricName::COUPLING_INSTABILITY_OWN => [
+            ['max' => 0.09, 'text' => 'Maximally stable'],
+            ['max' => 0.29, 'text' => 'Stable'],
+            ['max' => 0.7, 'text' => 'Balanced'],
+            ['max' => 0.9, 'text' => 'Unstable'],
+            ['above' => true, 'text' => 'Maximally unstable'],
+        ],
+        MetricName::COUPLING_ABSTRACTNESS_OWN => [
+            ['max' => 0.09, 'text' => 'All concrete'],
+            ['max' => 0.5, 'text' => 'Mostly concrete'],
+            ['max' => 0.9, 'text' => 'Mostly abstract'],
+            ['above' => true, 'text' => 'All abstract'],
+        ],
+        MetricName::COUPLING_DISTANCE_OWN => [
             ['max' => 0.1, 'text' => 'On main sequence'],
             ['max' => 0.3, 'text' => 'Acceptable balance'],
             ['above' => true, 'text' => 'Off balance'],

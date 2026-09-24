@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Logging\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\InvalidArgumentException;
 use Psr\Log\LogLevel;
 use Qualimetrix\Infrastructure\Logging\ConsoleLogger;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -89,20 +91,130 @@ final class ConsoleLoggerTest extends TestCase
         self::assertStringContainsString('[ERROR]', $content);
     }
 
+    /**
+     * The minimum level alone decides what is written. A second gate here,
+     * bound to verbosity, used to override the level its builder chose: a
+     * logger built for DEBUG printed no DEBUG line below `-vv`, and one built
+     * for WARNING at `-v` still dropped nothing it should.
+     *
+     * @param list<string> $written
+     * @param list<string> $dropped
+     */
     #[Test]
-    public function itRespectsVerbosityLevels(): void
+    #[DataProvider('provideMinimumLevelCases')]
+    public function itWritesExactlyWhatItsMinimumLevelAdmits(int $verbosity, string $minLevel, array $written, array $dropped): void
     {
-        // Normal verbosity - should only show warnings and errors
-        $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
-        $logger = new ConsoleLogger($output, LogLevel::DEBUG);
+        $output = new BufferedOutput($verbosity);
+        $logger = new ConsoleLogger($output, $minLevel);
 
-        $logger->debug('Debug message');
-        $logger->info('Info message');
-        $logger->warning('Warning message');
+        $logger->debug('debug-line');
+        $logger->info('info-line');
+        $logger->warning('warning-line');
+        $logger->error('error-line');
 
         $content = $output->fetch();
-        self::assertStringContainsString('[WARNING]', $content);
-        // DEBUG and INFO should not appear at NORMAL verbosity
+        foreach ($written as $line) {
+            self::assertStringContainsString($line, $content);
+        }
+        foreach ($dropped as $line) {
+            self::assertStringNotContainsString($line, $content);
+        }
+    }
+
+    /** @return iterable<string, array{int, string, list<string>, list<string>}> */
+    public static function provideMinimumLevelCases(): iterable
+    {
+        yield 'debug at normal verbosity' => [OutputInterface::VERBOSITY_NORMAL, LogLevel::DEBUG, ['debug-line', 'info-line', 'warning-line', 'error-line'], []];
+        yield 'debug at -v' => [OutputInterface::VERBOSITY_VERBOSE, LogLevel::DEBUG, ['debug-line', 'info-line', 'warning-line', 'error-line'], []];
+        yield 'warning at normal verbosity' => [OutputInterface::VERBOSITY_NORMAL, LogLevel::WARNING, ['warning-line', 'error-line'], ['debug-line', 'info-line']];
+        yield 'error at -vvv' => [OutputInterface::VERBOSITY_DEBUG, LogLevel::ERROR, ['error-line'], ['debug-line', 'info-line', 'warning-line']];
+    }
+
+    /**
+     * Every one of PSR-3's eight levels reaches a normal-verbosity console
+     * once admitted. ALERT used to fall into the unstyled `-vv` branch, so
+     * "action must be taken immediately" was quieter than a warning.
+     */
+    #[Test]
+    #[DataProvider('providePsrLevels')]
+    public function itWritesEveryPsrLevelItAdmits(string $level): void
+    {
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
+
+        (new ConsoleLogger($output, LogLevel::DEBUG))->log($level, 'admitted');
+
+        self::assertStringContainsString(\sprintf('[%s] admitted', strtoupper($level)), $output->fetch());
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function providePsrLevels(): iterable
+    {
+        foreach ([LogLevel::EMERGENCY, LogLevel::ALERT, LogLevel::CRITICAL, LogLevel::ERROR, LogLevel::WARNING, LogLevel::NOTICE, LogLevel::INFO, LogLevel::DEBUG] as $level) {
+            yield $level => [$level];
+        }
+    }
+
+    /** PSR-3: a level outside the eight is the caller's error, not a message to drop. */
+    #[Test]
+    public function itRefusesALevelOutsidePsr3(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unknown log level "trace".');
+
+        (new ConsoleLogger(new BufferedOutput(), LogLevel::WARNING))->log('trace', 'custom-level message');
+    }
+
+    #[Test]
+    public function itRefusesAMinimumLevelOutsidePsr3(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        (new ConsoleLogger(new BufferedOutput(), 'verbose'))->error('any');
+    }
+
+    /** A style name inside the text is text: the formatter deleted it before. */
+    #[Test]
+    public function itWritesMarkupInsideTheMessageAsText(): void
+    {
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
+
+        (new ConsoleLogger($output, LogLevel::WARNING))->warning(
+            'Failed to parse file',
+            ['error' => 'Unexpected <info> token, expected <T_STRING>'],
+        );
+
+        self::assertStringContainsString('"error":"Unexpected <info> token, expected <T_STRING>"', $output->fetch());
+    }
+
+    #[Test]
+    public function itKeepsAContextThatIsNotValidUtf8(): void
+    {
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
+
+        (new ConsoleLogger($output, LogLevel::WARNING))->warning('Failed to parse file', ['file' => "src/\xB1\x31.php"]);
+
+        self::assertStringContainsString("\"file\":\"src/\u{FFFD}1.php\"", $output->fetch());
+    }
+
+    #[Test]
+    public function itSaysSoWhenAContextCannotBeEncoded(): void
+    {
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
+
+        (new ConsoleLogger($output, LogLevel::WARNING))->warning('Measured {what}', ['what' => 'ratio', 'value' => \INF]);
+
+        self::assertStringContainsString('Measured ratio (context not shown: Inf and NaN cannot be JSON encoded)', $output->fetch());
+    }
+
+    /** Only named placeholders are converted: converting every value made NAN raise a PHP warning. */
+    #[Test]
+    public function itInterpolatesANonFiniteFloat(): void
+    {
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
+
+        (new ConsoleLogger($output, LogLevel::WARNING))->warning('ratio {value}', ['value' => \NAN]);
+
+        self::assertStringContainsString('ratio NAN', $output->fetch());
     }
 
     #[Test]

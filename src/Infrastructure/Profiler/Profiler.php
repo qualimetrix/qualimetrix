@@ -78,19 +78,14 @@ final class Profiler
         $now = hrtime(true);
         $memory = memory_get_usage(true);
 
-        // Enforce LIFO: stop all spans above the target span first
+        // Enforce LIFO: close every span above the target first. They did not
+        // stop themselves, and say so, rather than pass their borrowed end
+        // off as a measurement.
         for ($i = \count($this->stack) - 1; $i > $index; $i--) {
-            $aboveSpan = $this->stack[$i];
-            if ($aboveSpan->endTime === null) {
-                $aboveSpan->finish($now, $memory);
-                $this->propagatePeakToParent($aboveSpan);
-            }
+            $this->stack[$i]->closeWithAncestor($now, $memory);
         }
 
-        // Stop the target span
-        $span = $this->stack[$index];
-        $span->finish($now, $memory);
-        $this->propagatePeakToParent($span);
+        $this->stack[$index]->finish($now, $memory);
 
         // Remove the target span and all spans above it from the stack
         array_splice($this->stack, $index);
@@ -109,66 +104,34 @@ final class Profiler
         return $this->rootSpans;
     }
 
-    /** @return array<string, array{total: float, count: int, avg: float, memory: int, peak_memory: int}> */
+    /** @return array<string, array{total: float, count: int, unstopped: int}> */
     public function getSummary(): array
     {
-        if ($this->rootSpans === []) {
-            return [];
-        }
-
         $stats = [];
         foreach ($this->rootSpans as $root) {
             $this->collectStats($root, $stats);
-        }
-
-        // Calculate averages
-        foreach ($stats as $name => &$stat) {
-            $stat['avg'] = $stat['count'] > 0 ? $stat['total'] / $stat['count'] : 0.0;
         }
 
         return $stats;
     }
 
     /**
-     * Propagate a span's peak memory to its parent.
-     */
-    private function propagatePeakToParent(Span $span): void
-    {
-        if ($span->parent !== null) {
-            $span->parent->updatePeak($span->peakMemory);
-        }
-    }
-
-    /**
-     * Recursively collect statistics from span tree.
+     * Recursively collect statistics from span tree. A span that did not stop
+     * itself is counted apart and its time left out of `total`: it would add
+     * whatever ran until an enclosing span stopped.
      *
-     * @param Span $span Current span
-     * @param array<string, array{total: float, count: int, avg: float, memory: int, peak_memory: int}> &$stats Statistics array
+     * @param array<string, array{total: float, count: int, unstopped: int}> $stats
      */
     private function collectStats(Span $span, array &$stats): void
     {
+        $stats[$span->name] ??= ['total' => 0.0, 'count' => 0, 'unstopped' => 0];
+
         $duration = $span->getDuration();
-        $memory = $span->getMemoryDelta();
-        $peakMemory = $span->getPeakMemoryDelta();
-
-        if ($duration !== null && $memory !== null && $peakMemory !== null) {
-            if (!isset($stats[$span->name])) {
-                $stats[$span->name] = [
-                    'total' => 0.0,
-                    'count' => 0,
-                    'avg' => 0.0,
-                    'memory' => 0,
-                    'peak_memory' => 0,
-                ];
-            }
-
+        if ($span->wasStopped() && $duration !== null) {
             $stats[$span->name]['total'] += $duration;
             $stats[$span->name]['count']++;
-            $stats[$span->name]['memory'] += $memory;
-            $stats[$span->name]['peak_memory'] = max(
-                $stats[$span->name]['peak_memory'],
-                $peakMemory,
-            );
+        } else {
+            $stats[$span->name]['unstopped']++;
         }
 
         foreach ($span->children as $child) {

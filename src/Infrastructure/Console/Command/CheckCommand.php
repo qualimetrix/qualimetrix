@@ -7,6 +7,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -187,13 +188,14 @@ final class CheckCommand extends Command
     {
         $this->runtimeConfigurator->resetRunState();
 
+        // Resolve configuration through pipeline. It refuses an option written
+        // empty, so it runs before anything below reads `--output` as a path.
+        $document = $this->configurationInputAdapter->resolve($input);
+
         // Refuse an unwritable `--output` before analysis starts. This fast
         // precheck is not a guarantee because writability can change later.
         $this->resultPresenter->assertOutputIsWritable($input);
-        $namespacePattern = $this->resultPresenter->prepareNamespaceDrillDown($input);
-
-        // Resolve configuration through pipeline
-        $document = $this->configurationInputAdapter->resolve($input);
+        $namespacePattern = $this->resultPresenter->bindOutputOptions($input);
         $resolved = $this->configurationResolvers->resolve($document);
         $runConfiguration = $resolved->runConfiguration;
         $cacheConfiguration = $resolved->cacheConfiguration;
@@ -201,6 +203,7 @@ final class CheckCommand extends Command
         $findingConfiguration = $this->ruleInputValidator->resolve($document, $input);
         $findingExclusions = $resolved->findingExclusions;
         $outputFormat = $resolved->outputFormat;
+        $this->resultPresenter->bindOutputFormat($input, $outputFormat);
         $exitPolicy = $this->configurationInputAdapter->exitPolicy($document);
 
         // Configure runtime using resolved config
@@ -246,6 +249,21 @@ final class CheckCommand extends Command
             $this->writeWarning($output, \sprintf('Warning: %s', $warning));
         }
 
+        // Decodes `--suppress-path`, `--suppress-namespace` and `--baseline`
+        // as written — a KIND:VALUE selector parse and a command-line-spelling
+        // type check, neither of which reads an analysis result — so it runs
+        // before the analysis those options will filter, not after. Applying
+        // what a well-formed baseline path names still happens inside
+        // filterAndReport() below, which does read the analysis result.
+        $projectionOptions = $this->findingFilterOrchestrator->projectionOptions(
+            $findingExclusions,
+            $input,
+            $scopeResolution,
+        );
+        if ($projectionOptions->baselinePath !== null) {
+            BaselineLoader::assertReadable($projectionOptions->baselinePath);
+        }
+
         // Named, and carrying the coverage answer with the paths it is about:
         // rebuilding this positionally lost every field added to the run
         // configuration after the call site was written, silently and once per
@@ -255,16 +273,11 @@ final class CheckCommand extends Command
             : $runConfiguration->narrowedTo($scopeResolution->paths);
         $result = $this->runAnalysis($scopedRunConfiguration, $scopeResolution->fileDiscovery);
 
-        $projectionOptions = $this->findingFilterOrchestrator->projectionOptions(
-            $findingExclusions,
-            $input,
-            $scopeResolution,
-        );
         $filterResult = $this->findingFilterOrchestrator->filterAndReport(
             $result,
             $input,
             $output,
-            $scopeResolution,
+            $resolvedScope,
             $projectionOptions,
         );
         $filteredFindings = $filterResult->findings;
@@ -284,9 +297,25 @@ final class CheckCommand extends Command
             filterResult: $filterResult,
             projectionOptions: $projectionOptions,
             namespacePattern: $namespacePattern,
+            projectScope: $this->findingFilterOrchestrator->projectScope($resolvedScope, $result, $projectionOptions),
         );
 
-        $this->resultPresenter->presentProfile($input, $output);
+        return $this->presentProfile($input, $output, $exitCode);
+    }
+
+    /**
+     * The report is on stdout by now, so whatever ends the run here is
+     * presented without a second stdout document, whatever the format.
+     */
+    private function presentProfile(InputInterface $input, OutputInterface $output, int $exitCode): int
+    {
+        try {
+            $this->resultPresenter->presentProfile($input, $output);
+        } catch (ConfigurationRefusal $refusal) {
+            return $this->refusalPresenter->refusalAfterPublishedReport($output, $refusal);
+        } catch (Throwable $e) {
+            return $this->refusalPresenter->internalErrorAfterPublishedReport($output, $e);
+        }
 
         return $exitCode;
     }

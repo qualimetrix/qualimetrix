@@ -11,6 +11,7 @@ use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\RuntimeLoggerConfigurator;
+use Qualimetrix\Infrastructure\Logging\Contract\LogFileUnavailable;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -63,6 +64,59 @@ final class RuntimeLoggerConfiguratorTest extends TestCase
 
         (new RuntimeLoggerConfigurator($factory, new LoggerHolder(), new ErrorStream()))
             ->configure(self::logLevelInput('WARNING'), self::createStub(OutputInterface::class));
+    }
+
+    /** Not written is not `info`: only an unwritten level lets verbosity choose the console's. */
+    #[Test]
+    public function itPassesNoLevelToTheFactoryWhenNoneWasWritten(): void
+    {
+        $factory = $this->createMock(LoggerFactoryInterface::class);
+        $factory->expects(self::once())
+            ->method('create')
+            ->with(self::anything(), null, null)
+            ->willReturn(new NullLogger());
+
+        (new RuntimeLoggerConfigurator($factory, new LoggerHolder(), new ErrorStream()))
+            ->configure(
+                new ArrayInput([], new InputDefinition([new InputOption('log-level', null, InputOption::VALUE_REQUIRED)])),
+                self::createStub(OutputInterface::class),
+            );
+    }
+
+    /**
+     * An unwritable log path is the user's input to fix (exit 3), not an
+     * internal error (exit 1).
+     */
+    #[Test]
+    public function itRefusesALogFileTheFactoryCannotWrite(): void
+    {
+        $factory = self::createStub(LoggerFactoryInterface::class);
+        $factory->method('create')->willThrowException(
+            new LogFileUnavailable('/ro/qmx.log', 'which cannot be opened for appending: Permission denied'),
+        );
+
+        try {
+            (new RuntimeLoggerConfigurator($factory, new LoggerHolder(), new ErrorStream()))
+                ->configure(self::logLevelInput('info'), self::createStub(OutputInterface::class));
+            self::fail('An unwritable log file was accepted.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame(
+                'Option --log-file names "/ro/qmx.log", which cannot be opened for appending: Permission denied.',
+                $refusal->summary(),
+            );
+            self::assertSame('--log-file', $refusal->origin()->locator());
+        }
+    }
+
+    #[Test]
+    public function itPutsBackTheStartingLoggerOnReset(): void
+    {
+        $holder = new LoggerHolder();
+        $holder->setLogger(self::createStub(\Psr\Log\LoggerInterface::class));
+
+        (new RuntimeLoggerConfigurator(self::createStub(LoggerFactoryInterface::class), $holder, new ErrorStream()))->reset();
+
+        self::assertInstanceOf(NullLogger::class, $holder->getLogger());
     }
 
     private function configurator(): RuntimeLoggerConfigurator
