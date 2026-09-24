@@ -18,8 +18,9 @@ tokenizer intentionally does not reuse the product extractor, so agreement is
 evidence rather than two spellings of one defect.
 
 The unguarded-cases table is a source record. Its rows explain why a case is
-classified as `UNGUARDED` or `MISDECLARED`; a control declaration must be
-changed together with its adjudication and a fresh focused run.
+classified as `UNGUARDED` or `MISDECLARED`, or — for a case once found
+unguarded — which probe now guards it (`GUARDED`); a control declaration must
+be changed together with its adjudication and a fresh focused run.
 
 ## Operating checks
 
