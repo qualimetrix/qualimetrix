@@ -1,6 +1,6 @@
 {
   "version": 13,
-  "generated": "2026-09-24T05:49:28+00:00",
+  "generated": "2026-09-24T10:14:53+00:00",
   "scope": ["src"],
   "entries": {
     "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomOptions::fromArray@src/Analysis/Evidence/Cohesion/LcomOptions.php": [
@@ -325,6 +325,9 @@
     "ns:Qualimetrix\\Analysis\\Configuration\\Pipeline\\Stage": [
       {"channel":"health.cohesion","magnitudes":[25]}
     ],
+    "ns:Qualimetrix\\Analysis\\Evidence\\CodeSmell": [
+      {"channel":"coupling.cbo","magnitudes":[17]}
+    ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Complexity": [
       {"channel":"size.class-count","magnitudes":[21]}
     ],
@@ -333,6 +336,9 @@
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Summary": [
       {"channel":"health.maintainability","magnitudes":[44.2]}
+    ],
+    "ns:Qualimetrix\\Analysis\\Evidence\\Coupling": [
+      {"channel":"coupling.cbo","magnitudes":[19]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Design": [
       {"channel":"coupling.instability","magnitudes":[0.952381]}
@@ -371,16 +377,16 @@
       {"channel":"health.cohesion","magnitudes":[30]}
     ],
     "project:": [
-      {"channel":"duplication.clone","occurrence":"1eefcbbb02d84e4e","magnitudes":[17]},
-      {"channel":"duplication.clone","occurrence":"26a58f2d85548561","magnitudes":[31]},
-      {"channel":"duplication.clone","occurrence":"34b279d1e8cbb107","magnitudes":[22]},
-      {"channel":"duplication.clone","occurrence":"67c3f109dc2d3e97","magnitudes":[29]},
-      {"channel":"duplication.clone","occurrence":"9964fabbf3e849d9","magnitudes":[46]},
-      {"channel":"duplication.clone","occurrence":"cf1eed47dd349df2","magnitudes":[45]},
-      {"channel":"duplication.clone","occurrence":"d4a10c7cb6a1893d","magnitudes":[32]},
-      {"channel":"duplication.clone","occurrence":"fd45a3650ac682e6","magnitudes":[21]},
-      {"channel":"duplication.clone","occurrence":"ffe945d02651bf40","magnitudes":[24]},
-      {"channel":"duplication.clone","occurrence":"fffecc238d6441b0","magnitudes":[41]}
+      {"channel":"duplication.clone","occurrence":"1eefcbbb02d84e4e","magnitudes":[17,17,17,17,17]},
+      {"channel":"duplication.clone","occurrence":"26a58f2d85548561","magnitudes":[31,31]},
+      {"channel":"duplication.clone","occurrence":"34b279d1e8cbb107","magnitudes":[22,22]},
+      {"channel":"duplication.clone","occurrence":"67c3f109dc2d3e97","magnitudes":[29,29,29]},
+      {"channel":"duplication.clone","occurrence":"9964fabbf3e849d9","magnitudes":[46,46]},
+      {"channel":"duplication.clone","occurrence":"cf1eed47dd349df2","magnitudes":[45,45]},
+      {"channel":"duplication.clone","occurrence":"d4a10c7cb6a1893d","magnitudes":[32,32]},
+      {"channel":"duplication.clone","occurrence":"fd45a3650ac682e6","magnitudes":[21,21,21,21]},
+      {"channel":"duplication.clone","occurrence":"ffe945d02651bf40","magnitudes":[24,24,24,24]},
+      {"channel":"duplication.clone","occurrence":"fffecc238d6441b0","magnitudes":[41,41]}
     ]
   }
 }

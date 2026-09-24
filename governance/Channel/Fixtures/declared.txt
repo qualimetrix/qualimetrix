@@ -110,7 +110,7 @@ complexity.ccn higher callable,class judges:complexity.ccn,complexity.ccn.max
 complexity.cognitive higher callable,class judges:complexity.cognitive,complexity.cognitive.max
 complexity.npath higher callable,class judges:complexity.npath,complexity.npath.max
 complexity.wmc higher class judges:complexity.wmc
-coupling.cbo higher class,namespace judges:coupling.cbo,coupling.cbo-app
+coupling.cbo higher class,namespace judges:coupling.cbo,coupling.cbo-app,coupling.cbo-own
 coupling.class-rank - class
 coupling.distance higher namespace judges:coupling.distance
 coupling.instability higher class,namespace judges:coupling.instability

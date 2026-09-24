@@ -2410,6 +2410,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0082-the-project-aggregate-is-typed-not-spelled.md' => 'Core.Symbol',
         'docs/adr/0083-a-number-option-declares-its-range-in-its-form.md' => 'Analysis.Finding',
         'docs/adr/0084-a-project-scope-has-three-states-and-the-report-names-it.md' => 'Analysis.Run',
+        'docs/adr/0085-a-copy-of-a-duplicate-block-is-a-finding-of-its-own.md' => 'Analysis.Evidence.Duplication',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/Evidence/CircularDependency/README.md' => 'Analysis.Evidence.CircularDependency',

@@ -71,7 +71,7 @@ live in `docs/internal/generated/modular-architecture/`, never in prose.
 
 ```
 src/
-├── Core/              # Cross-cutting primitives (no dependencies)
+├── Core/              # Cross-cutting primitives (no project imports; PHP, PhpParser\Node, Composer\InstalledVersions)
 ├── Analysis/          # Orchestration plus taxonomy-only capability grouping
 │   ├── Configuration/       # ordered configuration document resolution
 │   ├── Finding/             # rule language, execution, findings and filtering

@@ -388,8 +388,9 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   is written instead of refused after the run, and a writable file in a
   directory that cannot be written is accepted. `check --output` and
   `--profile` used to replace an existing file with a renamed temporary file;
-  now a write that fails midway leaves that file partly written, and a new file
-  the write created is removed. The kernel decides which symbolic links are
+  now a write that fails midway leaves that file partly written, a new file
+  the write created is removed, and `check --help` no longer calls `--output`
+  an atomic write. The kernel decides which symbolic links are
   followed, so on Linux with `fs.protected_symlinks` a link another user left
   in `/tmp` is refused, as `>` refuses it, instead of having the file it names
   overwritten. `/dev/stdout`, `/dev/stderr`, `/dev/fd/N` and `/proc/self/fd/N`,
@@ -419,19 +420,32 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   closure or arrow function no longer adds +1 (plus nesting) to the enclosing
   callable, and its own value continues the nesting level it is written at; a
   method that calls itself adds +1 once rather than once per call; conditions
-  no longer count as nested inside the structure they control; `??` and `??=`
-  add nothing (the whitepaper ignores null-coalescing as shorthand). Values
+  no longer count as nested inside the structure they control; `??` adds
+  nothing (the whitepaper ignores null-coalescing as shorthand); sequences of
+  logical operators are read in source order, so `$a && ($b || $c) && $d` is
+  three sequences and `$a && !($b && $c)` two, and a group inside a call
+  argument or `!` starts its own; `else if` in two words scores +1 without a
+  nesting increment, like `elseif` (an `if/else if/else if/else` chain is 4,
+  not 9); a direct self-call is recognised in any letter case, through
+  `$this?->`, the own class name or a fully qualified function name. Values
   move in both directions: re-check `complexity.cognitive` thresholds and
-  regenerate baselines. The breakdown no longer lists `closure`, `??` or `??=`
-  increments and labels `nested ternary`. `complexity.ccn` still counts `??`.
-- **`duplication.clone` reports a duplicated block once, with every copy.** A
-  block with three or more copies is one finding (`N occurrences`, up to ten
-  other copies named in the message, all in related locations) instead of one
-  finding per pair, and there is no upper limit on copies any more. Baselines
-  holding the pairwise findings need regenerating.
-- **`size.loc` counts lines as `wc -l` does:** a file's final line break no
-  longer adds a line, so `size.loc` (and `size.loc.sum`/`.avg`) is one lower
-  per file that ends with a newline.
+  regenerate baselines. The breakdown no longer lists `closure` or `??`
+  increments, labels `nested ternary`, and shows an `else if` as one `elseif`
+  increment. `complexity.ccn` still counts `??`.
+- **`duplication.clone` reports one finding on each copy of a duplicated
+  block** instead of one finding per pair. Each names up to ten other copies
+  (message and SARIF `relatedLocations`) and counts the rest, and there is no
+  upper limit on copies any more. All copies share the block's identity, so a
+  baseline entry bounds the number of copies: a new copy of an accepted block
+  is a breach, `--report=git:*` reports it in the file it was pasted into, and
+  a baseline captured before this change breaches on every accepted block —
+  regenerate it with `baseline:generate`. Inline directives on the channel
+  stay refused, and the refusal now says why: a file or next-line directive
+  would silence one copy while the others still report the block.
+- **`size.loc` no longer counts a file's final line break as a line of its
+  own**, so `size.loc` (and `size.loc.sum`/`.avg`) is one lower per file that
+  ends with a newline; a last line without a line break still counts, which
+  `wc -l` would not.
 - **The whole-project channels read the run's scope in three states.**
   `architecture.unreachable-layer` and `architecture.empty-template` are no
   longer judged on a run whose paths leave out part of the `composer.json`
@@ -453,8 +467,9 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
 - **A negative threshold or count under `rules:` is refused with exit `3`**
   instead of silently inverting the rule (`warning: -1`, `threshold: -1`,
   `--rule-opt=size.method-count:threshold=-1`, `--max-cycle-size=-1`,
-  `min_methods: -3`, …); the refusal names the value (`got -1`) and the key as
-  written, and numeric refusals read "a non-negative whole number" / "a
+  `min_methods: -3`, …); the refusal names the value (`got -1`) and the option
+  by its canonical name (`minMethods` for `min_methods`, `maxCycleSize` for
+  `--max-cycle-size`), and numeric refusals read "a non-negative whole number" / "a
   non-negative number". Computed-metric `warning`/`error`/`threshold` still
   accept either sign. See
   [ADR 0083](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0083-a-number-option-declares-its-range-in-its-form.md).
@@ -478,6 +493,17 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
 
 ### Changed
 
+- Namespace-level `coupling.cbo` is now counted over the namespace's whole
+  subtree, the region its `coupling.ca`/`coupling.ce` cover, so a namespace
+  holding only sub-namespaces no longer publishes 0. What `coupling.cbo` used
+  to be, the count over the classes a namespace declares itself, is published
+  as the new `coupling.cbo-own`, and namespaces are still judged on it: a
+  namespace is reported whether or not its sub-namespaces are in the run's
+  paths, and one with no classes of its own gets no `coupling.cbo-own` and is
+  not judged. The namespace `min_class_count` now counts the classes the
+  namespace declares itself rather than its whole subtree, and the finding's
+  inbound/outbound counts are read from the same classes
+  (`coupling.ca-own`/`coupling.ce-own`).
 - Health coverage is shown where the scores are. `--format=health` gains a
   `Coverage` column, the summary block prints each dimension's share beside
   its bar, and the HTML report carries it as `summary.healthCoverage`. The
@@ -602,12 +628,18 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
 - Every report says how the run's paths stood against the project's
   `composer.json` autoload: `json`, `metrics` and `suppressed` carry a
   top-level `projectScope` object in every document (`state`: `covered`,
-  `narrowed` or `unknown`; `uncoveredAutoloadTargets`; `unjudgedChannels`),
-  `sarif` a `QMX-RUN-PROJECT-SCOPE` notification, `github` a
-  `run.project-scope` notice, `html` a banner and the text formats a
+  `narrowed` or `unknown`; `uncoveredAutoloadTargets`; `unjudgedChannels`;
+  `unjudgedValues`), `sarif` a `QMX-RUN-PROJECT-SCOPE` notification, `github`
+  a `run.project-scope` notice, `html` a banner and the text formats a
   `Project scope …` line, so a run no longer passes off the channels it did
   not judge as having nothing to report; `gitlab` and `checkstyle` are
-  unchanged.
+  unchanged. `unjudgedValues` lists, as `{"option", "pattern"}`, each
+  configured suppression value a `covered` or `unknown` run skipped because it
+  names a place the run did not analyse or cannot locate (`suppress_paths:
+  [tests/Legacy]` on `qmx check src/`), and `unjudgedChannels` names the
+  channels of those values — on a `narrowed` run, every channel that run
+  cannot judge. A `covered` run that skipped a value says so in every format
+  above.
 - `architecture.unreachable-layer` no longer calls a layer empty when a type
   its `implements:`/`extends:`/`attributes:` criteria name is declared by the
   analysed project's composer install (read from
@@ -630,14 +662,17 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   assignment, and `security.command-injection` also checks backtick commands;
   one SQL expression is one violation however its query is nested (a query
   function, `sprintf()` or concatenation around it reports the read once), and
-  a concatenated query behind another call inside one of them is now reported.
+  a subquery behind another call inside one of them is reported for its own
+  superglobal read.
 - `security.hardcoded-credentials` checks property, static-property and
   string-keyed array-element assignments (also `??=`) and recognises fused and
   digit-suffixed names (`$apikey`, `DBPASSWORD`, `$apiKey1`), as
   `security.sensitive-parameter` does; hyphen-, slash-, plus- or
   dot-separated values (UUID, AWS-style, base64, JWT) are no longer taken for
-  messages or identifiers, and a dotted key whose segments join words with a
-  hyphen (`auth.password-reset`) is not taken for a credential.
+  messages or identifiers, and a dotted key whose segments join lowercase
+  letter-only words with a hyphen (`auth.password-reset`) is not taken for a
+  credential, while dotted passwords and keys with hyphens
+  (`Summer-2024.Pass`, `sk-live.abc123-def456`) still are.
 - Namespace-level `coupling.cbo` messages name their unit (`CBO: 12
   namespaces`), since namespace CBO counts namespaces while Ca/Ce count
   classes; the health breakdown explains a high `coupling.class-rank` as "much
@@ -987,20 +1022,25 @@ directions. See
   cyclomatic complexity is missing; the run stops with an internal error
   instead of publishing a flattering index.
 - The Cognitive Complexity page lists its deviations from the whitepaper
-  (lambdas measured as separate units, indirect recursion not detected) and
-  no longer claims to follow it where it did not.
-- Namespace-level `coupling.cbo` of a parent namespace is counted over its
-  whole subtree, the region its `coupling.ca`/`coupling.ce` cover; it was 0
-  for every namespace with sub-namespaces, and a class declared in the parent
-  counted its own sub-namespace as coupled. The value is published and not
-  judged: `coupling.cbo` reports leaf namespaces only, because the namespace
-  thresholds do not model a number that grows with the subtree.
+  (lambdas and nested named functions measured as separate units, the exact
+  reach of recursion detection) and no longer claims to follow it where it did
+  not; the `complexity.ccn` page marks `??`, `??=`, `?->` and `xor` as a
+  deviation from McCabe's original.
 - `extends` of a PHP built-in class no longer counts toward `coupling.ce`,
   `coupling.ca`, `coupling.cbo`, `coupling.cbo-app` or
   `coupling.ce-packages`, matching `implements` and type hints of built-ins;
   a built-in written in another letter case (`\countable`,
-  `extends \exception`) is recognised as one, for coupling and for the DIT
-  "inheritance chain(s) … not followed to a root" warning.
+  `extends \exception`) is recognised as one, for coupling, for the DIT
+  "inheritance chain(s) … not followed to a root" warning and for layer
+  criteria on either side: `extends: ['\exception']` now takes a class
+  extending `\Exception`, and `implements: ['\IteratorAggregate']` a class
+  that writes `implements \iteratoraggregate`. Such classes used to fall out
+  of the layer, into a later one or none, and a lower-case criterion kept
+  `architecture.unreachable-layer` quiet about the layer it emptied; expect
+  them to change layer and `architecture.layer-violation`,
+  `architecture.potential-shadow` and `architecture.unreachable-layer`
+  findings to move with them. Your own and vendor class names are still
+  compared as written.
 - `design.noc` is published on classes only, as `design.dit` is, and
   `interface B extends A` no longer counts `B` as a child of `A`.
 - `coupling.distance` no longer reports a namespace with no dependencies in
@@ -1022,7 +1062,9 @@ directions. See
   `__get`/`__set`, or a magic method in another letter case, switches the
   magic-access protection on; method names match case-insensitively; an
   anonymous class no longer breaks `new self()` receiver tracking; a private
-  method only called by itself is reported.
+  method only called by itself is reported; a literal callable array
+  (`[$this, 'method']`, `[self::class, 'method']`, `[static::class, 'method']`,
+  `[__CLASS__, 'method']`) counts as a use of the method.
 - `code-smell.debug-code` flags `var_dump($x, true)`, `dd($x, true)` and
   `dump($x, true)`: positional return mode applies only to `print_r()` and
   `var_export()`.
@@ -1034,27 +1076,50 @@ directions. See
   merged into the project aggregate, its declarations lost their namespace in
   `symbol` and `subject`, and its namespace findings were reported as project
   findings.
+- A `suppress_namespaces` value, global or under `rules.<name>`, no longer
+  removes a project-level finding: `(project)` is what a report shows where
+  such a finding's namespace would be, not a namespace, so
+  `suppress_namespaces: [{exact: '(project)'}]` (or a regex broad enough to
+  match it) now removes nothing and is reported as matching nothing. It used
+  to remove every project-level finding silently — the report about that
+  pattern included — while `suppression.unmatched-rule-ledger` said the
+  per-rule pattern suppressed nothing.
 - A carve-out written as two layers with one pattern — the first with an
-  `exclude:`, the second receiving what it removes — loads instead of being
-  refused as unreachable; the refusal that remains names the carve-out.
-- `baseline:cleanup` lists an entry whose rule `--only-rule`, `--disable-rule`
-  or `enabled: false` kept out of the run as `not measured` instead of
-  `nothing reported for this identity`, and `baseline:explain` prints
-  `now not measured (…)` for it.
+  `exclude:`, the second receiving what it removes — loads and runs clean
+  instead of being refused as unreachable, and a pattern repeated behind a
+  `match: all` layer that narrows it with another criterion is no longer
+  reported by `architecture.potential-shadow` on every run; a narrower pattern
+  behind either layer is still reported, and the load refusal that remains
+  names the carve-out.
+- `baseline:cleanup` lists an entry whose channel the run left out at the
+  entry's level — by `--only-rule`, `--disable-rule` (also narrowed to a level,
+  `X:namespace`), `enabled: false`, or a level switched off in the rule's
+  options (`class: { enabled: false }`) — as `not measured: this invocation
+  did not run the rule for this channel at this level` instead of `nothing
+  reported for this identity`, and `baseline:explain` prints `now not measured
+  (…)` for it.
+- A baseline entry under a subject key no subject is written as (such as
+  `App\Foo::bar` without its `callable:` prefix) is reported as an unreadable
+  entry (`malformed entry`) instead of being kept and listed as stale forever.
 - `baseline:explain` shows an entry the file holds but cannot apply as
   `present but not applied (<reason> — <detail>)` instead of
   `baseline: (none)`, lists an unreadable line as `Unreadable baseline entry`,
   shows `mode: suppress`, and says when a member without a finite value makes
   `check` report the group.
-- A missing or unreadable baseline file (`check --baseline`,
-  `baseline:explain --baseline`, `baseline:update`, `baseline:cleanup`) is
-  refused with exit 3 before the analysis runs, not after it.
-- A baseline file the `baseline:*` commands cannot write is refused with exit
-  3 and the system's reason (was a PHP warning on stdout and exit 1), and
+- A missing or unreadable baseline file, or a directory given as one
+  (`check --baseline`, `baseline:explain --baseline`, `baseline:update`,
+  `baseline:cleanup`), is refused with exit 3 before the analysis runs, not
+  after it or with an internal error.
+- A baseline file the `baseline:*` commands cannot write — or, for
+  `baseline:generate --force`, a destination they cannot read: a file without
+  read permission, a directory, a symbolic link — is refused with exit 3 and
+  the system's reason (was a PHP warning on stdout and exit 1), and
   `hook:install`/`hook:uninstall` name the system's reason when they cannot
   write, back up, restore or remove the hook, without a PHP warning on stdout.
 - An unwritable `--log-file` is refused as input with exit 3 instead of a PHP
-  warning in stdout and an internal error; a log record whose context holds
+  warning in stdout and an internal error, and so is an empty or blank one
+  (`--log-file=$LOG` with `LOG` unset), which ran without a log file or
+  created a file named by the blank; a log record whose context holds
   bytes that are not UTF-8 is no longer written as an empty line; a message
   containing console markup such as `<info>` is printed as written;
   `--log-level=debug -v` prints debug lines (they waited for `-vv`).

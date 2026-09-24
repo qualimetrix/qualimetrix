@@ -597,8 +597,13 @@ Available tests:
  - Qualimetrix\Governance\RuleDeclaration\RuleIdentifierLiteralGuardTest::itRefusesAHandSpelledCodeInAFixtureOrDocPageThatNamesANonexistentRuleOrChannel
  - Qualimetrix\Governance\RuleDeclaration\RuleIdentifierLiteralGuardTest::itRefusesAProductionFileOutsideARuleOrChannelsOwningCapabilityThatHoldsItsLiteral
  - Qualimetrix\Governance\RuleDeclaration\RuleIdentifierLiteralGuardTest::itRequiresEveryNamedFileToStillEarnItsEntry
+ - Qualimetrix\Governance\RuleDeclaration\RuleInstanceStatelessnessTest::itAcceptsReadonlyStateSetOnlyInTheConstructor
  - Qualimetrix\Governance\RuleDeclaration\RuleInstanceStatelessnessTest::itFindsNoStateAnInstanceCouldCarryBetweenCalls
  - Qualimetrix\Governance\RuleDeclaration\RuleInstanceStatelessnessTest::itRecognisesAPropertyAnInstanceCanReassignAndAStaticOne
+ - Qualimetrix\Governance\RuleDeclaration\RuleInstanceStatelessnessTest::itRecognisesStateBehindAReadonlyDeclaration"a lazy readonly cache"
+ - Qualimetrix\Governance\RuleDeclaration\RuleInstanceStatelessnessTest::itRecognisesStateBehindAReadonlyDeclaration"a readonly initialised on first use"
+ - Qualimetrix\Governance\RuleDeclaration\RuleInstanceStatelessnessTest::itRecognisesStateBehindAReadonlyDeclaration"a static variable in a closure"
+ - Qualimetrix\Governance\RuleDeclaration\RuleInstanceStatelessnessTest::itRecognisesStateBehindAReadonlyDeclaration"an object written through its offset"
  - Qualimetrix\Governance\RuleDeclaration\RuleRegistrationDriftTest::itRegistersExactlyEveryConcreteRuleClassFoundOnDisk
  - Qualimetrix\Governance\RuleDeclaration\RuleRegistryCliAliasResolutionTest::itResolvesEveryCliAliasToARealRuleOption
  - Qualimetrix\Governance\RuleDeclaration\RuleRemediationMinutesCoverageTest::itRequiresEveryAddressableProducerToHaveAnInjectedRemediationEstimate
@@ -2009,6 +2014,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeCollectorTest::itDoesNotCountCommentAfterReturnAsUnreachable
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeCollectorTest::itDoesNotDescendIntoClosuresOrDeclarationsNestedInTheBody
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeCollectorTest::itDoesNotMarkCodeAfterIfUnreachableWhenReturnIsInsideIf
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeCollectorTest::itDoesNotTreatAFirstClassExitCallableStatementAsTerminal
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeCollectorTest::itDoesNotTreatAnIfElseWhoseBranchesAllTerminateAsTerminal
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeCollectorTest::itKeepsCodeUnreachableWhenGotoHasNoSubsequentLabel
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeCollectorTest::itProducesZeroForMethodWithNoUnreachableCode
@@ -2021,6 +2027,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeCollectorTest::itReturnsCollectorName
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeCollectorTest::itReturnsCorrectMetricDefinitions
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeCollectorTest::itSkipsAnonymousClassMethodsInsideNamedClass
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeCollectorTest::itTreatsAFullyQualifiedDieCallInAnyLetterCaseAsTerminal
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeCollectorTest::itTreatsAFullyQualifiedExitCallAsTerminal
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeCollectorTest::itTreatsGotoAsTerminalAndDetectsUnreachableStatement
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeRuleTest::itAnalyzeDisabledReturnsEmpty
@@ -2040,6 +2047,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itAnalyzesPrivateMembersOfEnums
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itClearsStateOnReset
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itContinuesCheckingConstantsWhenMagicMethodsPresent
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itCountsALiteralCallableArrayAsAUsage
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itCountsAMethodCallSpelledInAnotherCaseAsAUsage
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itDeliberatelyDoesNotProvideCallableMetrics
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itDetectsMultipleUnusedMembers
@@ -2050,6 +2058,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itDetectsUnusedPrivateProperty
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itDetectsUnusedPromotedConstructorProperty
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itDetectsUnusedPropertyAmongMultipleOnOneLine
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itDoesNotCountACallableArrayWithAnotherReceiverOrADynamicName
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itDoesNotCountAnonymousClassUsageForOuterClass
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itDoesNotFlagMagicMethodsAsUnused
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itDoesNotFlagPublicOrProtectedMembers
@@ -2349,6 +2358,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itDoesNotTreatParentStaticCallAsRecursion
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itExcludesArrowFunctionInsideAnonymousClassFromOuterMetrics
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itExcludesClosureInsideAnonymousClassFromOuterMetrics
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"a comment between else and if keeps the else if"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"a parenthesised group of another operator splits the outer sequence"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"a parenthesised group of the same operator continues the sequence"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"a same-named function of another namespace is not a self-call"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"a same-named method of another class is not a self-call"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"a sequence in a call argument is a sequence of its own"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"an if alone in a braced else is nested in it"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"an if alone in an alternative-syntax else is nested in it"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"an operator change in the middle of a chain"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"arrow function body is nested one level"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"arrow function without control flow adds nothing"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"closure at file level starts at nesting zero"
@@ -2357,18 +2375,25 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"closure in an if condition is nested one level"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"closure inside an if body"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"closure without control flow adds nothing"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"else if scores as elseif"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"function self-call spelled in another letter case"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"lambda in a lambda continues the nesting"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"lambda inside a file-level closure continues its nesting"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"logical sequence inside a lambda starts fresh"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"method recursion counts once per method"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"method self-call spelled in another letter case"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"namespaced function self-call through a namespace-relative name"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"namespaced function self-call through its fully qualified name"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"nesting is restored after a closure"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"null coalescing is ignored at any nesting level"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"null coalescing is ignored"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"null-coalescing assignment is ignored"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"nullsafe access is not counted"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"nullsafe method self-call"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"recursion counts once per method"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"short ternary inside if gets the nesting increment"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"short ternary next to null coalescing still counts"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"static self-call through the own class name"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"ternary in a catch body is nested"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"ternary in a do-while condition is not nested"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"ternary in a foreach subject is not nested"
@@ -2381,8 +2406,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"ternary inside if gets the nesting increment"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"ternary nested in a ternary branch"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"whitepaper myMethod2: lambda adds nothing and nests its body"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"whitepaper: a negated group is a sequence of its own"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"whitepaper: an else if chain"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"whitepaper: each new sequence of like operators"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"word and symbol spellings of one operator form one sequence"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itPassesIncrementsViaMethodsWithMetrics
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itRecordsAnElseIfAsOneElseifIncrementOnTheIfLine
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itRecordsNoIncrementForNullCoalescing
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itRefusesAnElseWithALoneIfWhenTheParserLeftNoEndPosition
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itResetsState
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itRestoresNodeStackAfterClosure
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itTracksIncrementsWithNestedStructures
@@ -2733,6 +2764,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreTest::itRequiresEveryScoreToStateWhatItCovers
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthSummaryBuilderTest::itEnrichesWithHealthScores
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthSummaryBuilderTest::itRanksANamespaceOnlyWhenItDeclaresClassesOfItsOwn
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricHintCatalogTest::itDescribesTheOwnScopeCboLikeItsSiblings
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricHintCatalogTest::itGetDirectionKnown
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricHintCatalogTest::itGetDirectionUnknown
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricHintCatalogTest::itGetExplanationHigherIsBetterAtThreshold
@@ -3018,6 +3050,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\WeightedHealthFormulaTest::itReadsAWeightedSumInEveryShapeTheLanguageAccepts
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\WeightedHealthFormulaTest::itReadsNoWeightedSumAtAllWhenOneTermIsNotOne
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\WeightedHealthFormulaTest::itReadsNoWeightedSumOutOfAFormulaThatIsNotOne
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceCboScopeIntegrationTest::itJudgesANamespaceWithASubNamespaceOnItsOwnClasses
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceCboScopeIntegrationTest::itReachesTheSameVerdictWhenTheSubNamespaceIsLeftOutOfTheRun
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\UnmatchedFrameworkNamespaceIntegrationTest::itFailsTheRunUnderFailOnWarning
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\UnmatchedFrameworkNamespaceIntegrationTest::itIsSilencedByDisablingTheProducingRule
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\UnmatchedFrameworkNamespaceIntegrationTest::itLeavesTheRunGreenUnderFailOnNone
@@ -3063,6 +3097,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itDeclaresCorrectCliAliases
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itDefaultsClassCboScopeToAll
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itDefaultsNamespaceMinClassCountToThree
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itDoesNotJudgeANamespaceWithoutAnOwnCbo
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itEmitsNoFindingWhenCboBelowThreshold
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itFallsBackToBaseMessageWithEmptyDependencyList
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itFallsBackToBaseMessageWithoutDependencyGraph
@@ -3074,7 +3109,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itGetsSupportedLevels
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itHandlesGlobalClassDependencyInRecommendation
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itIncludesTopDependenciesInRecommendationWhenGraphAvailable
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itJudgesOnlyNamespacesWithoutSubNamespaces
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itJudgesEveryNamespaceOnTheCouplingOfItsOwnDeclarations
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itLimitsRecommendationToFiveDependencies
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itOmitsDependencyListFromNamespaceLevelRecommendation
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itParsesCboOptionsFromHierarchicalArray
@@ -3162,6 +3197,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::itSkipsClassesThatHaveNoClassRankMetric
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::itStaysDisabledWhenExplicitlyDisabledInArray
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::itUsesCustomThresholdsFromArray
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CoupledNamespacesTest::itCountsTheOwnScopeOverExactlyOneNamespace
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CoupledNamespacesTest::itCouplesEveryEnclosingRegionTheEdgeLeaves
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CoupledNamespacesTest::itKeepsAnEdgeBetweenTwoSubNamespacesInsideTheirCommonParent
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CoupledNamespacesTest::itNamesTheFarSideByItsDeclaringNamespace
@@ -3205,7 +3241,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itCountsOnlyEfferentFrameworkDependenciesInCeFramework
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itCountsOnlyOnePackageWhenAllDependenciesShareATopLevelNamespace
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itCountsUniquelyCoupledNamespacesForNamespaceLevelCbo
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itDeclaresTenMetricDefinitionsWithTheirAggregationStrategies
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itDeclaresElevenMetricDefinitionsWithTheirAggregationStrategies
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itDeduplicatesExactSourcesWhileRetainingExternalLogicalTargets
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itDoesNotRegisterASymbolForAnExternalDependencyClass
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itDoesNotRegisterASymbolForAnExternalDependencyNamespace
@@ -3219,7 +3255,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itMatchesFrameworkPrefixesOnNamespaceBoundariesWhenClassifyingDependencies
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itPartitionsCeIntoCeAppAndCeFrameworkWithoutOverlap
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itProvidesTheCouplingMetricNames
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itPublishesAnOwnCboThatCountsTheSubNamespaceAsAnotherNamespace
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itPublishesTheOwnScopeOfANamespaceBesideItsSubtreeRollup
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itPublishesTheSameOwnCboWhenTheSubNamespaceIsLeftOutOfTheRun
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itRegistersAGlobalNamespaceClassUnderAnEmptyNamespace
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itReportsTheSameCouplingInBothScopesForANamespaceWithoutChildren
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itRequiresNoUpstreamMetrics
@@ -3828,6 +3866,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"param"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"property"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"return"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationGitScopeProcessTest::itReportsANewCopyStagedAloneOnTheCopyItself
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itBuildsTheExactCandidateIndexWithinABoundedMemoryLimit
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itFindsADuplicateWithCompleteCoverageUnderTheMemoryLimit
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itReportsEveryCopyOfABlockUnderTheDefaultMemoryLimit"100 copies"
@@ -3865,10 +3904,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itNamesTheFirstTenOtherOccurrencesAndCountsTheRestInTheMessage
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itOmitsTheHintSnippetFromTheMessageWhenNoHintIsGiven
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itParsesSnakeCaseAndCamelCaseOptionKeysFromAnArray
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itProducesAFindingDescribingADuplicateBlockAndItsOtherOccurrence
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itProducesAFindingOnEachCopyNamingTheOtherCopy
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itProducesNoFindingsWhenDisabled
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itProducesNoFindingsWhenNoDuplicateBlockWasCollected
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itProducesOneFindingPerDuplicateBlock
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itProducesOneFindingPerCopyOfEveryBlock
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itUsesOnlyProjectAndContentForDuplicateGroupIdentity
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itCapsTheHintAtThreeMeaningfulLines
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itClampsAnEndLineBeyondTheFileLength
@@ -4505,7 +4544,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"class constant"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"coalescing assignment"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"define"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"dotted key of hyphen-joined alphanumeric groups"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"dotted key with a segment that is not an identifier"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"dotted password mixing case across a hyphen"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"dotted password with a capitalised hyphenated segment"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"enum case"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"fused name"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"hyphenated key without dots"
@@ -4526,6 +4568,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"dot identifier with a hyphenated segment"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"dot identifier with a word per segment"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"dot identifier"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"dotted identifier with a digit inside a segment"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"dotted identifier with a snake-case segment"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"dotted identifier with capitalised segments"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"dotted value of lowercase hyphen-joined words has the shape of a key"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"empty string"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"human message"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"hyphenated human message"
@@ -4705,7 +4751,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itDetectsXssThroughValuePassingWrappers"echo superglobal only as a ternary condition"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itDetectsXssThroughValuePassingWrappers"echo superglobal only as an array key"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itDetectsXssThroughValuePassingWrappers"print coalesced superglobal"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itForgetsTheReportedReadsOnReset
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itGetsLocationsByType
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itNamesTheReadEachQueryReportsWhenASubqueryHidesBehindACall
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itReportsASuperglobalReadOnceWhateverWrapsIt"command function with a backtick command"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itReportsASuperglobalReadOnceWhateverWrapsIt"command function with an interpolated command as is"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itReportsASuperglobalReadOnceWhateverWrapsIt"command function with an interpolated command assigned"
@@ -4756,6 +4804,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itReportsASuperglobalReadOnceWhateverWrapsIt"sql function with an interpolated query concatenated"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itReportsASuperglobalReadOnceWhateverWrapsIt"sql function with an interpolated query in a match arm"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itReportsASuperglobalReadOnceWhateverWrapsIt"sql function with an interpolated query in a ternary branch"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itReportsASuperglobalReadOnceWhateverWrapsIt"subquery with another superglobal behind a call inside a reporting concatenation"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itReportsASuperglobalReadOnceWhateverWrapsIt"subquery with another superglobal behind a call inside a reporting sql function"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itReportsASuperglobalReadOnceWhateverWrapsIt"subquery without a superglobal behind a call inside a reporting concatenation"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itReportsASuperglobalReadOnceWhateverWrapsIt"two statements, two findings"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itResetsClearsState
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveNameMatcherTest::itDetectsExtraSensitiveNames
@@ -5196,13 +5247,18 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itIsNotWrittenIntoAGeneratedBaseline
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itIsSilencedByDisablingTheProducerAndByDisablingOneChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itIsSilencedByDisablingTheRuleThroughItsOptions
+ - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itKeepsAProjectFindingThatAPerRuleNamespacePatternCannotName
+ - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itKeepsAProjectFindingUnderABroadPerRuleRegex
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itLeavesANamespaceValueUnjudgedWhereTheProjectDeclaresNoAutoload
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itLeavesPerRuleNamespaceEntriesUnjudgedWhereTheProjectDeclaresNoAutoload
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itLeavesTheRunGreenUnderFailOnNone
+ - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itNamesEverySkippedValueOnACoveredRun
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itReportsAConfiguredSuppressNamespaceThatNamedNothingAndNotOneThatDid
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itReportsAConfiguredSuppressPathThatNamedNothing
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itReportsAPerRuleLedgerPatternThatNamedNothingAndNotOneThatDid
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itReportsTheCommandLineSuppressionFlagsThatNamedNothingAndNotOnesThatDid
+ - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itReportsTheProjectDisplayValueAsANamespaceThatNamedNothing
+ - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itSaysOnACoveredRunWhichValuesWereSkipped
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itSeparatesASuppressorThatBoundNothingFromOneThatMerelyRemovedNothing
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itSeparatesTheTwoZeroesForNamespacesToo
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itStaysSilentAboutANamespaceValueOnANarrowedRun
@@ -5210,6 +5266,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itStaysSilentOnAnEmptySuppressionList
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itStaysSilentWhenTheConfiguredSuppressPathNamedSomething
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itStillJudgesTheSameNamespaceValueWhereTheProjectDeclaresItsAutoload
+ - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itStillRemovesNamespaceFindingsUnderAPerRulePattern
  - Qualimetrix\Tests\Analysis\Finding\Unit\AbstractRuleThresholdSeamTest::itPassesTheMetricSubjectToTheThresholdResolutionSeam
  - Qualimetrix\Tests\Analysis\Finding\Unit\AcceptedLevelTest::itCarriesOnlyACountOnAnOccurrenceChannel
  - Qualimetrix\Tests\Analysis\Finding\Unit\AcceptedLevelTest::itCarriesTheAcceptedMagnitudesOfAMagnitudeChannel
@@ -5378,10 +5435,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsCircularDependencyRuleInExcludedNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsEveryDeclaredProjectScopedChannelInAnExcludedNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsLayerViolationRuleInExcludedNamespace
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itNeverComparesTheProjectAggregateDisplayValue
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itPassesFileSymbolFindingWhoseSubjectNamespaceDoesNotMatch
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itPassesFileSymbolFindingWithoutDeclaringNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itPassesNonMatchingNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itPassesWhenNoPatterns
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itStillFiltersANamespaceLevelFindingItsPatternNames
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itCanonicalizesNamedScalarEvidenceIndependentlyOfInputOrder
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itDistinguishesTheSemanticKindAndEvidence
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itPinsTheHashOfFixedInputsAsLiteralHexToCatchMechanismDrift
@@ -5508,6 +5567,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutionTest::itDoesNotExecuteAProducerDisabledByConfigurationEvenWhenNarrowingNamesIt
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutionTest::itDoesNotExecuteAProducerWhoseChannelCodeCollidesWithTheNarrowedName
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutionTest::itDoesNotPublishAFindingWhoseProducerCollidesWithTheNarrowedNameByChannelCodeAlone
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutionTest::itDoesNotPublishTheLevelASelectorNarrowedOut
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutionTest::itDoesNotPublishTheLevelConfigurationSwitchedOff
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutionTest::itDoesNotTreatABarePrefixAsAGroup
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutionTest::itExcludePathsAreIsolatedPerRule
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutionTest::itExcludePathsWithEmptyFilePassesThrough
@@ -5540,6 +5601,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutionTest::itNamespaceExclusionPassesThroughEmptyNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutionTest::itNamespaceExclusionPassesThroughNullNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutionTest::itPathExclusionIncrementsStatsPerRule
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutionTest::itPublishesAClasslessProducerTheSelectionLeftIn
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutionTest::itPublishesNoLevelOfAProducerTheSelectionLeftOut
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutionTest::itPublishesRuleMetadataWithExactAliasMappingWithoutConcreteRuleInstances
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutionTest::itRecordsEveryConfiguredPathPatternThatIndependentlyMatchesTheExcludedFinding
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutionTest::itRecordsTheFiringNamespaceChannelSelectorAndPatternInTheAttribution
@@ -5976,6 +6039,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\ArchitectureConfigurationWarningIntegrationTest::itProducesNoWarningsForACleanLayerConfiguration
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\ArchitectureConfigurationWarningIntegrationTest::itRejectsAForeignResolvedTokenBeforeChangingInstalledState
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\ArchitectureConfigurationWarningIntegrationTest::itWarnsOnAWildcardLayerAllowedToDependOnItself
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\BuiltinNameSpellingIntegrationTest::itAssignsABuiltinSubtypeWhateverCaseEitherSideSpellsTheName"criteria in lower case"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\BuiltinNameSpellingIntegrationTest::itAssignsABuiltinSubtypeWhateverCaseEitherSideSpellsTheName"criteria in the registry spelling"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\CaptureBindingIntegrationTest::itKeepsAllowCrossInstanceIntactThroughYamlConfigLoaderNormalization
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\CaptureBindingIntegrationTest::itLetsAllowCrossInstancePermitCrossModuleEdges
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\CaptureBindingIntegrationTest::itPassesSameModuleEdgesAndViolatesCrossModuleEdges
@@ -6010,7 +6075,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\MaxExpandedLayersFromYamlTest::itLetsAUserProvidedMaxExpandedLayersReachTheConfiguration
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\NarrowedRunDeclarationVerdictIntegrationTest::itDoesNotCallALayerOrTemplateEmptyOnARunNarrowedBelowTheAutoloadRoots
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\NarrowedRunDeclarationVerdictIntegrationTest::itJudgesAProjectWithoutAManifestAgainstTheAnalysedPaths
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\NarrowedRunDeclarationVerdictIntegrationTest::itLeavesTheNarrowedRunsScopeWarningAsTheTrace
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\NarrowedRunDeclarationVerdictIntegrationTest::itPublishesTheNarrowedScopeAndTheUnjudgedChannelsInTheDocument
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\NarrowedRunDeclarationVerdictIntegrationTest::itStillReportsAShadowSeenInsideTheSlice
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\NarrowedRunDeclarationVerdictIntegrationTest::itStillReportsAnEmptyLayerAndTemplateOnAWholeProjectRun
@@ -6023,6 +6087,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RelationsFilterIntegrationTest::itLetsTheTypeReferenceAliasPermitTypeHintAndForbidExtendsAndStaticCall
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RelationsFilterIntegrationTest::itPermitsOnlyTheListedDependencyKindsForAMixOfDirectValues
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RelationsFilterIntegrationTest::itPreservesTheRelationsKeyAndItsAliasThroughYamlConfigLoader
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RepeatedPatternShadowIntegrationTest::itDoesNotReportTheLayerReceivingTheResidueOfAMatchAllLayer
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RepeatedPatternShadowIntegrationTest::itDoesNotReportTheRecipientOfACarveOutAsShadowed
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RepeatedPatternShadowIntegrationTest::itStillReportsANarrowerLayerBehindABroadLayerWithAnExclude
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RepeatedPatternShadowIntegrationTest::itStillReportsARecipientTheCarveOutGivesNothing
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itAppliesAGraphBackedExcludeDuringObservation"attributes"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itAppliesAGraphBackedExcludeDuringObservation"extends"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itAppliesAGraphBackedExcludeDuringObservation"implements"
@@ -6908,6 +6976,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itSaysTheChannelWasNotMeasuredWhenItsRuleDidNotRun
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itSpellsAnAbsentSourceDifferentlyFromAZero
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itStillResolvesAChannelWhoseOptionsHoldOneBoundary
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesADirectoryInABaselineCommandBeforeItMeasures"cleanup"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesADirectoryInABaselineCommandBeforeItMeasures"explain"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesADirectoryInABaselineCommandBeforeItMeasures"update"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesADirectoryInCheckBeforeAnalysis
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesAMissingBaselineFileInCheckBeforeAnalysis
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesAMissingFileInABaselineCommandBeforeItMeasures"cleanup"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesAMissingFileInABaselineCommandBeforeItMeasures"explain"
@@ -6917,13 +6989,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itStillMeasuresABaselineCommandOnceWithAFileThatExists"cleanup"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itStillMeasuresABaselineCommandOnceWithAFileThatExists"explain"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itStillMeasuresABaselineCommandOnceWithAFileThatExists"update"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itStillReadsABaselineReachedThroughASymlink
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineGenerateCommandTest::itNamesTheGroupsItCouldNotCapture
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineGenerateCommandTest::itOverwritesAnExistingBaselineUnderForce
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineGenerateCommandTest::itPrintsTheDocsPointerAfterWritingTheBaseline
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineGenerateCommandTest::itRefusesADanglingSymlinkWithoutForceAndLeavesItUntouched
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineGenerateCommandTest::itRefusesToForceOverADanglingSymlinkWithoutAnUnsafeFallback
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineGenerateCommandTest::itRefusesToForceOverADirectoryAsInput
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineGenerateCommandTest::itRefusesToForceOverAFileRewrittenDuringTheAnalysis
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineGenerateCommandTest::itRefusesToForceOverASymlinkToARegularFileWithoutTouchingEither
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineGenerateCommandTest::itRefusesToForceOverAnUnreadableFileAsInput
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineGenerateCommandTest::itRefusesToOverwriteAnExistingBaselineWithoutForce
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineGenerateCommandTest::itRefusesToWriteOverAFileThatAppearedDuringTheAnalysis
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineGenerateCommandTest::itRejectsAModeItDoesNotKnow
@@ -6942,7 +7017,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itKeepsADuplicateAcceptedWhenThePrimaryCopyChanges
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itKeepsTheBuildGreenAfterDeletingOneOfTwoBaselinedDuplicateBlocks
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itListsSeveralManualRepairsAndRemovesOnlyTheirNamedSelectors
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itReKeysADuplicateWhoseMatchedTokensChangeInEveryCopy
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itReportsANewCopyOfAnAcceptedDuplicateBlock
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itRoundTripsARepositoryShapedProjectWithAnIgnoredGroupMember
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itSaysAnEntryWasNotMeasuredWhenASelectorSwitchedItsLevelOff
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itSaysAnEntryWasNotMeasuredWhenConfigurationSwitchedItsLevelOff
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMeasuredSetSeamTest::itAppliesDiscoveryExclusionBeforeEveryBaselineLifecycleMeasurement
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMeasuredSetSeamTest::itCapturesExactlyWhatCheckMeasuresOverTheSamePaths
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMeasuredSetSeamTest::itReadsBackACapturedComputedEntryAsAnApplicableOne
@@ -7005,6 +7084,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineRoundTripVOTest::itRewritesACanonicalFileByteForByte
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineRoundTripVOTest::itRoundTripsAbsoluteFileKeysAfterRelativization
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineRoundTripVOTest::itRoundTripsRelativeFileKeys
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineTemporaryFileRefusalTest::itRefusesATemporaryPathItCannotWriteWithTheSystemsReason
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWorkflowTest::itChangesIdentityOnMethodRename
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWorkflowTest::itDetectsResolvedFindings
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWorkflowTest::itExecutesCompleteBaselineWorkflow
@@ -7147,6 +7227,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsANonPositiveCountInert#0
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsANonPositiveCountInert#1
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnEntryThatIsNotAnObjectInert
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnEntryUnderAKeyNoSubjectIsWrittenAsInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnEntryWithAnUnparseableChannelInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnEntryWithCountAlongsideMagnitudesInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnEntryWithoutAChannelInert
@@ -8577,6 +8658,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookRefusalLadderTest::itRefusesABackupItCannotRestoreWithTheSystemsReason
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookRefusalLadderTest::itRefusesABackupItCannotWriteWithTheSystemsReason
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookRefusalLadderTest::itRefusesADanglingHookLinkItCannotReplaceWithTheSystemsReason
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookRefusalLadderTest::itRefusesAHookItCannotMoveIntoPlaceWithTheSystemsReason
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookRefusalLadderTest::itRefusesAHookItCannotRemoveWithTheSystemsReason
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookRefusalLadderTest::itRefusesAHookItCannotWriteWithTheSystemsReason
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookRefusalLadderTest::itRefusesAnExistingHookWithoutForce
@@ -8719,6 +8801,9 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\JsonDocumentMetaParityTest::itCarriesTheJsonFormatsMetaKeyForKey"debug:layer-assignment"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\JsonDocumentMetaParityTest::itCarriesTheJsonFormatsMetaKeyForKey"directives"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\JsonDocumentMetaParityTest::itPublishesTheDocumentationAddressesInTheJsonFormatsMeta
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\LogFileBlankValueRefusalTest::itRefusesABlankLogFileBeforeAnalysis"empty"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\LogFileBlankValueRefusalTest::itRefusesABlankLogFileBeforeAnalysis"space"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\LogFileBlankValueRefusalTest::itStillWritesANamedLogFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleExclusionStatsWiringTest::itKeysThePerRuleBreakdownByTheProducerOfTheFindingNotTheRuleThatRan
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleExclusionStatsWiringTest::itOmitsPerRuleExclusionDetailsWithoutShowSuppressed
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleExclusionStatsWiringTest::itSurfacesPerRuleExclusionStatsFromARealRunThroughTheContainer
@@ -8964,6 +9049,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ChannelExclusionKeyValidatorTest::itRefusesALevelTheOptionNeverAsksAbout
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ChannelExclusionKeyValidatorTest::itRefusesAWildcardKeyWhoseLevelAndProductionWitnessesAreDifferentChannels
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ChannelExclusionKeyValidatorTest::itRefusesTheRetiredPairBeforeTheLevel
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\CheckCommandDefinitionTest::itDescribesTheOutputWriteAsInPlaceRatherThanAtomic
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CheckCommandDefinitionTest::itRegistersABooleanAliasAsValueNone
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CheckCommandDefinitionTest::itRegistersANumericAliasAsValueRequired
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CheckCommandDefinitionTest::itRegistersTheAllOptionAsValueNone
@@ -9225,6 +9311,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itRejectsAChannelExclusionKeyThatAddressesNoChannel
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itStopsAProducerWhoseEveryDeclaredLevelTheRunDisabled
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itValidatesEveryComputedChannelSelectorFromTheSameResolvedDefinitions
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionAliasRangeRefusalTest::itKeepsAcceptingAValueAtOrAboveTheFloorThroughTheSameAlias
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionAliasRangeRefusalTest::itRefusesANegativeValueWrittenThroughARuleAlias
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeLimitsTest::itAcceptsAPositiveSizeOrUnlimited"bytes"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeLimitsTest::itAcceptsAPositiveSizeOrUnlimited"lowercase suffix"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeLimitsTest::itAcceptsAPositiveSizeOrUnlimited"megabytes"
@@ -9556,7 +9644,6 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itCreatesFileLoggerWhenPathProvided
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itCreatesNullLoggerWhenQuiet
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itGivesTheLogFileInfoWhenNoLevelWasWritten
- - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itHandlesEmptyLogFilePath
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itLetsAWrittenLevelHoldAtEveryVerbosity"-v, --log-level=debug"
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itLetsAWrittenLevelHoldAtEveryVerbosity"-v, --log-level=error"
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itLetsAWrittenLevelHoldAtEveryVerbosity"-v, --log-level=info"
@@ -9577,9 +9664,13 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itLetsAWrittenLevelHoldAtEveryVerbosity"normal, --log-level=info"
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itLetsAWrittenLevelHoldAtEveryVerbosity"normal, --log-level=warning"
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itLetsAWrittenLevelHoldAtEveryVerbosity"normal, no level written"
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itRefusesABlankLogFilePath"empty"
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itRefusesABlankLogFilePath"space"
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itRefusesABlankLogFilePath"tab and newline"
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itRespectsConfiguredConsoleLogLevel
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itWritesDebugAtVerboseWhenTheLevelAsksForIt
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itWritesDebugAtVeryVerboseByDefault
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itWritesNoLogFileWhenNoneWasGiven
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerHolderTest::itCanReplaceLogger
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerHolderTest::itCanSetCustomLogger
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerHolderTest::itInitiallyContainsNullLogger
@@ -10006,12 +10097,20 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesARunWhosePathsWereTakenAsTheProject"summary"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesARunWhosePathsWereTakenAsTheProject"text"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesARunWhosePathsWereTakenAsTheProject"text-verbose"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"github"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"health"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"html"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"sarif"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"summary"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"text"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"text-verbose"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itPublishesNothingOfTheStateInAFormatWithoutAPlace"checkstyle"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itPublishesNothingOfTheStateInAFormatWithoutAPlace"gitlab"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itPublishesTheStateUnderOneKeyOfOneShape"json"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itPublishesTheStateUnderOneKeyOfOneShape"metrics"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itPublishesTheStateUnderOneKeyOfOneShape"suppressed"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itPublishesUnderTheProjectScopeName
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itRefusesSkippedValuesOnANarrowedRun
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsAClassByItsFullyQualifiedName
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsANamespaceThatNamesAnAnalyzedOne
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\DrillDownBindingTest::itBindsANamespaceThatOnlyTheNamespaceTreeKnows
@@ -10776,6 +10875,20 @@ Available tests:
  - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectTest::itCallsTwoSeparatelyBuiltSubjectsOfOneIdentityEqual
  - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectTest::itGivesEachIdentityFamilyItsOwnCanonicalForm
  - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectTest::itKeepsTheThreeIdentityVariantsSeparate
+ - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectTest::itReadsTheLevelBackOffTheCanonicalForm"declared class"
+ - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectTest::itReadsTheLevelBackOffTheCanonicalForm"declared global function"
+ - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectTest::itReadsTheLevelBackOffTheCanonicalForm"declared method"
+ - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectTest::itReadsTheLevelBackOffTheCanonicalForm"declared namespaced function"
+ - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectTest::itReadsTheLevelBackOffTheCanonicalForm"file"
+ - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectTest::itReadsTheLevelBackOffTheCanonicalForm"global namespace"
+ - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectTest::itReadsTheLevelBackOffTheCanonicalForm"logical class"
+ - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectTest::itReadsTheLevelBackOffTheCanonicalForm"namespace"
+ - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectTest::itReadsTheLevelBackOffTheCanonicalForm"project"
+ - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectTest::itReadsTheLevelBackOffTheCanonicalForm"second declared class of one name"
+ - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectTest::itRefusesAStringNoSubjectWrites"bare declaration prefix"
+ - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectTest::itRefusesAStringNoSubjectWrites"declaration of an aggregate"
+ - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectTest::itRefusesAStringNoSubjectWrites"no prefix"
+ - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectTest::itRefusesAStringNoSubjectWrites"unknown prefix"
  - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectTest::itRejectsACallableAsAnAggregateSubject
  - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectTest::itSeparatesSubjectsOfOneFamilyThatDifferInOneField
  - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itCommonBuiltinClassesAreRecognized"Closure"
@@ -11140,6 +11253,7 @@ Available tests:
  - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itRecognisesARegisteredNameInAnyCaseSpelling"stdClass"
  - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itRecognisesARegisteredNameInAnyCaseSpelling"tidy"
  - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itRecognisesARegisteredNameInAnyCaseSpelling"tidyNode"
+ - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itSpellsAPhpClassAsTheListKeepsItAndAnyOtherNameAsWritten
  - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itUserClassesAreNotBuiltin"App\Exception"
  - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itUserClassesAreNotBuiltin"App\Service"
  - Qualimetrix\Tests\Unit\Core\Symbol\PhpBuiltinClassRegistryTest::itUserClassesAreNotBuiltin"MyClass"

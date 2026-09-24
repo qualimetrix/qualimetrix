@@ -48,7 +48,7 @@ Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType	Analysis.E
 Qualimetrix\Analysis\Evidence\Design\Inheritance\Contract\ExternalParentSourceInterface	Analysis.Evidence.Design	3	3
 Qualimetrix\Analysis\Evidence\Design\Inheritance\Contract\ParentLookup	Analysis.Evidence.Design	1	1
 Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector	Analysis.Evidence.Measurement	21	8
-Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy	Analysis.Evidence.Measurement	32	9
+Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy	Analysis.Evidence.Measurement	31	9
 Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface	Analysis.Evidence.Measurement	8	5
 Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics	Analysis.Evidence.Measurement	2	2
 Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface	Analysis.Evidence.Measurement	9	6
@@ -88,7 +88,7 @@ Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface	Analys
 Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface	Analysis.Finding	11	3
 Qualimetrix\Analysis\Finding\Contract\ChannelPresentation	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface	Analysis.Finding	3	3
-Qualimetrix\Analysis\Finding\Contract\ChannelShape	Analysis.Finding	44	17
+Qualimetrix\Analysis\Finding\Contract\ChannelShape	Analysis.Finding	43	17
 Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface	Analysis.Finding	5	3
 Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides	Analysis.Finding	1	1
@@ -201,8 +201,8 @@ Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory	Analysis.Pol
 Qualimetrix\Analysis\Policy\Inline\Contract\SourceControlExtractorInterface	Analysis.Policy.Inline	2	2
 Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor	Analysis.Policy.Inline	2	2
 Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor	Analysis.Policy.Inline	3	2
-Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage	Analysis.Run	4	2
-Qualimetrix\Analysis\Run\Configuration\ProjectScopeState	Analysis.Run	2	1
+Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage	Analysis.Run	3	2
+Qualimetrix\Analysis\Run\Configuration\ProjectScopeState	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface	Analysis.Run	3	2
 Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind	Analysis.Run	1	1
@@ -211,7 +211,6 @@ Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface	Analysis.Run
 Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ExecutionStrategyInterface	Analysis.Run	3	1
 Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ParallelCapableInterface	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface	Analysis.Run	3	2
-Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	8	2
 Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface	Analysis.Run	4	2
@@ -250,15 +249,15 @@ Qualimetrix\Core\Symbol\DeclarationOrdinal	Core.Symbol	4	1
 Qualimetrix\Core\Symbol\DeclarationPath	Core.Symbol	8	3
 Qualimetrix\Core\Symbol\FileDeclarationIndex	Core.Symbol	11	2
 Qualimetrix\Core\Symbol\LogicalClassPath	Core.Symbol	7	3
-Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	49	16
+Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	51	16
 Qualimetrix\Core\Symbol\MetricSubjectCodec	Core.Symbol	7	3
 Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy	Core.Symbol	2	1
-Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	4	2
+Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	6	3
 Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	28	9
-Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	115	21
+Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	116	21
 Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	6	4
 Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	77	20
-Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	33	12
+Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	34	12
 Qualimetrix\Core\Time\ClockInterface	Core.Neutral	4	2
 Qualimetrix\Core\Version	Core.Neutral	7	2
 Qualimetrix\Infrastructure\Ast\CachedFileParser	Infrastructure.Ast	1	1
@@ -321,4 +320,4 @@ Qualimetrix\Reporting\GroupBy	Reporting	1	1
 Qualimetrix\Reporting\Health\SummaryEnricher	Reporting	2	2
 Qualimetrix\Reporting\ReportBuilder	Reporting	1	1
 Qualimetrix\Reporting\ReportCoverage	Reporting	2	1
-Qualimetrix\Reporting\ReportProjectScope	Reporting	3	1
+Qualimetrix\Reporting\ReportProjectScope	Reporting	4	1

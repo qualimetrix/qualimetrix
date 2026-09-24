@@ -52,7 +52,7 @@ final class ResidualLimitationsCoverageTest extends TestCase
         ]],
         8 => [[
             'class' => \Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::class,
-            'method' => 'itKeepsADuplicateAcceptedWhenThePrimaryCopyChanges',
+            'method' => 'itReKeysADuplicateWhoseMatchedTokensChangeInEveryCopy',
         ]],
         9 => [[
             'class' => \Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::class,

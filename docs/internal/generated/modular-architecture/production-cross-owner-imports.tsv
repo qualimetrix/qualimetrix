@@ -552,7 +552,6 @@ Qualimetrix\Analysis\Evidence\Coupling\CboOptions	Analysis.Evidence.Coupling	Qua
 Qualimetrix\Analysis\Evidence\Coupling\CboOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\CboOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\CboOptions	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
-Qualimetrix\Analysis\Evidence\Coupling\CboRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\CboRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\CboRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\CboRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\ChannelShape	Analysis.Finding	contract
@@ -1321,8 +1320,10 @@ Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver	Analysis
 Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	contract
 Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration	Analysis.Finding	Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	contract
 Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
+Qualimetrix\Analysis\Finding\Contract\ChannelPublication	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	contract
 Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter	Analysis.Finding	Qualimetrix\Core\Pattern\NamespaceMatcher	Core.Neutral	contract
+Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract
 Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter	Analysis.Finding	Qualimetrix\Core\Pattern\PathMatcher	Core.Neutral	contract
 Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType	Analysis.Evidence.DependencyModel	contract
 Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
@@ -1405,6 +1406,7 @@ Qualimetrix\Analysis\Policy\Architecture\Configuration\ExcludeBlockValidator	Ana
 Qualimetrix\Analysis\Policy\Architecture\Configuration\ExcludeBlockValidator	Analysis.Policy.Architecture	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	contract
 Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerCriterionNormalizer	Analysis.Policy.Architecture	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
 Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerCriterionNormalizer	Analysis.Policy.Architecture	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	contract
+Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerCriterionNormalizer	Analysis.Policy.Architecture	Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	contract
 Qualimetrix\Analysis\Policy\Architecture\Configuration\LayersValidator	Analysis.Policy.Architecture	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
 Qualimetrix\Analysis\Policy\Architecture\Configuration\LayersValidator	Analysis.Policy.Architecture	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	contract
 Qualimetrix\Analysis\Policy\Architecture\Configuration\LongFormAllowEntryNormalizer	Analysis.Policy.Architecture	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
@@ -1490,6 +1492,7 @@ Qualimetrix\Analysis\Policy\Architecture\Layer\AnalysedDeclarations	Analysis.Pol
 Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory	Analysis.Policy.Architecture	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	contract
 Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory	Analysis.Policy.Architecture	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType	Analysis.Evidence.DependencyModel	contract
 Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory	Analysis.Policy.Architecture	Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy	Core.Symbol	contract
+Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory	Analysis.Policy.Architecture	Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	contract
 Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory	Analysis.Policy.Architecture	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
 Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet	Analysis.Policy.Architecture	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
 Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage	Analysis.Policy.Architecture	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
@@ -1509,8 +1512,8 @@ Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentWriter	Analysis.Policy.Base
 Qualimetrix\Analysis\Policy\Baseline\BaselineEdge	Analysis.Policy.Baseline	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType	Analysis.Evidence.DependencyModel	contract
 Qualimetrix\Analysis\Policy\Baseline\BaselineEntry	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\ChannelShape	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface	Analysis.Finding	contract
-Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\ChannelShape	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\FindingChannel	Analysis.Finding	contract
+Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser	Analysis.Policy.Baseline	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
 Qualimetrix\Analysis\Policy\Baseline\BaselineEntryPayload	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\FindingChannel	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator	Analysis.Policy.Baseline	Qualimetrix\Core\Time\ClockInterface	Core.Neutral	contract
@@ -1550,6 +1553,7 @@ Qualimetrix\Analysis\Policy\Baseline\Filter\GroupCeilingVerdict	Analysis.Policy.
 Qualimetrix\Analysis\Policy\Baseline\GroupAcceptance	Analysis.Policy.Baseline	Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	contract
 Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface	Analysis.Finding	contract
+Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage	Analysis.Policy.Baseline	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
 Qualimetrix\Analysis\Policy\Baseline\RunScope	Analysis.Policy.Baseline	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Analysis\Policy\Baseline\RunScope	Analysis.Policy.Baseline	Qualimetrix\Core\Path\PathFactory	Core.Path	contract
 Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Control\ControlScope	Analysis.Finding	contract
@@ -2039,9 +2043,6 @@ Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator	Infrastructure.Cons
 Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator	Infrastructure.Console	Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit	Analysis.Finding	contract
 Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator	Infrastructure.Console	Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement	Analysis.Finding	contract
 Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\RunScope	Analysis.Policy.Baseline	contract
-Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator	Infrastructure.Console	Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage	Analysis.Run	contract
-Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator	Infrastructure.Console	Qualimetrix\Analysis\Run\Configuration\ProjectScopeState	Analysis.Run	contract
-Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator	Infrastructure.Console	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator	Infrastructure.Console	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
@@ -2051,6 +2052,7 @@ Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator	Infrastructure.Cons
 Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator	Infrastructure.Console	Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions	Reporting	contract
 Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator	Infrastructure.Console	Qualimetrix\Reporting\FindingProjection\FindingProjectionResult	Reporting	contract
 Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator	Infrastructure.Console	Qualimetrix\Reporting\FindingProjection\FindingProjector	Reporting	contract
+Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator	Infrastructure.Console	Qualimetrix\Reporting\ReportProjectScope	Reporting	contract
 Qualimetrix\Infrastructure\Console\FormatOptionPairs	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
 Qualimetrix\Infrastructure\Console\FormatOptionPairs	Infrastructure.Console	Qualimetrix\Reporting\Formatter\FormatOptionValue	Reporting	contract
 Qualimetrix\Infrastructure\Console\FormatOptionPairs	Infrastructure.Console	Qualimetrix\Reporting\Formatter\FormatterRegistryInterface	Reporting	contract

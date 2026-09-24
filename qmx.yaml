@@ -470,6 +470,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelPresentation'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface'
+        - 'Qualimetrix\Analysis\Finding\Contract\ChannelPublication'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelShape'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface'
@@ -1498,6 +1499,13 @@ rules:
       - subtree: Qualimetrix\Core\Path
     suppress_namespace_channels:
       coupling.cbo:namespace:
+        # Re-measured 2026-09-24 over the classes the namespace declares itself
+        # (`coupling.cbo-own`, the scope the rule judges): union 19, the same as
+        # at ddc4dff9. Numbers further down are from when the entry was written.
+        # Raw 18 is the required union of eight inbound and twelve outbound
+        # Inline contract dependencies. Exact channel scope keeps declaration
+        # CBO, children, and every other coupling channel active.
+        - exact: 'Qualimetrix\Analysis\Policy\Inline\Contract'
         # Shared exact/subtree/regex primitives intentionally form one neutral
         # vocabulary used by configuration, analysis, reporting, and console
         # adapters. The namespace union is 21 after the bound selector contract
@@ -1509,6 +1517,72 @@ rules:
         # union is 16 after FormatterContext gained the bound selector; class
         # CBO and every other coupling channel remain active.
         - exact: 'Qualimetrix\Reporting\Formatter\Summary'
+        # Re-measured 2026-09-24 over the classes the namespace declares itself
+        # (`coupling.cbo-own`, the scope the rule judges): union 17, the same as
+        # at ddc4dff9. Numbers further down are from when the entry was written.
+        # The Reporting vocabulary root, 16 against an inclusive 16. This is
+        # the same namespace-granularity artefact the
+        # `Analysis\Configuration\Contract` entry in this list records, and
+        # here the run says so outright: `coupling.cbo` moves 15 -> 16
+        # while `coupling.ca` (12) and `coupling.ce` (57) do not move at all.
+        # No class gained or lost an edge; only the number of namespaces those
+        # same edges are spread over changed. Measured with
+        # `bin/qmx check src/ --format=metrics`, both sides, on the commit this
+        # change starts from and on the result.
+        #
+        # The cause is retiring the `Formatter\Support` bucket, which replaced
+        # one importing namespace with two: `Formatter\Detail\FindingDetailRenderer`
+        # and `Formatter\Ordering\FindingSorter` named `GroupBy` and
+        # `FormatterContext` from inside `Support` before and name the same two
+        # types from their own subjects now. That part is counted from imports
+        # rather than read off the graph, so it is offered as the explanation
+        # of a delta the tool reports, not as a reconstruction of the metric.
+        #
+        # The counterfactual of removing this entry is putting the bucket back,
+        # so no refactoring is offered. Moving `GroupBy` down into `Ordering`
+        # was rejected on a count rather than a run: eleven namespaces name
+        # that enum, so it would turn a leaf into a hub and add an edge from
+        # this root besides. Exact channel scope keeps declaration-level class
+        # CBO, every child namespace, and every other coupling channel active.
+        - exact: 'Qualimetrix\Reporting'
+        # Re-measured 2026-09-24 over the classes the namespace declares itself
+        # (`coupling.cbo-own`, the scope the rule judges): union 20, the same as
+        # at ddc4dff9. Numbers further down are from when the entry was written.
+        # The configuration hub, union 16 against an inclusive 16. The one edge
+        # that moved it from 15 is afferent, and it is X18's own cure:
+        # `Evidence\Coupling\CouplingAnalysis` stopped throwing a bare
+        # `InvalidArgumentException` and now names `ConfigSchema` and
+        # `ConfigurationRefusal` so a bad coupling option is refused under the
+        # `Configuration error:` framing. Measured, not assumed: the afferent
+        # namespace set goes 14 -> 15 and the single new member is
+        # `Analysis\Evidence\Coupling`; drop that one import and the union is
+        # back at 15, under the ceiling. The counterfactual of removing it is
+        # therefore exactly "undo the cure", which is why no refactoring is
+        # offered here. A point `@qmx-threshold` does not address this: the
+        # subject is `ns:Qualimetrix\Analysis\Configuration`, and a tag on the
+        # file the finding is attributed to was probed on this tree -- the
+        # violation stood and `bin/qmx directives` reported the directive inert.
+        # Exact channel scope keeps declaration-level class CBO, every child
+        # namespace and every other coupling channel measured.
+        - exact: 'Qualimetrix\Analysis\Configuration'
+        # Re-measured 2026-09-24 over the classes the namespace declares itself
+        # (`coupling.cbo-own`, the scope the rule judges): union 20, the same as
+        # at ddc4dff9. Numbers further down are from when the entry was written.
+        # The formatter namespace, union 16 against an inclusive 16, and the
+        # same shape: the edge that moved it from 15 is afferent, from
+        # `Reporting\Configuration\OutputFormatResolver`, which now names
+        # `FormatterRegistryInterface` to judge an output format against the
+        # registered formatters; at 72f18239 it wrapped whatever string it was
+        # given in an `OutputFormat` and checked nothing. Measured: the
+        # efferent namespace set is unchanged at 6 and the afferent set goes
+        # 9 -> 10 with that one new member, so 6 + 10 = 16. Note this corrects
+        # the efferent reading the rule's message suggests -- the breach is on
+        # the inbound half. Point thresholds do not reach a namespace subject
+        # (probed as above), and removing the edge means undoing X18's cure:
+        # the resolver was given the registry so an unknown output format is
+        # refused under the `Configuration error:` framing. No refactoring is
+        # offered here for the same reason as the entry above.
+        - exact: 'Qualimetrix\Reporting\Formatter'
         # The Measurement contract namespace, whose union is 47 against a
         # threshold of 25 — measured 2026-09-21, and the number is a dated
         # measurement rather than a ceiling, because this channel is suppressed
@@ -1735,19 +1809,19 @@ rules:
   # to what the justification actually says. Two methods that genuinely measure table
   # size rather than decision depth carry a per-symbol `@qmx-threshold` instead
   # (SarifRuleCollector::getRuleDescription, MetricEnricher::enrich).
-  # The two exact trait paths do the same AST node-type dispatch without carrying
+  # The exact trait path does the same AST node-type dispatch without carrying
   # the Visitor suffix.
   complexity.npath:
     suppress_paths:
       - regex: 'src/Analysis/Evidence/CodeSmell/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Cohesion/.*Visitor\.php'
-      - regex: 'src/Analysis/Evidence/Complexity/.*Visitor\.php'
+      # No Complexity root: no visitor there branches on node types past the
+      # bound, and an entry that suppresses nothing would hide the first one that does.
       - regex: 'src/Analysis/Evidence/Coupling/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Design/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Maintainability/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Security/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Size/.*Visitor\.php'
-      - exact: src/Analysis/Evidence/CodeSmell/UsageTrackingTrait.php
       - exact: src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php
 
   # Code duplication: Options classes share fromArray/threshold patterns by convention.
@@ -1777,10 +1851,10 @@ rules:
       # mechanism that put the eight capability roots above on this list. There
       # is no behaviour in the window to extract: a shared base class would hold
       # the interface's own signatures.
-      # Only the reported side is listed, the same rule the CboRule entry below
-      # states: the detector reports the pair once, and an entry for
-      # `Run/ExcludeBinding` beside it was measured inert and left out.
+      # Both sides are listed because each copy of a block is a finding of its
+      # own (ADR 0085): an entry for one side leaves the other reported.
       - regex: 'src/Analysis/Finding/SuppressionBinding/.*Options\.php'
+      - regex: 'src/Analysis/Run/ExcludeBinding/.*Options\.php'
       # CboRule and InstabilityRule match on 34 lines that hold no behaviour: the
       # class line, the five metadata constants every rule must declare, and the
       # name/description/supported-levels accessors the rule interface mandates.
@@ -1792,9 +1866,9 @@ rules:
       # hierarchical rules, so no base class can hold it. The window opened when
       # the retired `requires()` metadata, which used to differ between the two,
       # was deleted; nothing was copied.
-      # Only CboRule is listed: the detector reports the pair once, on this side.
-      # An InstabilityRule entry beside it was measured as inert and removed.
+      # Both rules are listed, for the reason given above the ExcludeBinding entry.
       - exact: src/Analysis/Evidence/Coupling/CboRule.php
+      - exact: src/Analysis/Evidence/Coupling/InstabilityRule.php
 
   complexity.ccn:
     suppress_paths:
@@ -1807,7 +1881,6 @@ rules:
       # No Security root: no visitor there branches on node types past the bound,
       # and an entry that suppresses nothing would hide the first one that does.
       - regex: 'src/Analysis/Evidence/Size/.*Visitor\.php'
-      - exact: src/Analysis/Evidence/CodeSmell/UsageTrackingTrait.php
       - exact: src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php
 
   complexity.wmc:
@@ -1825,7 +1898,7 @@ rules:
     suppress_paths:
       - regex: 'src/Analysis/Evidence/CodeSmell/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Cohesion/.*Visitor\.php'
-      - regex: 'src/Analysis/Evidence/Complexity/.*Visitor\.php'
+      # No Complexity root, for the reason given under complexity.npath.
       - regex: 'src/Analysis/Evidence/Coupling/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Design/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Maintainability/.*Visitor\.php'
