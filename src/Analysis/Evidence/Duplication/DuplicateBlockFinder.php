@@ -224,9 +224,8 @@ final class DuplicateBlockFinder
     /**
      * The copies of a match of `$length` tokens, or `null` when the match is
      * no block: a data table at every copy, fewer than two distinct copies,
-     * or no copy reaching `minLines`. A block keeps its shorter copies —
-     * {@see CodeDuplicationRule} reports each copy that reaches `minLines`
-     * itself and names the rest.
+     * or no copy reaching `minLines`. The longest copy admits every other,
+     * a copy shorter than `minLines` included.
      *
      * @param list<int> $members
      *

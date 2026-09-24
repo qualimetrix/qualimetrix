@@ -446,15 +446,17 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   new finding. A copy agreeing with only part of an accepted block, an edit
   inside one copy, or code inserted between a copy and the code around it
   that the copies share changes the block: its other copies get new findings
-  too, in files the change never touched. A copy is reported only when it
-  spans `min_lines` itself — a shorter copy is still named by the others — so
-  a comment or blank line inside one copy changes that copy's value, and
-  whether it is reported, and no other copy's. Check what you rely on: a block
-  of N copies is N findings (v0.27.0 reported N − 1), so the violation count
-  and the technical debt grow by one finding per block; `suppress_paths`
-  (global or per rule) now silences only the copies inside its paths — list
-  every file a block has a copy in to silence it. A baseline captured before
-  this change matches none of the new findings — regenerate it with
+  too, in files the change never touched. `min_lines` admits a block by its
+  longest copy, and every copy of an admitted block is reported, a shorter one
+  at its own value below `min_lines` (as a warning below `warning`). A comment
+  or blank line inside one copy changes that copy's value only — unless it
+  moves the longest copy across `min_lines`, which adds or removes the block
+  and every copy's finding with it. Check what you rely on: a block of N
+  copies is N findings (v0.27.0 reported N − 1), so the violation count and
+  the technical debt grow by one finding per block; `suppress_paths` (global
+  or per rule) now silences only the copies inside its paths — list every
+  file a block has a copy in to silence it. A baseline captured before this
+  change matches none of the new findings — regenerate it with
   `baseline:generate`. Inline directives on the channel stay refused, and the
   refusal now says why: a file or next-line directive would silence one copy
   while the others still report the block.

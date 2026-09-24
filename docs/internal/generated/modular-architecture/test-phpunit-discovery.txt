@@ -3867,11 +3867,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"param"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"property"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"return"
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyBaselineProcessTest::itFailsOnlyTheCopyACommentLiftsPastMinLines
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyBaselineProcessTest::itKeepsTheAcceptedCopiesAcceptedWhenANewCopySpansMoreLines
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyBaselineProcessTest::itReportsADenselyWrittenNewCopyOfAnAcceptedBlock
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyBaselineProcessTest::itReportsEveryCopyWhenACommentLiftsTheLongestPastMinLines
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyBaselineProcessTest::itTellsTheExplainedCopiesApartByOccurrenceAndFile
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyFingerprintProcessTest::itGivesEachCopyItsOwnGitLabFingerprint
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyFingerprintProcessTest::itGivesEachCopyItsOwnSarifPartialFingerprint
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationGitScopeProcessTest::itReportsADenselyWrittenNewCopyStagedAloneOnTheCopyItself
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationGitScopeProcessTest::itReportsANewCopyStagedAloneOnTheCopyItself
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itBuildsTheExactCandidateIndexWithinABoundedMemoryLimit
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itFindsADuplicateWithCompleteCoverageUnderTheMemoryLimit
@@ -3883,7 +3885,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itKeepsTheBlockAndEveryCopysIdentityWhenAnExactCopyIsAdded
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itKeepsTheBlockAndEveryCopysIdentityWhenCodeOutsideTheMatchIsAdded
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itRekeysTheUntouchedCopyWhenCodeIsInsertedNextToAnotherCopy
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itReportsOnlyTheCopyThatItselfReachesMinLines
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itReportsEveryCopyOnceTheLongestReachesMinLines
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itReportsNoCopyWhileNoCopyReachesMinLines
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itStalesOnlyTheEditedCopyWhenTheOthersStillAgreeOnTheBlock
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itValuesEachCopyByTheLinesThatCopySpans
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itAppliesMinLinesFilter
@@ -3910,7 +3913,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itClassifiesALargeDuplicateAsAnError
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itClassifiesDuplicateSeverityByLineCountUsingCustomThresholds
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itClassifiesDuplicateSeverityByLineCountUsingDefaultThresholds
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itCountsAnUnreportedCopyInTheIdentityOfTheCopiesAfterIt
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itDeclaresCodeDuplicationOptionsAsItsOptionsClass
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itExposesItsRuleNameAndDescription
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itGivesEveryCopyOfABlockAnIdentityOfItsOwn
@@ -3928,7 +3930,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itProducesNoFindingsWhenNoDuplicateBlockWasCollected
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itProducesOneFindingPerCopyOfEveryBlock
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReportsACopyBelowTheWarningThresholdAsAWarning
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReportsOnlyTheCopiesThatThemselvesReachMinLines
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReportsACopyShorterThanMinLinesAtItsOwnValue
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itCapsTheHintAtThreeMeaningfulLines
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itClampsAnEndLineBeyondTheFileLength
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itCollapsesRunsOfWhitespaceIntoASingleSpace

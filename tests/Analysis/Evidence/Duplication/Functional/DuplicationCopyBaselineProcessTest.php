@@ -66,12 +66,13 @@ final class DuplicationCopyBaselineProcessTest extends TestCase
     }
 
     /**
-     * A copy clears `min_lines` on its own lines. Two copies one line short
-     * report nothing; a comment in one of them makes that copy — and no
-     * other — a new finding, so the untouched file stays out of the gate.
+     * `min_lines` admits a block by its longest copy. A comment lifting the
+     * longest copy past it adds the block, so every copy is a new finding —
+     * the one in the file nobody touched too, at a value of its own below
+     * `min_lines` and reported as a warning.
      */
     #[Test]
-    public function itFailsOnlyTheCopyACommentLiftsPastMinLines(): void
+    public function itReportsEveryCopyWhenACommentLiftsTheLongestPastMinLines(): void
     {
         file_put_contents($this->tmpDir . '/src/Alpha.php', self::shortFunction('alpha', ''));
         file_put_contents($this->tmpDir . '/src/Beta.php', self::shortFunction('beta', ''));
@@ -83,14 +84,44 @@ final class DuplicationCopyBaselineProcessTest extends TestCase
 
         $checked = $this->qmx('check', 'src', '--config=qmx.yaml', '--baseline=baseline.json', '--fail-on=warning', '--format=json', '--no-progress', '--no-cache', '--workers=0');
         self::assertSame(1, $checked['exitCode'], $checked['stderr'] . "\n" . $checked['stdout']);
+        self::assertSame([['src/Alpha.php', 5, 'warning'], ['src/Beta.php', 4, 'warning']], self::violations($checked['stdout']));
+    }
 
-        /** @var array{violations: list<array{file: string, metricValue: int|float|null}>} $report */
-        $report = json_decode($checked['stdout'], true, flags: \JSON_THROW_ON_ERROR);
-        self::assertSame(
-            [['src/Alpha.php', 5]],
-            array_map(static fn(array $violation): array => [$violation['file'], $violation['metricValue']], $report['violations']),
-            $checked['stdout'],
+    /**
+     * A new copy written on fewer lines than the accepted ones — the same
+     * tokens without their blank lines — is a copy of the accepted block, and
+     * a new finding on the new copy alone, whatever its own line count.
+     */
+    #[Test]
+    public function itReportsADenselyWrittenNewCopyOfAnAcceptedBlock(): void
+    {
+        file_put_contents($this->tmpDir . '/src/Alpha.php', self::spaciousFunction('alpha'));
+        file_put_contents($this->tmpDir . '/src/Beta.php', self::spaciousFunction('beta'));
+
+        $generated = $this->qmx('baseline:generate', 'baseline.json', 'src', '--config=qmx.yaml', '--no-progress');
+        self::assertSame(0, $generated['exitCode'], $generated['stderr'] . "\n" . $generated['stdout']);
+
+        file_put_contents($this->tmpDir . '/src/Gamma.php', self::denseFunction('gamma'));
+
+        $checked = $this->qmx('check', 'src', '--config=qmx.yaml', '--baseline=baseline.json', '--fail-on=warning', '--format=json', '--no-progress', '--no-cache', '--workers=0');
+        self::assertSame(1, $checked['exitCode'], $checked['stderr'] . "\n" . $checked['stdout']);
+        self::assertSame([['src/Gamma.php', 3, 'warning']], self::violations($checked['stdout']));
+    }
+
+    /**
+     * @return list<array{string, int|float|null, string}> file, value and severity of each reported finding
+     */
+    private static function violations(string $stdout): array
+    {
+        /** @var array{violations: list<array{file: string, severity: string, metricValue: int|float|null}>} $report */
+        $report = json_decode($stdout, true, flags: \JSON_THROW_ON_ERROR);
+        $violations = array_map(
+            static fn(array $violation): array => [$violation['file'], $violation['metricValue'], $violation['severity']],
+            $report['violations'],
         );
+        sort($violations);
+
+        return $violations;
     }
 
     /**
@@ -179,6 +210,43 @@ final class DuplicationCopyBaselineProcessTest extends TestCase
             '    $y = $x - $a / 3 + $b * $c - $x % 4 + $a * $a - $b * $b + $c * $c - $x / 9 + $a - $b + $c;',
             '    $z = $x * $y - $a;',
             '    return $x * $y + $a - $b + $c * $x - $y / 2 + $a * $b * $c - $x + $y + 42 + $a + $b + $z; }',
+            '',
+        ]);
+    }
+
+    /**
+     * Twelve lines: the statements of {@see denseFunction()} with blank lines between them.
+     */
+    private static function spaciousFunction(string $name): string
+    {
+        return implode("\n", [
+            '<?php',
+            "function {$name}(\$a, \$b, \$c)",
+            '{',
+            '    $x = $a + $b * 2 - $c / 3 + $a * $b - $c + $a % 7;',
+            '',
+            '    $x = $x + $b % 5 - $c * $a + $b / 2 - $c + 11 * $a;',
+            '',
+            '    $y = $x - $a / 3 + $b * $c - $x % 4 + $a * $a;',
+            '',
+            '    $y = $y - $b * $b + $c * $c - $x / 9 + $a - $b + $c;',
+            '',
+            '    return $x * $y + $a - $b + $c * $x - $y / 2 + $a * $b * $c;',
+            '}',
+            '',
+        ]);
+    }
+
+    /**
+     * The tokens of {@see spaciousFunction()} on three lines — fewer than `min_lines`.
+     */
+    private static function denseFunction(string $name): string
+    {
+        return implode("\n", [
+            '<?php',
+            "function {$name}(\$a, \$b, \$c) { " . '$x = $a + $b * 2 - $c / 3 + $a * $b - $c + $a % 7; $x = $x + $b % 5 - $c * $a + $b / 2 - $c + 11 * $a;',
+            '    $y = $x - $a / 3 + $b * $c - $x % 4 + $a * $a; $y = $y - $b * $b + $c * $c - $x / 9 + $a - $b + $c;',
+            '    return $x * $y + $a - $b + $c * $x - $y / 2 + $a * $b * $c; }',
             '',
         ]);
     }

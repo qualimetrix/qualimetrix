@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -53,14 +54,11 @@ final class CodeDuplicationRule extends AbstractRule
      */
     private const int NAMED_COPY_LIMIT = 10;
 
-    private readonly int $minLines;
-
     public function __construct(
-        CodeDuplicationOptions $options,
+        RuleOptionsInterface $options,
         private readonly DuplicationResultProvider $resultProvider,
     ) {
         parent::__construct($options);
-        $this->minLines = $options->min_lines;
     }
 
     public function getName(): string
@@ -97,12 +95,13 @@ final class CodeDuplicationRule extends AbstractRule
      * `duplication.clone` reports the lines one copy spans as its
      * `metricValue`, judged worse the higher it goes:
      * {@see CodeDuplicationOptions::getSeverity()} compares that number with
-     * `warning` and `error`. Emission is gated by `min_lines` alone — a copy
-     * spanning at least that many lines produces a `Finding`, with
-     * `Severity::Warning` as the fallback below `warning`, which only a
-     * `warning` above `min_lines` reaches — and the threshold comparison
-     * genuinely gates *severity*, monotone in the copy's line span, so
-     * `higher` is a real fact about the code.
+     * `warning` and `error`. Emission itself is unconditional — every copy of
+     * every `DuplicateBlock` produces a `Finding` whatever its size, with
+     * `Severity::Warning` as the fallback below `warning`, which a copy
+     * shorter than `min_lines` in a block admitted by its longest copy
+     * reaches — but the threshold comparison genuinely gates *severity*, and
+     * severity is monotone in the copy's line span, so `higher` is a real
+     * fact about the code.
      *
      * @return array<string, ChannelDeclaration>
      */
@@ -117,14 +116,14 @@ final class CodeDuplicationRule extends AbstractRule
      * The block's copies are turned into locations once and every finding
      * shares them rather than building its own.
      *
-     * A copy's value, and whether it is reported at all, follow from the
-     * lines that copy spans, not from the block's longest copy: comments and
-     * blank lines are no tokens, so one copy can widen without changing the
-     * block. A value or a `min_lines` bar shared by every copy would move
-     * copies in files nobody touched — promoting them past what a baseline
-     * accepted, or reporting a copy below the bar it has to clear. A copy
-     * short of `min_lines` is still a copy: the others name it, and it keeps
-     * its place among the block's copies in its file.
+     * A copy's value is the lines that copy spans, not the block's longest
+     * copy: comments and blank lines are no tokens, so one copy can widen
+     * without changing the block, and a value shared by every copy would move
+     * copies in files nobody touched — a baseline would then promote them
+     * past what it accepted. Every copy of an admitted block is reported,
+     * one shorter than `min_lines` too: judged by its own lines, a copy
+     * pasted without its blank lines would be seen nowhere but in the files
+     * it was copied from.
      *
      * @return list<Finding>
      */
@@ -147,10 +146,6 @@ final class CodeDuplicationRule extends AbstractRule
             $file = $copy->pathString();
             $lines = $copy->lineCount();
             $copyInFile = $copiesInFile[$file] = ($copiesInFile[$file] ?? -1) + 1;
-            if ($lines < $this->minLines) {
-                continue;
-            }
-
             $named = self::namedOthers($block->occurrences(), $index);
             $unnamed = $block->occurrences() - 1 - \count($named);
 

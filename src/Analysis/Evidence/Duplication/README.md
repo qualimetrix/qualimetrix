@@ -100,8 +100,8 @@ both writing real files into a temporary directory:
 `DuplicationDetectorTest` runs the detector's whole pipeline over them, and
 `DuplicateCopyIdentityTest` runs the detector and the rule before and after an
 edit, pinning which edits keep the block and every copy's identity and which
-re-key untouched copies, and that each copy reports its own line span and
-is reported only when that span reaches `min_lines`.
+re-key untouched copies, and that each copy reports its own line span, below
+`min_lines` too once the block's longest copy reaches it.
 
 Four Functional classes under `tests/Analysis/Evidence/Duplication/Functional/`:
 `DuplicationMemoryLimitProcessTest`, which builds a temporary project and runs
@@ -126,12 +126,11 @@ vendor/bin/phpunit --no-coverage tests/Analysis/Evidence/Duplication
 
 ## Extension registration
 
-`CodeDuplicationRule` emits one finding per copy of each `DuplicateBlock`
-that spans at least `min_lines` lines itself, located on that copy, with the
-lines that copy spans as its value. A block is kept while one of its copies
-reaches `min_lines`; a shorter copy reports nothing of its own but is still
-named and counted by the others. Each copy
-has an identity of its own — the content hash, the copy's file and its place
+`CodeDuplicationRule` emits one finding per copy of each `DuplicateBlock`,
+located on that copy, with the lines that copy spans as its value. A block is
+kept while its longest copy reaches `min_lines`, and then a shorter copy is
+reported too, at its own value; the longest copy crossing `min_lines` adds or
+removes the block, and with it every copy's finding. Each copy has an identity of its own — the content hash, the copy's file and its place
 among the block's copies in that file, never a line number — so a new copy of
 a block the detector still finds is a new finding to a baseline and a new
 fingerprint to GitLab and SARIF. A change to what the copies agree on — a

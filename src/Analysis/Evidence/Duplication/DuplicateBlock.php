@@ -21,7 +21,7 @@ final readonly class DuplicateBlock
 
     /**
      * @param list<DuplicateLocation> $locations At least 2 locations (sorted deterministically)
-     * @param int $lines Lines spanned by the block's longest copy — a block is kept while one copy reaches `min_lines`; each copy is reported by its own span
+     * @param int $lines Lines spanned by the block's longest copy — what `min_lines` admits the block, and so every copy of it, by
      * @param int $tokens Number of tokens in the duplicated block
      * @param string $contentHash Full SHA-256 of the normalized matched token sequence and token count
      * @param string|null $hint Short content preview (~80 chars) of the duplicated code

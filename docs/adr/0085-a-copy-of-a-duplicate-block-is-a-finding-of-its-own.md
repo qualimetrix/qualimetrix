@@ -46,18 +46,20 @@ any repaired finding does. The git scope keeps a finding by its location, so a
 new copy is reported in the file it was pasted into.
 
 **A copy's value is the lines that copy spans**, not the span of the block's
-longest copy, **and a copy is reported only when that span reaches
-`min_lines`.** Comments and blank lines are no tokens, so one copy can span
+longest copy. Comments and blank lines are no tokens, so one copy can span
 more lines than another without changing the block. A value shared by every
 copy would let a comment written in one file raise the value of copies in
 files nobody touched, and a baseline would promote those accepted copies to
-Error while the new copy, a new finding, stayed a warning. A `min_lines` bar
-cleared by the longest copy for all of them would do the same to whether a
-copy is reported at all: a comment lifting one copy past the bar would
-report the copy in the untouched file as a new finding, below the bar it is
-held to. A shorter copy is still a copy of the block: the reported copies
-name it and count it, and it keeps its place among the block's copies in its
-file, so the copies after it keep their identities as it crosses the bar.
+Error while the new copy, a new finding, stayed a warning.
+
+**`min_lines` admits the block by its longest copy, and every copy of an
+admitted block is reported** — a shorter copy too, at its own value below
+`min_lines`, as a warning when that value is below `warning`. The bar is a
+property of the block, not of a copy: judged by its own lines, a copy pasted
+without the blank lines of the one it copies would be no finding anywhere.
+The change that adds it would pass a baseline and a git scope clean, and a
+run without a baseline would report the block only on the copies that were
+already there.
 
 A finding names at most ten other copies, in its message and as its related
 locations, and counts the rest. Every copy is reported by a finding of its
@@ -102,11 +104,17 @@ block and names the silenced one.
   file.
 - The baseline's ceiling on this channel compares a copy's own line span with
   the span it accepted. A copy that is reformatted, or given a comment or a
-  blank line, breaches its own entry and no other copy's; the same edit can
-  lift that copy past `min_lines` into a new finding, or drop it below and
-  leave its entry stale, and again no other copy's. A duplicate that grows in
-  every copy changes its tokens and so its identity: it reads as new findings
-  and stale entries, never as a breach.
+  blank line, breaches its own entry and no other copy's — unless the edit
+  moves the block's longest copy across `min_lines` (next point). A
+  duplicate that grows in every copy changes its tokens and so its identity:
+  it reads as new findings and stale entries, never as a breach.
+- Admitting by the longest copy has two costs. A comment or a blank line that
+  lifts the longest copy past `min_lines` adds the block, so every copy is a
+  new finding, the ones in files nobody touched too; one that drops it below
+  removes the block and stales every copy's entry. That is a change of the
+  block, as loud as a partial copy or an edit inside one. And a copy's value
+  can be below `min_lines`: a shorter copy of an admitted block reports the
+  lines it spans, as a warning when they are below `warning`.
 - `suppress_paths`, global or per rule, silences only the copies inside its
   paths. The block's other copies are still reported; silencing a block means
   listing every file it has a copy in.
@@ -145,9 +153,16 @@ block and names the silenced one.
 - **The span of the block's longest copy as every copy's value.** A comment
   or a blank line in one copy raises every copy's value, and a baseline
   promotes accepted copies in untouched files to Error.
-- **Every copy reported once the longest copy reaches `min_lines`.** A
-  comment in one copy decides whether the copy in an untouched file is
-  reported, and reports it with a value below `min_lines`.
-- **Every copy reported only once the shortest copy reaches `min_lines`.**
-  A copy that clears the bar on its own lines goes unreported because another
-  copy is shorter, and a comment in the short copy reports every copy.
+- **Each copy admitted by its own span.** A new copy written on fewer lines
+  than `min_lines` — the same tokens without their blank lines — is no finding
+  anywhere. Measured: two accepted twelve-line copies and a new three-line
+  one gave no finding under `--baseline` and none under `--report=git:staged`,
+  exit 0 with `--fail-on=warning`; with only the original in the repository, a
+  full run after the merge reported the block on the untouched original
+  alone. A silent loss of the copy being added costs more than the loud
+  over-report of the longest copy crossing the bar.
+- **The block admitted by its shortest copy.** A dense copy pasted beside
+  accepted ones drops the whole accepted block below the bar: its entries go
+  stale and the new copy is reported nowhere.
+- **`min_lines` read against the block's tokens rather than lines.** It would
+  give the option a different meaning, which is a separate change.

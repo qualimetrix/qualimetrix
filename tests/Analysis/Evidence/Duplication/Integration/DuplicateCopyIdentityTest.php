@@ -83,24 +83,36 @@ final class DuplicateCopyIdentityTest extends TestCase
     }
 
     /**
-     * A copy is reported when it spans `min_lines` itself. A comment that
-     * lifts one copy past it reports that copy alone: the copy in the file
-     * nobody touched is still a copy, named by the other, but stays below
-     * the bar it would have to clear on its own.
+     * `min_lines` admits a block by its longest copy. A comment lifting one
+     * copy past it admits the block, and the copy in the file nobody touched
+     * is reported too, at the lines it spans itself.
      */
     #[Test]
-    public function itReportsOnlyTheCopyThatItselfReachesMinLines(): void
+    public function itReportsEveryCopyOnceTheLongestReachesMinLines(): void
     {
         $this->write('A', self::shortFunction('runA', '    // a note'));
         $this->write('B', self::shortFunction('runB', ''));
 
         $analysis = $this->analyze();
 
-        self::assertSame(['src/A.php'], array_column($analysis['copies'], 'file'));
         $onA = self::onlyCopyIn($analysis, 'src/A.php');
+        $onB = self::onlyCopyIn($analysis, 'src/B.php');
         self::assertSame(5, $onA['value']);
-        self::assertStringContainsString('(5 lines, 2 occurrences)', $onA['message']);
-        self::assertStringEndsWith('also at src/B.php:2-5', $onA['message']);
+        self::assertSame(4, $onB['value']);
+        self::assertStringContainsString('(4 lines, 2 occurrences)', $onB['message']);
+        self::assertStringEndsWith('also at src/A.php:2-6', $onB['message']);
+    }
+
+    /**
+     * Without the comment neither copy reaches `min_lines`: there is no block.
+     */
+    #[Test]
+    public function itReportsNoCopyWhileNoCopyReachesMinLines(): void
+    {
+        $this->write('A', self::shortFunction('runA', ''));
+        $this->write('B', self::shortFunction('runB', ''));
+
+        self::assertSame([], $this->analyze()['copies']);
     }
 
     #[Test]
