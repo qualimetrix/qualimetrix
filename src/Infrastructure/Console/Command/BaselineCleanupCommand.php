@@ -74,12 +74,14 @@ final class BaselineCleanupCommand extends BaselineCommand
             'Without --remove the command only reports: no entry is removed and the'
             . "\n" . 'file is not touched.' . "\n\n"
             . 'An entry is listed when the run reported nothing for its identity, or'
-            . "\n" . 'when the rule reporting its channel did not run (--only-rule,'
-            . "\n" . '--disable-rule, enabled: false), or when no rule declares its channel'
-            . "\n" . 'any more, or when the entry could not be read at all. None of those'
-            . "\n" . 'proves the debt is gone — a'
-            . "\n" . 'loosened threshold silences a finding just as effectively as a fix —'
-            . "\n" . 'so removal is always yours to assert, one selector at a time.',
+            . "\n" . 'when the run did not measure its channel at the level of its subject'
+            . "\n" . '(--only-rule, --disable-rule, including a selector narrowed to one'
+            . "\n" . 'level such as X:namespace, enabled: false, or a level switched off in'
+            . "\n" . 'the rule\'s options), or when no rule declares its channel any more,'
+            . "\n" . 'or when the entry could not be read at all. None of those proves the'
+            . "\n" . 'debt is gone — a loosened threshold silences a finding just as'
+            . "\n" . 'effectively as a fix — so removal is always yours to assert, one'
+            . "\n" . 'selector at a time.',
         ));
     }
 
@@ -104,8 +106,8 @@ final class BaselineCleanupCommand extends BaselineCommand
             $baseline,
             $context->findings(),
             $this->declarations,
-            $this->ruleCoverage->unproducedChannels(array_map(
-                static fn($entry) => $entry->identity->channel,
+            $this->ruleCoverage->unmeasured(array_map(
+                static fn($entry) => $entry->identity,
                 $baseline->entries,
             )),
         );
@@ -226,8 +228,8 @@ final class BaselineCleanupCommand extends BaselineCommand
     {
         return match ($candidate->reason) {
             BaselineCleanupReason::Stale => 'nothing reported for this identity',
-            BaselineCleanupReason::ProducerDidNotRun => 'not measured: the rule reporting this channel did not run'
-                . ' in this invocation',
+            BaselineCleanupReason::ProducerDidNotRun => 'not measured: this invocation did not run the rule for'
+                . ' this channel at this level',
             BaselineCleanupReason::ChannelNotDeclared => 'no rule declares this channel',
             BaselineCleanupReason::ChannelIsConfigurationError => 'this channel reports a configuration error and'
                 . ' cannot be accepted as debt',

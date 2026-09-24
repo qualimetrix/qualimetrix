@@ -162,12 +162,12 @@ final readonly class SymbolPath
         $type = $this->getType();
 
         return match ($type) {
-            SymbolType::File => 'file:' . ($this->filePath?->value() ?? ''),
-            SymbolType::Project => 'project:',
+            SymbolType::File => $type->canonicalPrefix() . ($this->filePath?->value() ?? ''),
+            SymbolType::Project => $type->canonicalPrefix(),
             SymbolType::Function_ => $this->buildFunctionCanonical(),
             SymbolType::Method => $this->buildMethodCanonical(),
             SymbolType::Class_ => $this->buildClassCanonical(),
-            SymbolType::Namespace_ => 'ns:' . ($this->namespace ?? ''),
+            SymbolType::Namespace_ => $type->canonicalPrefix() . ($this->namespace ?? ''),
         };
     }
 
@@ -232,15 +232,15 @@ final readonly class SymbolPath
     private function buildFunctionCanonical(): string
     {
         if ($this->hasNamespace()) {
-            return 'func:' . $this->namespace . '::' . $this->member;
+            return SymbolType::Function_->canonicalPrefix() . $this->namespace . '::' . $this->member;
         }
 
-        return 'func::' . $this->member;
+        return SymbolType::Function_->canonicalPrefix() . ':' . $this->member;
     }
 
     private function buildMethodCanonical(): string
     {
-        $parts = ['callable:'];
+        $parts = [SymbolType::Method->canonicalPrefix()];
 
         if ($this->hasNamespace()) {
             $parts[] = $this->namespace;
@@ -256,7 +256,7 @@ final readonly class SymbolPath
 
     private function buildClassCanonical(): string
     {
-        $parts = ['class:'];
+        $parts = [SymbolType::Class_->canonicalPrefix()];
 
         if ($this->hasNamespace()) {
             $parts[] = $this->namespace;

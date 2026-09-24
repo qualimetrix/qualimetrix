@@ -96,3 +96,35 @@ named rather than quietly carried.
 - `DistanceRule` still declines to judge a node below `min_class_count`, so the
   rule and the aggregate continue to disagree about which nodes are worth an
   opinion. That is unchanged by this record and remains a separate question.
+
+## Amendment (2026-09-24): `coupling.cbo` judges the own scope
+
+Namespace-level `coupling.cbo` came to be taken over the subtree, the region the
+published Ca and Ce are counted over, and the rule then judged leaf namespaces
+only, because the thresholds do not describe a number that grows with the
+subtree. Which namespace is a leaf is a fact about the run, not the code: a
+namespace whose only sub-namespace holds one exception class was never judged
+on a whole run, and was judged on a run that left the sub-namespace out. The
+same code got a finding or none depending on the paths given.
+
+**The rule judges every namespace on the coupling of its own declarations** —
+the population this record folds, and for the same reason: each declaration
+belongs to exactly one namespace. `coupling.cbo-own` is published beside
+`coupling.cbo`, counting the namespaces coupled to the classes a namespace
+declares itself, a sub-namespace included like any other; the subtree value is
+published unchanged and not judged. A namespace declaring no type the run
+analysed gets no `coupling.cbo-own`, as it gets no `coupling.abstractness-own`.
+`min_class_count` counts the namespace's own classes and the finding's direction
+reads `coupling.ca-own` / `coupling.ce-own`, so a finding never pairs an own CBO
+with a subtree Ca or Ce.
+
+The rejected alternatives were to stop treating as a parent a namespace whose
+children are all below `min_class_count`, which still left the verdict a
+function of the run's paths, and to judge the subtree value at the leaves and
+name the cost, which kept it one.
+
+Measured on this repository with default thresholds: the namespace-level
+findings go from 16 to 30. The 14 added are all parents with classes of their
+own that the leaf rule never judged; every leaf is judged on the value it was
+judged on before, because for a namespace without sub-namespaces the two scopes
+are one (all 127 leaves were compared).

@@ -85,14 +85,17 @@ function processOrder(Order $order): void
 <!-- llms:skip-begin -->
 ### Implementation notes
 
-Qualimetrix uses an extended variant of Cyclomatic Complexity, sometimes called **CCN2+**. In addition to the standard decision points (if, elseif, while, for, foreach, case, catch, &&, ||, ?:), Qualimetrix also counts:
+Qualimetrix uses an extended variant of Cyclomatic Complexity, sometimes called **CCN2+**: the standard decision points (if, elseif, while, for, foreach, case, catch, &&, ||, ?:) plus the PHP operators listed in the deviation below.
 
-- `??` (null coalescing operator) and `??=` (null-coalescing assignment) — +1
-- `?->` (nullsafe method call) — +1
-- `?->` (nullsafe property fetch) — +1
-- `xor` (logical XOR operator) — +1
+!!! info "Deviation from original spec"
+    McCabe's metric has no counterpart for these PHP operators. Qualimetrix counts each as a decision point:
 
-This is a deliberate choice: all these constructs represent hidden branching. For example, `$a ?? $b` is equivalent to `$a !== null ? $a : $b` — a decision point that is easy to overlook.
+    - `??` (null coalescing operator) and `??=` (null-coalescing assignment) — +1
+    - `?->` (nullsafe method call) — +1
+    - `?->` (nullsafe property fetch) — +1
+    - `xor` (logical XOR operator) — +1, like the other logical operators, although it does not short-circuit
+
+    `??`, `??=` and `?->` hide a branch: `$a ?? $b` is equivalent to `$a !== null ? $a : $b` — a decision point that is easy to overlook.
 
 **`match` arms:** Each condition in a multi-value match arm is counted separately. For example, `1, 2, 3 => ...` counts as 3 decision points, analogous to switch case fall-through.
 
@@ -230,11 +233,13 @@ Qualimetrix implements the SonarSource whitepaper
 ([Cognitive Complexity, version 1.7](https://www.sonarsource.com/docs/CognitiveComplexity.pdf), Appendix B):
 
 - **Increments (+1):** `if`, `elseif`, `else`, ternary `?:`, `switch`, `for`, `foreach`, `while`, `do-while`, `catch`, `goto`, `break`/`continue` with a level number, each sequence of like logical operators, and a method that calls itself (+1 once per method, however many recursive calls it makes).
-- **Nesting increment:** `if`, ternary, `switch`, loops and `catch` also add the current nesting level. `elseif`, `else`, `goto` and numbered jumps do not.
+- **Sequences of logical operators** are read in source order, as the whitepaper writes them: every operator that differs from the one before it starts a new sequence. `$a && $b && $c` is one, `$a && $b || $c` two, `$a && ($b || $c) && $d` three. `&&` and `and` are one operator, as are `||` and `or`. Anything else between two operators — `!`, a call, an assignment — ends the expression, so `$a && !($b && $c)` is two sequences.
+- **`else if`** written as two words is the whitepaper's `else if`: +1 without a nesting increment, exactly like `elseif`. An `if` inside a braced `else { ... }` block is a nested `if`.
+- **Nesting increment:** `if`, ternary, `switch`, loops and `catch` also add the current nesting level. `elseif`, `else if`, `else`, `goto` and numbered jumps do not.
 - **Nesting level:** rises inside the bodies of `if`, `elseif`, `else`, ternary branches, `switch` cases, loops, `catch` and lambdas. The whitepaper does not say where a condition sits; Qualimetrix reads a condition or subject as not nested inside the structure it controls, so a ternary inside an `if (...)` condition adds +1, while one inside the `if` body adds +2.
 - **`match`** is PHP's switch expression and is scored as `switch` (+1 plus the nesting level, arms nested one level): the whitepaper counts a language's own spelling of a listed keyword.
 - **Closures and arrow functions** add nothing to the enclosing method and raise the nesting level of their body by one. Like every other callable metric, Qualimetrix measures each closure as its own unit (see the deviation below).
-- **Named functions and anonymous-class methods** declared inside a method are measured as separate units starting at nesting level 0.
+- **Named functions and anonymous-class methods** declared inside a method are measured as separate units starting at nesting level 0 (see the deviation below).
 - **Null-coalescing operators add nothing:** `??`, `??=` and `?->` score 0, as the whitepaper prescribes ("Ignore shorthand", page 6): they shorten a null check into one expression rather than break the linear flow. Cyclomatic complexity and NPath still count `??` and `??=`.
 
 ```php
@@ -256,9 +261,14 @@ public function activeNames(array $users): array  // cognitive complexity: 0
       from where the lambda is written. The whitepaper's score for a method is therefore
       the method's value plus the values of the lambdas inside it; in the example above,
       0 + 2 = 2. A finding for a complex closure is reported on the closure.
-    - **Recursion:** only a direct self-call is detected (`$this->method()`,
-      `self::`/`static::method()`, or a function calling itself). The whitepaper also
-      counts every method in an indirect cycle (A calls B, B calls A); Qualimetrix does not.
+    - **Named functions and anonymous-class methods inside a method:** the whitepaper
+      nests them one level inside the enclosing structure and adds their body to the
+      method. Qualimetrix measures each as its own unit starting at nesting level 0.
+    - **Recursion:** only a direct self-call is detected: `$this->method()` or
+      `$this?->method()`, `self::`, `static::` or the own class name, or a function calling
+      itself by its short, fully qualified or `namespace\`-relative name, in any letter case.
+      The whitepaper also counts every method in an indirect cycle (A calls B, B calls A);
+      Qualimetrix does not, and it does not follow a call through a variable or a callable.
 
 <!-- llms:skip-end -->
 

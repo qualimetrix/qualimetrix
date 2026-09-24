@@ -17,10 +17,11 @@ enum BaselineCleanupReason: string
     case Stale = 'stale';
 
     /**
-     * The entry's identity did not appear because the rule producing its
-     * channel did not run in this invocation ({@see RunRuleCoverage}). Kept
-     * apart from {@see Stale}: nothing was measured, so nothing is known
-     * about the code.
+     * The entry's identity did not appear because this invocation did not
+     * publish its channel at the level of its subject ({@see RunRuleCoverage}):
+     * the rule was left out, or kept running with that level or channel left
+     * out. Kept apart from {@see Stale}: nothing was measured, so nothing is
+     * known about the code.
      */
     case ProducerDidNotRun = 'producer-did-not-run';
 

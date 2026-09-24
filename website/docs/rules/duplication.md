@@ -125,34 +125,35 @@ this ownership change does not alter the rule id, options, algorithm or output.
 !!! info "Deviation from original spec"
     A duplicate group uses the full SHA-256 of the complete normalized matched
     token sequence plus token count as its semantic occurrence. The project is
-    the finding subject; primary-file choice, source lines, discovery order, and
-    related-copy order are presentation only. Adding a lexically earlier copy
-    therefore does not re-key an existing baseline entry or formatter
-    fingerprint.
+    the finding subject, and every copy of a block shares that identity; source
+    lines, discovery order and related-copy order are presentation only. Adding
+    a lexically earlier copy therefore does not re-key an existing baseline
+    entry or formatter fingerprint: it adds one member to the group the entry
+    bounds.
 
 !!! warning "Inline `@qmx-ignore` cannot suppress this channel"
-    `duplication.clone` reports at project level only, so no inline
-    directive can bind to it reliably: `@qmx-ignore` binds to the declaration
+    Every copy of a block is the same project-level debt, so no inline
+    directive is allowed to silence it: `@qmx-ignore` binds to the declaration
     it decorates, which the project never is, and `@qmx-ignore-file` /
-    `@qmx-ignore-next-line` are matched against the finding's primary
-    location — the copy the scan happens to visit first, an implementation
-    detail rather than something you control. All three forms are refused
-    (`annotation.unresolved-directive`) wherever they are written. Disable the
-    rule instead — `disabled_rules: [duplication.clone]` in the
-    configuration, or `--disable-rule=duplication.clone` — or
-    accept a specific occurrence into the baseline.
+    `@qmx-ignore-next-line` would silence the one copy they are written beside
+    while every other copy still reports the block — and a copy pasted
+    together with such a directive would pass a baseline unseen. All three
+    forms are refused (`annotation.unresolved-directive`) wherever they are
+    written. Disable the rule instead — `disabled_rules: [duplication.clone]`
+    in the configuration, or `--disable-rule=duplication.clone` — or accept
+    the block, all of its copies, into the baseline.
 
 !!! info "Constant and property arrays are always excluded"
     A duplicate block that lies **entirely** inside a `const` declaration or a static/instance property's array-literal initializer is never reported. Rows of a lookup table (e.g. `'key' => ['a' => ..., 'b' => ...]` repeated with different values) normalize to identical token sequences, but "extract a shared method" is not actionable advice for a data table — repeating the same field shape across rows is the normal, correct form of that table. A block spanning both a data declaration and executable code (or lying entirely in a method body) is still reported. This suppression is unconditional and cannot be turned off.
 
-!!! info "Every copy of a block is one finding"
-    All copies of one duplicated block are reported together as a single finding, however many there are — there is no upper limit on the number of copies. The message states the number of occurrences and names up to ten other copies, followed by `and N more` when there are more; the finding's related locations list every copy. When copies agree over different lengths, each longest agreeing set is reported: two copies that match for 40 lines and a third that matches them only for the first 10 give one finding for the two 40-line copies and one for all three over 10 lines.
+!!! info "Every copy of a block is a finding of its own"
+    Each copy of a duplicated block is reported by a finding located on that copy, however many copies there are — there is no upper limit on the number of copies. The message states the number of occurrences and names up to ten other copies, followed by `and N more` when there are more; the finding's related locations are the copies its message names. All copies of a block share one identity, so a baseline entry bounds how many copies there are: a new copy of an accepted block is a breach, and `--report=git:*` reports it in the file it was pasted into. When copies agree over different lengths, each longest agreeing set is reported: two copies that match for 40 lines and a third that matches them only for the first 10 give a finding on each of the two 40-line copies and one on each of the three copies over 10 lines.
 
 !!! info "Copies within one file"
     Two occurrences in the same file that share a line are one repetitive structure matching itself at a shifted position, not two copies, and only the first is kept. Occurrences that merely touch — one ends on the line before the other starts — are two copies and are reported.
 
 !!! tip "IDE integration"
-    When using SARIF output (`--format=sarif`), duplicate copies are linked via `relatedLocations`. This means duplicate copies appear as **clickable cross-references** in VS Code (SARIF Viewer extension) and JetBrains IDEs, making it easy to navigate between all copies of a duplicated block.
+    When using SARIF output (`--format=sarif`), duplicate copies are linked via `relatedLocations`. This means duplicate copies appear as **clickable cross-references** in VS Code (SARIF Viewer extension) and JetBrains IDEs, making it easy to navigate from each copy to the others it names.
 
 <!-- llms:skip-end -->
 

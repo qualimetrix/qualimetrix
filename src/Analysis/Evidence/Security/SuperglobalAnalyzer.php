@@ -43,30 +43,39 @@ final readonly class SuperglobalAnalyzer
     ];
 
     /**
+     * @param Expr|InterpolatedStringPart ...$parts an expression, or the parts of an interpolated string or a backtick command
+     *
      * @return string|null name of the first superglobal found (without `$`), or null
      */
-    public function findSuperglobal(Expr $expr): ?string
+    public function findSuperglobal(Expr|InterpolatedStringPart ...$parts): ?string
     {
-        if ($expr instanceof Variable) {
-            return \is_string($expr->name) && \in_array($expr->name, self::DANGEROUS_SUPERGLOBALS, true) ? $expr->name : null;
-        }
+        $name = ($this->readsInParts($parts)[0] ?? null)?->name;
 
-        return $this->findSuperglobalInParts($this->valueOperands($expr));
+        return \is_string($name) ? $name : null;
     }
 
     /**
-     * @param array<Expr|InterpolatedStringPart> $parts parts of an interpolated string or a backtick command
+     * Every dangerous superglobal read whose value becomes (part of) the value
+     * of one of $parts, in source order.
+     *
+     * @param array<Expr|InterpolatedStringPart> $parts
+     *
+     * @return list<Variable>
      */
-    public function findSuperglobalInParts(array $parts): ?string
+    public function readsInParts(array $parts): array
     {
+        $reads = [];
         foreach ($parts as $part) {
-            $name = $part instanceof Expr ? $this->findSuperglobal($part) : null;
-            if ($name !== null) {
-                return $name;
+            if ($part instanceof Variable) {
+                if (\is_string($part->name) && \in_array($part->name, self::DANGEROUS_SUPERGLOBALS, true)) {
+                    $reads[] = $part;
+                }
+            } elseif ($part instanceof Expr) {
+                array_push($reads, ...$this->readsInParts($this->valueOperands($part)));
             }
         }
 
-        return null;
+        return $reads;
     }
 
     /**

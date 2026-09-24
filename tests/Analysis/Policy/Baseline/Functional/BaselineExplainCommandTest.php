@@ -461,7 +461,7 @@ final class BaselineExplainCommandTest extends TestCase
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString(
-            'accepted 25; now not measured (the rule reporting this channel did not run in this invocation)',
+            'accepted 25; now not measured (this invocation did not run the rule for this channel at this level)',
             $tester->getDisplay(),
         );
     }

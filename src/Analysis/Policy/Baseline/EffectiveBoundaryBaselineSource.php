@@ -46,9 +46,9 @@ final readonly class EffectiveBoundaryBaselineSource
      *                                     number; above zero, the ceiling reports the group
      *                                     rather than comparing it (unless {@see $mode} waives
      *                                     the comparison)
-     * @param bool $producerRan whether the rule producing this channel ran in this invocation
-     *                          ({@see RunRuleCoverage}); when it did not, an empty group says
-     *                          nothing about the code
+     * @param bool $producerRan whether this invocation published the channel at the level of
+     *                          the entry's subject ({@see RunRuleCoverage}); when it did not, an
+     *                          empty group says nothing about the code
      */
     private function __construct(
         public ?AcceptedLevel $accepted,

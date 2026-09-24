@@ -63,10 +63,12 @@ second half of that question, per value: it places a value's subject through
 the run's paths and the manifest's PSR-4 map, and a value naming a place this
 run never analysed is not judged at all. On a project whose manifest declares
 no readable production autoload nothing locates a namespace, so no namespace
-value is judged there — only path values — and the report's project scope names
-the channels whose namespace values went unjudged. It is built at the same call
-site from the run's shape, so this namespace does not read `composer.json`
-itself.
+value is judged there — only path values. A skipped value is not silent:
+`UnboundSuppressionAudit::unjudgedValues()` enumerates the same values
+`findings()` judges, and the report's project scope publishes the ones skipped
+and their channels, on a `covered` run too. The judgement is built at the same
+call site from the run's shape, so this namespace does not read
+`composer.json` itself.
 
 `LevelActivity` records which producer/level pairs this configuration let run,
 asked of the rules themselves during execution and published beside the
@@ -82,13 +84,22 @@ The directive audit reads this record instead of re-deriving enablement from
 the merged configuration: three answers, not two, because a producer that does
 not declare a level at all is a different fact from one switched off there.
 
+`RuleExecutionInterface::publishesAt(producer, channel, level)` answers for a
+reader that holds only an identity — Baseline's cleanup and explain, about an
+entry the run did not report — whether this run publishes that channel at that
+level. It asks both switches: the selection, where a level-narrowed selector
+(`X:namespace`) lives and which this record never sees, and this record, where
+a level switched off in the rule's options lives and which the selection never
+sees.
+
 `RuleExecutionInterface` exposes immutable `RuleMetadata`; concrete rule instances never cross the capability boundary. `RuleConfigurationInterface` is the only external mutation/query surface for per-run options, selection, and exclusions. `replace(FindingConfiguration)` is the door the product configures a run through, and `RuleOptionsRegistry`'s narrower setters are written in terms of it. `resetRuntimeState()` is the one reset point, clearing options, selection and exclusion state before every run.
 
 A rule instance is shared by the process and executed more than once per run,
 so it carries no state between calls: `RuleInterface::analyze()` states the
 contract, including which writes through an injected collaborator stay inside
 it, and `governance/RuleDeclaration/RuleInstanceStatelessnessTest` refuses a
-registered rule or validator with a reassignable or static property.
+registered rule or validator with a reassignable or static property, a readonly
+property its source writes outside the constructor, or a `static` variable.
 
 `ThresholdAwareOptionsInterface::warningBoundary()` is how a rule's options
 name the warning boundary of the channel they configure, returning the number or

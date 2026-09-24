@@ -74,10 +74,15 @@ CCN = 1 + number of branching points
 | `case` (in switch)        | +1           |
 | `catch`                   | +1           |
 | `&&`, `\|\|`, `and`, `or` | +1           |
+| `xor`                     | +1           |
 | `?:` (ternary)            | +1           |
 | `??` (null coalescing)    | +1           |
 | `??=` (coalescing assign) | +1           |
 | `?->` (nullsafe)          | +1           |
+
+> **Note:** `??`, `??=`, `?->` and `xor` deviate from McCabe's original, which
+> has no counterpart for them (the CCN2+ reading). The visitor docblock and the
+> website rule page document the deviation.
 
 ### Interpretation
 
@@ -108,15 +113,16 @@ CCN = 1 + number of branching points
 
 ### Algorithm
 
-Follows the SonarSource whitepaper (version 1.7, Appendix B); the deviations
-are listed in the visitor docblock and on the website rule page.
+Implements the SonarSource whitepaper (version 1.7, Appendix B) with the
+deviations listed in the visitor docblock and on the website rule page.
 
 **Base increments (+1):**
-- `if`, `elseif`, `else`, `switch`, `match`, ternary `?:`
+- `if`, `elseif` (also `else if` in two words), `else`, `switch`, `match`, ternary `?:`
 - `for`, `foreach`, `while`, `do-while`
 - `catch`, `goto`, `break N`, `continue N`
 - A method that calls itself (once per method)
-- Logical chain (`&&`, `\|\|`)
+- Each sequence of like logical operators (`&&`/`and`, `\|\|`/`or`), read
+  in source order: `$a && ($b || $c) && $d` is three sequences
 
 **No increment:** `??`, `??=` and `?->` — the whitepaper ignores
 null-coalescing operators as shorthand ("Ignore shorthand", p. 6).
@@ -283,12 +289,12 @@ by name at both depths — the rule's own top level and inside a `callable`/
 
 ## Test ownership and Definition of Done
 
-Owned tests live under `tests/Analysis/Evidence/Complexity/`: thirteen unit
-test classes cover the three collector/visitor families and four rules; the
+Owned tests live under `tests/Analysis/Evidence/Complexity/`: the unit test
+classes cover the three collector/visitor families and four rules; the
 integration test verifies WMC aggregation and reporting. The package is done
-when all 14 test classes (391 PHPUnit IDs) are discovered, collector
-`requires()`/`provides()` sets and all rule IDs/channels/options are unchanged,
-and no old Complexity production or test FQCN remains in this leaf.
+when every owned test class is discovered, collector `requires()`/`provides()`
+sets and all rule IDs/channels/options are unchanged, and no old Complexity
+production or test FQCN remains in this leaf.
 
 
 ## Locality

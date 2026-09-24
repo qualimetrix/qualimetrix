@@ -36,6 +36,7 @@ final class MetricName
     public const string COUPLING_DISTANCE = 'coupling.distance';
     public const string COUPLING_CA_OWN = 'coupling.ca-own';
     public const string COUPLING_CE_OWN = 'coupling.ce-own';
+    public const string COUPLING_CBO_OWN = 'coupling.cbo-own';
     public const string COUPLING_INSTABILITY_OWN = 'coupling.instability-own';
     public const string COUPLING_ABSTRACTNESS_OWN = 'coupling.abstractness-own';
     public const string COUPLING_DISTANCE_OWN = 'coupling.distance-own';

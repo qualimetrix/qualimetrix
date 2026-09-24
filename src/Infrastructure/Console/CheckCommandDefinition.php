@@ -123,7 +123,7 @@ final class CheckCommandDefinition
                 'output',
                 'o',
                 InputOption::VALUE_REQUIRED,
-                'Write output to file instead of stdout (atomic write)',
+                'Write output to file instead of stdout; an existing file is written in place',
             )
             ->addOption(
                 'fail-on',

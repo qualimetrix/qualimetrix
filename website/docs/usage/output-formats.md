@@ -227,7 +227,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
         "debtPer1kLoc": 2.1
     },
     "outOfScope": null,
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
     "health": {
         "complexity": {
             "score": 78.0,
@@ -520,7 +520,7 @@ Raw metric values for every symbol (file, class, namespace, method, function, pr
             }
         }
     ],
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
     "summary": {
         "filesAnalyzed": 45,
         "filesSkipped": 0,
@@ -922,7 +922,7 @@ a finding back, and the identity leads to the finding's own record.
         "failed": 0,
         "failures": []
     },
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
     "mechanisms": [
         "suppression",
         "path-suppression",
@@ -1103,31 +1103,45 @@ The channels judged only on a whole-project run are
 `suppression.unmatched-namespace` and `suppression.unmatched-rule-ledger`. A
 narrowed report lists all of them, whether or not this run enabled them.
 
+`covered` is a statement about the autoload targets, not about every configured
+value. The suppression channels also judge each value against the place it
+names, and a value naming a place outside the analysed paths is skipped:
+`suppress_paths: [{subtree: tests/Legacy}]` on `qmx check src/`, with `tests/`
+declared only under `autoload-dev`, is not judged on that `covered` run. The
+report names every skipped value in `unjudgedValues`, and its channel in
+`unjudgedChannels`, so "judged and bound" and "not looked at" read differently.
+See [Suppression rules](../rules/suppression.md#scope-and-severity).
+
 On an `unknown` project, run the check over all of its code: a narrower run
 there is judged as if it were the whole project, and a layer whose classes lie
 outside the paths you named is reported as matching nothing. Namespace values
 of the global `suppress_namespaces` and of per-rule `suppress_namespaces` and
 `suppress_namespace_channels` are the exception: with no declared autoload a namespace
 has no location, so they are not judged on any run of such a project, and the
-report lists `suppression.unmatched-namespace` and
-`suppression.unmatched-rule-ledger` as the channels whose namespace values went
-unjudged.
+report lists each such value in `unjudgedValues` and its channel —
+`suppression.unmatched-namespace` or `suppression.unmatched-rule-ledger` — in
+`unjudgedChannels`.
 
-| Format                                      | Project scope representation                                                                                   |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `json`, `metrics`, `suppressed`             | Top-level `projectScope` object in every document: `state`, `uncoveredAutoloadTargets[]`, `unjudgedChannels[]` |
-| `sarif`                                     | A `note` in `runs[0].invocations[0].toolExecutionNotifications[]` with descriptor `QMX-RUN-PROJECT-SCOPE`      |
-| `github`                                    | A `::notice title=run.project-scope::` line                                                                    |
-| `html`                                      | A banner above the report                                                                                      |
-| `summary`, `text`, `text-verbose`, `health` | A `Project scope …` line beside the coverage sentence                                                          |
-| `gitlab`, `checkstyle`                      | Nothing: their consumers count every entry as a finding, and narrowing the run is not a defect of it           |
+| Format                                      | Project scope representation                                                                                                       |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `json`, `metrics`, `suppressed`             | Top-level `projectScope` object in every document: `state`, `uncoveredAutoloadTargets[]`, `unjudgedChannels[]`, `unjudgedValues[]` |
+| `sarif`                                     | A `note` in `runs[0].invocations[0].toolExecutionNotifications[]` with descriptor `QMX-RUN-PROJECT-SCOPE`                          |
+| `github`                                    | A `::notice title=run.project-scope::` line                                                                                        |
+| `html`                                      | A banner above the report                                                                                                          |
+| `summary`, `text`, `text-verbose`, `health` | A `Project scope …` line beside the coverage sentence                                                                              |
+| `gitlab`, `checkstyle`                      | Nothing: their consumers count every entry as a finding, and narrowing the run is not a defect of it                               |
 
 `projectScope` has the same keys in every state. `uncoveredAutoloadTargets`
-is empty unless the state is `narrowed`; `unjudgedChannels` is empty for
-`covered`, names every whole-project channel for `narrowed`, and for `unknown`
-names the channels whose namespace values were not judged. Every other format adds its entry only for `narrowed`
-and `unknown`. The console also prints a warning on stderr naming the
-autoload targets a narrowed run left out.
+is empty unless the state is `narrowed`. `unjudgedValues` lists every
+configured suppression value a `covered` or `unknown` run skipped, each as
+`{"option", "pattern"}` — `option` is `suppress_paths`, `suppress_namespaces`
+or `rules.<rule>.<option>`, the key to look under, and `pattern` the authored
+selector (`subtree:tests/Legacy`). `unjudgedChannels` names every
+whole-project channel for `narrowed`, where no value was judged and
+`unjudgedValues` is empty, and otherwise the channels of the skipped values.
+Every other format adds its entry for `narrowed`, for `unknown`, and for a
+`covered` run that skipped a value. The console also prints a warning on
+stderr naming the autoload targets a narrowed run left out.
 
 ## Comparison table
 

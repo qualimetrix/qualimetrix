@@ -97,12 +97,14 @@ One Integration class under `tests/Analysis/Evidence/Duplication/Integration/`:
 `DuplicationDetectorTest`, which writes real files into a temporary directory
 and runs the detector's whole pipeline over them.
 
-One Functional class under `tests/Analysis/Evidence/Duplication/Functional/`:
+Two Functional classes under `tests/Analysis/Evidence/Duplication/Functional/`:
 `DuplicationMemoryLimitProcessTest`, which builds a temporary project and runs
 `bin/qmx` in a real PHP subprocess under a `memory_limit`. It protects the
-bounded-memory candidate index, the report of a block copied around a hundred
-times under a 128M limit, and the real CLI path, and it is the reason the module
-has a Functional level at all.
+bounded-memory candidate index, the report of every copy of a block copied
+around a hundred times under a 128M limit, and the real CLI path, and it is the
+reason the module has a Functional level at all. `DuplicationGitScopeProcessTest`
+runs `--report=git:staged` over a git repository in which only a new copy is
+staged, and pins that the copy is reported in its own file.
 
 Run the complete owned suite with:
 
@@ -111,6 +113,14 @@ vendor/bin/phpunit --no-coverage tests/Analysis/Evidence/Duplication
 ```
 
 ## Extension registration
+
+`CodeDuplicationRule` emits one finding per copy of each `DuplicateBlock`,
+located on that copy. Every copy shares the block's identity (the project plus
+the content hash), so a baseline entry bounds the number of copies and a new
+copy breaches it. Each finding names at most ten other copies, in its message
+and as related locations, and counts the rest: the copies' `Location` objects
+are built once per block and shared, and a bound is what keeps a block of N
+copies from carrying N² related locations into SARIF.
 
 `CodeDuplicationRule` is a `qmx.rule` implementation. Registration is delegated
 to the infrastructure `DuplicationConfigurator`; compiler passes inject its

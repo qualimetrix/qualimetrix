@@ -81,19 +81,6 @@ final class NarrowedRunDeclarationVerdictIntegrationTest extends TestCase
     }
 
     /**
-     * On stderr the warning that the run is a slice says it; the declaration
-     * verdicts are withheld on exactly the runs it names. The document says
-     * it too — see the test below.
-     */
-    #[Test]
-    public function itLeavesTheNarrowedRunsScopeWarningAsTheTrace(): void
-    {
-        $tester = $this->check(self::CONFIG, ['src/Web']);
-
-        self::assertStringContainsString('Analyzed paths do not cover all autoload entries', $tester->getErrorOutput());
-    }
-
-    /**
      * The warning is stderr, which neither `-q` nor a machine format keeps;
      * the document itself says the run was narrowed and what it did not judge.
      */

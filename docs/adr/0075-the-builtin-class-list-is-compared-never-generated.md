@@ -101,11 +101,13 @@ enumerate it.
   pinned extension that does not load reddens the CI run instead of quietly
   narrowing what it compared.
 - The control cannot see one class of defect. PHP class names are
-  case-insensitive and `isBuiltin()` is an exact-key lookup, so
-  `class X extends \exception` is still measured as extending a project class.
-  The census compares canonical spellings on both sides and structurally cannot
-  reach it; a green census is agreement on a set of strings, not proof that
-  `isBuiltin()` answers correctly for every spelling source may use.
+  case-insensitive, and the census compares canonical spellings on both sides,
+  so it structurally cannot tell whether `isBuiltin()` answers for every
+  spelling source may use. When this was written `isBuiltin()` was an
+  exact-key lookup and `class X extends \exception` was measured as extending a
+  project class; it now folds ASCII case the way PHP does, and that fold is
+  held by the registry's own unit tests — a green census still proves only
+  agreement on a set of strings.
 - A name is verified wherever its extension is loaded, and nowhere else. No
   attributed extension is currently unloadable everywhere: `Pdo\Firebird` was
   recorded as such on the assumption that no runner builds `pdo_firebird`, and

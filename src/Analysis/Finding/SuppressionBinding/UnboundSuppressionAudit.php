@@ -57,7 +57,9 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * there. Every surviving value is then asked about
  * individually ({@see ValueScopeJudgement}): `suppress_paths: [tests/Legacy]`
  * is correct configuration that `qmx check src/` cannot judge, and reporting
- * it there accused the author of the caller's choice of path.
+ * it there accused the author of the caller's choice of path. A value skipped
+ * that way is named by {@see unjudgedValues()} instead, so the skip reaches the
+ * report rather than reading as a value judged and bound.
  */
 final readonly class UnboundSuppressionAudit
 {
@@ -84,8 +86,9 @@ final readonly class UnboundSuppressionAudit
      * `$declaredNamespaces` is `null` when the run produced no namespace tree
      * at all. That is not "nothing bound": it is "the universe to judge
      * against was never built", and the namespace half stays silent rather
-     * than reporting every configured namespace as unbound. The path half is
-     * unaffected — its universe is the coverage, which always exists.
+     * than reporting every configured namespace as unbound — naming each such
+     * value in {@see unjudgedValues()} instead. The path half is unaffected:
+     * its universe is the coverage, which always exists.
      *
      * The findings are passed through `publishable()` here rather than at the
      * seam: `--disable-rule`, `--only-rule`, the baseline and `--fail-on` must
@@ -113,34 +116,72 @@ final readonly class UnboundSuppressionAudit
 
         $findings = [];
 
-        foreach ($this->unboundPaths($suppressPaths, $analyzedFiles, $scope) as $pattern) {
-            $findings[] = self::pathFinding($pattern);
-        }
-
-        foreach ($this->unboundNamespaces($suppressNamespaces, $declaredNamespaces, $scope) as $pattern) {
-            $findings[] = self::namespaceFinding($pattern);
-        }
-
-        foreach ($this->unboundLedgerEntries($analyzedFiles, $declaredNamespaces, $scope) as [$ruleName, $option, $pattern]) {
-            $findings[] = self::ledgerFinding($ruleName, $option, $pattern);
+        foreach ($this->configuredValues($suppressPaths, $suppressNamespaces) as $value) {
+            if ($this->judges($value, $declaredNamespaces, $scope) && !self::binds($value, $analyzedFiles, $declaredNamespaces)) {
+                $findings[] = self::unboundFinding($value);
+            }
         }
 
         return $this->ruleExecution->publishable($findings);
     }
 
     /**
-     * Per-rule suppression entries that bound to nothing, read through
-     * {@see ConfiguredSuppression} — the one reader
-     * {@see \Qualimetrix\Analysis\Finding\FindingExclusionLedger} also uses
-     * when it applies them, so "bound" here and "applied" there cannot mean two
-     * different pattern sets.
+     * Every configured value {@see findings()} skipped without judging it,
+     * under the channel that would have reported it — the other half of the
+     * same enumeration, so the two cannot disagree about which values exist.
      *
-     * **All three options, including `suppress_namespace_channels`.** That one
-     * was applied and not judged while each side enumerated the options for
-     * itself, and a pattern under it sat in exactly the silence this channel
-     * exists to end. A channel pattern is reported under the selector it was
-     * written beneath, because that is the line an author has to find. Its
-     * universe is the run's declared namespaces, the same one
+     * Without this list a skipped value was indistinguishable from one judged
+     * and bound: a `covered` run that never looked at `tests/Legacy` read the
+     * same as one that found it. It does not depend on the rule being enabled,
+     * for the reason a narrowed report names every channel of the family: it
+     * says what this run's shape could not judge, not what would have fired.
+     *
+     * `option` is the key an author has to find: `suppress_paths` or
+     * `suppress_namespaces` for a global value (a `--suppress-*` flag is
+     * merged into those), `rules.<rule>.<option>` for a per-rule one.
+     *
+     * @param list<PathPattern> $suppressPaths
+     * @param list<NamespacePattern> $suppressNamespaces
+     * @param ?list<string> $declaredNamespaces
+     *
+     * @return list<array{channel: string, option: string, pattern: string}>
+     */
+    public function unjudgedValues(
+        array $suppressPaths,
+        array $suppressNamespaces,
+        ?array $declaredNamespaces,
+        ValueScopeJudgement $scope,
+    ): array {
+        $unjudged = [];
+
+        foreach ($this->configuredValues($suppressPaths, $suppressNamespaces) as $value) {
+            if (!$this->judges($value, $declaredNamespaces, $scope)) {
+                $unjudged[] = [
+                    'channel' => $value['channel'],
+                    'option' => $value['rule'] === null ? $value['option'] : \sprintf('rules.%s.%s', $value['rule'], $value['option']),
+                    'pattern' => $value['pattern']->definition->display(),
+                ];
+            }
+        }
+
+        return $unjudged;
+    }
+
+    /**
+     * Every configured value, global and per-rule, with the channel that
+     * reports it.
+     *
+     * Per-rule entries are read through {@see ConfiguredSuppression} — the one
+     * reader {@see \Qualimetrix\Analysis\Finding\FindingExclusionLedger} also
+     * uses when it applies them, so "bound" here and "applied" there cannot
+     * mean two different pattern sets.
+     *
+     * **All three per-rule options, including `suppress_namespace_channels`.**
+     * That one was applied and not judged while each side enumerated the
+     * options for itself, and a pattern under it sat in exactly the silence
+     * this channel exists to end. A channel pattern is reported under the
+     * selector it was written beneath, because that is the line an author has
+     * to find. Its universe is the run's declared namespaces, the same one
      * `suppress_namespaces` is judged against: the ledger matches a channel
      * pattern with {@see NamespaceMatcher} against a namespace-level finding's
      * declared namespace.
@@ -150,113 +191,107 @@ final readonly class UnboundSuppressionAudit
      * under a rule that is switched off still binds or fails to bind on the
      * same evidence.
      *
-     * @param list<RelativePath> $analyzedFiles
-     * @param ?list<string> $declaredNamespaces
+     * @param list<PathPattern> $suppressPaths
+     * @param list<NamespacePattern> $suppressNamespaces
      *
-     * @return list<array{string, string, SelectorDefinition}> rule name, option key, pattern
+     * @return list<array{channel: string, rule: ?string, option: string, pattern: PathPattern|NamespacePattern}>
      */
-    private function unboundLedgerEntries(
-        array $analyzedFiles,
-        ?array $declaredNamespaces,
-        ValueScopeJudgement $scope,
-    ): array {
-        $entries = [];
+    private function configuredValues(array $suppressPaths, array $suppressNamespaces): array
+    {
+        $values = [];
+
+        foreach ($suppressPaths as $pattern) {
+            $values[] = ['channel' => UnboundSuppressionOptions::UNMATCHED_PATH, 'rule' => null, 'option' => ConfiguredSuppression::PATHS, 'pattern' => $pattern];
+        }
+
+        foreach ($suppressNamespaces as $pattern) {
+            $values[] = ['channel' => UnboundSuppressionOptions::UNMATCHED_NAMESPACE, 'rule' => null, 'option' => ConfiguredSuppression::NAMESPACES, 'pattern' => $pattern];
+        }
 
         foreach ($this->ruleConfiguration->all() as $ruleName => $options) {
             if (!\is_array($options)) {
                 continue;
             }
 
-            foreach ($this->unboundPaths($this->ruleConfiguration->pathExclusions((string) $ruleName), $analyzedFiles, $scope) as $pattern) {
-                $entries[] = [(string) $ruleName, ConfiguredSuppression::PATHS, $pattern->definition];
-            }
+            $rule = (string) $ruleName;
+            $entries = [
+                ...array_map(static fn(PathPattern $p): array => [ConfiguredSuppression::PATHS, $p], $this->ruleConfiguration->pathExclusions($rule)),
+                ...array_map(static fn(NamespacePattern $p): array => [ConfiguredSuppression::NAMESPACES, $p], $this->ruleConfiguration->namespaceExclusions($rule)),
+            ];
 
-            foreach ($this->unboundNamespaces($this->ruleConfiguration->namespaceExclusions((string) $ruleName), $declaredNamespaces, $scope) as $pattern) {
-                $entries[] = [(string) $ruleName, ConfiguredSuppression::NAMESPACES, $pattern->definition];
-            }
-
-            foreach ($this->ruleConfiguration->namespaceChannelExclusions((string) $ruleName) as $selector => $patterns) {
-                foreach ($this->unboundNamespaces($patterns, $declaredNamespaces, $scope) as $unbound) {
-                    $entries[] = [
-                        (string) $ruleName,
-                        ConfiguredSuppression::NAMESPACE_CHANNELS . '.' . $selector,
-                        $unbound->definition,
-                    ];
+            foreach ($this->ruleConfiguration->namespaceChannelExclusions($rule) as $selector => $patterns) {
+                foreach ($patterns as $pattern) {
+                    $entries[] = [ConfiguredSuppression::NAMESPACE_CHANNELS . '.' . $selector, $pattern];
                 }
+            }
+
+            foreach ($entries as [$option, $pattern]) {
+                $values[] = ['channel' => UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER, 'rule' => $rule, 'option' => $option, 'pattern' => $pattern];
             }
         }
 
-        return $entries;
+        return $values;
     }
 
     /**
-     * @param list<PathPattern> $patterns
-     * @param list<RelativePath> $analyzedFiles
+     * Whether this run can judge the value at all: its shape reaches the place
+     * the value names, and — for a namespace — the run built the universe it is
+     * judged against.
      *
-     * @return list<PathPattern>
+     * @param array{channel: string, rule: ?string, option: string, pattern: PathPattern|NamespacePattern} $value
+     * @param ?list<string> $declaredNamespaces
      */
-    private function unboundPaths(array $patterns, array $analyzedFiles, ValueScopeJudgement $scope): array
+    private function judges(array $value, ?array $declaredNamespaces, ValueScopeJudgement $scope): bool
     {
-        $unbound = [];
+        $pattern = $value['pattern'];
 
-        foreach ($patterns as $pattern) {
-            if (!$scope->judgesPathValue($pattern)) {
-                continue;
-            }
+        if ($pattern instanceof PathPattern) {
+            return $scope->judgesPathValue($pattern);
+        }
 
-            $bound = false;
+        return $declaredNamespaces !== null && $scope->judgesNamespaceValue($pattern);
+    }
 
+    /**
+     * @param array{channel: string, rule: ?string, option: string, pattern: PathPattern|NamespacePattern} $value
+     * @param list<RelativePath> $analyzedFiles
+     * @param ?list<string> $declaredNamespaces
+     */
+    private static function binds(array $value, array $analyzedFiles, ?array $declaredNamespaces): bool
+    {
+        $pattern = $value['pattern'];
+
+        if ($pattern instanceof PathPattern) {
             foreach ($analyzedFiles as $file) {
                 if ($pattern->matches($file)) {
-                    $bound = true;
-
-                    break;
+                    return true;
                 }
             }
 
-            if (!$bound) {
-                $unbound[] = $pattern;
+            return false;
+        }
+
+        foreach ($declaredNamespaces ?? [] as $namespace) {
+            if ($pattern->matches($namespace)) {
+                return true;
             }
         }
 
-        return $unbound;
+        return false;
     }
 
     /**
-     * @param list<NamespacePattern> $patterns
-     * @param ?list<string> $declaredNamespaces
-     *
-     * @return list<NamespacePattern>
+     * @param array{channel: string, rule: ?string, option: string, pattern: PathPattern|NamespacePattern} $value
      */
-    private function unboundNamespaces(array $patterns, ?array $declaredNamespaces, ValueScopeJudgement $scope): array
+    private static function unboundFinding(array $value): Finding
     {
-        if ($declaredNamespaces === null) {
-            return [];
+        $pattern = $value['pattern'];
+
+        if ($value['rule'] !== null) {
+            return self::ledgerFinding($value['rule'], $value['option'], $pattern->definition);
         }
 
-        $unbound = [];
-
-        foreach ($patterns as $pattern) {
-            if (!$scope->judgesNamespaceValue($pattern)) {
-                continue;
-            }
-
-            $bound = false;
-
-            foreach ($declaredNamespaces as $namespace) {
-                if ($pattern->matches($namespace)) {
-                    $bound = true;
-
-                    break;
-                }
-            }
-
-            if (!$bound) {
-                $unbound[] = $pattern;
-            }
-        }
-
-        return $unbound;
+        return $pattern instanceof PathPattern ? self::pathFinding($pattern) : self::namespaceFinding($pattern);
     }
 
     private static function pathFinding(PathPattern $pattern): Finding

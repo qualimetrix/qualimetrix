@@ -33,10 +33,15 @@ final readonly class LayerMatch
     /**
      * @param list<MatchedCriterion> $matchedCriteria Non-empty list of matched
      *                                                criterion descriptors.
+     * @param bool $ownsItsPatterns Whether the layer takes every class its
+     *                              patterns name ({@see MembershipSpec::ownsItsPatterns()});
+     *                              a later layer on the same pattern receives
+     *                              what one that does not leaves over.
      */
     public function __construct(
         public string $layerName,
         public array $matchedCriteria,
+        public bool $ownsItsPatterns,
     ) {
         if ($matchedCriteria === []) {
             throw new InvalidArgumentException(

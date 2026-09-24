@@ -23,9 +23,9 @@ Coupling metrics measure dependencies between components. All collectors in this
 
 **Collector:** `CouplingCollector`
 **Type:** `GlobalContextCollectorInterface`
-**Provides:** `coupling.ca`, `coupling.ce`, `coupling.cbo`, `coupling.instability`, `coupling.ce-packages`, `coupling.cbo-app`, `coupling.ce-framework`, `coupling.ca-own`, `coupling.ce-own`, `coupling.instability-own`
+**Provides:** `coupling.ca`, `coupling.ce`, `coupling.cbo`, `coupling.instability`, `coupling.ce-packages`, `coupling.cbo-app`, `coupling.ce-framework`, `coupling.ca-own`, `coupling.ce-own`, `coupling.cbo-own`, `coupling.instability-own`
 **Level:** Class and Namespace (`coupling.ca`, `coupling.ce`, `coupling.cbo` and
-`coupling.instability` are published on both; the `-own` trio on namespaces only)
+`coupling.instability` are published on both; the `-own` keys on namespaces only)
 
 ### Metrics
 
@@ -40,6 +40,7 @@ Coupling metrics measure dependencies between components. All collectors in this
 | `coupling.ce-framework`    | Framework efferent coupling (outgoing framework deps) | count(framework Ce targets)                     |
 | `coupling.ca-own`          | Namespace Ca over its own declarations only           | count(dependents of this namespace)             |
 | `coupling.ce-own`          | Namespace Ce over its own declarations only           | count(dependencies of this namespace)           |
+| `coupling.cbo-own`         | Namespace CBO over its own declarations only          | count(namespaces coupled to this namespace)     |
 | `coupling.instability-own` | Instability of that own scope                         | Ce_own / (Ca_own + Ce_own)                      |
 
 > **Note:** A namespace that both declares classes and contains sub-namespaces
@@ -66,11 +67,16 @@ Coupling metrics measure dependencies between components. All collectors in this
 > as the class ones but measure this different quantity; they were not
 > calibrated separately.
 
-> **Note:** `CboRule` judges leaf namespaces only — those with no
-> sub-namespace among the run's namespaces. A parent's CBO is the subtree's and
-> grows with it, so the namespace thresholds do not model it; that includes a
-> namespace declaring classes beside its sub-namespaces. The value is still
-> published.
+> **Note:** `CboRule` judges a namespace on `coupling.cbo-own`, the same
+> count over the classes it declares itself, where a sub-namespace is a
+> namespace like any other (`CoupledNamespaces::ownCountFor()`). The subtree
+> value grows with the subtree, and its region depends on which sub-namespaces
+> the run holds, so a narrowed run and a whole one would judge the same code
+> differently; the own scope does not move with that. It is published only on a
+> namespace declaring a type the run analysed, which is the population of the
+> project fold (ADR 0080), and `min_class_count` counts that namespace's own
+> classes. The finding's direction reads `coupling.ca-own`/`coupling.ce-own`.
+> The subtree `coupling.cbo` is still published on every namespace.
 > `CboRule` decides whether there is a finding; `CboFindingText` words it —
 > the dominant direction, the message and the recommendation with a class's
 > top dependencies.

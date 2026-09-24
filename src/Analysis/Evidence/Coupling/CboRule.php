@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Coupling;
 
 use LogicException;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
@@ -31,11 +30,12 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * - Medium CBO (14-19): acceptable (warning)
  * - High CBO (>=20): tightly coupled, hard to isolate (error)
  *
- * Besides the published `coupling.cbo` (or `coupling.cbo-app` under
- * `scope: application`) value, also reads `coupling.ca` and `coupling.ce`
- * to describe the coupling direction in the message/recommendation, plus
- * `coupling.ce-framework` to report the excluded-framework-classes count
- * under the application scope.
+ * A class is judged on the published `coupling.cbo` (or `coupling.cbo-app`
+ * under `scope: application`), a namespace on `coupling.cbo-own`. Besides it
+ * the rule reads the Ca and Ce of the same scope (`coupling.ca`/`coupling.ce`,
+ * or their `-own` pair) to describe the coupling direction in the
+ * message/recommendation, plus `coupling.ce-framework` to report the
+ * excluded-framework-classes count under the application scope.
  *
  * @qmx-threshold coupling.cbo 22 -- Raw CBO 21: this hierarchical rule's own dependencies plus
  *                the per-rule channel, shape and judged-metric declarations every producer must
@@ -132,6 +132,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
                 JudgedMetrics::of(
                     MetricName::COUPLING_CBO,
                     MetricName::COUPLING_CBO_APP,
+                    MetricName::COUPLING_CBO_OWN,
                 ),
                 SymbolLevel::Class_,
                 SymbolLevel::Namespace_,
@@ -187,11 +188,15 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     }
 
     /**
-     * Judges leaf namespaces only. A parent's CBO is taken over its whole
-     * subtree (the region its Ca and Ce are counted over), so it grows with
-     * the subtree and the namespace thresholds do not model it; the value is
-     * still published. A namespace declaring classes beside sub-namespaces is
-     * a parent too: its number is the subtree's, not its own classes'.
+     * Judges every namespace on the coupling of its own declarations,
+     * `coupling.cbo-own`: the population a project fold reads, where each
+     * declaration belongs to exactly one namespace. The published
+     * `coupling.cbo` of a namespace is taken over its whole subtree, grows with
+     * it, and is not judged — nor is its region, which is the namespace alone
+     * or its subtree depending on which sub-namespaces the run holds. The own
+     * scope does not move with that, so neither does the verdict.
+     * `min_class_count` counts the namespace's own classes, for the same
+     * reason.
      *
      * @return list<Finding>
      */
@@ -201,14 +206,8 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             return [];
         }
         $findings = [];
-        $namespaces = iterator_to_array($context->metrics->all(SymbolLevel::Namespace_), false);
-        $parents = $this->parentNamespaces($namespaces);
 
-        foreach ($namespaces as $nsInfo) {
-            if (isset($parents[(string) $nsInfo->symbolPath->namespace])) {
-                continue;
-            }
-
+        foreach ($context->metrics->all(SymbolLevel::Namespace_) as $nsInfo) {
             $finding = $this->namespaceFinding($nsInfo, $context, $this->options->namespace);
             if ($finding !== null) {
                 $findings[] = $finding;
@@ -218,36 +217,12 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         return $findings;
     }
 
-    /**
-     * Every proper ancestor of a namespace in the run: exactly the namespaces
-     * with a sub-namespace beneath them. The global namespace is nobody's.
-     *
-     * @param list<SymbolInfo> $namespaces
-     *
-     * @return array<string, true>
-     */
-    private function parentNamespaces(array $namespaces): array
-    {
-        $parents = [];
-
-        foreach ($namespaces as $info) {
-            $namespace = (string) $info->symbolPath->namespace;
-
-            while (($separator = strrpos($namespace, '\\')) !== false) {
-                $namespace = substr($namespace, 0, $separator);
-                $parents[$namespace] = true;
-            }
-        }
-
-        return $parents;
-    }
-
     private function namespaceFinding(SymbolInfo $info, AnalysisContext $context, NamespaceCboOptions $options): ?Finding
     {
         $subject = $info->subject ?? MetricSubject::aggregate($info->symbolPath);
         $metrics = $context->metrics->get($info->symbolPath);
-        $classCount = (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0);
-        $cbo = $metrics->get(MetricName::COUPLING_CBO);
+        $classCount = (int) ($metrics->get(MetricName::SIZE_CLASS_COUNT) ?? 0);
+        $cbo = $metrics->get(MetricName::COUPLING_CBO_OWN);
         if ($classCount < $options->minClassCount || $cbo === null) {
             return null;
         }
@@ -278,8 +253,9 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         /** @var ClassCboOptions|NamespaceCboOptions $options */
         $options = $this->getEffectiveOptions($context, $options, $subject);
         $metrics = $context->metrics->get($subject->toSymbolPath());
-        $ca = (int) $metrics->require(MetricName::COUPLING_CA);
-        $ce = (int) $metrics->require(MetricName::COUPLING_CE);
+        // A namespace is judged on its own scope, so its direction is read there too.
+        $ca = (int) $metrics->require($presentation['namespaceLevel'] ? MetricName::COUPLING_CA_OWN : MetricName::COUPLING_CA);
+        $ce = (int) $metrics->require($presentation['namespaceLevel'] ? MetricName::COUPLING_CE_OWN : MetricName::COUPLING_CE);
 
         $severity = $options->getSeverity($cbo);
         if ($severity === null) {

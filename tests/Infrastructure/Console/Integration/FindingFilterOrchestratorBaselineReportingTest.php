@@ -22,8 +22,6 @@ use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
-use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
-use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
@@ -35,6 +33,7 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
+use Qualimetrix\Infrastructure\Console\ResolvedCheckScope;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
@@ -42,6 +41,7 @@ use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
+use Qualimetrix\Reporting\ReportProjectScope;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -304,11 +304,12 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
             $result,
             $input,
             $output,
-            $scopeResolution,
+            // Not a whole-project run, so the suppression-binding audit is not
+            // asked: it is not this file's subject.
+            new ResolvedCheckScope($scopeResolution, [], false, ReportProjectScope::narrowed([], [])),
             new FindingProjectionOptions(
                 baselinePath: \is_string($baselinePath) && $baselinePath !== '' ? $baselinePath : null,
             ),
-            AutoloadDevPolicy::Exclude,
         );
     }
 
@@ -332,7 +333,6 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
             $pipeline,
             new ErrorStream(),
             self::silentSuppressionAudit(),
-            new ProjectScopeCoverage(self::createStub(ComposerAutoloadPathReaderInterface::class)),
             self::createStub(ComposerAutoloadPathReaderInterface::class),
         );
     }

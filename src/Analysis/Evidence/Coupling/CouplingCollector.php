@@ -55,6 +55,7 @@ final class CouplingCollector implements GlobalContextCollectorInterface
             MetricName::COUPLING_CE_FRAMEWORK,
             MetricName::COUPLING_CA_OWN,
             MetricName::COUPLING_CE_OWN,
+            MetricName::COUPLING_CBO_OWN,
             MetricName::COUPLING_INSTABILITY_OWN,
         ];
     }
@@ -173,6 +174,11 @@ final class CouplingCollector implements GlobalContextCollectorInterface
                 aggregations: [],
             ),
             new MetricDefinition(
+                name: MetricName::COUPLING_CBO_OWN,
+                collectedAt: SymbolLevel::Namespace_,
+                aggregations: [],
+            ),
+            new MetricDefinition(
                 name: MetricName::COUPLING_INSTABILITY_OWN,
                 collectedAt: SymbolLevel::Namespace_,
                 aggregations: [],
@@ -287,12 +293,18 @@ final class CouplingCollector implements GlobalContextCollectorInterface
      * and B depends on A, CBO(A) = 1 (not 2), mirroring the class-level C&K definition.
      * It is taken over the same region as the published Ca and Ce: the subtree
      * (see {@see CoupledNamespaces}).
+     *
+     * `coupling.cbo-own` is the same count over the namespace's own
+     * declarations, published only on a namespace declaring a type the run
+     * analysed: a namespace with no declarations of its own is no package, and
+     * a 0 would read as a measured one.
      */
     private function computeNamespaceMetrics(
         DependencyGraphInterface $graph,
         MetricRepositoryInterface $repository,
     ): void {
         $coupledNamespaces = CoupledNamespaces::of($graph);
+        $declaring = $this->namespacesDeclaringAnAnalysedType($graph, $repository);
 
         foreach ($graph->getAllNamespaces() as $symbolPath) {
             // Skip namespaces not in the repository (e.g. vendor namespaces)
@@ -316,8 +328,31 @@ final class CouplingCollector implements GlobalContextCollectorInterface
                 ->with(MetricName::COUPLING_CE_OWN, $ownCe)
                 ->with(MetricName::COUPLING_INSTABILITY_OWN, $this->computeInstability($ownCa, $ownCe));
 
+            $namespace = $symbolPath->namespace ?? '';
+            if (isset($declaring[$namespace])) {
+                $metrics = $metrics->with(MetricName::COUPLING_CBO_OWN, $coupledNamespaces->ownCountFor($namespace));
+            }
+
             $repository->add($symbolPath, $metrics, null, null);
         }
+    }
+
+    /**
+     * @return array<string, true>
+     */
+    private function namespacesDeclaringAnAnalysedType(
+        DependencyGraphInterface $graph,
+        MetricRepositoryInterface $repository,
+    ): array {
+        $declaring = [];
+
+        foreach ($graph->getAllClasses() as $class) {
+            if ($class->namespace !== null && $repository->has($class)) {
+                $declaring[$class->namespace] = true;
+            }
+        }
+
+        return $declaring;
     }
 
     /**

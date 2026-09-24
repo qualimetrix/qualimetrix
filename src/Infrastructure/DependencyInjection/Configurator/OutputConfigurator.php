@@ -375,7 +375,6 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference($findingProjector),
                 new Reference(ErrorStream::class),
                 new Reference('Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit'),
-                new Reference(ProjectScopeCoverage::class),
                 new Reference(ComposerAutoloadPathReaderInterface::class),
             ]);
 

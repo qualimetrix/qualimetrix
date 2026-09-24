@@ -19,10 +19,23 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
  * truncated to the region's depth: a leaf's answer then stays the one it had
  * before regions were introduced, and only parent namespaces, which used to
  * answer 0, move.
+ *
+ * The own scope is the same count over the declarations of exactly one
+ * namespace, where a sub-namespace is outside like any other: the scope the
+ * graph's own Ca and Ce are counted over. It does not depend on which other
+ * namespaces the run holds, which the subtree does — a namespace's region
+ * shrinks to itself when its sub-namespaces are left out of the run.
  */
 final readonly class CoupledNamespaces
 {
-    /** @param array<string, array<string, true>> $byNamespace */
+    /**
+     * One row per namespace, both scopes together, as the graph keeps its Ca
+     * and Ce: held apart, the two are one lookup away from being paired
+     * across namespaces. `subtree` holds the namespaces the region is coupled
+     * to, `own` those the namespace's own declarations are.
+     *
+     * @param array<string, array{subtree?: array<string, true>, own?: array<string, true>}> $byNamespace
+     */
     private function __construct(private array $byNamespace) {}
 
     /**
@@ -41,6 +54,8 @@ final readonly class CoupledNamespaces
                 if ($sourceNs !== $targetNs) {
                     $coupled = self::withCrossings($coupled, $sourceNs, $targetNs);
                     $coupled = self::withCrossings($coupled, $targetNs, $sourceNs);
+                    $coupled[$sourceNs]['own'][$targetNs] = true;
+                    $coupled[$targetNs]['own'][$sourceNs] = true;
                 }
             }
         }
@@ -51,21 +66,27 @@ final readonly class CoupledNamespaces
     /** How many namespaces the region rooted at `$namespace` is coupled to. */
     public function countFor(string $namespace): int
     {
-        return \count($this->byNamespace[$namespace] ?? []);
+        return \count($this->byNamespace[$namespace]['subtree'] ?? []);
+    }
+
+    /** How many namespaces the declarations of exactly `$namespace` are coupled to. */
+    public function ownCountFor(string $namespace): int
+    {
+        return \count($this->byNamespace[$namespace]['own'] ?? []);
     }
 
     /**
      * Couples every region holding `$near` but not `$far` to `$far`.
      *
-     * @param array<string, array<string, true>> $coupled
+     * @param array<string, array{subtree?: array<string, true>, own?: array<string, true>}> $coupled
      *
-     * @return array<string, array<string, true>>
+     * @return array<string, array{subtree?: array<string, true>, own?: array<string, true>}>
      */
     private static function withCrossings(array $coupled, string $near, string $far): array
     {
         foreach (self::regionsContaining($near) as $region) {
             if (!self::isInsideRegion($far, $region)) {
-                $coupled[$region][$far] = true;
+                $coupled[$region]['subtree'][$far] = true;
             }
         }
 

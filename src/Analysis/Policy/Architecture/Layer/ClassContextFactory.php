@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\ClassLikeHandler;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy;
+use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
@@ -77,6 +78,13 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * {@code suffix} are answerable from the FQN and still fire; the three
  * graph-backed criteria refuse rather than report a non-match, which is the
  * difference between this mode and the bug it used to hide.
+ *
+ * @qmx-threshold coupling.instability warning=0.81 -- Ca=2, Ce=8 is exactly 0.800 against an
+ *                inclusive 0.800 ceiling. The eighth efferent edge is `PhpBuiltinClassRegistry`, which
+ *                gives a PHP class the one spelling layer criteria are compared in; it is a static
+ *                Core table nothing here can make less stable, and moving the call behind another
+ *                class of this capability would only trade it for an edge to that class. 0.81 still
+ *                reports the next efferent edge (Ce=9, 0.818).
  */
 final class ClassContextFactory
 {
@@ -210,16 +218,20 @@ final class ClassContextFactory
             return $this->contextCache[$cacheKey];
         }
 
-        $shortName = self::deriveShortName($fqn);
-
         if ($this->graph === null) {
-            return $this->contextCache[$cacheKey] = new ClassContext($fqn, $shortName, graphBacked: false);
+            return $this->contextCache[$cacheKey] = new ClassContext($fqn, self::deriveShortName($fqn), graphBacked: false);
         }
 
         if ($class->type === null || $class->type === '') {
-            return $this->contextCache[$cacheKey] = new ClassContext($fqn, $shortName);
+            return $this->contextCache[$cacheKey] = new ClassContext($fqn, self::deriveShortName($fqn));
         }
 
+        // PHP class names are case-insensitive and criteria are compared by
+        // exact string, so a class PHP declares is named — here and at both
+        // ends of every declaration edge — in the one spelling criteria are
+        // stored in (LayerCriterionNormalizer::normalizeFqnList()).
+        $fqn = PhpBuiltinClassRegistry::spelling($fqn);
+        $shortName = self::deriveShortName($fqn);
         $this->ensureMapsBuilt();
 
         // The subject itself is the first step of the walk. When the run never
@@ -286,7 +298,8 @@ final class ClassContextFactory
                 continue;
             }
 
-            $byType[$dependency->type->name][$sourceFqn][] = $targetFqn;
+            $sourceFqn = PhpBuiltinClassRegistry::spelling($sourceFqn);
+            $byType[$dependency->type->name][$sourceFqn][] = PhpBuiltinClassRegistry::spelling($targetFqn);
             if ($dependency->interfaceExtends) {
                 $interfaceSources[$sourceFqn] = true;
             }

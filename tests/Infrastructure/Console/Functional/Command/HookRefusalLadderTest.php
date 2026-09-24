@@ -222,6 +222,32 @@ final class HookRefusalLadderTest extends TestCase
         self::assertFileDoesNotExist($this->hookPath());
     }
 
+    /**
+     * The move into place, which the temporary-file case above never reaches.
+     *
+     * A directory at the hook path is read as an empty hook, and an empty
+     * backup beside it counts as already holding it, so `--force` goes on to
+     * the write and only `rename()` over the directory can fail.
+     */
+    #[Test]
+    public function itRefusesAHookItCannotMoveIntoPlaceWithTheSystemsReason(): void
+    {
+        mkdir($this->hookPath());
+        touch($this->hookPath() . '/keep-me');
+        touch($this->hookPath() . '.backup');
+
+        $tester = $this->runWithoutDiagnostics('hook:install', ['--force' => true]);
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertStringContainsString(
+            \sprintf('Failed to write hook: %s: ', $this->hookPath()),
+            $tester->getErrorOutput(),
+        );
+        self::assertMatchesRegularExpression('/: (Is a directory|Directory not empty)/', $tester->getErrorOutput());
+        self::assertFileExists($this->hookPath() . '/keep-me');
+        self::assertSame([], glob($this->hookPath() . '.tmp.*'), 'the temporary file is removed');
+    }
+
     #[Test]
     public function itRefusesABackupItCannotRestoreWithTheSystemsReason(): void
     {

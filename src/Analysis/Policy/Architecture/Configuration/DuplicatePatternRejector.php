@@ -7,7 +7,6 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 
@@ -32,8 +31,11 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
  * raw pattern would also be unreachable under declaration order.
  *
  * **Only an entry that takes every class its pattern names makes a later
- * occurrence unreachable.** Two kinds of entry take less, and neither owns the
- * pattern for this check:
+ * occurrence unreachable** — {@see MembershipSpec::ownsItsPatterns()}, the
+ * same predicate `architecture.potential-shadow` asks
+ * ({@see \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowing}),
+ * so a repeated pattern this check accepts is not then reported as a shadow on
+ * every run. Two kinds of entry take less, and neither owns the pattern:
  *
  * - One declaring {@code match: all} together with a non-empty non-pattern
  *   criterion (suffix / attributes / implements / extends) claims only the
@@ -91,7 +93,7 @@ final class DuplicatePatternRejector
 
         $seenInThisEntry = [];
         foreach ($membership->patterns as $pattern) {
-            $normalized = rtrim($pattern, '\\');
+            $normalized = MembershipSpec::patternIdentity($pattern);
             if (isset($seenInThisEntry[$normalized])) {
                 continue;
             }
@@ -111,17 +113,16 @@ final class DuplicatePatternRejector
      */
     private static function claimPattern(string $pattern, string $entryName, int $entryIndex, MembershipSpec $membership, array &$owners): void
     {
-        $narrows = self::narrowsByNonPatternCriteria($membership);
         $owner = $owners[$pattern] ?? null;
         if ($owner === null) {
-            if (!$narrows && $membership->exclude === null) {
+            if ($membership->ownsItsPatterns()) {
                 $owners[$pattern] = ['name' => $entryName, 'index' => $entryIndex];
             }
 
             return;
         }
 
-        if ($owner['name'] !== $entryName && !$narrows) {
+        if ($owner['name'] !== $entryName && !$membership->narrowsItsPatterns()) {
             self::refuseCollision($pattern, $owner, $entryName, $entryIndex);
         }
     }
@@ -144,28 +145,6 @@ final class DuplicatePatternRejector
                 $entryName,
             ),
         );
-    }
-
-    /**
-     * True when the entry declares {@code match: all} AND carries at least
-     * one non-empty non-pattern criterion (suffix / attributes / implements /
-     * extends). Such an entry only claims the subset of pattern matches that
-     * also satisfy the extra criteria — its patterns can legitimately overlap
-     * with siblings without rendering anyone unreachable.
-     *
-     * {@code match: any} entries never narrow: their patterns alone are
-     * sufficient to claim every match.
-     */
-    private static function narrowsByNonPatternCriteria(MembershipSpec $membership): bool
-    {
-        if ($membership->mode !== MatchMode::All) {
-            return false;
-        }
-
-        return $membership->suffix !== []
-            || $membership->attributes !== []
-            || $membership->implements !== []
-            || $membership->extends !== [];
     }
 
     /** Builds the refusal noise every throw site in this class shares: a position under the resolved document. */

@@ -18,13 +18,17 @@ final readonly class CredentialValue
     }
     /**
      * A translation, configuration or channel key such as `auth.password.reset`
-     * or `auth.password-reset`: every dot-separated segment starts with a letter
-     * or an underscore, and a hyphen joins words inside a segment. A JWT has the
-     * same dotted shape, but its header always encodes `{"` and so starts with `eyJ`.
+     * or `auth.password-reset`: every dot-separated segment is either a code
+     * identifier or lowercase letter-only words joined by hyphens. A hyphenated
+     * segment with a capital or a digit (`Summer-2024`, `abc123-def456`) is the
+     * shape of a password or a key, not of a name. A JWT has the identifier
+     * shape, but its header always encodes `{"` and so starts with `eyJ`.
      */
     private function dotIdentifier(string $value): bool
     {
-        return (bool) preg_match('/^[a-zA-Z_][\w-]*(\.[a-zA-Z_][\w-]*)+$/', $value) && !str_starts_with($value, 'eyJ');
+        $segment = '(?:[a-zA-Z_]\w*|[a-z]+(?:-[a-z]+)+)';
+
+        return (bool) preg_match("/^{$segment}(?:\\.{$segment})+$/", $value) && !str_starts_with($value, 'eyJ');
     }
     /**
      * Words of a message are separated by whitespace. Hyphens, dots, slashes

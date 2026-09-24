@@ -83,7 +83,11 @@ state becomes the `Reporting\ReportProjectScope` `ResultPresenter` adds to the
 report — naming, on a `Narrowed` run, the uncovered targets and
 `ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS` as not judged. A rule that must
 stay quiet on a slice, the warning about that slice and the report's statement
-of it cannot disagree. The measurement's pruned targets —
+of it cannot disagree. The suppression audit reads the same answer rather than
+measuring again: `FindingFilterOrchestrator::valueScope()` builds Finding's
+per-value `ValueScopeJudgement` once from `ResolvedCheckScope` — `null` on a
+narrowed run — and both the audit's findings and the values it skipped, which
+`projectScope()` adds to the report's scope, are read from it. The measurement's pruned targets —
 declared entries under a `vendor`, `node_modules` or `.git` directory, which are
 neither analysed by default nor counted — get a warning line of their own,
 independent of coverage: a whole-project run can still have dropped them.

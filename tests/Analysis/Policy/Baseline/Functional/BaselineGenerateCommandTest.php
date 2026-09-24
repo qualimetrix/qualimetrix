@@ -134,8 +134,9 @@ final class BaselineGenerateCommandTest extends TestCase
 
         $tester = $this->execute(['--force' => true]);
 
-        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertStringContainsString('not a regular file', $tester->getDisplay());
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString('not a regular file', $tester->getErrorOutput());
         self::assertTrue(is_link($this->baselinePath));
         self::assertSame($target, readlink($this->baselinePath));
     }
@@ -150,11 +151,59 @@ final class BaselineGenerateCommandTest extends TestCase
 
         $tester = $this->execute(['--force' => true]);
 
-        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertStringContainsString('not a regular file', $tester->getDisplay());
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString('not a regular file', $tester->getErrorOutput());
         self::assertTrue(is_link($this->baselinePath));
         self::assertSame($target, readlink($this->baselinePath));
         self::assertSame($contents, file_get_contents($target));
+    }
+
+    /**
+     * A destination `--force` cannot snapshot is refused as input, with the
+     * system's reason and before the analysis — not a PHP warning on stdout
+     * and an internal error.
+     */
+    #[Test]
+    public function itRefusesToForceOverAnUnreadableFileAsInput(): void
+    {
+        file_put_contents($this->baselinePath, 'do not touch');
+        chmod($this->baselinePath, 0o000);
+
+        if (is_readable($this->baselinePath)) {
+            chmod($this->baselinePath, 0o644);
+            self::markTestSkipped('The process reads a file with no permissions (running as root).');
+        }
+
+        $measured = false;
+
+        try {
+            $tester = $this->execute(['--force' => true], null, static function () use (&$measured): void {
+                $measured = true;
+            });
+        } finally {
+            chmod($this->baselinePath, 0o644);
+        }
+
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString('cannot be read', $tester->getErrorOutput());
+        self::assertStringContainsString('Permission denied', $tester->getErrorOutput());
+        self::assertFalse($measured, 'The run was measured before the unreadable destination was refused.');
+        self::assertSame('do not touch', file_get_contents($this->baselinePath));
+    }
+
+    #[Test]
+    public function itRefusesToForceOverADirectoryAsInput(): void
+    {
+        mkdir($this->baselinePath);
+
+        $tester = $this->execute(['--force' => true]);
+
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString('not a regular file', $tester->getErrorOutput());
+        self::assertDirectoryExists($this->baselinePath);
     }
 
     /**

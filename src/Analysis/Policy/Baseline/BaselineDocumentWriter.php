@@ -78,6 +78,37 @@ final readonly class BaselineDocumentWriter
     }
 
     /**
+     * The token {@see replace()} compares against, taken from a destination the
+     * caller means to overwrite without having loaded it.
+     *
+     * A symbolic link or any other non-regular entry has no snapshot the guard
+     * can compare — {@see assertUnchanged()} refuses a link — so it is refused
+     * here, before the caller spends a run on a write that cannot happen.
+     *
+     * @throws ConfigurationRefusal if the destination is not a readable regular file
+     */
+    public static function snapshot(string $path): string
+    {
+        if (is_link($path) || !is_file($path)) {
+            throw ConfigurationRefusal::aboutBaselineFileDocument(
+                $path,
+                "Baseline destination {$path} exists but is not a regular file; refusing to replace it safely.",
+            );
+        }
+
+        [$hash, $reason] = self::attempt(static fn(): string|false => hash_file('sha256', $path));
+
+        if ($hash === false) {
+            throw ConfigurationRefusal::aboutBaselineFileDocument(
+                $path,
+                "Baseline destination {$path} cannot be read, so its replacement cannot be guarded: {$reason}",
+            );
+        }
+
+        return $hash;
+    }
+
+    /**
      * Writes a file the caller read as absent, and refuses if it has since
      * appeared.
      *

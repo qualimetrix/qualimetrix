@@ -85,7 +85,7 @@ YAML);
     /**
      * 99 and 100 copies of one class exhausted a 128M limit while blocks
      * were kept per pair of copies, and 101 copies were skipped without a
-     * trace; every one of these runs must now complete and report the copies.
+     * trace; every one of these runs must now complete and report each copy.
      *
      * @return iterable<string, array{int}>
      */
@@ -110,13 +110,17 @@ YAML);
 
         self::assertSame(0, $exitCode, $stderr . "\n" . $stdout);
 
-        /** @var array{coverage?: array{complete?: bool}, violations?: list<array{rule?: string, message?: string}>} $report */
+        /** @var array{coverage?: array{complete?: bool}, violations?: list<array{rule?: string, file?: string, message?: string}>} $report */
         $report = json_decode($stdout, true, flags: \JSON_THROW_ON_ERROR);
         self::assertTrue($report['coverage']['complete'] ?? false, $stdout);
         $findings = $report['violations'] ?? [];
-        self::assertCount(1, $findings, $stdout);
-        self::assertSame('duplication.clone', $findings[0]['rule'] ?? null);
-        self::assertStringContainsString("{$copies} occurrences", $findings[0]['message'] ?? '');
+        self::assertCount($copies, $findings, $stdout);
+        self::assertSame($copies, \count(array_unique(array_column($findings, 'file'))), 'one finding on each copy');
+
+        foreach ($findings as $finding) {
+            self::assertSame('duplication.clone', $finding['rule'] ?? null);
+            self::assertStringContainsString("{$copies} occurrences", $finding['message'] ?? '');
+        }
     }
 
     private function copiedClass(string $className): string

@@ -55,15 +55,15 @@ final class CouplingCollectorTest extends TestCase
     #[Test]
     public function itProvidesTheCouplingMetricNames(): void
     {
-        self::assertSame(['coupling.ca', 'coupling.ce', 'coupling.cbo', 'coupling.instability', 'coupling.ce-packages', 'coupling.cbo-app', 'coupling.ce-framework', 'coupling.ca-own', 'coupling.ce-own', 'coupling.instability-own'], $this->collector->provides());
+        self::assertSame(['coupling.ca', 'coupling.ce', 'coupling.cbo', 'coupling.instability', 'coupling.ce-packages', 'coupling.cbo-app', 'coupling.ce-framework', 'coupling.ca-own', 'coupling.ce-own', 'coupling.cbo-own', 'coupling.instability-own'], $this->collector->provides());
     }
 
     #[Test]
-    public function itDeclaresTenMetricDefinitionsWithTheirAggregationStrategies(): void
+    public function itDeclaresElevenMetricDefinitionsWithTheirAggregationStrategies(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 
-        self::assertCount(10, $definitions);
+        self::assertCount(11, $definitions);
 
         // ca metric
         $ca = $definitions[0];
@@ -150,7 +150,7 @@ final class CouplingCollectorTest extends TestCase
         // the own-scope namespace metrics, which no level aggregates: the pair
         // exists so a parent namespace can answer for its own declarations as
         // well as for its subtree, and only distance folds up from there.
-        foreach ([7 => 'coupling.ca-own', 8 => 'coupling.ce-own', 9 => 'coupling.instability-own'] as $index => $name) {
+        foreach ([7 => 'coupling.ca-own', 8 => 'coupling.ce-own', 9 => 'coupling.cbo-own', 10 => 'coupling.instability-own'] as $index => $name) {
             $own = $definitions[$index];
             self::assertSame($name, $own->name);
             self::assertSame(SymbolLevel::Namespace_, $own->collectedAt);
@@ -717,6 +717,65 @@ final class CouplingCollectorTest extends TestCase
         self::assertSame(1, $metrics->get('coupling.ce-own'));
         self::assertSame(1, $metrics->get('coupling.ca-own'));
         self::assertEqualsWithDelta(0.5, $metrics->get('coupling.instability-own'), 0.0001);
+    }
+
+    /**
+     * The own CBO of a namespace counts its sub-namespace as a namespace like
+     * any other, which the subtree region cannot: the region swallows it when
+     * the run holds it and not when the run does not, and the verdict on the
+     * namespace must not move with that. A namespace declaring nothing of its
+     * own gets no own CBO at all.
+     */
+    #[Test]
+    public function itPublishesAnOwnCboThatCountsTheSubNamespaceAsAnotherNamespace(): void
+    {
+        $deps = [
+            $this->dep('App\\Svc\\S', 'Ext\\Z'),
+            $this->dep('App\\Svc\\S', 'App\\Svc\\Exception\\Oops'),
+            $this->dep('App\\Svc\\Exception\\Oops', 'Ext2\\Q'),
+        ];
+
+        $graph = $this->realGraph($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Svc\\S');
+        $this->registerClass($repository, 'App\\Svc\\Exception\\Oops');
+        foreach (['App', 'App\\Svc', 'App\\Svc\\Exception'] as $namespace) {
+            $this->registerNamespace($repository, $namespace);
+        }
+
+        $this->collector->calculate($graph, $repository);
+
+        $svc = $repository->get(SymbolPath::forNamespace('App\\Svc'));
+        // Subtree: Ext and Ext2; the sub-namespace is inside.
+        self::assertSame(2, $svc->get('coupling.cbo'));
+        // Own: Ext and the sub-namespace; Ext2 is the sub-namespace's.
+        self::assertSame(2, $svc->get('coupling.cbo-own'));
+        self::assertSame(2, $repository->get(SymbolPath::forNamespace('App\\Svc\\Exception'))->get('coupling.cbo-own'));
+        self::assertNull($repository->get(SymbolPath::forNamespace('App'))->get('coupling.cbo-own'));
+    }
+
+    /**
+     * Left out of the run, the sub-namespace is still the far end of an edge,
+     * so the own CBO is the one the whole run publishes, while the subtree
+     * value moves.
+     */
+    #[Test]
+    public function itPublishesTheSameOwnCboWhenTheSubNamespaceIsLeftOutOfTheRun(): void
+    {
+        $deps = [
+            $this->dep('App\\Svc\\S', 'Ext\\Z'),
+            $this->dep('App\\Svc\\S', 'App\\Svc\\Exception\\Oops'),
+        ];
+
+        $graph = $this->realGraph($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Svc\\S');
+        $this->registerNamespace($repository, 'App\\Svc');
+
+        $this->collector->calculate($graph, $repository);
+
+        $svc = $repository->get(SymbolPath::forNamespace('App\\Svc'));
+        self::assertSame(2, $svc->get('coupling.cbo-own'));
     }
 
     /**

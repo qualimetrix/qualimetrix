@@ -44,7 +44,7 @@ final readonly class CheckScopeResolver
             $state->coversProjectScope(),
             match ($state) {
                 ProjectScopeState::Covered => ReportProjectScope::covered(),
-                ProjectScopeState::Unknown => ReportProjectScope::unknown(ProjectScopeCoverage::UNKNOWN_SCOPE_UNJUDGED_CHANNELS),
+                ProjectScopeState::Unknown => ReportProjectScope::unknown(),
                 ProjectScopeState::Narrowed => ReportProjectScope::narrowed(
                     $measurement->uncoveredRoots,
                     ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS,

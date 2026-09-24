@@ -81,11 +81,11 @@ final class UnboundSuppressionIntegrationTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (['/src/Service.php', '/src/Deep/Old.php', '/composer.json', '/qmx.yaml'] as $file) {
+        foreach (['/src/Service.php', '/src/Deep/Old.php', '/src/Deep/Loose.php', '/composer.json', '/qmx.yaml'] as $file) {
             @unlink($this->fixture . $file);
         }
 
-        foreach (['/src/Deep', '/src', ''] as $dir) {
+        foreach (['/src/Deep', '/src', '/tests/Unit', '/tests', ''] as $dir) {
             @rmdir($this->fixture . $dir);
         }
     }
@@ -244,8 +244,9 @@ final class UnboundSuppressionIntegrationTest extends TestCase
      * A project with no readable production autoload has no PSR-4 map, so a
      * namespace value cannot be located: `Tests` may well be declared under a
      * directory `qmx check src` never read, and "matched nothing" would be a
-     * guess. The namespace value is left unjudged and the report says so; the
-     * path value beside it keeps its on-disk anchor and is still judged.
+     * guess. The namespace value is left unjudged and the report names it and
+     * its channel — only its channel, since no per-rule value was configured;
+     * the path value beside it keeps its on-disk anchor and is still judged.
      */
     #[Test]
     public function itLeavesANamespaceValueUnjudgedWhereTheProjectDeclaresNoAutoload(): void
@@ -258,10 +259,8 @@ final class UnboundSuppressionIntegrationTest extends TestCase
         self::assertSame([], $this->onChannel($tester, UnboundSuppressionOptions::UNMATCHED_NAMESPACE));
         self::assertCount(1, $this->onChannel($tester, UnboundSuppressionOptions::UNMATCHED_PATH));
         self::assertSame('unknown', $scope['state'] ?? null);
-        self::assertSame(
-            [UnboundSuppressionOptions::UNMATCHED_NAMESPACE, UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER],
-            $scope['unjudgedChannels'] ?? null,
-        );
+        self::assertSame([UnboundSuppressionOptions::UNMATCHED_NAMESPACE], $scope['unjudgedChannels'] ?? null);
+        self::assertSame([['option' => 'suppress_namespaces', 'pattern' => 'subtree:Tests']], $scope['unjudgedValues'] ?? null);
     }
 
     /**
@@ -298,7 +297,10 @@ final class UnboundSuppressionIntegrationTest extends TestCase
         $tester = $this->check("suppress_namespaces:\n  - {subtree: Tests}\n");
 
         self::assertCount(1, $this->onChannel($tester, UnboundSuppressionOptions::UNMATCHED_NAMESPACE));
-        self::assertSame(['state' => 'covered', 'uncoveredAutoloadTargets' => [], 'unjudgedChannels' => []], $this->projectScope($tester));
+        self::assertSame(
+            ['state' => 'covered', 'uncoveredAutoloadTargets' => [], 'unjudgedChannels' => [], 'unjudgedValues' => []],
+            $this->projectScope($tester),
+        );
     }
 
     /** A narrowed run still judges no value of either shape. */
@@ -326,10 +328,10 @@ final class UnboundSuppressionIntegrationTest extends TestCase
 
     /**
      * A finding about `suppress_paths` must not be removed by a sibling
-     * `suppress_paths` entry that does bind: the channels are declared
-     * project-scoped, and the global path and namespace filters exempt exactly
-     * those. Here `src` suppresses everything the code produced, and the
-     * report still carries the complaint about `src/NoSuchDir`.
+     * `suppress_paths` entry that does bind: the findings sit on the project,
+     * which has no file for a path pattern to match and no namespace for a
+     * namespace pattern to compare. Here `src` suppresses everything the code
+     * produced, and the report still carries the complaint about `src/NoSuchDir`.
      */
     #[Test]
     public function itDoesNotSuppressItsOwnFindingWithTheSuppressionItReportsOn(): void
@@ -341,6 +343,135 @@ final class UnboundSuppressionIntegrationTest extends TestCase
 
         self::assertCount(1, $findings);
         self::assertStringContainsString('src/NoSuchDir', (string) ($findings[0]['message'] ?? ''));
+    }
+
+    /**
+     * `(project)` is what the project aggregate shows where a namespace would
+     * be, not a namespace. Compared as one, it removed every project-level
+     * finding — this channel's report about `Sample\Gone` included — while the
+     * audit stayed silent about the pattern that did it. Uncompared, it binds
+     * to nothing and is reported like any other miss.
+     */
+    #[Test]
+    public function itReportsTheProjectDisplayValueAsANamespaceThatNamedNothing(): void
+    {
+        $tester = $this->check("suppress_namespaces:\n  - {exact: '(project)'}\n  - {subtree: Sample\\Gone}\n");
+        $reported = array_map(
+            static fn(array $finding): string => (string) ($finding['message'] ?? ''),
+            $this->onChannel($tester, UnboundSuppressionOptions::UNMATCHED_NAMESPACE),
+        );
+
+        self::assertCount(2, $reported);
+        self::assertStringContainsString('"exact:(project)"', implode("\n", $reported));
+        self::assertStringContainsString('Sample\\Gone', implode("\n", $reported));
+    }
+
+    /**
+     * A `covered` run still skips a value naming a place it did not analyse:
+     * `tests/` is declared only under `autoload-dev`, so `check src` covers
+     * the project and never looks at `tests/Legacy`. The skip was silent — the
+     * report read `covered` with nothing to tell "judged and clean" from "not
+     * judged". Its twin under `src/` is judged on the same run, reported on
+     * its channel and absent from the list.
+     */
+    #[Test]
+    public function itNamesEverySkippedValueOnACoveredRun(): void
+    {
+        $this->declareDevelopmentTests();
+
+        $tester = $this->check(
+            "suppress_paths:\n  - {subtree: tests/Legacy}\n  - {subtree: src/Gone}\n"
+            . "rules:\n  complexity.ccn:\n    suppress_namespaces: [{subtree: Sample\\Tests\\Unit}]\n",
+        );
+        $scope = $this->projectScope($tester);
+
+        self::assertSame('covered', $scope['state'] ?? null);
+        self::assertSame(
+            [
+                ['option' => 'suppress_paths', 'pattern' => 'subtree:tests/Legacy'],
+                ['option' => 'rules.complexity.ccn.suppress_namespaces', 'pattern' => 'subtree:Sample\\Tests\\Unit'],
+            ],
+            $scope['unjudgedValues'] ?? null,
+        );
+        self::assertSame(
+            [UnboundSuppressionOptions::UNMATCHED_PATH, UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER],
+            $scope['unjudgedChannels'] ?? null,
+        );
+
+        $reported = $this->onChannel($tester, UnboundSuppressionOptions::UNMATCHED_PATH);
+        self::assertCount(1, $reported);
+        self::assertStringContainsString('src/Gone', (string) ($reported[0]['message'] ?? ''));
+    }
+
+    /** The same run as a line in a human format, which says nothing about a `covered` run otherwise. */
+    #[Test]
+    public function itSaysOnACoveredRunWhichValuesWereSkipped(): void
+    {
+        $this->declareDevelopmentTests();
+
+        $text = $this->check("suppress_paths:\n  - {subtree: tests/Legacy}\n", format: 'text')->getDisplay();
+
+        self::assertStringContainsString('suppress_paths "subtree:tests/Legacy"', $text);
+    }
+
+    /**
+     * The per-rule door to the same value. The ledger compared `(project)` as
+     * a namespace too, so `rules.health.typing.suppress_namespaces` removed the
+     * project-level `health.typing` finding while this channel, judging the
+     * pattern against the declared namespaces, reported that it suppressed
+     * nothing — two statements about one pattern, one of them false.
+     */
+    #[Test]
+    public function itKeepsAProjectFindingThatAPerRuleNamespacePatternCannotName(): void
+    {
+        $this->writeUntypedClass();
+
+        $tester = $this->check("rules:\n  health.typing:\n    suppress_namespaces:\n      - {exact: '(project)'}\n");
+        $ledger = implode("\n", array_map(
+            static fn(array $finding): string => (string) ($finding['message'] ?? ''),
+            $this->onChannel($tester, UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER),
+        ));
+
+        self::assertContains('(project)', $this->symbolsOn($tester, 'health.typing'), 'Nothing may remove what the pattern cannot name.');
+        self::assertStringContainsString('"exact:(project)" configured under rule "health.typing"', $ledger);
+    }
+
+    /**
+     * A regex broad enough to match `(project)` removed the project finding
+     * the same way. It still removes every finding whose namespace it names;
+     * the run does not cover the project root, so the regex itself is not
+     * judged, and the report says so rather than calling it bound.
+     */
+    #[Test]
+    public function itKeepsAProjectFindingUnderABroadPerRuleRegex(): void
+    {
+        $this->writeUntypedClass();
+
+        $tester = $this->check("rules:\n  health.typing:\n    suppress_namespaces:\n      - {regex: '.*'}\n");
+
+        self::assertSame(['(project)'], $this->symbolsOn($tester, 'health.typing'));
+        self::assertSame([], $this->onChannel($tester, UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER));
+        self::assertSame(
+            [['option' => 'rules.health.typing.suppress_namespaces', 'pattern' => 'regex:.*']],
+            $this->projectScope($tester)['unjudgedValues'] ?? null,
+        );
+    }
+
+    /**
+     * The legitimate neighbour: a per-rule pattern naming the project's own
+     * namespace still removes every finding under it, binds, and is judged,
+     * so nothing reports it.
+     */
+    #[Test]
+    public function itStillRemovesNamespaceFindingsUnderAPerRulePattern(): void
+    {
+        $this->writeUntypedClass();
+
+        $tester = $this->check("rules:\n  health.typing:\n    suppress_namespaces:\n      - {subtree: Sample}\n");
+
+        self::assertSame(['(project)'], $this->symbolsOn($tester, 'health.typing'));
+        self::assertSame([], $this->onChannel($tester, UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER));
+        self::assertSame([], $this->projectScope($tester)['unjudgedValues'] ?? null);
     }
 
     /**
@@ -482,6 +613,54 @@ final class UnboundSuppressionIntegrationTest extends TestCase
         }
 
         return $matched;
+    }
+
+    /** A `tests/` tree declared only for development, which `check src` covers the project without. */
+    private function declareDevelopmentTests(): void
+    {
+        mkdir($this->fixture . '/tests/Unit', 0o755, true);
+        file_put_contents(
+            $this->fixture . '/composer.json',
+            json_encode([
+                'autoload' => ['psr-4' => ['Sample\\' => 'src/']],
+                'autoload-dev' => ['psr-4' => ['Sample\\Tests\\' => 'tests/']],
+            ], \JSON_THROW_ON_ERROR),
+        );
+    }
+
+    /**
+     * The fixture is fully typed, so it has no project-level finding for a
+     * suppression to remove; one untyped class gives `health.typing` one at
+     * every level.
+     */
+    private function writeUntypedClass(): void
+    {
+        file_put_contents($this->fixture . '/src/Deep/Loose.php', <<<'PHP'
+            <?php
+
+            namespace Sample\Deep;
+
+            class Loose
+            {
+                public $value;
+
+                public function value($argument)
+                {
+                    return $argument;
+                }
+            }
+            PHP);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function symbolsOn(CommandTester $tester, string $channel): array
+    {
+        return array_map(
+            static fn(array $finding): string => (string) ($finding['symbol'] ?? ''),
+            $this->onChannel($tester, $channel),
+        );
     }
 
     /**

@@ -276,9 +276,11 @@ final class ChannelCoverageTest extends TestCase
         $context = new AnalysisContext($repository);
 
         $findings = $rule->analyze($context);
-        self::assertCount(1, $findings);
+        self::assertCount(2, $findings, 'one finding on each copy');
 
-        self::assertDeclared($findings[0]->channel());
+        foreach ($findings as $finding) {
+            self::assertDeclared($finding->channel());
+        }
     }
 
     #[Test]

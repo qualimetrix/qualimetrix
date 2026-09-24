@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
+use Qualimetrix\Infrastructure\Logging\Contract\LogFileUnavailable;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -179,12 +180,46 @@ final class LoggerFactoryTest extends TestCase
         self::assertStringContainsString('Info message', $content);
     }
 
+    /**
+     * An empty `--log-file=` — typically an unset variable in a CI script —
+     * used to mean "no log file", and a blank one created a file named by the
+     * blank. Either way the run went on without the log that was asked for.
+     */
     #[Test]
-    public function itHandlesEmptyLogFilePath(): void
+    #[DataProvider('provideBlankLogFileCases')]
+    public function itRefusesABlankLogFilePath(string $logFile): void
+    {
+        $previous = (string) getcwd();
+        chdir($this->tempDir);
+
+        try {
+            (new LoggerFactory())->create(new BufferedOutput(), $logFile);
+            self::fail('A blank log file path was accepted');
+        } catch (LogFileUnavailable $unavailable) {
+            self::assertSame($logFile, $unavailable->path);
+            self::assertStringContainsString('leave the option out', $unavailable->reason);
+        } finally {
+            chdir($previous);
+        }
+
+        self::assertSame([], glob($this->tempDir . '/*'), 'nothing may be created for a blank path');
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function provideBlankLogFileCases(): iterable
+    {
+        yield 'empty' => [''];
+        yield 'space' => [' '];
+        yield 'tab and newline' => ["\t\n"];
+    }
+
+    /** The legitimate neighbour: no log file written is still no file logger, not a refusal. */
+    #[Test]
+    public function itWritesNoLogFileWhenNoneWasGiven(): void
     {
         $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
 
-        $logger = (new LoggerFactory())->create($output, '');
+        $logger = (new LoggerFactory())->create($output, null);
 
         $logger->info('Test');
         self::assertStringContainsString('Test', $output->fetch());

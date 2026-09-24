@@ -568,6 +568,15 @@ The collapse is stated here once. Do not re-derive it at a call site, and do not
 project a level back onto a declaration kind — a consumer that needs the kind
 reads it off the symbol it was handed.
 
+A holder of a canonical subject string alone — a baseline file keys its entries
+by it — asks `MetricSubject::levelOfCanonical(string): SymbolLevel`, which
+strips `DeclarationPath::CANONICAL_PREFIX`, reads the kind with
+`SymbolType::ofCanonical()` — the reverse of `SymbolType::canonicalPrefix()`,
+the one prefix table `SymbolPath::toCanonical()` writes with — and projects it
+here. A string no subject is
+written as is refused with `InvalidArgumentException`, never given a default
+level.
+
 ### MetricSubjectCodec
 
 `MetricSubjectCodec` is the canonical scalar wire grammar for metric subjects.

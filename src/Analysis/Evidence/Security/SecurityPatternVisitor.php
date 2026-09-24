@@ -24,8 +24,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrai
  *
  * Shared superglobal analysis logic lives in {@see SuperglobalAnalyzer}.
  *
- * One SQL injection finding is reported per outermost query-building node:
- * the queries nested in a node that already reported are not reported again.
+ * One SQL injection finding is reported per query: a query nested in a
+ * reported one is reported again only for a superglobal read the enclosing
+ * query did not reach, such as a subquery built inside a call.
  */
 final class SecurityPatternVisitor extends NodeVisitorAbstract implements DeclarationIndexAwareInterface, ResettableVisitorInterface
 {
@@ -35,11 +36,13 @@ final class SecurityPatternVisitor extends NodeVisitorAbstract implements Declar
     private array $locations = [];
 
     /**
-     * The node whose SQL injection finding is being traversed. A superglobal
-     * search looks through concatenation and interpolation, so every query
-     * nested in it would report the same read again.
+     * Object ids of the superglobal reads a reported query reached. A
+     * superglobal search looks through concatenation and interpolation, so a
+     * query nested in a reported one reaches the same reads again.
+     *
+     * @var array<int, true>
      */
-    private ?Node $reportedSqlNode = null;
+    private array $reportedReads = [];
 
     private readonly SqlInjectionDetector $sqlInjectionDetector;
     private readonly XssDetector $xssDetector;
@@ -56,7 +59,7 @@ final class SecurityPatternVisitor extends NodeVisitorAbstract implements Declar
     public function reset(): void
     {
         $this->locations = [];
-        $this->reportedSqlNode = null;
+        $this->reportedReads = [];
         $this->resetVisitorMethodContext();
     }
 
@@ -77,10 +80,6 @@ final class SecurityPatternVisitor extends NodeVisitorAbstract implements Declar
 
     public function leaveNode(Node $node): ?int
     {
-        if ($node === $this->reportedSqlNode) {
-            $this->reportedSqlNode = null;
-        }
-
         $this->leaveVisitorMethodContext($node);
 
         return null;
@@ -109,15 +108,16 @@ final class SecurityPatternVisitor extends NodeVisitorAbstract implements Declar
 
     private function detectSqlInjection(Node $node): void
     {
-        if ($this->reportedSqlNode !== null) {
+        $locations = $this->sqlInjectionDetector->detect($node, $this->reportedReads);
+        if ($locations === []) {
             return;
         }
 
-        $locations = $this->sqlInjectionDetector->detect($node);
-        if ($locations !== []) {
-            $this->reportedSqlNode = $node;
-            $this->addLocations($locations);
+        foreach ($this->sqlInjectionDetector->reads($node) as $read) {
+            $this->reportedReads[spl_object_id($read)] = true;
         }
+
+        $this->addLocations($locations);
     }
 
     /**

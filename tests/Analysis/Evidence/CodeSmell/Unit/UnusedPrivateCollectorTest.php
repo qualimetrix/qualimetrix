@@ -1659,6 +1659,65 @@ PHP);
     }
 
     #[Test]
+    public function itCountsALiteralCallableArrayAsAUsage(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class Normalizer
+{
+    public function run(array $data): array
+    {
+        $byThis = array_map([$this, 'normalize'], $data);
+        $bySelf = array_map([self::class, 'Walk'], $data);
+        $byStatic = \Closure::fromCallable([static::class, 'visit']);
+        usort($data, array($this, 'compare'));
+        $byMagic = [__CLASS__, 'fold'];
+
+        return [$byThis, $bySelf, $byStatic, $data, $byMagic];
+    }
+
+    private function normalize(mixed $v): mixed { return \is_array($v) ? array_map([$this, 'normalize'], $v) : $v; }
+    private static function walk(mixed $v): mixed { return \is_array($v) ? self::walk($v) : $v; }
+    private static function visit(mixed $v): mixed { return $v; }
+    private function compare(int $a, int $b): int { return $a <=> $b; }
+    private static function fold(): int { return 0; }
+}
+PHP);
+
+        self::assertSame(0, $metrics->entryCount('code-smell.unused-private.method:App\Normalizer'));
+    }
+
+    #[Test]
+    public function itDoesNotCountACallableArrayWithAnotherReceiverOrADynamicName(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class Normalizer
+{
+    public function run(object $other, string $name, array $data): array
+    {
+        return [array_map([$other, 'foreign'], $data), array_map([$this, $name], $data), [$this, 'label', 'extra']];
+    }
+
+    private function foreign(mixed $v): mixed { return $v; }
+    private function label(): string { return 'x'; }
+    private function selfOnly(array $v): array { return array_map([$this, 'selfOnly'], $v); }
+}
+PHP);
+
+        self::assertSame(
+            [['line' => 12, 'name' => 'foreign'], ['line' => 13, 'name' => 'label'], ['line' => 14, 'name' => 'selfOnly']],
+            $metrics->entries('code-smell.unused-private.method:App\Normalizer'),
+        );
+    }
+
+    #[Test]
     public function itAnalyzesPrivateMembersOfEnums(): void
     {
         $metrics = $this->collectMetrics(<<<'PHP'

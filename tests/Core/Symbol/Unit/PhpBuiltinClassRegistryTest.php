@@ -136,4 +136,14 @@ final class PhpBuiltinClassRegistryTest extends TestCase
         self::assertNull(PhpBuiltinClassRegistry::canonicalName('App\\Exception'));
         self::assertNull(PhpBuiltinClassRegistry::canonicalName('\\Exception'), 'a leading separator is the caller\'s to strip');
     }
+
+    /** The spelling of a name PHP does not declare is the one it was written in, project or vendor. */
+    #[Test]
+    public function itSpellsAPhpClassAsTheListKeepsItAndAnyOtherNameAsWritten(): void
+    {
+        self::assertSame('IteratorAggregate', PhpBuiltinClassRegistry::spelling('iteratoraggregate'));
+        self::assertSame('Random\\Engine', PhpBuiltinClassRegistry::spelling('random\\engine'));
+        self::assertSame('App\\exception', PhpBuiltinClassRegistry::spelling('App\\exception'));
+        self::assertSame('Vendor\\Base', PhpBuiltinClassRegistry::spelling('Vendor\\Base'));
+    }
 }

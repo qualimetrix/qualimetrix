@@ -82,8 +82,12 @@ final class CodeDuplicationRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
+    /**
+     * Each copy is a finding of its own, located on that copy and naming the
+     * other one — so the file a copy lives in is where it is reported.
+     */
     #[Test]
-    public function itProducesAFindingDescribingADuplicateBlockAndItsOtherOccurrence(): void
+    public function itProducesAFindingOnEachCopyNamingTheOtherCopy(): void
     {
         $rule = $this->createRule();
 
@@ -105,20 +109,27 @@ final class CodeDuplicationRuleTest extends TestCase
 
         $findings = $rule->analyze($context);
 
-        self::assertCount(1, $findings);
+        self::assertCount(2, $findings);
 
-        $v = $findings[0];
-        self::assertSame('duplication.clone', $v->ruleName);
-        self::assertSame('src/A.php', $v->location->pathString());
-        self::assertSame(10, $v->location->line);
-        self::assertSame(Severity::Warning, $v->severity);
-        self::assertSame(16, $v->metricValue);
-        self::assertSame(MetricSubject::aggregate(SymbolPath::forProject())->toCanonical(), $v->subject->toCanonical());
-        self::assertSame(SymbolPath::forProject()->toCanonical(), $v->symbolPath->toCanonical());
-        self::assertNotNull($v->occurrenceKey);
-        self::assertStringContainsString('16 lines', $v->message);
-        self::assertStringContainsString('2 occurrences', $v->message);
-        self::assertStringContainsString('src/B.php:30-45', $v->message);
+        foreach ($findings as $v) {
+            self::assertSame('duplication.clone', $v->ruleName);
+            self::assertSame(Severity::Warning, $v->severity);
+            self::assertSame(16, $v->metricValue);
+            self::assertSame(MetricSubject::aggregate(SymbolPath::forProject())->toCanonical(), $v->subject->toCanonical());
+            self::assertSame(SymbolPath::forProject()->toCanonical(), $v->symbolPath->toCanonical());
+            self::assertNotNull($v->occurrenceKey);
+            self::assertStringContainsString('16 lines', $v->message);
+            self::assertStringContainsString('2 occurrences', $v->message);
+        }
+
+        [$onA, $onB] = $findings;
+        self::assertSame(['src/A.php', 10], [$onA->location->pathString(), $onA->location->line]);
+        self::assertStringEndsWith('also at src/B.php:30-45', $onA->message);
+        self::assertSame(['src/B.php:30'], self::related($onA));
+        self::assertSame(['src/B.php', 30], [$onB->location->pathString(), $onB->location->line]);
+        self::assertStringEndsWith('also at src/A.php:10-25', $onB->message);
+        self::assertSame(['src/A.php:10'], self::related($onB));
+        self::assertSame($onA->getFingerprint(), $onB->getFingerprint());
     }
 
     /**
@@ -151,11 +162,13 @@ final class CodeDuplicationRuleTest extends TestCase
 
         $findings = $rule->analyze($context);
 
-        self::assertCount(1, $findings);
-        self::assertSame(
-            OccurrenceKey::semantic('duplication.code-duplication', ['contentHash' => self::CONTENT_HASH])->value,
-            $findings[0]->occurrenceKey?->value,
-        );
+        self::assertCount(2, $findings);
+        foreach ($findings as $finding) {
+            self::assertSame(
+                OccurrenceKey::semantic('duplication.code-duplication', ['contentHash' => self::CONTENT_HASH])->value,
+                $finding->occurrenceKey?->value,
+            );
+        }
     }
 
     #[Test]
@@ -182,7 +195,7 @@ final class CodeDuplicationRuleTest extends TestCase
 
         $findings = $rule->analyze($context);
 
-        self::assertCount(1, $findings);
+        self::assertCount(2, $findings);
         self::assertStringContainsString(
             ': "function processItems($items) { $result = [];"',
             $findings[0]->message,
@@ -214,7 +227,7 @@ final class CodeDuplicationRuleTest extends TestCase
 
         $findings = $rule->analyze($context);
 
-        self::assertCount(1, $findings);
+        self::assertCount(2, $findings);
         // No hint means no quotes in the message
         self::assertStringNotContainsString('"', $findings[0]->message);
         self::assertStringContainsString('(16 lines, 2 occurrences) — also at', $findings[0]->message);
@@ -243,12 +256,12 @@ final class CodeDuplicationRuleTest extends TestCase
 
         $findings = $rule->analyze($context);
 
-        self::assertCount(1, $findings);
-        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertCount(2, $findings);
+        self::assertSame([Severity::Error, Severity::Error], array_column($findings, 'severity'));
     }
 
     #[Test]
-    public function itProducesOneFindingPerDuplicateBlock(): void
+    public function itProducesOneFindingPerCopyOfEveryBlock(): void
     {
         $rule = $this->createRule();
 
@@ -273,7 +286,10 @@ final class CodeDuplicationRuleTest extends TestCase
 
         $findings = $rule->analyze($context);
 
-        self::assertCount(2, $findings);
+        self::assertSame(
+            ['a.php', 'b.php', 'c.php', 'd.php'],
+            array_map(static fn($finding): string => $finding->location->pathString(), $findings),
+        );
     }
 
     #[Test]
@@ -300,10 +316,11 @@ final class CodeDuplicationRuleTest extends TestCase
 
         $findings = $rule->analyze($context);
 
-        self::assertCount(1, $findings);
-        self::assertStringContainsString('3 occurrences', $findings[0]->message);
-        self::assertStringContainsString('b.php:5-14', $findings[0]->message);
-        self::assertStringContainsString('c.php:20-29', $findings[0]->message);
+        self::assertCount(3, $findings);
+        self::assertStringEndsWith('3 occurrences) — also at b.php:5-14, c.php:20-29', $findings[0]->message);
+        self::assertStringEndsWith('3 occurrences) — also at a.php:1-10, c.php:20-29', $findings[1]->message);
+        self::assertStringEndsWith('3 occurrences) — also at a.php:1-10, b.php:5-14', $findings[2]->message);
+        self::assertSame(['a.php:1', 'c.php:20'], self::related($findings[1]));
     }
 
     #[Test]
@@ -319,10 +336,17 @@ final class CodeDuplicationRuleTest extends TestCase
             [new DuplicateBlock(locations: $locations, lines: 10, tokens: 50, contentHash: self::CONTENT_HASH)],
         ));
 
-        self::assertCount(1, $findings);
+        self::assertCount(100, $findings);
         self::assertStringContainsString('100 occurrences', $findings[0]->message);
         self::assertStringEndsWith('— also at c001.php:1-10, c002.php:1-10, c003.php:1-10, c004.php:1-10, c005.php:1-10, c006.php:1-10, c007.php:1-10, c008.php:1-10, c009.php:1-10, c010.php:1-10 and 89 more', $findings[0]->message);
-        self::assertCount(99, $findings[0]->relatedLocations);
+        self::assertStringEndsWith('— also at c000.php:1-10, c001.php:1-10, c002.php:1-10, c003.php:1-10, c004.php:1-10, c006.php:1-10, c007.php:1-10, c008.php:1-10, c009.php:1-10, c010.php:1-10 and 89 more', $findings[5]->message);
+        self::assertStringEndsWith('— also at c000.php:1-10, c001.php:1-10, c002.php:1-10, c003.php:1-10, c004.php:1-10, c005.php:1-10, c006.php:1-10, c007.php:1-10, c008.php:1-10, c009.php:1-10 and 89 more', $findings[99]->message);
+        self::assertSame(
+            ['c000.php:1', 'c001.php:1', 'c002.php:1', 'c003.php:1', 'c004.php:1', 'c006.php:1', 'c007.php:1', 'c008.php:1', 'c009.php:1', 'c010.php:1'],
+            self::related($findings[5]),
+            'a copy names the same ten others as related locations as in its message',
+        );
+        self::assertSame($findings[0]->relatedLocations[4], $findings[99]->relatedLocations[5], 'the copies share their locations');
     }
 
     #[Test]
@@ -431,6 +455,17 @@ final class CodeDuplicationRuleTest extends TestCase
         $this->resultProvider->replace($blocks);
 
         return new AnalysisContext($repository);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function related(\Qualimetrix\Analysis\Finding\Contract\Finding $finding): array
+    {
+        return array_map(
+            static fn($location): string => $location->pathString() . ':' . $location->line,
+            $finding->relatedLocations,
+        );
     }
 
     private function analyzeBlock(

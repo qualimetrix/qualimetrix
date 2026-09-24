@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Finding;
 
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
@@ -29,13 +30,14 @@ use Traversable;
  * Filters rules at runtime based on configuration (disabled_rules, only_rules)
  * and executes only active rules. Filters individual findings by code.
  *
- * @qmx-threshold coupling.cbo warning=21 -- Ce is 17. The three afferent edges are
- * the dependency-injection composition that registers this class and rewrites its
- * arguments, which names it by `::class` so the architecture manifest can see and bind
- * each access. Raw CBO 20 gets one-edge headroom; the error bound stays the project's.
+ * @qmx-threshold coupling.cbo warning=22 -- Ce is 18, one of them the publication
+ * snapshot this executor answers with, as it answers with its level activity. The three
+ * afferent edges are the dependency-injection composition that registers this class and
+ * rewrites its arguments, which names it by `::class` so the architecture manifest can see
+ * and bind each access. Raw CBO 21 gets one-edge headroom; the error bound stays the project's.
  * @qmx-threshold coupling.instability warning=0.86 -- The same three composition edges
  * are the only afferent ones: without them Ca is 0 and the class sits under
- * `min_afferent`. An executor is efferent by construction; Ce=17, Ca=3 is 0.85.
+ * `min_afferent`. An executor is efferent by construction; Ce=18, Ca=3 is 0.857.
  */
 final class RuleExecution implements RuleExecutionInterface
 {
@@ -151,6 +153,11 @@ final class RuleExecution implements RuleExecutionInterface
         }
 
         return $kept;
+    }
+
+    public function publication(): ChannelPublication
+    {
+        return new ChannelPublication($this->ruleSelector, $this->ruleOptionsRegistry->selection(), $this->levelActivity());
     }
 
     public function levelActivity(): LevelActivity

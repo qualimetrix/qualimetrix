@@ -277,9 +277,8 @@ final class CheckCommand extends Command
             $result,
             $input,
             $output,
-            $scopeResolution,
+            $resolvedScope,
             $projectionOptions,
-            $runConfiguration->autoloadDevPolicy,
         );
         $filteredFindings = $filterResult->findings;
 
@@ -298,7 +297,7 @@ final class CheckCommand extends Command
             filterResult: $filterResult,
             projectionOptions: $projectionOptions,
             namespacePattern: $namespacePattern,
-            projectScope: $resolvedScope->projectScope,
+            projectScope: $this->findingFilterOrchestrator->projectScope($resolvedScope, $result, $projectionOptions),
         );
 
         return $this->presentProfile($input, $output, $exitCode);

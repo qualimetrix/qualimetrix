@@ -8,6 +8,7 @@ use Psr\Log\AbstractLogger;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
+use Qualimetrix\Infrastructure\Logging\Contract\LogFileUnavailable;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Stringable;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -31,7 +32,7 @@ final class LoggerFactory implements LoggerFactoryInterface
      *                                     error stream has exactly one owner, in the console adapter, and a
      *                                     second opinion here is what let log lines land inside a progress
      *                                     frame.
-     * @param string|null $logFile Optional path to log file
+     * @param string|null $logFile The written `--log-file`, or null when none was written
      * @param string|null $level The written `--log-level`, or null when none was written
      */
     public function create(
@@ -45,8 +46,17 @@ final class LoggerFactory implements LoggerFactoryInterface
             $loggers[] = new ConsoleLogger($diagnostics, self::consoleLevel($diagnostics, $level));
         }
 
-        // File logger
-        if ($logFile !== null && $logFile !== '') {
+        if ($logFile !== null) {
+            // Only null means "no log file". A blank path is what an unset
+            // variable in `--log-file=$LOG` produces, and reading it as absent
+            // ran without the log that was asked for.
+            if (trim($logFile) === '') {
+                throw new LogFileUnavailable(
+                    $logFile,
+                    'which is not a file name; write a path, or leave the option out to write no log file',
+                );
+            }
+
             $loggers[] = new FileLogger($logFile, $level ?? LogLevel::INFO);
         }
 

@@ -33,11 +33,11 @@ Baseline/
 ├── CanonicalBaselineReader.php  # Reads the canonical one-entry-per-line layout without decoding the whole document, or declines so the loader decodes it
 ├── BaselineWriter.php           # Turns a Baseline into the document's fields, and refuses two entries of one identity
 ├── BaselineDocumentLayout.php   # How a baseline document is spelled: one entry per line, float representation pinned
-├── BaselineDocumentWriter.php   # How a baseline file is replaced: sibling lock, compare-and-swap, atomic rename; an unwritable path throws ConfigurationRefusal
+├── BaselineDocumentWriter.php   # How a baseline file is replaced: sibling lock, compare-and-swap, atomic rename, the snapshot a forced replacement compares; an unusable path throws ConfigurationRefusal
 ├── BaselineEntryOrder.php       # Where an entry sorts among its siblings, computed identically by the writer and the carry
 ├── BaselineEntryPayload.php     # One entry line as the file spells it: the identity and ordering the document alone decides, built from the real types
 ├── RunScope.php                 # VO: a run's analysed paths in the portable form the file records, plus the coverage predicate the scope guard reads
-├── RunRuleCoverage.php          # The rule axis beside RunScope: which channels' producers this invocation did not run (selection or `enabled: false`)
+├── RunRuleCoverage.php          # The rule axis beside RunScope: which entries' channel, at the level of their subject, this invocation did not publish
 │
 ├── BaselineUpdater.php          # `baseline:update`: direction-aware monotonic tightening
 ├── BaselineUpdateResult.php     # VO: the updated baseline, one outcome per entry, and whether anything actually changed
@@ -298,17 +298,21 @@ every later narrow run would cover it and the guard would never fire again.
 
 ### `BaselineCleaner` — candidate enumeration and selector removal
 
-`BaselineCleaner::candidates(Baseline $baseline, list<Finding> $measured, ChannelDeclarationRegistryInterface $declarations, array<string, true> $unproducedChannels): list<BaselineCleanupCandidate>`
+`BaselineCleaner::candidates(Baseline $baseline, list<Finding> $measured, ChannelDeclarationRegistryInterface $declarations, array<string, true> $unmeasuredIdentities): list<BaselineCleanupCandidate>`
 lists every entry `cleanup` would offer to remove — **and changes nothing**.
 A valid entry is offered for `Stale` (absent from the measured set, via
 `Baseline::staleEntries()`), `ProducerDidNotRun`, `ChannelNotDeclared`, or
 `ChannelIsConfigurationError`. `ProducerDidNotRun` is the absent entry whose
-channel's rule this invocation never ran — `--only-rule`, `--disable-rule`, or
-`enabled: false` — as answered by `RunRuleCoverage`, the rule axis beside
-`RunScope`'s path axis: such an entry is absent because nothing looked, and
-"nothing reported" would state a measurement that was not made. The answer is
-per producer; a selector narrowed to one level of a producer that still runs is
-not seen, and an entry at that level still reads as `Stale`.
+channel this invocation did not publish at the level of the entry's subject —
+`--only-rule`, `--disable-rule` (a level-narrowed `X:namespace` included),
+`enabled: false`, or a level switched off in the rule's options — as answered
+by `RunRuleCoverage`, the rule axis beside `RunScope`'s path axis: such an
+entry is absent because nothing looked, and "nothing reported" would state a
+measurement that was not made. The level is read off the entry's subject key
+by `MetricSubject::levelOfCanonical()`, and the question is put to
+`RuleExecutionInterface::publishesAt()`, which asks both the selection and the
+rule's own level configuration. A subject key no subject is written as is
+refused at load as a malformed, inert entry.
 
 An entry whose channel is no longer declared is reported as
 `ChannelNotDeclared` even when it is also stale, since a channel nothing
@@ -546,6 +550,10 @@ check. The provenance is a property of the guard, never a field of the file.
 `write()` returns the token for the bytes it wrote, and
 `Baseline::withSourceContentHash()` carries it back — without which a caller writing one
 instance twice would be refused by its own first write.
+A caller that replaces a file it never loaded — `baseline:generate --force` — takes the
+token from `BaselineWriter::destinationSnapshot()` before the analysis; a destination
+that is not a regular file (a directory, a symbolic link) or cannot be read has no token
+the guard could compare, and is refused there as input rather than after the run.
 
 The wait for the lock is bounded (10 seconds by default): a crashed writer releases
 through the OS, but a hung one would otherwise stop the next `qmx` invocation with no

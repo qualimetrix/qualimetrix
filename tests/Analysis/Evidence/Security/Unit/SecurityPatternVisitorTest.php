@@ -476,6 +476,21 @@ final class SecurityPatternVisitorTest extends TestCase
     }
 
     #[Test]
+    public function itForgetsTheReportedReadsOnReset(): void
+    {
+        $visitor = new SecurityPatternVisitor();
+        $ast = (new ParserFactory())->createForHostVersion()->parse('<?php $q = "SELECT * FROM t WHERE id = " . $_GET["id"];') ?? [];
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+
+        $traverser->traverse($ast);
+        $visitor->reset();
+        $traverser->traverse($ast);
+
+        self::assertCount(1, $visitor->getLocationsByType('sql_injection'));
+    }
+
+    #[Test]
     public function itGetsLocationsByType(): void
     {
         $visitor = new SecurityPatternVisitor();
@@ -724,6 +739,22 @@ PHP;
             'code' => '<?php $q = $prefix . "SELECT * FROM t WHERE id = {$_GET[\'id\']}";',
             'expectedCount' => 1,
         ];
+        // A read the reporting query reaches only through a call belongs to another query.
+        yield 'subquery with another superglobal behind a call inside a reporting concatenation' => [
+            'type' => 'sql_injection',
+            'code' => '<?php $q = "SELECT * FROM t WHERE a = " . $_GET["a"] . " AND b IN (" . implode(",", ["SELECT id FROM u WHERE n = \'{$_POST[\'n\']}\'"]) . ")";',
+            'expectedCount' => 2,
+        ];
+        yield 'subquery with another superglobal behind a call inside a reporting sql function' => [
+            'type' => 'sql_injection',
+            'code' => '<?php mysqli_query($link, "SELECT * FROM t WHERE a = {$_GET[\'a\']} AND b IN (" . implode(",", ["SELECT id FROM u WHERE n = " . $_POST["n"]]) . ")");',
+            'expectedCount' => 2,
+        ];
+        yield 'subquery without a superglobal behind a call inside a reporting concatenation' => [
+            'type' => 'sql_injection',
+            'code' => '<?php $q = "SELECT * FROM t WHERE a = " . $_GET["a"] . " AND b IN (" . implode(",", ["SELECT id FROM u"]) . ")";',
+            'expectedCount' => 1,
+        ];
         yield 'two statements, two findings' => [
             'type' => 'sql_injection',
             'code' => '<?php mysqli_query($link, "SELECT * FROM a WHERE x = {$_GET[\'a\']}"); $q = "DELETE FROM b WHERE y = " . $_GET["b"];',
@@ -756,6 +787,20 @@ PHP;
             'code' => '<?php exec(`ls {$_GET[\'d\']}`);',
             'expectedCount' => 1,
         ];
+    }
+
+    #[Test]
+    public function itNamesTheReadEachQueryReportsWhenASubqueryHidesBehindACall(): void
+    {
+        $locations = $this->analyze(
+            '<?php $q = "SELECT * FROM t WHERE a = " . $_GET["a"] . " AND b IN (" . implode(",", ["SELECT id FROM u WHERE n = \'{$_POST[\'n\']}\'"]) . ")";',
+            'sql_injection',
+        );
+
+        self::assertSame(
+            ['$_GET concatenated with SQL query', '$_POST interpolated in SQL query'],
+            array_map(static fn($location): string => $location->context, $locations),
+        );
     }
 
     /**

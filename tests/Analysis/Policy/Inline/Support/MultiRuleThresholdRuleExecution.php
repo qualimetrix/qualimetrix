@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Support;
 
+use LogicException;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -69,5 +71,10 @@ final class MultiRuleThresholdRuleExecution implements RuleExecutionInterface
     public function allRules(): array
     {
         return [];
+    }
+
+    public function publication(): ChannelPublication
+    {
+        throw new LogicException('The threshold audit never asks a scripted executor what a run publishes.');
     }
 }

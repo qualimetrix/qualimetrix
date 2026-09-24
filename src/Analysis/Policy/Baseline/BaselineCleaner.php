@@ -32,7 +32,8 @@ final readonly class BaselineCleaner
     /**
      * Every entry `cleanup` would offer to remove, with its reason and
      * selector. A valid entry is offered for one of four reasons — stale,
-     * absent because its rule did not run in this invocation, its channel is
+     * absent because this invocation did not measure its channel at its
+     * subject's level, its channel is
      * no longer declared, or its channel reports a configuration error and
      * may never be accepted — and every inert entry
      * is offered too, since it already has a selector and the user is
@@ -46,9 +47,9 @@ final readonly class BaselineCleaner
      * and the more specific, more permanent cause is the more useful answer.
      *
      * @param list<Finding> $measured the run's measured set (ADR 0017)
-     * @param array<string, true> $unproducedChannels codes of the channels
-     *                                                whose producer this invocation did not run, as
-     *                                                {@see RunRuleCoverage} answers them
+     * @param array<string, true> $unmeasuredIdentities keys of the identities
+     *                                                  this invocation would not have published, as
+     *                                                  {@see RunRuleCoverage} answers them
      *
      * @return list<BaselineCleanupCandidate>
      */
@@ -56,7 +57,7 @@ final readonly class BaselineCleaner
         Baseline $baseline,
         array $measured,
         ChannelDeclarationRegistryInterface $declarations,
-        array $unproducedChannels,
+        array $unmeasuredIdentities,
     ): array {
         $measuredKeys = [];
         foreach ($measured as $finding) {
@@ -103,7 +104,7 @@ final readonly class BaselineCleaner
                 $candidates[] = new BaselineCleanupCandidate(
                     $entry->selector(),
                     $entry->identity->describe(),
-                    isset($unproducedChannels[$entry->identity->channel->code])
+                    isset($unmeasuredIdentities[$entry->identity->key()])
                         ? BaselineCleanupReason::ProducerDidNotRun
                         : BaselineCleanupReason::Stale,
                 );

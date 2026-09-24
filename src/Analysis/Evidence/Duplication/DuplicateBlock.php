@@ -41,8 +41,8 @@ final readonly class DuplicateBlock
             throw new InvalidArgumentException('DuplicateBlock contentHash must be a full lowercase SHA-256 digest');
         }
 
-        // Sort locations deterministically so primaryLocation() is stable
-        // regardless of file discovery order
+        // Sorted so the order of the copies' findings, and the copies each
+        // names, do not depend on file discovery order
         usort($locations, static fn(DuplicateLocation $a, DuplicateLocation $b) => ($a->pathString() <=> $b->pathString()) !== 0 ? ($a->pathString() <=> $b->pathString()) : ($a->startLine <=> $b->startLine));
         $this->locations = $locations;
     }
@@ -53,23 +53,5 @@ final readonly class DuplicateBlock
     public function occurrences(): int
     {
         return \count($this->locations);
-    }
-
-    /**
-     * Returns the primary (first) location for reporting.
-     */
-    public function primaryLocation(): DuplicateLocation
-    {
-        return $this->locations[0];
-    }
-
-    /**
-     * Returns all locations except the primary one.
-     *
-     * @return list<DuplicateLocation>
-     */
-    public function relatedLocations(): array
-    {
-        return \array_slice($this->locations, 1);
     }
 }

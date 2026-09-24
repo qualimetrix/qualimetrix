@@ -88,7 +88,8 @@ a default would be indistinguishable from a written `info`.
   normal verbosity it can only narrow the console (`error` hides warnings),
   never widen it, so `--log-level=debug --log-file=…` fills the file and not
   the terminal
-- A file logger is created with `--log-file`, at the written level or INFO
+- A file logger is created with `--log-file`, at the written level or INFO;
+  only `null` means no file, and a blank path throws `LogFileUnavailable`
 - Returns a composite logger if both are active, `NullLogger` if neither is
 
 ### LoggerHolder and DelegatingLogger
@@ -115,7 +116,7 @@ worker reaches the log only through the result it returns.
 
 | Option                | Description                                                                           |
 | --------------------- | ------------------------------------------------------------------------------------- |
-| `--log-file=<path>`   | Log file path (JSON Lines); an unwritable path is refused with exit 3                 |
+| `--log-file=<path>`   | Log file path (JSON Lines); a blank or unwritable path is refused with exit 3         |
 | `--log-level=<level>` | Minimum log level (debug/info/warning/error) for the file and, from `-v`, the console |
 | (none)                | WARNING and ERROR to the console                                                      |
 | `-v`                  | INFO to the console, or the written `--log-level`                                     |

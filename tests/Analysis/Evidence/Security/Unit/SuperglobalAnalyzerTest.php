@@ -79,7 +79,7 @@ final class SuperglobalAnalyzerTest extends TestCase
         $shellExec = $this->parseExpression('`ls {$_COOKIE[\'d\']}`');
         self::assertInstanceOf(ShellExec::class, $shellExec);
 
-        self::assertSame('_COOKIE', $this->analyzer->findSuperglobalInParts($shellExec->parts));
+        self::assertSame('_COOKIE', $this->analyzer->findSuperglobal(...$shellExec->parts));
     }
 
     #[Test]
@@ -88,7 +88,7 @@ final class SuperglobalAnalyzerTest extends TestCase
         $shellExec = $this->parseExpression('`ls {$dir}`');
         self::assertInstanceOf(ShellExec::class, $shellExec);
 
-        self::assertNull($this->analyzer->findSuperglobalInParts($shellExec->parts));
+        self::assertNull($this->analyzer->findSuperglobal(...$shellExec->parts));
     }
 
     private function parseExpression(string $expression): Expr

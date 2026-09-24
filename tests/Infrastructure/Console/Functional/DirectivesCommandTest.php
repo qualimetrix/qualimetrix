@@ -648,32 +648,21 @@ final class DirectivesCommandTest extends TestCase
     }
 
     /**
-     * `duplication.clone` reports one project-wide finding per
-     * duplicate block ({@see \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule::channelDeclarations()}
+     * `duplication.clone` reports one finding on each copy of a duplicate
+     * block, every copy under one project-level identity
+     * ({@see \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule::channelDeclarations()}
      * declares {@see \Qualimetrix\Core\Symbol\SymbolLevel::Project} and
-     * nothing else), and no directive form binds to a project aggregate: a
-     * symbol directive binds to the declaration it decorates, never the
-     * project, and a file or next-line directive is judged by
-     * {@see \Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter}
-     * against the finding's `Location`, which the rule sets to whichever copy
-     * the duplicate scan visits first — not the file the directive happens to
-     * be written in.
+     * nothing else). A symbol directive binds to the declaration it
+     * decorates, never the project; a file or next-line directive would
+     * silence the copy it is written beside while the other copy still
+     * reports the block. {@see DirectiveChannelBan} refuses every form where
+     * it is written, and `check` and `directives` are asked about the same
+     * fixture so a form one command refused and the other still judged would
+     * be caught here.
      *
-     * On this two-file shape, a symbol directive never suppressed the finding
-     * regardless of which copy
-     * carried it; a file or next-line directive suppressed it only when
-     * placed in whichever copy happened to be the first occurrence, and did
-     * nothing — silently, reported as `annotation.unused-directive` — when
-     * placed in the other. The ban refuses every form where it is written
-     * instead, so the outcome no longer depends on which copy the scan visits
-     * first, and `check` and `directives` are asked about the same fixture so
-     * a form one command refused and the other still judged would be caught
-     * here.
-     *
-     * The underlying `duplication.clone` finding is never
-     * suppressible by any directive ({@see DirectiveChannelBan::covers()}
-     * short-circuits {@see SuppressionFilter::applies()} for it), so it stays
-     * in the report beside the refusal — two violations, not one.
+     * No directive suppresses the channel ({@see DirectiveChannelBan::covers()}
+     * short-circuits {@see SuppressionFilter::applies()} for it), so both
+     * copies stay in the report beside the refusal — three violations.
      */
     #[Test]
     #[DataProvider('provideFormsThatReachTheDuplicationBan')]
@@ -692,15 +681,20 @@ final class DirectivesCommandTest extends TestCase
         $report = self::decode($check->getDisplay());
 
         self::assertSame(2, $check->getStatusCode(), $check->getDisplay());
-        self::assertCount(2, $report['violations'], $check->getDisplay());
+        self::assertCount(3, $report['violations'], $check->getDisplay());
 
         $byChannel = [];
+        $copies = [];
         foreach ($report['violations'] as $violation) {
             $byChannel[(string) $violation['channel']] = $violation;
+
+            if ($violation['channel'] === 'duplication.clone') {
+                $copies[] = basename((string) $violation['file']);
+            }
         }
 
         self::assertArrayHasKey('annotation.unresolved-directive', $byChannel);
-        self::assertArrayHasKey('duplication.clone', $byChannel);
+        self::assertSame(['DupA.php', 'DupB.php'], $copies);
         self::assertSame($line, $byChannel['annotation.unresolved-directive']['line']);
         self::assertStringContainsString(
             'duplication.clone',
@@ -739,15 +733,11 @@ final class DirectivesCommandTest extends TestCase
     }
 
     /**
-     * The complaint the ban closes, reproduced directly: before the ban
-     * existed, a file directive written on the copy the scan does not visit
-     * first did nothing and was reported as `annotation.unused-directive` —
-     * the report's evidence that the directive did nothing further, and the
-     * scan visiting `DupA.php` first is exactly this shape (`DupA` sorts
-     * before `DupB`, and the provider builds the hash index in path order).
-     * Now the same directive is refused before either file is judged for
-     * suppression, so the channel that used to (and, on the other copy,
-     * still could) hide the mistake never appears at all.
+     * A directive on the copy that sorts second is refused like one on the
+     * first: it is reported as a refusal where it is written, never judged
+     * for suppression and never left to read as
+     * `annotation.unused-directive`, the answer it got when the channel's one
+     * finding sat on the first copy only.
      */
     #[Test]
     public function itNoLongerLetsTheNonPrimaryCopyProduceAnUnusedDirectiveInstead(): void

@@ -383,7 +383,7 @@ final class LayerRegistry
             if (!$result->matched) {
                 continue;
             }
-            $match = new LayerMatch($layer->name(), $result->matchedCriteria);
+            $match = new LayerMatch($layer->name(), $result->matchedCriteria, $layer->membership()->ownsItsPatterns());
             $matches[] = $match;
             if ($result->undecided) {
                 $unansweredExcludes[] = $layer->name();

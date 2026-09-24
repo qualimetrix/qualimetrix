@@ -109,7 +109,11 @@ PHP gave it. A `__toString()` a class takes from a trait is not seen, and
 `extends: ['\Stringable']` does not see the one an interface gets.
 Criterion FQNs are stored without a leading `\`, which is how a class in the
 global namespace is written (`\Throwable`) and how the run records none of
-them.
+them. A class PHP declares is one name whatever its case, so both sides of the
+comparison carry it in `PhpBuiltinClassRegistry::spelling()`:
+`LayerCriterionNormalizer` stores a criterion that way, and
+`ClassContextFactory` names a graph-backed class subject and both ends of every
+declaration edge that way. Project and vendor names are compared as written.
 
 `LayerCriteriaMatcher` turns that into a third answer beside match and
 non-match. `CriterionOutcome::Undecidable` is what a declared criterion returns
@@ -202,6 +206,11 @@ was found to ask, a type only unanalysed code reaches — or the outside symbols
 unanswered `exclude:` holds. `LayerShadowing` draws a shadow only
 between `establishedMatches()`, the first of them shadowing the rest, and
 `debug:layer-assignment` reports its `shadowed` list and hint by the same rule.
+A layer repeating the pattern of one that does not take every class it names
+(`MembershipSpec::ownsItsPatterns()` — an `exclude:`, or `match: all` beside
+another criterion) is the recipient of what that layer leaves over and is not
+shadowed by it; `DuplicatePatternRejector` accepts a repeated pattern by the
+same predicate, so a configuration that loads is never failed for it.
 `architecture.doubted-assignment` names every layer a contest keeps out of
 `unreachable-layer`: those that could not answer, and — from the walk's
 `ownsIfExcluded` column — those that would own a symbol if an unanswered

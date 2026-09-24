@@ -593,9 +593,9 @@ PHP;
         );
 
         self::assertSame(3, $block->occurrences());
-        self::assertSame('a.php', $block->primaryLocation()->file->value());
-        self::assertCount(2, $block->relatedLocations());
-        self::assertSame('b.php', $block->relatedLocations()[0]->file->value());
+        self::assertSame('a.php', $block->locations[0]->file->value());
+        self::assertCount(3, $block->locations);
+        self::assertSame('b.php', $block->locations[1]->file->value());
         self::assertSame('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', $block->contentHash);
     }
 

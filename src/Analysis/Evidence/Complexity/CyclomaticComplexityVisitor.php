@@ -48,6 +48,12 @@ use Qualimetrix\Core\Path\RelativePath;
  * - ?: (ternary): +1
  * - ?? (null coalescing) and ??= (null-coalescing assignment): +1
  * - ?-> (nullsafe): +1
+ *
+ * Deviation from McCabe's original (the CCN2+ reading): `??`, `??=` and `?->`
+ * are PHP operators the original has no counterpart for; each skips an
+ * evaluation on null the way a condition does, so each counts as a decision
+ * point. `xor` counts with the other logical operators although it does not
+ * short-circuit.
  */
 final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements DeclarationIndexAwareInterface, ResettableVisitorInterface
 {

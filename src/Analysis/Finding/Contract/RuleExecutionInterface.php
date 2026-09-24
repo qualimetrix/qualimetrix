@@ -88,6 +88,14 @@ interface RuleExecutionInterface
     public function publishable(array $findings): array;
 
     /**
+     * What this run's selection and configuration publish, for a reader that
+     * holds an identity rather than a finding — a baseline entry the run did
+     * not report. Built once and asked per channel and level; see
+     * {@see ChannelPublication} for why both switches are asked.
+     */
+    public function publication(): ChannelPublication;
+
+    /**
      * Every registered producer, each carrying whether the resolved selection
      * leaves it enabled.
      *

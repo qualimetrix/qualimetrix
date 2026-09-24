@@ -84,8 +84,9 @@ and that list in every report format with a place for it, and
 `ProjectScopeReadersTest` fails when a reader of the predicate appears whose
 channels the list does not name. On `Unknown` the suppression channels judge
 path values only, since nothing locates a namespace without a declared
-autoload; `ProjectScopeCoverage::UNKNOWN_SCOPE_UNJUDGED_CHANNELS` is what an
-`unknown` report names as the channels whose namespace values went unjudged. The answer travels on
+autoload. Which values went unjudged is not a fact of this capability: the
+suppression audit in `Analysis\Finding` lists them, and the report derives the
+channels it names from that list. The answer travels on
 `RunConfiguration::$coversProjectScope` because it is a fact about that
 configuration's paths: `RunConfigurationResolver` fills it, `CheckCommand`
 refills it from `CheckScopeResolver` when a Git report scope narrows the run

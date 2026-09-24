@@ -111,7 +111,7 @@ final class BaselineCleanupCommandTest extends TestCase
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString(
-            '(not measured: the rule reporting this channel did not run in this invocation)',
+            '(not measured: this invocation did not run the rule for this channel at this level)',
             $tester->getDisplay(),
         );
         self::assertStringNotContainsString('nothing reported for this identity', $tester->getDisplay());

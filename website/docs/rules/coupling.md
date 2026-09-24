@@ -42,7 +42,7 @@ For example, if `UserService` uses `UserRepository`, `Logger`, `Validator`, and 
 
 The other side is named by the namespace that declares the class, so the number depends on how finely the code around the namespace is split: dividing a neighbouring directory into sub-namespaces raises this namespace's CBO while its Ca and Ce stay the same. A parent namespace near the root of a project is coupled to many such namespaces and usually has the highest CBO of all. The namespace thresholds below reuse the class-level numbers; they were not calibrated for this quantity separately.
 
-**Only leaf namespaces are judged.** A namespace with a sub-namespace in the run is not reported at namespace level, whatever its CBO: its number is taken over the whole subtree and grows with it, so the thresholds do not describe it. That includes a namespace that declares classes of its own beside its sub-namespaces -- its CBO is still the subtree's. The value is published all the same (`coupling.cbo` on the namespace in `--format=metrics`), and the classes it holds are judged at class level as usual. Which namespaces are leaves depends on what the run analysed: on a narrowed run a namespace whose sub-namespaces were left out is a leaf.
+**A namespace is judged on its own classes.** The rule reads `coupling.cbo-own`: the same count taken over the classes declared directly in the namespace, where a sub-namespace is a namespace like any other. A namespace without sub-namespaces has one scope, so the two keys are equal there. On a parent they differ, and the subtree value is not judged: it grows with the subtree, and its region depends on which sub-namespaces the run holds, so a narrowed run and a whole one would disagree about the same code. The own scope does not move with that, and neither does the verdict. The finding's inbound and outbound counts are the own scope's too (`coupling.ca-own`, `coupling.ce-own`). A namespace that declares no type of its own publishes no `coupling.cbo-own` and is not judged; the subtree `coupling.cbo` is published on every namespace (`--format=metrics`).
 
 <!-- llms:skip-end -->
 
@@ -53,15 +53,15 @@ The other side is named by the namespace that declares the class, so the number 
 
 | Level   | Threshold | Severity |
 | ------- | --------- | -------- |
-| Warning | > 14      | Warning  |
-| Error   | > 20      | Error    |
+| Warning | >= 14     | Warning  |
+| Error   | >= 20     | Error    |
 
-**Namespace level** (enabled by default, leaf namespaces only, requires at least 3 classes in the namespace):
+**Namespace level** (enabled by default, judged on `coupling.cbo-own`, requires at least 3 classes declared in the namespace itself):
 
 | Level   | Threshold | Severity |
 | ------- | --------- | -------- |
-| Warning | > 14      | Warning  |
-| Error   | > 20      | Error    |
+| Warning | >= 14     | Warning  |
+| Error   | >= 20     | Error    |
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
@@ -534,6 +534,9 @@ has two coupling scopes, and both are published:
 | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `coupling.ca` / `coupling.ce` / `coupling.instability` / `coupling.abstractness` / `coupling.distance`                     | The whole subtree rooted at this namespace — the value the rule judges and the one a namespace-level report shows |
 | `coupling.ca-own` / `coupling.ce-own` / `coupling.instability-own` / `coupling.abstractness-own` / `coupling.distance-own` | Only the types declared directly in this namespace, leaving the ones its sub-namespaces hold to those namespaces  |
+
+`coupling.cbo` and `coupling.cbo-own` split the same way, and there the rule
+judges the own scope instead: see [CBO](#cbo----coupling-between-objects).
 
 For a namespace with no sub-namespaces the two coincide. A namespace that
 declares no type of its own carries no own-scope abstractness at all and gets no

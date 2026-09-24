@@ -18,8 +18,8 @@ Command injection also treats the backtick operator as a sink.
 Because the search looks through concatenation and interpolation, a query
 function, `sprintf()` call or concatenation sees the same read as the queries
 built inside it. `SecurityPatternVisitor` therefore reports SQL injection once
-per outermost reporting node and skips the queries nested in it; a query behind
-any other call is still judged on its own.
+per query: a query nested in a reported one is reported again only for a read
+the enclosing query did not reach, such as a subquery built behind a call.
 
 ## Structure
 
@@ -84,7 +84,7 @@ keep names such as `passwordHash`, `tokenStorage`, `cacheKey`, and
 property or static property assignment (also `??=`), a string-keyed array
 element assignment, an array item, a class constant, `define()`, a property or
 parameter default, and an enum case. Values that are dotted identifiers (each
-segment starts with a letter or an underscore and may join words with hyphens;
+segment is a code identifier or lowercase letter-only words joined by hyphens;
 not a JWT) or messages of three or more whitespace-separated words are skipped.
 
 ## Lifecycle

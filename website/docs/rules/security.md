@@ -41,7 +41,7 @@ Names like `$passwordHash`, `$tokenStorage`, `$cacheKey`, `OPTION_PASSWORD` are 
 **Value filtering:** these values are skipped:
 
 - empty strings, strings shorter than 4 characters, and strings of identical characters (`***`, `xxx`);
-- dotted identifiers such as `auth.password.reset` or `auth.password-reset` (translation, configuration or channel keys: each segment starts with a letter or an underscore, and a hyphen joins words inside it) — a JWT (`eyJ...`) is not treated as one;
+- dotted identifiers such as `auth.password.reset`, `App.Models.User` or `auth.password-reset` (translation, configuration or channel keys: each segment is a code identifier — a letter or an underscore followed by letters, digits or underscores — or lowercase letter-only words joined by hyphens). A hyphenated segment with a capital letter or a digit is reported, so `Summer-2024.Pass` and `sk-live.abc123-def456` are not treated as keys; neither is a JWT (`eyJ...`). A value made only of lowercase words, such as `sk-live-abc.def`, has the shape of a key and is skipped;
 - messages: longer than 20 characters and at least three whitespace-separated words. Hyphens, dots, slashes and plus signs are not word breaks, so UUID-, AWS- and base64-shaped keys are still reported.
 
 <!-- llms:skip-end -->
@@ -114,7 +114,7 @@ Detects use of superglobals (`$_GET`, `$_POST`, `$_REQUEST`, `$_COOKIE`) in SQL 
 
 The superglobal is found through the same value-passing wrappers as for XSS (`"... WHERE id = " . ($_GET['id'] ?? 0)` is reported); a function call or an `(int)`/`(float)` cast ends the search.
 
-One query is one finding. When a query function, a `sprintf()` call or a concatenation reports a superglobal, the queries built inside it are not reported again: `mysqli_query($conn, "SELECT * FROM users WHERE name = '{$_POST['name']}'")` is one violation, not one for the call and one for the interpolated string. A query behind any other call is still reported on its own: `mysqli_query($conn, trim("SELECT * FROM users WHERE id = " . $_GET['id']))` is reported for the concatenation.
+One query is one finding, however many superglobals it reads. When a query function, a `sprintf()` call or a concatenation reports a superglobal, the queries built inside it are reported again only for a read it did not reach: `mysqli_query($conn, "SELECT * FROM users WHERE name = '{$_POST['name']}'")` is one violation, not one for the call and one for the interpolated string. A query behind any other call is still reported on its own: `mysqli_query($conn, trim("SELECT * FROM users WHERE id = " . $_GET['id']))` is reported for the concatenation, and in `"SELECT * FROM t WHERE a = " . $_GET['a'] . " AND b IN (" . implode(',', ["SELECT id FROM u WHERE n = '{$_POST['n']}'"]) . ")"` the subquery is reported for `$_POST` next to the outer query's `$_GET`.
 
 <!-- llms:skip-end -->
 

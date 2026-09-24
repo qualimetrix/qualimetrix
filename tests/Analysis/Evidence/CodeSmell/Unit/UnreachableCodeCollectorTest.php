@@ -766,6 +766,58 @@ PHP);
     }
 
     #[Test]
+    public function itTreatsAFullyQualifiedDieCallInAnyLetterCaseAsTerminal(): void
+    {
+        // Unqualified `die()` parses as an exit expression; only the qualified spelling is a function call.
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class Runner
+{
+    public function run(): void
+    {
+        \die('stop');
+        $dead = 1;
+    }
+
+    public function shout(): void
+    {
+        \EXIT(1);
+        $dead = 1;
+    }
+}
+PHP);
+
+        self::assertSame(1, $metrics->get('code-smell.unreachable-code:App\Runner::run'));
+        self::assertSame(1, $metrics->get('code-smell.unreachable-code:App\Runner::shout'));
+    }
+
+    #[Test]
+    public function itDoesNotTreatAFirstClassExitCallableStatementAsTerminal(): void
+    {
+        // A bare statement, so the call node itself reaches the terminality check.
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class Runner
+{
+    public function run(): void
+    {
+        \exit(...);
+        \die(...);
+        $alive = 1;
+    }
+}
+PHP);
+
+        self::assertSame(0, $metrics->get('code-smell.unreachable-code:App\Runner::run'));
+    }
+
+    #[Test]
     public function itResetsReachabilityAtAGotoLabelInsideANestedList(): void
     {
         $metrics = $this->collectMetrics(<<<'PHP'

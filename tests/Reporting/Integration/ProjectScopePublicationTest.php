@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Reporting\Integration;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -30,6 +31,10 @@ final class ProjectScopePublicationTest extends TestCase
     private const array CHANNELS = ['architecture.unreachable-layer', 'discovery.unmatched-exclude'];
 
     private const array UNKNOWN_CHANNELS = ['suppression.unmatched-namespace'];
+
+    private const array UNKNOWN_VALUES = [['option' => 'suppress_namespaces', 'pattern' => 'subtree:Tests']];
+
+    private const array SKIPPED_VALUES = [['option' => 'suppress_paths', 'pattern' => 'subtree:tests/Legacy']];
 
     /** @return iterable<string, array{string}> */
     public static function documentFormats(): iterable
@@ -63,15 +68,29 @@ final class ProjectScopePublicationTest extends TestCase
         $narrowed = self::decode($this->format($format, self::narrowed()))['projectScope'];
 
         self::assertSame(
-            ['state' => 'narrowed', 'uncoveredAutoloadTargets' => ['lib/'], 'unjudgedChannels' => self::CHANNELS],
+            ['state' => 'narrowed', 'uncoveredAutoloadTargets' => ['lib/'], 'unjudgedChannels' => self::CHANNELS, 'unjudgedValues' => []],
             $narrowed,
         );
         self::assertSame(
-            ['state' => 'covered', 'uncoveredAutoloadTargets' => [], 'unjudgedChannels' => []],
+            ['state' => 'covered', 'uncoveredAutoloadTargets' => [], 'unjudgedChannels' => [], 'unjudgedValues' => []],
             self::decode($this->format($format, ReportProjectScope::covered()))['projectScope'],
         );
         self::assertSame(
-            ['state' => 'unknown', 'uncoveredAutoloadTargets' => [], 'unjudgedChannels' => self::UNKNOWN_CHANNELS],
+            [
+                'state' => 'covered',
+                'uncoveredAutoloadTargets' => [],
+                'unjudgedChannels' => ['suppression.unmatched-path'],
+                'unjudgedValues' => self::SKIPPED_VALUES,
+            ],
+            self::decode($this->format($format, self::coveredWithSkippedValues()))['projectScope'],
+        );
+        self::assertSame(
+            [
+                'state' => 'unknown',
+                'uncoveredAutoloadTargets' => [],
+                'unjudgedChannels' => self::UNKNOWN_CHANNELS,
+                'unjudgedValues' => self::UNKNOWN_VALUES,
+            ],
             self::decode($this->format($format, self::unknown()))['projectScope'],
         );
     }
@@ -111,7 +130,32 @@ final class ProjectScopePublicationTest extends TestCase
         $output = $this->format($format, self::unknown());
 
         self::assertStringContainsString('Project scope unknown', $output);
-        self::assertStringContainsString('suppression.unmatched-namespace', $output);
+        self::assertStringContainsString('suppress_namespaces', $output);
+        self::assertStringContainsString('subtree:Tests', $output);
+    }
+
+    /**
+     * A covered run that skipped a value is not the ordinary one: without the
+     * line it read exactly like a run that judged the value and found it bound.
+     */
+    #[Test]
+    #[DataProvider('noticeFormats')]
+    public function itNamesTheValuesACoveredRunSkipped(string $format): void
+    {
+        $output = $this->format($format, self::coveredWithSkippedValues());
+
+        self::assertStringContainsString('Project scope covered', $output);
+        self::assertStringContainsString('suppress_paths', $output);
+        self::assertStringContainsString('subtree:tests/Legacy', $output);
+    }
+
+    /** A narrowed run judges no value, so it has none to skip, and a list beside its channels could only contradict them. */
+    #[Test]
+    public function itRefusesSkippedValuesOnANarrowedRun(): void
+    {
+        $this->expectException(LogicException::class);
+
+        self::narrowed()->withUnjudgedValues([]);
     }
 
     /** A covered run is the ordinary one and adds no entry to a list or a line to prose. */
@@ -134,11 +178,21 @@ final class ProjectScopePublicationTest extends TestCase
 
         self::assertSame($covered, $this->format($format, self::narrowed()));
         self::assertSame($covered, $this->format($format, self::unknown()));
+        self::assertSame($covered, $this->format($format, self::coveredWithSkippedValues()));
     }
 
     private static function unknown(): ReportProjectScope
     {
-        return ReportProjectScope::unknown(self::UNKNOWN_CHANNELS);
+        return ReportProjectScope::unknown()->withUnjudgedValues([
+            ['channel' => 'suppression.unmatched-namespace', ...self::UNKNOWN_VALUES[0]],
+        ]);
+    }
+
+    private static function coveredWithSkippedValues(): ReportProjectScope
+    {
+        return ReportProjectScope::covered()->withUnjudgedValues([
+            ['channel' => 'suppression.unmatched-path', ...self::SKIPPED_VALUES[0]],
+        ]);
     }
 
     private static function narrowed(): ReportProjectScope

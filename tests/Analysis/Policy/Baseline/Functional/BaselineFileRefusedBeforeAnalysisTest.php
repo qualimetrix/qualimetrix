@@ -140,6 +140,49 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
     }
 
     /**
+     * A directory passes `file_exists()` and `is_readable()` alike, and the
+     * reader only fails on it once the whole run has been spent.
+     */
+    #[Test]
+    public function itRefusesADirectoryInCheckBeforeAnalysis(): void
+    {
+        [$tester, $pipeline] = $this->executeCheck($this->tempDir);
+
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Baseline path is not a regular file', $tester->getDisplay());
+        self::assertSame(0, $pipeline->calls, 'The analysis ran before the directory was refused.');
+    }
+
+    #[Test]
+    #[DataProvider('provideBaselineCommands')]
+    public function itRefusesADirectoryInABaselineCommandBeforeItMeasures(string $command): void
+    {
+        $tester = $this->executeBaselineCommand($command, $this->tempDir);
+
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Baseline path is not a regular file', $tester->getErrorOutput());
+        self::assertSame(0, $this->runs, 'The run was measured before the directory was refused.');
+    }
+
+    /**
+     * The legitimate neighbour of the directory refusal: `is_file()` follows a
+     * link, so a baseline reached through one is still read.
+     */
+    #[Test]
+    public function itStillReadsABaselineReachedThroughASymlink(): void
+    {
+        $present = $this->tempDir . '/present.json';
+        $this->writeEmptyBaseline($present);
+        $link = $this->tempDir . '/link.json';
+        symlink($present, $link);
+
+        BaselineLoader::assertReadable($link);
+        $baseline = (new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults())))->load($link);
+
+        self::assertSame([], $baseline->entries);
+    }
+
+    /**
      * The early answer is the loader's own, not a second spelling of it.
      */
     #[Test]

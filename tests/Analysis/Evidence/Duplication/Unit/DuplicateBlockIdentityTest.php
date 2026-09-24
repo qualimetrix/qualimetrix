@@ -31,8 +31,8 @@ final class DuplicateBlockIdentityTest extends TestCase
 
         self::assertSame(self::CONTENT_HASH, $forward->contentHash);
         self::assertSame($forward->contentHash, $reverse->contentHash);
-        self::assertSame('src/A.php', $forward->primaryLocation()->file->value());
-        self::assertSame('src/A.php', $reverse->primaryLocation()->file->value());
+        self::assertSame('src/A.php', $forward->locations[0]->file->value());
+        self::assertSame('src/A.php', $reverse->locations[0]->file->value());
     }
 
     #[Test]

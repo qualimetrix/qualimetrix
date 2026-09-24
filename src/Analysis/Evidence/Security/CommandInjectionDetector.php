@@ -73,7 +73,7 @@ final readonly class CommandInjectionDetector
      */
     public function detectInShellExec(ShellExec $node): array
     {
-        $varName = $this->superglobalAnalyzer->findSuperglobalInParts($node->parts);
+        $varName = $this->superglobalAnalyzer->findSuperglobal(...$node->parts);
         if ($varName === null) {
             return [];
         }

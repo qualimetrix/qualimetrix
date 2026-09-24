@@ -79,7 +79,7 @@ bin/qmx baseline:cleanup baseline.json src/
 bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
 ```
 
-Без `--remove` команда `baseline:cleanup <baseline> [<paths>...]` только выводит кандидатов и никогда не меняет файл. У каждого кандидата названа причина: `nothing reported for this identity` — правило отработало и ничего не сообщило; `not measured: the rule reporting this channel did not run in this invocation` — `--only-rule`, `--disable-rule` или `enabled: false` не дали правилу исполниться, и отсутствие записи ничего не говорит о коде. Повторяй `--remove=<selector>` ровно для проверенных записей. Массового удаления нет: отсутствие может быть вызвано сменой конфигурации, а не только исправлением. `--force` имеет то же значение проверки области, что и у `baseline:update`.
+Без `--remove` команда `baseline:cleanup <baseline> [<paths>...]` только выводит кандидатов и никогда не меняет файл. У каждого кандидата названа причина: `nothing reported for this identity` — прогон измерил канал записи на уровне её субъекта и ничего не сообщил; `not measured: this invocation did not run the rule for this channel at this level` — прогон не измерял этот канал на этом уровне, и отсутствие записи ничего не говорит о коде. Уровень берётся из самой записи: `--disable-rule=coupling.cbo:namespace` делает запись `coupling.cbo` уровня неймспейса неизмеренной, а записи уровня класса по-прежнему судятся; так же действует уровень, выключенный в опциях правила (`class: { enabled: false }`), и `--only-rule`, `--disable-rule` или `enabled: false` для правила целиком. Повторяй `--remove=<selector>` ровно для проверенных записей. Массового удаления нет: отсутствие может быть вызвано сменой конфигурации, а не только исправлением. `--force` имеет то же значение проверки области, что и у `baseline:update`.
 
 ### Перенос baseline на переименованные каналы
 
@@ -176,14 +176,15 @@ bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --channel=c
 | `accepted 25, 25; now 20, and 1 without a finite value, so the entry is not applied and the group is reported` | У одного из членов нет конечного значения, поэтому `check` не сравнивает группу и сообщает её с её собственной severity.     |
 | `present but not applied (<reason> — <detail>) [<selector>]; now …`                                            | В файле есть запись для этой идентичности, но применить её нельзя — это та же запись, которую `check` перечисляет как inert. |
 | `(none)`                                                                                                       | Записи для этой идентичности в файле нет.                                                                                    |
-| `…; now not measured (the rule reporting this channel did not run in this invocation)`                         | Правило, производящее канал, не исполнялось в этом прогоне, поэтому пустая группа ничего не говорит о коде.                  |
+| `…; now not measured (this invocation did not run the rule for this channel at this level)`                    | Прогон не измерял канал на уровне этого субъекта, поэтому пустая группа ничего не говорит о коде.                            |
 
 Строка файла про этот символ, идентичность которой прочитать не удалось вовсе, выводится отдельно как
 `Unreadable baseline entry [<selector>]` с той же причиной, что называет `check`.
 
 Файл `--baseline` (у `check` и `baseline:explain`) или аргумент `<baseline>` (у
-`baseline:update` и `baseline:cleanup`), который не существует или не читается, отклоняется
-с кодом 3 до начала анализа.
+`baseline:update` и `baseline:cleanup`), который не существует, не является обычным файлом (например, каталог) или не читается,
+отклоняется с кодом 3 до начала анализа. `baseline:generate --force` так же отклоняет цель,
+которую не может прочитать или которая не является обычным файлом.
 
 Все lifecycle-команды требуют полного анализа. Ошибка parsing или processing
 возвращает код 4 до интерпретации, классификации, создания или изменения baseline.

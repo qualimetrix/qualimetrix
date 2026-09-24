@@ -417,12 +417,17 @@ final class CboRuleTest extends TestCase
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
-        // CBO = 16
+        // Own scope: CBO = 16. The subtree values beside it would read as an
+        // error with a different direction if the rule judged them.
         $metricBag = (new MetricBag())
-            ->with('coupling.cbo', 16)
-            ->with('coupling.ca', 6)
-            ->with('coupling.ce', 10)
-            ->with('size.class-count.sum', 5);
+            ->with('coupling.cbo', 30)
+            ->with('coupling.ca', 1)
+            ->with('coupling.ce', 40)
+            ->with('coupling.cbo-own', 16)
+            ->with('coupling.ca-own', 6)
+            ->with('coupling.ce-own', 10)
+            ->with('size.class-count.sum', 9)
+            ->with('size.class-count', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -453,10 +458,10 @@ final class CboRuleTest extends TestCase
 
         // CBO = 25
         $metricBag = (new MetricBag())
-            ->with('coupling.cbo', 25)
-            ->with('coupling.ca', 10)
-            ->with('coupling.ce', 15)
-            ->with('size.class-count.sum', 5);
+            ->with('coupling.cbo-own', 25)
+            ->with('coupling.ca-own', 10)
+            ->with('coupling.ce-own', 15)
+            ->with('size.class-count', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -473,50 +478,73 @@ final class CboRuleTest extends TestCase
     }
 
     /**
-     * A parent namespace's CBO is taken over its whole subtree, so it grows
-     * with the subtree and the namespace thresholds do not model it. Only a
-     * namespace with no sub-namespace in the run is judged — including one that
-     * declares classes of its own beside its children, and including the global
-     * namespace, which is nobody's parent.
+     * A namespace is judged on the coupling of its own declarations, parent or
+     * not, so the verdict does not depend on which of its sub-namespaces the
+     * run holds. The subtree `coupling.cbo` beside it is published, not judged.
      */
     #[Test]
-    public function itJudgesOnlyNamespacesWithoutSubNamespaces(): void
+    public function itJudgesEveryNamespaceOnTheCouplingOfItsOwnDeclarations(): void
     {
         $rule = new CboRule(new CboOptions());
 
-        $paths = [
-            'App' => SymbolPath::forNamespace('App'),
-            'App\Service' => SymbolPath::forNamespace('App\Service'),
-            'App\Service\Auth' => SymbolPath::forNamespace('App\Service\Auth'),
-            'App\ServiceLocator' => SymbolPath::forNamespace('App\ServiceLocator'),
-            'App\Report' => SymbolPath::forNamespace('App\Report'),
-            'App\ReportExport' => SymbolPath::forNamespace('App\ReportExport'),
-            '' => SymbolPath::forNamespace(''),
+        $parent = SymbolPath::forNamespace('App\Service');
+        $leaf = SymbolPath::forNamespace('App\Service\Auth');
+        $bags = [
+            // A parent coupled over the threshold on its own classes.
+            'App\Service' => (new MetricBag())
+                ->with('coupling.cbo', 8)
+                ->with('coupling.cbo-own', 25)
+                ->with('coupling.ca-own', 10)
+                ->with('coupling.ce-own', 15)
+                ->with('size.class-count', 3),
+            // A leaf whose own coupling is low, whatever its subtree value says.
+            'App\Service\Auth' => (new MetricBag())
+                ->with('coupling.cbo', 40)
+                ->with('coupling.cbo-own', 5)
+                ->with('coupling.ca-own', 2)
+                ->with('coupling.ce-own', 3)
+                ->with('size.class-count', 3),
         ];
-        $infos = array_map(
-            static fn(SymbolPath $path): \Qualimetrix\Core\Symbol\SymbolInfo => self::subjectInfo($path, RelativePath::fromString('src'), null),
-            array_values($paths),
-        );
-
-        // Every namespace is over the error threshold on its own numbers.
-        $metricBag = (new MetricBag())
-            ->with('coupling.cbo', 25)
-            ->with('coupling.ca', 10)
-            ->with('coupling.ce', 15)
-            ->with('size.class-count.sum', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn($infos);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('all')->willReturn([
+            self::subjectInfo($parent, RelativePath::fromString('src/Service'), null),
+            self::subjectInfo($leaf, RelativePath::fromString('src/Service/Auth'), null),
+        ]);
+        $repository->method('get')->willReturnCallback(
+            static fn(SymbolPath $path): MetricBag => $bags[(string) $path->namespace],
+        );
 
         $findings = $rule->analyzeLevel(SymbolLevel::Namespace_, new AnalysisContext($repository));
 
-        $judged = array_map(static fn($finding): string => (string) $finding->symbolPath->namespace, $findings);
-        sort($judged);
+        self::assertCount(1, $findings);
+        self::assertSame('App\Service', $findings[0]->symbolPath->namespace);
+        self::assertSame(25.0, $findings[0]->metricValue);
+        self::assertStringContainsString('10 inbound + 15 outbound (CBO: 25 namespaces', $findings[0]->message);
+    }
 
-        // `App\ReportExport` shares a string prefix with `App\Report` but is not
-        // beneath it, so `App\Report` is still a leaf.
-        self::assertSame(['', 'App\Report', 'App\ReportExport', 'App\ServiceLocator', 'App\Service\Auth'], $judged);
+    /**
+     * A namespace declaring no type of its own publishes no own CBO: there is
+     * no package to judge, and a 0 would not be a measurement.
+     */
+    #[Test]
+    public function itDoesNotJudgeANamespaceWithoutAnOwnCbo(): void
+    {
+        $rule = new CboRule(new CboOptions(namespace: new NamespaceCboOptions(minClassCount: 0)));
+
+        $metricBag = (new MetricBag())
+            ->with('coupling.cbo', 50)
+            ->with('coupling.ca', 20)
+            ->with('coupling.ce', 30)
+            ->with('size.class-count.sum', 9);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')->willReturn([
+            self::subjectInfo(SymbolPath::forNamespace('App'), RelativePath::fromString('src'), null),
+        ]);
+        $repository->method('get')->willReturn($metricBag);
+
+        self::assertSame([], $rule->analyzeLevel(SymbolLevel::Namespace_, new AnalysisContext($repository)));
     }
 
     // Namespace minClassCount tests
@@ -529,12 +557,14 @@ final class CboRuleTest extends TestCase
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
-        // classCount.sum = 1, below default minClassCount (3)
+        // One class of its own, below the default minClassCount (3), however
+        // many its sub-namespaces hold.
         $metricBag = (new MetricBag())
-            ->with('coupling.cbo', 50)
-            ->with('coupling.ca', 20)
-            ->with('coupling.ce', 30)
-            ->with('size.class-count.sum', 1);
+            ->with('coupling.cbo-own', 50)
+            ->with('coupling.ca-own', 20)
+            ->with('coupling.ce-own', 30)
+            ->with('size.class-count.sum', 12)
+            ->with('size.class-count', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -566,10 +596,10 @@ final class CboRuleTest extends TestCase
             ->with('coupling.ca', 8)
             ->with('coupling.ce', 10);
         $nsBag = (new MetricBag())
-            ->with('coupling.cbo', 16)
-            ->with('coupling.ca', 6)
-            ->with('coupling.ce', 10)
-            ->with('size.class-count.sum', 5);
+            ->with('coupling.cbo-own', 16)
+            ->with('coupling.ca-own', 6)
+            ->with('coupling.ce-own', 10)
+            ->with('size.class-count', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -903,10 +933,10 @@ final class CboRuleTest extends TestCase
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         $metricBag = (new MetricBag())
-            ->with('coupling.cbo', 25)
-            ->with('coupling.ca', 10)
-            ->with('coupling.ce', 15)
-            ->with('size.class-count.sum', 5);
+            ->with('coupling.cbo-own', 25)
+            ->with('coupling.ca-own', 10)
+            ->with('coupling.ce-own', 15)
+            ->with('size.class-count', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')

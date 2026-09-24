@@ -263,8 +263,8 @@ Read this README with:
 Changes are complete when the seven flat leaf declarations retain collector
 name `halstead`, all five `maintainability.halstead.*` metrics, derived requirements exactly
 `halstead`, `cyclomatic-complexity`, and `method-statement-count`, and the
-`maintainability.mi` ID, aliases, channels, option defaults, thresholds,
-and 100 owned PHPUnit IDs. Do not add a `Contract/` directory without a named
+`maintainability.mi` ID, aliases, channels, option defaults and thresholds,
+and every owned test class is discovered. Do not add a `Contract/` directory without a named
 external consumer.
 
 

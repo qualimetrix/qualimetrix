@@ -8,6 +8,7 @@ use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\BinaryOp\Concat;
 use PhpParser\Node\Expr\FuncCall;
+use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Name;
 use PhpParser\Node\Scalar\InterpolatedString;
 
@@ -21,9 +22,10 @@ use PhpParser\Node\Scalar\InterpolatedString;
  * - sprintf() with SQL format string and superglobal arguments
  *
  * A superglobal search looks through concatenation and interpolation, so a
- * call or a concatenation already sees the read an interpolated or
- * concatenated query nested in it holds; the caller reports only the
- * outermost of them, see {@see SecurityPatternVisitor}.
+ * call or a concatenation already reaches the reads an interpolated or
+ * concatenated query nested in it holds. The caller passes the reads an
+ * enclosing query already reported, and a nested query is reported only for a
+ * read no enclosing query reached, see {@see SecurityPatternVisitor}.
  */
 final readonly class SqlInjectionDetector
 {
@@ -43,157 +45,100 @@ final readonly class SqlInjectionDetector
     /**
      * Detect SQL injection in any node that can build or run a query.
      *
-     * @return list<SecurityPatternLocation>
-     */
-    public function detect(Node $node): array
-    {
-        return match (true) {
-            $node instanceof FuncCall => $this->detectInFuncCall($node),
-            $node instanceof Concat => $this->detectInConcat($node),
-            $node instanceof InterpolatedString => $this->detectInInterpolation($node),
-            default => [],
-        };
-    }
-
-    /**
-     * Detect SQL injection in a function call node.
+     * @param array<int, true> $reported object ids of the reads an enclosing query already reported
      *
      * @return list<SecurityPatternLocation>
      */
-    public function detectInFuncCall(FuncCall $node): array
+    public function detect(Node $node, array $reported = []): array
     {
-        if (!$node->name instanceof Name || $node->isFirstClassCallable()) {
+        $query = $this->query($node);
+        if ($query === null) {
             return [];
         }
 
-        $functionName = $node->name->toLowerString();
-
-        // Check direct SQL functions
-        if (\in_array($functionName, self::SQL_FUNCTIONS, true)) {
-            foreach ($node->getArgs() as $arg) {
-                $varName = $this->superglobalAnalyzer->findSuperglobal($arg->value);
-                if ($varName !== null) {
-                    return [
-                        new SecurityPatternLocation(
-                            type: 'sql_injection',
-                            line: $node->getStartLine(),
-                            context: "\${$varName} in {$functionName}() call",
-                        ),
-                    ];
-                }
-            }
-        }
-
-        // Check sprintf with SQL keywords and superglobals
-        if ($functionName === 'sprintf') {
-            return $this->detectInSprintf($node);
-        }
-
-        return [];
-    }
-
-    /**
-     * Detect SQL injection in a concatenation node.
-     *
-     * @return list<SecurityPatternLocation>
-     */
-    public function detectInConcat(Concat $node): array
-    {
-        $parts = $this->superglobalAnalyzer->flattenConcat($node);
-
-        $hasSqlKeyword = false;
-        $superglobalName = null;
-
-        foreach ($parts as $part) {
-            if ($part instanceof Node\Scalar\String_ && $this->containsSqlKeyword($part->value)) {
-                $hasSqlKeyword = true;
-            }
-
-            $superglobalName ??= $this->superglobalAnalyzer->findSuperglobal($part);
-        }
-
-        if ($hasSqlKeyword && $superglobalName !== null) {
-            return [
-                new SecurityPatternLocation(
-                    type: 'sql_injection',
-                    line: $node->getStartLine(),
-                    context: "\${$superglobalName} concatenated with SQL query",
-                ),
-            ];
-        }
-
-        return [];
-    }
-
-    /**
-     * Detect SQL injection in an interpolated string node.
-     *
-     * @return list<SecurityPatternLocation>
-     */
-    public function detectInInterpolation(InterpolatedString $node): array
-    {
-        $hasSqlKeyword = false;
-        $superglobalName = null;
-
-        foreach ($node->parts as $part) {
-            if ($part instanceof Node\InterpolatedStringPart && $this->containsSqlKeyword($part->value)) {
-                $hasSqlKeyword = true;
-            }
-
-            if ($superglobalName === null && $part instanceof Expr) {
-                $superglobalName = $this->superglobalAnalyzer->findSuperglobal($part);
-            }
-        }
-
-        if ($hasSqlKeyword && $superglobalName !== null) {
-            return [
-                new SecurityPatternLocation(
-                    type: 'sql_injection',
-                    line: $node->getStartLine(),
-                    context: "\${$superglobalName} interpolated in SQL query",
-                ),
-            ];
-        }
-
-        return [];
-    }
-
-    /**
-     * Check sprintf with SQL keywords and superglobals.
-     *
-     * @return list<SecurityPatternLocation>
-     */
-    private function detectInSprintf(FuncCall $node): array
-    {
-        $args = $node->getArgs();
-        if ($args === []) {
-            return [];
-        }
-
-        $firstArg = $args[0]->value;
-        if (!$firstArg instanceof Node\Scalar\String_) {
-            return [];
-        }
-
-        if (!$this->containsSqlKeyword($firstArg->value)) {
-            return [];
-        }
-
-        // Check remaining arguments for superglobals
-        for ($i = 1, $count = \count($args); $i < $count; $i++) {
-            $varName = $this->superglobalAnalyzer->findSuperglobal($args[$i]->value);
-            if ($varName !== null) {
+        foreach ($this->superglobalAnalyzer->readsInParts($query[0]) as $read) {
+            if (!isset($reported[spl_object_id($read)]) && \is_string($read->name)) {
                 return [
                     new SecurityPatternLocation(
                         type: 'sql_injection',
                         line: $node->getStartLine(),
-                        context: "\${$varName} in sprintf() with SQL query",
+                        context: "\${$read->name} {$query[1]}",
                     ),
                 ];
             }
         }
 
         return [];
+    }
+
+    /**
+     * Every superglobal read the query built or run by $node holds; empty when
+     * $node is not a query.
+     *
+     * @return list<Variable>
+     */
+    public function reads(Node $node): array
+    {
+        $query = $this->query($node);
+
+        return $query === null ? [] : $this->superglobalAnalyzer->readsInParts($query[0]);
+    }
+
+    /**
+     * The operands that carry user input into the query $node builds or runs,
+     * and how the finding describes the way they get there; null when $node
+     * is not a query: a direct SQL function call, `sprintf()` with an SQL
+     * format literal, or a concatenation or interpolation with an SQL keyword.
+     *
+     * @return array{array<Expr|Node\InterpolatedStringPart>, string}|null
+     */
+    private function query(Node $node): ?array
+    {
+        return match (true) {
+            $node instanceof FuncCall => $this->callQuery($node),
+            $node instanceof Concat => $this->textQuery($this->superglobalAnalyzer->flattenConcat($node), 'concatenated with SQL query'),
+            $node instanceof InterpolatedString => $this->textQuery($node->parts, 'interpolated in SQL query'),
+            default => null,
+        };
+    }
+
+    /**
+     * @return array{array<Expr>, string}|null
+     */
+    private function callQuery(FuncCall $node): ?array
+    {
+        if (!$node->name instanceof Name || $node->isFirstClassCallable()) {
+            return null;
+        }
+
+        $functionName = $node->name->toLowerString();
+        $values = array_map(static fn(Node\Arg $arg): Expr => $arg->value, $node->getArgs());
+
+        if (\in_array($functionName, self::SQL_FUNCTIONS, true)) {
+            return [$values, "in {$functionName}() call"];
+        }
+
+        $format = $values[0] ?? null;
+
+        return $functionName === 'sprintf' && $format instanceof Node\Scalar\String_ && $this->containsSqlKeyword($format->value)
+            ? [\array_slice($values, 1), 'in sprintf() with SQL query']
+            : null;
+    }
+
+    /**
+     * @param array<Expr|Node\InterpolatedStringPart> $parts
+     *
+     * @return array{array<Expr|Node\InterpolatedStringPart>, string}|null
+     */
+    private function textQuery(array $parts, string $how): ?array
+    {
+        foreach ($parts as $part) {
+            if (($part instanceof Node\Scalar\String_ || $part instanceof Node\InterpolatedStringPart) && $this->containsSqlKeyword($part->value)) {
+                return [$parts, $how];
+            }
+        }
+
+        return null;
     }
 
     /**

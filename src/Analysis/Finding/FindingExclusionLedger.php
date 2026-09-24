@@ -124,6 +124,15 @@ final class FindingExclusionLedger
      */
     private function namespaceExclusionAttribution(string $producerRuleName, Finding $finding): ?RuleExclusionAttribution
     {
+        // The project aggregate has no namespace; its symbol path shows
+        // `(project)` in that field. Compared, `exact: '(project)'` or a broad
+        // regex removed the finding while the unbound-suppression audit, which
+        // judges patterns against declared namespaces, reported the same
+        // pattern as having suppressed nothing.
+        if ($finding->symbolPath->getType() === SymbolType::Project) {
+            return null;
+        }
+
         // Occurrence-style rules attach a file symbol path (namespace null) to
         // their findings; the declaring namespace lives on the subject, so
         // fall back to it the same way NamespaceExclusionFilter does.

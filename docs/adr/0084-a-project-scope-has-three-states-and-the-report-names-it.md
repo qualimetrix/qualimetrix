@@ -44,13 +44,14 @@ the gate grew its second meaning. Only a run narrowed below a declared project
 is withheld.
 
 **2. The report names the state in every format with a place for it.**
-`Reporting\ReportProjectScope` carries the state, the uncovered targets and
-the channels not judged: every whole-project channel on a narrowed run, and on
-an `unknown` run the channels whose namespace values were not judged (see
-Consequences). `json`, `metrics` and `suppressed`
-publish it under a top-level `projectScope` key of one shape in every state;
-`sarif`, `github`, `html` and the human formats add an entry only for
-`narrowed` and `unknown`. `gitlab` and `checkstyle` omit it: their consumers
+`Reporting\ReportProjectScope` carries the state, the uncovered targets, the
+channels not judged and the configured values not judged: on a narrowed run
+every whole-project channel and an empty value list, since it judges none, on a `covered` or `unknown` run
+the suppression values the run skipped and the channels those values belong
+to (see Consequences). `json`, `metrics` and `suppressed` publish it under a
+top-level `projectScope` key of one shape in every state; `sarif`, `github`,
+`html` and the human formats add an entry whenever it says something — every
+state but a `covered` run that skipped no value. `gitlab` and `checkstyle` omit it: their consumers
 count every entry as a finding, and narrowing a run is the caller's choice, so
 — unlike a drill-down selection, which those formats refuse — the run is not
 refused either.
@@ -78,15 +79,22 @@ a file that is neither fails the test by name.
   never read, and reporting it as matching nothing was a guess that failed a
   `--fail-on=warning` pipeline over correct configuration. So no namespace
   value — global `suppress_namespaces`, per-rule `suppress_namespaces` or
-  `suppress_namespace_channels` — is judged on an `unknown` run, and the report
-  lists `suppression.unmatched-namespace` and
-  `suppression.unmatched-rule-ledger` in `unjudgedChannels` as the channels
-  whose namespace values went unjudged. The price is the whole-tree run of such
-  a project, where every namespace was in reach and a miss would have been a
-  fact; it is silent too, because the rule is one answer per state rather than
-  a second predicate about the paths, and the published list can then be a
-  constant the report cannot contradict. The remedy is the one above: a
-  `composer.json` with `autoload`.
+  `suppress_namespace_channels` — is judged on an `unknown` run. The price is
+  the whole-tree run of such a project, where every namespace was in reach and
+  a miss would have been a fact; it is silent too, because the rule is one
+  answer per state rather than a second predicate about the paths. The remedy
+  is the one above: a `composer.json` with `autoload`.
+- A skipped value is named, and the channels are derived from the values. The
+  suppression audit that judges each value lists every one it skipped — any
+  namespace value on an `unknown` run, a path value the run's paths do not
+  reach on a `covered` one — and the report publishes them as
+  `unjudgedValues`, `{option, pattern}` each, with `unjudgedChannels` the
+  distinct channels of those values. A fixed list of channels per state would
+  name a channel none of whose values was skipped, and would say nothing on a
+  `covered` run that spared a value: `suppress_paths: [tests/Legacy]` on
+  `qmx check src/`, with `tests/` declared only for development, read exactly
+  like a value judged and bound. One enumeration yields both the findings and
+  the skipped values, so the two cannot disagree about which values exist.
 - The narrowed list names every channel of the family, enabled on the run or
   not; it says which channels this kind of run cannot judge, not which ones
   would have fired.

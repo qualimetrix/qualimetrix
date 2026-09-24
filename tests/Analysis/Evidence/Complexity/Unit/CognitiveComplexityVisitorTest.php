@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit;
 
+use LogicException;
+use PhpParser\Node\Stmt\If_;
+use PhpParser\NodeFinder;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -142,10 +145,7 @@ PHP,
         ];
 
         // Mixed logical operators: $a && $b || $c && $d
-        // AST: BooleanOr(BooleanAnd($a, $b), BooleanAnd($c, $d))
-        // BooleanOr: no boolean ancestor -> +1
-        // BooleanAnd($a,$b): parent BooleanOr (different) -> +1
-        // BooleanAnd($c,$d): parent BooleanOr (different) -> +1
+        // In source order `&&`, `||`, `&&`: each differs from the one before it -> +3
         // Total: +1 (if) + 3 (logical) = 4
         yield 'mixed operators' => [
             'code' => <<<'PHP'
@@ -157,7 +157,7 @@ function mixedOps($a, $b, $c, $d) {
     return false;
 }
 PHP,
-            'expected' => ['mixedOps' => 4], // +1 (if) + 3 (logical: ||, left &&, right &&)
+            'expected' => ['mixedOps' => 4], // +1 (if) + 3 (logical sequences)
         ];
 
         // Switch: only +1, not for each case
@@ -609,11 +609,7 @@ PHP,
             ],
         ];
 
-        // Tree-aware logical operator tracking: $a || $b || $c && $d
-        // AST: BooleanOr(BooleanOr($a, $b), BooleanAnd($c, $d))
-        // Inner BooleanOr($a,$b): no boolean ancestor -> +1
-        // Outer BooleanOr: parent BooleanOr (same) -> +0
-        // BooleanAnd($c,$d): parent BooleanOr (different) -> +1
+        // $a || $b || $c && $d: in source order `||`, `||`, `&&` -> +1, +0, +1
         // Total: +1 (if) + 2 (logical) = 3
         yield 'or chain then and' => [
             'code' => <<<'PHP'
@@ -629,11 +625,7 @@ PHP,
         ];
 
         // Nested parenthesized boolean expressions: ($a && $b) || ($c && ($d || $e))
-        // AST: BooleanOr(BooleanAnd($a,$b), BooleanAnd($c, BooleanOr($d,$e)))
-        // BooleanOr: no boolean ancestor -> +1
-        // BooleanAnd($a,$b): parent BooleanOr (different) -> +1
-        // BooleanAnd($c,...): parent BooleanOr (different) -> +1
-        // BooleanOr($d,$e): parent BooleanAnd (different) -> +1
+        // In source order `&&`, `||`, `&&`, `||`: each differs from the one before it -> +4
         // Total: +1 (if) + 4 (logical) = 5
         yield 'nested parenthesized boolean' => [
             'code' => <<<'PHP'
@@ -648,10 +640,7 @@ PHP,
             'expected' => ['nestedBool' => 5],
         ];
 
-        // Deep same-type chain: $a && $b && $c && $d && $e
-        // AST: BooleanAnd(BooleanAnd(BooleanAnd(BooleanAnd($a,$b), $c), $d), $e)
-        // Innermost BooleanAnd: no boolean ancestor -> +1
-        // All outer BooleanAnd: parent BooleanAnd (same) -> +0 each
+        // Deep same-type chain: $a && $b && $c && $d && $e is one sequence
         // Total: +1 (if) + 1 (logical) = 2
         yield 'long same-type chain' => [
             'code' => <<<'PHP'
@@ -1169,9 +1158,7 @@ PHP;
     }
 
     /**
-     * Bug fix: nodeStack must be saved/restored for closures inside methods.
-     * Without this fix, the nodeStack from the outer method leaks into the closure,
-     * causing incorrect logical operator chain detection.
+     * A logical sequence of the outer method must not continue into a closure written inside it.
      */
     #[Test]
     public function itDoesNotLeakNodeStackIntoClosure(): void
@@ -1210,8 +1197,7 @@ PHP;
     }
 
     /**
-     * Bug fix: nodeStack must be restored after closure ends.
-     * Logical operators after a closure should use the outer nodeStack, not an empty one.
+     * Logical operators after a closure are scored by the outer method's rules again.
      */
     #[Test]
     public function itRestoresNodeStackAfterClosure(): void
@@ -1501,6 +1487,57 @@ PHP;
     }
 
     #[Test]
+    public function itRecordsAnElseIfAsOneElseifIncrementOnTheIfLine(): void
+    {
+        $code = <<<'PHP'
+<?php
+function f($a, $b) {
+    if ($a) {
+    } else
+        if ($b) {
+        }
+}
+PHP;
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        self::assertSame(
+            [['type' => 'if', 'line' => 3, 'points' => 1], ['type' => 'elseif', 'line' => 5, 'points' => 1]],
+            $visitor->getIncrements()['f'],
+        );
+    }
+
+    #[Test]
+    public function itRefusesAnElseWithALoneIfWhenTheParserLeftNoEndPosition(): void
+    {
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse('<?php function f($a, $b) { if ($a) {} else if ($b) {} }') ?? [];
+        $outerIf = (new NodeFinder())->findFirstInstanceOf($ast, If_::class);
+        self::assertNotNull($outerIf);
+        $outerIf->setAttributes(array_diff_key($outerIf->getAttributes(), ['endFilePos' => true]));
+
+        $visitor = new CognitiveComplexityVisitor();
+        $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
+        $traverser->addVisitor($visitor);
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('endFilePos');
+        $traverser->traverse($ast);
+    }
+
+    #[Test]
     public function itRecordsNoIncrementForNullCoalescing(): void
     {
         $code = '<?php function f($a, $b) { $a ??= $b ?? 1; return $a ? 1 : 2; }';
@@ -1745,6 +1782,109 @@ PHP;
         yield 'method recursion counts once per method' => [
             'code' => '<?php namespace App; class C { public function m($a) { $this->m($a); return $this->m($a); } }',
             'expected' => ['App\C::m' => 1],
+        ];
+
+        // A direct self-call in every spelling PHP resolves to the same callable.
+        yield 'method self-call spelled in another letter case' => [
+            'code' => '<?php namespace App; class C { public function m($a) { return $this->M($a); } }',
+            'expected' => ['App\C::m' => 1],
+        ];
+
+        yield 'nullsafe method self-call' => [
+            'code' => '<?php namespace App; class C { public function ns($a) { return $this?->ns($a); } }',
+            'expected' => ['App\C::ns' => 1],
+        ];
+
+        yield 'static self-call through the own class name' => [
+            'code' => '<?php namespace App; class R { public static function st($a) { return R::st($a) + \App\R::sT($a); } }',
+            'expected' => ['App\R::st' => 1],
+        ];
+
+        yield 'function self-call spelled in another letter case' => [
+            'code' => '<?php function k($a) { return K($a); }',
+            'expected' => ['k' => 1],
+        ];
+
+        yield 'namespaced function self-call through its fully qualified name' => [
+            'code' => '<?php namespace App; function g($a) { return \App\g($a); }',
+            'expected' => ['App\g' => 1],
+        ];
+
+        yield 'namespaced function self-call through a namespace-relative name' => [
+            'code' => '<?php namespace App; function g($a) { return namespace\g($a); }',
+            'expected' => ['App\g' => 1],
+        ];
+
+        yield 'a same-named method of another class is not a self-call' => [
+            'code' => '<?php namespace App; class R { public static function st($a) { return \Other\R::st($a) + Q::st($a); } }',
+            'expected' => ['App\R::st' => 0],
+        ];
+
+        yield 'a same-named function of another namespace is not a self-call' => [
+            'code' => '<?php namespace App; function g($a) { return \Other\g($a) + Sub\g($a); }',
+            'expected' => ['App\g' => 0],
+        ];
+
+        // B1: "sequences of binary logical operators", read in source order as the whitepaper writes them.
+        yield 'whitepaper: each new sequence of like operators' => [
+            'code' => '<?php function f($a, $b, $c, $d, $e, $g) { if ($a && $b && $c || $d || $e && $g) {} }',
+            'expected' => ['f' => 4], // if +1, `&& &&` +1, `|| ||` +1, `&&` +1
+        ];
+
+        yield 'whitepaper: a negated group is a sequence of its own' => [
+            'code' => '<?php function f($a, $b, $c) { if ($a && !($b && $c)) {} }',
+            'expected' => ['f' => 3], // if +1, && +1, && inside !() +1
+        ];
+
+        yield 'a sequence in a call argument is a sequence of its own' => [
+            'code' => '<?php function f($a, $b, $c) { return $a && g($b && $c); }',
+            'expected' => ['f' => 2],
+        ];
+
+        yield 'a parenthesised group of another operator splits the outer sequence' => [
+            'code' => '<?php function f($a, $b, $c, $d) { return $a && ($b || $c) && $d; }',
+            'expected' => ['f' => 3], // `&&`, `||`, `&&` in source order
+        ];
+
+        yield 'an operator change in the middle of a chain' => [
+            'code' => '<?php function f($a, $b, $c, $d) { return $a || $b && $c || $d; }',
+            'expected' => ['f' => 3], // `||`, `&&`, `||` in source order
+        ];
+
+        yield 'a parenthesised group of the same operator continues the sequence' => [
+            'code' => '<?php function f($a, $b, $c) { return $a && ($b && $c); }',
+            'expected' => ['f' => 1],
+        ];
+
+        yield 'word and symbol spellings of one operator form one sequence' => [
+            'code' => '<?php function f($a, $b, $c) { return ($a and $b && $c); }',
+            'expected' => ['f' => 1],
+        ];
+
+        // B1/B2: `else if` is the hybrid `else if` of the whitepaper, whichever way PHP spells it.
+        yield 'whitepaper: an else if chain' => [
+            'code' => '<?php function f($a, $b, $c) { if ($a) {} else if ($b) {} else if ($c) {} else {} }',
+            'expected' => ['f' => 4], // if +1, else if +1, else if +1, else +1
+        ];
+
+        yield 'else if scores as elseif' => [
+            'code' => '<?php function f($a, $b, $c) { if ($a) {} else if ($b) { if ($c) {} } }',
+            'expected' => ['f' => 4], // if +1, else if +1, inner if +2 (nesting=1)
+        ];
+
+        yield 'a comment between else and if keeps the else if' => [
+            'code' => '<?php function f($a, $b) { if ($a) {} else /* then */ if ($b) {} }',
+            'expected' => ['f' => 2],
+        ];
+
+        yield 'an if alone in a braced else is nested in it' => [
+            'code' => '<?php function f($a, $b) { if ($a) {} else { if ($b) {} else {} } }',
+            'expected' => ['f' => 5], // if +1, else +1, if +2 (nesting=1), inner else +1
+        ];
+
+        yield 'an if alone in an alternative-syntax else is nested in it' => [
+            'code' => '<?php function f($a, $b) { if ($a): else: if ($b) {} endif; }',
+            'expected' => ['f' => 4], // if +1, else +1, if +2 (nesting=1)
         ];
 
         // "Cognitive Complexity ignores null-coalescing operators" (whitepaper p. 6).

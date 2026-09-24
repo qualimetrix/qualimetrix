@@ -301,8 +301,10 @@ mentions. What the ban removes is only the ability to hide the finding with the
 mechanism it exists to audit.
 
 **The second banned channel is `duplication.clone`, for a different
-reason** — no directive form binds to its project-wide finding in a way an
-author controls; see the `DirectiveChannelBan` docblock for the mechanism.
+reason** — every copy of a block is one project-level debt: a symbol directive
+never binds to the project, and a file or next-line directive would silence the
+copy it is written beside while the other copies still report the block; see
+the `DirectiveChannelBan` docblock for the mechanism.
 Every form is refused at the line it is written on, with the same
 `annotation.unresolved-directive` code and its own wording; the working path
 is channel-level (`disabled_rules` / `--disable-rule` / baseline), not a

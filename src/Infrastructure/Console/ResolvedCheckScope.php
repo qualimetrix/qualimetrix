@@ -15,7 +15,8 @@ final readonly class ResolvedCheckScope
      * @param bool $coversProjectScope Whether a whole-project channel may judge the resolved paths: they cover every
      *                                 autoload target the run's `AutoloadDevPolicy` counts, or the manifest declares
      *                                 none and the paths are the project
-     * @param ReportProjectScope $projectScope The same measurement as the report publishes it
+     * @param ReportProjectScope $projectScope The same measurement as the report publishes it, before any configured
+     *                                         value was judged: a judging run adds the values it skipped afterwards
      */
     public function __construct(
         public GitScopeResolution $scope,

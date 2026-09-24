@@ -17,7 +17,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * The difference matters: a written level holds on the console at every
  * verbosity, and only an unwritten one lets verbosity choose.
  *
- * @throws LogFileUnavailable when `$logFile` cannot be written
+ * @throws LogFileUnavailable when `$logFile` is blank or cannot be written; only null means no log file
  */
 interface LoggerFactoryInterface
 {

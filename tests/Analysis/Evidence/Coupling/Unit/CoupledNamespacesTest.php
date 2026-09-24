@@ -55,6 +55,25 @@ final class CoupledNamespacesTest extends TestCase
     }
 
     /**
+     * The own scope is exactly one namespace: a sub-namespace is on the far
+     * side like any other, and an ancestor's own count holds only its own
+     * edges.
+     */
+    #[Test]
+    public function itCountsTheOwnScopeOverExactlyOneNamespace(): void
+    {
+        $coupled = CoupledNamespaces::of(AdjacencyGraphBuilder::build([
+            'App\\Svc\\S' => ['App\\Svc\\Exception\\Oops', 'Ext\\Z'],
+            'App\\Svc\\Exception\\Oops' => ['Ext2\\Q'],
+        ]));
+
+        self::assertSame(2, $coupled->ownCountFor('App\\Svc'));
+        self::assertSame(2, $coupled->ownCountFor('App\\Svc\\Exception'));
+        self::assertSame(0, $coupled->ownCountFor('App'));
+        self::assertSame(2, $coupled->countFor('App\\Svc'));
+    }
+
+    /**
      * The global namespace is a region of its own, not the parent of every
      * namespace: a prefix of '' would otherwise swallow the whole project.
      */

@@ -484,3 +484,30 @@ layer's own `exclude:` makes no such room, and a third occurrence is refused
 behind the layer that received the carved-out classes. Whether the recipient
 reaches anything is left to `architecture.unreachable-layer` at run time. The
 refusal that remains names the carve-out as the way to reach the second layer.
+
+The first version of that repair asked the question in one place only.
+`architecture.potential-shadow` still reported the recipient as shadowed on
+every class the earlier layer kept — equal patterns are not strictly more
+specific — so the carve-out loaded and then failed every run. Whether a layer
+takes every class its pattern names is now one predicate
+(`MembershipSpec::ownsItsPatterns()`), asked by the loading check and by the
+shadow verdict alike: a pattern repeated behind a layer with an `exclude:`, or
+behind a `match: all` layer narrowing it with another criterion, is neither
+refused nor reported as a shadow. A narrower pattern behind such a layer is
+still a shadow; the repetition is the only form the predicate excuses.
+
+**A PHP class has one name, whatever its case.** The known-type test and the
+hierarchy table folded the case of PHP's own class names, while membership
+compared a criterion with the names a class declares by exact string. A
+criterion `extends: ['\exception']` therefore named a type the run met — so
+`architecture.unreachable-layer` stood down — and matched no class extending
+`\Exception`; `implements \iteratoraggregate` in the source missed
+`implements: ['\IteratorAggregate']` and reported the layer unreachable. Both
+sides now reach the comparison in the spelling `PhpBuiltinClassRegistry` keeps:
+a criterion when it is loaded, and every name a class context holds — the
+subject and each end of each declaration edge — when the context is built. The
+rejected alternative was the opposite fold: to let the known-type test accept
+only the exact spelling. It would have restored the error for a lower-case
+criterion, but kept every class that writes a PHP name in another case out of
+the layers naming it, which PHP itself does not do. Names of the project's own
+classes and of vendor classes are still compared as written.

@@ -77,7 +77,7 @@ final class BaselineCleanerTest extends TestCase
             self::baselineOf($entry),
             [],
             StubChannelDeclarationRegistry::withDefaults(),
-            $coverage->unproducedChannels([$entry->identity->channel]),
+            $coverage->unmeasured([$entry->identity]),
         );
 
         self::assertCount(1, $candidates);
@@ -100,7 +100,7 @@ final class BaselineCleanerTest extends TestCase
             self::baselineOf($entry),
             [],
             StubChannelDeclarationRegistry::withDefaults(),
-            StubRuleCoverage::withSkipped(notSelected: ['code-smell.goto'])->unproducedChannels([$entry->identity->channel]),
+            StubRuleCoverage::withSkipped(notSelected: ['code-smell.goto'])->unmeasured([$entry->identity]),
         );
 
         self::assertCount(1, $candidates);

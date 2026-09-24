@@ -7,12 +7,16 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Support;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
+use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
+use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
 
 /**
@@ -65,6 +69,15 @@ final class StubRuleCoverage
             public function publishable(array $findings): array
             {
                 return $findings;
+            }
+
+            public function publication(): ChannelPublication
+            {
+                return new ChannelPublication(
+                    new RuleSelector(new InMemoryRuleChannelRegistry()),
+                    new RuleSelection(disabled: $this->notSelected),
+                    $this->levelActivity(),
+                );
             }
 
             public function allRules(): array

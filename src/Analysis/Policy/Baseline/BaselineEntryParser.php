@@ -6,8 +6,8 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Core\Symbol\MetricSubject;
 
 /**
  * Turns one decoded entry of a baseline file into either an applicable
@@ -89,7 +89,7 @@ final readonly class BaselineEntryParser
         );
 
         try {
-            return new BaselineIdentity(
+            $identity = new BaselineIdentity(
                 $subjectKey,
                 new FindingChannel($channel),
                 self::readOptionalNonEmptyString(
@@ -99,6 +99,13 @@ final readonly class BaselineEntryParser
                 ),
                 self::readEdge($raw),
             );
+
+            // A key no subject is written as could never meet a finding, and
+            // the level it measures at is what decides whether a run that did
+            // not report it had looked.
+            MetricSubject::levelOfCanonical($subjectKey);
+
+            return $identity;
         } catch (InvalidArgumentException $e) {
             throw new BaselineEntryRejection(InertEntryReason::Malformed, $e->getMessage());
         }
@@ -176,13 +183,14 @@ final readonly class BaselineEntryParser
         // The channel's own shape is not stored here — it moved to the
         // producer (ADR 0031) — but `$declaration->direction` is null exactly
         // when the producer declared `occurrence`, since registry assembly
-        // refuses any other combination. Comparing nullability against
-        // `$entry`'s self-derived shape is the same check as before.
-        if (($declaration->direction === null) !== ($entry->shape() === ChannelShape::Occurrence)) {
+        // refuses any other combination, and an entry is occurrence-shaped
+        // exactly when it stores no magnitudes. The two nullabilities agree
+        // or the entry is refused.
+        if (($declaration->direction === null) !== ($entry->magnitudes === null)) {
             throw new BaselineEntryRejection(InertEntryReason::ShapeMismatch, \sprintf(
                 'the channel declares shape "%s" but the entry stores %s',
                 $declaration->direction === null ? 'occurrence' : 'magnitude',
-                $entry->shape() === ChannelShape::Magnitude ? 'magnitudes' : 'no magnitudes',
+                $entry->magnitudes !== null ? 'magnitudes' : 'no magnitudes',
             ));
         }
 

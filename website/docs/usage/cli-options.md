@@ -641,7 +641,10 @@ bin/qmx check src/ --log-file=qmx.log
 The file is appended to, and a missing directory is created. A path that cannot
 be written — a directory that cannot be created, a file that cannot be opened for
 appending — is refused with exit code 3 before analysis starts, and the message
-quotes the reason the system gave. Only `check` takes the option.
+quotes the reason the system gave. An empty or blank value — `--log-file=`, as an
+unset variable in `--log-file=$LOG` writes it — is refused with exit code 3 too,
+rather than read as "no log file": leave the option out to write none. Only
+`check` takes the option.
 
 ### `--log-level`
 

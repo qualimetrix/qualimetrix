@@ -28,6 +28,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterfac
  * Handles:
  * - Instance methods via $this->method()
  * - Static methods via self::method() / static::method()
+ * - Literal callable arrays [$this, 'method'], [self::class, 'method'], [static::class, 'method'],
+ *   [__CLASS__, 'method'] and a proven same-class receiver variable
  * - Properties via $this->prop / self::$prop / static::$prop
  * - Constants via self::CONST / static::CONST
  * - Constructor promoted properties
@@ -47,7 +49,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterfac
  *
  * Limitations:
  * - Variable method/property access ($this->$name) not detected
- * - Callable syntax [$this, 'method'] not detected
+ * - Callable strings ('self::method') and callable arrays whose method name is not a string literal not detected
  * - Traits from other files are not resolved
  */
 final class UnusedPrivateVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface

@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
+use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 
 /**
  * Per-criterion shape and semantic validator shared by {@see LayersValidator}
@@ -84,6 +85,11 @@ final class LayerCriterionNormalizer
      * a class in the global namespace (`\Throwable`), and the run records
      * every name without one, so a name kept verbatim could never match.
      *
+     * A class PHP declares is stored in the spelling its registry keeps, the
+     * one the run records it by whatever case the source used: PHP class names
+     * are case-insensitive, and `\exception` is `\Exception`. Kept verbatim,
+     * it would be a type the run met that no class could ever match.
+     *
      * @return list<string>
      */
     public function normalizeFqnList(int $index, string $layerName, string $kind, mixed $value): array
@@ -113,7 +119,7 @@ final class LayerCriterionNormalizer
             },
         );
 
-        return array_map(static fn(string $entry): string => ltrim($entry, '\\'), $entries);
+        return array_map(static fn(string $entry): string => PhpBuiltinClassRegistry::spelling(ltrim($entry, '\\')), $entries);
     }
 
     /**

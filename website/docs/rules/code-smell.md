@@ -888,7 +888,8 @@ The rule is smart about edge cases:
 - **Anonymous classes:** private members in anonymous classes are isolated and don't leak to the parent class
 - **Analyzed types:** classes and enums; interfaces and traits are not analyzed
 - **Access patterns:** recognizes `$this->method()`, `self::method()`, `static::method()`, property access, and constant access. Method names are matched case-insensitively, as PHP resolves them; property and constant names are case-sensitive
-- **Recursion:** a private method that is only called from its own body is reported as unused
+- **Callables:** a literal callable array counts as a use of the method: `[$this, 'method']`, `[self::class, 'method']`, `[static::class, 'method']`, `[__CLASS__, 'method']`, also inside `Closure::fromCallable()` or `array_map()`. A method named by a variable (`[$this, $name]`, `$this->$name()`) or by a string such as `'self::method'` is not recognized, and such a method is reported as unused
+- **Recursion:** a private method that is only called from its own body is reported as unused; a callable array naming the method inside its own body is a self-reference too
 - **Trait resolution:** calls to methods defined in traits used by the same class (in the same file) are recognized, reducing false positives
 
 <!-- llms:skip-end -->

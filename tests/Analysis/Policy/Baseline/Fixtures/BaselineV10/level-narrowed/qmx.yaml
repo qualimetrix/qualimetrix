@@ -1,0 +1,12 @@
+onlyRules: ['health.maintainability', 'complexity.ccn']
+computed_metrics:
+  health.maintainability:
+    formula: "10"
+rules:
+  complexity.ccn:
+    callable:
+      warning: 1
+      error: 99
+    class:
+      max_warning: 1
+      max_error: 99

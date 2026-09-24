@@ -148,7 +148,7 @@ final readonly class BoundaryExplanationService
         ?array $repositoryRecord,
     ): EffectiveBoundary {
         $baselineSource = self::baselineSourceFor($identity, $baseline, $measuredFindings);
-        if ($baselineSource !== null && $this->ruleCoverage->unproducedChannels([$identity->channel]) !== []) {
+        if ($baselineSource !== null && $this->ruleCoverage->unmeasured([$identity]) !== []) {
             $baselineSource = $baselineSource->unmeasured();
         }
 

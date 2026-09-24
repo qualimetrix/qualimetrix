@@ -13,4 +13,6 @@ and refuse on divergence; neither table is generated.
 PHP folds class names by ASCII case, so both tables answer a name in any case
 spelling: `PhpBuiltinClassRegistry::canonicalName()` maps it to the spelling the
 list keeps, and every lookup goes through it. Callers strip a leading `\`
-themselves.
+themselves. `PhpBuiltinClassRegistry::spelling()` is the name a caller records
+a class under — that spelling for a PHP class, the written name for any other —
+for readers that compare class names by exact string.

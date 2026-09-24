@@ -118,19 +118,6 @@ final readonly class ProjectScopeCoverage
         'suppression.unmatched-rule-ledger',
     ];
 
-    /**
-     * The channels whose namespace values an `Unknown` run leaves unjudged: a
-     * namespace is located only through a declared autoload, and such a project
-     * declares none. Their path values are still judged, so the list names the
-     * channels, not a silence of every value they carry.
-     *
-     * @var list<string>
-     */
-    public const array UNKNOWN_SCOPE_UNJUDGED_CHANNELS = [
-        'suppression.unmatched-namespace',
-        'suppression.unmatched-rule-ledger',
-    ];
-
     public function __construct(private ComposerAutoloadPathReaderInterface $composerReader) {}
 
     /**

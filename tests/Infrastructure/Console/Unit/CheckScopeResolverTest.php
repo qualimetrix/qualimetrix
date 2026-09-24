@@ -134,13 +134,14 @@ final class CheckScopeResolverTest extends TestCase
 
     /**
      * The three states reach the report from the one measurement the verdict
-     * is read from: a manifest-less project is judged and names the channels
-     * whose namespace values it could not locate, a narrowed run is not judged
-     * and names what it left out and which channels.
+     * is read from: a narrowed run is not judged and names what it left out
+     * and which channels. A judging run — covered or manifest-less — names no
+     * channel here: which of its values went unjudged is known only once they
+     * are asked, after the analysis, and the report gains them then.
      *
      * @param ?list<string> $targets what the manifest declares, or null for none readable
      * @param list<string> $paths
-     * @param array{state: string, uncoveredAutoloadTargets: list<string>, unjudgedChannels: list<string>} $expected
+     * @param array{state: string, uncoveredAutoloadTargets: list<string>, unjudgedChannels: list<string>, unjudgedValues: list<array{option: string, pattern: string}>} $expected
      */
     #[Test]
     #[DataProvider('provideProjectScopes')]
@@ -176,17 +177,19 @@ final class CheckScopeResolverTest extends TestCase
     public static function provideProjectScopes(): iterable
     {
         yield 'covered' => [['src', 'lib'], ['src', 'lib'], true, [
-            'state' => 'covered', 'uncoveredAutoloadTargets' => [], 'unjudgedChannels' => [],
+            'state' => 'covered', 'uncoveredAutoloadTargets' => [], 'unjudgedChannels' => [], 'unjudgedValues' => [],
         ]];
         yield 'narrowed' => [['src', 'lib'], ['src'], false, [
             'state' => 'narrowed',
             'uncoveredAutoloadTargets' => ['lib'],
             'unjudgedChannels' => ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS,
+            'unjudgedValues' => [],
         ]];
         yield 'unknown: the paths are the project' => [null, ['src'], true, [
             'state' => 'unknown',
             'uncoveredAutoloadTargets' => [],
-            'unjudgedChannels' => ProjectScopeCoverage::UNKNOWN_SCOPE_UNJUDGED_CHANNELS,
+            'unjudgedChannels' => [],
+            'unjudgedValues' => [],
         ]];
     }
 

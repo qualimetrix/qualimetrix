@@ -207,6 +207,17 @@ final class PhpBuiltinClassRegistry
     }
 
     /**
+     * The name a class is recorded under: the spelling this list keeps when
+     * PHP declares the name in any case, and the name as written otherwise.
+     * Two readers comparing class names by exact string agree on a PHP class
+     * only when both pass through here.
+     */
+    public static function spelling(string $className): string
+    {
+        return self::canonicalName($className) ?? $className;
+    }
+
+    /**
      * The spelling this list keeps for a name written in any case, or null
      * when PHP does not declare the name.
      *

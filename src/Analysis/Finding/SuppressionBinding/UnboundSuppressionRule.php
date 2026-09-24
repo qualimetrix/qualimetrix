@@ -115,11 +115,11 @@ final class UnboundSuppressionRule extends AbstractRule
      * and belongs to no declaration — it is a fact about the run's
      * configuration, the way `discovery.unmatched-exclude` is.
      *
-     * Project level is also what keeps a finding about `suppress_paths` from
-     * being removed by the very pattern it reports: the global path and
-     * namespace filters exempt channels their owner declared project-scoped
-     * (`ChannelFileScope`), which is a declared property rather than a
-     * spelling.
+     * Project level is also what keeps a finding about a pattern from being
+     * removed by the very pattern it reports. These channels are not declared
+     * project-scoped (`ChannelFileScope`); the global filters pass them
+     * because a project finding has no file for a path pattern to match and
+     * no namespace for a namespace pattern to compare.
      *
      * @return array<string, ChannelDeclaration>
      */

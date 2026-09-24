@@ -108,6 +108,42 @@ final readonly class MembershipSpec
     }
 
     /**
+     * Whether the layer takes every class its patterns name — the question
+     * both readers of a repeated pattern ask: a later layer on the same pattern
+     * is unreachable behind a layer that does, and receives the classes left
+     * over by one that does not.
+     *
+     * Two kinds of layer leave classes over. One with an `exclude:` hands the
+     * classes it removes to the next layer that matches them, which is how a
+     * carve-out is written. One declaring `match: all` beside a non-pattern
+     * criterion takes only the pattern's classes that also satisfy it.
+     */
+    public function ownsItsPatterns(): bool
+    {
+        return $this->exclude === null && !$this->narrowsItsPatterns();
+    }
+
+    /**
+     * Whether the layer declares `match: all` beside a non-pattern criterion,
+     * and so takes only the pattern's classes that also satisfy it. Under
+     * `match: any` the patterns alone claim every class they name.
+     */
+    public function narrowsItsPatterns(): bool
+    {
+        return $this->mode === MatchMode::All
+            && ($this->suffix !== [] || $this->attributes !== [] || $this->implements !== [] || $this->extends !== []);
+    }
+
+    /**
+     * The form in which two patterns are compared for being the same one: a
+     * trailing separator names the same namespace as its absence.
+     */
+    public static function patternIdentity(string $pattern): string
+    {
+        return rtrim($pattern, '\\');
+    }
+
+    /**
      * @param list<string> $values
      */
     private static function quoteCsv(array $values): string

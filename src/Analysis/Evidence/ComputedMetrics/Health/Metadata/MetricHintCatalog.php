@@ -201,6 +201,13 @@ final class MetricHintCatalog
         // through the base key, and `coupling.distance-own` is a base, not a
         // suffix of `coupling.distance`. Without them the report printed the
         // raw key and an empty target where a label and a threshold belong.
+        MetricName::COUPLING_CBO_OWN => [
+            'label' => 'CBO (own)',
+            'direction' => 'lower_is_better',
+            'goodValue' => 'below 7',
+            'badExplanation' => 'the namespace\'s own classes are coupled to too many others',
+            'goodExplanation' => 'its own classes are well-isolated',
+        ],
         MetricName::COUPLING_INSTABILITY_OWN => [
             'label' => 'Instability (own)',
             'direction' => 'range',
@@ -494,6 +501,12 @@ final class MetricHintCatalog
             ['max' => 0.1, 'text' => 'On main sequence'],
             ['max' => 0.3, 'text' => 'Acceptable balance'],
             ['above' => true, 'text' => 'Off balance'],
+        ],
+        MetricName::COUPLING_CBO_OWN => [
+            ['max' => 7, 'text' => 'Normal coupling'],
+            ['max' => 14, 'text' => 'Moderate coupling'],
+            ['max' => 20, 'text' => 'High coupling'],
+            ['above' => true, 'text' => 'Very high coupling'],
         ],
         MetricName::COUPLING_INSTABILITY_OWN => [
             ['max' => 0.09, 'text' => 'Maximally stable'],

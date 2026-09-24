@@ -227,7 +227,7 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
         "debtPer1kLoc": 2.1
     },
     "outOfScope": null,
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
     "health": {
         "complexity": {
             "score": 78.0,
@@ -520,7 +520,7 @@ bin/qmx check src/ --format=json --no-progress > report.json
             }
         }
     ],
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
     "summary": {
         "filesAnalyzed": 45,
         "filesSkipped": 0,
@@ -925,7 +925,7 @@ xdg-open report.html  # Linux
         "failed": 0,
         "failures": []
     },
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
     "mechanisms": [
         "suppression",
         "path-suppression",
@@ -1105,30 +1105,46 @@ generated-файлы, полный и неполный анализ.
 Отчёт суженного прогона перечисляет их все, независимо от того, включены ли
 они в этом прогоне.
 
+`covered` — утверждение об автозагрузке, а не о каждом заданном значении.
+Каналы подавлений ещё и судят каждое значение по месту, которое оно называет, и
+значение, называющее место вне проанализированных путей, пропускается:
+`suppress_paths: [{subtree: tests/Legacy}]` при `qmx check src/`, когда `tests/`
+объявлен только в `autoload-dev`, на этом прогоне в состоянии `covered` не
+судится. Отчёт называет каждое пропущенное значение в `unjudgedValues`, а его
+канал — в `unjudgedChannels`, так что «просужено и привязалось» и «не
+просматривалось» читаются по-разному. См.
+[правила подавления](../rules/suppression.ru.md).
+
 На проекте в состоянии `unknown` запускайте проверку по всему его коду: более
 узкий прогон там судится так, будто он и есть весь проект, и слой, чьи классы
 лежат вне названных путей, будет назван не совпавшим ни с чем. Исключение —
 значения-неймспейсы глобального `suppress_namespaces` и заданных под правилом
 `suppress_namespaces` и `suppress_namespace_channels`: без объявленного автозагрузчика неймспейсу
 негде находиться, поэтому на таком проекте они не судятся ни на каком прогоне,
-а отчёт называет `suppression.unmatched-namespace` и
-`suppression.unmatched-rule-ledger` каналами, чьи значения-неймспейсы не
-судились.
+а отчёт называет каждое такое значение в `unjudgedValues`, а его канал —
+`suppression.unmatched-namespace` или `suppression.unmatched-rule-ledger` — в
+`unjudgedChannels`.
 
-| Формат                                      | Представление охвата проекта                                                                                          |
-| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `json`, `metrics`, `suppressed`             | Объект верхнего уровня `projectScope` в каждом документе: `state`, `uncoveredAutoloadTargets[]`, `unjudgedChannels[]` |
-| `sarif`                                     | `note` в `runs[0].invocations[0].toolExecutionNotifications[]` с дескриптором `QMX-RUN-PROJECT-SCOPE`                 |
-| `github`                                    | Строка `::notice title=run.project-scope::`                                                                           |
-| `html`                                      | Баннер над отчётом                                                                                                    |
-| `summary`, `text`, `text-verbose`, `health` | Строка `Project scope …` рядом с фразой о покрытии                                                                    |
-| `gitlab`, `checkstyle`                      | Ничего: их потребители считают каждую запись находкой, а сужение прогона — не его дефект                              |
+| Формат                                      | Представление охвата проекта                                                                                                              |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `json`, `metrics`, `suppressed`             | Объект верхнего уровня `projectScope` в каждом документе: `state`, `uncoveredAutoloadTargets[]`, `unjudgedChannels[]`, `unjudgedValues[]` |
+| `sarif`                                     | `note` в `runs[0].invocations[0].toolExecutionNotifications[]` с дескриптором `QMX-RUN-PROJECT-SCOPE`                                     |
+| `github`                                    | Строка `::notice title=run.project-scope::`                                                                                               |
+| `html`                                      | Баннер над отчётом                                                                                                                        |
+| `summary`, `text`, `text-verbose`, `health` | Строка `Project scope …` рядом с фразой о покрытии                                                                                        |
+| `gitlab`, `checkstyle`                      | Ничего: их потребители считают каждую запись находкой, а сужение прогона — не его дефект                                                  |
 
 У `projectScope` одни и те же ключи в любом состоянии. `uncoveredAutoloadTargets`
-пуст, если состояние не `narrowed`; `unjudgedChannels` пуст для `covered`,
-называет все каналы всего проекта для `narrowed`, а для `unknown` — каналы,
-чьи значения-неймспейсы не судились. Остальные форматы добавляют запись только для
-`narrowed` и `unknown`. Консоль, кроме того, печатает в stderr предупреждение с
+пуст, если состояние не `narrowed`. `unjudgedValues` перечисляет каждое
+заданное значение подавления, которое прогон в состоянии `covered` или
+`unknown` пропустил, в виде `{"option", "pattern"}`: `option` — это
+`suppress_paths`, `suppress_namespaces` или `rules.<rule>.<option>`, ключ, под
+которым искать, а `pattern` — селектор в записанном виде
+(`subtree:tests/Legacy`). `unjudgedChannels` для `narrowed` называет все каналы
+всего проекта — там не судилось ни одно значение, и `unjudgedValues` пуст, — а
+в остальных состояниях каналы пропущенных значений. Остальные форматы добавляют
+запись для `narrowed`, для `unknown` и для прогона в состоянии `covered`,
+пропустившего значение. Консоль, кроме того, печатает в stderr предупреждение с
 autoload-целями, которые суженный прогон оставил вне анализа.
 
 ## Сравнительная таблица

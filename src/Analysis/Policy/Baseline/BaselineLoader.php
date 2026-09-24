@@ -73,7 +73,7 @@ final readonly class BaselineLoader
     ) {}
 
     /**
-     * @throws ConfigurationRefusal if the file is missing, unreadable, or its envelope is invalid
+     * @throws ConfigurationRefusal if the file is missing, not a regular file, unreadable, or its envelope is invalid
      */
     public function load(string $path): Baseline
     {
@@ -116,12 +116,19 @@ final readonly class BaselineLoader
      * {@see load()} asks the same question with the same sentences, so a file
      * that disappears in between is still refused in the same words.
      *
-     * @throws ConfigurationRefusal if the file is missing or unreadable
+     * A directory passes both `file_exists()` and `is_readable()`, and the
+     * reader fails on it only after the run, so "a file" is asked for by name.
+     *
+     * @throws ConfigurationRefusal if the file is missing, not a regular file, or unreadable
      */
     public static function assertReadable(string $path): void
     {
         if (!file_exists($path)) {
             throw self::refusal($path, "Baseline file not found: {$path}");
+        }
+
+        if (!is_file($path)) {
+            throw self::refusal($path, "Baseline path is not a regular file: {$path}");
         }
 
         if (!is_readable($path)) {

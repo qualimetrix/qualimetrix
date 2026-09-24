@@ -41,7 +41,7 @@ use Qualimetrix\Core\Pattern\SelectorKind;
  * **The question asked here is where the value's own subject lives.** A value
  * names a place; if that place can lie outside the analysed paths, this run
  * cannot tell "the code is gone" from "the code was not looked at", and the
- * honest answer is silence. `tests/Legacy` anchors at `tests/`, which
+ * honest answer is no finding — the value is named as unjudged instead. `tests/Legacy` anchors at `tests/`, which
  * `qmx check src/` did not analyse, so it is unjudgeable there and judgeable
  * on `qmx check src tests` — where a genuine miss is still reported.
  *
@@ -74,7 +74,7 @@ use Qualimetrix\Core\Pattern\SelectorKind;
  * guess. A path value keeps its on-disk anchor and is judged as above. The
  * cost is the whole-tree run of such a project, where every namespace was in
  * reach and a miss would have been a fact; it is not reported either, and the
- * report names the channels whose namespace values went unjudged.
+ * report names each namespace value that went unjudged.
  */
 final readonly class ValueScopeJudgement
 {
