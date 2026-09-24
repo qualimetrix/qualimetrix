@@ -74,11 +74,16 @@ has no logger, `GitScopeResolver`, or `ScopeWarningChecker` property.
 payload are produced, and only then asks Run's `ProjectScopeCoverage` which of
 the project's autoload targets — production, plus `autoload-dev` under
 `AutoloadDevPolicy::Include` — the resolved paths leave uncovered. That one
-measurement feeds both outputs of `ResolvedCheckScope`: `ScopeWarningChecker`
-renders its uncovered targets as the partial-autoload warning, and its
-`covers()` verdict is the `coversProjectScope` boolean `CheckCommand` puts on
-the scoped `RunConfiguration`, so a rule that must stay quiet on a slice and the
-warning about that slice cannot disagree. The measurement's pruned targets —
+measurement feeds every output of `ResolvedCheckScope`: `ScopeWarningChecker`
+renders its uncovered targets as the partial-autoload warning, its
+`ProjectScopeState` decides the `coversProjectScope` boolean `CheckCommand` puts
+on the scoped `RunConfiguration` (true for `Covered` and for `Unknown`, where
+the manifest declares nothing and the paths are the project), and the same
+state becomes the `Reporting\ReportProjectScope` `ResultPresenter` adds to the
+report — naming, on a `Narrowed` run, the uncovered targets and
+`ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS` as not judged. A rule that must
+stay quiet on a slice, the warning about that slice and the report's statement
+of it cannot disagree. The measurement's pruned targets —
 declared entries under a `vendor`, `node_modules` or `.git` directory, which are
 neither analysed by default nor counted — get a warning line of their own,
 independent of coverage: a whole-project run can still have dropped them.
@@ -152,16 +157,22 @@ its closed set and a `--profile` target the export cannot be written to, and
 `ResultPresenter::assertOutputIsWritable()` the same for `--output` — all before
 analysis. Both targets, and `graph:export --output`, are judged by
 `ArtifactFile`, which also makes the write, so the precheck cannot model a
-different write than the one made. Both turn on whether the target exists,
-never on its type: an existing target is opened by the path as written and
-written in place, and needs only to be writable and not a directory; a new name
-is followed through its link chain, written beside the name it ends at and
-renamed onto it, and needs a writable directory and a name not ending in `/`.
-The one enumerated exception — `/dev/stdout`, `/dev/stderr`, `/dev/fd/N`,
-`/proc/self/fd/N`, written or reached through a link — is written through
-`php://fd/N`, because PHP on Linux opens those paths by resolving them, which
-fails on a pipe and truncates a redirected file. A write that fails midway
-leaves an existing target partly written. A profile write that still fails after the report is published
+different write than the one made. The write is a shell's `>` as nearly as
+PHP allows, and the kernel decides what a path leads to: a target it reaches is
+opened by the path as written and written in place; a name it reaches nothing
+at is created by `touch()`, whose open the kernel resolves, so a dangling link
+creates its target and a link `fs.protected_symlinks` forbids is refused —
+every other PHP open resolves links in userspace, beyond that rule. The
+precheck asks only what the kernel answers without a write (not a directory; a
+reachable target writable; a new name's directory writable and searchable; a
+descriptor held and, on Linux, open for writing) and leaves a link it does not
+follow to the write, which refuses after the run. The supported spellings
+`/dev/stdout`, `/dev/stderr`, `/dev/fd/N` and `/proc/self/fd/N`, exactly as
+written, go through `php://fd/N` in blocking mode, because PHP on Linux opens
+those paths by resolving them, which fails on a pipe and truncates a redirected
+file; another spelling is opened by its path. A write that fails midway removes
+a file it created and leaves an existing target partly written. A profile write
+that still fails after the report is published
 ends the run with exit 3 through `RefusalPresenter::refusalAfterPublishedReport()`:
 the sentence goes to stderr whatever the format, so stdout keeps the report as
 its only document. `FormatOptionPairs` judges every written `--format-opt` pair
@@ -270,11 +281,11 @@ not against the working directory `--working-dir` has since changed.
 
 ### Logging and Progress
 
-| Option          | Default | Description                |
-| --------------- | ------- | -------------------------- |
-| `--log-file`    | —       | Log file path (JSON Lines) |
-| `--log-level`   | `info`  | Minimum log level          |
-| `--no-progress` | false   | Disable progress bar       |
+| Option          | Default | Description                                                                                                                                                              |
+| --------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--log-file`    | —       | Log file path (JSON Lines); a path that cannot be written is refused with exit 3                                                                                         |
+| `--log-level`   | —       | Minimum log level for `--log-file` and, with `-v` or more, the console; without `-v` it can only narrow the console. Not given: verbosity chooses, the file takes `info` |
+| `--no-progress` | false   | Disable progress bar                                                                                                                                                     |
 
 ### Baseline
 

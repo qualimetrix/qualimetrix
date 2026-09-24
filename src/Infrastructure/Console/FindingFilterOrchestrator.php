@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
+use Qualimetrix\Analysis\Run\Configuration\ProjectScopeState;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -141,7 +142,10 @@ final readonly class FindingFilterOrchestrator
      * and the manifest's PSR-4 map: a run wide enough to judge the project is
      * not automatically wide enough to judge every value written for it, and
      * `suppress_paths: [tests/Legacy]` under `qmx check src/` is correct
-     * configuration this run never looked at.
+     * configuration this run never looked at. The state goes with it: an
+     * `Unknown` project has no declared autoload to locate a namespace value
+     * through, so none is judged, and the report names those channels from
+     * {@see ProjectScopeCoverage::UNKNOWN_SCOPE_UNJUDGED_CHANNELS}.
      *
      * @return list<Finding>
      */
@@ -151,7 +155,9 @@ final readonly class FindingFilterOrchestrator
         FindingProjectionOptions $options,
         AutoloadDevPolicy $autoloadDev,
     ): array {
-        if (!$this->projectScopeCoverage->pathsCoverProjectScope($scopeResolution->projectRoot, $scopeResolution->paths, $autoloadDev)) {
+        $state = $this->projectScopeCoverage->measure($scopeResolution->projectRoot, $scopeResolution->paths, $autoloadDev)->state();
+
+        if (!$state->coversProjectScope()) {
             return [];
         }
 
@@ -170,6 +176,7 @@ final readonly class FindingFilterOrchestrator
                     $scopeResolution->projectRoot->joinRelative(RelativePath::fromString('composer.json'))->value(),
                 ),
                 array_map(static fn(AbsolutePath $path): string => $path->value(), $scopeResolution->paths),
+                projectDeclared: $state !== ProjectScopeState::Unknown,
             ),
         );
     }

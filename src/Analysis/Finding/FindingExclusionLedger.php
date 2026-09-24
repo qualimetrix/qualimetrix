@@ -15,6 +15,7 @@ use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
  * Applies a producer's `suppress_namespaces`, `suppress_namespace_channels` and
@@ -144,7 +145,7 @@ final class FindingExclusionLedger
         }
 
         if (
-            $finding->symbolPath->getType()->value === 'namespace'
+            $finding->symbolPath->getType() === SymbolType::Namespace_
             && $this->ruleOptionsRegistry->isNamespaceChannelExcluded($producerRuleName, $finding->channel(), $namespace)
         ) {
             $hits = $this->matchingChannelPatterns($producerRuleName, $finding->channel(), $namespace);

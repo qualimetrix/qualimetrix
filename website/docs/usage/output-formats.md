@@ -157,15 +157,14 @@ Compact, one-line-per-violation output. Compatible with GCC/Clang error format, 
 **Example output:**
 
 ```
-src/Repository/OrderRepository.php: error[coupling.class-rank]: ClassRank is 0.5000, exceeds threshold of 0.3536 (scaled for 2 classes). This class is a critical hub — changes have wide impact (OrderRepository)
-src/Service/UserService.php: error[coupling.class-rank]: ClassRank is 0.5000, exceeds threshold of 0.3536 (scaled for 2 classes). This class is a critical hub — changes have wide impact (UserService)
+src/Repository/OrderRepository.php: error[coupling.class-rank]: ClassRank is 0.6491, exceeds threshold of 0.3536 (scaled for 2 classes). This class is a critical hub — changes have wide impact (OrderRepository)
 src/Repository/OrderRepository.php: warning[complexity.ccn]: Cyclomatic complexity is 10, exceeds threshold of 10. Consider extracting methods or simplifying conditions (OrderRepository::findByCriteria)
 src/Service/UserService.php:9: warning[code-smell.error-suppression]: Error suppression (@) on file_get_contents() - handle errors explicitly
 src/Service/UserService.php: warning[complexity.ccn]: Cyclomatic complexity is 14, exceeds threshold of 10. Consider extracting methods or simplifying conditions (UserService::calculate)
 
-Qualimetrix 0.26.0: 2 error(s), 3 warning(s) in 2 file(s)
+Qualimetrix 0.26.0: 1 error(s), 3 warning(s) in 2 file(s)
 Analysis complete: 2 analyzed, 0 generated file(s) excluded.
-Technical debt: 2h 10min
+Technical debt: 1h 40min
 Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
@@ -200,7 +199,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
 
 **When to use:** Custom scripts, dashboards, programmatic processing.
 
-**Top-level keys:** `meta`, `summary`, `outOfScope`, `coverage`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, plus `violationGroups` when `--group-by` is passed — without it, the key is absent entirely, not an empty object.
+**Top-level keys:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (see [Project scope in every format](#project-scope-in-every-format)), `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, plus `violationGroups` when `--group-by` is passed — without it, the key is absent entirely, not an empty object.
 
 `meta` identifies the tool that wrote the document: `version`, `package`, `timestamp`, and two documentation addresses — `docs`, the documentation site, and `llmsTxt`, the index written for AI agents. Every JSON report with an envelope object carries the same two addresses; see the exceptions in [Documentation addresses in JSON reports](#documentation-addresses).
 
@@ -228,6 +227,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
         "debtPer1kLoc": 2.1
     },
     "outOfScope": null,
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": []},
     "health": {
         "complexity": {
             "score": 78.0,
@@ -412,7 +412,7 @@ unchanged.
 
 When using `--group-by=class` or `--group-by=namespace`, violations are organized into a `violationGroups` object. Each group is `{count, violations}` — a violation count and the violations array; it does not carry its own `errorCount`, `warningCount`, or `violationDensity`.
 
-The group keys are not always a class FQCN or namespace. For `--group-by=class`: the key is the class FQCN for a class-scoped finding, the file path for a file-level finding with no class context, and an empty string `""` for a project-level finding (which has neither a class nor a file). For `--group-by=namespace`: the key is the namespace for a namespaced class, `<global>` for a class with no namespace, and `__PROJECT__` for a project-level finding.
+The group keys are not always a class FQCN or namespace. For `--group-by=class`: the key is the class FQCN for a class-scoped finding, the file path for a file-level finding with no class context, and an empty string `""` for a project-level finding (which has neither a class nor a file). For `--group-by=namespace`: the key is the namespace for a namespaced class, `<global>` for a class with no namespace, and `(project)` for a project-level finding.
 
 <!-- llms:skip-begin -->
 ```json
@@ -466,7 +466,7 @@ Raw metric values for every symbol (file, class, namespace, method, function, pr
 
 **When to use:** Custom dashboards, trend analysis, data science pipelines, or building your own quality gates on raw metrics.
 
-**Top-level keys:** `version`, `toolVersion`, `package`, `timestamp`, `docs`, `llmsTxt`, `symbols[]` (each with `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `outOfScope`, `coverage`, `summary`. Under `--namespace`/`--class` the `summary` counts only the selection and `outOfScope` counts what it left out; `symbols[]` is never narrowed. There is no `callable` type; a single `project` entry aggregates project-wide statistical metrics (min/max/avg/p95 across all symbols) and has a `null` `line`. Here `version` is the version of this export format and `toolVersion` the version of Qualimetrix; `docs` and `llmsTxt` are the documentation addresses `json` carries in its `meta`.
+**Top-level keys:** `version`, `toolVersion`, `package`, `timestamp`, `docs`, `llmsTxt`, `symbols[]` (each with `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `outOfScope`, `projectScope`, `coverage`, `summary`. Under `--namespace`/`--class` the `summary` counts only the selection and `outOfScope` counts what it left out; `symbols[]` is never narrowed. There is no `callable` type; a single `project` entry aggregates project-wide statistical metrics (min/max/avg/p95 across all symbols) and has a `null` `line`. Here `version` is the version of this export format and `toolVersion` the version of Qualimetrix; `docs` and `llmsTxt` are the documentation addresses `json` carries in its `meta`.
 
 <!-- llms:skip-begin -->
 **Example output (abbreviated):**
@@ -520,6 +520,7 @@ Raw metric values for every symbol (file, class, namespace, method, function, pr
             }
         }
     ],
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": []},
     "summary": {
         "filesAnalyzed": 45,
         "filesSkipped": 0,
@@ -887,7 +888,9 @@ deleted file is indistinguishable from one that was never written.
 `meta` is the same block `json` carries, including `docs` and `llmsTxt`.
 
 **Top-level keys:** `meta`, `note`, `coverage` (the same object `json`
-carries, so an audit of an incomplete run says so), `mechanisms` (all seven,
+carries, so an audit of an incomplete run says so), `projectScope` (the same
+object `json` carries, so an audit of a narrowed run names the suppression
+channels it did not judge), `mechanisms` (all seven,
 always present), `byMechanism` (count per mechanism, including zero),
 `suppressed` (the multiset), `neverMatched`.
 
@@ -919,6 +922,7 @@ a finding back, and the identity leads to the finding's own record.
         "failed": 0,
         "failures": []
     },
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": []},
     "mechanisms": [
         "suppression",
         "path-suppression",
@@ -951,7 +955,7 @@ a finding back, and the identity leads to the finding's own record.
             "symbol": "src/Infrastructure/Ast/CachedFileParser.php",
             "severity": "error",
             "message": "Empty catch block detected - exceptions should not be silently ignored",
-            "recommendation": "Log the exception or add a comment explaining why it is safe to ignore."
+            "recommendation": "Log or rethrow the exception, or handle it explicitly. A comment alone does not clear this finding; suppress an intentional ignore with `@qmx-ignore code-smell.empty-catch` and a reason."
         },
         {
             "mechanism": "rule-path-suppression",
@@ -1074,6 +1078,56 @@ the path of that entry rather than of a PHP file. Treat a value you do not
 recognize as an entry the run did not read: the list can grow, and refusing the
 whole document to learn that is a worse trade than reporting the run as
 incomplete.
+
+## Project scope in every format {#project-scope-in-every-format}
+
+Some channels say that a configured value matches nothing in the project — a
+layer no class belongs to, an `exclude:` that removed no directory, a
+suppression that names nothing. A run over part of the project cannot say
+that about code it did not analyse, so those channels speak only when the
+analysed paths cover everything `composer.json` declares under `autoload`
+(and under `autoload-dev` with
+[`--include-autoload-dev`](cli-options.md#--include-autoload-dev)). The report
+says which of three states the run was in:
+
+| State      | When                                                                                                                       | Whole-project channels                                                                                                               |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `covered`  | the analysed paths contain every declared autoload target                                                                  | judged                                                                                                                               |
+| `narrowed` | some declared target lies outside the analysed paths                                                                       | not judged; the report names them and the targets left out                                                                           |
+| `unknown`  | `composer.json` is missing, does not parse, or declares no production autoload outside `vendor`, `node_modules` and `.git` | judged, taking the analysed paths as the whole project — except namespace values of the suppression channels, which the report names |
+
+The channels judged only on a whole-project run are
+`architecture.unreachable-layer`, `architecture.empty-template`,
+`architecture.unmatched-exclude`, `coupling.unmatched-framework-namespace`,
+`discovery.unmatched-exclude`, `suppression.unmatched-path`,
+`suppression.unmatched-namespace` and `suppression.unmatched-rule-ledger`. A
+narrowed report lists all of them, whether or not this run enabled them.
+
+On an `unknown` project, run the check over all of its code: a narrower run
+there is judged as if it were the whole project, and a layer whose classes lie
+outside the paths you named is reported as matching nothing. Namespace values
+of the global `suppress_namespaces` and of per-rule `suppress_namespaces` and
+`suppress_namespace_channels` are the exception: with no declared autoload a namespace
+has no location, so they are not judged on any run of such a project, and the
+report lists `suppression.unmatched-namespace` and
+`suppression.unmatched-rule-ledger` as the channels whose namespace values went
+unjudged.
+
+| Format                                      | Project scope representation                                                                                   |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `json`, `metrics`, `suppressed`             | Top-level `projectScope` object in every document: `state`, `uncoveredAutoloadTargets[]`, `unjudgedChannels[]` |
+| `sarif`                                     | A `note` in `runs[0].invocations[0].toolExecutionNotifications[]` with descriptor `QMX-RUN-PROJECT-SCOPE`      |
+| `github`                                    | A `::notice title=run.project-scope::` line                                                                    |
+| `html`                                      | A banner above the report                                                                                      |
+| `summary`, `text`, `text-verbose`, `health` | A `Project scope …` line beside the coverage sentence                                                          |
+| `gitlab`, `checkstyle`                      | Nothing: their consumers count every entry as a finding, and narrowing the run is not a defect of it           |
+
+`projectScope` has the same keys in every state. `uncoveredAutoloadTargets`
+is empty unless the state is `narrowed`; `unjudgedChannels` is empty for
+`covered`, names every whole-project channel for `narrowed`, and for `unknown`
+names the channels whose namespace values were not judged. Every other format adds its entry only for `narrowed`
+and `unknown`. The console also prints a warning on stderr naming the
+autoload targets a narrowed run left out.
 
 ## Comparison table
 

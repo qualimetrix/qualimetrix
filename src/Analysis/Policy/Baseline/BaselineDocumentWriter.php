@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use RuntimeException;
 
 /**
@@ -34,6 +35,11 @@ use RuntimeException;
  * a fact about the *file*, not about the object being written: the channel
  * carry rewrites the document as raw text and must not be able to introduce
  * a race the other `baseline:*` commands do not allow.
+ *
+ * **A path that cannot be written is refused as the baseline file** the user
+ * named, with the reason the system gave. The filesystem call's own warning
+ * is kept out of the output: printed under `display_errors`, it reached
+ * stdout ahead of the refusal and left a machine-format stdout unparseable.
  */
 final readonly class BaselineDocumentWriter
 {
@@ -59,7 +65,8 @@ final readonly class BaselineDocumentWriter
      * conflict with and only the atomicity guarantee applies.
      *
      * @throws BaselineConflictException if the target changed or vanished since it was read
-     * @throws RuntimeException if the write fails
+     * @throws ConfigurationRefusal if the path cannot be written
+     * @throws RuntimeException if another writer holds the lock past the timeout
      */
     public function replace(string $path, string $contents, ?string $expectedHash): void
     {
@@ -75,7 +82,8 @@ final readonly class BaselineDocumentWriter
      * appeared.
      *
      * @throws BaselineConflictException if the target exists after all
-     * @throws RuntimeException if the write fails
+     * @throws ConfigurationRefusal if the path cannot be written
+     * @throws RuntimeException if another writer holds the lock past the timeout
      */
     public function create(string $path, string $contents): void
     {
@@ -99,8 +107,11 @@ final readonly class BaselineDocumentWriter
     private function guarded(string $path, string $contents, callable $assertExpectation): void
     {
         $directory = \dirname($path);
-        if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) {
-            throw new RuntimeException("Failed to create directory: {$directory}");
+        if (!is_dir($directory)) {
+            [$created, $reason] = self::attempt(static fn(): bool => mkdir($directory, 0755, true));
+            if (!$created && !is_dir($directory)) {
+                throw self::unwritable($path, "Cannot create the baseline directory {$directory}: {$reason}");
+            }
         }
 
         $lock = $this->acquireLock($path);
@@ -130,10 +141,10 @@ final readonly class BaselineDocumentWriter
     private function acquireLock(string $path)
     {
         $lockPath = $path . '.lock';
-        $handle = fopen($lockPath, 'c');
+        [$handle, $reason] = self::attempt(static fn() => fopen($lockPath, 'c'));
 
         if ($handle === false) {
-            throw new RuntimeException("Failed to open baseline lock file: {$lockPath}");
+            throw self::unwritable($path, "Cannot open the baseline lock file {$lockPath}: {$reason}");
         }
 
         $deadline = microtime(true) + $this->lockTimeoutSeconds;
@@ -197,27 +208,58 @@ final readonly class BaselineDocumentWriter
         $tempPath = $path . '.tmp.' . getmypid();
 
         try {
-            // Both calls warn on failure and both failures become exceptions
-            // naming the same paths, so the native warning adds nothing but
-            // noise on top of a message the caller already gets.
-            //
             // Compared against the length rather than against `false`: a short
             // write — a full disk, an exceeded quota, an I/O error partway —
             // returns the count it managed, and the `rename()` below would
             // then atomically put a truncated document in place of a sound
             // baseline. The temp file is removed by the `finally` either way,
             // so the target is left exactly as it was.
-            if (@file_put_contents($tempPath, $json) !== \strlen($json)) {
-                throw new RuntimeException("Failed to write baseline to: {$tempPath}");
+            [$written, $reason] = self::attempt(static fn() => file_put_contents($tempPath, $json));
+            if ($written !== \strlen($json)) {
+                throw self::unwritable($path, "Cannot write the baseline to {$tempPath}: {$reason}");
             }
 
-            if (!@rename($tempPath, $path)) {
-                throw new RuntimeException("Failed to move baseline from {$tempPath} to {$path}");
+            [$moved, $reason] = self::attempt(static fn(): bool => rename($tempPath, $path));
+            if (!$moved) {
+                throw self::unwritable($path, "Cannot move the baseline into place at {$path}: {$reason}");
             }
         } finally {
             if (file_exists($tempPath)) {
                 @unlink($tempPath);
             }
         }
+    }
+
+    private static function unwritable(string $path, string $summary): ConfigurationRefusal
+    {
+        return ConfigurationRefusal::aboutBaselineFileDocument($path, $summary);
+    }
+
+    /**
+     * Runs a filesystem call and keeps the system's reason for a failure, as
+     * PHP words it in the warning, instead of letting the warning out.
+     *
+     * @template T
+     *
+     * @param callable(): T $operation
+     *
+     * @return array{T, string}
+     */
+    private static function attempt(callable $operation): array
+    {
+        $reason = 'unknown reason';
+        set_error_handler(static function (int $level, string $message) use (&$reason): bool {
+            $reason = preg_match('~^[a-z_]+\([^)]*\): (.+)$~s', $message, $match) === 1 ? $match[1] : $message;
+
+            return true;
+        });
+
+        try {
+            $result = $operation();
+        } finally {
+            restore_error_handler();
+        }
+
+        return [$result, $reason];
     }
 }

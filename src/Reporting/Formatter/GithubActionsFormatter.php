@@ -10,6 +10,7 @@ use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
+use Qualimetrix\Reporting\ReportProjectScope;
 
 /**
  * Formats report as GitHub Actions workflow commands.
@@ -18,6 +19,10 @@ use Qualimetrix\Reporting\Report;
  * when running inside GitHub Actions CI.
  *
  * @see https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#setting-a-warning-message
+ *
+ * @qmx-ignore health.cohesion -- Stateless: no instance field for TCC to measure, so from the sixth
+ *             counted method the score reads an undefined TCC as zero; the escaping and notice
+ *             helpers share no state by design.
  */
 final class GithubActionsFormatter implements FormatterInterface
 {
@@ -38,9 +43,8 @@ final class GithubActionsFormatter implements FormatterInterface
             $lines[] = $this->formatFinding($finding, $context);
         }
 
-        $outOfScope = $report->outOfScope;
-        if ($outOfScope !== null && $outOfScope->total() > 0) {
-            $lines[] = \sprintf('::notice title=%s::%s', OutOfScopeFindings::CHECK, $this->escapeData($outOfScope->describe()));
+        foreach (self::notices($report) as $title => $notice) {
+            $lines[] = \sprintf('::notice title=%s::%s', $title, $this->escapeData($notice));
         }
 
         if ($lines === [] && ($report->coverage === null || $report->coverage->isComplete())) {
@@ -53,6 +57,21 @@ final class GithubActionsFormatter implements FormatterInterface
     public function getName(): string
     {
         return 'github';
+    }
+
+    /**
+     * What the report says about itself rather than about the code, by title.
+     *
+     * @return array<string, string>
+     */
+    private static function notices(Report $report): array
+    {
+        $outOfScope = $report->outOfScope;
+
+        return array_filter([
+            OutOfScopeFindings::CHECK => $outOfScope !== null && $outOfScope->total() > 0 ? $outOfScope->describe() : null,
+            ReportProjectScope::CHECK => $report->projectScope?->describe(),
+        ], is_string(...));
     }
 
     public function getDefaultGroupBy(): GroupBy

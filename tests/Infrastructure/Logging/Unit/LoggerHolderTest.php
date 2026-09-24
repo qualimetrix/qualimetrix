@@ -47,4 +47,14 @@ final class LoggerHolderTest extends TestCase
         self::assertSame($secondLogger, $holder->getLogger());
     }
 
+    #[Test]
+    public function itResetsToTheNullLoggerItStartsWith(): void
+    {
+        $holder = new LoggerHolder();
+        $holder->setLogger(self::createStub(LoggerInterface::class));
+
+        $holder->reset();
+
+        self::assertInstanceOf(NullLogger::class, $holder->getLogger());
+    }
 }

@@ -36,9 +36,10 @@ Directories to skip entirely. Files in these directories are not analyzed at all
 
 ```yaml
 exclude:
-  - vendor/
-  - tests/Fixtures/
+  - subtree: tests/Fixtures
 ```
+
+Each entry is a path selector written the same way as under [Suppress Paths](#suppress-paths) — `exact`, `subtree` or `regex`; a bare string is refused. `vendor`, `node_modules` and `.git` are never walked, so they need no entry. A directory you name under `paths` or on the command line that an entry here removes stops the run with a configuration error (exit code 3) instead of a successful run that never looked inside it; see [Paths argument](../usage/cli-options.md#paths-argument).
 
 ### Include Generated
 
@@ -859,7 +860,7 @@ source the value arrives from is judged, not only the one that wins: a wrong
 overrides it, because a value nobody will use is still a value somebody wrote:
 
 ```
-Configuration error: Option "warning" of rule "complexity.ccn" at level "callable" must be a whole number or null, got a string.
+Configuration error: Option "warning" of rule "complexity.ccn" at level "callable" must be a non-negative whole number or null, got a string.
 Configuration error: Invalid value for "only_rules": expected a list of entries, got a map.
 Configuration error: Invalid value for "cache": expected a section of named keys (dir, enabled), got a list.
 ```
@@ -872,18 +873,19 @@ can be compared side by side.
 
 The shapes a key can ask for, in the words the refusal uses:
 
-| Shape              | Accepts                                                     |
-| ------------------ | ----------------------------------------------------------- |
-| a boolean          | `true` / `false`                                            |
-| a whole number     | `15` — not `10.5`, not `"15"`                               |
-| a number           | `15` or `10.5`                                              |
-| a string           | any string, the empty one included                          |
-| a non-empty string | a string with at least one non-blank character              |
-| a list of X        | a YAML sequence, every element of shape X                   |
-| a map of X         | a YAML mapping you name the keys of, every value of shape X |
-| a block of options | a mapping whose own keys another declaration answers for    |
+| Shape                       | Accepts                                                     |
+| --------------------------- | ----------------------------------------------------------- |
+| a boolean                   | `true` / `false`                                            |
+| a non-negative whole number | `15` or `0` — not `10.5`, not `"15"`, not `-1`              |
+| a non-negative number       | `15`, `10.5` or `0` — not `-0.5`                            |
+| a number                    | any number of either sign (computed-metric thresholds only) |
+| a string                    | any string, the empty one included                          |
+| a non-empty string          | a string with at least one non-blank character              |
+| a list of X                 | a YAML sequence, every element of shape X                   |
+| a map of X                  | a YAML mapping you name the keys of, every value of shape X |
+| a block of options          | a mapping whose own keys another declaration answers for    |
 
-Five consequences are worth spelling out, because each of them used to pass
+Six consequences are worth spelling out, because each of them used to pass
 unnoticed:
 
 - **A quoted number is a string.** `warning: "15"` is refused where a whole
@@ -893,11 +895,11 @@ unnoticed:
   `--rule-opt="size.method-count:threshold=25"` and
   `--rule-opt="complexity.ccn:enabled=false"` are unaffected.
 - **A whole number is not a fraction — except for the keys named here, which
-  declare "a number".** `warning: 10.5` is refused where a whole number is
-  declared, and most thresholds in this document declare exactly that: a
-  whole number. The keys below declare "a number" instead, and therefore
-  accept a fraction exactly as written, because each one measures a
-  continuously-valued metric rather than counting something: the
+  declare "a non-negative number".** `warning: 10.5` is refused where a whole
+  number is declared, and most thresholds in this document declare exactly
+  that: a whole number. The keys below declare "a non-negative number" instead,
+  and therefore accept a fraction exactly as written, because each one
+  measures a continuously-valued metric rather than counting something: the
   maintainability index (`maintainability.mi.error` / `.warning` /
   `.threshold`), instability (`coupling.instability.max-error` /
   `.max-warning` / `.threshold`, the same three at the `class.` and
@@ -913,6 +915,14 @@ unnoticed:
   `coupling.distance.min-class-count`, `coupling.instability.min-afferent`
   (at every level slot) and `coupling.instability.namespace.min-class-count`
   are each a class or file count, not a ratio.
+- **A threshold or a count is never negative.** Every numeric option under
+  `rules:` is a count or a boundary on a measurement that cannot be negative,
+  and a negative boundary does not tighten a rule, it inverts it: `warning: -1`
+  on `size.method-count` would report every class. It is refused with the value
+  itself, from the file and from `--rule-opt` alike, and a `threshold: -1`
+  shorthand is named as `threshold`, the key that was written. Zero is
+  accepted. A computed metric's `warning` / `error` / `threshold` keep both
+  signs, because its formula is yours and may well be negative.
 - **A list and a map are not interchangeable.** `only_rules: {a: complexity.ccn}`
   and `exclude_methods: {a: getName}` are refused; write
   `only_rules: [complexity.ccn]` and `exclude_methods: [getName]`. The same in

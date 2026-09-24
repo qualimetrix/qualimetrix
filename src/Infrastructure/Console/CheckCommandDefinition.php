@@ -247,8 +247,9 @@ final class CheckCommandDefinition
                 'log-level',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Minimum log level (debug, info, warning, error). Refused when the value is none of them',
-                'info',
+                'Minimum log level (debug, info, warning, error) for --log-file and, with -v or more, the console; '
+                . 'without -v it can only narrow the console below warnings. Not given: the console shows warnings, '
+                . 'info with -v, debug with -vv, and the log file takes info. Refused when the value is none of them',
             )
             ->addOption(
                 'no-progress',
@@ -372,21 +373,30 @@ final class CheckCommandDefinition
             $reflection = new ReflectionClass($optionsClass);
 
             foreach ($aliases as $alias => $optionName) {
-                // Option name may be nested (e.g., 'callable.warning'), use the leaf
-                $leafName = str_contains($optionName, '.') ? substr($optionName, (int) strrpos($optionName, '.') + 1) : $optionName;
-
-                if ($reflection->hasProperty($leafName)) {
-                    $property = $reflection->getProperty($leafName);
-                    $type = $property->getType();
-
-                    if ($type instanceof ReflectionNamedType && $type->getName() === 'bool') {
-                        $booleanAliases[] = $alias;
-                    }
+                if (self::isBooleanOption($reflection, $optionName)) {
+                    $booleanAliases[] = $alias;
                 }
             }
         }
 
         return $booleanAliases;
+    }
+
+    /**
+     * @param ReflectionClass<covariant object> $options
+     */
+    private static function isBooleanOption(ReflectionClass $options, string $optionName): bool
+    {
+        // Option name may be nested (e.g., 'callable.warning'), use the leaf
+        $leafName = str_contains($optionName, '.') ? substr($optionName, (int) strrpos($optionName, '.') + 1) : $optionName;
+
+        if (!$options->hasProperty($leafName)) {
+            return false;
+        }
+
+        $type = $options->getProperty($leafName)->getType();
+
+        return $type instanceof ReflectionNamedType && $type->getName() === 'bool';
     }
 
     private static function addHealthOptions(Command $command): void

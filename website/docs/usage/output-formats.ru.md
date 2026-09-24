@@ -157,15 +157,14 @@ bin/qmx check src/ --detail=50
 **Пример вывода:**
 
 ```
-src/Repository/OrderRepository.php: error[coupling.class-rank]: ClassRank is 0.5000, exceeds threshold of 0.3536 (scaled for 2 classes). This class is a critical hub — changes have wide impact (OrderRepository)
-src/Service/UserService.php: error[coupling.class-rank]: ClassRank is 0.5000, exceeds threshold of 0.3536 (scaled for 2 classes). This class is a critical hub — changes have wide impact (UserService)
+src/Repository/OrderRepository.php: error[coupling.class-rank]: ClassRank is 0.6491, exceeds threshold of 0.3536 (scaled for 2 classes). This class is a critical hub — changes have wide impact (OrderRepository)
 src/Repository/OrderRepository.php: warning[complexity.ccn]: Cyclomatic complexity is 10, exceeds threshold of 10. Consider extracting methods or simplifying conditions (OrderRepository::findByCriteria)
 src/Service/UserService.php:9: warning[code-smell.error-suppression]: Error suppression (@) on file_get_contents() - handle errors explicitly
 src/Service/UserService.php: warning[complexity.ccn]: Cyclomatic complexity is 14, exceeds threshold of 10. Consider extracting methods or simplifying conditions (UserService::calculate)
 
-Qualimetrix 0.26.0: 2 error(s), 3 warning(s) in 2 file(s)
+Qualimetrix 0.26.0: 1 error(s), 3 warning(s) in 2 file(s)
 Analysis complete: 2 analyzed, 0 generated file(s) excluded.
-Technical debt: 2h 10min
+Technical debt: 1h 40min
 Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
@@ -200,7 +199,7 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 
 **Когда использовать:** Пользовательские скрипты, дашборды, программная обработка.
 
-**Ключи верхнего уровня:** `meta`, `summary`, `outOfScope`, `coverage`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, плюс `violationGroups`, когда передан `--group-by` — без него ключа нет вовсе, это не пустой объект.
+**Ключи верхнего уровня:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (см. [Охват проекта во всех форматах](#project-scope-in-every-format)), `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, плюс `violationGroups`, когда передан `--group-by` — без него ключа нет вовсе, это не пустой объект.
 
 `meta` называет инструмент, записавший документ: `version`, `package`, `timestamp` и два адреса документации — `docs`, сайт документации, и `llmsTxt`, индекс для ИИ-агентов. Оба адреса есть в каждом JSON-отчёте, у которого есть объект-конверт; см. исключения в [Адреса документации в JSON-отчётах](#documentation-addresses).
 
@@ -228,6 +227,7 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
         "debtPer1kLoc": 2.1
     },
     "outOfScope": null,
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": []},
     "health": {
         "complexity": {
             "score": 78.0,
@@ -411,7 +411,7 @@ optional edge`. `symbol` — логическая проекция для ото
 
 При использовании `--group-by=class` или `--group-by=namespace` нарушения организуются в объект `violationGroups`. Каждая группа — это `{count, violations}`: счётчик нарушений и их массив; собственных `errorCount`, `warningCount` или `violationDensity` у группы нет.
 
-Ключи группы — не всегда FQCN класса или пространство имён. Для `--group-by=class`: ключ — это FQCN класса для находки уровня класса, путь к файлу для находки уровня файла без контекста класса, и пустая строка `""` для находки уровня проекта (у неё нет ни класса, ни файла). Для `--group-by=namespace`: ключ — это пространство имён для класса внутри него, `<global>` для класса без пространства имён, и `__PROJECT__` для находки уровня проекта.
+Ключи группы — не всегда FQCN класса или пространство имён. Для `--group-by=class`: ключ — это FQCN класса для находки уровня класса, путь к файлу для находки уровня файла без контекста класса, и пустая строка `""` для находки уровня проекта (у неё нет ни класса, ни файла). Для `--group-by=namespace`: ключ — это пространство имён для класса внутри него, `<global>` для класса без пространства имён, и `(project)` для находки уровня проекта.
 
 <!-- llms:skip-begin -->
 ```json
@@ -466,7 +466,7 @@ bin/qmx check src/ --format=json --no-progress > report.json
 
 **Когда использовать:** Пользовательские дашборды, анализ трендов, пайплайны data science или создание собственных критериев качества на основе сырых метрик.
 
-**Ключи верхнего уровня:** `version`, `toolVersion`, `package`, `timestamp`, `docs`, `llmsTxt`, `symbols[]` (каждый с `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `outOfScope`, `coverage`, `summary`. При `--namespace`/`--class` `summary` считает только выборку, а `outOfScope` — то, что осталось вне её; `symbols[]` выборка не сужает никогда. Типа `callable` не существует; одна запись `project` агрегирует статистические метрики по всему проекту (min/max/avg/p95 по всем символам) и имеет `line` равным `null`. Здесь `version` — версия формата этой выгрузки, а `toolVersion` — версия Qualimetrix; `docs` и `llmsTxt` — те же адреса документации, что `json` публикует в `meta`.
+**Ключи верхнего уровня:** `version`, `toolVersion`, `package`, `timestamp`, `docs`, `llmsTxt`, `symbols[]` (каждый с `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `outOfScope`, `projectScope`, `coverage`, `summary`. При `--namespace`/`--class` `summary` считает только выборку, а `outOfScope` — то, что осталось вне её; `symbols[]` выборка не сужает никогда. Типа `callable` не существует; одна запись `project` агрегирует статистические метрики по всему проекту (min/max/avg/p95 по всем символам) и имеет `line` равным `null`. Здесь `version` — версия формата этой выгрузки, а `toolVersion` — версия Qualimetrix; `docs` и `llmsTxt` — те же адреса документации, что `json` публикует в `meta`.
 
 <!-- llms:skip-begin -->
 **Пример вывода (сокращённо):**
@@ -520,6 +520,7 @@ bin/qmx check src/ --format=json --no-progress > report.json
             }
         }
     ],
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": []},
     "summary": {
         "filesAnalyzed": 45,
         "filesSkipped": 0,
@@ -890,7 +891,9 @@ xdg-open report.html  # Linux
 `meta` — тот же блок, что у `json`, включая `docs` и `llmsTxt`.
 
 **Ключи верхнего уровня:** `meta`, `note`, `coverage` (тот же объект, что у
-`json`, — аудит неполного прогона говорит, что он неполон), `mechanisms` (все
+`json`, — аудит неполного прогона говорит, что он неполон), `projectScope`
+(тот же объект, что у `json`, — аудит суженного прогона называет каналы
+подавлений, которые не судились), `mechanisms` (все
 семь, всегда присутствуют), `byMechanism` (счётчик на каждый механизм, включая
 нулевые), `suppressed` (само мультимножество), `neverMatched`.
 
@@ -922,6 +925,7 @@ xdg-open report.html  # Linux
         "failed": 0,
         "failures": []
     },
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": []},
     "mechanisms": [
         "suppression",
         "path-suppression",
@@ -954,7 +958,7 @@ xdg-open report.html  # Linux
             "symbol": "src/Infrastructure/Ast/CachedFileParser.php",
             "severity": "error",
             "message": "Empty catch block detected - exceptions should not be silently ignored",
-            "recommendation": "Log the exception or add a comment explaining why it is safe to ignore."
+            "recommendation": "Log or rethrow the exception, or handle it explicitly. A comment alone does not clear this finding; suppress an intentional ignore with `@qmx-ignore code-smell.empty-catch` and a reason."
         },
         {
             "mechanism": "rule-path-suppression",
@@ -1075,6 +1079,57 @@ generated-файлы, полный и неполный анализ.
 несут путь этой записи, а не PHP-файла. Незнакомое значение считай записью,
 которую прогон не прочитал: список может вырасти, и отказ от всего документа
 ради этого знания хуже, чем сообщить о неполном прогоне.
+
+## Охват проекта во всех форматах {#project-scope-in-every-format}
+
+Некоторые каналы утверждают, что настроенное значение ни с чем в проекте не
+совпало: слой, которому не принадлежит ни один класс, `exclude:`, не убравший
+ни одного каталога, подавление, не называющее ничего. Прогон по части проекта
+не может утверждать такое о коде, который не анализировал, поэтому эти каналы
+говорят только тогда, когда анализируемые пути покрывают всё, что
+`composer.json` объявляет в `autoload` (и в `autoload-dev` с
+[`--include-autoload-dev`](cli-options.ru.md#--include-autoload-dev)). Отчёт
+сообщает, в каком из трёх состояний был прогон:
+
+| Состояние  | Когда                                                                                                                  | Каналы всего проекта                                                                                                         |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `covered`  | анализируемые пути содержат каждую объявленную autoload-цель                                                           | судятся                                                                                                                      |
+| `narrowed` | какая-то объявленная цель лежит вне анализируемых путей                                                                | не судятся; отчёт называет их и оставленные вне прогона цели                                                                 |
+| `unknown`  | `composer.json` отсутствует, не разбирается или не объявляет production-autoload вне `vendor`, `node_modules` и `.git` | судятся, принимая анализируемые пути за весь проект, — кроме значений-неймспейсов каналов подавлений, которые отчёт называет |
+
+Только на прогоне по всему проекту судятся каналы
+`architecture.unreachable-layer`, `architecture.empty-template`,
+`architecture.unmatched-exclude`, `coupling.unmatched-framework-namespace`,
+`discovery.unmatched-exclude`, `suppression.unmatched-path`,
+`suppression.unmatched-namespace` и `suppression.unmatched-rule-ledger`.
+Отчёт суженного прогона перечисляет их все, независимо от того, включены ли
+они в этом прогоне.
+
+На проекте в состоянии `unknown` запускайте проверку по всему его коду: более
+узкий прогон там судится так, будто он и есть весь проект, и слой, чьи классы
+лежат вне названных путей, будет назван не совпавшим ни с чем. Исключение —
+значения-неймспейсы глобального `suppress_namespaces` и заданных под правилом
+`suppress_namespaces` и `suppress_namespace_channels`: без объявленного автозагрузчика неймспейсу
+негде находиться, поэтому на таком проекте они не судятся ни на каком прогоне,
+а отчёт называет `suppression.unmatched-namespace` и
+`suppression.unmatched-rule-ledger` каналами, чьи значения-неймспейсы не
+судились.
+
+| Формат                                      | Представление охвата проекта                                                                                          |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `json`, `metrics`, `suppressed`             | Объект верхнего уровня `projectScope` в каждом документе: `state`, `uncoveredAutoloadTargets[]`, `unjudgedChannels[]` |
+| `sarif`                                     | `note` в `runs[0].invocations[0].toolExecutionNotifications[]` с дескриптором `QMX-RUN-PROJECT-SCOPE`                 |
+| `github`                                    | Строка `::notice title=run.project-scope::`                                                                           |
+| `html`                                      | Баннер над отчётом                                                                                                    |
+| `summary`, `text`, `text-verbose`, `health` | Строка `Project scope …` рядом с фразой о покрытии                                                                    |
+| `gitlab`, `checkstyle`                      | Ничего: их потребители считают каждую запись находкой, а сужение прогона — не его дефект                              |
+
+У `projectScope` одни и те же ключи в любом состоянии. `uncoveredAutoloadTargets`
+пуст, если состояние не `narrowed`; `unjudgedChannels` пуст для `covered`,
+называет все каналы всего проекта для `narrowed`, а для `unknown` — каналы,
+чьи значения-неймспейсы не судились. Остальные форматы добавляют запись только для
+`narrowed` и `unknown`. Консоль, кроме того, печатает в stderr предупреждение с
+autoload-целями, которые суженный прогон оставил вне анализа.
 
 ## Сравнительная таблица
 

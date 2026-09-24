@@ -15,7 +15,11 @@ final class ProfileSummaryRenderer
         }
         $lines = ['<comment>Profile summary:</comment>'];
         foreach ($summary->spans as $name => $stat) {
-            $lines[] = \sprintf('  <info>%s</info>: %.3fs | %dx', $name, $stat['total'] / 1000, $stat['count']);
+            $line = \sprintf('  <info>%s</info>: %.3fs | %dx', $name, $stat['total'] / 1000, $stat['count']);
+            if ($stat['unstopped'] > 0) {
+                $line .= \sprintf(' | %d never stopped, not timed', $stat['unstopped']);
+            }
+            $lines[] = $line;
         }
         return implode("\n", $lines);
     }

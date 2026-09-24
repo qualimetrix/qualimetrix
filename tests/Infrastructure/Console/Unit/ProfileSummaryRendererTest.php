@@ -14,24 +14,28 @@ use Qualimetrix\Infrastructure\Profiler\Contract\ProfileSummary;
 final class ProfileSummaryRendererTest extends TestCase
 {
     /**
-     * The whole rendering, not two substrings of it. A span statistic carries
-     * five numbers and the summary prints two of them; asserting that the
-     * name and the duration appear says nothing about which of the other
-     * three joined them or left.
+     * The whole rendering, not two substrings of it: a statistic the summary
+     * gains must show up here as a changed line.
      */
     #[Test]
-    public function itRendersTheDurationAndTheCountAndNoOtherStatistic(): void
+    public function itRendersTheDurationAndTheCount(): void
     {
-        $summary = new ProfileSummary(['analysis' => [
-            'total' => 1500.0,
-            'count' => 2,
-            'avg' => 750.0,
-            'memory' => 128,
-            'peak_memory' => 256,
-        ]]);
+        $summary = new ProfileSummary(['analysis' => ['total' => 1500.0, 'count' => 2, 'unstopped' => 0]]);
 
         self::assertSame(
             "<comment>Profile summary:</comment>\n  <info>analysis</info>: 1.500s | 2x",
+            (new ProfileSummaryRenderer())->render($summary),
+        );
+    }
+
+    /** A span that never stopped itself has no time of its own, and the line says so. */
+    #[Test]
+    public function itNamesSpansThatWereNotTimed(): void
+    {
+        $summary = new ProfileSummary(['discovery' => ['total' => 0.0, 'count' => 0, 'unstopped' => 1]]);
+
+        self::assertSame(
+            "<comment>Profile summary:</comment>\n  <info>discovery</info>: 0.000s | 0x | 1 never stopped, not timed",
             (new ProfileSummaryRenderer())->render($summary),
         );
     }

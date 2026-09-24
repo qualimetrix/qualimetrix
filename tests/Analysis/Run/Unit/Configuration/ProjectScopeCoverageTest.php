@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
+use Qualimetrix\Analysis\Run\Configuration\ProjectScopeState;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
@@ -163,33 +164,41 @@ final class ProjectScopeCoverageTest extends TestCase
     }
 
     /**
-     * "Cannot judge", narrowed to the honest case: the manifest declares no
-     * production autoload this product can read *at all*. There is no
-     * denominator, so the gate closes — and no target is named, because there
-     * is none to name, which is why the warning list and the verdict are taken
-     * from one measurement rather than from each other.
+     * `Unknown`: the manifest declares no production autoload this product
+     * can read *at all*. There is no denominator and no target to name, and the
+     * project is what the user named, so a whole-project channel judges the
+     * paths. It used to close the gate instead, which silenced
+     * `architecture.unreachable-layer` on every such project for good.
      *
-     * A *missing* manifest is one of these. It used to read as "covers" on
-     * the ground that its
-     * absence is separately warned about. It is warned about still — by
-     * `CheckCommand::warnIfComposerJsonMissing()` — but a project that never
-     * said which of its directories hold production code cannot tell a slice
-     * from a whole, and guessing "whole" is the guess that accuses an author.
+     * The state, not the verdict, is what keeps it apart from `Covered`: both
+     * cover and both name nothing.
      *
      * @param ?string $manifest raw `composer.json` content, or null for no manifest at all
      */
     #[Test]
     #[DataProvider('provideManifestsThatDeclareNoProductionAutoload')]
-    public function itCannotJudgeAProjectThatDeclaresNoReadableProductionAutoload(?string $manifest): void
+    public function itTakesTheAnalysedPathsAsTheProjectWhenTheManifestDeclaresNone(?string $manifest): void
     {
         if ($manifest !== null) {
             file_put_contents($this->tempDir . '/composer.json', $manifest);
         }
 
-        $configuration = $this->configuration(['src', 'lib']);
+        $configuration = $this->configuration(['src']);
 
-        self::assertFalse($this->covers($configuration));
+        self::assertTrue($this->covers($configuration));
         self::assertSame([], $this->uncovered($configuration));
+        self::assertSame(ProjectScopeState::Unknown, $this->state($configuration));
+    }
+
+    /** Covered and Narrowed are told apart by the uncovered list, Unknown by the manifest. */
+    #[Test]
+    public function itNamesTheStateOfARunWhoseManifestWasRead(): void
+    {
+        $this->writeComposerJson(['src/', 'lib/']);
+
+        self::assertSame(ProjectScopeState::Covered, $this->state($this->configuration(['src', 'lib'])));
+        self::assertSame(ProjectScopeState::Narrowed, $this->state($this->configuration(['src'])));
+        self::assertFalse($this->covers($this->configuration(['src'])));
     }
 
     /** @return iterable<string, array{?string}> */
@@ -288,6 +297,11 @@ final class ProjectScopeCoverageTest extends TestCase
     private function covers(RunConfiguration $configuration): bool
     {
         return $this->coverage()->pathsCoverProjectScope($configuration->projectRoot, $configuration->paths, $configuration->autoloadDevPolicy);
+    }
+
+    private function state(RunConfiguration $configuration): ProjectScopeState
+    {
+        return $this->coverage()->measure($configuration->projectRoot, $configuration->paths, $configuration->autoloadDevPolicy)->state();
     }
 
     /** @return list<string> */

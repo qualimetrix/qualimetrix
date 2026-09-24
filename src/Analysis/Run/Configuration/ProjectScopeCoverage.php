@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Run\Configuration;
 
 use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Discovery\DirectoryPruner;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -45,17 +46,27 @@ use RuntimeException;
  * is judged by the per-value question its own channel asks instead, and this answer is the
  * project-wide half of that pair.
  *
- * **Two answers, and the second is "cannot judge".** A run is measured
- * against every production path the manifest declares — `psr-4` and `psr-0`
- * roots, `classmap` entries and `files` entries alike. A `classmap` or
- * `files` entry may name a single file rather than a directory, which is no
- * obstacle: the question asked of each target is whether an analysed path
- * contains it, and containment answers the same way for a file. The other
- * answer, "cannot judge", is reached only when the manifest declares nothing
- * readable *at all* — it is absent, it does not parse, it has no `autoload`
- * section, or every production section in it is empty or malformed. Then
- * there is no denominator, the gate closes, and no scope warning is printed
- * because there is no uncovered target to name.
+ * **Three answers ({@see ProjectScopeState}).** A run is measured against
+ * every production path the manifest declares — `psr-4` and `psr-0` roots,
+ * `classmap` entries and `files` entries alike. A `classmap` or `files` entry
+ * may name a single file rather than a directory, which is no obstacle: the
+ * question asked of each target is whether an analysed path contains it, and
+ * containment answers the same way for a file. Every target contained is
+ * `Covered`; one left out is `Narrowed`. The third answer, `Unknown`, is
+ * reached only when the manifest declares nothing readable *at all* — it is
+ * absent, it does not parse, it has no `autoload` section, or every production
+ * section in it is empty or malformed. Then there is no denominator and no
+ * target to warn about, and the project is what the user named: the analysed
+ * paths cover it, and a whole-project channel judges them.
+ *
+ * `Unknown` covering is a decision, and the opposite one was in force before:
+ * a manifest-less project was never judged by any channel listed in
+ * {@see self::WHOLE_PROJECT_CHANNELS}. That cost every such project its
+ * layer-typo errors (`architecture.unreachable-layer`) for good, in exchange for
+ * not accusing an author on `qmx check src/Web` of a project that never said
+ * `src/Web` was a slice. Both errors are possible here; the first is permanent
+ * and invisible, the second is named by the report's project-scope state,
+ * which is why the report publishes it.
  *
  * `classmap`, `psr-0` and `files` are ordinary production targets. Treating a
  * manifest that declares production code through any of
@@ -85,12 +96,52 @@ use RuntimeException;
  */
 final readonly class ProjectScopeCoverage
 {
+    /**
+     * Every channel that is silent on a `Narrowed` run because it reads
+     * {@see self::pathsCoverProjectScope()}, directly or through the answer a
+     * run configuration or rule context carries — a report names them as not
+     * judged. Only the Architecture names come from their owner's contract:
+     * the others are declared on classes internal to their capability, and
+     * importing Discovery's own would tie this namespace to the one it gates.
+     * A reader added without its channels here reddens `ProjectScopeReadersTest`.
+     *
+     * @var list<string>
+     */
+    public const array WHOLE_PROJECT_CHANNELS = [
+        LayerPolicyPreparationInterface::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+        LayerPolicyPreparationInterface::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME,
+        LayerPolicyPreparationInterface::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
+        'coupling.unmatched-framework-namespace',
+        'discovery.unmatched-exclude',
+        'suppression.unmatched-namespace',
+        'suppression.unmatched-path',
+        'suppression.unmatched-rule-ledger',
+    ];
+
+    /**
+     * The channels whose namespace values an `Unknown` run leaves unjudged: a
+     * namespace is located only through a declared autoload, and such a project
+     * declares none. Their path values are still judged, so the list names the
+     * channels, not a silence of every value they carry.
+     *
+     * @var list<string>
+     */
+    public const array UNKNOWN_SCOPE_UNJUDGED_CHANNELS = [
+        'suppression.unmatched-namespace',
+        'suppression.unmatched-rule-ledger',
+    ];
+
     public function __construct(private ComposerAutoloadPathReaderInterface $composerReader) {}
 
-    /** @param list<AbsolutePath> $analyzedPaths */
+    /**
+     * Whether a whole-project channel may judge this run: `Covered` or
+     * `Unknown`, never `Narrowed`.
+     *
+     * @param list<AbsolutePath> $analyzedPaths
+     */
     public function pathsCoverProjectScope(AbsolutePath $projectRoot, array $analyzedPaths, AutoloadDevPolicy $autoloadDev): bool
     {
-        return $this->measure($projectRoot, $analyzedPaths, $autoloadDev)->covers();
+        return $this->measure($projectRoot, $analyzedPaths, $autoloadDev)->state()->coversProjectScope();
     }
 
     /**
@@ -98,10 +149,9 @@ final readonly class ProjectScopeCoverage
      * contains, in the spelling `composer.json` uses.
      *
      * Empty on a project whose production autoload this class cannot read:
-     * there is no target to name, which is why the verdict and this list are
-     * taken from one measurement — a caller reading emptiness here as "covers"
-     * would reintroduce exactly the answer {@see ProjectScopeMeasurement}
-     * separates.
+     * there is no target to name, which is why the state and this list are
+     * taken from one measurement — emptiness here is `Covered` or `Unknown`,
+     * and only {@see ProjectScopeMeasurement::state()} tells which.
      *
      * @param list<AbsolutePath> $analyzedPaths
      *
@@ -123,22 +173,18 @@ final readonly class ProjectScopeCoverage
 
         // One question, one branch: either the manifest declares production
         // paths this product can compare a run against, or it declares none
-        // and no channel may judge anything on this run. A missing manifest
-        // is that second case. Its absence does produce a stderr line from
-        // CheckCommand::warnIfComposerJsonMissing(), but that line survives
-        // neither `-q` nor the machine formats, so on such a project this
-        // silence is what a CI pipeline sees — the price of not guessing
-        // "whole project" for a project that never said what its code is.
+        // and the run's own paths are the project. A missing manifest is that
+        // second case.
         [$autoloadPaths, $prunedTargets] = $this->partition(
             $projectRoot,
             $this->declaredTargets($composerJsonPath->value(), $autoloadDev) ?? [],
         );
 
         // `[]` is the same answer as `null` and is spelled out rather than
-        // trusted away: reading an empty denominator as "covers" is precisely
-        // the defect this measurement was amended to remove. A manifest whose
-        // every target is pruned lands here too — it declares no code a walk
-        // of the project reaches.
+        // trusted away: an empty denominator is `Unknown`, which a report
+        // names, not `Covered`, which it does not. A manifest whose every
+        // target is pruned lands here too — it declares no code a walk of the
+        // project reaches.
         if ($autoloadPaths === []) {
             return ProjectScopeMeasurement::unreadable($prunedTargets);
         }

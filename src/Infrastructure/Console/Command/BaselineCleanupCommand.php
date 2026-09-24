@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupReason;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Analysis\Policy\Baseline\EntrySelector;
+use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
@@ -49,6 +50,7 @@ final class BaselineCleanupCommand extends BaselineCommand
         private readonly BaselineCleaner $cleaner,
         private readonly BaselineWriter $writer,
         private readonly ChannelDeclarationRegistryInterface $declarations,
+        private readonly RunRuleCoverage $ruleCoverage,
     ) {
         parent::__construct();
     }
@@ -72,8 +74,10 @@ final class BaselineCleanupCommand extends BaselineCommand
             'Without --remove the command only reports: no entry is removed and the'
             . "\n" . 'file is not touched.' . "\n\n"
             . 'An entry is listed when the run reported nothing for its identity, or'
-            . "\n" . 'when no rule declares its channel any more, or when the entry could'
-            . "\n" . 'not be read at all. None of those proves the debt is gone — a'
+            . "\n" . 'when the rule reporting its channel did not run (--only-rule,'
+            . "\n" . '--disable-rule, enabled: false), or when no rule declares its channel'
+            . "\n" . 'any more, or when the entry could not be read at all. None of those'
+            . "\n" . 'proves the debt is gone — a'
             . "\n" . 'loosened threshold silences a finding just as effectively as a fix —'
             . "\n" . 'so removal is always yours to assert, one selector at a time.',
         ));
@@ -96,7 +100,15 @@ final class BaselineCleanupCommand extends BaselineCommand
         $context = $measured->context;
         $baseline = $measured->baseline;
 
-        $candidates = $this->cleaner->candidates($baseline, $context->findings(), $this->declarations);
+        $candidates = $this->cleaner->candidates(
+            $baseline,
+            $context->findings(),
+            $this->declarations,
+            $this->ruleCoverage->unproducedChannels(array_map(
+                static fn($entry) => $entry->identity->channel,
+                $baseline->entries,
+            )),
+        );
         self::reportCandidates($candidates, $output);
 
         $selectors = self::readSelectors($written);
@@ -214,6 +226,8 @@ final class BaselineCleanupCommand extends BaselineCommand
     {
         return match ($candidate->reason) {
             BaselineCleanupReason::Stale => 'nothing reported for this identity',
+            BaselineCleanupReason::ProducerDidNotRun => 'not measured: the rule reporting this channel did not run'
+                . ' in this invocation',
             BaselineCleanupReason::ChannelNotDeclared => 'no rule declares this channel',
             BaselineCleanupReason::ChannelIsConfigurationError => 'this channel reports a configuration error and'
                 . ' cannot be accepted as debt',

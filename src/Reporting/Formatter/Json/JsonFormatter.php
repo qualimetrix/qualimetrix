@@ -53,6 +53,7 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
             'summary' => $this->buildSummary($report, $filteredFindings),
             'outOfScope' => $this->buildOutOfScope($report->outOfScope),
             'coverage' => $report->coverage?->toArray(),
+            'projectScope' => $report->projectScope?->toArray(),
             'health' => $this->healthSection->format($report, $context),
             'worstNamespaces' => $this->offenderSection->formatNamespaces(
                 $report->worstNamespaces,

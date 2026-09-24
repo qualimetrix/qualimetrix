@@ -94,7 +94,7 @@ final class BaselineLifecycleTest extends TestCase
 
             $captured = self::aggregateForChannel($project->baselinePath, 'duplication.clone');
             self::assertSame(2, $captured['count']);
-            self::assertSame([11, 15], $captured['magnitudes']);
+            self::assertSame([12, 15], $captured['magnitudes']);
 
             file_put_contents($project->root . '/Three.php', self::uniqueClass('Three'));
 

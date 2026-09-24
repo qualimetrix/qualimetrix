@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Symbol;
 
+use LogicException;
+
 /**
  * Registry of PHP built-in classes.
  *
@@ -34,6 +36,9 @@ namespace Qualimetrix\Core\Symbol;
  */
 final class PhpBuiltinClassRegistry
 {
+    /** @var array<string, string>|null lower-cased name => the spelling the list keeps */
+    private static ?array $byFoldedName = null;
+
     /** @var array<string, true> */
     private const BUILTIN_CLASSES = [
         // Core: Exception hierarchy
@@ -198,6 +203,46 @@ final class PhpBuiltinClassRegistry
 
     public static function isBuiltin(string $className): bool
     {
-        return isset(self::BUILTIN_CLASSES[$className]);
+        return self::canonicalName($className) !== null;
+    }
+
+    /**
+     * The spelling this list keeps for a name written in any case, or null
+     * when PHP does not declare the name.
+     *
+     * PHP class names are case-insensitive, so `\arrayobject` is
+     * `\ArrayObject`. PHP folds ASCII letters only, which `strtolower()`
+     * reproduces exactly; a multibyte fold would join names PHP keeps apart.
+     * A leading separator is the caller's to strip.
+     */
+    public static function canonicalName(string $className): ?string
+    {
+        if (isset(self::BUILTIN_CLASSES[$className])) {
+            return $className;
+        }
+
+        self::$byFoldedName ??= self::foldNames();
+
+        return self::$byFoldedName[strtolower($className)] ?? null;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function foldNames(): array
+    {
+        $folded = [];
+
+        foreach (array_keys(self::BUILTIN_CLASSES) as $name) {
+            $folded[strtolower($name)] = $name;
+        }
+
+        // Two entries differing only in case would make one of them
+        // unreachable here, and PHP cannot declare both.
+        if (\count($folded) !== \count(self::BUILTIN_CLASSES)) {
+            throw new LogicException('The builtin class list carries a name twice in different case spellings');
+        }
+
+        return $folded;
     }
 }

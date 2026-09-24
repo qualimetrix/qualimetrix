@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
 /**
- * The matching and describing logic {@see RuleOptionShape} needs only for
+ * The matching and describing logic {@see RuleOptionShape} needs for
  * its two COMPOUND kinds — a container (`listOf()`/`mapOf()`, judged element
  * by element) and a union (`either()`, judged by any alternative matching) —
  * split out of the class body so its own method count stays a size the
@@ -76,5 +76,29 @@ trait RuleOptionShapeCompoundForms
         return $element->kind instanceof RuleOptionValueForm && !$element->nullable
             ? $element->kind->describeMany()
             : $element->describe();
+    }
+
+    /**
+     * The written value itself, when this shape's own plain form or one of its
+     * alternatives has the value's type and not its range: a range question is
+     * answered by the value, the way a membership question is answered by the
+     * word. Here rather than in the class body because a union has to ask each
+     * of its alternatives.
+     */
+    private function describeOutOfRange(mixed $written): ?string
+    {
+        if ($this->kind instanceof RuleOptionValueForm) {
+            return $this->kind->describeOutOfRange($written);
+        }
+
+        foreach ($this->alternatives as $alternative) {
+            $described = $alternative->describeOutOfRange($written);
+
+            if ($described !== null) {
+                return $described;
+            }
+        }
+
+        return null;
     }
 }

@@ -154,24 +154,15 @@ final class CheckCommandProjectionOptionsBeforeAnalysisTest extends TestCase
     }
 
     /**
-     * A baseline file that a syntactically valid `--baseline` value names but
-     * that does not exist on disk is a question the run's file system answers,
-     * not the option parser — {@see \Qualimetrix\Analysis\Policy\Baseline\BaselineLoader}
-     * loads it from inside {@see \Qualimetrix\Reporting\FindingProjection\FindingProjector::project()}.
-     * Named here so the before/after split is not mistaken for covering it
-     * too: it still runs after analysis. Unlike the cases above, this is not
-     * because it needs the analysis result — `is_file()` does not — but
-     * because the loader is Baseline-owned, outside this package's file set;
-     * a Console-side existence precheck comparable to
-     * {@see \Qualimetrix\Infrastructure\Console\ResultPresenter::assertOutputIsWritable()}
-     * would be legitimate but is not this package's call to make. No call
-     * count is asserted here — pinning "one wasted run" as the spec would be
-     * wrong; only that the refusal still fires and still says why.
+     * A well-formed `--baseline` naming a file that does not exist is a
+     * question the file system answers, not the option parser — yet it needs
+     * no analysis result either, so it is refused before the pipeline runs,
+     * like the malformed values above.
      */
     #[Test]
-    public function itStillRefusesAMissingBaselineFileAfterAnalysisStarts(): void
+    public function itRefusesAMissingBaselineFileBeforeAnalysis(): void
     {
-        [$command] = $this->createCommand();
+        [$command, $pipeline] = $this->createCommand();
         $tester = new CommandTester($command);
 
         $exit = $tester->execute(
@@ -184,6 +175,11 @@ final class CheckCommandProjectionOptionsBeforeAnalysisTest extends TestCase
         );
 
         self::assertSame(3, $exit, $tester->getDisplay());
+        self::assertSame(
+            0,
+            $pipeline->calls,
+            'The analysis pipeline ran before the missing baseline file was refused: ' . $tester->getDisplay(),
+        );
         self::assertStringContainsString('Baseline file not found', $tester->getDisplay());
     }
 

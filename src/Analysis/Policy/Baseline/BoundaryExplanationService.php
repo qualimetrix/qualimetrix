@@ -6,7 +6,6 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
@@ -49,6 +48,7 @@ final readonly class BoundaryExplanationService
      */
     public function __construct(
         private ChannelIdentityInterface $channels,
+        private RunRuleCoverage $ruleCoverage,
     ) {}
 
     /**
@@ -99,6 +99,7 @@ final readonly class BoundaryExplanationService
             $subjectKey,
             $boundaries,
             self::statusFor($subjectKey, $baseline, $measuredFindings, $repositoryRecord),
+            ExplainedSubject::unidentifiedEntries($subjectKey, $channelFilter, $baseline),
         );
     }
 
@@ -147,6 +148,9 @@ final readonly class BoundaryExplanationService
         ?array $repositoryRecord,
     ): EffectiveBoundary {
         $baselineSource = self::baselineSourceFor($identity, $baseline, $measuredFindings);
+        if ($baselineSource !== null && $this->ruleCoverage->unproducedChannels([$identity->channel]) !== []) {
+            $baselineSource = $baselineSource->unmeasured();
+        }
 
         $subject = ExplainedSubject::subjectFor($identity, $measuredFindings, $repositoryRecord);
         $configuredThreshold = self::configuredThresholdFor(
@@ -189,9 +193,7 @@ final readonly class BoundaryExplanationService
         ?Baseline $baseline,
         array $measuredFindings,
     ): ?EffectiveBoundaryBaselineSource {
-        $entry = $baseline?->findByIdentity($identity);
-
-        if ($entry === null) {
+        if ($baseline === null) {
             return null;
         }
 
@@ -202,30 +204,52 @@ final readonly class BoundaryExplanationService
             }
         }
 
+        $entry = $baseline->findByIdentity($identity);
+
+        if ($entry === null) {
+            $inert = $baseline->findInertByIdentity($identity);
+
+            return $inert !== null ? EffectiveBoundaryBaselineSource::inert($inert, \count($group)) : null;
+        }
+
         $currentMagnitudes = null;
+        $withoutMagnitude = 0;
 
         if ($entry->magnitudes !== null) {
             $currentMagnitudes = [];
 
             foreach ($group as $finding) {
-                if ($finding->metricValue === null) {
+                $magnitude = self::finiteMagnitude($finding);
+
+                if ($magnitude === null) {
+                    ++$withoutMagnitude;
+
                     continue;
                 }
 
-                try {
-                    $currentMagnitudes[] = BaselineEntry::normalizeMagnitude($finding->metricValue);
-                } catch (InvalidArgumentException) {
-                    // Not finite: not a boundary, left out of the current reading.
-                    continue;
-                }
+                $currentMagnitudes[] = $magnitude;
             }
         }
 
-        return new EffectiveBoundaryBaselineSource(
-            accepted: new AcceptedLevel($entry->magnitudes, $entry->count),
-            currentMagnitudes: $currentMagnitudes,
-            currentCount: \count($group),
-        );
+        return EffectiveBoundaryBaselineSource::applicable($entry, $currentMagnitudes, \count($group), $withoutMagnitude);
+    }
+
+    /**
+     * The member's magnitude normalised as the stored ones were, or `null`
+     * when it reports none or a non-finite one — the members on which the
+     * ceiling declines to compare the group.
+     */
+    private static function finiteMagnitude(Finding $finding): ?float
+    {
+        if ($finding->metricValue === null) {
+            return null;
+        }
+
+        try {
+            return BaselineEntry::normalizeMagnitude($finding->metricValue);
+        } catch (InvalidArgumentException) {
+            return null;
+        }
     }
 
     /**

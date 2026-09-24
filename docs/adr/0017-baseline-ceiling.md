@@ -118,7 +118,7 @@ rejected boundary.
 6. **`complexity.npath.*` saturates at 10^9.** An entry at saturation cannot breach.
 7. **Renames strand entries.** The renamed finding reports as new and the old identity becomes stale.
 8. **Duplication can re-key after the first copy moves.** A reduction can yield one stale entry and one fresh finding.
-9. **Symbol keys are not unique per declaration.** Same-FQN declarations and trait consumers can share an identity, and `__PROJECT__` is a legal PHP namespace name.
+9. **Symbol keys are not unique per declaration.** Same-FQN declarations and trait consumers can share an identity.
 10. **Aggregate magnitudes can move after another file changes.** A class CBO boundary can breach without an edit to that class.
 11. **Three project-keyed architecture channels form multi-member groups.** `architecture.unreachable-layer`, `architecture.potential-shadow`, and `architecture.empty-template` have occurrence ceilings with no member-position information; single-result `architecture.coverage` is unaffected.
 12. **A survivor can grow into a repaired member's slot.** Cumulative comparison accepts redistribution below the worst previously accepted magnitude; this is the cost of not tracking member identity.

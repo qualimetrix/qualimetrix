@@ -32,7 +32,9 @@ final readonly class ExplainedSubject
 {
     /**
      * Every identity worth reporting on: every baseline entry for this
-     * symbol, plus every channel currently firing for it, narrowed to one
+     * symbol — including one the loader could read the identity of but not
+     * apply, which `check` names as inert and which must not be denied here —
+     * plus every channel currently firing for it, narrowed to one
      * channel when `$channelFilter` is given. When neither source has
      * anything and a channel was explicitly asked for, a bare identity with
      * no edge is still returned — `qmx.yaml` and the annotation may have
@@ -49,37 +51,25 @@ final readonly class ExplainedSubject
         ?Baseline $baseline,
         array $measuredFindings,
     ): array {
+        $candidates = [
+            ...array_map(static fn(BaselineEntry $entry): BaselineIdentity => $entry->identity, $baseline->entries ?? []),
+            ...array_filter(array_map(
+                static fn(InertBaselineEntry $entry): ?BaselineIdentity => $entry->identity,
+                $baseline->inertEntries ?? [],
+            )),
+            ...array_map(BaselineIdentity::forFinding(...), array_filter(
+                $measuredFindings,
+                static fn(Finding $finding): bool => $finding->subject->toCanonical() === $symbolKey,
+            )),
+        ];
+
         /** @var array<string, BaselineIdentity> $byKey */
         $byKey = [];
 
-        if ($baseline !== null) {
-            foreach ($baseline->entries as $entry) {
-                $identity = $entry->identity;
-
-                if ($identity->subjectKey !== $symbolKey) {
-                    continue;
-                }
-
-                if ($channelFilter !== null && !$identity->channel->equals($channelFilter)) {
-                    continue;
-                }
-
-                $byKey[$identity->key()] = $identity;
+        foreach ($candidates as $identity) {
+            if ($identity->subjectKey === $symbolKey && ($channelFilter === null || $identity->channel->equals($channelFilter))) {
+                $byKey[$identity->key()] ??= $identity;
             }
-        }
-
-        foreach ($measuredFindings as $finding) {
-            if ($finding->subject->toCanonical() !== $symbolKey) {
-                continue;
-            }
-
-            $identity = BaselineIdentity::forFinding($finding);
-
-            if ($channelFilter !== null && !$identity->channel->equals($channelFilter)) {
-                continue;
-            }
-
-            $byKey[$identity->key()] ??= $identity;
         }
 
         if ($byKey === [] && $channelFilter !== null) {
@@ -88,6 +78,30 @@ final readonly class ExplainedSubject
         }
 
         return array_values($byKey);
+    }
+
+    /**
+     * The lines about this symbol whose identity could not be read at all:
+     * no boundary can be built for them, yet they are lines of the file about
+     * this subject, and `check` names them.
+     *
+     * @return list<InertBaselineEntry>
+     */
+    public static function unidentifiedEntries(
+        string $symbolKey,
+        ?FindingChannel $channelFilter,
+        ?Baseline $baseline,
+    ): array {
+        if ($baseline === null) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $baseline->inertEntries,
+            static fn(InertBaselineEntry $inert): bool => $inert->identity === null
+                && $inert->subjectKey === $symbolKey
+                && ($channelFilter === null || $inert->channelKey === $channelFilter->code),
+        ));
     }
 
     /**

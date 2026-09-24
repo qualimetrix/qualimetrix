@@ -25,6 +25,7 @@ use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEdge;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationStatus;
@@ -40,6 +41,7 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 
 #[CoversClass(BoundaryExplanationService::class)]
 #[CoversClass(ExplainedSubject::class)]
@@ -51,7 +53,7 @@ final class BoundaryExplanationServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->service = new BoundaryExplanationService(self::producerEdge());
+        $this->service = new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan());
     }
 
     /**
@@ -150,7 +152,7 @@ final class BoundaryExplanationServiceTest extends TestCase
         $boundary = $explanation->boundaries[0];
 
         self::assertNotNull($boundary->baseline);
-        self::assertSame([25.0], $boundary->baseline->accepted->magnitudes);
+        self::assertSame([25.0], $boundary->baseline->accepted?->magnitudes);
         self::assertSame(20, $boundary->configuredThreshold);
         self::assertNotNull($boundary->annotation);
         self::assertSame(15, $boundary->annotation->warning);
@@ -182,10 +184,111 @@ final class BoundaryExplanationServiceTest extends TestCase
         $source = $explanation->boundaries[0]->baseline;
 
         self::assertNotNull($source);
+        self::assertNotNull($source->accepted);
         self::assertSame([25.0], $source->accepted->magnitudes);
         self::assertSame([31.0], $source->currentMagnitudes);
         self::assertNotSame($source->accepted->magnitudes, $source->currentMagnitudes);
         self::assertSame(1, $source->currentCount);
+    }
+
+    /**
+     * The ceiling declines to compare a magnitude group with a member that
+     * reports no finite number, so the explanation counts such members
+     * rather than silently leaving them out of the reading.
+     */
+    #[Test]
+    public function itCountsMembersWithoutAFiniteMagnitudeInsteadOfDroppingThem(): void
+    {
+        $channel = new FindingChannel('complexity.ccn');
+        $baseline = $this->baselineWithEntry($channel, magnitudes: [25, 25, 25], count: 3);
+
+        $explanation = $this->service->explain(
+            subjectKey: self::SYMBOL_KEY,
+            channelFilter: $channel,
+            baseline: $baseline,
+            measuredFindings: [
+                $this->finding($channel, metricValue: 20),
+                $this->finding($channel, metricValue: \NAN),
+                $this->finding($channel, metricValue: \INF),
+            ],
+            thresholdOverridesByFile: [],
+            configuredThresholds: [],
+        );
+
+        $source = $explanation->boundaries[0]->baseline;
+
+        self::assertNotNull($source);
+        self::assertSame([20.0], $source->currentMagnitudes);
+        self::assertSame(2, $source->membersWithoutMagnitude);
+        self::assertSame(3, $source->currentCount);
+    }
+
+    /**
+     * An entry the loader demoted but whose identity it read is a boundary
+     * source in its own right, carrying why it cannot be applied; a line
+     * whose identity it could not read is listed beside the boundaries.
+     */
+    #[Test]
+    public function itExplainsInertEntriesRatherThanDenyingThem(): void
+    {
+        $channel = new FindingChannel('complexity.renamed-ccn');
+        $identity = new BaselineIdentity(self::SYMBOL_KEY, $channel);
+        $inert = InertBaselineEntry::forIdentity($identity, InertEntryReason::UndeclaredChannel, 'renamed', ['channel' => $channel->code]);
+        $unreadable = InertBaselineEntry::forRaw(self::SYMBOL_KEY, null, InertEntryReason::Malformed, 'no channel', ['channel' => 5]);
+        $elsewhere = InertBaselineEntry::forRaw('file:src/Other.php', null, InertEntryReason::Malformed, 'no channel', ['channel' => 6]);
+
+        $explanation = $this->service->explain(
+            subjectKey: self::SYMBOL_KEY,
+            channelFilter: null,
+            baseline: new Baseline(
+                generated: new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
+                scope: ['src'],
+                entries: [],
+                inertEntries: [$inert, $unreadable, $elsewhere],
+            ),
+            measuredFindings: [],
+            thresholdOverridesByFile: [],
+            configuredThresholds: [],
+        );
+
+        self::assertCount(1, $explanation->boundaries);
+        $source = $explanation->boundaries[0]->baseline;
+        self::assertNotNull($source);
+        self::assertSame($inert, $source->inert);
+        self::assertNull($source->accepted);
+        self::assertSame([$unreadable], $explanation->unidentifiedEntries);
+    }
+
+    /**
+     * The legitimate neighbour: an applicable entry whose members all
+     * measure carries its mode and no unmeasured member.
+     */
+    #[Test]
+    public function itCarriesTheModeAndNoStateForAnOrdinaryEntry(): void
+    {
+        $channel = new FindingChannel('complexity.ccn');
+        $identity = new BaselineIdentity(self::SYMBOL_KEY, $channel);
+        $baseline = new Baseline(
+            generated: new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
+            scope: ['src'],
+            entries: [new BaselineEntry($identity, [24], 1, BaselineEntryMode::Suppress)],
+        );
+
+        $explanation = $this->service->explain(
+            subjectKey: self::SYMBOL_KEY,
+            channelFilter: $channel,
+            baseline: $baseline,
+            measuredFindings: [$this->finding($channel, metricValue: 32)],
+            thresholdOverridesByFile: [],
+            configuredThresholds: [],
+        );
+
+        $source = $explanation->boundaries[0]->baseline;
+        self::assertNotNull($source);
+        self::assertSame(BaselineEntryMode::Suppress, $source->mode);
+        self::assertSame(0, $source->membersWithoutMagnitude);
+        self::assertNull($source->inert);
+        self::assertSame([], $explanation->unidentifiedEntries);
     }
 
     /**

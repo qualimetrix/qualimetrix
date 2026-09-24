@@ -127,7 +127,7 @@ final class ProfilerTest extends TestCase
         self::assertArrayHasKey('operation', $summary);
         self::assertSame(2, $summary['operation']['count']);
         self::assertGreaterThan(0, $summary['operation']['total']);
-        self::assertGreaterThan(0, $summary['operation']['avg']);
+        self::assertSame(0, $summary['operation']['unstopped']);
     }
 
     #[Test]
@@ -155,9 +155,9 @@ final class ProfilerTest extends TestCase
         $data = json_decode($json, true);
 
         self::assertIsArray($data);
-        self::assertSame('test', $data['name']);
-        self::assertArrayHasKey('duration_ms', $data);
-        self::assertArrayHasKey('memory_delta_bytes', $data);
+        self::assertSame('test', $data['spans'][0]['name']);
+        self::assertArrayHasKey('duration_ms', $data['spans'][0]);
+        self::assertArrayHasKey('memory_delta_bytes', $data['spans'][0]);
     }
 
     #[Test]
@@ -275,66 +275,6 @@ final class ProfilerTest extends TestCase
     }
 
     #[Test]
-    public function itRecordsPeakMemoryOnStop(): void
-    {
-        $this->profiler->start('test');
-        $this->profiler->stop('test');
-
-        $root = $this->profiler->getRootSpan();
-        self::assertNotNull($root);
-
-        // Peak should be at least startMemory
-        self::assertGreaterThanOrEqual($root->startMemory, $root->peakMemory);
-        self::assertNotNull($root->getPeakMemoryDelta());
-        self::assertGreaterThanOrEqual(0, $root->getPeakMemoryDelta());
-    }
-
-    #[Test]
-    public function itPropagatesChildPeakToParent(): void
-    {
-        $this->profiler->start('parent');
-        $this->profiler->start('child');
-
-        // Allocate some memory to create a peak
-        /** @var list<string> $buffer */
-        $buffer = [];
-        for ($i = 0; $i < 100; $i++) {
-            $buffer[] = str_repeat('x', 1024);
-        }
-        $peakDuringChild = memory_get_usage(true);
-
-        $this->profiler->stop('child');
-
-        // Free the buffer
-        unset($buffer);
-
-        $this->profiler->stop('parent');
-
-        $root = $this->profiler->getRootSpan();
-        self::assertNotNull($root);
-
-        // Parent's peak should be at least as high as what was measured during child
-        self::assertGreaterThanOrEqual($peakDuringChild, $root->peakMemory);
-    }
-
-    #[Test]
-    public function itUpdatesPeakForAllSpansWhenStoppingOutOfOrder(): void
-    {
-        $this->profiler->start('outer');
-        $this->profiler->start('inner');
-
-        $currentMemory = memory_get_usage(true);
-        $this->profiler->stop('outer');
-
-        // Stopping the outer span closes the whole active stack and records the
-        // same observed memory peak for both spans.
-        $root = $this->profiler->getRootSpan();
-        self::assertNotNull($root);
-        self::assertGreaterThanOrEqual($currentMemory, $root->peakMemory);
-        self::assertGreaterThanOrEqual($currentMemory, $root->children[0]->peakMemory);
-    }
-
-    #[Test]
     public function itIgnoresStopOnEmptyStack(): void
     {
         // Should not throw
@@ -342,53 +282,51 @@ final class ProfilerTest extends TestCase
         self::assertNull($this->profiler->getRootSpan());
     }
 
+    /**
+     * A span still open when an enclosing span stops is closed with it, but
+     * its time is not its own: it ran until the ancestor stopped and adopted
+     * everything started after it. Counted as measured, `discovery` here
+     * reported the whole of `analysis`.
+     */
     #[Test]
-    public function itIncludesPeakMemoryInSummary(): void
+    public function itKeepsASpanClosedByItsAncestorOutOfTheMeasuredTime(): void
     {
-        $this->profiler->start('root');
-        $this->profiler->start('operation');
-        $this->profiler->stop('operation');
-        $this->profiler->stop('root');
+        $this->profiler->start('analysis');
+        $this->profiler->start('discovery');
+        $this->profiler->start('collection');
+        $this->profiler->stop('collection');
+        $this->profiler->stop('analysis');
 
         $summary = $this->profiler->getSummary();
-        self::assertArrayHasKey('peak_memory', $summary['root']);
-        self::assertArrayHasKey('peak_memory', $summary['operation']);
-        self::assertGreaterThanOrEqual(0, $summary['root']['peak_memory']);
-        self::assertGreaterThanOrEqual(0, $summary['operation']['peak_memory']);
+
+        self::assertSame(['total' => 0.0, 'count' => 0, 'unstopped' => 1], $summary['discovery']);
+        self::assertSame(1, $summary['collection']['count']);
+        self::assertSame(1, $summary['analysis']['count']);
+
+        $data = json_decode($this->profiler->export('json'), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($data);
+        $discovery = $data['spans'][0]['children'][0];
+        self::assertSame('discovery', $discovery['name']);
+        self::assertFalse($discovery['stopped']);
+        self::assertTrue($discovery['children'][0]['stopped']);
     }
 
     /**
-     * Three instances each raise the process peak by about a megabyte and hold
-     * it, so each one's own rise is about a third of the root span's. Summing
-     * them would give the root's figure; taking the maximum gives a third of
-     * it, and only one of the two can be strictly less than the root.
+     * A run that ends before its spans stop still has something to say:
+     * the summary used to be empty, as if nothing had been recorded.
      */
     #[Test]
-    public function itTakesPeakMemoryMaxAcrossInstances(): void
+    public function itSummarisesSpansThatNeverStopped(): void
     {
-        /** @var list<string> $held */
-        $held = [];
+        $this->profiler->start('analysis');
+        $this->profiler->start('discovery');
 
-        $this->profiler->start('root');
-
-        for ($instance = 0; $instance < 3; ++$instance) {
-            $this->profiler->start('op');
-            $held[] = str_repeat('a', 1024 * 1024);
-            $this->profiler->stop('op');
-        }
-
-        $this->profiler->stop('root');
-
-        $summary = $this->profiler->getSummary();
-
-        self::assertSame(3, $summary['op']['count']);
-        self::assertGreaterThan(0, $summary['op']['peak_memory']);
-        self::assertLessThan(
-            $summary['root']['peak_memory'],
-            $summary['op']['peak_memory'],
-            'peak_memory is the largest instance, not the instances added up',
+        self::assertSame(
+            [
+                'analysis' => ['total' => 0.0, 'count' => 0, 'unstopped' => 1],
+                'discovery' => ['total' => 0.0, 'count' => 0, 'unstopped' => 1],
+            ],
+            $this->profiler->getSummary(),
         );
-
-        unset($held);
     }
 }

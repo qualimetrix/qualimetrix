@@ -13,6 +13,9 @@ namespace Fixtures\ThresholdAudit;
  * correct answer. The method below takes seven parameters, which the default
  * long-parameter-list boundaries report, and has a cyclomatic complexity of
  * one, which no boundary on earth reports.
+ *
+ * `render()` is a finding no directive touches — a boolean argument — so the
+ * run reports something whatever the audit decides about the pair.
  */
 final class PairedDirectives
 {
@@ -32,5 +35,10 @@ final class PairedDirectives
         string $seven,
     ): string {
         return $one . $two . $three . $four . $five . $six . $seven;
+    }
+
+    public function render(bool $pretty): string
+    {
+        return $pretty ? 'a' : 'b';
     }
 }

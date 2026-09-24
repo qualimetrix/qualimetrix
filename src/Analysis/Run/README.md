@@ -71,11 +71,21 @@ file, and the denominator's question is containment. A declared target
 missing on disk is skipped by the denominator, and as a default path it is
 refused by the path check before analysis, as a stale PSR-4 root always was.
 `ProjectScopeMeasurement` carries both halves of one measurement — the
-uncovered targets the console warns about, and the verdict a channel reads,
-beside the pruned targets —
-because a manifest declaring no readable production autoload at all (absent,
-unparseable, or without a production section) names no uncovered target and
-still may not be judged. The answer travels on
+uncovered targets the console warns about, and the `ProjectScopeState` a
+channel reads, beside the pruned targets. There are three states: `Covered`
+(every counted target analysed), `Narrowed` (some left out) and `Unknown` (a
+manifest declaring no readable production autoload at all — absent,
+unparseable, or without a production section). `Unknown` names no uncovered
+target and covers the project: with nothing declared, the analysed paths are
+the project, so the whole-project channels judge them. Only `Narrowed`
+silences them, and `ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS` lists the
+channels it silences — the console publishes the state, the uncovered targets
+and that list in every report format with a place for it, and
+`ProjectScopeReadersTest` fails when a reader of the predicate appears whose
+channels the list does not name. On `Unknown` the suppression channels judge
+path values only, since nothing locates a namespace without a declared
+autoload; `ProjectScopeCoverage::UNKNOWN_SCOPE_UNJUDGED_CHANNELS` is what an
+`unknown` report names as the channels whose namespace values went unjudged. The answer travels on
 `RunConfiguration::$coversProjectScope` because it is a fact about that
 configuration's paths: `RunConfigurationResolver` fills it, `CheckCommand`
 refills it from `CheckScopeResolver` when a Git report scope narrows the run
@@ -87,7 +97,7 @@ field has no default: every site that narrows a run states its own answer. A rul
 having bound to nothing must read it first: "bound nothing" is a fact about the
 pair (configuration, run scope), and a slice cannot carry the configuration's
 denominator. The predicate sees narrowing by path only, and answers "covers"
-when there is no composer manifest to be a denominator.
+when there is no composer manifest to be a denominator (`Unknown`).
 
 `AnalysisFileDiscovery` coordinates the default or explicit discovery strategy,
 deduplicates overlapping roots by project-relative path, and applies
@@ -144,8 +154,15 @@ before anything is yielded, through `DirectoryPruner::builtInExclusion()`: no
 default path is ever such a directory, so it was written by hand, and the walk
 would have reported success over zero files. A directory argument inside one
 (`vendor/acme`) is walked. A root removed only by an authored `exclude:` is
-still skipped silently, because discovery cannot tell a written root from a
-composer default the author excluded on purpose.
+skipped by discovery without a word, because discovery cannot tell a written
+root from a composer default the author excluded on purpose.
+`RunConfigurationResolver` can, so it refuses a directory the author wrote
+(`paths:` or a command-line path) that an authored selector removes, before
+analysis and by the same `DirectoryPruner::match()` discovery asks of a root:
+`exclude: [subtree: legacy]` refuses `check legacy` and `check legacy/old`,
+`exclude: [exact: legacy]` refuses only `check legacy`. A composer default the
+author excluded stays a silent exclusion, and a written file inside an excluded
+directory stays an exact input.
 
 Collection is the only parallel phase. `FileProcessingResult` holds the path and
 exactly one terminal state: a `SuccessfulFileProcessing` payload, or a failure

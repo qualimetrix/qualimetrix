@@ -31,6 +31,12 @@ final class LoggerHolder
         $this->logger = $logger;
     }
 
+    /** Puts back the NullLogger the holder starts with. */
+    public function reset(): void
+    {
+        $this->logger = new NullLogger();
+    }
+
     /**
      * Gets the current logger instance.
      */

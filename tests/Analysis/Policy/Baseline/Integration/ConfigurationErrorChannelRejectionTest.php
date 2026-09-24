@@ -137,6 +137,7 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
             self::baselineOf($entry),
             [$finding],
             self::registry(),
+            [],
         );
 
         self::assertCount(1, $candidates);

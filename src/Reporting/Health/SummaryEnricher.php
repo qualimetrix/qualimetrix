@@ -68,6 +68,7 @@ final readonly class SummaryEnricher
             coverage: $report->coverage,
             suppressionComposition: $report->suppressionComposition,
             outOfScope: $report->outOfScope,
+            projectScope: $report->projectScope,
         );
     }
 }

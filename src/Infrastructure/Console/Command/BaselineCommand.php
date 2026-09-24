@@ -85,10 +85,10 @@ abstract class BaselineCommand extends Command
             // is the user's to fix, not ours to explain with a stack.
             return $this->refusalPresenter->fallbackRefusal($output, $format, $e);
         } catch (RuntimeException $e) {
-            // The baseline loader and the v5 reader used to report every
-            // envelope problem this way; both now use typed carriers, so
-            // what still reaches here is either a genuine defect or a type
-            // without a typed refusal carrier. Either way it is not a
+            // The baseline loader used to report every envelope problem this
+            // way; it now uses a typed carrier, so what still reaches here is
+            // either a genuine defect or a type without a typed refusal
+            // carrier. Either way it is not a
             // proven refusal, so it keeps the trace-on-`-v` treatment rather
             // than the presenter's code 3.
             return $this->fail($output, $e->getMessage(), $e);
@@ -196,6 +196,8 @@ abstract class BaselineCommand extends Command
      * first would leave every such entry inert, and each command would
      * answer differently than the `check` applying the very same entry —
      * then refuse when the run's scope does not cover what the file records.
+     * Only the file's existence is asked before the run: it needs no
+     * declaration, and a missing file should not cost a whole analysis.
      *
      * Returns `null` when the caller must answer with `self::FAILURE`; the
      * scope guard has already written its own message to `$output`.
@@ -209,6 +211,7 @@ abstract class BaselineCommand extends Command
     ): ?LoadedBaselineRun {
         $force = $input->getOption('force') === true;
 
+        BaselineLoader::assertReadable($baselinePath);
         $context = $baselineRun->measure($input, $output);
         $baseline = $loader->load($baselinePath);
 

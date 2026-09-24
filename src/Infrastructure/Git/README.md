@@ -38,7 +38,15 @@ once and names no single change. It reaches the tool through `git:staged`
 only — measured, the same conflicted repository reports `M` under `git:HEAD`.
 `X` and any letter a later git adds are refused by the same branch, quoted
 back by letter. Every refusal is a warning naming the path; there is no silent
-way out of `parseNameStatus()`.
+way out of `NameStatusListing`.
+
+### NameStatusListing
+
+One `--name-status -z` listing read into `ChangedFile`s. The rows `GitClient`
+cannot hand on — refused status, a name the relative-path model cannot carry, a
+path outside the project root — are grouped by reason, beside renames whose
+source name was lost, and logged as one warning per reason once the listing is
+read.
 
 ### NameStatusRecord
 

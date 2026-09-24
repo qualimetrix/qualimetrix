@@ -71,6 +71,15 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
             ), $rendered);
         }
 
+        $projectScope = $report->projectScope?->describe();
+        if ($projectScope !== null) {
+            $rendered = str_replace('<body>', '<body>' . \sprintf(
+                '<div role="status" data-qmx-project-scope="%s" style="padding:12px;background:#78350f;color:#fff">%s</div>',
+                htmlspecialchars($report->projectScope->state, \ENT_QUOTES),
+                htmlspecialchars($projectScope, \ENT_QUOTES),
+            ), $rendered);
+        }
+
         if ($repairs > 0) {
             $rendered = str_replace('<body>', '<body>' . \sprintf(
                 '<div role="alert" data-qmx-publication="invalid-utf8" style="padding:12px;background:#78350f;color:#fff">%s</div>',

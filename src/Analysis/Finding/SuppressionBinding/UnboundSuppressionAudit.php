@@ -51,8 +51,10 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * project-wide one
  * ({@see \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage}) before
  * calling at all: on a run narrowed below the project's production autoload
- * roots, or on one whose manifest declares no readable production autoload,
- * there is nothing here to judge. Every surviving value is then asked about
+ * roots there is nothing here to judge. A project whose manifest declares no
+ * readable production autoload is judged, its analysed paths taken as the
+ * whole project — its path values only, since nothing locates a namespace
+ * there. Every surviving value is then asked about
  * individually ({@see ValueScopeJudgement}): `suppress_paths: [tests/Legacy]`
  * is correct configuration that `qmx check src/` cannot judge, and reporting
  * it there accused the author of the caller's choice of path.

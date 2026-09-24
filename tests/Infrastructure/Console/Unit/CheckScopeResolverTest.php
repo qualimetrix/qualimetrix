@@ -132,6 +132,64 @@ final class CheckScopeResolverTest extends TestCase
         }
     }
 
+    /**
+     * The three states reach the report from the one measurement the verdict
+     * is read from: a manifest-less project is judged and names the channels
+     * whose namespace values it could not locate, a narrowed run is not judged
+     * and names what it left out and which channels.
+     *
+     * @param ?list<string> $targets what the manifest declares, or null for none readable
+     * @param list<string> $paths
+     * @param array{state: string, uncoveredAutoloadTargets: list<string>, unjudgedChannels: list<string>} $expected
+     */
+    #[Test]
+    #[DataProvider('provideProjectScopes')]
+    public function itCarriesTheProjectScopeStateToTheReport(?array $targets, array $paths, bool $covers, array $expected): void
+    {
+        $projectRoot = sys_get_temp_dir() . '/qmx_check_scope_' . bin2hex(random_bytes(6));
+        mkdir($projectRoot . '/src', 0o755, true);
+        mkdir($projectRoot . '/lib', 0o755, true);
+        $factory = self::createStub(FileDiscoveryFactoryInterface::class);
+        $factory->method('create')->willReturn(self::createStub(FileDiscoveryInterface::class));
+        $reader = self::createStub(ComposerAutoloadPathReaderInterface::class);
+        $reader->method('productionAutoloadTargets')->willReturn($targets);
+
+        try {
+            $result = $this->resolver($factory, $reader)->resolve(
+                $this->input(),
+                $this->configuration(AbsolutePath::fromString($projectRoot), array_map(
+                    static fn(string $path): string => $projectRoot . '/' . $path,
+                    $paths,
+                )),
+            );
+
+            self::assertSame($covers, $result->coversProjectScope);
+            self::assertSame($expected, $result->projectScope->toArray());
+        } finally {
+            rmdir($projectRoot . '/src');
+            rmdir($projectRoot . '/lib');
+            rmdir($projectRoot);
+        }
+    }
+
+    /** @return iterable<string, array{?list<string>, list<string>, bool, array<string, mixed>}> */
+    public static function provideProjectScopes(): iterable
+    {
+        yield 'covered' => [['src', 'lib'], ['src', 'lib'], true, [
+            'state' => 'covered', 'uncoveredAutoloadTargets' => [], 'unjudgedChannels' => [],
+        ]];
+        yield 'narrowed' => [['src', 'lib'], ['src'], false, [
+            'state' => 'narrowed',
+            'uncoveredAutoloadTargets' => ['lib'],
+            'unjudgedChannels' => ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS,
+        ]];
+        yield 'unknown: the paths are the project' => [null, ['src'], true, [
+            'state' => 'unknown',
+            'uncoveredAutoloadTargets' => [],
+            'unjudgedChannels' => ProjectScopeCoverage::UNKNOWN_SCOPE_UNJUDGED_CHANNELS,
+        ]];
+    }
+
     #[Test]
     public function itDoesNotComputeWarningsWhenGitScopeResolutionFails(): void
     {

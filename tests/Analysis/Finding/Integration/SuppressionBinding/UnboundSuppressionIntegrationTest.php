@@ -240,6 +240,80 @@ final class UnboundSuppressionIntegrationTest extends TestCase
         );
     }
 
+    /**
+     * A project with no readable production autoload has no PSR-4 map, so a
+     * namespace value cannot be located: `Tests` may well be declared under a
+     * directory `qmx check src` never read, and "matched nothing" would be a
+     * guess. The namespace value is left unjudged and the report says so; the
+     * path value beside it keeps its on-disk anchor and is still judged.
+     */
+    #[Test]
+    public function itLeavesANamespaceValueUnjudgedWhereTheProjectDeclaresNoAutoload(): void
+    {
+        unlink($this->fixture . '/composer.json');
+
+        $tester = $this->check("suppress_namespaces:\n  - {subtree: Tests}\nsuppress_paths:\n  - {subtree: src/Gone}\n");
+        $scope = $this->projectScope($tester);
+
+        self::assertSame([], $this->onChannel($tester, UnboundSuppressionOptions::UNMATCHED_NAMESPACE));
+        self::assertCount(1, $this->onChannel($tester, UnboundSuppressionOptions::UNMATCHED_PATH));
+        self::assertSame('unknown', $scope['state'] ?? null);
+        self::assertSame(
+            [UnboundSuppressionOptions::UNMATCHED_NAMESPACE, UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER],
+            $scope['unjudgedChannels'] ?? null,
+        );
+    }
+
+    /**
+     * The per-rule ledger on the same project: its namespace entries — both
+     * keys — share the global one's missing location, and its path entry
+     * does not.
+     */
+    #[Test]
+    public function itLeavesPerRuleNamespaceEntriesUnjudgedWhereTheProjectDeclaresNoAutoload(): void
+    {
+        unlink($this->fixture . '/composer.json');
+
+        $findings = $this->onChannel(
+            $this->check(
+                "rules:\n  complexity.ccn:\n    suppress_paths: [{subtree: src/Gone}]\n    suppress_namespaces: [{subtree: Tests}]\n"
+                . "  coupling.cbo:\n    suppress_namespace_channels:\n      coupling.cbo: [{subtree: Tests}]\n",
+            ),
+            UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER,
+        );
+        $messages = implode(' | ', array_map(static fn(array $f): string => (string) ($f['message'] ?? ''), $findings));
+
+        self::assertCount(1, $findings, $messages);
+        self::assertStringContainsString('src/Gone', $messages);
+    }
+
+    /**
+     * The same namespace value on a project whose manifest does declare its
+     * code is judged: the declared map locates `Tests` nowhere this run left
+     * out, so its miss is a fact.
+     */
+    #[Test]
+    public function itStillJudgesTheSameNamespaceValueWhereTheProjectDeclaresItsAutoload(): void
+    {
+        $tester = $this->check("suppress_namespaces:\n  - {subtree: Tests}\n");
+
+        self::assertCount(1, $this->onChannel($tester, UnboundSuppressionOptions::UNMATCHED_NAMESPACE));
+        self::assertSame(['state' => 'covered', 'uncoveredAutoloadTargets' => [], 'unjudgedChannels' => []], $this->projectScope($tester));
+    }
+
+    /** A narrowed run still judges no value of either shape. */
+    #[Test]
+    public function itStaysSilentAboutANamespaceValueOnANarrowedRun(): void
+    {
+        self::assertSame(
+            [],
+            $this->onChannel(
+                $this->check("suppress_namespaces:\n  - {subtree: Tests}\n", paths: ['src/Deep']),
+                UnboundSuppressionOptions::UNMATCHED_NAMESPACE,
+            ),
+        );
+    }
+
     /** An empty list is not a miss: there is no authored value to judge. */
     #[Test]
     public function itStaysSilentOnAnEmptySuppressionList(): void
@@ -408,6 +482,19 @@ final class UnboundSuppressionIntegrationTest extends TestCase
         }
 
         return $matched;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function projectScope(CommandTester $tester): array
+    {
+        $payload = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($payload);
+        $scope = $payload['projectScope'] ?? null;
+        self::assertIsArray($scope);
+
+        return $scope;
     }
 
     /**

@@ -80,8 +80,9 @@ final class HookUninstallCommand extends AbstractHookCommand
             ));
         }
 
-        if (!unlink($hookPath)) {
-            throw $this->refusal(\sprintf('Failed to remove hook file: %s', $hookPath));
+        [$removed, $reason] = self::attempt(static fn(): bool => unlink($hookPath));
+        if (!$removed) {
+            throw $this->refusal(\sprintf('Failed to remove hook file: %s: %s', $hookPath, $reason));
         }
 
         $output->writeln('<info>✓ Pre-commit hook removed</info>');
@@ -97,12 +98,14 @@ final class HookUninstallCommand extends AbstractHookCommand
             return;
         }
 
-        if (!copy($backupPath, $hookPath)) {
-            throw $this->refusal(\sprintf('Failed to restore backup %s to %s', $backupPath, $hookPath));
+        [$copied, $reason] = self::attempt(static fn(): bool => copy($backupPath, $hookPath));
+        if (!$copied) {
+            throw $this->refusal(\sprintf('Failed to restore backup %s to %s: %s', $backupPath, $hookPath, $reason));
         }
 
-        if (!chmod($hookPath, 0755)) {
-            throw $this->refusal(\sprintf('Failed to make restored hook executable: %s', $hookPath));
+        [$executable, $reason] = self::attempt(static fn(): bool => chmod($hookPath, 0755));
+        if (!$executable) {
+            throw $this->refusal(\sprintf('Failed to make restored hook executable: %s: %s', $hookPath, $reason));
         }
 
         $output->writeln('<info>✓ Backup restored</info>');

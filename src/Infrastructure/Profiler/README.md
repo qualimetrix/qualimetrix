@@ -26,19 +26,27 @@ Infrastructure/Profiler/
 ```php
 interface ProfilerInterface
 {
-    public function start(string $name, string $category = 'default'): void;
+    public function start(string $name, ?string $category = null): void;
     public function stop(string $name): void;
 }
 ```
 
 ### ProfileSession and Span
 
-Each `start()`/`stop()` creates a `Span` — a record of a single measurement:
+Each `start()`/`stop()` pair creates a `Span` — a record of a single measurement:
 - `name` — operation name (e.g., `collection`, `aggregation`)
-- `category` — category (e.g., `pipeline`, `file`)
-- `startTime` — start time in milliseconds
-- `duration` — duration in milliseconds
-- `memoryStart` / `memoryPeak` — memory usage
+- `category` — category (e.g., `pipeline`, `collection`), or `null`
+- `startTime` / `endTime` — `hrtime(true)` nanoseconds
+- `startMemory` / `endMemory` — `memory_get_usage(true)` at the two
+  boundaries. It moves in the allocator's blocks (2 MiB steps are typical),
+  and nothing between the boundaries is sampled: a spike inside a span that
+  is freed before it stops is not seen.
+
+`stop()` closes the most recent open span with that name. Spans opened
+after it and still open are closed with it, but they did not stop
+themselves: their end is borrowed from the enclosing span, so they are
+marked as **not stopped** and their time is kept out of the summary's
+totals. A span still open when the profile is read is not stopped either.
 
 `ProfileSession` is the single per-container lifecycle object. It implements
 the Core instrumentation port, starts disabled, clears recorded spans whenever
@@ -63,17 +71,37 @@ bin/qmx check src/ --profile=trace.json --profile-format=chrome-tracing
 
 ### Summary Output
 
+One line per span name, in the order the names were first seen: the summed
+duration of the spans that stopped themselves, and how many there were.
+Names that repeat (`aggregation.to_namespaces` runs once per aggregation
+pass) are added up. Captured from a run (excerpt):
+
 ```
 Profile summary:
-  analysis       : 0.452s ( 50%) | 18.0 MB  | 1x
-  collection     : 0.394s ( 44%) | 16.0 MB  | 1x
-  discovery      : 0.029s (  3%) | 0.0 B    | 1x
-  aggregation    : 0.019s (  2%) | 0.0 B    | 1x
-  rules          : 0.005s (  1%) | 0.0 B    | 1x
-  dependency     : 0.002s (  0%) | 0.0 B    | 1x
-  global         : 0.002s (  0%) | 2.0 MB   | 1x
-Peak memory: 32.0 MB
+  analysis: 0.025s | 1x
+  discovery: 0.001s | 1x
+  collection: 0.007s | 1x
+  collection.execute_strategy: 0.007s | 1x
+  collection.file: 0.007s | 1x
+  aggregation.to_namespaces: 0.001s | 2x
+  rules: 0.005s | 1x
 ```
+
+A name with spans that did not stop themselves says so and leaves their
+time out: `discovery: 0.000s | 0x | 1 never stopped, not timed`.
+
+`ProfileSummary` carries exactly what this prints — `total` (milliseconds),
+`count` and `unstopped` per name — and nothing that is computed and not shown.
+
+### Collection coverage
+
+`collection.file` spans are recorded only when collection runs in-process
+through `SequentialStrategy` (`--workers=0`). `AmphpParallelStrategy` records
+none — neither for files processed by workers, which run in other processes
+without a profiler, nor in its own sequential fallback below the parallel
+threshold. The `collection` and `collection.execute_strategy` totals are
+present either way, and in parallel mode the memory figures of those spans
+are the coordinating process's, not the workers'.
 
 ### Chrome Tracing
 
@@ -85,33 +113,15 @@ Format conforms to [Chrome Trace Event Format](https://docs.google.com/document/
 
 ## Pipeline Instrumentation
 
-`AnalysisPipeline` automatically instruments the main phases:
+`AnalysisPipeline` instruments the phases (`analysis`, `discovery`,
+`collection`, `dependency`, `rules`); aggregation, computed metrics, rule
+preparation, file-set inspection, rule execution and reporting add their own
+spans. Every pair is written by hand around its work:
 
 ```php
-// Phase 1: Discovery
 $this->profiler->start('discovery', 'pipeline');
 $files = iterator_to_array($discovery->discover($paths), false);
 $this->profiler->stop('discovery');
-
-// Phase 2: Collection (longest phase)
-$this->profiler->start('collection', 'pipeline');
-$collectionResult = $this->collectionOrchestrator->collect(...);
-$this->profiler->stop('collection');
-
-// Phase 3: Aggregation
-$this->profiler->start('aggregation', 'pipeline');
-$this->aggregator->aggregate($repository);
-$this->profiler->stop('aggregation');
-
-// Phase 4: Global collectors
-$this->profiler->start('global', 'pipeline');
-$this->globalCollectorRunner->run($graph, $repository);
-$this->profiler->stop('global');
-
-// Phase 5: Rule execution
-$this->profiler->start('rules', 'pipeline');
-$findings = $this->ruleExecutor->execute($context);
-$this->profiler->stop('rules');
 ```
 
 ## Adding Instrumentation
@@ -119,7 +129,10 @@ $this->profiler->stop('rules');
 To add profiling to a new component:
 
 1. Inject `Core\Profiler\Contract\ProfilerInterface`.
-2. Use `$this->profiler->start()` and `$this->profiler->stop()`.
+2. Use `$this->profiler->start()` and `$this->profiler->stop()`, stopping on
+   every exit path — `try`/`finally` where the work can throw. A span left
+   open is closed by its enclosing span's `stop()` and reported as not
+   stopped, without a time of its own.
 
 ```php
 class MyService
@@ -131,8 +144,11 @@ class MyService
     public function doWork(): void
     {
         $this->profiler->start('my-operation', 'my-category');
-        // ... work ...
-        $this->profiler->stop('my-operation');
+        try {
+            // ... work ...
+        } finally {
+            $this->profiler->stop('my-operation');
+        }
     }
 }
 ```
@@ -141,44 +157,58 @@ class MyService
 
 ### JSON
 
+Always an object with one key, `spans`: the list of root spans, each with its
+children. The top level does not change with the number of roots. Captured
+from a run (children trimmed):
+
 ```json
 {
-  "spans": [
-    {
-      "name": "collection",
-      "category": "pipeline",
-      "start_time": 1234567890.123,
-      "duration": 394.5,
-      "memory_start": 16777216,
-      "memory_peak": 33554432
-    }
-  ],
-  "summary": {
-    "collection": {
-      "total": 394.5,
-      "count": 1,
-      "avg": 394.5,
-      "memory": 16777216
-    }
-  },
-  "peak_memory": 33554432
+    "spans": [
+        {
+            "name": "analysis",
+            "category": "pipeline",
+            "duration_ms": 27.831291,
+            "memory_delta_bytes": 4194304,
+            "stopped": true,
+            "children": [
+                {
+                    "name": "discovery",
+                    "category": "pipeline",
+                    "duration_ms": 1.654416,
+                    "memory_delta_bytes": 0,
+                    "stopped": true,
+                    "children": []
+                }
+            ]
+        },
+        {
+            "name": "reporting",
+            "category": "pipeline",
+            "duration_ms": 1.007708,
+            "memory_delta_bytes": 0,
+            "stopped": true,
+            "children": []
+        }
+    ]
 }
 ```
 
+`duration_ms` and `memory_delta_bytes` are `null` for a span that never
+ended. `stopped` is `false` for a span that did not stop itself (see
+[ProfileSession and Span](#profilesession-and-span)): its duration runs to
+its enclosing span's stop.
+
 ### Chrome Tracing
+
+A `B` (begin) and an `E` (end) event per span, `ts` in microseconds. A span
+that never ended has no `E` event; the `E` event of a span that did not stop
+itself carries `"args": {"stopped": false}`. Captured from a run:
 
 ```json
 {
   "traceEvents": [
-    {
-      "name": "collection",
-      "cat": "pipeline",
-      "ph": "X",
-      "ts": 1234567890123,
-      "dur": 394500,
-      "pid": 1,
-      "tid": 1
-    }
+    { "name": "analysis", "ph": "B", "ts": 818960963565.291, "pid": 1, "tid": 1, "cat": "pipeline" },
+    { "name": "discovery", "ph": "B", "ts": 818960963909.75, "pid": 1, "tid": 1, "cat": "pipeline" }
   ]
 }
 ```
@@ -196,7 +226,8 @@ class MyService
 
 ## Related Components
 
-- [AnalysisPipeline](../../Analysis/Pipeline/) — main profiler consumer
+- [AnalysisPipeline](../../Analysis/Run/Pipeline/) — main profiler consumer
+- [ProfilePresenter](../Console/ProfilePresenter.php) — summary and export on the command line
 - [CheckCommand](../Console/Command/) — CLI integration
 
 

@@ -48,6 +48,7 @@ final class RuntimeConfigurator
         $this->profileSession->disable();
         $this->progressConfigurator->reset();
         $this->runtimeLimitsController->reset();
+        $this->runtimeLoggerConfigurator->reset();
     }
 
     /**

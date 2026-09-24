@@ -53,7 +53,6 @@ final class RefusalPresenterTest extends TestCase
     #[TestWith(['sarif'])]
     #[TestWith(['gitlab'])]
     #[TestWith(['metrics'])]
-    #[TestWith(['health'])]
     #[TestWith(['suppressed'])]
     public function itAnswersAConfigurationRefusalAsAnEnvelopeOnEveryJsonFormat(string $format): void
     {
@@ -71,6 +70,34 @@ final class RefusalPresenterTest extends TestCase
             ['error' => 'Configuration error: unknown group "bogus"', 'exit_code' => 3, 'position' => null],
             json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR),
         );
+    }
+
+    /**
+     * `health` is the case that was missed: its formatter prints a text table,
+     * and an envelope written into that stream left a reader of the table a
+     * JSON document instead of the sentence on stderr.
+     */
+    #[Test]
+    #[TestWith(['text'])]
+    #[TestWith(['text-verbose'])]
+    #[TestWith(['summary'])]
+    #[TestWith(['health'])]
+    #[TestWith(['checkstyle'])]
+    #[TestWith(['github'])]
+    #[TestWith(['html'])]
+    public function itAnswersAConfigurationRefusalOnStderrUnderEveryNonJsonFormat(string $format): void
+    {
+        $output = self::terminalOutput();
+        $refusal = ConfigurationRefusal::aboutInput(
+            ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--group'),
+            'unknown group "bogus"',
+        );
+
+        $exit = $this->presenter()->refusal($output, $format, $refusal);
+
+        self::assertSame(3, $exit);
+        self::assertSame('', $output->standardOutputContent());
+        self::assertStringContainsString('Configuration error: unknown group "bogus"', $output->errorOutputContent());
     }
 
     /**

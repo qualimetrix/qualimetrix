@@ -40,6 +40,17 @@ interface RuleInterface extends RuleDefinitionInterface
     /**
      * Analyzes metrics and generates findings.
      *
+     * One instance serves the whole process and is asked more than once per
+     * run — once for the run itself, and once per authored threshold-override
+     * group inside the directive audit — so it must carry nothing from one
+     * call to the next: every property readonly, none static. Two calls with
+     * the same context must answer the same. A write through an injected
+     * collaborator is allowed only when repeating the call leaves the
+     * collaborator as one call did: a memo keyed by the context, or a switch
+     * set to the value the configuration already decides.
+     * `governance/RuleDeclaration/RuleInstanceStatelessnessTest` refuses the
+     * first half by class name; the collaborator half is enforced by nothing.
+     *
      * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array;

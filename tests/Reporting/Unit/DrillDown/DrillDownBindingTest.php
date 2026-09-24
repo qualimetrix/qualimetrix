@@ -121,7 +121,7 @@ final class DrillDownBindingTest extends TestCase
 
         $binding = new DrillDownBinding();
 
-        self::assertSame(0, $binding->namespaceBindings(\Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('__PROJECT__'), $repository, null));
+        self::assertSame(0, $binding->namespaceBindings(\Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('(project)'), $repository, null));
         self::assertSame(6, $binding->namespaceUniverseSize($repository, null));
     }
 

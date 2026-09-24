@@ -9,7 +9,10 @@ use Qualimetrix\Infrastructure\Profiler\Span;
 /**
  * Exports profiling data in Chrome Tracing format.
  *
- * The output can be viewed in chrome://tracing for visualization.
+ * The output can be viewed in chrome://tracing for visualization. Each span
+ * is a `B`/`E` pair of events; a span that never ended has no `E`, and the
+ * `E` of a span that ended only when an enclosing span stopped carries
+ * `args.stopped: false`.
  *
  * @see https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview
  */
@@ -33,7 +36,7 @@ final class ChromeTracingExporter implements ProfileExporterInterface
      * Recursively collect trace events from span tree.
      *
      * @param Span $span Current span
-     * @param list<array{name: string, ph: string, ts: float, pid: int, tid: int, cat?: string}> &$events Events array
+     * @param list<array{name: string, ph: string, ts: float, pid: int, tid: int, cat?: string, args?: array{stopped: false}}> &$events Events array
      */
     private function collectEvents(Span $span, array &$events): void
     {
@@ -69,6 +72,10 @@ final class ChromeTracingExporter implements ProfileExporterInterface
 
             if ($span->category !== null) {
                 $endEvent['cat'] = $span->category;
+            }
+
+            if (!$span->wasStopped()) {
+                $endEvent['args'] = ['stopped' => false];
             }
 
             $events[] = $endEvent;

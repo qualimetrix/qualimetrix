@@ -114,8 +114,9 @@ metric, and `design.dit` is still computed and published in `--format=metrics`.
 A caveat about a number the user can still read belongs with that number.
 
 The channel has gates, and they are the same ones the neighbouring scope warning
-already carries: `-q` silences it, `--log-level=error` does so only together
-with `-v` (without `-v` the console level is pinned at `WARNING`), a buffered or
+already carries: `-q` silences it, so does `--log-level=error` with or without
+`-v` (without `-v` a written level can only make the console quieter than
+`WARNING`, never louder), a buffered or
 `NullOutput` sink drops it, and it is absent from the machine formats' payload —
 which is where CI reads this metric. The alternative was a published key for a
 diagnostic. This stops being the right trade the first time someone needs the

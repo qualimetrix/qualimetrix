@@ -30,6 +30,7 @@ final class ReportBuilder
     private ?ReportCoverage $coverage = null;
     private ?SuppressionComposition $suppressionComposition = null;
     private ?OutOfScopeFindings $outOfScope = null;
+    private ?ReportProjectScope $projectScope = null;
 
     /**
      * Creates a new builder instance.
@@ -160,6 +161,14 @@ final class ReportBuilder
         return $this;
     }
 
+    /** Records how the run's paths stood against the project — see {@see ReportProjectScope}. */
+    public function projectScope(ReportProjectScope $projectScope): self
+    {
+        $this->projectScope = $projectScope;
+
+        return $this;
+    }
+
     /**
      * Builds the Report instance.
      */
@@ -190,6 +199,7 @@ final class ReportBuilder
             coverage: $this->coverage,
             suppressionComposition: $this->suppressionComposition,
             outOfScope: $this->outOfScope,
+            projectScope: $this->projectScope,
         );
     }
 }

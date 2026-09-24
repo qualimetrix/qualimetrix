@@ -10,10 +10,11 @@ namespace Qualimetrix\Analysis\Run\Configuration;
  *
  * The two exist together because they are not the same question and empty is
  * not a synonym for covered. `uncoveredRoots` names what a scope warning
- * should print; `covers()` says whether a channel conditioned on scope may
- * speak. They agree on a project whose autoload was read, and they
- * deliberately disagree on one whose autoload could not be read at all: no
- * target to name, and no licence to judge.
+ * should print; `state()` says which of the three {@see ProjectScopeState}s
+ * the run is in, and a channel conditioned on scope reads its
+ * `coversProjectScope()`. An empty list is `Covered` on a project whose
+ * autoload was read and `Unknown` on one whose autoload could not be read at
+ * all: no target to name, and the analysed paths taken as the project.
  *
  * `prunedTargets` is a third answer and belongs to neither: the declared
  * targets that lie under a directory discovery never enters, which are
@@ -59,8 +60,12 @@ final readonly class ProjectScopeMeasurement
         return new self([], readable: false, prunedTargets: $prunedTargets);
     }
 
-    public function covers(): bool
+    public function state(): ProjectScopeState
     {
-        return $this->readable && $this->uncoveredRoots === [];
+        return match (true) {
+            !$this->readable => ProjectScopeState::Unknown,
+            $this->uncoveredRoots === [] => ProjectScopeState::Covered,
+            default => ProjectScopeState::Narrowed,
+        };
     }
 }

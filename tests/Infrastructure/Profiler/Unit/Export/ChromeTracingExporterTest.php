@@ -104,6 +104,22 @@ final class ChromeTracingExporterTest extends TestCase
     }
 
     #[Test]
+    public function itMarksTheEndOfASpanClosedByItsAncestor(): void
+    {
+        $parent = new Span(name: 'parent', category: null, startTime: 1000000.0, startMemory: 100);
+        $child = new Span(name: 'child', category: null, startTime: 1500000.0, startMemory: 100);
+        $child->attachTo($parent);
+        $child->closeWithAncestor(3000000.0, 100);
+        $parent->finish(3000000.0, 100);
+
+        $events = json_decode($this->exporter->export([$parent]), true, flags: \JSON_THROW_ON_ERROR)['traceEvents'];
+
+        self::assertSame(['B', 'B', 'E', 'E'], array_column($events, 'ph'));
+        self::assertSame(['stopped' => false], $events[2]['args']);
+        self::assertArrayNotHasKey('args', $events[3]);
+    }
+
+    #[Test]
     public function itExportsNestedSpans(): void
     {
         $parent = new Span(

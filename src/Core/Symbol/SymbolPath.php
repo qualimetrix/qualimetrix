@@ -9,16 +9,21 @@ use Qualimetrix\Core\Path\RelativePath;
 final readonly class SymbolPath
 {
     /**
-     * Sentinel value used internally to represent project-level SymbolPath.
-     * Must never appear as an actual PHP namespace.
+     * What the project aggregate carries in its namespace field.
+     *
+     * Parentheses cannot occur in a PHP namespace name, so no analysed
+     * namespace publishes this value. It is shown, never compared: the project
+     * is told apart by {@see self::$project}, so a namespace a user or a file
+     * names this way stays a namespace.
      */
-    private const string PROJECT_SENTINEL = '__PROJECT__';
+    private const string PROJECT_NAMESPACE = '(project)';
 
     private function __construct(
         public ?string $namespace,
         public ?string $type,
         public ?string $member,
         public ?RelativePath $filePath = null,
+        private bool $project = false,
     ) {}
 
     public static function forMethod(string $namespace, string $class, string $method): self
@@ -54,9 +59,10 @@ final readonly class SymbolPath
     public static function forProject(): self
     {
         return new self(
-            namespace: self::PROJECT_SENTINEL,
+            namespace: self::PROJECT_NAMESPACE,
             type: null,
             member: null,
+            project: true,
         );
     }
 
@@ -114,7 +120,7 @@ final readonly class SymbolPath
             return SymbolType::File;
         }
 
-        if ($this->namespace === self::PROJECT_SENTINEL && $this->type === null && $this->member === null) {
+        if ($this->project) {
             return SymbolType::Project;
         }
 
@@ -220,7 +226,7 @@ final readonly class SymbolPath
      */
     private function hasNamespace(): bool
     {
-        return $this->namespace !== null && $this->namespace !== '' && $this->namespace !== self::PROJECT_SENTINEL;
+        return $this->namespace !== null && $this->namespace !== '';
     }
 
     private function buildFunctionCanonical(): string

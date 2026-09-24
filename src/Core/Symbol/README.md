@@ -9,3 +9,8 @@ declares — which names are PHP's, and what is above each of them — as static
 tables, so no answer depends on the PHP that runs the analysis. Governance
 censuses in `governance/SymbolVocabulary/` compare both with the running PHP
 and refuse on divergence; neither table is generated.
+
+PHP folds class names by ASCII case, so both tables answer a name in any case
+spelling: `PhpBuiltinClassRegistry::canonicalName()` maps it to the spelling the
+list keeps, and every lookup goes through it. Callers strip a leading `\`
+themselves.

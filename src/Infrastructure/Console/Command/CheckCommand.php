@@ -7,6 +7,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -259,6 +260,9 @@ final class CheckCommand extends Command
             $input,
             $scopeResolution,
         );
+        if ($projectionOptions->baselinePath !== null) {
+            BaselineLoader::assertReadable($projectionOptions->baselinePath);
+        }
 
         // Named, and carrying the coverage answer with the paths it is about:
         // rebuilding this positionally lost every field added to the run
@@ -294,6 +298,7 @@ final class CheckCommand extends Command
             filterResult: $filterResult,
             projectionOptions: $projectionOptions,
             namespacePattern: $namespacePattern,
+            projectScope: $resolvedScope->projectScope,
         );
 
         return $this->presentProfile($input, $output, $exitCode);

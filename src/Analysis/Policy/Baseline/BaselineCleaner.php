@@ -31,9 +31,10 @@ final readonly class BaselineCleaner
 
     /**
      * Every entry `cleanup` would offer to remove, with its reason and
-     * selector. A valid entry is offered for one of three reasons — stale,
-     * its channel is no longer declared, or its channel reports a
-     * configuration error and may never be accepted — and every inert entry
+     * selector. A valid entry is offered for one of four reasons — stale,
+     * absent because its rule did not run in this invocation, its channel is
+     * no longer declared, or its channel reports a configuration error and
+     * may never be accepted — and every inert entry
      * is offered too, since it already has a selector and the user is
      * entitled to delete an unreadable line (ADR 0017).
      *
@@ -45,6 +46,9 @@ final readonly class BaselineCleaner
      * and the more specific, more permanent cause is the more useful answer.
      *
      * @param list<Finding> $measured the run's measured set (ADR 0017)
+     * @param array<string, true> $unproducedChannels codes of the channels
+     *                                                whose producer this invocation did not run, as
+     *                                                {@see RunRuleCoverage} answers them
      *
      * @return list<BaselineCleanupCandidate>
      */
@@ -52,6 +56,7 @@ final readonly class BaselineCleaner
         Baseline $baseline,
         array $measured,
         ChannelDeclarationRegistryInterface $declarations,
+        array $unproducedChannels,
     ): array {
         $measuredKeys = [];
         foreach ($measured as $finding) {
@@ -98,7 +103,9 @@ final readonly class BaselineCleaner
                 $candidates[] = new BaselineCleanupCandidate(
                     $entry->selector(),
                     $entry->identity->describe(),
-                    BaselineCleanupReason::Stale,
+                    isset($unproducedChannels[$entry->identity->channel->code])
+                        ? BaselineCleanupReason::ProducerDidNotRun
+                        : BaselineCleanupReason::Stale,
                 );
             }
         }

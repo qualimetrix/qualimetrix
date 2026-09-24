@@ -28,7 +28,8 @@ use Qualimetrix\Core\Pattern\SelectorKind;
  *
  * **The run's shape is handed over, not fetched.** The caller has already
  * read `composer.json` to answer the project-wide question, so it passes the
- * PSR-4 map and the paths as plain data. Reading the manifest here instead
+ * PSR-4 map, the paths and whether the manifest declares the project at all as
+ * plain data. Reading the manifest here instead
  * would parse it once per configured value and give this class a second
  * opinion about what the run analysed. Measured on a plain repository
  * whose `composer.json` autoloads `src/` for production and `tests/` for dev:
@@ -64,6 +65,16 @@ use Qualimetrix\Core\Pattern\SelectorKind;
  * **Regex definitions are judged only on a complete universe.** Their fragment
  * does not promise a locatable subject, so a partial run stays silent rather
  * than guessing where a match might have existed.
+ *
+ * **Without a declared production autoload no namespace value is judged.** The
+ * PSR-4 map is the only thing that locates a namespace, and a project whose
+ * manifest declares no readable production autoload has none for its own code:
+ * `suppress_namespaces: [{subtree: Tests}]` on `qmx check src` may name code
+ * under a directory the run never read, and "matched nothing" would be a
+ * guess. A path value keeps its on-disk anchor and is judged as above. The
+ * cost is the whole-tree run of such a project, where every namespace was in
+ * reach and a miss would have been a fact; it is not reported either, and the
+ * report names the channels whose namespace values went unjudged.
  */
 final readonly class ValueScopeJudgement
 {
@@ -72,11 +83,14 @@ final readonly class ValueScopeJudgement
      * @param array<string, list<string>> $psr4Roots the manifest's PSR-4 map, `autoload-dev` included:
      *                                               a value's subject is located through it
      * @param list<string> $analyzedPaths the run's own paths
+     * @param bool $projectDeclared whether the manifest declares a readable production autoload;
+     *                              without one no namespace value is located, and none is judged
      */
     public function __construct(
         private string $projectRoot,
         private array $psr4Roots,
         private array $analyzedPaths,
+        private bool $projectDeclared,
     ) {}
 
     /**
@@ -111,15 +125,18 @@ final readonly class ValueScopeJudgement
      */
     public function judgesNamespaceValue(NamespacePattern $pattern): bool
     {
+        // Before the regex branch: a whole-tree run would otherwise judge a
+        // regex namespace value here while refusing every literal one.
+        if (!$this->projectDeclared) {
+            return false;
+        }
+
         if ($pattern->definition->kind === SelectorKind::Regex) {
             return $this->coversCompleteUniverse();
         }
 
         $head = trim($pattern->definition->value, '\\');
 
-        // No map, no location: a project without a PSR-4 manifest is judged
-        // by the project-wide predicate alone, which already closes the gate
-        // when a manifest exists and cannot be read.
         foreach ($this->psr4Roots as $prefix => $paths) {
             if (!self::compatible($head, trim($prefix, '\\'))) {
                 continue;

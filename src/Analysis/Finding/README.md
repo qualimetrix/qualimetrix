@@ -30,6 +30,14 @@ to return), `$exclusions` (`RuleExclusionStats`, unchanged), and
 `--format=suppressed`; every other caller keeps reading `$published`. See
 `docs/adr/0037-suppressed-format-and-produced-findings.md`.
 
+Only the ledger half of the `$produced`/`$published` difference is accounted
+for in `$exclusions`. Channel selection is deliberately outside it: a
+selection says what the invocation asks to see and carries no premise about
+the code that could go stale, and it is the same request as a level switched
+off in the rule's options, which produces nothing to account for.
+`RuleExecutionResult`'s docblock says where a reader finds what selection
+removed.
+
 `SuppressionBinding/` answers a question no rule can: whether a `suppress_paths`
 or `suppress_namespaces` value — global or under `rules.<name>` — named any file
 this run analysed or any namespace it declared. That is a different zero from
@@ -48,12 +56,17 @@ its authored `kind:value` identity rather than the rendered PCRE.
 
 The coverage
 precondition is asked at that call site, so a run narrowed below the project's
-production autoload roots — or one whose manifest declares no readable
-production autoload — produces nothing here. `ValueScopeJudgement` asks the
+production autoload roots produces nothing here; a project whose manifest
+declares no readable production autoload is judged, its analysed paths taken
+as the whole project. `ValueScopeJudgement` asks the
 second half of that question, per value: it places a value's subject through
 the run's paths and the manifest's PSR-4 map, and a value naming a place this
-run never analysed is not judged at all. It is built at the same call site from
-the run's shape, so this namespace does not read `composer.json` itself.
+run never analysed is not judged at all. On a project whose manifest declares
+no readable production autoload nothing locates a namespace, so no namespace
+value is judged there — only path values — and the report's project scope names
+the channels whose namespace values went unjudged. It is built at the same call
+site from the run's shape, so this namespace does not read `composer.json`
+itself.
 
 `LevelActivity` records which producer/level pairs this configuration let run,
 asked of the rules themselves during execution and published beside the
@@ -69,7 +82,13 @@ The directive audit reads this record instead of re-deriving enablement from
 the merged configuration: three answers, not two, because a producer that does
 not declare a level at all is a different fact from one switched off there.
 
-`RuleExecutionInterface` exposes immutable `RuleMetadata`; concrete rule instances never cross the capability boundary. `RuleConfigurationInterface` is the only external mutation/query surface for per-run options, selection, and exclusions. Runtime reset clears CLI selection and exclusion state before every run.
+`RuleExecutionInterface` exposes immutable `RuleMetadata`; concrete rule instances never cross the capability boundary. `RuleConfigurationInterface` is the only external mutation/query surface for per-run options, selection, and exclusions. `replace(FindingConfiguration)` is the door the product configures a run through, and `RuleOptionsRegistry`'s narrower setters are written in terms of it. `resetRuntimeState()` is the one reset point, clearing options, selection and exclusion state before every run.
+
+A rule instance is shared by the process and executed more than once per run,
+so it carries no state between calls: `RuleInterface::analyze()` states the
+contract, including which writes through an injected collaborator stay inside
+it, and `governance/RuleDeclaration/RuleInstanceStatelessnessTest` refuses a
+registered rule or validator with a reassignable or static property.
 
 `ThresholdAwareOptionsInterface::warningBoundary()` is how a rule's options
 name the warning boundary of the channel they configure, returning the number or
@@ -116,7 +135,14 @@ derived from what the reading code does with the value — the cast's target, th
 guard's predicate — not from what the key is called, which is what the removed
 `validateNumericFields()` judged by. The words a refusal uses for a form, and
 the words it uses for the form that was actually written, are one vocabulary:
-`RuleOptionValueForm`. A hierarchical rule does not restate its level slots
+`RuleOptionValueForm`. A number carries its range as well as its type:
+`integer()` and `number()` are never negative, because every such option is a
+count or a boundary on a measurement that is never negative and a negative
+boundary inverts the rule rather than tightening it; `signedNumber()` keeps
+both signs for a boundary on a user-written computed-metric formula. The range
+lives on the form, so the key walk and the `threshold` shorthand unfolding ask
+one question, and a value out of range is refused with the value itself
+(`got -1`). A hierarchical rule does not restate its level slots
 here: `RuleOptionKeySet::withLevelSlots()` takes them from
 `levelOptionsClasses()`, which stays the single source of a slot's existence
 and form.
@@ -132,6 +158,9 @@ framework keys are taken out and before
 untouched, so `fromArray()` may refuse it in its own words; the three framework
 keys (`suppress-paths`, `suppress-namespaces`, `suppress-namespace-channels`)
 are legal at the rule's own depth only and are declared by no options class.
+The factory takes the three values out through `Exclusion\ConfiguredSuppression::take()`,
+the one reader of a producer's raw suppression options, rather than deriving
+their spellings itself.
 `FrameworkOptionKeys` (`Contract\Rule`) is where those three are named, so that
 a refusal for a mistyped one can name the spelling that works and the `rules`
 listing can advertise them. `RuleOptionSurface` beside it answers the question

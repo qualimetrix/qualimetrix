@@ -13,7 +13,8 @@ final readonly class RunConfiguration
     /**
      * @param list<AbsolutePath> $paths
      * @param list<PathPattern> $pathExcludes built-in and authored directory selectors
-     * @param bool $coversProjectScope Whether `$paths` cover every autoload target `$autoloadDevPolicy` counts as the project
+     * @param bool $coversProjectScope Whether `$paths` cover every autoload target `$autoloadDevPolicy` counts as the project,
+     *                                 or the manifest declares none and `$paths` are the project
      * @param list<PathPattern> $authoredPathExcludes The subset of `$pathExcludes` the user wrote
      * @param AutoloadDevPolicy $autoloadDevPolicy Whether `autoload-dev` code is part of the project
      *
@@ -55,7 +56,8 @@ final readonly class RunConfiguration
 
     /**
      * The same configuration over a re-resolved set of paths that still covers
-     * the project's autoload targets.
+     * the project: its autoload targets, or — with no manifest to declare
+     * them — whatever the paths are.
      *
      * Two methods rather than one taking the answer as a flag, because the
      * answer is not a parameter of the same operation — it is which operation

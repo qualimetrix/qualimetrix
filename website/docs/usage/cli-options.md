@@ -22,6 +22,8 @@ bin/qmx check src/Service/UserService.php
 
 A path you name that is itself a `vendor`, `node_modules` or `.git` directory (`bin/qmx check lib/vendor`) stops the run with a configuration error: Qualimetrix never walks into one, so the run would analyse nothing. Name a file or a directory inside it instead (`bin/qmx check vendor/acme/`); a `vendor` directory inside a path you name is still skipped.
 
+A directory you name — here or under `paths:` in `qmx.yaml` — that your own `exclude:` or `--exclude` removes stops the run with a configuration error (exit code 3) before analysis starts, naming the path and the selector that removes it: the run would otherwise succeed without having looked inside it. `directives`, `baseline:generate`, `baseline:update`, `baseline:cleanup` and `baseline:explain` refuse it the same way. A file you name inside an excluded directory is still analysed, and so is a directory below one that an `exact:` selector removes, because `exact:` does not reach below the directory it names. A path detected from `composer.json` that you exclude is skipped without a word: there the exclusion is doing what it was written for.
+
 If you omit paths, Qualimetrix auto-detects them from every path the `autoload` section of your `composer.json` declares — `psr-4` and `psr-0` roots, `classmap` entries (a `*` wildcard expanded to the directories it matches) and `files` entries alike. These are the same paths a run is judged against when Qualimetrix asks whether it covered the whole project, so a run with no paths always counts as covering it. An entry that is, or lies inside, a `vendor`, `node_modules` or `.git` directory — which Qualimetrix never walks into — is left out of both and named in a warning instead: third-party code is not analysed as your project's. A declared path that does not exist on disk stops the run with a configuration error. `autoload-dev` is not included: test code is analysed only when you name its path (`bin/qmx check src/ tests/`, or `paths:` in `qmx.yaml`), or when you count it as part of the project with [`--include-autoload-dev`](#--include-autoload-dev).
 
 ---
@@ -56,6 +58,9 @@ level, not a refusal, and only on a run whose paths cover the project: every
 path `composer.json` declares under `autoload`, and under `autoload-dev` too
 with [`--include-autoload-dev`](#--include-autoload-dev). On a narrower run the pattern may bind nothing
 simply because the code it names lies outside the slice.
+
+A value that removes a directory you named as a path is refused instead; see
+[Paths argument](#paths-argument).
 
 ### `--include-generated`
 
@@ -174,18 +179,28 @@ An existing file is written in place, as `>` in a shell does: it keeps its
 inode, owner, permissions and hard links, and a file mounted into a container
 on its own works too. A symbolic link is followed to the file it names, and
 the link stays; so do `/dev/null`, a named pipe and a process substitution such
-as `>(gzip > report.json.gz)`. `/dev/stdout`, `/dev/stderr`, `/dev/fd/N` and
-`/proc/self/fd/N` are written through the stream itself, whether it is a
-terminal, a pipe or a file. A name nothing stands at yet is created: the report
-is written beside it and renamed onto it, so a failed write leaves no file
-behind. A write that fails midway through an existing file leaves that file
-partly written.
+as `>(gzip > report.json.gz)`. A name nothing stands at yet is created, through
+a dangling symbolic link too; if the write then fails, the file it created is
+removed (one created through a link stays). A write that fails midway through
+an existing file leaves that file partly written. The kernel decides which
+links are followed: on Linux with `fs.protected_symlinks`, a link another user
+left in a shared directory such as `/tmp` is refused, as `>` refuses it. On a
+thread-safe (ZTS) PHP build, such a link to an existing file is still followed.
 
-A target that cannot be written is refused with exit code 3 before analysis
-starts: a directory or a name ending in `/` (or a symbolic link to one), an
-existing file that is not writable, a new name in a directory that does not
-exist or cannot be written, or a descriptor the process does not hold. A write
-that still fails after the run also exits with code 3.
+`/dev/stdout`, `/dev/stderr`, `/dev/fd/N` and `/proc/self/fd/N`, spelled
+exactly so, are written through the stream itself, whether it is a terminal, a
+pipe or a file. Another spelling of the same stream, such as
+`/proc/thread-self/fd/1` or a symbolic link to `/dev/stdout`, is opened by its
+path, which on Linux fails when the stream is a pipe: use one of the four.
+
+qmx checks what it can before the run; the write itself is the final judge. A
+directory or a name ending in `/`, an existing file that is not writable, a new
+name in a directory that does not exist or does not allow creating a file, a
+descriptor the process does not hold, and on Linux one it holds only for
+reading, are refused with exit code 3 before analysis starts. A symbolic link
+that leads to no file qmx can create (dangling into a missing directory, a
+loop, a link the kernel refuses to follow) is refused by the write, with exit
+code 3 after the run, as is any write that still fails then.
 
 ### `--group-by`
 
@@ -617,22 +632,39 @@ Equivalent YAML: `memory_limit: 1G`
 
 ### `--log-file`
 
-Write a debug log to a file:
+Write the run's log to a file, one JSON record per line:
 
 ```bash
 bin/qmx check src/ --log-file=qmx.log
 ```
 
+The file is appended to, and a missing directory is created. A path that cannot
+be written — a directory that cannot be created, a file that cannot be opened for
+appending — is refused with exit code 3 before analysis starts, and the message
+quotes the reason the system gave. Only `check` takes the option.
+
 ### `--log-level`
 
-Set the minimum log level. Default: `info`.
+Set the minimum level of log lines, for the `--log-file` file and for the
+console:
 
 ```bash
 bin/qmx check src/ --log-file=qmx.log --log-level=debug
 ```
 
 Available levels: `debug`, `info`, `warning`, `error`. A value outside them is
-refused with exit 3 instead of falling back to `info`.
+refused with exit 3 instead of falling back to a default.
+
+| Written                    | Console                                               | `--log-file` |
+| -------------------------- | ----------------------------------------------------- | ------------ |
+| nothing                    | `warning`; `info` with `-v`; `debug` with `-vv`       | `info`       |
+| a level, with `-v` or more | that level                                            | that level   |
+| a level, without `-v`      | that level if stricter than `warning`, else `warning` | that level   |
+
+Without `-v` the level can only narrow the console: `--log-level=error` hides
+warnings, while `--log-level=debug --log-file=qmx.log` writes a detailed file and
+leaves the terminal as quiet as it was. `-q` silences the console whatever the
+level; the file still receives its lines.
 
 ### `--no-progress`
 
@@ -1111,8 +1143,8 @@ missed exclusion leaves the picture whole, so the viewer loses nothing.
 
 An `--output` target is judged and written the way `check` treats its own
 [`--output`](#--output--o): a directory or a name ending in `/`, an unwritable
-existing file and a new name in a directory that does not exist or cannot be
-written are refused with exit 3 before any file is read; an existing target —
+existing file and a new name in a directory that does not exist or does not
+allow creating a file are refused with exit 3 before any file is read; an existing target —
 a file, a symbolic link, `/dev/stdout`, a named pipe — is written in place.
 
 If any discovered file fails parsing or processing, `graph:export` exits 4 and

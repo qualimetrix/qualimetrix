@@ -77,13 +77,7 @@ final readonly class BaselineLoader
      */
     public function load(string $path): Baseline
     {
-        if (!file_exists($path)) {
-            throw self::refusal($path, "Baseline file not found: {$path}");
-        }
-
-        if (!is_readable($path)) {
-            throw self::refusal($path, "Baseline file is not readable: {$path}");
-        }
+        self::assertReadable($path);
 
         // Constructed here rather than injected: the recogniser is an
         // implementation detail of this loader with no other consumer and no
@@ -110,6 +104,29 @@ final readonly class BaselineLoader
         }
 
         return $this->parseBaseline($data, hash('sha256', $content), $path);
+    }
+
+    /**
+     * The half of {@see load()} a caller may ask before any analysis runs.
+     *
+     * The file's contents must wait for the run — an entry on a `computed.*`
+     * channel is parsed against declarations the run resolves — but whether
+     * there is a file to read is not such a question, and asking it only
+     * after analysis spends a whole run to say what was known at the start.
+     * {@see load()} asks the same question with the same sentences, so a file
+     * that disappears in between is still refused in the same words.
+     *
+     * @throws ConfigurationRefusal if the file is missing or unreadable
+     */
+    public static function assertReadable(string $path): void
+    {
+        if (!file_exists($path)) {
+            throw self::refusal($path, "Baseline file not found: {$path}");
+        }
+
+        if (!is_readable($path)) {
+            throw self::refusal($path, "Baseline file is not readable: {$path}");
+        }
     }
 
     /**
@@ -347,20 +364,11 @@ final readonly class BaselineLoader
      */
     private function separateDuplicates(array $entries, array $inert): array
     {
-        $occurrences = [];
-        foreach ($entries as $entry) {
-            $key = $entry->identity->key();
-            $occurrences[$key] = ($occurrences[$key] ?? 0) + 1;
-        }
-
-        foreach ($inert as $claimed) {
-            if ($claimed->identity === null) {
-                continue;
-            }
-
-            $key = $claimed->identity->key();
-            $occurrences[$key] = ($occurrences[$key] ?? 0) + 1;
-        }
+        $claimed = [
+            ...array_map(static fn(BaselineEntry $entry): BaselineIdentity => $entry->identity, $entries),
+            ...array_filter(array_map(static fn(InertBaselineEntry $entry): ?BaselineIdentity => $entry->identity, $inert)),
+        ];
+        $occurrences = array_count_values(array_map(static fn(BaselineIdentity $identity): string => $identity->key(), $claimed));
 
         $unique = [];
         foreach ($entries as $entry) {

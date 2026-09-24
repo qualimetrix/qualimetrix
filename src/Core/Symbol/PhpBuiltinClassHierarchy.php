@@ -426,15 +426,17 @@ final class PhpBuiltinClassHierarchy
      */
     public static function extendsOf(string $fqn): ?array
     {
-        if (!PhpBuiltinClassRegistry::isBuiltin($fqn)) {
+        $name = PhpBuiltinClassRegistry::canonicalName($fqn);
+
+        if ($name === null) {
             return null;
         }
 
-        if (isset(self::INTERFACE_NAMES[$fqn])) {
-            return self::INTERFACES[$fqn] ?? [];
+        if (isset(self::INTERFACE_NAMES[$name])) {
+            return self::INTERFACES[$name] ?? [];
         }
 
-        return isset(self::PARENTS[$fqn]) ? [self::PARENTS[$fqn]] : [];
+        return isset(self::PARENTS[$name]) ? [self::PARENTS[$name]] : [];
     }
 
     /**
@@ -445,7 +447,9 @@ final class PhpBuiltinClassHierarchy
      */
     public static function interfacesOf(string $fqn): ?array
     {
-        return PhpBuiltinClassRegistry::isBuiltin($fqn) ? self::INTERFACES[$fqn] ?? [] : null;
+        $name = PhpBuiltinClassRegistry::canonicalName($fqn);
+
+        return $name !== null ? self::INTERFACES[$name] ?? [] : null;
     }
 
     /**
@@ -456,6 +460,8 @@ final class PhpBuiltinClassHierarchy
      */
     public static function attributesOf(string $fqn): ?array
     {
-        return PhpBuiltinClassRegistry::isBuiltin($fqn) ? self::ATTRIBUTES[$fqn] ?? [] : null;
+        $name = PhpBuiltinClassRegistry::canonicalName($fqn);
+
+        return $name !== null ? self::ATTRIBUTES[$name] ?? [] : null;
     }
 }

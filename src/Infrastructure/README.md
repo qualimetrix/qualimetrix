@@ -48,6 +48,7 @@ Infrastructure/
 │       └── AnalysedInstallAnchorInterface.php # Re-aims install-backed adapters for each run
 ├── Git/                              # -> See Git/README.md
 │   ├── GitClient.php
+│   ├── NameStatusListing.php         # One `--name-status -z` listing read into files; the rows it drops, reported by reason
 │   ├── GitScopeParser.php
 │   ├── GitScope.php
 │   ├── ChangedFile.php
@@ -172,6 +173,7 @@ Infrastructure/
         ├── BaselineRenameChannelsCommand.php # `baseline:rename-channels` — carries a baseline onto renamed channels along a declared TSV map; the one baseline command that runs no analysis
         ├── ChannelRenameReporter.php        # Renders a rename-channels outcome (refusal or ChannelRenameReport) in the caller's chosen format
         ├── BaselineExplainCommand.php  # `baseline:explain` — prints the effective boundary for one symbol and its three sources (baseline, qmx.yaml, @qmx-threshold)
+        ├── BaselineExplanationRenderer.php # How `baseline:explain` spells a BoundaryExplanation: entries present but not applied, unreadable entries, `mode: suppress`, a member without a finite value
         ├── DirectivesCommand.php      # `directives` — what each inline @qmx directive still does; exits 2 on an inert one (ADR 0039)
         ├── GraphExportCommand.php           # Export dependency graph (DOT, JSON)
         ├── RulesCommand.php           # Lists every option each rule accepts, its CLI aliases and judged metrics

@@ -83,11 +83,31 @@ use Throwable;
  * behavioural case here: it takes no `--config`, resolves no configuration
  * document, and consults {@see \Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer}
  * alone — there is no resolver in its call path to substitute.
+ *
+ * `baseline:update` and `baseline:cleanup` refuse a missing baseline file
+ * before they resolve any configuration, so their cases name a file that is
+ * there: a missing one would be refused by that earlier check and never reach
+ * the substituted resolver this class exists to route. That earlier refusal
+ * is {@see \Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest}'s
+ * subject. The file stays empty on purpose: the loader is inert, so a command
+ * that read it before resolving the configuration fails loudly here.
  */
 #[CoversNothing]
 final class ConfigurationRefusalRoutingTest extends TestCase
 {
     private const string REFUSAL_SUMMARY = 'the substituted resolver refused this configuration';
+
+    /** @var list<string> */
+    private array $presentBaselines = [];
+
+    protected function tearDown(): void
+    {
+        foreach ($this->presentBaselines as $path) {
+            if (is_file($path)) {
+                unlink($path);
+            }
+        }
+    }
 
     #[Test]
     public function itWiresThePresenterIntoEveryCommandTheRealContainerBuilds(): void
@@ -226,7 +246,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
 
         $tester = new CommandTester($command);
         $code = $tester->execute(
-            ['baseline' => $this->nonExistentBaselinePath()],
+            ['baseline' => $this->presentBaselinePath()],
             ['capture_stderr_separately' => true],
         );
 
@@ -244,12 +264,13 @@ final class ConfigurationRefusalRoutingTest extends TestCase
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineCleaner'),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineWriter'),
             $this->inert('Qualimetrix\\Analysis\\Finding\\Contract\\ChannelDeclarationRegistryInterface'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\RunRuleCoverage'),
         );
         $command->setRefusalPresenter($this->freshPresenter());
 
         $tester = new CommandTester($command);
         $code = $tester->execute(
-            ['baseline' => $this->nonExistentBaselinePath()],
+            ['baseline' => $this->presentBaselinePath()],
             ['capture_stderr_separately' => true],
         );
 
@@ -453,6 +474,15 @@ final class ConfigurationRefusalRoutingTest extends TestCase
     private function nonExistentBaselinePath(): string
     {
         return sys_get_temp_dir() . '/qmx-refusal-routing-' . bin2hex(random_bytes(6)) . '.json';
+    }
+
+    private function presentBaselinePath(): string
+    {
+        $path = $this->nonExistentBaselinePath();
+        touch($path);
+        $this->presentBaselines[] = $path;
+
+        return $path;
     }
 
     /**

@@ -79,7 +79,7 @@ bin/qmx baseline:cleanup baseline.json src/
 bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
 ```
 
-Without `--remove`, `baseline:cleanup <baseline> [<paths>...]` only lists candidates and never writes the file. Repeat `--remove=<selector>` for exactly the entries you have reviewed. There is no bulk removal: absence can be caused by a configuration change, not only a repair. `--force` has the same scope-guard meaning as `baseline:update`.
+Without `--remove`, `baseline:cleanup <baseline> [<paths>...]` only lists candidates and never writes the file. Each candidate names its reason: `nothing reported for this identity` means the rule ran and reported nothing; `not measured: the rule reporting this channel did not run in this invocation` means `--only-rule`, `--disable-rule` or `enabled: false` kept the rule out of the run, so its absence says nothing about the code. Repeat `--remove=<selector>` for exactly the entries you have reviewed. There is no bulk removal: absence can be caused by a configuration change, not only a repair. `--force` has the same scope-guard meaning as `baseline:update`.
 
 ### Carry a baseline onto renamed channels
 
@@ -164,6 +164,24 @@ bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --channel=c
 A symbol absent from both the current analysis and the baseline is invalid input,
 not a clean result. A baseline-only symbol remains explainable and is labelled as
 absent from the current scope or result.
+
+The `baseline:` line says whether `check` compares the two numbers at all:
+
+| Output                                                                                                         | Meaning                                                                                                      |
+| -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `accepted 25; now 31`                                                                                          | The entry is applied: the current group is compared against the accepted level.                              |
+| `accepted 24 (mode: suppress, accepted whatever is reported); now 32`                                          | A `mode: suppress` entry: the numbers are shown, but the group is accepted whatever they are.                |
+| `accepted 25, 25; now 20, and 1 without a finite value, so the entry is not applied and the group is reported` | A member reports no finite number, so `check` does not compare the group and reports it at its own severity. |
+| `present but not applied (<reason> — <detail>) [<selector>]; now …`                                            | The file holds an entry for this identity that cannot be applied — the same entry `check` lists as inert.    |
+| `(none)`                                                                                                       | The file holds no entry for this identity.                                                                   |
+| `…; now not measured (the rule reporting this channel did not run in this invocation)`                         | The rule producing the channel was kept out of this run, so an empty group says nothing about the code.      |
+
+A line about the symbol whose identity could not be read at all is listed separately as
+`Unreadable baseline entry [<selector>]`, with the reason `check` gives for it.
+
+A `--baseline` file (for `check` and `baseline:explain`) or a `<baseline>` argument (for
+`baseline:update` and `baseline:cleanup`) that does not exist or cannot be read is refused
+with exit 3 before any analysis runs.
 
 All lifecycle commands require complete analysis. A parse or processing failure
 returns exit 4 before any baseline is interpreted, classified, created, or

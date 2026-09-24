@@ -715,6 +715,39 @@ final class RuleExecutionTest extends TestCase
         self::assertSame($methodFinding, $findings[0]);
     }
 
+    /**
+     * Channel selection is outside the exclusion account by decision, not by
+     * omission: a finding the selection removed stays in `$produced`, leaves
+     * `$published`, and is booked nowhere in `$exclusions` — even when the
+     * account is capturing, so that the two removal paths of one loop cannot
+     * be read as one.
+     */
+    #[Test]
+    public function itKeepsASelectedOutFindingInProducedAndOutOfTheExclusionAccount(): void
+    {
+        $this->captureExcludedFindings = true;
+        $methodFinding = $this->createFinding('complexity', code: 'complexity.callable');
+        $classFinding = $this->createFinding('complexity', code: 'complexity.class');
+
+        $rule = $this->createHierarchicalRule(
+            'complexity',
+            [SymbolLevel::Callable, SymbolLevel::Class_],
+            [
+                SymbolLevel::Callable->value => [$methodFinding],
+                SymbolLevel::Class_->value => [$classFinding],
+            ],
+        );
+
+        $result = $this->createExecution([$rule], $this->createConfiguredProvider(new RuleSelection(disabled: ['complexity.class'])))
+            ->execute($this->createMinimalContext());
+
+        self::assertContains($classFinding, $result->produced);
+        self::assertNotContains($classFinding, $result->published);
+        self::assertTrue($result->exclusions->isEmpty());
+        self::assertSame([], $result->exclusions->excludedFindings);
+        self::assertSame([], $result->exclusions->attributions);
+    }
+
     #[Test]
     public function itExecutesHierarchicalRuleWithEntireRuleDisabled(): void
     {

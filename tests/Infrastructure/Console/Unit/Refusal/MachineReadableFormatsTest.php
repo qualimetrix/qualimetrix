@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Refusal\MachineReadableFormats;
 
 /**
- * Six of the registered formats carry a JSON document on stdout, and only
+ * Five of the registered formats carry a JSON document on stdout, and only
  * those formats get a refusal envelope.
  */
 #[CoversClass(MachineReadableFormats::class)]
@@ -22,7 +22,6 @@ final class MachineReadableFormatsTest extends TestCase
     #[TestWith(['sarif'])]
     #[TestWith(['gitlab'])]
     #[TestWith(['metrics'])]
-    #[TestWith(['health'])]
     #[TestWith(['suppressed'])]
     public function itRecognisesEveryJsonDocumentFormat(string $format): void
     {
@@ -33,6 +32,7 @@ final class MachineReadableFormatsTest extends TestCase
     #[TestWith(['text'])]
     #[TestWith(['text-verbose'])]
     #[TestWith(['summary'])]
+    #[TestWith(['health'])]
     #[TestWith(['checkstyle'])]
     #[TestWith(['github'])]
     #[TestWith(['html'])]

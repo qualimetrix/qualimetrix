@@ -47,8 +47,9 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
         $lines = [];
 
         $this->renderHeader($report, $context, $color, $lines);
-        if ($report->coverage !== null) {
-            $lines[] = CoverageNarrator::describe($report->coverage);
+        $coverageLines = CoverageNarrator::lines($report);
+        if ($coverageLines !== []) {
+            array_push($lines, ...$coverageLines);
             $lines[] = '';
         }
 

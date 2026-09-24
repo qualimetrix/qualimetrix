@@ -9,7 +9,6 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
@@ -28,6 +27,7 @@ use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
 use Qualimetrix\Reporting\ReportBuilder;
 use Qualimetrix\Reporting\ReportCoverage;
+use Qualimetrix\Reporting\ReportProjectScope;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -79,6 +79,7 @@ final class ResultPresenter
         ?FindingProjectionResult $filterResult = null,
         ?FindingProjectionOptions $projectionOptions = null,
         ?NamespacePattern $namespacePattern = null,
+        ?ReportProjectScope $projectScope = null,
     ): int {
         $profiler = $this->profiler;
         $profiler->start('reporting', 'pipeline');
@@ -122,6 +123,9 @@ final class ResultPresenter
 
         if ($context->namespace !== null || $context->class !== null) {
             $reportBuilder->outOfScope(OutOfScopeFindings::between($findings, $filteredFindings));
+        }
+        if ($projectScope !== null) {
+            $reportBuilder->projectScope($projectScope);
         }
 
         $this->attachSuppressionComposition($reportBuilder, $format, $input, $analysisResult, $filterResult, $projectionOptions);
@@ -243,14 +247,9 @@ final class ResultPresenter
     {
         return new CoverageFailure(
             $failure->path->value(),
-            $this->failureKind($failure->kind),
+            $failure->kind->value,
             $this->relativizeFailureMessage($failure->message, $projectRoot),
         );
-    }
-
-    private function failureKind(AnalysisFailureKind $kind): string
-    {
-        return $kind->value;
     }
 
     private function relativizeFailureMessage(string $message, AbsolutePath $projectRoot): string

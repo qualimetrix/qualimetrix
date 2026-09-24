@@ -98,6 +98,36 @@ abstract class AbstractHookCommand extends Command
     }
 
     /**
+     * Runs a filesystem call and keeps the system's reason for a failure, as
+     * PHP words it in the warning, instead of letting the warning out: under
+     * `display_errors` it reached stdout ahead of the refusal that already
+     * says what failed, and the refusal lacked the reason.
+     *
+     * @template T
+     *
+     * @param callable(): T $operation
+     *
+     * @return array{T, string}
+     */
+    final protected static function attempt(callable $operation): array
+    {
+        $reason = 'unknown reason';
+        set_error_handler(static function (int $level, string $message) use (&$reason): bool {
+            $reason = preg_match('~^[a-z_]+\([^)]*\): (.+)$~s', $message, $match) === 1 ? $match[1] : $message;
+
+            return true;
+        });
+
+        try {
+            $result = $operation();
+        } finally {
+            restore_error_handler();
+        }
+
+        return [$result, $reason];
+    }
+
+    /**
      * Whether git would run something at this path.
      *
      * `file_exists` alone follows a symlink and answers false for a broken

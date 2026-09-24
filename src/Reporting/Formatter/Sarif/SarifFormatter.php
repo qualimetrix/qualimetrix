@@ -75,6 +75,11 @@ final class SarifFormatter implements FormatterInterface
             $run = self::withNotification($run, 'note', $report->outOfScope->describe(), 'QMX-DRILL-DOWN-OUT-OF-SCOPE');
         }
 
+        $projectScope = $report->projectScope?->describe();
+        if ($projectScope !== null) {
+            $run = self::withNotification($run, 'note', $projectScope, 'QMX-RUN-PROJECT-SCOPE');
+        }
+
         // Add originalUriBaseIds when basePath is provided
         if ($context->basePath !== '') {
             $run['originalUriBaseIds'] = [

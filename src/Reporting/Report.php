@@ -16,11 +16,13 @@ use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
 /**
  * Value Object representing the analysis report.
  *
- * @qmx-threshold coupling.cbo warning=31 error=31 -- Report is the transport VO every formatter's
+ * @qmx-threshold coupling.cbo warning=32 error=32 -- Report is the transport VO every formatter's
  *                `format(Report, FormatterContext)` signature depends on, and the type every
  *                pipeline consumer that builds one depends on in turn; the `SuppressionComposition`
  *                field and its eleventh formatter consumer (`SuppressedFormatter`) are the intentional
- *                cause of the two-point rise from the previously baseline-accepted 28. A point
+ *                cause of the two-point rise from the previously baseline-accepted 28, and the
+ *                `ReportProjectScope` field of one more: a fact about the run every format publishes
+ *                travels on the one object every format reads. A point
  *                threshold replaces that baseline entry rather than raising it, per the same reasoning
  *                already applied to the sibling hub {@see FormatterContext}.
  */
@@ -44,6 +46,8 @@ final readonly class Report
      * @param ?OutOfScopeFindings $outOfScope What a `--namespace`/`--class` selection left out
      *                                        of `$findings`; `null` when no selection is active,
      *                                        so `$findings` is then the whole run.
+     * @param ?ReportProjectScope $projectScope Whether the run's paths covered the project;
+     *                                          `null` only for a report no run measured
      */
     public function __construct(
         public array $findings,
@@ -64,6 +68,7 @@ final readonly class Report
         public ?ReportCoverage $coverage = null,
         public ?SuppressionComposition $suppressionComposition = null,
         public ?OutOfScopeFindings $outOfScope = null,
+        public ?ReportProjectScope $projectScope = null,
     ) {}
 
     /**

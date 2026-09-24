@@ -109,6 +109,7 @@ final class MetricsJsonFormatter implements FormatterInterface
             'llmsTxt' => $identity['llmsTxt'],
             'symbols' => $symbols,
             'coverage' => $report->coverage?->toArray(),
+            'projectScope' => $report->projectScope?->toArray(),
             'summary' => [
                 'filesAnalyzed' => $report->filesAnalyzed,
                 'filesSkipped' => $report->filesSkipped,

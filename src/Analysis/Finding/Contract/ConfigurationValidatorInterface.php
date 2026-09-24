@@ -60,6 +60,10 @@ interface ConfigurationValidatorInterface
     public static function channelDeclarations(): array;
 
     /**
+     * Holds the same statelessness contract as
+     * {@see \Qualimetrix\Analysis\Finding\Rule\RuleInterface::analyze()}: it
+     * runs in its producer's slot, as often as that rule does.
+     *
      * @return list<Finding>
      */
     public function validate(AnalysisContext $context): array;

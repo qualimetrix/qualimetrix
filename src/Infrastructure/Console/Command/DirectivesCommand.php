@@ -159,9 +159,9 @@ final class DirectivesCommand extends Command
             // decides the stream from {@see MachineReadableFormats}, not from
             // whether this command itself supports the value, so an unknown
             // `--format` still lands on stdout as a JSON envelope when it
-            // names one of the six machine-readable formats (e.g.
+            // names one of the five JSON-document formats (e.g.
             // `--format=sarif`, which this command does not support) and
-            // falls through to stderr only for the other six.
+            // falls through to stderr for the other seven.
             return $this->refusalPresenter->refusal($output, $format, $refusal);
         } catch (InvalidArgumentException $failure) {
             // Named secondary signal for code 3: an

@@ -45,6 +45,20 @@ final class PhpBuiltinClassHierarchyTest extends TestCase
         self::assertSame([], PhpBuiltinClassHierarchy::attributesOf('DateTime'));
     }
 
+    /**
+     * A name the registry recognises in another case spelling must carry its
+     * ancestry too; recognising it and answering with no parent would turn
+     * `\runtimeexception` into a root.
+     */
+    #[Test]
+    public function itAnswersForARegisteredNameInAnotherCaseSpelling(): void
+    {
+        self::assertSame(['Exception'], PhpBuiltinClassHierarchy::extendsOf('runtimeexception'));
+        self::assertSame(['Stringable', 'Throwable'], PhpBuiltinClassHierarchy::interfacesOf('RUNTIMEEXCEPTION'));
+        self::assertSame(['Traversable'], PhpBuiltinClassHierarchy::extendsOf('iteratoraggregate'));
+        self::assertSame(['AllowDynamicProperties'], PhpBuiltinClassHierarchy::attributesOf('STDCLASS'));
+    }
+
     #[Test]
     public function itDoesNotAnswerForANamePhpDoesNotDeclare(): void
     {

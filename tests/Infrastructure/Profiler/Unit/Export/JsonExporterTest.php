@@ -18,12 +18,46 @@ final class JsonExporterTest extends TestCase
         $this->exporter = new JsonExporter();
     }
 
+    /**
+     * One top-level shape whatever the run recorded. It used to be `[]`, a
+     * bare span object or a list of them depending on the number of roots,
+     * so a reader had to know the run to parse its profile.
+     */
     #[Test]
-    public function itExportsEmptyArrayForNoSpans(): void
+    public function itWrapsEveryNumberOfRootsInTheSameObject(): void
     {
-        $result = $this->exporter->export([]);
+        $first = new Span(name: 'analysis', category: null, startTime: 1000000.0, startMemory: 100, endTime: 2000000.0, endMemory: 100);
+        $second = new Span(name: 'reporting', category: null, startTime: 2000000.0, startMemory: 100, endTime: 3000000.0, endMemory: 100);
 
-        self::assertSame('[]', $result);
+        self::assertSame(['spans' => []], json_decode($this->exporter->export([]), true, flags: \JSON_THROW_ON_ERROR));
+        self::assertSame(['analysis'], array_column(self::spans($this->exporter->export([$first])), 'name'));
+        self::assertSame(['analysis', 'reporting'], array_column(self::spans($this->exporter->export([$first, $second])), 'name'));
+    }
+
+    #[Test]
+    public function itSaysWhichSpansDidNotStopThemselves(): void
+    {
+        $parent = new Span(name: 'parent', category: null, startTime: 1000000.0, startMemory: 100);
+        $child = new Span(name: 'child', category: null, startTime: 1500000.0, startMemory: 100);
+        $child->attachTo($parent);
+        $child->closeWithAncestor(3000000.0, 100);
+        $parent->finish(3000000.0, 100);
+
+        $data = self::spans($this->exporter->export([$parent]))[0];
+
+        self::assertTrue($data['stopped']);
+        self::assertFalse($data['children'][0]['stopped']);
+    }
+
+    /** @return list<array<string, mixed>> */
+    private static function spans(string $export): array
+    {
+        $document = json_decode($export, true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($document);
+        self::assertSame(['spans'], array_keys($document));
+        self::assertIsList($document['spans']);
+
+        return $document['spans'];
     }
 
     #[Test]
@@ -39,7 +73,7 @@ final class JsonExporterTest extends TestCase
         );
 
         $result = $this->exporter->export([$span]);
-        $data = json_decode($result, true);
+        $data = self::spans($result)[0];
 
         self::assertIsArray($data);
         self::assertSame('test', $data['name']);
@@ -62,7 +96,7 @@ final class JsonExporterTest extends TestCase
         );
 
         $result = $this->exporter->export([$span]);
-        $data = json_decode($result, true);
+        $data = self::spans($result)[0];
 
         self::assertNull($data['category']);
     }
@@ -78,7 +112,7 @@ final class JsonExporterTest extends TestCase
         );
 
         $result = $this->exporter->export([$span]);
-        $data = json_decode($result, true);
+        $data = self::spans($result)[0];
 
         self::assertNull($data['duration_ms']);
         self::assertNull($data['memory_delta_bytes']);
@@ -109,7 +143,7 @@ final class JsonExporterTest extends TestCase
         $parent->children[] = $child;
 
         $result = $this->exporter->export([$parent]);
-        $data = json_decode($result, true);
+        $data = self::spans($result)[0];
 
         self::assertSame('parent', $data['name']);
         self::assertCount(1, $data['children']);
@@ -154,7 +188,7 @@ final class JsonExporterTest extends TestCase
         $level2->children[] = $level3;
 
         $result = $this->exporter->export([$level1]);
-        $data = json_decode($result, true);
+        $data = self::spans($result)[0];
 
         self::assertSame('level1', $data['name']);
         self::assertCount(1, $data['children']);

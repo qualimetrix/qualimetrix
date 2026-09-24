@@ -31,8 +31,9 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
     {
         $root = $document->workingDirectory();
         $autoloadDev = self::autoloadDevPolicy($document->contributions(ConfigSchema::INCLUDE_AUTOLOAD_DEV));
+        $pathContributions = $document->contributions(ConfigSchema::PATHS);
         $paths = self::analysedPaths(
-            $document->contributions(ConfigSchema::PATHS),
+            $pathContributions,
             $this->discoveredPaths($document, $autoloadDev),
         );
         $pathList = array_map(
@@ -45,6 +46,10 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
 
         $excludeContributions = $document->contributions(ConfigSchema::EXCLUDES);
         $authoredExcludes = $this->accumulatedPathPatterns($excludeContributions);
+
+        if ($pathContributions !== []) {
+            self::refuseWrittenRootsExcluded($pathList, $root, new DirectoryPruner($root, $authoredExcludes));
+        }
 
         return new RunConfiguration(
             coversProjectScope: $this->projectScopeCoverage->pathsCoverProjectScope($root, $pathList, $autoloadDev),
@@ -59,6 +64,56 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
                 $document->contributions(ConfigSchema::INCLUDE_GENERATED),
             ),
             autoloadDevPolicy: $autoloadDev,
+        );
+    }
+
+    /**
+     * A directory the author named and their own `exclude:` removes is never
+     * walked, and the run would report success over nothing there. Only a
+     * written list is asked: a composer default the author excluded is an
+     * exclusion working as intended. The predicate is the one discovery applies
+     * to a root, so a directory below one excluded only `exact:` is still
+     * walked and not refused. The built-in `vendor`, `node_modules` and `.git`
+     * floor is not asked here; discovery refuses a root it removes.
+     *
+     * @param list<AbsolutePath> $paths
+     *
+     * @throws ConfigurationRefusal
+     */
+    private static function refuseWrittenRootsExcluded(array $paths, AbsolutePath $root, DirectoryPruner $authored): void
+    {
+        $excluded = [];
+        foreach ($paths as $path) {
+            if (!$path->isDirectory()) {
+                continue;
+            }
+
+            $match = $authored->match($path);
+            if ($match !== null) {
+                $excluded[] = \sprintf(
+                    '"%s" (selector "%s")',
+                    $path->tryRelativizeTo($root)?->value() ?? $path->value(),
+                    $match->definition->display(),
+                );
+            }
+        }
+
+        if ($excluded === []) {
+            return;
+        }
+
+        $one = \count($excluded) === 1;
+
+        throw ConfigurationRefusal::aboutResolvedInput(
+            \sprintf(
+                'Invalid value for "%s": %s %s by your own exclude, so analysis never enters %s and this run would'
+                . ' analyse nothing there. Remove the exclude selector, or name a path it does not remove.',
+                ConfigSchema::PATHS,
+                implode(', ', $excluded),
+                $one ? 'is removed' : 'are removed',
+                $one ? 'it' : 'them',
+            ),
+            ConfigSchema::PATHS,
         );
     }
 

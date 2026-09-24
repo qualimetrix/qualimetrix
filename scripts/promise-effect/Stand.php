@@ -1150,7 +1150,11 @@ final class Stand
                 }
 
                 $value = $this->rootProbe($row, $writePath, $base, $spelling, $flag, $cacheOwned, $observable, $withdraw);
+                // A valueless flag writes the same argv for the comparand as
+                // for the value, so a collapse probe would be the value probe
+                // again and read COLLAPSED whenever the flag has any effect.
                 $collapse = $spelling->collapseYaml === '' || !$value->accepted() || $value->text === $omitted->text
+                    || ($flag !== null && $flag[2] === 'yes')
                     ? null
                     : $this->rootProbe($row, $writePath, $base, $spelling->comparand(), $flag, $cacheOwned, $observable, $withdraw);
 

@@ -308,7 +308,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         ]], AbsolutePath::fromString($fixtureRoot));
 
         /**
-         * @return array{\Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult, array<string, array{total: float, count: int, avg: float, memory: int, peak_memory: int}>}
+         * @return array{\Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult, array<string, array{total: float, count: int, unstopped: int}>}
          */
         $run = static function (
             string $path,

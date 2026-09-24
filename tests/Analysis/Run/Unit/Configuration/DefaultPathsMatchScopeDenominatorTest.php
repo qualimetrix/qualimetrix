@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolution
 use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ComposerDiscoveryStage;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
+use Qualimetrix\Analysis\Run\Configuration\ProjectScopeState;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
@@ -208,8 +209,8 @@ final class DefaultPathsMatchScopeDenominatorTest extends TestCase
     /**
      * A manifest whose every target lies under a pruned directory declares no
      * project code a walk reaches: the run falls back to the working
-     * directory, as with no autoload at all, is not judged as covering a
-     * project it has no denominator for, and still names what it dropped.
+     * directory, as with no autoload at all, takes that directory as the
+     * project — `Unknown`, not `Covered` — and still names what it dropped.
      */
     #[Test]
     public function itTreatsAManifestWhoseEveryTargetIsPrunedAsDeclaringNothingAndStillNamesThem(): void
@@ -217,13 +218,14 @@ final class DefaultPathsMatchScopeDenominatorTest extends TestCase
         $configuration = $this->resolve(['autoload' => ['files' => ['vendor/acme/helpers.php']]], false);
 
         self::assertSame([$this->root], array_map(static fn(AbsolutePath $path): string => $path->value(), $configuration->paths));
-        self::assertFalse($configuration->coversProjectScope);
+        self::assertTrue($configuration->coversProjectScope);
 
         $measurement = (new ProjectScopeCoverage(new ComposerReader()))->measure(
             $configuration->projectRoot,
             $configuration->paths,
             $configuration->autoloadDevPolicy,
         );
+        self::assertSame(ProjectScopeState::Unknown, $measurement->state());
         self::assertSame([['target' => 'vendor/acme/helpers.php', 'directory' => 'vendor']], $measurement->prunedTargets);
     }
 

@@ -11,9 +11,11 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 /**
  * Canonical spellings for the three per-rule suppression options.
  *
- * Runtime values are decoded once by `RuleOptionsFactory` and exposed through
- * typed `RuleConfigurationInterface` methods. Console decoding also reads the
- * three raw values here before rule options are constructed.
+ * The one reader of a producer's raw suppression options, and the one place
+ * their spellings are derived. `RuleOptionsFactory` takes the three values out
+ * through {@see self::take()} and decodes them into typed
+ * `RuleConfigurationInterface` state; console decoding reads them through the
+ * `raw*()` methods before rule options are constructed.
  */
 final readonly class ConfiguredSuppression
 {
@@ -96,12 +98,54 @@ final readonly class ConfiguredSuppression
         return self::rawValue($options, FrameworkOptionKeys::NAMESPACES, self::NAMESPACES);
     }
 
+    /**
+     * Reads one suppression option's raw value and removes it from `$options`
+     * under both spellings a door hands it over under, so that it does not
+     * reach the producer's own options class as an unknown key.
+     *
+     * The value is returned exactly as written: deciding what it means, and
+     * refusing a malformed one, belongs to the decoder the caller hands it to.
+     *
+     * @param array<string, mixed> $options
+     *
+     * @param-out array<string, mixed> $options
+     *
+     * @throws LogicException when `$canonicalKey` is not one of {@see FrameworkOptionKeys::all()}
+     */
+    public static function take(array &$options, string $canonicalKey): mixed
+    {
+        [$camelKey, $snakeKey] = self::spellingsOf($canonicalKey);
+        $value = $options[$camelKey] ?? $options[$snakeKey] ?? null;
+
+        unset($options[$camelKey], $options[$snakeKey]);
+
+        return $value;
+    }
+
     /** @param array<mixed> $options */
     private static function rawValue(array $options, string $canonicalKey, string $authoredKey): mixed
     {
         $camelKey = ConfigKeySpelling::normalize($canonicalKey);
 
         return $options[$camelKey] ?? $options[$authoredKey] ?? null;
+    }
+
+    /**
+     * The camelCase spelling the configuration pipeline's normalization
+     * produces, and the snake_case spelling an author writes in `qmx.yaml` —
+     * both derived from the one canonical name.
+     *
+     * @return array{string, string}
+     */
+    private static function spellingsOf(string $canonicalKey): array
+    {
+        if (!\in_array($canonicalKey, FrameworkOptionKeys::all(), true)) {
+            throw new LogicException(\sprintf('"%s" is not a suppression option.', $canonicalKey));
+        }
+
+        $camelKey = ConfigKeySpelling::normalize($canonicalKey);
+
+        return [$camelKey, ConfigKeySpelling::rewriteLike($camelKey, 'a_b')];
     }
 
 }

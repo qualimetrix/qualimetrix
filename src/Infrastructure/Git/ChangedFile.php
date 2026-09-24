@@ -44,7 +44,7 @@ final readonly class ChangedFile
      *
      * A source name this build cannot carry unchanged lands as `null` too, and
      * that one is a loss rather than a judgement about scope. The two are told
-     * apart in {@see GitClient::parseNameStatus()}, which reports the second;
+     * apart in {@see NameStatusListing::changedFiles()}, which reports the second;
      * from inside this method they are the same absent value.
      */
     public static function fromGitOutput(

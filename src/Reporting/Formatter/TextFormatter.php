@@ -76,9 +76,7 @@ final class TextFormatter implements FormatterInterface
             $lines[] = '';
         }
         $lines[] = $this->formatSummary($report, $color);
-        if ($report->coverage !== null) {
-            $lines[] = CoverageNarrator::describe($report->coverage);
-        }
+        array_push($lines, ...CoverageNarrator::lines($report));
 
         // Technical debt line (dimmed to visually distinguish from summary)
         $debt = $this->debtCalculator->calculate($report->findings);
@@ -97,9 +95,7 @@ final class TextFormatter implements FormatterInterface
 
         // Summary line
         $lines[] = $this->formatSummary($report, $color);
-        if ($report->coverage !== null) {
-            $lines[] = CoverageNarrator::describe($report->coverage);
-        }
+        array_push($lines, ...CoverageNarrator::lines($report));
 
         return implode("\n", $lines) . "\n";
     }

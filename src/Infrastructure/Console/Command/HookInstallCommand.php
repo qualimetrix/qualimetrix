@@ -41,8 +41,9 @@ final class HookInstallCommand extends AbstractHookCommand
 
         $this->clearExistingHook($input, $output, $hookPath);
 
-        if (!$this->write($hookPath, PreCommitHook::script($binary))) {
-            throw $this->refusal(\sprintf('Failed to write hook: %s', $hookPath));
+        $failure = self::write($hookPath, PreCommitHook::script($binary));
+        if ($failure !== null) {
+            throw $this->refusal(\sprintf('Failed to write hook: %s: %s', $hookPath, $failure));
         }
 
         $output->writeln('<info>✓ Pre-commit hook installed</info>');
@@ -79,8 +80,13 @@ final class HookInstallCommand extends AbstractHookCommand
         // The link itself, not what it points at: `rename()` would replace the
         // target through it and leave the repository pointing at a file that
         // no longer belongs there.
-        if (is_link($hookPath) && !unlink($hookPath)) {
-            throw $this->refusal(\sprintf('Failed to remove the existing hook: %s', $hookPath));
+        if (!is_link($hookPath)) {
+            return;
+        }
+
+        [$removed, $reason] = self::attempt(static fn(): bool => unlink($hookPath));
+        if (!$removed) {
+            throw $this->refusal(\sprintf('Failed to remove the existing hook: %s: %s', $hookPath, $reason));
         }
     }
 
@@ -129,8 +135,9 @@ final class HookInstallCommand extends AbstractHookCommand
             ));
         }
 
-        if (!copy($hookPath, $backupPath)) {
-            throw $this->refusal(\sprintf('Failed to back up the existing hook to %s, so it was left in place.', $backupPath));
+        [$copied, $reason] = self::attempt(static fn(): bool => copy($hookPath, $backupPath));
+        if (!$copied) {
+            throw $this->refusal(\sprintf('Failed to back up the existing hook to %s: %s. The hook was left in place.', $backupPath, $reason));
         }
 
         $output->writeln(\sprintf('<info>Existing hook backed up to: %s</info>', $backupPath));
@@ -141,25 +148,31 @@ final class HookInstallCommand extends AbstractHookCommand
      *
      * Temporary file first, then rename: a hook half-written by an
      * interrupted run is a file git will still try to execute.
+     *
+     * @return string|null the system's reason the hook could not be written, or null once it is
      */
-    private function write(string $hookPath, string $contents): bool
+    private static function write(string $hookPath, string $contents): ?string
     {
         $temporaryPath = $hookPath . '.tmp.' . getmypid();
 
         // The length, not just `false`: a full disk writes part of the file
         // and reports how much, and a truncated hook is one git still runs.
-        if (file_put_contents($temporaryPath, $contents) !== \strlen($contents)) {
+        [$written, $reason] = self::attempt(static fn() => file_put_contents($temporaryPath, $contents));
+        if ($written !== \strlen($contents)) {
             @unlink($temporaryPath);
 
-            return false;
+            return $reason;
         }
 
-        if (!chmod($temporaryPath, 0755) || !rename($temporaryPath, $hookPath)) {
-            unlink($temporaryPath);
+        [$placed, $reason] = self::attempt(
+            static fn(): bool => chmod($temporaryPath, 0755) && rename($temporaryPath, $hookPath),
+        );
+        if (!$placed) {
+            @unlink($temporaryPath);
 
-            return false;
+            return $reason;
         }
 
-        return true;
+        return null;
     }
 }

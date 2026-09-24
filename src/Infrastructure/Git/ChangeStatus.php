@@ -14,7 +14,7 @@ namespace Qualimetrix\Infrastructure\Git;
  * that exists and whose content changed, so it is an ordinary change here and
  * carries no distinction downstream. The statuses left out are `U`, which
  * names an unmerged index entry rather than one version of a file, and `X`,
- * which git documents as its own bug; {@see GitClient::parseNameStatus()}
+ * which git documents as its own bug; {@see NameStatusListing::changedFiles()}
  * refuses both by name rather than silently.
  */
 enum ChangeStatus: string

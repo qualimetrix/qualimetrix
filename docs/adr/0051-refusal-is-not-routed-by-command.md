@@ -106,8 +106,8 @@ each measured rather than assumed:
    sentence where they previously got nothing on `baseline:*`'s failure path,
    or a code with nothing behind it elsewhere — on the same channel as
    without `-q`.
-3. Under one of the six JSON-document formats (`json`, `sarif`, `gitlab`,
-   `metrics`, `health`, `suppressed` — {@see MachineReadableFormats}) the
+3. Under one of the five JSON-document formats (`json`, `sarif`, `gitlab`,
+   `metrics`, `suppressed` — {@see MachineReadableFormats}) the
    message is not text at all: it is the JSON envelope on stdout
    (`RefusalPresenter::writeEnvelope()`), the shape every command's
    refusal and internal error now shares. The envelope was `{error,
@@ -115,10 +115,12 @@ each measured rather than assumed:
    that is written to stderr instead because the report already holds
    stdout, are in the amendments below. `-q` does not remove the envelope;
    a JSON-document consumer piping stdout still gets a parseable document on
-   both the success and the failure path. The other six formats (`text`,
-   `text-verbose`, `summary`, `checkstyle`, `github`, `html`) keep their
-   human-readable, XML or workflow-command stdout contract and get the
+   both the success and the failure path. The other seven formats (`text`,
+   `text-verbose`, `summary`, `health`, `checkstyle`, `github`, `html`) keep
+   their human-readable, XML or workflow-command stdout contract and get the
    `<error>…</error>` line on stderr instead, same as no `--format` at all.
+   (`health` prints a table; it was counted among the JSON formats until
+   2026-09-24, which put a JSON envelope where its table was expected.)
 
 **`--silent` is folded into this same decision, not a separate one.**
 `VERBOSITY_SILENT` (8) is lower than `VERBOSITY_QUIET` (16), so before this
@@ -235,25 +237,54 @@ twin), and keeps its code: 3 for the refusal, 1 for an internal error. The
 report stays the only document on stdout.
 
 The export target is checked before the analysis by the class that makes the
-write (`ArtifactFile`), and both turn on one question — whether the target
-exists — never on what kind of thing stands there. An existing target is
-opened by the path as written and written in place, as a shell's `>` does, so
-a file, a hard link, a file mounted on its own, a device, a named pipe or the
-file a symbolic link names stays the same object with the same owner; the
-precheck asks only that it be writable and not a directory. A name nothing
-stands at yet is created: a chain of symbolic links is followed to the name it
-ends at, the file is written beside that name and renamed onto it, and the
-precheck asks that the name not end in `/` and that its directory can be
-written. One exception is closed and enumerated rather than classified:
-`/dev/stdout`, `/dev/stderr`, `/dev/fd/N` and `/proc/self/fd/N`, written or
-reached through a link, are written through the descriptor itself, and one
-the process does not hold is refused: PHP on Linux opens them by resolving the
-path, which fails on a pipe and reopens, truncating, a file the stream is
-redirected to. Choosing the write by the
-target's type was rejected: each classification replaced one more kind of
-target it should have written — a descriptor named through `/proc`, a file
-mounted on its own, a hard link, a file owned by someone else — because the set
-of kinds is open, and existence is not. The price is stated, not hidden: a
+write (`ArtifactFile`), and the write is a shell's `>` as nearly as PHP
+allows: the kernel, not the class, decides what a path leads to. A target the
+kernel reaches is opened by the path as written and written in place, so a
+file, a hard link, a file mounted on its own, a device, a named pipe or the
+file a symbolic link names stays the same object with the same owner. A name
+the kernel reaches nothing at is created by `touch()`, the one PHP call
+measured (PHP 8.4, thread-safe or not) to hand the path to the kernel's own
+open: a dangling link creates
+the file it names, and a link the kernel refuses to follow
+(`fs.protected_symlinks`, a link another user left in `/tmp`) is refused.
+Every other PHP open — `fopen` in any mode, `x` included, `SplFileObject`,
+`file://`, `php://filter`, a `proc_open` file descriptor — resolves the link
+chain in userspace before it calls `open(2)`, so the kernel's rule never sees
+the link; resolving the chain in the class and renaming a temporary file onto
+its end did the same, and let a link another user planted in `/tmp` replace a
+file its victim could write. Three residues are named, not closed: a
+thread-safe (ZTS) PHP resolves links before asking whether a path exists, so
+there a foreign link to an existing file is still written through; between
+the kernel's answer and PHP's own open a user who owns the name can swap it,
+where `>` opens once; and a file created through a dangling link stays when
+the write then fails, because only the kernel knows the link's target. A write
+that fails midway removes a file it created and leaves an existing one partly
+written.
+
+`/dev/stdout`, `/dev/stderr`, `/dev/fd/N` and `/proc/self/fd/N`, spelled
+exactly so, are written through the descriptor, switched to blocking mode
+first as the console output is: PHP on Linux opens those paths by resolving
+them, which fails on a pipe and reopens, truncating, a file the stream is
+redirected to. The four are the supported spellings, not a classification of
+targets. Another spelling of the same stream — `/proc/thread-self/fd/1`, a
+link of one's own to `/dev/stdout` — is opened by its path like any target,
+which on Linux fails for a pipe, and the refusal names the four. Recognising
+more spellings was rejected: the set of spellings is as open as the set of
+kinds, and review kept finding one more.
+
+The precheck is best-effort and asks the kernel only what it answers without
+a write: not a directory or a name ending in `/`; a reachable target
+writable; a new name's directory writable and searchable; a descriptor held
+and, where the system publishes its open mode (`/proc/self/fdinfo` on Linux),
+open for writing. A link the kernel does not follow to a file — dangling,
+forbidden, a loop, ending in `/` — is left to the write, which is the final
+judge: qmx checks what it can before the run, and a write that still fails
+exits 3 after it. Prechecking by opening the target was rejected: opening and
+closing a named pipe before the analysis releases its reader. Choosing the
+write by the target's type was rejected: each classification replaced one
+more kind of target it should have written — a descriptor named through
+`/proc`, a file mounted on its own, a hard link, a file owned by someone
+else — because the set of kinds is open. The price is stated, not hidden: a
 write that fails midway leaves an existing target partly written, where
 replacing it whole kept the old file intact. Replacing the report whole was an
 implementation habit, never a promise the report made; the baseline, which

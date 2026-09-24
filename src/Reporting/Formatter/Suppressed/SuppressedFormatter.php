@@ -62,6 +62,7 @@ final class SuppressedFormatter implements FormatterInterface
                 . 'can appear under more than one mechanism, so byMechanism counts do not sum to the number '
                 . 'of distinct findings suppressed.',
             'coverage' => $report->coverage?->toArray(),
+            'projectScope' => $report->projectScope?->toArray(),
             'mechanisms' => array_map(static fn(SuppressionMechanism $m): string => $m->value, SuppressionMechanism::cases()),
             'byMechanism' => $byMechanism,
             'suppressed' => $suppressed,
