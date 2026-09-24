@@ -125,6 +125,32 @@ final class ProcessProbe
     }
 
     /**
+     * One run of a command that is not the product, read exactly as a product
+     * run is read: the same heads, the same tokenizing, the same
+     * {@see ProcessObservation::outcome()}. Not counted in {@see self::runs()}
+     * and not put under the cache protocol — neither says anything about a
+     * process that is not the product.
+     *
+     * @param list<string> $argv
+     */
+    public function observeCommand(array $argv): ProcessObservation
+    {
+        try {
+            $result = ChildProcess::run($argv, $this->repositoryRoot);
+        } catch (RuntimeException $failure) {
+            throw new ProbeFailure('the command did not complete: ' . $failure->getMessage(), 0, $failure);
+        }
+
+        return new ProcessObservation(
+            $result['exitCode'],
+            'n/a',
+            $this->tokenize(substr($result['stdout'], 0, 400), null),
+            $this->tokenize(substr($result['stderr'], 0, 400), null),
+            'n/a',
+        );
+    }
+
+    /**
      * @param array<string, mixed> $document
      * @param list<string> $extraArguments
      * @param list<string> $withdraw
@@ -421,7 +447,7 @@ final class ProcessProbe
      * absolute home path in a tracked file. Longest prefix first, raw and
      * resolved, because the run directory lives inside the scratch root.
      */
-    private function tokenize(string $text, string $runDirectory): string
+    private function tokenize(string $text, ?string $runDirectory): string
     {
         // Longest prefix first, raw and resolved: the run directory lives
         // inside the scratch root, and on macOS `/tmp` resolves to
@@ -429,10 +455,15 @@ final class ProcessProbe
         // The product tree is here too — a crash quotes the frame it crashed
         // in, and that frame is an absolute path inside this checkout.
         $roots = [
-            $runDirectory => '<RUN>',
             $this->scratchRoot => '<SCRATCH>',
             $this->repositoryRoot => '<REPO>',
         ];
+
+        // A null run directory is omitted rather than passed as '': realpath('')
+        // resolves to the working directory and would tokenize it as `<RUN>`.
+        if ($runDirectory !== null) {
+            $roots = [$runDirectory => '<RUN>', ...$roots];
+        }
 
         foreach ($roots as $root => $token) {
             foreach ([$root, realpath($root)] as $candidate) {

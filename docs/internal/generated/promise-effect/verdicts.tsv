@@ -5773,7 +5773,7 @@ D	form|cli-root|cache.dir|map	map	report	NOT OBSERVABLE	no	DECIDED	a CLI door ha
 D	form|cli-root|cache.dir|null	null	report	REFUSES	no	DECIDED	refused
 D	form|cli-root|cache.dir|string-nonnumber	string-nonnumber	report	COLLAPSED	yes	DECIDED	equal to the canonical write of another form
 D	form|cli-root|cache.dir|string-number	string-number	report	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters
-D	form|cli-root|cache.enabled|bool	bool	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
+D	form|cli-root|cache.enabled|bool	bool	report	COLLAPSED	yes	DECIDED	equal to the canonical write of another form
 D	form|cli-root|cache.enabled|float	float	report	NOT OBSERVABLE	no	DECIDED	a valueless flag carries no spelling for this form
 D	form|cli-root|cache.enabled|int	int	report	NOT OBSERVABLE	no	DECIDED	a valueless flag carries no spelling for this form
 D	form|cli-root|cache.enabled|list	list	report	NOT OBSERVABLE	no	DECIDED	a valueless flag carries no spelling for this form
@@ -6178,7 +6178,7 @@ D	form|yaml|computed_metrics.<name>|float	float	report	REFUSES	no	DECIDED	refuse
 D	form|yaml|computed_metrics.<name>|int	int	report	REFUSES	no	DECIDED	refused
 D	form|yaml|computed_metrics.<name>|list	list	report	REFUSES	no	DECIDED	refused
 D	form|yaml|computed_metrics.<name>|map	map	report	REFUSES	no	DECIDED	refused
-D	form|yaml|computed_metrics.<name>|null	null	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
+D	form|yaml|computed_metrics.<name>|null	null	report	REFUSES	no	DECIDED	refused
 D	form|yaml|computed_metrics.<name>|string-nonnumber	string-nonnumber	report	REFUSES	no	DECIDED	refused
 D	form|yaml|computed_metrics.<name>|string-number	string-number	report	REFUSES	no	DECIDED	refused
 D	form|yaml|computed_metrics|bool	bool	report	REFUSES	no	PROMISED	refused

@@ -100,7 +100,10 @@ in `witness-envelopes.tsv`.
 Every process probe names and clears a unique cache directory and fails if the
 default cache appears. `--no-cache` is not trusted. The refusal classifier also
 uses a framed and an unframed control on every measured tree; a changed control
-shape is a refusal of the stand, not a verdict.
+shape is a refusal of the stand, not a verdict. The framed control is a product
+refusal. The unframed one is a stand-owned process that writes the product's
+JSON refusal envelope without the frame: the product frames every exit-3
+refusal, so it has no unframed refusal to offer.
 
 ## Limits and floor
 

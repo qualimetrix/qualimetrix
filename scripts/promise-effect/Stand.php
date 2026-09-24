@@ -38,6 +38,8 @@ final class Stand
 
     private const string UNWRITABLE = 'a valueless flag carries no spelling for this form';
 
+    public const string UNFRAMED_WITNESS_MESSAGE = 'refused by the stand\'s unframed witness, not by the product';
+
     /** @var array<string, bool> producer name => was it seen to run */
     private array $witnesses = [];
 
@@ -118,36 +120,29 @@ final class Stand
      * The in-process points see an exception, not a frame, and the round's
      * REFUSES verdict is defined by the frame. So the mapping is not assumed:
      * two process runs prove it every time the stand runs — one value the
-     * product refuses with its own framing, one it refuses without. A stand
-     * that guessed here would report a product defect as correct behaviour, or
-     * the reverse.
+     * product refuses with its own framing, and one process that refuses
+     * without it. A stand that guessed here would report a product defect as
+     * correct behaviour, or the reverse.
+     *
+     * The framed side is the product's: it is the evidence that a
+     * `ConfigurationRefusal` still reaches the user framed. The unframed side
+     * is NOT the product's, and cannot be — the product frames every exit-3
+     * refusal, the fallback for a bare `InvalidArgumentException` included, so
+     * any product subject chosen here is a claim that a defect exists. What
+     * this side proves is the stand's own half of the mapping: that an exit 3
+     * without the frame, read through the same heads and the same
+     * {@see ProcessObservation::outcome()} as every product run, is told apart
+     * from one with it. The witness writes the product's JSON refusal
+     * envelope minus the frame, so the frame is the only difference between
+     * the two sides; a witness edited to carry it, or to exit otherwise,
+     * reddens this control rather than weakening it.
      *
      * @return list<string> what went wrong, empty when the mapping holds
      */
     public function proveRefusalFraming(): array
     {
         $framed = $this->process->observe(['rules' => ['complexity.ccn' => ['callable' => ['warning' => 'abc']]]]);
-
-        // A negative worker count: refused by
-        // `ParallelConfigurationResolver` with a bare
-        // `InvalidArgumentException`, which the console catches as its
-        // FALLBACK refusal — exit 3 with no `Configuration error:` frame.
-        //
-        // The invariant `--workers=0` is withdrawn, or the probe would hand
-        // the product two values for one flag and measure the parser instead
-        // of the resolver.
-        //
-        // This control stood on `--layer-violation-severity=true` until the
-        // first cure package framed it, and the replacement is chosen to
-        // outlive the same fate rather than to be merely different: the
-        // subject is a ROOT flag whose value is judged by an infrastructure
-        // resolver, so no rule-option key, spelling or registry — the whole
-        // material of axis C — can reach it. Its predecessor was a rule-option
-        // alias, which is why it died. The control is still mortal, as it must
-        // be: when this refusal is framed too, the stand exits 3 instead of
-        // reporting, and `php scripts/enumerate-refusal-fallback.php` is where
-        // the next subject is found.
-        $unframed = $this->process->observe([], ['--workers=-5'], false, 'findings', ['--workers']);
+        $unframed = $this->process->observeCommand(self::refusalWitness(self::UNFRAMED_WITNESS_MESSAGE));
 
         $this->raw[] = ['control', 'refusal-framing', 'framed', $framed->outcome(), $framed->text()];
         $this->raw[] = ['control', 'refusal-framing', 'unframed', $unframed->outcome(), $unframed->text()];
@@ -158,6 +153,24 @@ final class Stand
             $unframed->outcome(),
             $unframed->text(),
         );
+    }
+
+    /**
+     * A process that refuses the way the product's JSON door does — the
+     * `{error, exit_code}` envelope on stdout, exit 3 — with `$message` as the
+     * whole `error`.
+     *
+     * @return list<string>
+     */
+    public static function refusalWitness(string $message): array
+    {
+        $envelope = var_export(['error' => $message, 'exit_code' => 3], true);
+
+        return [
+            \PHP_BINARY,
+            '-r',
+            'fwrite(STDOUT, json_encode(' . $envelope . ', JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\\n"); exit(3);',
+        ];
     }
 
     /**
