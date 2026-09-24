@@ -70,12 +70,11 @@ final class CheckCommandProfileExportTest extends TestCase
     }
 
     /**
-     * The export is written beside its target and renamed over it, so an
-     * existing, writable target file in a directory that cannot be written
-     * cannot be exported to — and is refused before analysis, not after it.
+     * An existing export target is written in place, so a writable file in a
+     * directory that cannot be written is exported to, not refused.
      */
     #[Test]
-    public function itRefusesAWritableTargetInADirectoryItCannotWriteBeforeAnalysis(): void
+    public function itExportsIntoAWritableFileInADirectoryItCannotWrite(): void
     {
         if (\function_exists('posix_geteuid') && posix_geteuid() === 0) {
             self::markTestSkipped('Directory permissions do not bind root.');
@@ -91,11 +90,9 @@ final class CheckCommandProfileExportTest extends TestCase
             chmod($sealed, 0o755);
         }
 
-        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
-        /** @var array{error: string, exit_code: int, position: mixed} $envelope */
-        $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
-        self::assertSame(['error', 'exit_code', 'position'], array_keys($envelope), 'Analysis ran: a report precedes the refusal.');
-        self::assertStringContainsString('--profile', $envelope['error']);
+        self::assertNotSame(3, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertStringContainsString('Profile exported to', $tester->getErrorOutput());
+        self::assertNotSame('', file_get_contents($sealed . '/p.json'));
     }
 
     /**
@@ -104,7 +101,7 @@ final class CheckCommandProfileExportTest extends TestCase
      * on stderr with exit code 3.
      *
      * The failure is planted where no precheck can see it: the temporary file
-     * the export writes first is taken by a directory of the same name.
+     * a new export is written to first is taken by a directory of the same name.
      */
     #[Test]
     public function itKeepsTheReportTheOnlyStdoutDocumentWhenTheExportFailsAfterIt(): void

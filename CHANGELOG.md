@@ -350,7 +350,7 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   To analyse vendored code, name a file or a directory inside it explicitly
   (`bin/qmx check vendor/acme/helpers.php`).
 - **A path you name that is itself a `vendor`, `node_modules` or `.git`
-  directory exits `3` before the analysis** — on the command line
+  directory exits `3` at discovery, before any file is read** — on the command line
   (`bin/qmx check lib/vendor`) or in `paths:` in `qmx.yaml`, for `check`,
   `baseline:generate`, `graph:export` and `directives`. Discovery never walks
   into such a directory, so the run used to analyse nothing and report it as a
@@ -375,14 +375,21 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   Qualimetrix's, a dangling symlink, an unnameable binary, a failed write.
 - **An output file that cannot be written is a refusal.** `--profile`,
   `check --output` and `graph:export --output` judge a target by the write they
-  make, so a directory or a name ending in `/`, a target in a directory that
-  cannot be written, or an unwritable file exits `3` before the analysis
-  instead of failing after it. A regular file or a new name is written to a
-  temporary file beside it and renamed over it, keeping a replaced file's
-  permissions; a symbolic link is followed and stays a link; `/dev/stdout`,
-  `/dev/null`, a named pipe or a process substitution is written in place.
-  `graph:export --output` now writes regular files that way too instead of
-  overwriting them in place. A profile write that still fails after the run
+  make, so a directory or a name ending in `/` (or a symbolic link to one), an
+  existing file that is not writable, a new name in a directory that does not
+  exist or cannot be written, or a descriptor the process does not hold exits
+  `3` before the analysis instead of failing after it. An existing target is
+  written in place, as `>` in a shell does: a regular file keeps its inode,
+  owner, permissions and hard links, a file mounted into a container on its own
+  is written instead of refused after the run, and a writable file in a
+  directory that cannot be written is accepted. `check --output` and
+  `--profile` used to replace an existing file with a renamed temporary file;
+  now a write that fails midway leaves that file partly written. A new name is
+  still written beside its target and renamed onto it, so a failed write leaves
+  no file. `/dev/stdout`, `/dev/stderr`, `/dev/fd/N` and `/proc/self/fd/N`
+  are written through the stream itself, so on Linux a piped `--output=/dev/stdout`
+  and a process substitution work (they exited `3`) and a stdout redirected to
+  a file is no longer truncated. A profile write that still fails after the run
   exits `3` instead of keeping the analysis exit code, with the reason on
   stderr so stdout keeps the report as its only document.
 - **`--namespace`/`--class` with `--format=gitlab` or `--format=checkstyle`

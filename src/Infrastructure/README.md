@@ -149,7 +149,7 @@ Infrastructure/
     ├── ProfilePresenter.php           # Handles profiling output: summary to stderr or export to file
     ├── FormatterContextFactory.php    # Creates FormatterContext from CLI input options
     ├── FormatOptionPairs.php          # The --format-opt door: every written pair judged, a repeated key and two spellings of one value refused
-    ├── ArtifactFile.php               # A file an option names for an artifact: the precheck and the tmp+rename write it models
+    ├── ArtifactFile.php               # A file an option names for an artifact: written in place when it exists, created when it does not
     ├── CommandLineSpelling.php        # An option or argument value as argv would spell it; other shapes refused with exit 3
     ├── CheckCommandDefinition.php     # Command option definitions
     ├── FilteredInputDefinition.php    # InputDefinition that hides rule-specific options from --help

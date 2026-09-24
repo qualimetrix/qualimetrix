@@ -234,13 +234,32 @@ is now written to stderr as the text path's sentence, whatever the format
 twin), and keeps its code: 3 for the refusal, 1 for an internal error. The
 report stays the only document on stdout.
 
-The export target is checked before the analysis against the same model of
-the target the write uses (`ArtifactFile`): a regular file outside `/dev`, or
-a name nothing stands at yet, is replaced whole — a temporary file beside it
-renamed over it, keeping a replaced file's permissions; a symbolic link is
-followed to the file it names and stays a link; a device, a named pipe or
-anything under `/dev` is written in place; a directory or a name ending in `/`
-is refused. So this ending is left to failures no precheck can see. Keeping the analysis exit code for it was rejected: the run was asked
-for an artifact it did not deliver, and exit 3 is how a wrapper learns that.
+The export target is checked before the analysis by the class that makes the
+write (`ArtifactFile`), and both turn on one question — whether the target
+exists — never on what kind of thing stands there. An existing target is
+opened by the path as written and written in place, as a shell's `>` does, so
+a file, a hard link, a file mounted on its own, a device, a named pipe or the
+file a symbolic link names stays the same object with the same owner; the
+precheck asks only that it be writable and not a directory. A name nothing
+stands at yet is created: a chain of symbolic links is followed to the name it
+ends at, the file is written beside that name and renamed onto it, and the
+precheck asks that the name not end in `/` and that its directory can be
+written. One exception is closed and enumerated rather than classified:
+`/dev/stdout`, `/dev/stderr`, `/dev/fd/N` and `/proc/self/fd/N`, written or
+reached through a link, are written through the descriptor itself, and one
+the process does not hold is refused: PHP on Linux opens them by resolving the
+path, which fails on a pipe and reopens, truncating, a file the stream is
+redirected to. Choosing the write by the
+target's type was rejected: each classification replaced one more kind of
+target it should have written — a descriptor named through `/proc`, a file
+mounted on its own, a hard link, a file owned by someone else — because the set
+of kinds is open, and existence is not. The price is stated, not hidden: a
+write that fails midway leaves an existing target partly written, where
+replacing it whole kept the old file intact. Replacing the report whole was an
+implementation habit, never a promise the report made; the baseline, which
+does promise it, has its own writer. So this ending is left to failures no
+precheck can see. Keeping the analysis exit code for it was rejected: the run
+was asked for an artifact it did not deliver, and exit 3 is how a wrapper
+learns that.
 Writing the profile before the report was rejected too: the profile would
 then miss the reporting phase it measures.

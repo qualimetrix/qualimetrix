@@ -118,8 +118,8 @@ final class CheckScopeResolverTest extends TestCase
             );
 
             self::assertSame(
-                ['Autoload entries that are, or lie inside, a vendor, node_modules or .git directory are neither analyzed'
-                    . ' nor counted as project scope: lib/vendor.'],
+                ['Autoload entries that are, or lie inside, a vendor, node_modules or .git directory are not counted as project scope,'
+                    . ' and discovery skips them unless a path you name lies inside that directory: lib/vendor.'],
                 $result->warnings,
             );
             self::assertTrue($result->coversProjectScope);

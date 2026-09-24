@@ -174,10 +174,37 @@ final class ScopeWarningCheckerTest extends TestCase
         $measurement = $this->coverage->measure($this->projectRoot, [$this->projectRoot], AutoloadDevPolicy::Exclude);
 
         self::assertSame(
-            ['Autoload entries that are, or lie inside, a vendor, node_modules or .git directory are neither analyzed'
-                . ' nor counted as project scope: lib/vendor, vendor/x/helpers.php (inside vendor).'],
+            ['Autoload entries that are, or lie inside, a vendor, node_modules or .git directory are not counted as project scope,'
+                . ' and discovery skips them unless a path you name lies inside that directory: lib/vendor, vendor/x/helpers.php (inside vendor).'],
             $this->checker->describe($measurement->uncoveredRoots, $measurement->prunedTargets),
         );
+    }
+
+    /**
+     * A path named inside a vendor directory is analyzed, and the line still
+     * names the entry it covers — so the line may not say the entry goes
+     * unanalyzed.
+     */
+    #[Test]
+    public function itMakesNoClaimAboutAnalysisOfAPrunedEntryARunNamesExplicitly(): void
+    {
+        $this->writeComposerJson([
+            'autoload' => ['psr-4' => ['App\\' => 'src/'], 'files' => ['vendor/x/helpers.php']],
+        ]);
+        mkdir($this->tempDir . '/src', 0o755, true);
+        mkdir($this->tempDir . '/vendor/x', 0o755, true);
+        file_put_contents($this->tempDir . '/vendor/x/helpers.php', '<?php');
+
+        $measurement = $this->coverage->measure(
+            $this->projectRoot,
+            [$this->subPath('src'), $this->subPath('vendor/x/helpers.php')],
+            AutoloadDevPolicy::Exclude,
+        );
+        $warnings = $this->checker->describe($measurement->uncoveredRoots, $measurement->prunedTargets);
+
+        self::assertCount(1, $warnings);
+        self::assertStringContainsString('vendor/x/helpers.php (inside vendor)', $warnings[0]);
+        self::assertStringNotContainsString('analyzed', $warnings[0]);
     }
 
     #[Test]
@@ -198,8 +225,8 @@ final class ScopeWarningCheckerTest extends TestCase
         self::assertSame(
             [
                 'Analyzed paths do not cover all autoload entries (missing: lib). Coupling and instability metrics may be incomplete.',
-                'Autoload entries that are, or lie inside, a vendor, node_modules or .git directory are neither analyzed'
-                    . ' nor counted as project scope: node_modules/pkg (inside node_modules).',
+                'Autoload entries that are, or lie inside, a vendor, node_modules or .git directory are not counted as project scope,'
+                    . ' and discovery skips them unless a path you name lies inside that directory: node_modules/pkg (inside node_modules).',
             ],
             $this->checker->describe($measurement->uncoveredRoots, $measurement->prunedTargets),
         );

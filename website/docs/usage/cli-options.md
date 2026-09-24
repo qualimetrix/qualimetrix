@@ -170,15 +170,22 @@ Write the report to a file instead of stdout:
 bin/qmx check src/ --format=html --output=report.html
 ```
 
-A regular file, or a name nothing stands at yet, is written beside the target
-and renamed over it, so a reader never sees half a report; a replaced file
-keeps its permissions. A symbolic link is followed to the file it names, and
-the link stays. Anything else that exists — `/dev/stdout`, `/dev/null`, a
-named pipe, a process substitution such as `>(gzip > report.json.gz)` — is
-written in place. A target that cannot be written is refused with exit code 3
-before analysis starts: a directory or a name ending in `/`, a file in a
-directory that does not exist or cannot be written, or a file that is not
-writable. A write that still fails after the run also exits with code 3.
+An existing file is written in place, as `>` in a shell does: it keeps its
+inode, owner, permissions and hard links, and a file mounted into a container
+on its own works too. A symbolic link is followed to the file it names, and
+the link stays; so do `/dev/null`, a named pipe and a process substitution such
+as `>(gzip > report.json.gz)`. `/dev/stdout`, `/dev/stderr`, `/dev/fd/N` and
+`/proc/self/fd/N` are written through the stream itself, whether it is a
+terminal, a pipe or a file. A name nothing stands at yet is created: the report
+is written beside it and renamed onto it, so a failed write leaves no file
+behind. A write that fails midway through an existing file leaves that file
+partly written.
+
+A target that cannot be written is refused with exit code 3 before analysis
+starts: a directory or a name ending in `/` (or a symbolic link to one), an
+existing file that is not writable, a new name in a directory that does not
+exist or cannot be written, or a descriptor the process does not hold. A write
+that still fails after the run also exits with code 3.
 
 ### `--group-by`
 
@@ -1103,10 +1110,10 @@ exporting an empty graph. `--exclude-namespace` keeps its silence on purpose: a
 missed exclusion leaves the picture whole, so the viewer loses nothing.
 
 An `--output` target is judged and written the way `check` treats its own
-[`--output`](#--output--o): a directory or a name ending in `/`, a file in a
-directory that does not exist or cannot be written, and an unwritable file are
-refused with exit 3 before any file is read; a symbolic link, `/dev/stdout` and
-a named pipe are written through, not replaced.
+[`--output`](#--output--o): a directory or a name ending in `/`, an unwritable
+existing file and a new name in a directory that does not exist or cannot be
+written are refused with exit 3 before any file is read; an existing target —
+a file, a symbolic link, `/dev/stdout`, a named pipe — is written in place.
 
 If any discovered file fails parsing or processing, `graph:export` exits 4 and
 emits no partial graph. It does not create a missing output file and preserves

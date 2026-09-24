@@ -152,13 +152,16 @@ its closed set and a `--profile` target the export cannot be written to, and
 `ResultPresenter::assertOutputIsWritable()` the same for `--output` — all before
 analysis. Both targets, and `graph:export --output`, are judged by
 `ArtifactFile`, which also makes the write, so the precheck cannot model a
-different write than the one made: a directory or a name ending in `/`, a file
-in a directory it cannot write and an unwritable file are refused. A regular
-file or a new name is written to a temporary file beside it and renamed over
-it, keeping a replaced file's permissions; a symbolic link is followed and
-kept; any other existing target — a device, a named pipe, a descriptor under
-`/dev` such as `/dev/fd/1` when stdout is redirected to a file — is written in
-place. A profile write that still fails after the report is published
+different write than the one made. Both turn on whether the target exists,
+never on its type: an existing target is opened by the path as written and
+written in place, and needs only to be writable and not a directory; a new name
+is followed through its link chain, written beside the name it ends at and
+renamed onto it, and needs a writable directory and a name not ending in `/`.
+The one enumerated exception — `/dev/stdout`, `/dev/stderr`, `/dev/fd/N`,
+`/proc/self/fd/N`, written or reached through a link — is written through
+`php://fd/N`, because PHP on Linux opens those paths by resolving them, which
+fails on a pipe and truncates a redirected file. A write that fails midway
+leaves an existing target partly written. A profile write that still fails after the report is published
 ends the run with exit 3 through `RefusalPresenter::refusalAfterPublishedReport()`:
 the sentence goes to stderr whatever the format, so stdout keeps the report as
 its only document. `FormatOptionPairs` judges every written `--format-opt` pair

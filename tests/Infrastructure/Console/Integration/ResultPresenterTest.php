@@ -221,10 +221,8 @@ final class ResultPresenterTest extends TestCase
     }
 
     /**
-     * The report is written beside its target and renamed over it, so the
-     * precheck asks about that write: a directory cannot be renamed over, and
-     * a writable file in a directory that cannot be written cannot be
-     * replaced. Either used to pass the precheck and fail after the analysis.
+     * A directory passes a check that only asks whether the path is writable,
+     * and the write then failed after the analysis.
      */
     #[Test]
     public function itRefusesADirectoryOutputTargetBeforeAnalysis(): void
@@ -243,12 +241,15 @@ final class ResultPresenterTest extends TestCase
         }
     }
 
+    /** An existing report is written in place, which needs the file and not its directory. */
     #[Test]
-    public function itRefusesAWritableOutputFileInADirectoryItCannotWriteBeforeAnalysis(): void
+    public function itAcceptsAWritableOutputFileInADirectoryItCannotWrite(): void
     {
         if (\function_exists('posix_geteuid') && posix_geteuid() === 0) {
             self::markTestSkipped('Directory permissions do not bind root.');
         }
+
+        self::expectNotToPerformAssertions();
 
         $dir = sys_get_temp_dir() . '/qmx-result-presenter-sealed-' . bin2hex(random_bytes(6));
         mkdir($dir, 0o755, true);
@@ -258,9 +259,6 @@ final class ResultPresenterTest extends TestCase
         try {
             $this->presenter(self::createStub(FormatterRegistryInterface::class))
                 ->assertOutputIsWritable($this->input(['--output' => $dir . '/report.json']));
-            self::fail('A target file whose directory cannot be written must be refused before analysis runs.');
-        } catch (ConfigurationRefusal $refusal) {
-            self::assertStringContainsString($dir, $refusal->summary());
         } finally {
             chmod($dir, 0o755);
             unlink($dir . '/report.json');

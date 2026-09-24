@@ -45,18 +45,81 @@ final class ArtifactFileTest extends TestCase
         unlink($path);
     }
 
+    /**
+     * An existing target is the same file after the write: a bind-mounted
+     * file cannot be renamed over, and a hard link and the owner survive only
+     * the write that keeps the inode.
+     */
     #[Test]
-    public function itReplacesAnExistingTargetWholeAndLeavesNoTemporaryFile(): void
+    public function itWritesAnExistingTargetInPlaceAndLeavesNoTemporaryFile(): void
     {
         $target = $this->directory . '/report.json';
-        file_put_contents($target, 'old');
+        file_put_contents($target, 'old content, longer than the new');
+        $inode = fileinode($target);
         $file = new ArtifactFile($target, '--output');
 
         $file->refuseUnwritable();
         $file->write('new');
 
+        clearstatcache();
         self::assertSame('new', file_get_contents($target));
-        self::assertSame(['report.json'], array_values(array_diff((array) scandir($this->directory), ['.', '..'])));
+        self::assertSame($inode, fileinode($target), 'The target was replaced by another file.');
+        self::assertSame(['report.json'], $this->entries());
+    }
+
+    #[Test]
+    public function itWritesThroughAHardLinkSoBothNamesReadTheArtifact(): void
+    {
+        $target = $this->directory . '/report.json';
+        file_put_contents($target, 'old');
+        link($target, $this->directory . '/second-name.json');
+        $file = new ArtifactFile($target, '--output');
+
+        $file->refuseUnwritable();
+        $file->write('new');
+
+        self::assertSame('new', file_get_contents($this->directory . '/second-name.json'));
+    }
+
+    /** Writing a file in place needs the file, not its directory. */
+    #[Test]
+    public function itWritesAWritableFileInADirectoryItCannotWrite(): void
+    {
+        if (\function_exists('posix_geteuid') && posix_geteuid() === 0) {
+            self::markTestSkipped('Directory permissions do not bind root.');
+        }
+
+        $sealed = $this->directory . '/sealed';
+        mkdir($sealed);
+        file_put_contents($sealed . '/report.json', 'old');
+        chmod($sealed, 0o555);
+        $file = new ArtifactFile($sealed . '/report.json', '--output');
+
+        try {
+            $file->refuseUnwritable();
+            $file->write('new');
+        } finally {
+            chmod($sealed, 0o755);
+        }
+
+        self::assertSame('new', file_get_contents($sealed . '/report.json'));
+    }
+
+    #[Test]
+    public function itRefusesAnExistingFileItCannotWrite(): void
+    {
+        if (\function_exists('posix_geteuid') && posix_geteuid() === 0) {
+            self::markTestSkipped('File permissions do not bind root.');
+        }
+
+        $target = $this->directory . '/report.json';
+        file_put_contents($target, 'old');
+        chmod($target, 0o444);
+
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('is not writable');
+
+        (new ArtifactFile($target, '--output'))->refuseUnwritable();
     }
 
     #[Test]
@@ -203,26 +266,37 @@ final class ArtifactFileTest extends TestCase
     }
 
     /**
-     * `/dev/stdout` is whatever the process's stdout is: a pipe, or — under
-     * `> report.json` — a regular file reached through `/dev/fd/1`, whose
-     * directory no process can create a file in. Only a process whose stdout
-     * really is redirected shows the second form.
+     * A descriptor the process holds is written through that descriptor. On
+     * Linux, opening `/dev/stdout` by its path fails when stdout is a pipe,
+     * and reopens the file when it is redirected to one — truncating what the
+     * stream already carried. The shell's own writes on both sides of the
+     * artifact tell a write into the stream from a write to the file's name.
      *
-     * @return iterable<string, array{string, bool}>
+     * @return iterable<string, array{string, string}>
      */
     public static function provideDescriptorTargets(): iterable
     {
-        foreach (['/dev/stdout', '/dev/fd/1'] as $target) {
-            yield $target . ' redirected to a file' => [$target, true];
-            yield $target . ' piped' => [$target, false];
+        foreach (['/dev/stdout', '/dev/fd/1', '/proc/self/fd/1', '{dir}/stdout-link'] as $target) {
+            yield $target . ' redirected to a file' => [$target, 'file'];
+            yield $target . ' piped' => [$target, 'stdout'];
+        }
+
+        foreach (['/dev/stderr', '/dev/fd/2'] as $target) {
+            yield $target . ' piped' => [$target, 'stderr'];
         }
     }
 
     #[Test]
     #[DataProvider('provideDescriptorTargets')]
-    public function itWritesToTheProcessStdoutWhateverItIs(string $target, bool $redirectedToAFile): void
+    public function itWritesToTheProcessStreamWhateverItIs(string $target, string $stream): void
     {
-        $captured = $this->directory . '/stdout.txt';
+        if (str_starts_with($target, '/proc/') && !is_dir('/proc/self/fd')) {
+            self::markTestSkipped('This system has no /proc/self/fd.');
+        }
+
+        symlink('/dev/stdout', $this->directory . '/stdout-link');
+        $target = str_replace('{dir}', $this->directory, $target);
+        $captured = $this->directory . '/stream.txt';
         $script = \sprintf(
             'require %s; $file = new %s(%s, "--output"); $file->refuseUnwritable(); $file->write("payload");',
             var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true),
@@ -230,12 +304,26 @@ final class ArtifactFileTest extends TestCase
             var_export($target, true),
         );
 
-        $run = $redirectedToAFile
-            ? ChildProcess::run(['sh', '-c', '"$0" -r "$1" > "$2"', \PHP_BINARY, $script, $captured])
+        $run = $stream === 'file'
+            ? ChildProcess::run(['sh', '-c', '{ printf head; "$0" -r "$1"; printf tail; } > "$2"', \PHP_BINARY, $script, $captured])
             : ChildProcess::run([\PHP_BINARY, '-r', $script]);
 
         self::assertSame(0, $run['exitCode'], $run['stderr']);
-        self::assertSame('payload', $redirectedToAFile ? file_get_contents($captured) : $run['stdout']);
+        match ($stream) {
+            'file' => self::assertSame('headpayloadtail', file_get_contents($captured)),
+            'stdout' => self::assertSame('payload', $run['stdout']),
+            default => self::assertSame('payload', $run['stderr']),
+        };
+    }
+
+    /** A descriptor the process does not hold is not a file to create. */
+    #[Test]
+    public function itRefusesADescriptorTheProcessDoesNotHoldBeforeAnyWork(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('/dev/fd/97');
+
+        (new ArtifactFile('/dev/fd/97', '--output'))->refuseUnwritable();
     }
 
     /** @return iterable<string, array{string}> */
@@ -244,15 +332,21 @@ final class ArtifactFileTest extends TestCase
         yield 'a directory that does not exist' => ['nodir/'];
         yield 'an existing file' => ['afile/'];
         yield 'an existing directory' => ['adir/'];
+        yield 'a dangling link to a directory name' => ['link-to-nodir'];
+        yield 'a link to a file name ending in a slash' => ['link-to-afile'];
     }
 
-    /** A trailing slash names a directory, which the write cannot become. */
+    /** A trailing slash names a directory, which the write cannot become — whether written or reached through a link. */
     #[Test]
     #[DataProvider('provideDirectoryNames')]
     public function itRefusesAPathEndingInASlashBeforeAnyWork(string $name): void
     {
         file_put_contents($this->directory . '/afile', 'x');
         mkdir($this->directory . '/adir');
+        // PHP's symlink() refuses a target naming a file with a trailing slash on macOS.
+        foreach (['nodir/' => 'link-to-nodir', 'afile/' => 'link-to-afile'] as $linkTarget => $link) {
+            self::assertSame(0, ChildProcess::run(['ln', '-s', $linkTarget, $this->directory . '/' . $link])['exitCode']);
+        }
 
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('directory');

@@ -8163,8 +8163,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itRejectsNonExistentPath
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itExportsInAnAcceptedFormat"chrome-tracing"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itExportsInAnAcceptedFormat"json"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itExportsIntoAWritableFileInADirectoryItCannotWrite
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itKeepsTheReportTheOnlyStdoutDocumentWhenTheExportFailsAfterIt
- - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itRefusesAWritableTargetInADirectoryItCannotWriteBeforeAnalysis
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itRefusesAnImpossibleExportBeforeAnalysis"a directory as the target"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itRefusesAnImpossibleExportBeforeAnalysis"a name ending in a slash"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itRefusesAnImpossibleExportBeforeAnalysis"empty format"
@@ -8540,6 +8540,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\FindingFilterOrchestratorTest::itPrintsPathExclusionCountWhenVerbose
  - Qualimetrix\Tests\Infrastructure\Console\Integration\FindingFilterOrchestratorTest::itPrintsResolvedEntriesOnARunThatStaysGreen
  - Qualimetrix\Tests\Infrastructure\Console\Integration\FindingFilterOrchestratorTest::itReportsAStaleEntryWithoutFailingTheRunOrDisablingItsNeighbour
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itAcceptsAWritableOutputFileInADirectoryItCannotWrite
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itAcceptsAWritableOutputTargetOrNoTargetAtAll
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itAppliesTheExplicitExitPolicyWithoutAConfigurationProvider
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itBindsANamespaceTheTreeKnowsAndTheMetricsDoNot
@@ -8552,7 +8553,6 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itRefusesAClassThatSelectsNothingInTheRun
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itRefusesADirectoryOutputTargetBeforeAnalysis
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itRefusesANamespaceThatSelectsNothingInTheRun
- - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itRefusesAWritableOutputFileInADirectoryItCannotWriteBeforeAnalysis
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itRefusesAnUnwritableOutputTargetBeforeAnalysis
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itRefusesInsteadOfSwallowingAWriteFailureAndBeatsTheFindingsExitCode
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itRelativizesOnlyTheProjectRootPrefixInCoverageFailureMessages
@@ -8603,20 +8603,32 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itCreatesANewTargetAndLeavesNoTemporaryFile
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itCreatesTheFileADanglingSymlinkNames
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itKeepsThePermissionsOfTheFileItReplaces
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesADescriptorTheProcessDoesNotHoldBeforeAnyWork
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesADirectoryNamingTheOptionThatNamedIt
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesAPathEndingInASlashBeforeAnyWork"a dangling link to a directory name"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesAPathEndingInASlashBeforeAnyWork"a directory that does not exist"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesAPathEndingInASlashBeforeAnyWork"a link to a file name ending in a slash"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesAPathEndingInASlashBeforeAnyWork"an existing directory"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesAPathEndingInASlashBeforeAnyWork"an existing file"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesATargetWhoseDirectoryDoesNotExist
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesAWriteThatFailsAfterThePrecheck
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itReplacesAnExistingTargetWholeAndLeavesNoTemporaryFile
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesAnExistingFileItCannotWrite
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesAWritableFileInADirectoryItCannotWrite
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesAnExistingTargetInPlaceAndLeavesNoTemporaryFile
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesIntoANamedPipeForItsReader
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesThroughAHardLinkSoBothNamesReadTheArtifact
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesThroughASymlinkToTheFileItNames
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToACharacterDeviceInPlace
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStdoutWhateverItIs"/dev/fd/1 piped"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStdoutWhateverItIs"/dev/fd/1 redirected to a file"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStdoutWhateverItIs"/dev/stdout piped"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStdoutWhateverItIs"/dev/stdout redirected to a file"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStreamWhateverItIs"/dev/fd/1 piped"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStreamWhateverItIs"/dev/fd/1 redirected to a file"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStreamWhateverItIs"/dev/fd/2 piped"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStreamWhateverItIs"/dev/stderr piped"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStreamWhateverItIs"/dev/stdout piped"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStreamWhateverItIs"/dev/stdout redirected to a file"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStreamWhateverItIs"/proc/self/fd/1 piped"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStreamWhateverItIs"/proc/self/fd/1 redirected to a file"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStreamWhateverItIs"{dir}/stdout-link piped"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStreamWhateverItIs"{dir}/stdout-link redirected to a file"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ChannelExclusionKeyValidatorTest::itAcceptsAWildcardKeyWhoseOwnRuleReportsAtTheLevel
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ChannelExclusionKeyValidatorTest::itAcceptsTheNamespaceLevelAndTheLevelFreeSpelling
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ChannelExclusionKeyValidatorTest::itRefusesALevelFreeKeyNamingAnotherRulesChannel
@@ -8887,6 +8899,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeLoggerConfiguratorTest::itPassesADeclaredLogLevelToTheFactory
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeLoggerConfiguratorTest::itRefusesALogLevelItCannotBuild
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ScopeWarningCheckerTest::itDoesNotCheckAutoloadDev
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ScopeWarningCheckerTest::itMakesNoClaimAboutAnalysisOfAPrunedEntryARunNamesExplicitly
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ScopeWarningCheckerTest::itNamesAutoloadEntriesThatDiscoveryNeverEnters
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ScopeWarningCheckerTest::itPrintsBothLinesWhenASliceAlsoDropsPrunedEntries
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ScopeWarningCheckerTest::itPrintsNoPrunedLineForAManifestWithoutSuchEntries

@@ -41,7 +41,7 @@ final class ScopeWarningChecker
 
         if ($prunedTargets !== []) {
             $warnings[] = \sprintf(
-                'Autoload entries that are, or lie inside, a vendor, node_modules or .git directory are neither analyzed nor counted as project scope: %s.',
+                'Autoload entries that are, or lie inside, a vendor, node_modules or .git directory are not counted as project scope, and discovery skips them unless a path you name lies inside that directory: %s.',
                 implode(', ', array_map(
                     static fn(array $pruned): string => $pruned['target'] === $pruned['directory']
                         ? $pruned['target']
