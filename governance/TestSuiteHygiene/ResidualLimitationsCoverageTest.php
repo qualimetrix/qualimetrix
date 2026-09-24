@@ -57,11 +57,15 @@ final class ResidualLimitationsCoverageTest extends TestCase
             ],
             [
                 'class' => \Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::class,
-                'method' => 'itRekeysTheUntouchedCopiesWhenAPartialCopyRedefinesTheBlock',
+                'method' => 'itGivesTheUntouchedCopiesNewFindingsWhenAPartialCopyAddsABlock',
             ],
             [
                 'class' => \Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::class,
                 'method' => 'itRekeysTheUntouchedCopyWhenCodeIsInsertedNextToAnotherCopy',
+            ],
+            [
+                'class' => \Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::class,
+                'method' => 'itStalesOnlyTheEditedCopyWhenTheOthersStillAgreeOnTheBlock',
             ],
             [
                 'class' => \Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::class,

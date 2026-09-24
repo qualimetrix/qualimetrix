@@ -31,12 +31,12 @@ Think of it like comparing recipes: if two recipes have the exact same steps in 
 
 Minimum block size (configurable):
 
-| Option       | Default | Meaning                                            |
-| ------------ | ------- | -------------------------------------------------- |
-| `min_lines`  | 5       | Minimum number of lines for a block to be checked  |
-| `min_tokens` | 70      | Minimum number of tokens for a block to be flagged |
+| Option       | Default | Meaning                                                 |
+| ------------ | ------- | ------------------------------------------------------- |
+| `min_lines`  | 5       | Minimum number of lines a copy must span to be reported |
+| `min_tokens` | 70      | Minimum number of tokens for a block to be flagged      |
 
-Each copy's finding reports the lines **that copy** spans, and its severity follows from that number. Comments and blank lines are not tokens, so the copies of one block can span different numbers of lines: a comment added inside one copy changes that copy's value and no other's. A block is checked when its longest copy spans at least `min_lines` lines.
+Each copy's finding reports the lines **that copy** spans, and its severity follows from that number. A copy is reported only when it spans at least `min_lines` lines itself; a shorter copy of the same block reports nothing of its own, but the reported copies still name it. Comments and blank lines are not tokens, so the copies of one block can span different numbers of lines: a comment added inside one copy changes that copy's value, and can make that copy — and no other — cross `min_lines` in either direction.
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
@@ -164,7 +164,7 @@ this ownership change does not alter the rule id, options, algorithm or output.
     A duplicate block that lies **entirely** inside a `const` declaration or a static/instance property's array-literal initializer is never reported. Rows of a lookup table (e.g. `'key' => ['a' => ..., 'b' => ...]` repeated with different values) normalize to identical token sequences, but "extract a shared method" is not actionable advice for a data table — repeating the same field shape across rows is the normal, correct form of that table. A block spanning both a data declaration and executable code (or lying entirely in a method body) is still reported. This suppression is unconditional and cannot be turned off.
 
 !!! info "Every copy of a block is a finding of its own"
-    Each copy of a duplicated block is reported by a finding located on that copy, however many copies there are — there is no upper limit on the number of copies. The message states the number of occurrences and names up to ten other copies, followed by `and N more` when there are more; the finding's related locations are the copies its message names. Each copy has an identity of its own, so a new copy that agrees with the whole of an accepted block is a new finding — reported on the new copy alone, at its own severity, while the copies the baseline accepted stay accepted — and `--report=git:*` reports it in the file it was pasted into. A block of N copies is N findings, each carrying the rule's remediation time. When copies agree over different lengths, each longest agreeing set is reported: two copies that match for 40 lines and a third that matches them only for the first 10 give a finding on each of the two 40-line copies and one on each of the three copies over 10 lines. That is also why a copy agreeing with only part of an accepted block is not new on its own: the shorter block it forms is new on every copy.
+    Each copy of a duplicated block that spans at least `min_lines` lines is reported by a finding located on that copy, however many copies there are — there is no upper limit on the number of copies. The message states the number of occurrences and names up to ten other copies, followed by `and N more` when there are more; the finding's related locations are the copies its message names. Each copy has an identity of its own, so a new copy that agrees with the whole of an accepted block is a new finding — reported on the new copy alone, at its own severity, while the copies the baseline accepted stay accepted — and `--report=git:*` reports it in the file it was pasted into. A block of N copies is N findings, each carrying the rule's remediation time. When copies agree over different lengths, each longest agreeing set is reported: two copies that match for 40 lines and a third that matches them only for the first 10 give a finding on each of the two 40-line copies and one on each of the three copies over 10 lines. That is also why a copy agreeing with only part of an accepted block is not new on its own: the shorter block it forms is new on every copy.
 
 !!! info "Copies within one file"
     Two occurrences in the same file that share a line are one repetitive structure matching itself at a shifted position, not two copies, and only the first is kept. Occurrences that merely touch — one ends on the line before the other starts — are two copies and are reported.

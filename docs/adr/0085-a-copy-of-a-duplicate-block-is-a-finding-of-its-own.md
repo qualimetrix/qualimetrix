@@ -46,11 +46,18 @@ any repaired finding does. The git scope keeps a finding by its location, so a
 new copy is reported in the file it was pasted into.
 
 **A copy's value is the lines that copy spans**, not the span of the block's
-longest copy. Comments and blank lines are no tokens, so one copy can span
+longest copy, **and a copy is reported only when that span reaches
+`min_lines`.** Comments and blank lines are no tokens, so one copy can span
 more lines than another without changing the block. A value shared by every
 copy would let a comment written in one file raise the value of copies in
 files nobody touched, and a baseline would promote those accepted copies to
-Error while the new copy, a new finding, stayed a warning.
+Error while the new copy, a new finding, stayed a warning. A `min_lines` bar
+cleared by the longest copy for all of them would do the same to whether a
+copy is reported at all: a comment lifting one copy past the bar would
+report the copy in the untouched file as a new finding, below the bar it is
+held to. A shorter copy is still a copy of the block: the reported copies
+name it and count it, and it keeps its place among the block's copies in its
+file, so the copies after it keep their identities as it crosses the bar.
 
 A finding names at most ten other copies, in its message and as its related
 locations, and counts the rest. Every copy is reported by a finding of its
@@ -86,17 +93,20 @@ block and names the silenced one.
   block is gone goes stale. `--fail-on=warning` then fails on files outside
   the change, and a GitLab merge request shows new fingerprints there; the
   git scope, which keeps a finding by its location, reports only the changed
-  files. Measured: a copy of the first eight lines of a method accepted in
-  two files, ending in a `return` of its own, adds a block over all three
-  copies, so both untouched copies gain a new finding while their accepted
-  one stays accepted; a method inserted between a class's property and the
-  copied method narrows the match in both copies and re-keys the copy in the
-  untouched file.
+  files. Measured: a copy of the first nine lines of a method accepted in
+  two files, closing its loop and ending in a `return` of its own, adds a
+  13-line block over all three copies, so both untouched copies gain a new
+  finding while their accepted 17-line one stays accepted and no entry goes
+  stale; a method inserted between a class's property and the copied method
+  narrows the match in both copies and re-keys the copy in the untouched
+  file.
 - The baseline's ceiling on this channel compares a copy's own line span with
   the span it accepted. A copy that is reformatted, or given a comment or a
-  blank line, breaches its own entry and no other copy's. A duplicate that
-  grows in every copy changes its tokens and so its identity: it reads as new
-  findings and stale entries, never as a breach.
+  blank line, breaches its own entry and no other copy's; the same edit can
+  lift that copy past `min_lines` into a new finding, or drop it below and
+  leave its entry stale, and again no other copy's. A duplicate that grows in
+  every copy changes its tokens and so its identity: it reads as new findings
+  and stale entries, never as a breach.
 - `suppress_paths`, global or per rule, silences only the copies inside its
   paths. The block's other copies are still reported; silencing a block means
   listing every file it has a copy in.
@@ -135,3 +145,9 @@ block and names the silenced one.
 - **The span of the block's longest copy as every copy's value.** A comment
   or a blank line in one copy raises every copy's value, and a baseline
   promotes accepted copies in untouched files to Error.
+- **Every copy reported once the longest copy reaches `min_lines`.** A
+  comment in one copy decides whether the copy in an untouched file is
+  reported, and reports it with a value below `min_lines`.
+- **Every copy reported only once the shortest copy reaches `min_lines`.**
+  A copy that clears the bar on its own lines goes unreported because another
+  copy is shorter, and a comment in the short copy reports every copy.

@@ -399,6 +399,80 @@ final class CodeDuplicationRuleTest extends TestCase
         self::assertNotContains($moved['src/D.php:30'], $accepted);
     }
 
+    /**
+     * A copy is reported when it spans `min_lines` itself; a shorter copy of
+     * the same block reports nothing of its own but is still a copy, named by
+     * the ones that are reported.
+     */
+    #[Test]
+    public function itReportsOnlyTheCopiesThatThemselvesReachMinLines(): void
+    {
+        $block = new DuplicateBlock(
+            locations: [
+                new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25),
+                new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 33),
+            ],
+            lines: 16,
+            tokens: 80,
+            contentHash: self::CONTENT_HASH,
+        );
+        $context = $this->contextWithBlocks(self::createStub(MetricRepositoryInterface::class), [$block]);
+
+        $findings = $this->createRule()->analyze($context);
+
+        self::assertCount(1, $findings);
+        self::assertSame('src/A.php', $findings[0]->location->pathString());
+        self::assertStringContainsString('(16 lines, 2 occurrences)', $findings[0]->message);
+        self::assertStringEndsWith('also at src/B.php:30-33', $findings[0]->message);
+        self::assertSame(['src/B.php:30'], self::related($findings[0]));
+    }
+
+    /**
+     * A copy below `min_lines` still holds its place among the block's copies
+     * in its file, so the copy after it keeps its identity when the shorter
+     * one grows past the bar or shrinks below it.
+     */
+    #[Test]
+    public function itCountsAnUnreportedCopyInTheIdentityOfTheCopiesAfterIt(): void
+    {
+        $locations = static fn(int $firstEnd): array => [
+            new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, $firstEnd),
+            new DuplicateLocation(RelativePath::fromString('src/A.php'), 60, 75),
+            new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45),
+        ];
+        $short = $this->fingerprintsByCopy(new DuplicateBlock($locations(12), 16, 80, self::CONTENT_HASH));
+        $long = $this->fingerprintsByCopy(new DuplicateBlock($locations(25), 16, 80, self::CONTENT_HASH));
+
+        self::assertSame(['src/A.php:60', 'src/B.php:30'], array_keys($short));
+        self::assertSame($long['src/A.php:60'], $short['src/A.php:60']);
+        self::assertSame($long['src/B.php:30'], $short['src/B.php:30']);
+    }
+
+    /**
+     * `min_lines` and `warning` are separate options: a copy that clears the
+     * first but not the second is still reported, as a warning.
+     */
+    #[Test]
+    public function itReportsACopyBelowTheWarningThresholdAsAWarning(): void
+    {
+        $block = new DuplicateBlock(
+            locations: [
+                new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 13),
+                new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 33),
+            ],
+            lines: 4,
+            tokens: 80,
+            contentHash: self::CONTENT_HASH,
+        );
+        $context = $this->contextWithBlocks(self::createStub(MetricRepositoryInterface::class), [$block]);
+
+        $findings = $this->createRule(new CodeDuplicationOptions(min_lines: 3, warning: 10))->analyze($context);
+
+        self::assertCount(2, $findings);
+        self::assertSame([Severity::Warning, Severity::Warning], array_map(static fn($finding) => $finding->severity, $findings));
+        self::assertSame([4, 4], array_map(static fn($finding) => $finding->metricValue, $findings));
+    }
+
     #[Test]
     public function itKeepsTheBlocksContentInEachCopysIdentity(): void
     {

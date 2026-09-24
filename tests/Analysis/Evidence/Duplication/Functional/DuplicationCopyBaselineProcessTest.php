@@ -66,6 +66,34 @@ final class DuplicationCopyBaselineProcessTest extends TestCase
     }
 
     /**
+     * A copy clears `min_lines` on its own lines. Two copies one line short
+     * report nothing; a comment in one of them makes that copy — and no
+     * other — a new finding, so the untouched file stays out of the gate.
+     */
+    #[Test]
+    public function itFailsOnlyTheCopyACommentLiftsPastMinLines(): void
+    {
+        file_put_contents($this->tmpDir . '/src/Alpha.php', self::shortFunction('alpha', ''));
+        file_put_contents($this->tmpDir . '/src/Beta.php', self::shortFunction('beta', ''));
+
+        $generated = $this->qmx('baseline:generate', 'baseline.json', 'src', '--config=qmx.yaml', '--no-progress');
+        self::assertSame(0, $generated['exitCode'], $generated['stderr'] . "\n" . $generated['stdout']);
+
+        file_put_contents($this->tmpDir . '/src/Alpha.php', self::shortFunction('alpha', '    // explain y'));
+
+        $checked = $this->qmx('check', 'src', '--config=qmx.yaml', '--baseline=baseline.json', '--fail-on=warning', '--format=json', '--no-progress', '--no-cache', '--workers=0');
+        self::assertSame(1, $checked['exitCode'], $checked['stderr'] . "\n" . $checked['stdout']);
+
+        /** @var array{violations: list<array{file: string, metricValue: int|float|null}>} $report */
+        $report = json_decode($checked['stdout'], true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(
+            [['src/Alpha.php', 5]],
+            array_map(static fn(array $violation): array => [$violation['file'], $violation['metricValue']], $report['violations']),
+            $checked['stdout'],
+        );
+    }
+
+    /**
      * Every copy is a boundary of its own under the one project subject, so
      * `baseline:explain` prints a section per copy; without the copy's
      * occurrence and file the sections read the same.
@@ -136,6 +164,23 @@ final class DuplicationCopyBaselineProcessTest extends TestCase
             }
 
             PHP;
+    }
+
+    /**
+     * Four lines and over 70 tokens: one line short of the default
+     * `min_lines`, until `$extra` lands inside it.
+     */
+    private static function shortFunction(string $name, string $extra): string
+    {
+        return implode("\n", [
+            '<?php',
+            "function {$name}(\$a, \$b, \$c) { " . '$x = $a + $b * 2 - $c / 3 + $a * $b - $c + $a % 7 + $b % 5 - $c * $a + $b / 2 - $c + 11 * $a;',
+            ...($extra === '' ? [] : [$extra]),
+            '    $y = $x - $a / 3 + $b * $c - $x % 4 + $a * $a - $b * $b + $c * $c - $x / 9 + $a - $b + $c;',
+            '    $z = $x * $y - $a;',
+            '    return $x * $y + $a - $b + $c * $x - $y / 2 + $a * $b * $c - $x + $y + 42 + $a + $b + $z; }',
+            '',
+        ]);
     }
 
     private function removeDirectory(string $directory): void

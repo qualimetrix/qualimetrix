@@ -55,7 +55,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0014 — Deptrac Retirement](0014-deptrac-retirement.md) — project-owned architecture enforcement replaces deptrac.
 - [0015 — Typed Paths](0015-relative-path-vo.md) — typed absolute and relative path boundaries.
 - [0016 — Subject Cohesion](0016-subject-cohesion.md) — directories and module boundaries follow subjects.
-- [0017 — Baseline Ceiling](0017-baseline-ceiling.md) — baselines cap the reported magnitude they accepted; amended 2026-09-24: the baseline commands accept the project-scope flags `--include-generated` and `--include-autoload-dev`, `baseline:migrate` is gone, and a copy of a duplicate block re-keys when the block the detector finds changes or the copy changes file, rather than when its first copy moves.
+- [0017 — Baseline Ceiling](0017-baseline-ceiling.md) — baselines cap the reported magnitude they accepted; amended 2026-09-24: the baseline commands accept the project-scope flags `--include-generated` and `--include-autoload-dev`, `baseline:migrate` is gone, and a copy of a duplicate block's findings follow the blocks the detector finds and the copy's file, rather than its first copy.
 - [0018 — Coverage, Verdict, and Projection](0018-analysis-coverage-verdict-and-output-projection.md) — analysis completeness is separate from verdict and presentation; its discovered population is widened by 0078.
 - [0019 — Namespace Metric Ownership](0019-namespace-metric-ownership-and-attribution.md) — explicit namespace contribution and attribution.
 - [0020 — Method Size and NPath](0020-method-size-and-npath-semantics.md) — method-size and recursive NPath semantics.

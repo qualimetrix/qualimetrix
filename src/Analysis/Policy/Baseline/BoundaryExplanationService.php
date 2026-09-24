@@ -82,12 +82,14 @@ final readonly class BoundaryExplanationService
     ): BoundaryExplanation {
         $identities = ExplainedSubject::identities($subjectKey, $channelFilter, $baseline, $measuredFindings);
         $repositoryRecord = ExplainedSubject::recordFor($subjectKey, ExplainedSubject::index($symbolLocations));
+        $groups = self::groupsByIdentity($measuredFindings);
 
         $boundaries = [];
         foreach ($identities as $identity) {
             $boundaries[] = $this->explainIdentity(
                 $identity,
                 $baseline,
+                $groups[$identity->key()] ?? [],
                 $measuredFindings,
                 $thresholdOverridesByFile,
                 $configuredThresholds,
@@ -134,6 +136,26 @@ final readonly class BoundaryExplanationService
     }
 
     /**
+     * The measured findings of each identity, in run order. Built once per
+     * explanation: a block of N duplicate copies is N identities, and
+     * filtering the whole measured set for each would cost N² identity keys.
+     *
+     * @param list<Finding> $measuredFindings
+     *
+     * @return array<string, list<Finding>>
+     */
+    private static function groupsByIdentity(array $measuredFindings): array
+    {
+        $groups = [];
+        foreach ($measuredFindings as $finding) {
+            $groups[BaselineIdentity::forFinding($finding)->key()][] = $finding;
+        }
+
+        return $groups;
+    }
+
+    /**
+     * @param list<Finding> $group the measured findings sharing `$identity`
      * @param list<Finding> $measuredFindings
      * @param array<string, list<ThresholdOverride>> $thresholdOverridesByFile
      * @param array<string, array<string, int|float>> $configuredThresholds
@@ -142,15 +164,12 @@ final readonly class BoundaryExplanationService
     private function explainIdentity(
         BaselineIdentity $identity,
         ?Baseline $baseline,
+        array $group,
         array $measuredFindings,
         array $thresholdOverridesByFile,
         array $configuredThresholds,
         ?array $repositoryRecord,
     ): EffectiveBoundary {
-        $group = array_values(array_filter(
-            $measuredFindings,
-            static fn(Finding $finding): bool => BaselineIdentity::forFinding($finding)->key() === $identity->key(),
-        ));
         $baselineSource = self::baselineSourceFor($identity, $baseline, $group);
         if ($baselineSource !== null && $this->ruleCoverage->unmeasured([$identity]) !== []) {
             $baselineSource = $baselineSource->unmeasured();

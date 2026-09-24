@@ -82,6 +82,27 @@ final class DuplicateCopyIdentityTest extends TestCase
         self::assertStringContainsString('(17 lines, 2 occurrences)', $onB['message']);
     }
 
+    /**
+     * A copy is reported when it spans `min_lines` itself. A comment that
+     * lifts one copy past it reports that copy alone: the copy in the file
+     * nobody touched is still a copy, named by the other, but stays below
+     * the bar it would have to clear on its own.
+     */
+    #[Test]
+    public function itReportsOnlyTheCopyThatItselfReachesMinLines(): void
+    {
+        $this->write('A', self::shortFunction('runA', '    // a note'));
+        $this->write('B', self::shortFunction('runB', ''));
+
+        $analysis = $this->analyze();
+
+        self::assertSame(['src/A.php'], array_column($analysis['copies'], 'file'));
+        $onA = self::onlyCopyIn($analysis, 'src/A.php');
+        self::assertSame(5, $onA['value']);
+        self::assertStringContainsString('(5 lines, 2 occurrences)', $onA['message']);
+        self::assertStringEndsWith('also at src/B.php:2-5', $onA['message']);
+    }
+
     #[Test]
     public function itKeepsTheBlockAndEveryCopysIdentityWhenAnExactCopyIsAdded(): void
     {
@@ -119,20 +140,51 @@ final class DuplicateCopyIdentityTest extends TestCase
     /**
      * The block is the longest run all its copies agree on, so a copy that
      * agrees with only part of it adds a block over every copy: the
-     * untouched copies keep their accepted identities and gain new ones.
+     * untouched copies keep their accepted identities and gain new ones, and
+     * none goes stale.
      */
     #[Test]
-    public function itRekeysTheUntouchedCopiesWhenAPartialCopyRedefinesTheBlock(): void
+    public function itGivesTheUntouchedCopiesNewFindingsWhenAPartialCopyAddsABlock(): void
     {
         $this->write('A', self::classWith('A', self::BODY));
         $this->write('B', self::classWith('B', self::BODY));
         $before = $this->analyze();
 
-        $this->write('C', self::classWith('C', [...\array_slice(self::BODY, 0, 8), '        return 1;']));
+        $this->write('C', self::classWith('C', [...\array_slice(self::BODY, 0, 9), '        return 1;']));
         $after = $this->analyze();
 
         self::assertNotSame($before['hashes'], $after['hashes']);
         self::assertSame([], array_diff(array_column($before['copies'], 'key'), array_column($after['copies'], 'key')));
+        self::assertSame(['src/A.php', 'src/B.php', 'src/C.php'], self::filesWithNewKeys($before, $after));
+    }
+
+    /**
+     * An edit inside one of three copies takes that copy out of the block;
+     * the two untouched copies still agree on all of it and keep their
+     * identities, while what all three still agree on is a new block over
+     * every copy.
+     */
+    #[Test]
+    public function itStalesOnlyTheEditedCopyWhenTheOthersStillAgreeOnTheBlock(): void
+    {
+        foreach (['A', 'B', 'C'] as $class) {
+            $this->write($class, self::classWith($class, self::BODY));
+        }
+        $before = $this->analyze();
+
+        $this->write('C', str_replace(
+            "\$total -= \$item['discount'] + \$key;",
+            "\$total -= \$item['discount'] * 2;",
+            self::classWith('C', self::BODY),
+        ));
+        $after = $this->analyze();
+
+        $afterKeys = array_column($after['copies'], 'key');
+        $stale = array_values(array_filter(
+            $before['copies'],
+            static fn(array $copy): bool => !\in_array($copy['key'], $afterKeys, true),
+        ));
+        self::assertSame(['src/C.php'], array_column($stale, 'file'));
         self::assertSame(['src/A.php', 'src/B.php', 'src/C.php'], self::filesWithNewKeys($before, $after));
     }
 
@@ -251,6 +303,23 @@ final class DuplicateCopyIdentityTest extends TestCase
         array_splice($body, 4, 0, ['        // a note']);
 
         return $body;
+    }
+
+    /**
+     * Four lines and over 70 tokens: one line short of the default
+     * `min_lines`, until `$extra` lands inside it.
+     */
+    private static function shortFunction(string $name, string $extra): string
+    {
+        return implode("\n", [
+            '<?php',
+            "function {$name}(\$a, \$b, \$c) { " . '$x = $a + $b * 2 - $c / 3 + $a * $b - $c + $a % 7 + $b % 5 - $c * $a + $b / 2 - $c + 11 * $a;',
+            ...($extra === '' ? [] : [$extra]),
+            '    $y = $x - $a / 3 + $b * $c - $x % 4 + $a * $a - $b * $b + $c * $c - $x / 9 + $a - $b + $c;',
+            '    $z = $x * $y - $a;',
+            '    return $x * $y + $a - $b + $c * $x - $y / 2 + $a * $b * $c - $x + $y + 42 + $a + $b + $z; }',
+            '',
+        ]);
     }
 
     /**

@@ -164,7 +164,7 @@ Rules that detect duplicated code.
 | ---------------- | ------------------- | --------- | ---------- | ------ |
 | Code Duplication | `duplication.clone` | <50 lines | >=50 lines | Method |
 
-**Code Duplication** detects duplicate code blocks. Configured with `min_lines: 5` and `min_tokens: 70` -- blocks shorter than these thresholds are ignored. Duplicates under 50 lines produce a warning; 50 lines or more produce an error.
+**Code Duplication** detects duplicate code blocks. Configured with `min_lines: 5` and `min_tokens: 70` -- a block under `min_tokens` tokens is ignored, and so is each copy spanning fewer than `min_lines` lines. Duplicates under 50 lines produce a warning; 50 lines or more produce an error.
 
 ## Security Rules
 
