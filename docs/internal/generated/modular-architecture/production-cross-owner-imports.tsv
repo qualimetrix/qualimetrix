@@ -953,7 +953,6 @@ Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule	Analysis.Evidence.
 Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule	Analysis.Evidence.Duplication	Qualimetrix\Analysis\Finding\Contract\OccurrenceKey	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule	Analysis.Evidence.Duplication	Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule	Analysis.Evidence.Duplication	Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	contract
-Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule	Analysis.Evidence.Duplication	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule	Analysis.Evidence.Duplication	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule	Analysis.Evidence.Duplication	Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	contract
 Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule	Analysis.Evidence.Duplication	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract

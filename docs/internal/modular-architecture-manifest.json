@@ -8945,10 +8945,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\CodeDuplicationOptions"
         },
         {
-          "owner": "Analysis.Evidence.Duplication",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\CodeDuplicationRule"
-        },
-        {
           "owner": "Analysis.Evidence.Maintainability",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\MaintainabilityOptions"
         },
