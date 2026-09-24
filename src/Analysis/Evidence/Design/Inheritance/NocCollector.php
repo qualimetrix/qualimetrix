@@ -26,11 +26,15 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * - A extends B, C extends B → NOC(B) = 2
  * - D extends C → does NOT increase NOC(B)
  *
- * Design decision: only `extends` is counted, NOT `implements` or trait `use`.
- * This follows the canonical Chidamber & Kemerer (1994) definition where NOC
- * measures class inheritance hierarchy depth, not interface contracts.
- * Interface implementations represent a different type of relationship
- * (contractual, not structural) and should be tracked separately if needed.
+ * Design decision: only a class's `extends` is counted, NOT `implements`,
+ * trait `use`, or an interface extending an interface. This follows the
+ * Chidamber & Kemerer (1994) definition, where NOC counts the immediate
+ * subclasses of a class; interface hierarchies are contracts, not subclassing.
+ *
+ * NOC is measured on the population DIT is -- the named classes the per-file
+ * pass measured, recognised by the `design.dit` it left on them -- so the two
+ * metrics that read one inheritance tree from opposite ends share their
+ * denominators. An interface, a trait or an enum gets no NOC, not even 0.
  *
  * Anonymous classes never contribute to NOC: they have no declaration
  * identity a named class could `extends`, and their own `extends` edge is
@@ -101,14 +105,15 @@ final class NocCollector implements GlobalContextCollectorInterface
             $repository->addScalar($parentPath, MetricName::DESIGN_NOC, $noc);
         }
 
-        // Step 3: Ensure all classes have NOC (even if 0)
-        // Iterate all classes from repository and set NOC=0 if not set
+        // Step 3: every measured class without children gets NOC = 0
         foreach ($repository->all(SymbolLevel::Class_) as $classSymbol) {
             if (!$repository->has($classSymbol->symbolPath)) {
                 continue;
             }
 
-            if (!$repository->get($classSymbol->symbolPath)->has(MetricName::DESIGN_NOC)) {
+            $metrics = $repository->get($classSymbol->symbolPath);
+
+            if ($metrics->has(MetricName::DESIGN_DIT) && !$metrics->has(MetricName::DESIGN_NOC)) {
                 $repository->addScalar($classSymbol->symbolPath, MetricName::DESIGN_NOC, 0);
             }
         }
@@ -117,7 +122,8 @@ final class NocCollector implements GlobalContextCollectorInterface
     /**
      * Builds a map of parent canonical key → {symbolPath, children} from dependency graph.
      *
-     * Only counts DependencyType::Extends (not implements or trait use).
+     * Only counts a class's DependencyType::Extends (not implements, trait use,
+     * or an interface's extends).
      *
      * Children are collected as a set of names rather than counted as edges.
      * A name declared in two files — the `class_exists()`-guarded polyfill
@@ -132,8 +138,9 @@ final class NocCollector implements GlobalContextCollectorInterface
 
         // Iterate all dependencies and filter for extends relationships
         foreach ($graph->getAllDependencies() as $dependency) {
-            // Only count extends (inheritance), not implements or trait use
-            if ($dependency->type !== DependencyType::Extends) {
+            // Only count a class's extends, not implements, trait use or
+            // an interface extending an interface
+            if ($dependency->type !== DependencyType::Extends || $dependency->interfaceExtends) {
                 continue;
             }
 

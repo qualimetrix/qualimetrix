@@ -256,27 +256,29 @@ contest rests on:
   right about it; only an unanswered `exclude:` in front decides the owner.
 - An analysed class the layer could not answer about counts only while some
   type its `attributes:`, `implements:` or `extends:` criteria name is one the
-  run met: declared in the analysed paths, declared by PHP, or at either end of
-  an edge in the declaration or the coupling view. The unread parent may reach
-  a type the run met; a type the run never met is indistinguishable from a
-  typo.
+  run met: declared in the analysed paths, declared by PHP, at either end of
+  an edge in the declaration or the coupling view, or declared by the analysed
+  project's composer install (see the amendment below). The unread parent may
+  reach a type the run met; a type the run never met is indistinguishable from
+  a typo.
 - A symbol outside the analysed paths never counts. The run never reads it, so
   every such criterion goes unanswered about it in every run.
 
 A contest that does not count is said in the finding, in the words true of it.
 A layer that could not answer is told how many symbols it could not answer
 about and, when no named type is one the run met, which types those are and
-both readings — a mistyped name, or a type reachable only through code the run
-did not analyse, which widening `paths:` decides. A layer whose criteria matched
+what their absence rests on — with the install asked, a mistyped name or a
+package that is not installed; with no install to ask, a mistyped name or a
+type reachable only through code the run did not analyse. A layer whose criteria matched
 symbols outside the paths is told that an earlier layer holds them through an
 `exclude:` no run can answer, rather than that its criteria match nothing.
 
 The costs are named. A criterion naming a type only a vendor chain reaches —
 `implements: ['Doctrine\Persistence\ObjectRepository']` over repositories
 that extend `ServiceEntityRepository`, with no analysed code naming the
-interface — is reported as unreachable again, as before any doubt was tracked;
-the finding says why, and naming the type anywhere in analysed code, or widening
-`paths:` to the vendor package, keeps the layer. A layer written for vendor
+interface — was reported as unreachable again by the first version of this
+rule; the amendment below removes that cost where the package is installed, and
+it remains only where it is not. A layer written for vendor
 types alone — a narrower vendor `patterns` layer behind a vendor carve-out whose
 `exclude:` cannot be answered, say — is reported as unreachable while it may
 own a vendor type. `architecture.doubted-assignment` names both beside the
@@ -368,8 +370,9 @@ global net if that is really what was wanted.
   paths keeps no layer from being unreachable. The finding says what it left
   out: the unanswered symbols and the named types the run never met, or the
   outside symbols an earlier unanswered `exclude:` holds. A criterion naming a
-  type only a vendor chain reaches is reported as unreachable, as it was before
-  the doubt was tracked.
+  type only a vendor chain reaches keeps its layer while the analysed install
+  declares the type, and is reported where it does not. Neither channel judges
+  a run that covers only part of the project (amendment below).
 - Membership is now a function of what the run analysed. Widening `paths:`
   can turn an undecidable layer into a decided one, in either direction. A
   criterion that names a class's direct parent or interface keeps matching, and
@@ -424,3 +427,60 @@ global net if that is really what was wanted.
   carry `#[\Deprecated]` or `#[\NoDiscard]` differs between PHP 8.4 and 8.5, so
   a PHP class met as the far end of an edge (`extends \PDO`) answers "no" to an
   `attributes:` criterion naming an attribute only its members carry.
+
+## Amendment (2026-09-24): the installed type, the partial run, the carve-out
+
+Three conclusions this decision drew turned out to rest on facts the run
+could have had, or did not have at all.
+
+**A type the analysed install declares is a type the run met.** The known-type
+test above asked only what the run analysed, PHP and the edges; a vendor
+interface that only a vendor chain reaches is none of those, so a correct
+criterion over it read as a typo and failed the run. `KnownTypes` now asks one
+more place, last because it reads files: the analysed project's composer
+install, through `ExternalParentSourceInterface` — the port DIT's ancestor walk
+reads it by ([ADR 0074](0074-dit-reads-the-ancestors-it-measures.md)), which
+places a class through `installed.json`, the project's own `autoload` and the
+generated classmap and parses its file without loading it. A name counts only
+when the mapped file declares exactly that name, so a mistyped one, or one
+differing in case on a case-insensitive filesystem, stays unmet. The finding
+that names unmet types says whether an install was asked, because "mistyped or
+not installed" and "mistyped or reachable only through unanalysed code" are
+different advice.
+
+The install answers existence, not membership. The rejected alternative was to
+follow the vendor chain and decide the criterion: the port reads a class's
+parent only, not the interfaces it implements, so `implements:` over a vendor
+chain would stay undecidable anyway, and a second reader of vendor declarations
+inside this capability would duplicate the one Design already owns. Widening
+the port is where to start if deciding it is ever wanted.
+
+**Two verdicts need the whole project.** `architecture.unreachable-layer` and
+`architecture.empty-template` say that no class matches a declaration. On a run
+over part of the project — `qmx check src/Web` — every layer and template whose
+code lies outside the slice matched nothing there, and both channels failed the
+run; with the known-type test, a type known only from an edge outside the slice
+turned into an apparent typo as well. The validator now withholds both unless
+the run's paths cover everything the project's manifest declares under
+`autoload` — `AnalysisContext::$coversProjectScope`, the predicate
+`architecture.unmatched-exclude` and the framework-namespace channel already
+read ([ADR 0061](0061-configuration-miss-and-refusal-semantics.md)). The other
+three declaration verdicts draw only on what the run read and stay. A project
+with no readable production autoload in `composer.json` is judged by both, its
+analysed paths taken as the whole project, and every report names the run's
+project scope — `covered`, `narrowed` with the channels it did not judge, or
+`unknown` — in its own format
+([ADR 0084](0084-a-project-scope-has-three-states-and-the-report-names-it.md)).
+Measured: `--report=git:staged` does not narrow the analysed set, so a
+pre-commit run is judged as before.
+
+**A carve-out's recipient is reachable.** Layer loading refused two layers
+declaring the same pattern as "the second occurrence is unreachable", including
+when the first carries an `exclude:` — the simplest carve-out this decision
+reasons about, which therefore never loaded. Only a layer that takes every class
+its pattern names now makes a later occurrence unreachable: one with an
+`exclude:` hands what it removes to the next layer that matches it. A later
+layer's own `exclude:` makes no such room, and a third occurrence is refused
+behind the layer that received the carved-out classes. Whether the recipient
+reaches anything is left to `architecture.unreachable-layer` at run time. The
+refusal that remains names the carve-out as the way to reach the second layer.

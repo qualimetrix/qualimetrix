@@ -8,8 +8,6 @@ namespace Qualimetrix\Analysis\Evidence\CodeSmell;
  * Internal data structure for tracking private member declarations and usages within a class.
  *
  * Used by UnusedPrivateVisitor to compute unused private members.
- *
- * @qmx-ignore health.cohesion -- Member-kind views are independent projections of one tracking record.
  */
 final class UnusedPrivateClassData
 {
@@ -22,7 +20,7 @@ final class UnusedPrivateClassData
     /** @var array<string, int> name => line */
     public array $declaredConstants = [];
 
-    /** @var array<string, true> */
+    /** @var array<string, true> lowercase name => true */
     public array $usedMethods = [];
 
     /** @var array<string, true> */
@@ -47,6 +45,21 @@ final class UnusedPrivateClassData
     ) {}
 
     /**
+     * Records the dynamic access a declared magic method opens for the whole class, whatever its
+     * visibility and letter case, and whether it is declared in the class or in a used trait.
+     */
+    public function noteMethodDeclaration(string $name): void
+    {
+        match (strtolower($name)) {
+            '__call' => $this->hasMagicCall = true,
+            '__callstatic' => $this->hasMagicCallStatic = true,
+            '__get' => $this->hasMagicGet = true,
+            '__set' => $this->hasMagicSet = true,
+            default => null,
+        };
+    }
+
+    /**
      * Returns unused private methods (name => line).
      *
      * If the class defines __call or __callStatic, all private methods are
@@ -60,7 +73,11 @@ final class UnusedPrivateClassData
             return [];
         }
 
-        return array_diff_key($this->declaredMethods, $this->usedMethods);
+        return array_filter(
+            $this->declaredMethods,
+            fn(string $name): bool => !isset($this->usedMethods[strtolower($name)]),
+            \ARRAY_FILTER_USE_KEY,
+        );
     }
 
     /**

@@ -373,6 +373,51 @@ final class SecurityPatternVisitorTest extends TestCase
             'expectedCount' => 1,
         ];
 
+        yield 'exec with coalesced superglobal' => [
+            'code' => '<?php exec($_GET["cmd"] ?? "ls");',
+            'expectedCount' => 1,
+        ];
+
+        yield 'exec with concat of coalesced superglobal' => [
+            'code' => '<?php exec("ls " . ($_GET["d"] ?? "."));',
+            'expectedCount' => 1,
+        ];
+
+        yield 'system with string-cast superglobal' => [
+            'code' => '<?php system((string) $_POST["cmd"]);',
+            'expectedCount' => 1,
+        ];
+
+        yield 'exec with superglobal in a ternary branch' => [
+            'code' => '<?php exec($c ? $_GET["cmd"] : "ls");',
+            'expectedCount' => 1,
+        ];
+
+        yield 'backticks with braced superglobal' => [
+            'code' => '<?php $o = `ls {$_GET[\'d\']}`;',
+            'expectedCount' => 1,
+        ];
+
+        yield 'backticks with simple superglobal interpolation' => [
+            'code' => '<?php $o = `ls $_GET[d]`;',
+            'expectedCount' => 1,
+        ];
+
+        yield 'backticks without a superglobal' => [
+            'code' => '<?php $o = `ls -la {$dir}`;',
+            'expectedCount' => 0,
+        ];
+
+        yield 'first-class callable of exec' => [
+            'code' => '<?php $run = exec(...);',
+            'expectedCount' => 0,
+        ];
+
+        yield 'exec with escaped coalesced superglobal' => [
+            'code' => '<?php exec("ls " . escapeshellarg($_GET["d"] ?? "."));',
+            'expectedCount' => 0,
+        ];
+
         // --- True negatives (sanitized) ---
 
         yield 'exec with escapeshellarg' => [
@@ -452,6 +497,284 @@ PHP;
         self::assertCount(1, $visitor->getLocationsByType('xss'));
         self::assertCount(1, $visitor->getLocationsByType('command_injection'));
         self::assertCount(1, $visitor->getLocationsByType('sql_injection'));
+    }
+
+    #[Test]
+    #[DataProvider('provideSqlInjectionThroughValueWrappersCases')]
+    public function itDetectsSqlInjectionThroughValuePassingWrappers(string $code, int $expectedCount): void
+    {
+        self::assertCount($expectedCount, $this->analyze($code, 'sql_injection'), $code);
+    }
+
+    /**
+     * @return iterable<string, array{code: string, expectedCount: int}>
+     */
+    public static function provideSqlInjectionThroughValueWrappersCases(): iterable
+    {
+        yield 'concat with coalesced superglobal' => [
+            'code' => '<?php $q = "SELECT * FROM t WHERE id = " . ($_GET["id"] ?? 0);',
+            'expectedCount' => 1,
+        ];
+
+        yield 'concat with superglobal in a ternary branch' => [
+            'code' => '<?php $q = "SELECT * FROM t WHERE id = " . ($c ? $_GET["id"] : 0);',
+            'expectedCount' => 1,
+        ];
+
+        yield 'concat with string-cast superglobal' => [
+            'code' => '<?php $q = "SELECT * FROM t WHERE id = " . (string) $_GET["id"];',
+            'expectedCount' => 1,
+        ];
+
+        yield 'mysqli_query with coalesced superglobal' => [
+            'code' => '<?php mysqli_query($db, $_POST["q"] ?? "");',
+            'expectedCount' => 1,
+        ];
+
+        yield 'sprintf with coalesced superglobal' => [
+            'code' => '<?php $s = sprintf("SELECT * FROM t WHERE id = %s", $_GET["id"] ?? 0);',
+            'expectedCount' => 1,
+        ];
+
+        yield 'first-class callable of mysqli_query' => [
+            'code' => '<?php $query = mysqli_query(...);',
+            'expectedCount' => 0,
+        ];
+
+        yield 'concat with intval of coalesced superglobal' => [
+            'code' => '<?php $q = "SELECT * FROM t WHERE id = " . intval($_GET["id"] ?? 0);',
+            'expectedCount' => 0,
+        ];
+
+        yield 'concat with superglobal only as an array key' => [
+            'code' => '<?php $q = "SELECT * FROM t WHERE id = " . $ids[$_GET["k"]];',
+            'expectedCount' => 0,
+        ];
+    }
+
+    #[Test]
+    #[DataProvider('provideXssThroughValueWrappersCases')]
+    public function itDetectsXssThroughValuePassingWrappers(string $code, int $expectedCount): void
+    {
+        self::assertCount($expectedCount, $this->analyze($code, 'xss'), $code);
+    }
+
+    /**
+     * @return iterable<string, array{code: string, expectedCount: int}>
+     */
+    public static function provideXssThroughValueWrappersCases(): iterable
+    {
+        yield 'echo coalesced superglobal' => [
+            'code' => '<?php echo $_GET["name"] ?? "guest";',
+            'expectedCount' => 1,
+        ];
+
+        yield 'echo coalesce with the superglobal as fallback' => [
+            'code' => '<?php echo $name ?? $_GET["name"];',
+            'expectedCount' => 1,
+        ];
+
+        yield 'echo superglobal in a ternary branch' => [
+            'code' => '<?php echo $ok ? $_GET["a"] : "b";',
+            'expectedCount' => 1,
+        ];
+
+        yield 'echo short ternary on a superglobal' => [
+            'code' => '<?php echo $_GET["a"] ?: "b";',
+            'expectedCount' => 1,
+        ];
+
+        yield 'echo string-cast superglobal' => [
+            'code' => '<?php echo (string) $_GET["a"];',
+            'expectedCount' => 1,
+        ];
+
+        yield 'echo error-suppressed superglobal' => [
+            'code' => '<?php echo @$_GET["a"];',
+            'expectedCount' => 1,
+        ];
+
+        yield 'echo superglobal in a match arm' => [
+            'code' => '<?php echo match ($m) { 1 => $_GET["a"], default => "" };',
+            'expectedCount' => 1,
+        ];
+
+        yield 'echo assignment of a superglobal' => [
+            'code' => '<?php echo $name = $_GET["name"];',
+            'expectedCount' => 1,
+        ];
+
+        yield 'print coalesced superglobal' => [
+            'code' => '<?php print $_GET["a"] ?? "";',
+            'expectedCount' => 1,
+        ];
+
+        yield 'echo concat with coalesced superglobal' => [
+            'code' => '<?php echo "Hi " . ($_GET["n"] ?? "x");',
+            'expectedCount' => 1,
+        ];
+
+        yield 'echo superglobal only as a ternary condition' => [
+            'code' => '<?php echo $_GET["a"] ? "yes" : "no";',
+            'expectedCount' => 0,
+        ];
+
+        yield 'echo sanitized coalesced superglobal' => [
+            'code' => '<?php echo htmlspecialchars($_GET["a"] ?? "");',
+            'expectedCount' => 0,
+        ];
+
+        yield 'echo coalesce with a sanitized superglobal as fallback' => [
+            'code' => '<?php echo $name ?? htmlspecialchars($_GET["a"]);',
+            'expectedCount' => 0,
+        ];
+
+        yield 'echo int cast of coalesced superglobal' => [
+            'code' => '<?php echo (int) ($_GET["a"] ?? 0);',
+            'expectedCount' => 0,
+        ];
+
+        yield 'echo superglobal only as an array key' => [
+            'code' => '<?php echo $labels[$_GET["k"]];',
+            'expectedCount' => 0,
+        ];
+
+        yield 'echo isset of a superglobal' => [
+            'code' => '<?php echo isset($_GET["a"]) ? "1" : "0";',
+            'expectedCount' => 0,
+        ];
+    }
+
+    /**
+     * A detector that looks through a wrapper reaches the same superglobal read
+     * that a detector of a node nested in that wrapper reaches again; the read
+     * is still one finding.
+     */
+    #[Test]
+    #[DataProvider('provideOneFindingPerReadCases')]
+    public function itReportsASuperglobalReadOnceWhateverWrapsIt(string $type, string $code, int $expectedCount): void
+    {
+        self::assertCount($expectedCount, $this->analyze($code, $type), $code);
+    }
+
+    /**
+     * @return iterable<string, array{type: string, code: string, expectedCount: int}>
+     */
+    public static function provideOneFindingPerReadCases(): iterable
+    {
+        $query = '"SELECT * FROM t WHERE n = \'{$_POST[\'n\']}\'"';
+
+        foreach (self::valuePassingWrappers($query) as $form => $argument) {
+            yield "sql function with an interpolated query {$form}" => [
+                'type' => 'sql_injection',
+                'code' => "<?php mysqli_query(\$link, {$argument});",
+                'expectedCount' => 1,
+            ];
+            yield "sprintf with an interpolated query {$form}" => [
+                'type' => 'sql_injection',
+                'code' => "<?php \$q = sprintf(\"SELECT * FROM t %s\", {$argument});",
+                'expectedCount' => 1,
+            ];
+        }
+
+        yield 'concatenation of an interpolated query' => [
+            'type' => 'sql_injection',
+            'code' => '<?php $q = "SELECT * FROM t " . "WHERE n = {$_POST[\'n\']}";',
+            'expectedCount' => 1,
+        ];
+        yield 'sql function with a concatenation of an interpolated query' => [
+            'type' => 'sql_injection',
+            'code' => '<?php mysqli_query($link, "SELECT * FROM t " . "WHERE n = {$_POST[\'n\']}");',
+            'expectedCount' => 1,
+        ];
+        yield 'sprintf with a concatenated query' => [
+            'type' => 'sql_injection',
+            'code' => '<?php $q = sprintf("SELECT * FROM t %s", " WHERE n = " . $_GET["n"]);',
+            'expectedCount' => 1,
+        ];
+        yield 'sql function whose two branches build one query each' => [
+            'type' => 'sql_injection',
+            'code' => '<?php mysqli_query($link, $c ? "SELECT * FROM a WHERE x = {$_GET[\'a\']}" : "SELECT * FROM b WHERE y = {$_GET[\'b\']}");',
+            'expectedCount' => 1,
+        ];
+
+        // A call the outer detector does not look through leaves the inner query to its own detector.
+        yield 'interpolated query behind a call inside an sql function' => [
+            'type' => 'sql_injection',
+            'code' => '<?php mysqli_query($link, trim("SELECT * FROM t WHERE n = {$_GET[\'n\']}"));',
+            'expectedCount' => 1,
+        ];
+        yield 'concatenated query behind a call inside an sql function' => [
+            'type' => 'sql_injection',
+            'code' => '<?php mysqli_query($link, trim("SELECT * FROM t WHERE n = " . $_GET["n"]));',
+            'expectedCount' => 1,
+        ];
+        yield 'concatenated query behind a call inside a concatenation' => [
+            'type' => 'sql_injection',
+            'code' => '<?php $q = $prefix . trim("SELECT * FROM t WHERE n = " . $_GET["n"]);',
+            'expectedCount' => 1,
+        ];
+        yield 'concatenated query in a ternary branch inside a concatenation' => [
+            'type' => 'sql_injection',
+            'code' => '<?php $q = $prefix . ($c ? "SELECT * FROM t WHERE n = " . $_GET["n"] : "");',
+            'expectedCount' => 1,
+        ];
+        yield 'interpolated query concatenated to a variable' => [
+            'type' => 'sql_injection',
+            'code' => '<?php $q = $prefix . "SELECT * FROM t WHERE id = {$_GET[\'id\']}";',
+            'expectedCount' => 1,
+        ];
+        yield 'two statements, two findings' => [
+            'type' => 'sql_injection',
+            'code' => '<?php mysqli_query($link, "SELECT * FROM a WHERE x = {$_GET[\'a\']}"); $q = "DELETE FROM b WHERE y = " . $_GET["b"];',
+            'expectedCount' => 2,
+        ];
+
+        foreach (self::valuePassingWrappers('"Hello {$_GET[\'n\']}"') as $form => $argument) {
+            yield "echo of an interpolated string {$form}" => [
+                'type' => 'xss',
+                'code' => "<?php echo {$argument};",
+                'expectedCount' => 1,
+            ];
+            yield "print of an interpolated string {$form}" => [
+                'type' => 'xss',
+                'code' => "<?php print {$argument};",
+                'expectedCount' => 1,
+            ];
+        }
+
+        foreach (self::valuePassingWrappers('"ls {$_GET[\'d\']}"') as $form => $argument) {
+            yield "command function with an interpolated command {$form}" => [
+                'type' => 'command_injection',
+                'code' => "<?php exec({$argument});",
+                'expectedCount' => 1,
+            ];
+        }
+
+        yield 'command function with a backtick command' => [
+            'type' => 'command_injection',
+            'code' => '<?php exec(`ls {$_GET[\'d\']}`);',
+            'expectedCount' => 1,
+        ];
+    }
+
+    /**
+     * Every wrapper the superglobal search looks through, around one value.
+     *
+     * @return array<string, string>
+     */
+    private static function valuePassingWrappers(string $value): array
+    {
+        return [
+            'as is' => $value,
+            'behind ??' => "\$fallback ?? {$value}",
+            'in a ternary branch' => "\$c ? {$value} : ''",
+            'behind a (string) cast' => "(string) {$value}",
+            'concatenated' => "{$value} . ''",
+            'behind @' => "@{$value}",
+            'in a match arm' => "match (\$m) { default => {$value} }",
+            'assigned' => "\$v = {$value}",
+        ];
     }
 
     /**

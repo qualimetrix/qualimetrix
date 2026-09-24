@@ -20,24 +20,42 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellLocation;
 /** Evaluates control-flow code smells without owning AST traversal state. */
 final class ControlFlowSmells
 {
-    /** @return list<CodeSmellLocation> */
-    public function locations(Node $node, string $subjectId, int $foreachDepth): array
+    /**
+     * @param bool $isChainAttempt Whether the node is a try that {@see ChainOfAttempts::attempts()} returned for its loop
+     *
+     * @return list<CodeSmellLocation>
+     */
+    public function locations(Node $node, string $subjectId, bool $isChainAttempt = false): array
     {
         return match (true) {
             $node instanceof Node\Stmt\Goto_ => [$this->location('goto', $node, $subjectId)],
-            $node instanceof Node\Expr\Exit_ => [$this->location('exit', $node, $subjectId)],
-            $node instanceof TryCatch => $this->emptyCatchLocations($node, $subjectId, $foreachDepth),
+            $node instanceof Node\Expr\Exit_, $node instanceof FuncCall && $this->isExitCall($node) => [$this->location('exit', $node, $subjectId)],
+            $node instanceof TryCatch => $this->emptyCatchLocations($node, $subjectId, $isChainAttempt),
             $node instanceof For_, $node instanceof While_, $node instanceof Do_ => $this->loopLocations($node, $subjectId),
             default => [],
         };
     }
 
-    /** @return list<CodeSmellLocation> */
-    private function emptyCatchLocations(TryCatch $tryCatch, string $subjectId, int $foreachDepth): array
+    /**
+     * `exit`/`die` spelled fully qualified (`\exit()`) parses as a function call since PHP 8.4.
+     */
+    private function isExitCall(FuncCall $call): bool
     {
+        return $call->name instanceof Name
+            && !$call->isFirstClassCallable()
+            && \in_array($call->name->toLowerString(), ['exit', 'die'], true);
+    }
+
+    /** @return list<CodeSmellLocation> */
+    private function emptyCatchLocations(TryCatch $tryCatch, string $subjectId, bool $isChainAttempt): array
+    {
+        if ($isChainAttempt) {
+            return [];
+        }
+
         $locations = [];
         foreach ($tryCatch->catches as $catch) {
-            if ($this->isEmptyCatch($catch) && !($foreachDepth > 0 && $this->hasChainSignal($tryCatch->stmts))) {
+            if ($this->isEmptyCatch($catch)) {
                 $locations[] = $this->location('empty_catch', $catch, $subjectId);
             }
         }
@@ -65,30 +83,6 @@ final class ControlFlowSmells
     private function isEmptyCatch(Catch_ $catch): bool
     {
         return array_filter($catch->stmts, static fn(Node $statement): bool => !$statement instanceof Node\Stmt\Nop) === [];
-    }
-
-    /** @param array<Node\Stmt> $statements */
-    private function hasChainSignal(array $statements): bool
-    {
-        $pending = $statements;
-        while ($pending !== []) {
-            $statement = array_pop($pending);
-            if ($statement instanceof Node\Stmt\Return_ || $statement instanceof Node\Stmt\Continue_) {
-                return true;
-            }
-
-            if ($statement instanceof Node\Stmt\If_) {
-                array_push($pending, ...$statement->stmts);
-                foreach ($statement->elseifs as $elseif) {
-                    array_push($pending, ...$elseif->stmts);
-                }
-                if ($statement->else !== null) {
-                    array_push($pending, ...$statement->else->stmts);
-                }
-            }
-        }
-
-        return false;
     }
 
     private function containsCountCall(?Node $node): bool

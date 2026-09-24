@@ -27,6 +27,12 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * - 1: far from the main sequence (problematic)
  *
  * Packages should ideally be close to the main sequence (A + I ≈ 1).
+ *
+ * A namespace missing either input gets no distance, in either scope: the
+ * inputs are declared required, and a missing one read as 0 made a namespace
+ * that declares only functions -- present in the repository, absent from the
+ * class graph, so never given an instability -- publish |0 + 0 - 1| = 1.0,
+ * the worst value there is, for a namespace the metric does not describe.
  */
 final class DistanceCollector implements GlobalContextCollectorInterface
 {
@@ -77,12 +83,16 @@ final class DistanceCollector implements GlobalContextCollectorInterface
             $nsPath = $symbolInfo->symbolPath;
             $metrics = $repository->get($nsPath);
 
-            $instability = $metrics->get(MetricName::COUPLING_INSTABILITY) ?? 0.0;
-            $abstractness = $metrics->get(MetricName::COUPLING_ABSTRACTNESS) ?? 0.0;
+            $instability = $metrics->get(MetricName::COUPLING_INSTABILITY);
+            $abstractness = $metrics->get(MetricName::COUPLING_ABSTRACTNESS);
 
-            $distance = $this->computeDistance((float) $instability, (float) $abstractness);
-
-            $repository->addScalar($nsPath, MetricName::COUPLING_DISTANCE, $distance);
+            if ($instability !== null && $abstractness !== null) {
+                $repository->addScalar(
+                    $nsPath,
+                    MetricName::COUPLING_DISTANCE,
+                    $this->computeDistance((float) $instability, (float) $abstractness),
+                );
+            }
 
             $this->addOwnDistance($repository, $nsPath);
         }
@@ -102,12 +112,11 @@ final class DistanceCollector implements GlobalContextCollectorInterface
         $metrics = $repository->get($nsPath);
 
         $ownAbstractness = $metrics->get(MetricName::COUPLING_ABSTRACTNESS_OWN);
+        $ownInstability = $metrics->get(MetricName::COUPLING_INSTABILITY_OWN);
 
-        if ($ownAbstractness === null) {
+        if ($ownAbstractness === null || $ownInstability === null) {
             return;
         }
-
-        $ownInstability = $metrics->get(MetricName::COUPLING_INSTABILITY_OWN) ?? 0.0;
 
         $repository->addScalar(
             $nsPath,

@@ -532,6 +532,19 @@ An `exclude:` clause the run cannot answer — an `extends` / `implements` / `at
 
 Under declaration-order matching, the same effect is often achievable by declaring a narrower layer earlier. `exclude:` is the right tool when the excluded subtree should remain **genuinely unclassified** (so it falls through to a catch-all or to coverage diagnostics) or when the positive criteria mix `patterns` with `suffix`/`implements`/`extends` and a single early layer cannot cleanly express the carve-out.
 
+The classes a clause removes go to the next layer that matches them, and that layer may declare the **same pattern**. This is the plain form of a carve-out:
+
+```yaml
+- name: repo-plain
+  patterns: ['App\Repository\**']
+  exclude:
+    extends: ['Doctrine\ORM\EntityRepository']
+- name: repo-doctrine
+  patterns: ['App\Repository\**']   # receives exactly what repo-plain excludes
+```
+
+Two layers declaring the same pattern are otherwise refused at load time: the first takes every class the pattern names, so the second can never own one. Only the earlier layer's `exclude:` makes room — a later layer's own `exclude:` narrows what it takes, not what the earlier one already took — and so does an earlier `match: all` layer that narrows its pattern with another criterion. A third layer on the same pattern is refused behind the layer that received the carved-out classes. Whether the receiving layer gets any class is a fact about the code, reported at run time by [`architecture.unreachable-layer`](#unreachable-layer-diagnostic).
+
 #### When the clause removes nothing { #unmatched-exclude }
 
 An `exclude:` clause that matches no class is silent damage: the layer holds
@@ -580,8 +593,11 @@ What the channel deliberately does not do:
   everything `composer.json` declares under `autoload` — `psr-4` and `psr-0`
   roots, `classmap` and `files` entries alike — and under `autoload-dev` too
   with [`--include-autoload-dev`](../usage/cli-options.md#--include-autoload-dev).
-  A narrower run, or a project whose manifest declares nothing in the sections
-  the run counts, leaves the channel silent.
+  A narrower run leaves the channel silent, and the report's
+  [project scope](../usage/output-formats.md#project-scope-in-every-format)
+  names it as not judged. A project whose manifest declares nothing in the
+  sections the run counts has no project beyond the paths you name, so the
+  channel judges those paths as the whole project.
 
 Unlike the architecture *configuration* diagnostics, this one is an ordinary
 rule finding: it answers to `fail_on`, `--disable-rule`, `@qmx-ignore
@@ -809,7 +825,7 @@ Unassigned declarations: App\Legacy\Bar, App\Legacy\Baz, App\Legacy\Foo. ...
 
 ### Unreachable-layer diagnostic
 
-`architecture.unreachable-layer` fires once per declared layer — or per concrete instance produced by a template — whose patterns matched zero classes **and** zero dependency-edge ends during analysis, **and** that could not own any analysed class whose assignment the run left in doubt. A layer that would own an analysed class if an earlier layer's unanswered `exclude:` removed it is not reported as matching nothing — that is not a conclusion the run reached. Neither is a layer the run could not answer about an analysed class, as long as some type its `attributes` / `implements` / `extends` criteria name is one the run met: declared in the analysed paths, declared by PHP itself, or seen at either end of a dependency edge. Both are named by [`architecture.doubted-assignment`](#doubted-assignment) instead. A type the run never met is not enough: a class whose parent is outside the analysed paths leaves every such criterion unanswered, a mistyped name included, so on any project where an analysed class extends vendor code a typo would otherwise never be reported. A symbol outside the analysed paths keeps no layer out of this diagnostic either, since the run never reads it. The finding says what it left out, in the words that hold for it: how many symbols the layer could not answer about and, when it names no type the run met, which types those are — a mistyped name, or a type reachable only through code the run did not analyse, which widening `paths:` decides; or how many symbols outside the analysed paths its criteria matched while an earlier layer holds them through an `exclude:` the run cannot answer. A criterion naming a type only a vendor chain reaches — `implements: ['Doctrine\Persistence\ObjectRepository']` over repositories extending `ServiceEntityRepository`, with no analysed code naming the interface — is therefore reported; naming the type anywhere in analysed code, or widening `paths:` to the package, keeps the layer. It is a configuration diagnostic (see the note under [Coverage modes](#coverage-modes)): it fails the run unconditionally whenever it fires, and it is not configurable, baselineable, or suppressible with `@qmx-ignore`. Three possible causes:
+`architecture.unreachable-layer` fires once per declared layer — or per concrete instance produced by a template — whose patterns matched zero classes **and** zero dependency-edge ends during analysis, **and** that could not own any analysed class whose assignment the run left in doubt. A layer that would own an analysed class if an earlier layer's unanswered `exclude:` removed it is not reported as matching nothing — that is not a conclusion the run reached. Neither is a layer the run could not answer about an analysed class, as long as some type its `attributes` / `implements` / `extends` criteria name is one the run met: declared in the analysed paths, declared by PHP itself, seen at either end of a dependency edge, or declared by the analysed project's composer install — looked up in `vendor/composer/installed.json`, the project's own `autoload` and the files they map, read as data and never loaded. Both are named by [`architecture.doubted-assignment`](#doubted-assignment) instead. A type the run never met is not enough: a class whose parent is outside the analysed paths leaves every such criterion unanswered, a mistyped name included, so on any project where an analysed class extends vendor code a typo would otherwise never be reported. A symbol outside the analysed paths keeps no layer out of this diagnostic either, since the run never reads it. The finding says what it left out, in the words that hold for it: how many symbols the layer could not answer about and, when it names no type the run met, which types those are and whether the install was asked — a mistyped name, or a package that is not installed; or how many symbols outside the analysed paths its criteria matched while an earlier layer holds them through an `exclude:` the run cannot answer. A criterion naming a type only a vendor chain reaches — `implements: ['Doctrine\Persistence\ObjectRepository']` over repositories extending `ServiceEntityRepository`, with no analysed code naming the interface — therefore keeps its layer while the package is installed: the install declares the interface, and the layer is named by [`architecture.doubted-assignment`](#doubted-assignment) instead. The install tells only that the type exists; whether a repository implements it is still unanswered, because the run does not follow the vendor chain. With the package not installed, the layer is reported. The diagnostic is only judged on a run that can judge it: like [`architecture.unmatched-exclude`](#unmatched-exclude), it needs paths covering everything `composer.json` declares under `autoload`. On a run over part of the project — `qmx check src/Web` — a layer whose classes are all outside the slice matches nothing there while owning code elsewhere, so the diagnostic stays silent; the run's warning that the analysed paths do not cover all autoload entries says so on stderr, and the report's [project scope](../usage/output-formats.md#project-scope-in-every-format) — `narrowed`, with this channel among those not judged — says so in every format. A project whose `composer.json` declares no readable production autoload, or that has none, is judged: without a manifest the project is the paths you name, so run it over all of its code — `qmx check src/Web` on such a project reports every layer whose classes lie elsewhere, and the report's project scope reads `unknown`. It is a configuration diagnostic (see the note under [Coverage modes](#coverage-modes)): it fails the run unconditionally whenever it fires, and it is not configurable, baselineable, or suppressible with `@qmx-ignore`. Three possible causes:
 
 1. **Shadowed by a broader layer earlier in the order.** A pattern like `'**'` or `'App\**'` declared before a narrower one captures every class first.
 2. **Pattern matches no class in the analysed codebase and is never seen as a dependency-edge end either.** The layer is declared for a namespace that doesn't exist yet — or the namespace was renamed.
@@ -832,6 +848,8 @@ It exists because `pending: true` switches a safety net off, and a switched-off 
 ### Empty-template diagnostic
 
 `architecture.empty-template` fires once per template layer that expanded to **zero** concrete instances — typically a typo in the template pattern, an excluded module, or a single-segment `{var}` used where the binding spans multiple namespace segments (use `{var:**}` for cross-segment captures).
+
+Like [`architecture.unreachable-layer`](#unreachable-layer-diagnostic), it is judged only on a run whose paths cover everything `composer.json` declares under `autoload`: a slice of the project cannot show that no module exists.
 
 A template that expands to zero instances **silently disables** the policy attached to it, which is why — like the other four configuration diagnostics — it fails the run unconditionally instead of waiting on a severity or `fail_on` setting; see the note under [Coverage modes](#coverage-modes). Three common causes:
 

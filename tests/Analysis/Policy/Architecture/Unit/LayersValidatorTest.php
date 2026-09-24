@@ -912,6 +912,89 @@ final class LayersValidatorTest extends TestCase
         self::assertSame(['a', 'b'], self::namesOf($entries));
     }
 
+    // -------------------------------------------------------------------------
+    // Duplicate pattern behind an earlier layer's exclude clause (carve-out)
+    // -------------------------------------------------------------------------
+
+    /**
+     * The earlier layer hands the classes its `exclude:` removes to the next
+     * layer declaring the same pattern, so the second occurrence is reachable
+     * for exactly those classes. Whether it reaches any is a question about
+     * the code, which `architecture.unreachable-layer` answers at run time.
+     */
+    #[Test]
+    public function itAllowsTheSamePatternBehindAnEarlierLayersExcludeClause(): void
+    {
+        $entries = $this->validator->validate([
+            ['name' => 'repo-plain', 'patterns' => ['App\\Repository\\**'], 'exclude' => ['extends' => ['Doctrine\\ORM\\EntityRepository']]],
+            ['name' => 'repo-doctrine', 'patterns' => ['App\\Repository\\**']],
+        ]);
+
+        self::assertSame(['repo-plain', 'repo-doctrine'], self::namesOf($entries));
+    }
+
+    #[Test]
+    public function itAllowsTheSamePatternBehindAnEarlierTemplatesExcludeClause(): void
+    {
+        $entries = $this->validator->validate([
+            ['name' => 'domain-{m}', 'patterns' => ['App\\Module\\{m}\\**'], 'exclude' => ['suffix' => ['Generated']]],
+            ['name' => 'generated-{m}', 'patterns' => ['App\\Module\\{m}\\**']],
+        ]);
+
+        self::assertSame(['domain-{m}', 'generated-{m}'], self::namesOf($entries));
+    }
+
+    /**
+     * Only the EARLIER layer's clause makes room: a later layer's own
+     * `exclude:` narrows what it takes, and the earlier layer already took
+     * everything its pattern names.
+     */
+    #[Test]
+    public function itStillRejectsTheSamePatternWhenOnlyTheLaterLayerExcludes(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/"a" \\(architecture\\.layers\\[0\\]\\) and "b" \\(architecture\\.layers\\[1\\]\\)/');
+
+        $this->validator->validate([
+            ['name' => 'a', 'patterns' => ['App\\Shared']],
+            ['name' => 'b', 'patterns' => ['App\\Shared'], 'exclude' => ['suffix' => ['Proxy']]],
+        ]);
+    }
+
+    /**
+     * The carve-out hands its classes to the first layer that takes the whole
+     * pattern; a third layer on the same pattern is unreachable behind that
+     * one, and the refusal names the layer that actually shadows it.
+     */
+    #[Test]
+    public function itRejectsAThirdOccurrenceBehindTheLayerThatTookTheCarvedOutClasses(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/"b" \\(architecture\\.layers\\[1\\]\\) and "c" \\(architecture\\.layers\\[2\\]\\)/');
+
+        $this->validator->validate([
+            ['name' => 'a', 'patterns' => ['App\\Shared'], 'exclude' => ['suffix' => ['Proxy']]],
+            ['name' => 'b', 'patterns' => ['App\\Shared']],
+            ['name' => 'c', 'patterns' => ['App\\Shared']],
+        ]);
+    }
+
+    /**
+     * The refusal says how the second layer can be reached, because the
+     * shape it rejects is one keystroke away from a legitimate carve-out.
+     */
+    #[Test]
+    public function itNamesTheExcludeCarveOutInTheDuplicateRefusal(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/"exclude" on "a" hands the classes it removes to "b"/');
+
+        $this->validator->validate([
+            ['name' => 'a', 'patterns' => ['App\\Shared']],
+            ['name' => 'b', 'patterns' => ['App\\Shared']],
+        ]);
+    }
+
     #[Test]
     public function itAddressesTheResolvedDocumentForEveryError(): void
     {

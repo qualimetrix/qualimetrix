@@ -127,7 +127,7 @@ Qualimetrix содержит набор встроенных правил для
 | ----------------------------------------------------- | -------------------------------------- | --------------------------------------------------------------------------------- |
 | [Булевый аргумент](code-smell.ru.md)                  | `code-smell.boolean-argument`          | Параметры типа `bool` в сигнатурах методов                                        |
 | [Count в цикле](code-smell.ru.md)                     | `code-smell.count-in-loop`             | Вызов `count()` в условии цикла                                                   |
-| [Отладочный код](code-smell.ru.md)                    | `code-smell.debug-code`                | `var_dump`, `print_r`, `debug_backtrace` и т.д.                                   |
+| [Отладочный код](code-smell.ru.md)                    | `code-smell.debug-code`                | `var_dump`, `print_r`, `debug_print_backtrace` и т.д.                             |
 | [Пустой catch](code-smell.ru.md)                      | `code-smell.empty-catch`               | Блоки `catch` без тела                                                            |
 | [Подавление ошибок](code-smell.ru.md)                 | `code-smell.error-suppression`         | Оператор подавления ошибок `@`                                                    |
 | [Eval](code-smell.ru.md)                              | `code-smell.eval`                      | Использование `eval()`                                                            |

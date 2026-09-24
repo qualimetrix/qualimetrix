@@ -307,6 +307,25 @@ final class CodeDuplicationRuleTest extends TestCase
     }
 
     #[Test]
+    public function itNamesTheFirstTenOtherOccurrencesAndCountsTheRestInTheMessage(): void
+    {
+        $locations = [];
+        for ($copy = 0; $copy < 100; $copy++) {
+            $locations[] = new DuplicateLocation(RelativePath::fromString(\sprintf('c%03d.php', $copy)), 1, 10);
+        }
+
+        $findings = $this->createRule()->analyze($this->contextWithBlocks(
+            self::createStub(MetricRepositoryInterface::class),
+            [new DuplicateBlock(locations: $locations, lines: 10, tokens: 50, contentHash: self::CONTENT_HASH)],
+        ));
+
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('100 occurrences', $findings[0]->message);
+        self::assertStringEndsWith('— also at c001.php:1-10, c002.php:1-10, c003.php:1-10, c004.php:1-10, c005.php:1-10, c006.php:1-10, c007.php:1-10, c008.php:1-10, c009.php:1-10, c010.php:1-10 and 89 more', $findings[0]->message);
+        self::assertCount(99, $findings[0]->relatedLocations);
+    }
+
+    #[Test]
     public function itUsesOnlyProjectAndContentForDuplicateGroupIdentity(): void
     {
         $rule = $this->createRule();

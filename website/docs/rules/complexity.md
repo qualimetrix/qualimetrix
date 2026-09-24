@@ -87,7 +87,7 @@ function processOrder(Order $order): void
 
 Qualimetrix uses an extended variant of Cyclomatic Complexity, sometimes called **CCN2+**. In addition to the standard decision points (if, elseif, while, for, foreach, case, catch, &&, ||, ?:), Qualimetrix also counts:
 
-- `??` (null coalescing operator) — +1
+- `??` (null coalescing operator) and `??=` (null-coalescing assignment) — +1
 - `?->` (nullsafe method call) — +1
 - `?->` (nullsafe property fetch) — +1
 - `xor` (logical XOR operator) — +1
@@ -158,7 +158,7 @@ Key differences from cyclomatic complexity:
 
 - **Nesting increases the penalty.** An `if` inside another `if` scores higher than two `if` blocks at the same level, because nested logic is harder to follow mentally.
 - **Shorthand structures score less.** A `switch` with 10 cases adds only 1 point (it is a single mental structure), while 10 separate `if` statements add 10 points each plus nesting.
-- **Breaks in linear flow add points.** `break`, `continue`, and `goto` all cost points because they disrupt the reading flow.
+- **Breaks in linear flow add points.** `goto` and `break`/`continue` with a level number (`break 2`) cost points because they disrupt the reading flow.
 
 **How to read the value:**
 
@@ -220,6 +220,45 @@ Notice how nesting makes the penalty grow. The deeply nested `if ($item->hasDisc
 - **Extract deeply nested blocks** into separate methods with descriptive names.
 - **Avoid `else` after `return`.** If the `if` branch returns, you do not need `else`.
 - **Replace loops with collection methods** (e.g., `array_filter`, `array_map`) when appropriate.
+
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
+### Implementation notes
+
+Qualimetrix implements the SonarSource whitepaper
+([Cognitive Complexity, version 1.7](https://www.sonarsource.com/docs/CognitiveComplexity.pdf), Appendix B):
+
+- **Increments (+1):** `if`, `elseif`, `else`, ternary `?:`, `switch`, `for`, `foreach`, `while`, `do-while`, `catch`, `goto`, `break`/`continue` with a level number, each sequence of like logical operators, and a method that calls itself (+1 once per method, however many recursive calls it makes).
+- **Nesting increment:** `if`, ternary, `switch`, loops and `catch` also add the current nesting level. `elseif`, `else`, `goto` and numbered jumps do not.
+- **Nesting level:** rises inside the bodies of `if`, `elseif`, `else`, ternary branches, `switch` cases, loops, `catch` and lambdas. The whitepaper does not say where a condition sits; Qualimetrix reads a condition or subject as not nested inside the structure it controls, so a ternary inside an `if (...)` condition adds +1, while one inside the `if` body adds +2.
+- **`match`** is PHP's switch expression and is scored as `switch` (+1 plus the nesting level, arms nested one level): the whitepaper counts a language's own spelling of a listed keyword.
+- **Closures and arrow functions** add nothing to the enclosing method and raise the nesting level of their body by one. Like every other callable metric, Qualimetrix measures each closure as its own unit (see the deviation below).
+- **Named functions and anonymous-class methods** declared inside a method are measured as separate units starting at nesting level 0.
+- **Null-coalescing operators add nothing:** `??`, `??=` and `?->` score 0, as the whitepaper prescribes ("Ignore shorthand", page 6): they shorten a null check into one expression rather than break the linear flow. Cyclomatic complexity and NPath still count `??` and `??=`.
+
+```php
+public function activeNames(array $users): array  // cognitive complexity: 0
+{
+    return array_map(                         // +0 (the arrow function itself)
+        fn (User $u) => $u->isActive()        // the arrow function: +2 (ternary, nesting=1)
+            ? $u->name()
+            : 'inactive',
+        $users,
+    );
+}
+```
+
+!!! info "Deviation from original spec"
+    - **Closures and arrow functions inside a method:** the whitepaper adds a lambda's
+      body to the enclosing method. Qualimetrix keeps the lambda a separate unit, as its
+      cyclomatic, NPath and maintainability metrics do, but continues the nesting level
+      from where the lambda is written. The whitepaper's score for a method is therefore
+      the method's value plus the values of the lambdas inside it; in the example above,
+      0 + 2 = 2. A finding for a complex closure is reported on the closure.
+    - **Recursion:** only a direct self-call is detected (`$this->method()`,
+      `self::`/`static::method()`, or a function calling itself). The whitepaper also
+      counts every method in an indirect cycle (A calls B, B calls A); Qualimetrix does not.
 
 <!-- llms:skip-end -->
 

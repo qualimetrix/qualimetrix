@@ -29,7 +29,6 @@ final readonly class Suite
         'tests/Analysis/Evidence/ComputedMetrics/Health/Unit/HealthScoreTest.php',
         'tests/Analysis/Evidence/Coupling/Unit/NamespaceInstabilityOptionsTest.php',
         'tests/Analysis/Evidence/DependencyModel/Unit/DependencyTest.php',
-        'tests/Analysis/Evidence/DependencyModel/Unit/EmptyDependencyGraphTest.php',
         'tests/Analysis/Finding/Unit/LocationTest.php',
         'tests/Analysis/Policy/Baseline/Unit/ChannelRenameMapTest.php',
         'tests/Core/Symbol/Unit/CallableKindTest.php',

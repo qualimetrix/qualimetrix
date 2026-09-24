@@ -17,6 +17,7 @@ use PhpParser\Node\Stmt\Foreach_;
 use PhpParser\Node\Stmt\Function_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\CodeSmell\BooleanArgument\BooleanArgumentSmells;
+use Qualimetrix\Analysis\Evidence\CodeSmell\ControlFlow\ChainOfAttempts;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ControlFlow\ControlFlowSmells;
 use Qualimetrix\Analysis\Evidence\CodeSmell\Debug\DebugCodeSmells;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
@@ -28,25 +29,29 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements DeclarationI
 {
     use VisitorMethodTrackingTrait;
 
+    private const SUPERGLOBALS = ['_GET', '_POST', '_REQUEST', '_COOKIE', '_SESSION', '_SERVER', '_FILES', '_ENV', 'GLOBALS'];
+
     /** @var list<CodeSmellLocation> */
     private array $locations = [];
 
     /** @var list<string> */
     private array $methodStack = [];
 
-    private int $foreachDepth = 0;
+    /** @var array<int, true> Object ids of the tries that form a foreach chain of attempts */
+    private array $chainAttempts = [];
 
     public function __construct(
         private readonly ControlFlowSmells $controlFlowSmells = new ControlFlowSmells(),
         private readonly DebugCodeSmells $debugCodeSmells = new DebugCodeSmells(),
         private readonly BooleanArgumentSmells $booleanArgumentSmells = new BooleanArgumentSmells(),
+        private readonly ChainOfAttempts $chainOfAttempts = new ChainOfAttempts(),
     ) {}
 
     public function reset(): void
     {
         $this->locations = [];
         $this->methodStack = [];
-        $this->foreachDepth = 0;
+        $this->chainAttempts = [];
         $this->resetVisitorMethodContext();
     }
 
@@ -55,11 +60,13 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements DeclarationI
         $this->enterVisitorMethodContext($node);
         $this->trackMethod($node);
         if ($node instanceof Foreach_) {
-            ++$this->foreachDepth;
+            foreach ($this->chainOfAttempts->attempts($node) as $attempt) {
+                $this->chainAttempts[spl_object_id($attempt)] = true;
+            }
         }
 
         $subjectId = $this->currentFileEntrySubjectId();
-        $this->append($this->controlFlowSmells->locations($node, $subjectId, $this->foreachDepth));
+        $this->append($this->controlFlowSmells->locations($node, $subjectId, isset($this->chainAttempts[spl_object_id($node)])));
         if ($node instanceof FuncCall) {
             $location = $this->debugCodeSmells->location($node, $this->currentMethod(), $subjectId);
             if ($location !== null) {
@@ -78,9 +85,6 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements DeclarationI
     {
         if ($node instanceof ClassMethod || $node instanceof Function_) {
             array_pop($this->methodStack);
-        }
-        if ($node instanceof Foreach_) {
-            --$this->foreachDepth;
         }
         $this->leaveVisitorMethodContext($node);
 
@@ -135,7 +139,7 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements DeclarationI
         } elseif ($node instanceof ErrorSuppress) {
             $name = $node->expr instanceof FuncCall && $node->expr->name instanceof Name ? $node->expr->name->toLowerString() : null;
             $this->append([new CodeSmellLocation('error_suppression', $node->getStartLine(), $node->getStartTokenPos(), $subjectId, $name)]);
-        } elseif ($node instanceof Variable && \is_string($node->name) && \in_array($node->name, ['_GET', '_POST', '_REQUEST', '_COOKIE', '_SESSION', '_SERVER', '_FILES', '_ENV', 'GLOBALS'], true)) {
+        } elseif ($node instanceof Variable && \is_string($node->name) && \in_array($node->name, self::SUPERGLOBALS, true)) {
             $this->append([new CodeSmellLocation('superglobals', $node->getStartLine(), $node->getStartTokenPos(), $subjectId, $node->name)]);
         }
     }

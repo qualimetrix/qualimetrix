@@ -208,7 +208,10 @@ final class UnmatchedFrameworkNamespaceIntegrationTest extends TestCase
     {
         $tester = $this->check($this->config("[{subtree: 'Nope\\Missing'}]"), ['--fail-on' => 'warning']);
 
-        self::assertSame(2, $tester->getStatusCode(), 'Findings at or above --fail-on exit 2.');
+        // 1, the warning exit: the fixture's only class is no longer reported
+        // as a ClassRank hub nothing depends on, whose error used to turn this
+        // into 2 and hide which of the two findings the gate was reading.
+        self::assertSame(1, $tester->getStatusCode(), 'A warning at --fail-on=warning exits 1.');
     }
 
     /**

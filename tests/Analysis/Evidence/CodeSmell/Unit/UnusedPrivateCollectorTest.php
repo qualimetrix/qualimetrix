@@ -8,6 +8,7 @@ use PhpParser\NodeTraverser;
 
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateClassData;
@@ -1448,6 +1449,252 @@ PHP;
     public function itDeliberatelyDoesNotProvideCallableMetrics(): void
     {
         self::assertNotContains(\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface::class, class_implements($this->collector));
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string}>
+     */
+    public static function provideNonPrivateMagicMethods(): iterable
+    {
+        yield 'public __call' => ['public', 'function __call($name, $args) { return null; }', 'method'];
+        yield 'protected __callStatic' => ['protected', 'static function __callStatic($name, $args) { return null; }', 'method'];
+        yield 'public __get' => ['public', 'function __get($name) { return null; }', 'property'];
+        yield 'public __set' => ['public', 'function __set($name, $value) {}', 'property'];
+    }
+
+    #[Test]
+    #[DataProvider('provideNonPrivateMagicMethods')]
+    public function itHonoursANonPrivateMagicMethod(string $visibility, string $declaration, string $kind): void
+    {
+        $metrics = $this->collectMetrics(<<<PHP
+<?php
+
+namespace App;
+
+class Proxy
+{
+    private string \$hidden = '';
+    private function hiddenMethod(): void {}
+    {$visibility} {$declaration}
+}
+PHP);
+
+        self::assertSame(0, $metrics->entryCount("code-smell.unused-private.{$kind}:App\\Proxy"));
+    }
+
+    #[Test]
+    public function itRecognizesMagicMethodNamesCaseInsensitively(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class OddCase
+{
+    private function helper(): void {}
+    public function __CALL($name, $args) { return null; }
+}
+PHP);
+
+        self::assertSame(0, $metrics->entryCount('code-smell.unused-private.method:App\OddCase'));
+    }
+
+    #[Test]
+    public function itNeverReportsAMagicMethodSpelledInAnotherCase(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class OddCaseMagic
+{
+    private function __Invoke(): void {}
+    private function __DEBUGINFO(): array { return []; }
+}
+PHP);
+
+        self::assertSame(0, $metrics->entryCount('code-smell.unused-private.method:App\OddCaseMagic'));
+    }
+
+    #[Test]
+    public function itHonoursAMagicMethodDeclaredByASameFileTrait(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+trait MagicAccess
+{
+    public function __get($name) { return null; }
+}
+
+class UsesMagic
+{
+    use MagicAccess;
+
+    private string $hidden = '';
+}
+PHP);
+
+        self::assertSame(0, $metrics->entryCount('code-smell.unused-private.property:App\UsesMagic'));
+    }
+
+    #[Test]
+    public function itCountsAMethodCallSpelledInAnotherCaseAsAUsage(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class CaseUsage
+{
+    private function helper(): int { return 1; }
+    private static function build(): int { return 2; }
+    public function run(): int { return $this->Helper() + SELF::BUILD(); }
+}
+PHP);
+
+        self::assertSame(0, $metrics->entryCount('code-smell.unused-private.method:App\CaseUsage'));
+    }
+
+    #[Test]
+    public function itKeepsPropertyNamesCaseSensitive(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class PropertyCase
+{
+    private string $secret = '';
+    public function read(): mixed { return $this->Secret; }
+}
+PHP);
+
+        self::assertSame([['line' => 7, 'name' => 'secret']], $metrics->entries('code-smell.unused-private.property:App\PropertyCase'));
+    }
+
+    #[Test]
+    public function itReportsTheDeclaredSpellingOfAnUnusedMethod(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class Spelling
+{
+    private function loadAll(): void {}
+}
+PHP);
+
+        self::assertSame([['line' => 7, 'name' => 'loadAll']], $metrics->entries('code-smell.unused-private.method:App\Spelling'));
+    }
+
+    #[Test]
+    public function itKeepsTheSameClassReceiverAfterAnAnonymousClassMethod(): void
+    {
+        $withAnonymous = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class Anon
+{
+    private function helper(): int { return 1; }
+    public function run(): int
+    {
+        $copy = new self();
+        $probe = new class { public function m(): int { return 1; } };
+        return $copy->helper();
+    }
+}
+PHP);
+
+        self::assertSame(0, $withAnonymous->entryCount('code-smell.unused-private.method:App\Anon'));
+    }
+
+    #[Test]
+    public function itFlagsAPrivateMethodThatOnlyCallsItself(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class Recursive
+{
+    private function countdown(int $n): int { return $n > 0 ? $this->countdown($n - 1) : 0; }
+    private static function walk(int $n): int { return $n > 0 ? self::walk($n - 1) : 0; }
+}
+PHP);
+
+        self::assertSame(
+            [['line' => 7, 'name' => 'countdown'], ['line' => 8, 'name' => 'walk']],
+            $metrics->entries('code-smell.unused-private.method:App\Recursive'),
+        );
+    }
+
+    #[Test]
+    public function itKeepsARecursiveMethodThatIsCalledFromElsewhere(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class Recursive
+{
+    private function countdown(int $n): int { return $n > 0 ? $this->countdown($n - 1) : 0; }
+    public function run(): int { return $this->countdown(3); }
+}
+PHP);
+
+        self::assertSame(0, $metrics->entryCount('code-smell.unused-private.method:App\Recursive'));
+    }
+
+    #[Test]
+    public function itAnalyzesPrivateMembersOfEnums(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+enum Kind: string
+{
+    case A = 'a';
+    private const UNUSED = 1;
+    private function unusedHelper(): int { return 1; }
+}
+PHP);
+
+        self::assertSame(1, $metrics->entryCount('code-smell.unused-private.method:App\Kind'));
+        self::assertSame(1, $metrics->entryCount('code-smell.unused-private.constant:App\Kind'));
+    }
+
+    #[Test]
+    public function itDoesNotFollowMutualRecursionBetweenUnusedMethods(): void
+    {
+        // Known limit: usage is a set of referenced names, not reachability, so two methods calling only each other look used.
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+
+namespace App;
+
+class PingPong
+{
+    private function ping(int $n): int { return $n > 0 ? $this->pong($n - 1) : 0; }
+    private function pong(int $n): int { return $n > 0 ? $this->ping($n - 1) : 0; }
+}
+PHP);
+
+        self::assertSame(0, $metrics->entryCount('code-smell.unused-private.method:App\PingPong'));
     }
 
     private function collectMetrics(string $code): MetricBag

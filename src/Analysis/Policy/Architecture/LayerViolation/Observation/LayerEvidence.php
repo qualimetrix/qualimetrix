@@ -187,8 +187,11 @@ final readonly class LayerEvidence
      * and `extends:` criteria name when the run met none of them, and is
      * empty when it met any — see
      * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\KnownTypes}.
+     * `installConsulted` says whether the analysed project's composer install
+     * was among the places asked, which the finding naming unmet types needs
+     * to say what their absence rests on.
      *
-     * @return array<string, array{matchedAnalysed: int, matchedOutside: int, unansweredAnalysed: int, unansweredOutside: int, unmetTypes: list<string>}>
+     * @return array<string, array{matchedAnalysed: int, matchedOutside: int, unansweredAnalysed: int, unansweredOutside: int, unmetTypes: list<string>, installConsulted: bool}>
      */
     public function contests(): array
     {
@@ -198,7 +201,8 @@ final readonly class LayerEvidence
             $membership = $definition->membership();
             $namedByLayer[$definition->name()] = array_values(array_unique([...$membership->attributes, ...$membership->implements, ...$membership->extends]));
         }
-        $known = $this->architecture->registry()->contextFactory()->knownTypes()->among(array_values(array_unique(array_merge([], ...array_values($namedByLayer)))));
+        $knownTypes = $this->architecture->registry()->contextFactory()->knownTypes();
+        $known = $knownTypes->among(array_values(array_unique(array_merge([], ...array_values($namedByLayer)))));
 
         $contests = [];
         foreach ($namedByLayer as $layerName => $named) {
@@ -212,6 +216,7 @@ final readonly class LayerEvidence
                 'unansweredAnalysed' => \count(array_diff_key($unanswered, $outside)),
                 'unansweredOutside' => \count(array_intersect_key($unanswered, $outside)),
                 'unmetTypes' => array_intersect_key(array_flip($named), $known) === [] ? $named : [],
+                'installConsulted' => $knownTypes->installConsulted(),
             ];
         }
 

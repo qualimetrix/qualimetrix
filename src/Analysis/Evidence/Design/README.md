@@ -67,6 +67,13 @@ own. Do not recreate `Metrics/`, `Rules/`, or a generic helper subdirectory
 inside any of them, and do not put a type back in the root: a type that would
 belong to no family is the signal that a fifth family is being named.
 
+Because they read one tree, DIT and NOC are measured on one population: the
+named classes the per-file pass measured. `NocCollector` recognises them by the
+`design.dit` that pass left on them, so an interface, a trait or an enum gets
+no `design.noc` (not 0), and `interface B extends A` is not a subclass of `A`
+(the edge carries `Dependency::$interfaceExtends`). Otherwise every NOC
+aggregate would divide by a larger count than its DIT neighbour.
+
 `Inheritance/Contract/` is the one public surface here. It exists because
 following a chain out of the analysed path needs a file placed and read, which
 is delivery: the port is promised to the composer adapter in

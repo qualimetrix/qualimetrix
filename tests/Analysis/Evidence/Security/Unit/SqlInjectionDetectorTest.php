@@ -291,31 +291,6 @@ final class SqlInjectionDetectorTest extends TestCase
         self::assertCount(0, $locations);
     }
 
-    // --- isSqlFuncCall ---
-
-    #[Test]
-    public function itReturnsTrueForSqlFunctions(): void
-    {
-        foreach (['mysql_query', 'mysqli_query', 'pg_query', 'pg_query_params', 'sqlite_query'] as $func) {
-            $funcCall = $this->createFuncCall($func, []);
-            self::assertTrue($this->detector->isSqlFuncCall($funcCall), "Expected {$func} to be SQL function");
-        }
-    }
-
-    #[Test]
-    public function itReturnsFalseForNonSqlFunctions(): void
-    {
-        $funcCall = $this->createFuncCall('array_map', []);
-        self::assertFalse($this->detector->isSqlFuncCall($funcCall));
-    }
-
-    #[Test]
-    public function itReturnsFalseForDynamicName(): void
-    {
-        $funcCall = new FuncCall(new Variable('func'));
-        self::assertFalse($this->detector->isSqlFuncCall($funcCall));
-    }
-
     // --- SQL keyword matching (case-insensitive, word boundary) ---
 
     #[Test]

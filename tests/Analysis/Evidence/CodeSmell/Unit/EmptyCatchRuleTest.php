@@ -97,6 +97,11 @@ final class EmptyCatchRuleTest extends TestCase
         self::assertSame('Empty catch block detected - exceptions should not be silently ignored', $findings[0]->message);
         self::assertSame('code-smell.empty-catch', $findings[0]->ruleName);
         self::assertSame(1.0, $findings[0]->metricValue);
+        // A comment-only catch is still reported, so the advice must not offer a comment as a remedy.
+        self::assertSame(
+            'Log or rethrow the exception, or handle it explicitly. A comment alone does not clear this finding; suppress an intentional ignore with `@qmx-ignore code-smell.empty-catch` and a reason.',
+            $findings[0]->recommendation,
+        );
     }
 
     /**

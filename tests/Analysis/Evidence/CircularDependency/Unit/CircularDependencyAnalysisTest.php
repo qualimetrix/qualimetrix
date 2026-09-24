@@ -11,6 +11,8 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyDetector;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
+use ReflectionClass;
+use ReflectionMethod;
 
 #[CoversClass(CircularDependencyAnalysis::class)]
 final class CircularDependencyAnalysisTest extends TestCase
@@ -41,6 +43,23 @@ final class CircularDependencyAnalysisTest extends TestCase
 
         self::assertSame([], $analysis->all());
         self::assertSame(1, $detector->detectCalls);
+    }
+
+    /**
+     * The evidence has one source, the graph `prepare()` is given. A public
+     * setter beside it would let anything swap the evidence after preparation,
+     * and `all()` could not tell the two apart.
+     */
+    #[Test]
+    public function itTakesEvidenceOnlyFromPreparation(): void
+    {
+        $public = array_map(
+            static fn(ReflectionMethod $method): string => $method->getName(),
+            (new ReflectionClass(CircularDependencyAnalysis::class))->getMethods(ReflectionMethod::IS_PUBLIC),
+        );
+        sort($public);
+
+        self::assertSame(['__construct', 'all', 'prepare', 'reset'], $public);
     }
 
     #[Test]

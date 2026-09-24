@@ -18,7 +18,7 @@ use PhpParser\Node\Name;
  * Shared logic for classifying AST nodes as member usages.
  *
  * Recognises five patterns:
- * - $this->method() / $sameClass->method() → usedMethods
+ * - $this->method() / $sameClass->method() → usedMethods (lowercase: method names are case-insensitive)
  * - self::method() / static:: → usedMethods
  * - $this->property           → usedProperties
  * - self::$prop / static::    → usedProperties
@@ -28,19 +28,23 @@ trait UsageTrackingTrait
 {
     /**
      * Classify a single AST node and record the referenced member in $data.
-     */
-    /**
+     *
      * @param array<string, true> $sameClassReceiverVariables
+     * @param string|null $callingMethod Lowercase name of the enclosing method; a call to it is recursion, not a usage
      */
-    private function trackUsage(Node $node, UnusedPrivateClassData $data, array $sameClassReceiverVariables = []): void
-    {
+    private function trackUsage(
+        Node $node,
+        UnusedPrivateClassData $data,
+        array $sameClassReceiverVariables = [],
+        ?string $callingMethod = null,
+    ): void {
         // $this->method() / a receiver proven to be a new self/static instance
         if ($node instanceof MethodCall
             && $node->var instanceof Variable
             && ($node->var->name === 'this' || (\is_string($node->var->name) && isset($sameClassReceiverVariables[$node->var->name])))
             && $node->name instanceof Identifier
         ) {
-            $data->usedMethods[$node->name->toString()] = true;
+            $this->recordMethodUsage($node->name, $data, $callingMethod);
 
             return;
         }
@@ -51,7 +55,7 @@ trait UsageTrackingTrait
             && $this->isSelfOrStatic($node->class)
             && $node->name instanceof Identifier
         ) {
-            $data->usedMethods[$node->name->toString()] = true;
+            $this->recordMethodUsage($node->name, $data, $callingMethod);
 
             return;
         }
@@ -86,6 +90,14 @@ trait UsageTrackingTrait
             && $node->name->toString() !== 'class'
         ) {
             $data->usedConstants[$node->name->toString()] = true;
+        }
+    }
+
+    private function recordMethodUsage(Identifier $name, UnusedPrivateClassData $data, ?string $callingMethod): void
+    {
+        $lowerName = $name->toLowerString();
+        if ($lowerName !== $callingMethod) {
+            $data->usedMethods[$lowerName] = true;
         }
     }
 

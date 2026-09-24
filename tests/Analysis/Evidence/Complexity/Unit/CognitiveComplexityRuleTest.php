@@ -457,7 +457,7 @@ final class CognitiveComplexityRuleTest extends TestCase
     }
 
     #[Test]
-    public function itBreakdownWithSingleIncrementAndClosureLabel(): void
+    public function itBreakdownLabelsANestedTernary(): void
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
@@ -466,7 +466,7 @@ final class CognitiveComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())
             ->with('complexity.cognitive', 20)
-            ->withEntry('cognitive-complexity.increments', ['type' => 'closure', 'line' => 15, 'points' => 3]);
+            ->withEntry('cognitive-complexity.increments', ['type' => 'ternary', 'line' => 15, 'points' => 3]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -482,8 +482,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $findings = $rule->analyzeLevel(SymbolLevel::Callable, $context);
 
         self::assertCount(1, $findings);
-        // Closure never gets "nested" prefix regardless of points
-        self::assertStringContainsString('Top: closure +3 L15.', $findings[0]->message); // trailing "." from message format, not from breakdown
+        self::assertStringContainsString('Top: nested ternary +3 L15.', $findings[0]->message); // trailing "." from message format, not from breakdown
     }
 
     #[Test]

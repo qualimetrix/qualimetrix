@@ -24,6 +24,10 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * ClassRank identifies the most "important" classes in the codebase by analyzing
  * the dependency graph using the PageRank algorithm. Classes with high ClassRank
  * are critical hubs where changes have wide-reaching impact.
+ *
+ * A class nothing depends on (`coupling.ca` = 0) is never reported: PageRank
+ * gives every class a floor share of the rank, and on a small or loosely
+ * coupled project that floor alone can clear the scaled threshold.
  */
 #[CliAlias('class-rank-warning', 'warning')]
 #[CliAlias('class-rank-error', 'error')]
@@ -97,6 +101,11 @@ final class ClassRankRule extends AbstractRule
             return null;
         }
 
+        $dependents = (int) $context->metrics->get($subject->toSymbolPath())->require(MetricName::COUPLING_CA);
+        if ($dependents === 0) {
+            return null;
+        }
+
         $rankValue = (float) $classRank;
 
         /** @var ClassRankOptions $effectiveOptions */
@@ -124,7 +133,13 @@ final class ClassRankRule extends AbstractRule
             ),
             severity: $severity,
             metricValue: $rankValue,
-            recommendation: \sprintf('ClassRank: %.4f (threshold: %.4f) — coupling hotspot, many depend on this', $rankValue, $threshold),
+            recommendation: \sprintf(
+                'ClassRank: %.4f (threshold: %.4f) — coupling hotspot, %d %s on this',
+                $rankValue,
+                $threshold,
+                $dependents,
+                $dependents === 1 ? 'class depends' : 'classes depend',
+            ),
             threshold: $threshold,
         );
     }

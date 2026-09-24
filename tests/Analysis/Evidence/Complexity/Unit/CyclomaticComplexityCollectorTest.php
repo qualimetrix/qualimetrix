@@ -321,6 +321,38 @@ PHP;
     }
 
     #[Test]
+    public function itCountsCoalesceAssignmentLikeNullCoalescing(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class CoalesceAssignmentTest
+{
+    public function shorthand(?string $name): string
+    {
+        $name ??= 'Unknown';
+
+        return $name;
+    }
+
+    public function longhand(?string $name): string
+    {
+        $name = $name ?? 'Unknown';
+
+        return $name;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(2, $metrics->get('complexity.ccn:App\CoalesceAssignmentTest::shorthand'));
+        self::assertSame(2, $metrics->get('complexity.ccn:App\CoalesceAssignmentTest::longhand'));
+    }
+
+    #[Test]
     public function itCountsNullsafeOperatorAsDecisionPoint(): void
     {
         $code = <<<'PHP'

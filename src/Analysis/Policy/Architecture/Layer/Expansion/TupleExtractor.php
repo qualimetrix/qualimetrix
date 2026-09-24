@@ -87,13 +87,6 @@ final class TupleExtractor
         /** @var array<string, array<string, string>> */
         $observed = [];
 
-        // Hoist the mode check out of the per-class loop: under MatchMode::Any
-        // the post-pattern criteria check is a no-op (a class that bound via
-        // the capture pattern is admitted regardless of non-pattern criteria),
-        // so we skip the function call entirely.
-        $checkNonPatternCriteria = $membership->mode === MatchMode::All;
-        $exclude = $membership->exclude;
-
         foreach ($classes->classes() as $classPath) {
             $context = $classes->contextFor($classPath);
             if ($context->fqn === '') {
@@ -109,17 +102,7 @@ final class TupleExtractor
                 continue;
             }
 
-            if ($checkNonPatternCriteria && !self::admitsNonPatternCriteria($membership, $context)) {
-                continue;
-            }
-
-            // Apply the template's exclude clause AFTER capture binding
-            // succeeds, using the substituted bindings. A class that would be
-            // removed from the concrete layer at runtime must not contribute
-            // a tuple, otherwise template expansion produces a "phantom"
-            // concrete layer driven solely by classes that are then unassigned
-            // (and the layer itself would be empty under runtime classification).
-            if ($exclude !== null && self::excludeRemoves($exclude, $context, $tuple)) {
+            if (!self::admitsBoundTuple($membership, $context, $tuple)) {
                 continue;
             }
 
@@ -128,6 +111,28 @@ final class TupleExtractor
         }
 
         return array_values($observed);
+    }
+
+    /**
+     * The checks that need the capture bound first. Under `match: any` the
+     * non-pattern criteria are not asked: a class that bound through the
+     * capture pattern is admitted regardless of them.
+     *
+     * The template's `exclude:` is applied with the substituted bindings. A
+     * class that would be removed from the concrete layer at runtime must not
+     * contribute a tuple, otherwise template expansion produces a "phantom"
+     * concrete layer driven solely by classes that are then unassigned (and the
+     * layer itself would be empty under runtime classification).
+     *
+     * @param array<string, string> $tuple
+     */
+    private static function admitsBoundTuple(MembershipSpec $membership, ClassContext $context, array $tuple): bool
+    {
+        if ($membership->mode === MatchMode::All && !self::admitsNonPatternCriteria($membership, $context)) {
+            return false;
+        }
+
+        return $membership->exclude === null || !self::excludeRemoves($membership->exclude, $context, $tuple);
     }
 
     /**

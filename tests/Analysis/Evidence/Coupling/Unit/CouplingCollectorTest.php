@@ -564,6 +564,127 @@ final class CouplingCollectorTest extends TestCase
     }
 
     /**
+     * A parent namespace's Ca and Ce are taken over its whole subtree, so its
+     * CBO has to be taken over the same region: the namespaces on the far side
+     * of an edge that leaves or enters the subtree. Keyed by the namespace
+     * string alone, the parent matched no edge and published 0 beside a
+     * non-zero Ce, and a class declared in the parent itself counted its own
+     * sub-namespace as external.
+     */
+    #[Test]
+    public function itCountsAParentNamespaceCboOverTheSameSubtreeAsItsCaAndCe(): void
+    {
+        $deps = [
+            $this->dep('App\\A\\X', 'Ext\\Z'),
+            $this->dep('App\\B\\Y', 'Ext2\\Q'),
+            $this->dep('App\\Foo', 'App\\A\\X'),
+            $this->dep('Ext\\P', 'App\\B\\Y'),
+        ];
+
+        $graph = $this->realGraph($deps);
+        $repository = new InMemoryMetricRepository();
+        foreach (['App\\A\\X', 'App\\B\\Y', 'App\\Foo', 'Ext\\P'] as $class) {
+            $this->registerClass($repository, $class);
+        }
+        foreach (['App', 'App\\A', 'App\\B', 'Ext'] as $namespace) {
+            $this->registerNamespace($repository, $namespace);
+        }
+
+        $this->collector->calculate($graph, $repository);
+
+        $app = $repository->get(SymbolPath::forNamespace('App'));
+        self::assertSame(2, $app->get('coupling.ce'));
+        self::assertSame(1, $app->get('coupling.ca'));
+        // Ext (both directions) and Ext2; App\A is inside App, not coupled to it.
+        self::assertSame(2, $app->get('coupling.cbo'));
+
+        // A leaf keeps its own answer: Ext out, and App, where App\Foo lives, in.
+        self::assertSame(2, $repository->get(SymbolPath::forNamespace('App\\A'))->get('coupling.cbo'));
+        // Ext2 out, Ext in: one namespace each way.
+        self::assertSame(2, $repository->get(SymbolPath::forNamespace('App\\B'))->get('coupling.cbo'));
+    }
+
+    /**
+     * Extending a PHP class is how a class names PHP's type, not coupling to
+     * it: the same class written as `implements \Countable` or typed on
+     * `\DateTimeImmutable` counts nothing, so neither may `extends`. Every
+     * coupling number read from the class's edges agrees.
+     */
+    #[Test]
+    public function itCountsNoCouplingForExtendingAPhpClass(): void
+    {
+        $deps = [
+            $this->dep('App\\MyErr', 'RuntimeException', DependencyType::Extends),
+            $this->dep('App\\Rand', 'Random\\RandomException', DependencyType::Extends),
+            $this->dep('App\\Child', 'Vendor\\Base', DependencyType::Extends),
+        ];
+
+        $graph = $this->realGraph($deps);
+        $repository = new InMemoryMetricRepository();
+        foreach (['App\\MyErr', 'App\\Rand', 'App\\Child'] as $class) {
+            $this->registerClass($repository, $class);
+        }
+        $this->registerNamespace($repository, 'App');
+
+        $this->collector->calculate($graph, $repository);
+
+        foreach (['App\\MyErr', 'App\\Rand'] as $class) {
+            $metrics = $repository->get(SymbolPath::fromClassFqn($class));
+            foreach (['coupling.ce', 'coupling.cbo', 'coupling.cbo-app', 'coupling.ce-packages'] as $key) {
+                self::assertSame(0, $metrics->get($key), $class . ' ' . $key);
+            }
+        }
+
+        // The neighbour: extending a vendor class is coupling.
+        $child = $repository->get(SymbolPath::fromClassFqn('App\\Child'));
+        self::assertSame(1, $child->get('coupling.ce'));
+        self::assertSame(1, $child->get('coupling.cbo'));
+
+        $namespace = $repository->get(SymbolPath::forNamespace('App'));
+        self::assertSame(1, $namespace->get('coupling.ce'));
+        self::assertSame(1, $namespace->get('coupling.cbo'));
+    }
+
+    /**
+     * Namespace CBO counts namespaces and Ca/Ce count classes, so the numbers
+     * differ -- but over one region they cannot disagree about whether there
+     * is any coupling at all, nor can CBO exceed the classes it is drawn from.
+     */
+    #[Test]
+    public function itKeepsEveryNamespaceCboWithinTheCouplingItsCaAndCeMeasure(): void
+    {
+        $deps = [
+            $this->dep('App\\A\\X', 'Ext\\Z'),
+            $this->dep('App\\A\\X', 'App\\B\\Y'),
+            $this->dep('App\\B\\Y', 'App\\A\\W'),
+            $this->dep('App\\Foo', 'App\\A\\X'),
+            $this->dep('App\\C\\D\\E', 'App\\C\\F'),
+            $this->dep('Ext\\P', 'App\\C\\F'),
+            $this->dep('Other\\Iso', 'Other\\Iso2'),
+        ];
+
+        $graph = $this->realGraph($deps);
+        $repository = new InMemoryMetricRepository();
+        foreach ($graph->getAllClasses() as $class) {
+            $repository->add($class, new MetricBag(), RelativePath::fromString('test.php'), 1);
+        }
+        foreach ($graph->getAllNamespaces() as $namespace) {
+            $repository->add($namespace, new MetricBag(), RelativePath::fromString('test.php'), null);
+        }
+
+        $this->collector->calculate($graph, $repository);
+
+        foreach ($graph->getAllNamespaces() as $namespace) {
+            $metrics = $repository->get($namespace);
+            $classes = (int) $metrics->get('coupling.ca') + (int) $metrics->get('coupling.ce');
+            $cbo = (int) $metrics->get('coupling.cbo');
+
+            self::assertSame($classes === 0, $cbo === 0, $namespace->toString());
+            self::assertLessThanOrEqual($classes, $cbo, $namespace->toString());
+        }
+    }
+
+    /**
      * A namespace that both declares classes and contains a sub-namespace gets
      * two answers, and they have to be told apart: the subtree rollup counts
      * the sub-namespace's crossings as its own, the own scope counts only what
@@ -932,12 +1053,12 @@ final class CouplingCollectorTest extends TestCase
         self::assertSame(1, $serviceMetrics->get('coupling.ce-framework'));
     }
 
-    private function dep(string $source, string $target): Dependency
+    private function dep(string $source, string $target, DependencyType $type = DependencyType::New_): Dependency
     {
         return new Dependency(
             DeclarationPath::of(SymbolPath::fromClassFqn($source), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
             new LogicalClassPath(SymbolPath::fromClassFqn($target)),
-            DependencyType::New_,
+            $type,
             new Location(RelativePath::fromString('test.php'), 1),
         );
     }

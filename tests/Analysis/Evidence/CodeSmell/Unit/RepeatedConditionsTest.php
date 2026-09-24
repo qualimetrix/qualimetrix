@@ -28,4 +28,29 @@ final class RepeatedConditionsTest extends TestCase
         self::assertCount(1, $findings);
         self::assertSame('duplicate_condition', $findings[0]->type);
     }
+
+    #[Test]
+    public function itFollowsAnElseHoldingOnlyAnIfAsTheSameChain(): void
+    {
+        $if = (new NodeFinder())->findFirstInstanceOf(
+            (new ParserFactory())->createForHostVersion()->parse("<?php if (\$a) {} else if (\$b) {} else { // comment\n if (\$a) {} }") ?? [],
+            If_::class,
+        );
+        self::assertInstanceOf(If_::class, $if);
+        $conditions = new RepeatedConditions();
+
+        self::assertSame([['duplicate_condition', 2]], array_map(static fn($f): array => [$f->type, $f->line], $conditions->findings($if, 'file')));
+    }
+
+    #[Test]
+    public function itComparesConditionsWithTheirCalls(): void
+    {
+        $if = (new NodeFinder())->findFirstInstanceOf(
+            (new ParserFactory())->createForHostVersion()->parse('<?php if ($it->valid()) {} elseif ($it->valid()) {}') ?? [],
+            If_::class,
+        );
+        self::assertInstanceOf(If_::class, $if);
+
+        self::assertCount(1, (new RepeatedConditions())->findings($if, 'file'));
+    }
 }

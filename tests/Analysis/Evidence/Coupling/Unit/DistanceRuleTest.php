@@ -130,6 +130,8 @@ final class DistanceRuleTest extends TestCase
         // 0.35 is above warning (0.3), below error (0.5)
         $metricBag = (new MetricBag())
             ->with('coupling.distance', 0.35)
+            ->with('coupling.ca', 1)
+            ->with('coupling.ce', 1)
             ->with('coupling.abstractness', 0.2)
             ->with('coupling.instability', 0.45);
 
@@ -163,6 +165,8 @@ final class DistanceRuleTest extends TestCase
         // 0.6 is above error (0.5)
         $metricBag = (new MetricBag())
             ->with('coupling.distance', 0.6)
+            ->with('coupling.ca', 1)
+            ->with('coupling.ce', 1)
             ->with('coupling.abstractness', 0.1)
             ->with('coupling.instability', 0.3);
 
@@ -191,6 +195,8 @@ final class DistanceRuleTest extends TestCase
         // Distance close to 0 = on main sequence
         $metricBag = (new MetricBag())
             ->with('coupling.distance', 0.1)
+            ->with('coupling.ca', 1)
+            ->with('coupling.ce', 1)
             ->with('coupling.abstractness', 0.5)
             ->with('coupling.instability', 0.5);
 
@@ -218,11 +224,15 @@ final class DistanceRuleTest extends TestCase
         $nsInfo2 = self::subjectInfo($nsPath2, RelativePath::fromString('src/Controller'), null);
 
         $nsBag1 = (new MetricBag())
-            ->with('coupling.distance', 0.4) // Warning
+            ->with('coupling.distance', 0.4)
+            ->with('coupling.ca', 1)
+            ->with('coupling.ce', 1) // Warning
             ->with('coupling.abstractness', 0.1)
             ->with('coupling.instability', 0.5);
         $nsBag2 = (new MetricBag())
-            ->with('coupling.distance', 0.55) // Error
+            ->with('coupling.distance', 0.55)
+            ->with('coupling.ca', 1)
+            ->with('coupling.ce', 1) // Error
             ->with('coupling.abstractness', 0.0)
             ->with('coupling.instability', 0.45);
 
@@ -312,6 +322,8 @@ final class DistanceRuleTest extends TestCase
 
         $metricBag = (new MetricBag())
             ->with('coupling.distance', $distance)
+            ->with('coupling.ca', 1)
+            ->with('coupling.ce', 1)
             ->with('coupling.abstractness', 0.0)
             ->with('coupling.instability', 0.0);
 
@@ -358,6 +370,8 @@ final class DistanceRuleTest extends TestCase
         // classCount.sum=2 is below minClassCount=3, so no finding despite high distance
         $metricBag = (new MetricBag())
             ->with('coupling.distance', 0.6)
+            ->with('coupling.ca', 1)
+            ->with('coupling.ce', 1)
             ->with('coupling.abstractness', 0.1)
             ->with('coupling.instability', 0.3)
             ->with('size.class-count.sum', 2);
@@ -387,6 +401,8 @@ final class DistanceRuleTest extends TestCase
         // classCount.sum=3 meets minClassCount=3, so finding is reported
         $metricBag = (new MetricBag())
             ->with('coupling.distance', 0.6)
+            ->with('coupling.ca', 1)
+            ->with('coupling.ce', 1)
             ->with('coupling.abstractness', 0.1)
             ->with('coupling.instability', 0.3)
             ->with('size.class-count.sum', 3);
@@ -430,6 +446,8 @@ final class DistanceRuleTest extends TestCase
             SymbolPath::forNamespace($namespace),
             MetricBag::fromArray([
                 'coupling.distance' => 0.6,
+                'coupling.ca' => 1,
+                'coupling.ce' => 1,
                 'coupling.abstractness' => 0.1,
                 'coupling.instability' => 0.3,
             ]),
@@ -442,6 +460,46 @@ final class DistanceRuleTest extends TestCase
 
         self::assertSame(1, $repository->get(SymbolPath::forNamespace($namespace))->get('size.class-count.sum'));
         self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+    }
+
+    /**
+     * With Ca = Ce = 0 instability is 0 by convention, not by measurement, so
+     * a concrete namespace nobody touches computed D = 1.0 and was reported
+     * as the worst imbalance of stability and abstraction -- about a package
+     * whose stability nothing measured. The rule does not judge it, as it does
+     * not judge one below `min_class_count`.
+     */
+    #[Test]
+    public function itDoesNotJudgeANamespaceWithoutAnyCoupling(): void
+    {
+        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')]));
+        $repository = new InMemoryMetricRepository();
+        $file = RelativePath::fromString('src/Iso/C1.php');
+
+        $repository->add(SymbolPath::forNamespace('App\\Iso'), MetricBag::fromArray([
+            'size.class-count.sum' => 3,
+            'coupling.distance' => 1.0,
+            'coupling.abstractness' => 0.0,
+            'coupling.instability' => 0.0,
+            'coupling.ca' => 0,
+            'coupling.ce' => 0,
+        ]), $file, 1);
+        // The neighbour the gate must not reach: a concrete namespace others
+        // depend on is the zone of pain the rule exists for.
+        $repository->add(SymbolPath::forNamespace('App\\Stable'), MetricBag::fromArray([
+            'size.class-count.sum' => 3,
+            'coupling.distance' => 1.0,
+            'coupling.abstractness' => 0.0,
+            'coupling.instability' => 0.0,
+            'coupling.ca' => 2,
+            'coupling.ce' => 0,
+        ]), $file, 1);
+
+        $findings = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $findings);
+        self::assertSame('App\\Stable', $findings[0]->symbolPath->namespace);
         self::assertSame(Severity::Error, $findings[0]->severity);
     }
 
@@ -458,6 +516,8 @@ final class DistanceRuleTest extends TestCase
         // No classCount.sum metric at all, but minClassCount=0 so it should still be analyzed
         $metricBag = (new MetricBag())
             ->with('coupling.distance', 0.6)
+            ->with('coupling.ca', 1)
+            ->with('coupling.ce', 1)
             ->with('coupling.abstractness', 0.1)
             ->with('coupling.instability', 0.3);
 
@@ -564,6 +624,8 @@ final class DistanceRuleTest extends TestCase
 
         $metricBag = (new MetricBag())
             ->with('coupling.distance', 0.1)
+            ->with('coupling.ca', 1)
+            ->with('coupling.ce', 1)
             ->with('coupling.abstractness', 0.5)
             ->with('coupling.instability', 0.5);
 
@@ -651,6 +713,8 @@ final class DistanceRuleTest extends TestCase
                 MetricName::COUPLING_DISTANCE => 0.4,
                 MetricName::COUPLING_ABSTRACTNESS => 0.2,
                 MetricName::COUPLING_INSTABILITY => 0.6,
+                MetricName::COUPLING_CA => 2,
+                MetricName::COUPLING_CE => 3,
             ]),
         );
 
@@ -681,7 +745,7 @@ final class DistanceRuleTest extends TestCase
         $bags = [
             $smallPath->toCanonical() => MetricBag::fromArray(['size.class-count.sum' => 2, 'coupling.distance' => 0.8]),
             $missingPath->toCanonical() => MetricBag::fromArray(['size.class-count.sum' => 3]),
-            $belowPath->toCanonical() => MetricBag::fromArray(['size.class-count.sum' => 3, 'coupling.distance' => 0.1]),
+            $belowPath->toCanonical() => MetricBag::fromArray(['size.class-count.sum' => 3, 'coupling.distance' => 0.1, 'coupling.ca' => 1, 'coupling.ce' => 1]),
         ];
         $repository->method('get')->willReturnCallback(
             static fn(SymbolPath $path): MetricBag => $bags[$path->toCanonical()],

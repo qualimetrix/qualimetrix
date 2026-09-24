@@ -89,6 +89,21 @@ final class SensitiveNameMatcherTest extends TestCase
         yield 'ACCESS_TOKEN' => ['ACCESS_TOKEN'];
         yield 'REFRESH_TOKEN' => ['REFRESH_TOKEN'];
         yield 'jwtToken' => ['jwtToken'];
+
+        // fused lowercase or uppercase spellings, and a digit suffix
+        yield 'apikey' => ['apikey'];
+        yield 'APIKEY' => ['APIKEY'];
+        yield 'dbpassword' => ['dbpassword'];
+        yield 'DBPASSWORD' => ['DBPASSWORD'];
+        yield 'userpassword' => ['userpassword'];
+        yield 'apisecret' => ['apisecret'];
+        yield 'secretkey' => ['secretkey'];
+        yield 'accesstoken' => ['accesstoken'];
+        yield 'smtppasswd' => ['smtppasswd'];
+        yield 'myapikey' => ['myapikey'];
+        yield 'apiKey1' => ['apiKey1'];
+        yield 'API_KEY_2' => ['API_KEY_2'];
+        yield 'password2' => ['password2'];
         yield 'JWT_TOKEN' => ['JWT_TOKEN'];
     }
 
@@ -150,6 +165,21 @@ final class SensitiveNameMatcherTest extends TestCase
         yield 'foreignKey' => ['foreignKey'];
         yield 'arrayKey' => ['arrayKey'];
         yield 'CACHE_KEY' => ['CACHE_KEY'];
+
+        // fused spellings that must stay non-sensitive
+        yield 'monkey' => ['monkey'];
+        yield 'keyword' => ['keyword'];
+        yield 'hotkey' => ['hotkey'];
+        yield 'passwordless' => ['passwordless'];
+        yield 'secretary' => ['secretary'];
+        yield 'passwordhash' => ['passwordhash'];
+        yield 'haspassword' => ['haspassword'];
+        yield 'hashedpassword' => ['hashedpassword'];
+        yield 'resetpassword' => ['resetpassword'];
+        yield 'cachekey' => ['cachekey'];
+        yield 'primarykey' => ['primarykey'];
+        yield 'sessiontoken' => ['sessiontoken'];
+        yield 'csrftoken' => ['csrftoken'];
 
         // empty and trivial
         yield 'empty string' => [''];

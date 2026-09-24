@@ -20,6 +20,8 @@ Detects hardcoded credentials in PHP code -- string literal values assigned to v
 **Detection patterns:**
 
 - Variable assignment: `$password = 'secret';`
+- Property assignment: `$this->apiKey = '...';`, `self::$secret = '...';` (also with `??=`)
+- Array element assignment: `$config['password'] = '...';`
 - Array item: `['api_key' => 'abc123']`
 - Class constant: `const DB_PASSWORD = 'root';`
 - `define()` call: `define('API_KEY', '...');`
@@ -32,9 +34,15 @@ Detects hardcoded credentials in PHP code -- string literal values assigned to v
 - Compound "key" (only with qualifier): `apiKey`, `secretKey`, `privateKey`, `encryptionKey`, `signingKey`, `authKey`, `accessKey`
 - Compound "token" (only with qualifier): `authToken`, `accessToken`, `bearerToken`, `apiToken`, `refreshToken`
 
+Names are split into words at case changes, underscores and letter/digit boundaries (`apiKey1` is `api`, `key`, `1`). A word written without any boundary is split when it ends with a sensitive word: `$apikey`, `$dbpassword`, `APISECRET` match, while `passwordless`, `secretary`, `keyword` and `monkey` do not.
+
 Names like `$passwordHash`, `$tokenStorage`, `$cacheKey`, `OPTION_PASSWORD` are excluded (non-credential context).
 
-**Value filtering:** empty strings, strings shorter than 4 characters, and strings of identical characters (`***`, `xxx`) are skipped.
+**Value filtering:** these values are skipped:
+
+- empty strings, strings shorter than 4 characters, and strings of identical characters (`***`, `xxx`);
+- dotted identifiers such as `auth.password.reset` or `auth.password-reset` (translation, configuration or channel keys: each segment starts with a letter or an underscore, and a hyphen joins words inside it) — a JWT (`eyJ...`) is not treated as one;
+- messages: longer than 20 characters and at least three whitespace-separated words. Hyphens, dots, slashes and plus signs are not word breaks, so UUID-, AWS- and base64-shaped keys are still reported.
 
 <!-- llms:skip-end -->
 
@@ -104,6 +112,10 @@ Detects use of superglobals (`$_GET`, `$_POST`, `$_REQUEST`, `$_COOKIE`) in SQL 
 - Arguments to unsafe query functions: `mysql_query($_GET['q'])`, `mysqli_query($conn, $_POST['sql'])`, `pg_query($_REQUEST['q'])`
 - `sprintf()` with SQL template: `sprintf("SELECT * FROM users WHERE id = %s", $_GET['id'])`
 
+The superglobal is found through the same value-passing wrappers as for XSS (`"... WHERE id = " . ($_GET['id'] ?? 0)` is reported); a function call or an `(int)`/`(float)` cast ends the search.
+
+One query is one finding. When a query function, a `sprintf()` call or a concatenation reports a superglobal, the queries built inside it are not reported again: `mysqli_query($conn, "SELECT * FROM users WHERE name = '{$_POST['name']}'")` is one violation, not one for the call and one for the interpolated string. A query behind any other call is still reported on its own: `mysqli_query($conn, trim("SELECT * FROM users WHERE id = " . $_GET['id']))` is reported for the concatenation.
+
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
@@ -155,13 +167,9 @@ $stmt->execute();
 
 Detects `echo` or `print` statements that output superglobals (`$_GET`, `$_POST`, `$_REQUEST`, `$_COOKIE`) without proper sanitization, which can lead to Cross-Site Scripting (XSS) attacks.
 
-A violation is **not** reported when the value is wrapped in a sanitization function:
+The superglobal is found through the wrappers that pass its value on: concatenation, interpolation, `??`, the branches of `?:`, `match` arm results, `(string)`, `@` and assignment — `echo $_GET['name'] ?? 'guest';` is reported.
 
-- `htmlspecialchars()`
-- `htmlentities()`
-- `strip_tags()`
-- `intval()`
-- `(int)` or `(float)` casts
+A violation is **not** reported when the value passes through a function or method call or an `(int)`/`(float)` cast. That covers the sanitizers — `htmlspecialchars()`, `htmlentities()`, `strip_tags()`, `intval()` — but equally every other call: function results are not tracked (see *What is NOT detected* under *Detection scope* below).
 
 <!-- llms:skip-end -->
 
@@ -212,12 +220,9 @@ echo (int) $_GET['id'];
 
 Detects superglobals (`$_GET`, `$_POST`, `$_REQUEST`, `$_COOKIE`) passed as arguments to shell execution functions, which can lead to command injection attacks.
 
-**Detected functions:** `exec()`, `system()`, `passthru()`, `shell_exec()`, `proc_open()`, `popen()`
+**Detected sinks:** `exec()`, `system()`, `passthru()`, `shell_exec()`, `proc_open()`, `popen()`, and the backtick operator (`` `ls {$_GET['dir']}` ``), which runs a command exactly like `shell_exec()`.
 
-A violation is **not** reported when the value is wrapped in:
-
-- `escapeshellarg()`
-- `escapeshellcmd()`
+The superglobal is found through the same value-passing wrappers as for XSS (`??`, `?:`, `(string)`, concatenation, interpolation, ...). A violation is **not** reported when the value passes through a function call — `escapeshellarg()`, `escapeshellcmd()` and any other — or an `(int)`/`(float)` cast.
 
 <!-- llms:skip-end -->
 
@@ -343,15 +348,19 @@ The security rules (`sql-injection`, `xss`, `command-injection`) use **pattern-b
 
 ### What IS detected
 
-Direct superglobal-to-sink patterns, including through concatenation and string interpolation:
+Direct superglobal-to-sink patterns within one expression, including through the wrappers that pass the value on:
 
 ```php
 // All detected:
 echo $_GET['name'];                                          // direct
 echo "Hello " . $_POST['user'];                              // concatenation
 echo "Welcome {$_GET['name']}";                              // interpolation
+echo $_GET['name'] ?? 'guest';                               // null coalescing
+echo $ok ? $_GET['name'] : '';                               // ternary branch
+echo (string) $_GET['name'];                                 // string cast
 mysqli_query($conn, "SELECT * FROM t WHERE id=" . $_GET['id']); // SQL function arg
 exec("ping " . $_GET['host']);                                // command function arg
+$out = `ls {$_GET['dir']}`;                                  // backtick command
 ```
 
 ### What is NOT detected
@@ -366,6 +375,9 @@ echo $name;
 // NOT detected -- value passed through a function:
 function getName() { return $_GET['name']; }
 echo getName();
+
+// NOT detected -- any function call ends the search, not only a sanitizer:
+echo trim($_GET['name']);
 
 // NOT detected -- value stored in an object:
 $request->name = $_POST['name'];

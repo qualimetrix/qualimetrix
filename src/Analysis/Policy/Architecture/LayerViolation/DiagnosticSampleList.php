@@ -9,7 +9,7 @@ namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
  * that lists examples out of a set larger than a message should print whole.
  *
  * Shared by {@see DeclaredLayerReachability::coverage()},
- * {@see DeclaredLayerReachability::doubtedAssignments()} and
+ * {@see DoubtedAssignmentDiagnostic::forDoubts()} and
  * {@see UnassignedClassSummary::unassignedClasses()}: each builds a
  * `sprintf`-style text naming a few classes out of a larger set, and each is
  * gated separately (by {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode}
@@ -19,7 +19,8 @@ namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
  * Sorted before slicing so CI diffs stay stable: `metrics->all()` iteration
  * order is not stable under parallel collection.
  *
- * @internal Consumed by {@see DeclaredLayerReachability} and {@see UnassignedClassSummary}.
+ * @internal Consumed by {@see DeclaredLayerReachability}, {@see DoubtedAssignmentDiagnostic} and
+ *           {@see UnassignedClassSummary}.
  */
 final class DiagnosticSampleList
 {

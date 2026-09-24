@@ -127,7 +127,7 @@ function add(int $a, int $b): int
 
 **Collector:** `MaintainabilityIndexCollector`
 **Type:** `DerivedCollectorInterface`
-**Requires:** `maintainability.halstead.volume`, `complexity.ccn`
+**Requires:** `maintainability.halstead.volume`, `complexity.ccn`, `size.method-statement-count`
 **Provides:** `maintainability.mi`
 **Level:** Method
 
@@ -140,7 +140,11 @@ MI = 171 - 5.2xln(V) - 0.23xCCN - 16.2xln(LOC)
 Where:
 - V = Halstead Volume
 - CCN = Cyclomatic Complexity
-- LOC = Logical Lines of Code (LLOC -- statement count, not physical line count; estimated from Halstead volume when not available directly)
+- LOC = Logical Lines of Code (LLOC -- statement count, not physical line count)
+
+A symbol without Halstead volume or statement count (for example, a class
+entry) gets no MI. A callable that has both but no CCN is a wiring defect and
+stops the run with a `LogicException` instead of scoring it as CCN 1.
 
 **Normalization:** The result is clamped to the 0-100 range.
 
@@ -260,7 +264,7 @@ Changes are complete when the seven flat leaf declarations retain collector
 name `halstead`, all five `maintainability.halstead.*` metrics, derived requirements exactly
 `halstead`, `cyclomatic-complexity`, and `method-statement-count`, and the
 `maintainability.mi` ID, aliases, channels, option defaults, thresholds,
-and 101 owned PHPUnit IDs. Do not add a `Contract/` directory without a named
+and 100 owned PHPUnit IDs. Do not add a `Contract/` directory without a named
 external consumer.
 
 

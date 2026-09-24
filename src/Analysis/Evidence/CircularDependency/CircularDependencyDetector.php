@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\CircularDependency;
 
 use LogicException;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -117,52 +118,90 @@ class CircularDependencyDetector
     }
 
     /**
-     * Tarjan's algorithm: recursively visits nodes to find SCCs.
+     * Tarjan's algorithm over an explicit stack of frames rather than the call
+     * stack: the depth of the walk is the length of the longest dependency
+     * chain, and recursing that deep hit Xdebug's nesting limit on a chain of a
+     * few hundred classes. Each frame is a node, its successors, and the index
+     * of the next successor to visit; popping a frame is returning from the
+     * recursive call, so the partition and every SCC come out as before.
      */
-    private function strongConnect(string $nodeKey, DependencyGraphInterface $graph): void
+    private function strongConnect(string $rootKey, DependencyGraphInterface $graph): void
+    {
+        $this->discover($rootKey);
+        /** @var list<array{string, list<string>, int}> $frames */
+        $frames = [[$rootKey, $this->successors($rootKey, $graph), 0]];
+
+        while ($frames !== []) {
+            $top = \count($frames) - 1;
+            [$nodeKey, $successors, $next] = $frames[$top];
+
+            if ($next < \count($successors)) {
+                $frames[$top][2] = $next + 1;
+                $targetKey = $successors[$next];
+
+                if (!isset($this->indices[$targetKey])) {
+                    $this->discover($targetKey);
+                    $frames[] = [$targetKey, $this->successors($targetKey, $graph), 0];
+                } elseif ($this->onStack[$targetKey] ?? false) {
+                    $this->lowlinks[$nodeKey] = min($this->lowlinks[$nodeKey], $this->indices[$targetKey]);
+                }
+
+                continue;
+            }
+
+            array_pop($frames);
+            $this->collectComponentRootedAt($nodeKey);
+
+            if ($frames !== []) {
+                $parentKey = $frames[\count($frames) - 1][0];
+                $this->lowlinks[$parentKey] = min($this->lowlinks[$parentKey], $this->lowlinks[$nodeKey]);
+            }
+        }
+    }
+
+    private function discover(string $nodeKey): void
     {
         $this->indices[$nodeKey] = $this->index;
         $this->lowlinks[$nodeKey] = $this->index;
         $this->index++;
         $this->stack[] = $nodeKey;
         $this->onStack[$nodeKey] = true;
+    }
 
-        // Visit all dependencies
-        $nodePath = $this->symbolPathMap[$nodeKey];
-        foreach ($graph->getClassDependencies($nodePath) as $dependency) {
-            $targetKey = $dependency->targetLogical()->toCanonical();
+    /**
+     * The node's dependency targets in edge order, one per edge.
+     *
+     * @return list<string>
+     */
+    private function successors(string $nodeKey, DependencyGraphInterface $graph): array
+    {
+        return array_map(
+            static fn(Dependency $dependency): string => $dependency->targetLogical()->toCanonical(),
+            array_values($graph->getClassDependencies($this->symbolPathMap[$nodeKey])),
+        );
+    }
 
-            if (!isset($this->indices[$targetKey])) {
-                // Target not visited yet
-                $this->strongConnect($targetKey, $graph);
-                $this->lowlinks[$nodeKey] = min(
-                    $this->lowlinks[$nodeKey],
-                    $this->lowlinks[$targetKey],
-                );
-            } elseif ($this->onStack[$targetKey] ?? false) {
-                // Target is on stack (part of current SCC)
-                $this->lowlinks[$nodeKey] = min(
-                    $this->lowlinks[$nodeKey],
-                    $this->indices[$targetKey],
-                );
-            }
+    /**
+     * Pops the SCC off the stack when the node is its root.
+     */
+    private function collectComponentRootedAt(string $nodeKey): void
+    {
+        if ($this->lowlinks[$nodeKey] !== $this->indices[$nodeKey]) {
+            return;
         }
 
-        // If this is the root of an SCC, pop the SCC from stack
-        if ($this->lowlinks[$nodeKey] === $this->indices[$nodeKey]) {
-            $scc = [];
-            do {
-                $w = array_pop($this->stack);
-                if ($w === null) {
-                    break; // Safety check
-                }
-                $this->onStack[$w] = false;
-                $scc[] = $w;
-            } while ($w !== $nodeKey && $this->stack !== []);
-
-            if ($scc !== []) {
-                $this->sccs[] = $scc;
+        $scc = [];
+        do {
+            $w = array_pop($this->stack);
+            if ($w === null) {
+                break; // Safety check
             }
+            $this->onStack[$w] = false;
+            $scc[] = $w;
+        } while ($w !== $nodeKey && $this->stack !== []);
+
+        if ($scc !== []) {
+            $this->sccs[] = $scc;
         }
     }
 
@@ -187,29 +226,30 @@ class CircularDependencyDetector
         $start = $scc[0];
         $sccSet = array_flip($scc);
 
-        /** @var array<array<string>> $queue */
-        $queue = [[$start]];
+        // A queue read through a head index, with each node's predecessor kept
+        // instead of its whole path: shifting the queue and copying a path per
+        // edge made the search quadratic on a long cycle.
+        $queue = [$start];
+        $head = 0;
+        /** @var array<string, string> $predecessor */
+        $predecessor = [];
         // Seeding the start node keeps a self-loop on the representative from
         // being enqueued as a second hop, which would yield the degenerate
         // path A → A → A instead of a genuine walk through the cycle.
         $visited = [$start => true];
 
-        while ($queue !== []) {
-            $path = array_shift($queue);
-            $current = end($path);
-            if ($current === false) {
-                continue; // Empty path, skip
-            }
+        while (isset($queue[$head])) {
+            $current = $queue[$head++];
 
             foreach ($this->sortedNeighbours($current, $sccSet, $graph) as $targetKey) {
-                if ($targetKey === $start && \count($path) > 1) {
-                    // Found a cycle back to start
-                    return array_values([...$path, $start]);
+                if ($targetKey === $start && $current !== $start) {
+                    return [...$this->pathTo($current, $predecessor), $start];
                 }
 
                 if (!isset($visited[$targetKey])) {
                     $visited[$targetKey] = true;
-                    $queue[] = [...$path, $targetKey];
+                    $predecessor[$targetKey] = $current;
+                    $queue[] = $targetKey;
                 }
             }
         }
@@ -224,6 +264,25 @@ class CircularDependencyDetector
             'CircularDependencyDetector invariant violated: no cycle path found within the SCC [%s]',
             implode(', ', $scc),
         ));
+    }
+
+    /**
+     * The walk from the search's start to `$nodeKey`, rebuilt from predecessors.
+     *
+     * @param array<string, string> $predecessor
+     *
+     * @return list<string>
+     */
+    private function pathTo(string $nodeKey, array $predecessor): array
+    {
+        $path = [$nodeKey];
+
+        while (isset($predecessor[$nodeKey])) {
+            $nodeKey = $predecessor[$nodeKey];
+            $path[] = $nodeKey;
+        }
+
+        return array_reverse($path);
     }
 
     /**

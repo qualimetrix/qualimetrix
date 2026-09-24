@@ -264,9 +264,10 @@ final class DependencyGraphTest extends TestCase
 
         $graph = $this->build($deps);
 
-        // extends preserved, instanceof filtered
+        // extends preserved for inheritance readers, instanceof filtered;
+        // neither counts toward coupling
         self::assertCount(1, $graph->getAllDependencies());
-        self::assertSame(1, $graph->getClassCe(SymbolPath::fromClassFqn('App\\MyException')));
+        self::assertSame(0, $graph->getClassCe(SymbolPath::fromClassFqn('App\\MyException')));
 
         $classNames = array_map(fn(SymbolPath $p) => $p->toString(), $graph->getAllClasses());
         self::assertContains('RuntimeException', $classNames);
@@ -285,9 +286,10 @@ final class DependencyGraphTest extends TestCase
 
         $graph = $this->build($deps);
 
-        // App\Bar and Pdo\Mysql (extends) remain, Random\Randomizer and Dom\Document filtered
+        // App\Bar and Pdo\Mysql (extends) remain, Random\Randomizer and Dom\Document filtered;
+        // of the two, only App\Bar is coupling
         self::assertCount(2, $graph->getAllDependencies());
-        self::assertSame(2, $graph->getClassCe(SymbolPath::fromClassFqn('App\\Foo')));
+        self::assertSame(1, $graph->getClassCe(SymbolPath::fromClassFqn('App\\Foo')));
     }
 
     #[Test]

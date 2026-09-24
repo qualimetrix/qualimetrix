@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
+use Closure;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\ClassLikeHandler;
@@ -146,6 +147,9 @@ final class ClassContextFactory
      */
     private AnalysedDeclarations $analysed;
 
+    /** @var (Closure(string): bool)|null see {@see KnownTypes} */
+    private ?Closure $installDeclares = null;
+
     public function __construct()
     {
         $this->analysed = AnalysedDeclarations::unknown();
@@ -165,9 +169,14 @@ final class ClassContextFactory
      *                                                   them makes every answer
      *                                                   read as complete, as it
      *                                                   always did.
+     * @param (Closure(string): bool)|null $installDeclares Whether the analysed install
+     *                                                      declares a type, for
+     *                                                      {@see knownTypes()} only;
+     *                                                      membership never reads it.
      */
-    public function bindGraph(?DependencyGraphInterface $graph, ?iterable $analysedClasses = null): void
+    public function bindGraph(?DependencyGraphInterface $graph, ?iterable $analysedClasses = null, ?Closure $installDeclares = null): void
     {
+        $this->installDeclares = $installDeclares;
         $this->graph = $graph;
         $this->extendsMap = null;
         $this->interfaceSources = null;
@@ -238,12 +247,12 @@ final class ClassContextFactory
     }
 
     /**
-     * The types this run met, read from the graph and the declarations bound
-     * here — see {@see KnownTypes}.
+     * The types this run met, read from the graph, the declarations and the
+     * install bound here — see {@see KnownTypes}.
      */
     public function knownTypes(): KnownTypes
     {
-        return new KnownTypes($this->graph, $this->analysed);
+        return new KnownTypes($this->graph, $this->analysed, $this->installDeclares);
     }
 
     private function ensureMapsBuilt(): void

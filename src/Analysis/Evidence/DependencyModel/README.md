@@ -29,7 +29,6 @@ DependencyModel/
 │   └── Handler/                  # one internal extraction family
 ├── DependencyGraph.php
 ├── DependencyGraphBuilder.php
-├── EmptyDependencyGraph.php
 ├── NamespaceCouplings.php        # both coupling scopes of every namespace
 └── StringSet.php                 # unique-dependency counting for coupling
 ```
@@ -38,9 +37,9 @@ DependencyModel/
 
 The model's graph/value contracts and
 `DependencyTraversalParticipantInterface` are the declared public surface.
-`DependencyGraph`, `DependencyGraphBuilder`, `EmptyDependencyGraph`,
-`NamespaceCouplings`, `StringSet`, and every type under `Extraction/` are
-internal implementation details.
+`DependencyGraph`, `DependencyGraphBuilder`, `NamespaceCouplings`,
+`StringSet`, and every type under `Extraction/` are internal implementation
+details.
 `DependencyLocationInterface` exposes a structured relative file and line so
 Finding consumers can project DependencyModel-owned extraction locations
 without parsing their wire representation. `Analysis\Finding\Contract\Location` also
@@ -57,8 +56,13 @@ encounter order and coupling semantics.
 The builder leaves every edge whose target is a class PHP itself declares out
 of the coupling view — `getAllDependencies()`, the per-class dependency lists,
 `getAllClasses()`, Ce/Ca and both namespace scopes — because coupling to the
-standard library is not architectural risk. An `extends` edge is the one
-exception there: DIT and NOC read inheritance from it.
+standard library is not architectural risk. An `extends` edge is kept in
+`getAllDependencies()` (and its target in `getAllClasses()`), because DIT and
+NOC read inheritance from it, but it is in no per-class dependency list and
+counts toward no Ce, Ca or namespace scope: `extends \RuntimeException` is no
+more coupling than `implements \Countable`, and a consumer computing CBO from
+the per-class lists agrees with Ce and Ca without deciding again what a PHP
+class is.
 
 `getDeclarationDependencies()` answers a different question — what a
 declaration states about itself — and keeps every `extends`, `implements`,
@@ -169,7 +173,6 @@ The module owns these Unit test classes under
 `tests/Analysis/Evidence/DependencyModel/Unit/`:
 
 - `DependencyTest`
-- `EmptyDependencyGraphTest`
 - `DependencyGraphTest`
 - `DependencyGraphBuilderTest`
 - `DependencyResolverTest`

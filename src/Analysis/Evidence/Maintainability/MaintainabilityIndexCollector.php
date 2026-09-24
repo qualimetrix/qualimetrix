@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Maintainability;
 
+use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
@@ -70,7 +71,12 @@ final class MaintainabilityIndexCollector implements DerivedCollectorInterface, 
             return new MetricBag();
         }
 
-        $ccn = $sourceBag->get(MetricName::COMPLEXITY_CCN) ?? 1;
+        // Every callable carries CCN; a stand-in would pass for the simplest method.
+        $ccn = $sourceBag->get(MetricName::COMPLEXITY_CCN)
+            ?? throw new LogicException(\sprintf(
+                'Maintainability Index needs %s alongside Halstead volume and statement count',
+                MetricName::COMPLEXITY_CCN,
+            ));
 
         $mi = $this->calculator->calculate(
             halsteadVolume: (float) $volume,

@@ -435,7 +435,11 @@ final class CboRuleTest extends TestCase
 
         self::assertCount(1, $findings);
         self::assertSame(Severity::Warning, $findings[0]->severity);
-        self::assertStringContainsString('Coupling too high: 6 inbound + 10 outbound (CBO: 16, threshold: 14)', $findings[0]->message);
+        // Ca and Ce count classes, namespace CBO counts namespaces: the message
+        // names the unit so the union never reads smaller than its parts.
+        self::assertStringContainsString('Coupling too high: 6 inbound + 10 outbound (CBO: 16 namespaces, threshold: 14)', $findings[0]->message);
+        self::assertStringContainsString('CBO: 16 namespaces (threshold: 14)', (string) $findings[0]->recommendation);
+        self::assertStringNotContainsString('this class', (string) $findings[0]->recommendation);
         self::assertSame('coupling.cbo', $findings[0]->code);
     }
 
@@ -466,6 +470,53 @@ final class CboRuleTest extends TestCase
         self::assertCount(1, $findings);
         self::assertSame(Severity::Error, $findings[0]->severity);
         self::assertSame(25.0, $findings[0]->metricValue);
+    }
+
+    /**
+     * A parent namespace's CBO is taken over its whole subtree, so it grows
+     * with the subtree and the namespace thresholds do not model it. Only a
+     * namespace with no sub-namespace in the run is judged — including one that
+     * declares classes of its own beside its children, and including the global
+     * namespace, which is nobody's parent.
+     */
+    #[Test]
+    public function itJudgesOnlyNamespacesWithoutSubNamespaces(): void
+    {
+        $rule = new CboRule(new CboOptions());
+
+        $paths = [
+            'App' => SymbolPath::forNamespace('App'),
+            'App\Service' => SymbolPath::forNamespace('App\Service'),
+            'App\Service\Auth' => SymbolPath::forNamespace('App\Service\Auth'),
+            'App\ServiceLocator' => SymbolPath::forNamespace('App\ServiceLocator'),
+            'App\Report' => SymbolPath::forNamespace('App\Report'),
+            'App\ReportExport' => SymbolPath::forNamespace('App\ReportExport'),
+            '' => SymbolPath::forNamespace(''),
+        ];
+        $infos = array_map(
+            static fn(SymbolPath $path): \Qualimetrix\Core\Symbol\SymbolInfo => self::subjectInfo($path, RelativePath::fromString('src'), null),
+            array_values($paths),
+        );
+
+        // Every namespace is over the error threshold on its own numbers.
+        $metricBag = (new MetricBag())
+            ->with('coupling.cbo', 25)
+            ->with('coupling.ca', 10)
+            ->with('coupling.ce', 15)
+            ->with('size.class-count.sum', 5);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')->willReturn($infos);
+        $repository->method('get')->willReturn($metricBag);
+
+        $findings = $rule->analyzeLevel(SymbolLevel::Namespace_, new AnalysisContext($repository));
+
+        $judged = array_map(static fn($finding): string => (string) $finding->symbolPath->namespace, $findings);
+        sort($judged);
+
+        // `App\ReportExport` shares a string prefix with `App\Report` but is not
+        // beneath it, so `App\Report` is still a leaf.
+        self::assertSame(['', 'App\Report', 'App\ReportExport', 'App\ServiceLocator', 'App\Service\Auth'], $judged);
     }
 
     // Namespace minClassCount tests

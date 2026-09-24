@@ -38,6 +38,12 @@ For example, if `UserService` uses `UserRepository`, `Logger`, `Validator`, and 
 | 15--20 | High coupling -- consider reducing dependencies |
 | 20+    | Very high coupling                              |
 
+**At namespace level CBO counts namespaces, not classes.** A namespace's CBO is the number of distinct namespaces holding a class on the other side of a dependency that crosses the namespace's boundary, in either direction. The boundary is the namespace's whole subtree -- the same region its `coupling.ca` and `coupling.ce` are counted over -- so a parent namespace is coupled to what lies outside it, never to its own sub-namespaces. `coupling.ca` and `coupling.ce` on a namespace still count classes, which is why a namespace's CBO is usually smaller than either, and why the finding message spells it `CBO: N namespaces`.
+
+The other side is named by the namespace that declares the class, so the number depends on how finely the code around the namespace is split: dividing a neighbouring directory into sub-namespaces raises this namespace's CBO while its Ca and Ce stay the same. A parent namespace near the root of a project is coupled to many such namespaces and usually has the highest CBO of all. The namespace thresholds below reuse the class-level numbers; they were not calibrated for this quantity separately.
+
+**Only leaf namespaces are judged.** A namespace with a sub-namespace in the run is not reported at namespace level, whatever its CBO: its number is taken over the whole subtree and grows with it, so the thresholds do not describe it. That includes a namespace that declares classes of its own beside its sub-namespaces -- its CBO is still the subtree's. The value is published all the same (`coupling.cbo` on the namespace in `--format=metrics`), and the classes it holds are judged at class level as usual. Which namespaces are leaves depends on what the run analysed: on a narrowed run a namespace whose sub-namespaces were left out is a leaf.
+
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
@@ -50,7 +56,7 @@ For example, if `UserService` uses `UserRepository`, `Logger`, `Validator`, and 
 | Warning | > 14      | Warning  |
 | Error   | > 20      | Error    |
 
-**Namespace level** (enabled by default, requires at least 3 classes in the namespace):
+**Namespace level** (enabled by default, leaf namespaces only, requires at least 3 classes in the namespace):
 
 | Level   | Threshold | Severity |
 | ------- | --------- | -------- |
@@ -105,7 +111,7 @@ Qualimetrix implements **bidirectional coupling** consistent with Chidamber & Ke
 - **Extended coupling types:** Qualimetrix detects 14 types of coupling, going beyond C&K's original "methods or instance variables" definition. These include: class instantiation, static method calls, type hints (parameters, return types, properties), `catch` clauses, `instanceof` checks, class constants, attributes, `extends`/`implements`, and trait `use`.
 - **Union and intersection types:** Each type in a union (`A|B`) or intersection (`A&B`) type hint is counted as a separate coupling.
 - **Self-references excluded:** References to `self`, `static`, and `parent` within the same class are not counted as coupling.
-- **PHP built-in classes excluded:** Dependencies on classes from the PHP distribution (php-src) are excluded from CBO, Ca, and Ce — this includes core classes (`Exception`, `DateTime`, `Closure`), SPL (`ArrayIterator`, `SplFileInfo`), and bundled extensions (`PDO`, `DOMDocument`, `Random\Randomizer`, `CurlHandle`, etc.). Coupling to stable, PHP-maintained types does not increase architectural risk. Classes from PECL extensions (e.g., `Redis`, `Memcached`, `MongoDB\Driver\Manager`) are **not** excluded and count toward CBO as regular dependencies. Structural dependencies (`extends`) are always preserved for DIT calculations.
+- **PHP built-in classes excluded:** Dependencies on classes from the PHP distribution (php-src) are excluded from CBO, Ca, and Ce — this includes core classes (`Exception`, `DateTime`, `Closure`), SPL (`ArrayIterator`, `SplFileInfo`), and bundled extensions (`PDO`, `DOMDocument`, `Random\Randomizer`, `CurlHandle`, etc.). Coupling to stable, PHP-maintained types does not increase architectural risk. Classes from PECL extensions (e.g., `Redis`, `Memcached`, `MongoDB\Driver\Manager`) are **not** excluded and count toward CBO as regular dependencies. The exclusion does not depend on how the class is named: `extends \RuntimeException` counts toward CBO, Ca and Ce no more than `implements \Countable` or a `\DateTimeImmutable` type hint does. The `extends` edge itself is kept, because DIT and NOC read inheritance from it.
 
 !!! info "Deviation from original spec"
     The graph universe includes every named project class, interface, trait, and
@@ -324,13 +330,13 @@ The result is a number between 0.0 and 1.0:
 
 **How to read the value:**
 
-| I (Instability) | Interpretation                              |
-| --------------- | ------------------------------------------- |
-| 0.0             | Maximally stable (only depended upon)       |
-| 0.0--0.3        | Stable -- hard to change, many dependents   |
-| 0.3--0.7        | Balanced                                    |
-| 0.7--1.0        | Unstable -- easy to change                  |
-| 1.0             | Maximally unstable (only depends on others) |
+| I (Instability) | Interpretation                                                                                                                            |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| 0.0             | Maximally stable (only depended upon) -- or not connected at all: with Ca = Ce = 0 the ratio is undefined and reported as 0 by convention |
+| 0.0--0.3        | Stable -- hard to change, many dependents                                                                                                 |
+| 0.3--0.7        | Balanced                                                                                                                                  |
+| 0.7--1.0        | Unstable -- easy to change                                                                                                                |
+| 1.0             | Maximally unstable (only depends on others)                                                                                               |
 
 <!-- llms:skip-end -->
 
@@ -559,6 +565,10 @@ share of; see [What a Score Covers](../reference/health-scores.md#what-a-score-c
 The rule judges the subtree value `coupling.distance`, not `coupling.distance-own`.
 
 Only namespaces with at least 3 classes are analyzed (configurable via `minClassCount`).
+
+A namespace with no dependency in either direction (Ca = Ce = 0) is not judged either. Its instability is 0 by convention, not by measurement, so a concrete namespace that nothing uses and that uses nothing would read D = 1.0 and be reported as a zone of pain -- which needs many dependents it does not have. The value is still published and still enters `health.coupling`.
+
+A namespace that lacks an input publishes no distance at all rather than one computed from 0. A namespace that declares only functions is not in the class dependency graph, so it has no instability and gets no `coupling.distance`.
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
@@ -665,6 +675,8 @@ The result is a value between 0.0 and 1.0, where all class ranks in the project 
 | ------- | --------- | -------- |
 | Warning | >= 0.02   | Warning  |
 | Error   | >= 0.05   | Error    |
+
+Both thresholds are divided by the project-size factor described under Implementation notes. A class that no other class depends on (`coupling.ca` = 0) is never reported, whatever its rank: it is not a hub, and on a small project the floor rank every class receives can exceed the scaled threshold on its own.
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
@@ -711,14 +723,14 @@ Qualimetrix uses the standard PageRank algorithm with the following parameters:
 - **Max iterations:** 100
 - **Convergence epsilon:** 1e-6
 
-Ranks are normalized so they sum to 1.0 across all project classes. Vendor classes are excluded from the graph. Isolated classes (no incoming or outgoing dependencies) receive the base rank of `(1 - d) / N`, where `d` is the damping factor and `N` is the total number of classes.
+Ranks are normalized so they sum to 1.0 across all project classes. Vendor classes are excluded from the graph. A class with no outgoing project dependency is a *dangling* node: its rank is spread evenly over all classes in the next iteration, which is what keeps the sum at 1.0. Every class therefore receives at least `(1 - d) / N + d · S / N`, where `d` is the damping factor, `N` the number of classes and `S` the total rank held by dangling classes. An isolated class (no incoming or outgoing dependencies) receives exactly that floor, not `(1 - d) / N`: in a project with no dependencies at all every class is dangling, `S = 1`, and each class ranks `1 / N`. The floor rises with the share of dangling classes, which is why the rule does not report a class nothing depends on.
 
 Each graph vertex is a logical class. Its one ClassRank score is projected to
 every exact declaration owned by that logical class; the score and graph remain
 logical while controls, findings, baseline identity, and fingerprints remain
 declaration-scoped.
 
-**Sqrt scaling for project size:** Because ranks sum to 1.0, individual ClassRank values naturally decrease as the number of classes grows (dilution effect). To keep thresholds meaningful across different project sizes, Qualimetrix applies a `sqrt(classCount / 100)` scaling factor: thresholds remain unchanged for a 100-class project, loosen for larger projects, and tighten for smaller ones.
+**Sqrt scaling for project size:** Because ranks sum to 1.0, individual ClassRank values naturally decrease as the number of classes grows (dilution effect). To keep thresholds meaningful across different project sizes, Qualimetrix applies a `sqrt(classCount / 100)` scaling factor: both thresholds are divided by it, so they remain unchanged for a 100-class project, are lower for larger projects (where every rank is diluted) and higher for smaller ones.
 
 <!-- llms:skip-end -->
 

@@ -37,14 +37,4 @@ final class CircularDependencyAnalysis implements CircularDependencyPreparationI
     {
         return $this->cycles;
     }
-
-    /**
-     * Replaces prepared evidence for an internal fixture.
-     *
-     * @param list<Cycle> $cycles
-     */
-    public function replace(array $cycles): void
-    {
-        $this->cycles = $cycles;
-    }
 }

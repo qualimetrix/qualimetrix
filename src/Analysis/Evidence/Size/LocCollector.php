@@ -26,7 +26,8 @@ use SplFileInfo;
  * Collects Lines of Code metrics.
  *
  * Metrics:
- * - loc:{path} — Total lines of code
+ * - loc:{path} — Total lines of code, counted like `wc -l` plus an
+ *   unterminated last line: a file's final line break does not open a line
  * - lloc:{path} — Logical lines (lines with at least one code token)
  * - cloc:{path} — Pure comment lines (no code tokens on the same line)
  * - classLoc — Physical LOC per class (endLine - startLine + 1)
@@ -155,63 +156,22 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
             return [MetricName::SIZE_LOC => 0, MetricName::SIZE_LLOC => 0, MetricName::SIZE_CLOC => 0];
         }
 
-        $lines = explode("\n", $content);
+        $lines = $this->physicalLines($content);
         $endLine ??= \count($lines);
         $startLine = max(1, $startLine);
         $endLine = min(\count($lines), $endLine);
         $loc = max(0, $endLine - $startLine + 1);
 
-        // Track which lines contain comment tokens
-        /** @var array<int, true> */
-        $commentLines = [];
-
-        // Track which lines have non-comment code tokens (array tokens only)
-        /** @var array<int, true> */
-        $codeLines = [];
-
-        // Track which lines are empty
+        // Identify empty lines
         /** @var array<int, true> */
         $emptyLines = [];
-
-        // Identify empty lines
         foreach ($lines as $lineNumber => $line) {
             if (trim($line) === '') {
                 $emptyLines[$lineNumber + 1] = true;
             }
         }
 
-        // Use PHP tokenizer to classify lines
-        $tokens = @token_get_all($content);
-
-        foreach ($tokens as $token) {
-            if (!\is_array($token)) {
-                // Single-character tokens ('{', '}', ';', etc.) don't carry line
-                // information in token_get_all. Lines containing only such tokens
-                // are handled below by checking non-empty, non-comment lines.
-                continue;
-            }
-
-            [$tokenId, $tokenContent, $tokenLine] = $token;
-
-            if ($tokenId === \T_COMMENT || $tokenId === \T_DOC_COMMENT) {
-                // Mark all lines covered by this comment
-                $commentLineCount = substr_count($tokenContent, "\n");
-
-                for ($i = 0; $i <= $commentLineCount; $i++) {
-                    $commentLines[$tokenLine + $i] = true;
-                }
-            } elseif ($tokenId !== \T_WHITESPACE
-                && $tokenId !== \T_OPEN_TAG
-                && $tokenId !== \T_CLOSE_TAG
-            ) {
-                // Non-whitespace, non-comment, non-tag array token = code
-                $tokenLineCount = substr_count($tokenContent, "\n");
-
-                for ($i = 0; $i <= $tokenLineCount; $i++) {
-                    $codeLines[$tokenLine + $i] = true;
-                }
-            }
-        }
+        [$commentLines, $codeLines] = $this->tokenLines($content);
 
         // A "pure comment line" has comment tokens but NO code tokens.
         // Lines with both code and comments (inline comments) are code lines, not CLOC.
@@ -232,6 +192,64 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
             MetricName::SIZE_LLOC => max(0, $lloc),
             MetricName::SIZE_CLOC => $pureCommentLineCount,
         ];
+    }
+
+    /**
+     * The lines that carry a comment token and the lines that carry a code
+     * token, as the PHP tokenizer sees them. A line can be in both.
+     *
+     * @return array{array<int, true>, array<int, true>}
+     */
+    private function tokenLines(string $content): array
+    {
+        /** @var array<int, true> */
+        $commentLines = [];
+        /** @var array<int, true> */
+        $codeLines = [];
+
+        foreach (@token_get_all($content) as $token) {
+            if (!\is_array($token)) {
+                // Single-character tokens ('{', '}', ';', etc.) don't carry line
+                // information in token_get_all. Lines containing only such tokens
+                // are handled by the caller as non-empty, non-comment lines.
+                continue;
+            }
+
+            [$tokenId, $tokenContent, $tokenLine] = $token;
+
+            if ($tokenId === \T_COMMENT || $tokenId === \T_DOC_COMMENT) {
+                $this->markLines($commentLines, $tokenLine, $tokenContent);
+            } elseif ($tokenId !== \T_WHITESPACE
+                && $tokenId !== \T_OPEN_TAG
+                && $tokenId !== \T_CLOSE_TAG
+            ) {
+                $this->markLines($codeLines, $tokenLine, $tokenContent);
+            }
+        }
+
+        return [$commentLines, $codeLines];
+    }
+
+    /**
+     * @param array<int, true> $lines
+     */
+    private function markLines(array &$lines, int $firstLine, string $tokenContent): void
+    {
+        $lineCount = substr_count($tokenContent, "\n");
+
+        for ($i = 0; $i <= $lineCount; $i++) {
+            $lines[$firstLine + $i] = true;
+        }
+    }
+
+    /**
+     * A final line break terminates the last line; it does not open another.
+     *
+     * @return list<string>
+     */
+    private function physicalLines(string $content): array
+    {
+        return explode("\n", str_ends_with($content, "\n") ? substr($content, 0, -1) : $content);
     }
 
     /**

@@ -6,18 +6,31 @@ namespace Qualimetrix\Analysis\Evidence\Security;
 
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\ArrayDimFetch;
+use PhpParser\Node\Expr\Assign;
+use PhpParser\Node\Expr\BinaryOp\Coalesce;
 use PhpParser\Node\Expr\BinaryOp\Concat;
 use PhpParser\Node\Expr\Cast;
-use PhpParser\Node\Expr\FuncCall;
+use PhpParser\Node\Expr\ErrorSuppress;
+use PhpParser\Node\Expr\Match_;
+use PhpParser\Node\Expr\Ternary;
 use PhpParser\Node\Expr\Variable;
-use PhpParser\Node\Name;
+use PhpParser\Node\InterpolatedStringPart;
+use PhpParser\Node\MatchArm;
 use PhpParser\Node\Scalar\InterpolatedString;
 
 /**
- * Shared utility for analyzing superglobal usage in AST expressions.
+ * Finds a dangerous superglobal ($_GET, $_POST, $_REQUEST, $_COOKIE) whose
+ * value becomes the value of an expression, or part of it, within that one
+ * expression.
  *
- * Provides methods to detect dangerous superglobals ($_GET, $_POST, $_REQUEST, $_COOKIE),
- * check sanitization, and extract superglobal names from expression trees.
+ * Only wrappers whose result is one of their operands, or a string built
+ * from them, are looked through: concatenation, interpolation, `??`, the
+ * branches of `?:` (and the condition of the short form, which is its
+ * value), `match` arm results, `(string)`, `@` and assignment. Every other
+ * node ends the search, so a function or method call — a sanitizer such as
+ * `htmlspecialchars()` or `escapeshellarg()` as much as any other — an
+ * `(int)`/`(float)` cast, an array key and a ternary condition never carry
+ * the superglobal's value. Data flow through variables is not tracked.
  */
 final readonly class SuperglobalAnalyzer
 {
@@ -30,157 +43,26 @@ final readonly class SuperglobalAnalyzer
     ];
 
     /**
-     * Check if an expression is a dangerous superglobal variable or array access.
+     * @return string|null name of the first superglobal found (without `$`), or null
      */
-    public function isDangerousSuperglobal(Expr $expr): bool
+    public function findSuperglobal(Expr $expr): ?string
     {
-        // Direct: $_GET, $_POST, etc.
-        if ($expr instanceof Variable && \is_string($expr->name)) {
-            return \in_array($expr->name, self::DANGEROUS_SUPERGLOBALS, true);
+        if ($expr instanceof Variable) {
+            return \is_string($expr->name) && \in_array($expr->name, self::DANGEROUS_SUPERGLOBALS, true) ? $expr->name : null;
         }
 
-        // Array access: $_GET['key']
-        if ($expr instanceof ArrayDimFetch) {
-            return $this->isDangerousSuperglobal($expr->var);
-        }
-
-        return false;
+        return $this->findSuperglobalInParts($this->valueOperands($expr));
     }
 
     /**
-     * Check if an expression tree contains a superglobal.
+     * @param array<Expr|InterpolatedStringPart> $parts parts of an interpolated string or a backtick command
      */
-    public function containsSuperglobal(Expr $expr): bool
+    public function findSuperglobalInParts(array $parts): ?string
     {
-        if ($this->isDangerousSuperglobal($expr)) {
-            return true;
-        }
-
-        if ($expr instanceof Concat) {
-            return $this->containsSuperglobal($expr->left) || $this->containsSuperglobal($expr->right);
-        }
-
-        if ($expr instanceof ArrayDimFetch) {
-            return $this->isDangerousSuperglobal($expr->var);
-        }
-
-        return false;
-    }
-
-    /**
-     * Get the superglobal variable name from an expression.
-     */
-    public function getSuperglobalName(Expr $expr): string
-    {
-        if ($expr instanceof Variable && \is_string($expr->name)) {
-            return $expr->name;
-        }
-
-        if ($expr instanceof ArrayDimFetch) {
-            return $this->getSuperglobalName($expr->var);
-        }
-
-        return 'unknown';
-    }
-
-    /**
-     * Find a superglobal name in an expression tree (traverses Concat chains).
-     */
-    public function findSuperglobalName(Expr $expr): string
-    {
-        if ($this->isDangerousSuperglobal($expr)) {
-            return $this->getSuperglobalName($expr);
-        }
-
-        if ($expr instanceof Concat) {
-            if ($this->containsSuperglobal($expr->left)) {
-                return $this->findSuperglobalName($expr->left);
-            }
-
-            return $this->findSuperglobalName($expr->right);
-        }
-
-        if ($expr instanceof ArrayDimFetch) {
-            return $this->getSuperglobalName($expr);
-        }
-
-        return 'unknown';
-    }
-
-    /**
-     * Check if an expression is an unsanitized superglobal.
-     *
-     * @param list<string> $sanitizers Function names considered safe wrappers
-     */
-    public function isUnsanitizedSuperglobal(Expr $expr, array $sanitizers): bool
-    {
-        // Check for sanitization wrapper: htmlspecialchars($_GET['x']), etc.
-        if ($expr instanceof FuncCall && $expr->name instanceof Name) {
-            $funcName = $expr->name->toLowerString();
-            if (\in_array($funcName, $sanitizers, true)) {
-                return false;
-            }
-        }
-
-        // Check for int/float cast: (int)$_GET['x']
-        if ($expr instanceof Cast\Int_ || $expr instanceof Cast\Double) {
-            return false;
-        }
-
-        // Check for intval wrapper
-        if ($expr instanceof FuncCall && $expr->name instanceof Name && $expr->name->toLowerString() === 'intval') {
-            return false;
-        }
-
-        return $this->isDangerousSuperglobal($expr);
-    }
-
-    /**
-     * Check if an expression tree contains an unsanitized superglobal.
-     *
-     * @param list<string> $sanitizers Function names considered safe wrappers
-     */
-    public function containsUnsanitizedSuperglobalInExpr(Expr $expr, array $sanitizers): bool
-    {
-        if ($this->isUnsanitizedSuperglobal($expr, $sanitizers)) {
-            return true;
-        }
-
-        if ($expr instanceof Concat) {
-            return $this->containsUnsanitizedSuperglobalInExpr($expr->left, $sanitizers)
-                || $this->containsUnsanitizedSuperglobalInExpr($expr->right, $sanitizers);
-        }
-
-        return false;
-    }
-
-    /**
-     * Find the name of an unsanitized superglobal in expression tree.
-     *
-     * @param list<string> $sanitizers Function names considered safe wrappers
-     */
-    public function findUnsanitizedSuperglobalName(Expr $expr, array $sanitizers): ?string
-    {
-        if ($this->isUnsanitizedSuperglobal($expr, $sanitizers)) {
-            return $this->getSuperglobalName($expr);
-        }
-
-        if ($expr instanceof Concat) {
-            return $this->findUnsanitizedSuperglobalName($expr->left, $sanitizers)
-                ?? $this->findUnsanitizedSuperglobalName($expr->right, $sanitizers);
-        }
-
-        return null;
-    }
-
-    /**
-     * Find an unsanitized superglobal in an InterpolatedString node.
-     */
-    public function findSuperglobalInInterpolatedString(InterpolatedString $node): ?string
-    {
-        foreach ($node->parts as $part) {
-            if ($part instanceof Expr && $this->isDangerousSuperglobal($part)) {
-                return $this->getSuperglobalName($part);
+        foreach ($parts as $part) {
+            $name = $part instanceof Expr ? $this->findSuperglobal($part) : null;
+            if ($name !== null) {
+                return $name;
             }
         }
 
@@ -209,5 +91,34 @@ final readonly class SuperglobalAnalyzer
         }
 
         return $parts;
+    }
+
+    /**
+     * The operands whose value becomes (part of) the value of $expr; empty for
+     * every node the search does not look through.
+     *
+     * @return array<Expr|InterpolatedStringPart>
+     */
+    private function valueOperands(Expr $expr): array
+    {
+        return match (true) {
+            $expr instanceof ArrayDimFetch => [$expr->var],
+            $expr instanceof Concat, $expr instanceof Coalesce => [$expr->left, $expr->right],
+            $expr instanceof Ternary => [$expr->if ?? $expr->cond, $expr->else],
+            default => $this->wrappedOperands($expr),
+        };
+    }
+
+    /**
+     * @return array<Expr|InterpolatedStringPart>
+     */
+    private function wrappedOperands(Expr $expr): array
+    {
+        return match (true) {
+            $expr instanceof Cast\String_, $expr instanceof ErrorSuppress, $expr instanceof Assign => [$expr->expr],
+            $expr instanceof InterpolatedString => $expr->parts,
+            $expr instanceof Match_ => array_map(static fn(MatchArm $arm): Expr => $arm->body, $expr->arms),
+            default => [],
+        };
     }
 }

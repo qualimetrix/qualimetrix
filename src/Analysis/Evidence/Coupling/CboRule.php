@@ -21,7 +21,6 @@ use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
-use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
@@ -183,11 +182,17 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             $subject,
             $options,
             $context,
-            ['applicationScope' => $applicationScope, 'frameworkCe' => $frameworkCe],
+            ['applicationScope' => $applicationScope, 'frameworkCe' => $frameworkCe, 'namespaceLevel' => false],
         );
     }
 
     /**
+     * Judges leaf namespaces only. A parent's CBO is taken over its whole
+     * subtree (the region its Ca and Ce are counted over), so it grows with
+     * the subtree and the namespace thresholds do not model it; the value is
+     * still published. A namespace declaring classes beside sub-namespaces is
+     * a parent too: its number is the subtree's, not its own classes'.
+     *
      * @return list<Finding>
      */
     private function analyzeNamespaceLevel(AnalysisContext $context): array
@@ -196,8 +201,14 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             return [];
         }
         $findings = [];
+        $namespaces = iterator_to_array($context->metrics->all(SymbolLevel::Namespace_), false);
+        $parents = $this->parentNamespaces($namespaces);
 
-        foreach ($context->metrics->all(SymbolLevel::Namespace_) as $nsInfo) {
+        foreach ($namespaces as $nsInfo) {
+            if (isset($parents[(string) $nsInfo->symbolPath->namespace])) {
+                continue;
+            }
+
             $finding = $this->namespaceFinding($nsInfo, $context, $this->options->namespace);
             if ($finding !== null) {
                 $findings[] = $finding;
@@ -205,6 +216,30 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         }
 
         return $findings;
+    }
+
+    /**
+     * Every proper ancestor of a namespace in the run: exactly the namespaces
+     * with a sub-namespace beneath them. The global namespace is nobody's.
+     *
+     * @param list<SymbolInfo> $namespaces
+     *
+     * @return array<string, true>
+     */
+    private function parentNamespaces(array $namespaces): array
+    {
+        $parents = [];
+
+        foreach ($namespaces as $info) {
+            $namespace = (string) $info->symbolPath->namespace;
+
+            while (($separator = strrpos($namespace, '\\')) !== false) {
+                $namespace = substr($namespace, 0, $separator);
+                $parents[$namespace] = true;
+            }
+        }
+
+        return $parents;
     }
 
     private function namespaceFinding(SymbolInfo $info, AnalysisContext $context, NamespaceCboOptions $options): ?Finding
@@ -223,14 +258,14 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             $subject,
             $options,
             $context,
-            ['applicationScope' => false, 'frameworkCe' => null],
+            ['applicationScope' => false, 'frameworkCe' => null, 'namespaceLevel' => true],
         );
     }
 
     /**
      * Checks CBO threshold for a symbol.
      *
-     * @param array{applicationScope: bool, frameworkCe: ?int} $presentation
+     * @param array{applicationScope: bool, frameworkCe: ?int, namespaceLevel: bool} $presentation
      */
     private function checkCbo(
         int $cbo,
@@ -252,6 +287,9 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         }
 
         $threshold = $severity === Severity::Error ? $options->error : $options->warning;
+        // Namespace CBO counts namespaces while its Ca and Ce count classes;
+        // without the unit the union reads smaller than its own parts.
+        $cboText = $presentation['namespaceLevel'] ? $cbo . ' namespaces' : (string) $cbo;
 
         return new Finding(
             location: new Location($symbolInfo->file, $symbolInfo->line),
@@ -259,157 +297,12 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             symbolPath: $symbolInfo->symbolPath,
             ruleName: $this->getName(),
             code: self::NAME,
-            message: $this->buildMessage($cbo, $ca, $ce, $threshold, $presentation['applicationScope'], $presentation['frameworkCe']),
+            message: CboFindingText::message($cboText, $ca, $ce, $threshold, $presentation['applicationScope'], $presentation['frameworkCe']),
             severity: $severity,
             metricValue: (float) $cbo,
-            recommendation: $this->buildRecommendation($cbo, $ca, $ce, $threshold, $symbolInfo->symbolPath, $context, $presentation['applicationScope']),
+            recommendation: CboFindingText::recommendation($cboText, $ca, $ce, $threshold, $symbolInfo->symbolPath, $context, $presentation),
             threshold: $threshold,
         );
-    }
-
-    /**
-     * Determines coupling direction and builds a direction-aware finding message.
-     *
-     * When $isAppScope is true, labels the metric as "CBO_APP" and appends
-     * framework exclusion count so users understand the decomposition.
-     */
-    private function buildMessage(int $cbo, int $ca, int $ce, int $threshold, bool $isAppScope = false, ?int $ceFramework = null): string
-    {
-        $direction = $this->getCouplingDirection($ca, $ce);
-        $label = $isAppScope ? 'CBO_APP' : 'CBO';
-        $frameworkSuffix = $isAppScope && $ceFramework !== null
-            ? \sprintf(', framework: %d classes excluded', $ceFramework)
-            : '';
-
-        return match ($direction) {
-            'efferent' => \sprintf(
-                'Efferent coupling too high: depends on %d classes (%s: %d, threshold: %d%s)',
-                $ce,
-                $label,
-                $cbo,
-                $threshold,
-                $frameworkSuffix,
-            ),
-            'afferent' => \sprintf(
-                'Afferent coupling too high: %d classes depend on this (%s: %d, threshold: %d%s)',
-                $ca,
-                $label,
-                $cbo,
-                $threshold,
-                $frameworkSuffix,
-            ),
-            default => \sprintf(
-                'Coupling too high: %d inbound + %d outbound (%s: %d, threshold: %d%s)',
-                $ca,
-                $ce,
-                $label,
-                $cbo,
-                $threshold,
-                $frameworkSuffix,
-            ),
-        };
-    }
-
-    /**
-     * Builds a direction-aware recommendation, optionally including top dependencies.
-     */
-    private function buildRecommendation(
-        int $cbo,
-        int $ca,
-        int $ce,
-        int $threshold,
-        ?SymbolPath $symbolPath,
-        AnalysisContext $context,
-        bool $isAppScope,
-    ): string {
-        $direction = $this->getCouplingDirection($ca, $ce);
-        $label = $isAppScope ? 'CBO_APP' : 'CBO';
-
-        $base = match ($direction) {
-            'efferent' => \sprintf(
-                '%s: %d (threshold: %d) — extract dependencies to reduce outbound coupling',
-                $label,
-                $cbo,
-                $threshold,
-            ),
-            'afferent' => \sprintf(
-                '%s: %d (threshold: %d) — this class is a coupling magnet, consider if it is a healthy abstraction point',
-                $label,
-                $cbo,
-                $threshold,
-            ),
-            default => \sprintf(
-                '%s: %d (threshold: %d) — reduce both inbound and outbound coupling',
-                $label,
-                $cbo,
-                $threshold,
-            ),
-        };
-
-        $topDeps = $this->getTopDependencies($symbolPath, $context);
-        if ($topDeps !== '') {
-            return $topDeps . '. ' . $base;
-        }
-
-        return $base;
-    }
-
-    /**
-     * Returns a formatted string of top-5 efferent dependencies for a class, sorted by occurrence count.
-     *
-     * Only works for class-level SymbolPaths when the dependency graph is available.
-     */
-    private function getTopDependencies(?SymbolPath $symbolPath, AnalysisContext $context): string
-    {
-        $dependencyGraph = $context->dependencyGraph;
-        if ($symbolPath === null || $dependencyGraph === null) {
-            return '';
-        }
-
-        if ($symbolPath->getType() !== SymbolType::Class_) {
-            return '';
-        }
-
-        $dependencies = $dependencyGraph->getClassDependencies($symbolPath);
-        if ($dependencies === []) {
-            return '';
-        }
-
-        // Count occurrences per target class (a class may be referenced multiple times)
-        $counts = [];
-        $targetNames = [];
-        foreach ($dependencies as $dep) {
-            $targetKey = $dep->targetLogical()->toCanonical();
-            $counts[$targetKey] = ($counts[$targetKey] ?? 0) + 1;
-            $targetNames[$targetKey] = $dep->targetLogical()->type ?? $targetKey;
-        }
-
-        // Sort by occurrence count descending
-        arsort($counts);
-
-        $topKeys = \array_slice(array_keys($counts), 0, 5);
-        $topNames = array_map(static fn(string $targetKey): string => $targetNames[$targetKey], $topKeys);
-
-        return 'Top dependencies: ' . implode(', ', $topNames);
-    }
-
-    /**
-     * Determines coupling direction: 'afferent', 'efferent', or 'balanced'.
-     *
-     * Uses a 2:1 ratio threshold: a direction dominates when it accounts
-     * for more than twice the other direction.
-     */
-    private function getCouplingDirection(int $ca, int $ce): string
-    {
-        if ($ca > $ce * 2) {
-            return 'afferent';
-        }
-
-        if ($ce > $ca * 2) {
-            return 'efferent';
-        }
-
-        return 'balanced';
     }
 
     /**

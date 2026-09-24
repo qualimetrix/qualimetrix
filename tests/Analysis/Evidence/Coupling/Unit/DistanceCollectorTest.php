@@ -93,9 +93,9 @@ final class DistanceCollectorTest extends TestCase
 
     /**
      * A namespace that declares types but has no edge at all is at I = 0 by
-     * measurement, not by fallback: Ce = Ca = 0 gives instability 0, and the
-     * collector that publishes it skips a namespace absent from the graph.
-     * Both roads reach the same number, so the own distance is |A + 0 - 1|.
+     * the published convention: Ce = Ca = 0 gives instability 0, so the own
+     * distance is |A + 0 - 1|. Whether such a namespace is judged is the
+     * rule's call, not this collector's.
      */
     #[Test]
     public function itTreatsAnOwnScopeWithoutEdgesAsFullyStable(): void
@@ -106,7 +106,8 @@ final class DistanceCollectorTest extends TestCase
         $repository->add($nsPath, (new MetricBag())
             ->with('coupling.abstractness', 0.25)
             ->with('coupling.instability', 0.0)
-            ->with('coupling.abstractness-own', 0.25), null, 0);
+            ->with('coupling.abstractness-own', 0.25)
+            ->with('coupling.instability-own', 0.0), null, 0);
 
         $this->collector->calculate($this->createEmptyGraph(), $repository);
 
@@ -220,22 +221,55 @@ final class DistanceCollectorTest extends TestCase
         self::assertEqualsWithDelta(0.3, $result->get('coupling.distance'), 0.001);
     }
 
+    /**
+     * A namespace that declares only functions is in the repository but not in
+     * the class graph, so no instability is ever published for it. Read as 0,
+     * the missing input made it |0 + 0 - 1| = 1.0 -- the worst distance there
+     * is, for a namespace distance does not describe. No input, no value.
+     */
     #[Test]
-    public function itDefaultsMissingAbstractnessAndInstabilityToZero(): void
+    public function itPublishesNoDistanceForANamespaceWithoutInstability(): void
     {
-        // Missing both abstractness and instability → defaults to 0
-        // distance = |0 + 0 - 1| = 1
+        $repository = new InMemoryMetricRepository();
+        $nsPath = SymbolPath::forNamespace('App\\Functions');
+
+        $repository->add($nsPath, (new MetricBag())->with('coupling.abstractness', 0.0), null, 0);
+
+        $this->collector->calculate($this->createEmptyGraph(), $repository);
+
+        $result = $repository->get($nsPath);
+        self::assertNull($result->get('coupling.distance'));
+        self::assertNull($result->get('coupling.distance-own'));
+    }
+
+    #[Test]
+    public function itPublishesNoDistanceWithoutAbstractness(): void
+    {
         $repository = new InMemoryMetricRepository();
         $nsPath = SymbolPath::forNamespace('App\\NoMetrics');
 
-        $repository->add($nsPath, new MetricBag(), null, 0);
+        $repository->add($nsPath, (new MetricBag())->with('coupling.instability', 0.0), null, 0);
 
-        $graph = $this->createEmptyGraph();
+        $this->collector->calculate($this->createEmptyGraph(), $repository);
 
-        $this->collector->calculate($graph, $repository);
+        self::assertNull($repository->get($nsPath)->get('coupling.distance'));
+    }
 
-        $result = $repository->get($nsPath);
-        self::assertEqualsWithDelta(1.0, $result->get('coupling.distance'), 0.001);
+    #[Test]
+    public function itPublishesNoOwnDistanceWithoutAnOwnInstability(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $nsPath = SymbolPath::forNamespace('App\\Leaf');
+
+        $repository->add($nsPath, (new MetricBag())
+            ->with('coupling.abstractness', 0.25)
+            ->with('coupling.instability', 0.5)
+            ->with('coupling.abstractness-own', 0.25), null, 0);
+
+        $this->collector->calculate($this->createEmptyGraph(), $repository);
+
+        self::assertEqualsWithDelta(0.25, $repository->get($nsPath)->get('coupling.distance'), 0.0001);
+        self::assertNull($repository->get($nsPath)->get('coupling.distance-own'));
     }
 
     private function createEmptyGraph(): DependencyGraphInterface

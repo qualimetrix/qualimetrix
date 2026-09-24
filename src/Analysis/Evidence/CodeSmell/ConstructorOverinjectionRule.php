@@ -102,8 +102,8 @@ final class ConstructorOverinjectionRule extends AbstractRule
         $subject = $symbolInfo->subject ?? throw new LogicException('Constructor findings require an exact callable subject');
         $declaration = $subject->declarationPath() ?? throw new LogicException('Constructor findings require a declaration subject');
 
-        // Only check constructors.
-        if ($declaration->logical->member !== '__construct') {
+        // Only constructors; PHP method names are case-insensitive, so `__Construct` is one too.
+        if (strtolower($declaration->logical->member ?? '') !== '__construct') {
             return null;
         }
 

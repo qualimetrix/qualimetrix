@@ -5,27 +5,16 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Security;
 
 use PhpParser\Node\Expr\Print_;
-use PhpParser\Node\Scalar\InterpolatedString;
 use PhpParser\Node\Stmt\Echo_;
 
 /**
- * Detects XSS (Cross-Site Scripting) patterns: unsanitized superglobal output.
- *
- * Detection vectors:
- * - echo/print of superglobals without htmlspecialchars/htmlentities/strip_tags/intval
- * - echo/print of interpolated strings containing superglobals
- * - echo/print of concatenations containing unsanitized superglobals
+ * Detects XSS (Cross-Site Scripting) patterns: echo/print of an expression
+ * whose value carries a superglobal — see {@see SuperglobalAnalyzer} for
+ * which wrappers are looked through and which (sanitizers, `(int)`/`(float)`
+ * casts, any other call) end the search.
  */
 final readonly class XssDetector
 {
-    /** @var list<string> XSS sanitization functions */
-    private const XSS_SANITIZERS = [
-        'htmlspecialchars',
-        'htmlentities',
-        'strip_tags',
-        'intval',
-    ];
-
     public function __construct(
         private SuperglobalAnalyzer $superglobalAnalyzer,
     ) {}
@@ -40,31 +29,13 @@ final readonly class XssDetector
         $locations = [];
 
         foreach ($node->exprs as $expr) {
-            if ($this->superglobalAnalyzer->isUnsanitizedSuperglobal($expr, self::XSS_SANITIZERS)) {
-                $varName = $this->superglobalAnalyzer->getSuperglobalName($expr);
+            $varName = $this->superglobalAnalyzer->findSuperglobal($expr);
+            if ($varName !== null) {
                 $locations[] = new SecurityPatternLocation(
                     type: 'xss',
                     line: $node->getStartLine(),
                     context: "echo \${$varName} without sanitization",
                 );
-            } elseif ($expr instanceof InterpolatedString) {
-                $varName = $this->superglobalAnalyzer->findSuperglobalInInterpolatedString($expr);
-                if ($varName !== null) {
-                    $locations[] = new SecurityPatternLocation(
-                        type: 'xss',
-                        line: $node->getStartLine(),
-                        context: "echo \${$varName} without sanitization",
-                    );
-                }
-            } elseif ($this->superglobalAnalyzer->containsUnsanitizedSuperglobalInExpr($expr, self::XSS_SANITIZERS)) {
-                $varName = $this->superglobalAnalyzer->findUnsanitizedSuperglobalName($expr, self::XSS_SANITIZERS);
-                if ($varName !== null) {
-                    $locations[] = new SecurityPatternLocation(
-                        type: 'xss',
-                        line: $node->getStartLine(),
-                        context: "echo \${$varName} without sanitization",
-                    );
-                }
             }
         }
 
@@ -78,44 +49,17 @@ final readonly class XssDetector
      */
     public function detectInPrint(Print_ $node): array
     {
-        if ($this->superglobalAnalyzer->isUnsanitizedSuperglobal($node->expr, self::XSS_SANITIZERS)) {
-            $varName = $this->superglobalAnalyzer->getSuperglobalName($node->expr);
-
-            return [
-                new SecurityPatternLocation(
-                    type: 'xss',
-                    line: $node->getStartLine(),
-                    context: "print \${$varName} without sanitization",
-                ),
-            ];
+        $varName = $this->superglobalAnalyzer->findSuperglobal($node->expr);
+        if ($varName === null) {
+            return [];
         }
 
-        if ($node->expr instanceof InterpolatedString) {
-            $varName = $this->superglobalAnalyzer->findSuperglobalInInterpolatedString($node->expr);
-            if ($varName !== null) {
-                return [
-                    new SecurityPatternLocation(
-                        type: 'xss',
-                        line: $node->getStartLine(),
-                        context: "print \${$varName} without sanitization",
-                    ),
-                ];
-            }
-        }
-
-        if ($this->superglobalAnalyzer->containsUnsanitizedSuperglobalInExpr($node->expr, self::XSS_SANITIZERS)) {
-            $varName = $this->superglobalAnalyzer->findUnsanitizedSuperglobalName($node->expr, self::XSS_SANITIZERS);
-            if ($varName !== null) {
-                return [
-                    new SecurityPatternLocation(
-                        type: 'xss',
-                        line: $node->getStartLine(),
-                        context: "print \${$varName} without sanitization",
-                    ),
-                ];
-            }
-        }
-
-        return [];
+        return [
+            new SecurityPatternLocation(
+                type: 'xss',
+                line: $node->getStartLine(),
+                context: "print \${$varName} without sanitization",
+            ),
+        ];
     }
 }

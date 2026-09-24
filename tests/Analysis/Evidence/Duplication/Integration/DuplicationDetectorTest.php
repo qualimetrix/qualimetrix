@@ -316,18 +316,17 @@ PHP;
 
         self::assertNotEmpty($blocks, 'The repetitive array should still produce candidate blocks');
 
-        // No block should have two identical locations (same file + same line range)
+        // No block may carry two locations of one file that share a line:
+        // that is the structure matching itself at a shifted offset.
         foreach ($blocks as $block) {
-            $locations = $block->locations;
-            if (\count($locations) === 2) {
-                $isSelfDuplicate = $locations[0]->file === $locations[1]->file
-                    && $locations[0]->startLine === $locations[1]->startLine
-                    && $locations[0]->endLine === $locations[1]->endLine;
+            foreach ($block->locations as $i => $first) {
+                foreach (\array_slice($block->locations, $i + 1) as $second) {
+                    $sharesALine = $first->pathString() === $second->pathString()
+                        && $first->startLine <= $second->endLine
+                        && $second->startLine <= $first->endLine;
 
-                self::assertFalse(
-                    $isSelfDuplicate,
-                    'A block should not be reported as a duplicate of itself',
-                );
+                    self::assertFalse($sharesALine, 'A block should not be reported as a duplicate of itself');
+                }
             }
         }
     }
@@ -450,6 +449,124 @@ PHP;
         $blocks = $this->inspect($detector, [$fileA, $fileB]);
 
         self::assertNotEmpty($blocks, 'A block spanning both a const array and executable code must still be reported');
+    }
+
+    #[Test]
+    public function itReportsTheLinesTheMatchedTokensActuallyOccupy(): void
+    {
+        // The two files differ only in the return type on line 4, so the
+        // match starts at the `{` alone on line 5 and ends at the class's
+        // closing `}` alone on line 14.
+        $body = <<<'PHP'
+    {
+        $out = [];
+        foreach ($rows as $row) {
+            if ($row->isActive()) {
+                $out[] = $row->name();
+            }
+        }
+        return $out;
+    }
+}
+PHP;
+        $first = "<?php\nfinal class First\n{\n    public function compute(array \$rows): array\n{$body}\n";
+        $second = "<?php\nfinal class Second\n{\n    public function compute(array \$rows): iterable\n{$body}\n";
+
+        $blocks = $this->inspect($this->createDetector(minTokens: 20, minLines: 5), [
+            $this->createFile('first.php', $first),
+            $this->createFile('second.php', $second),
+        ]);
+
+        self::assertCount(1, $blocks);
+        self::assertSame(
+            ['first.php:5-14', 'second.php:5-14'],
+            array_map($this->shortLocation(...), $blocks[0]->locations),
+        );
+        self::assertSame(10, $blocks[0]->lines);
+        self::assertNotNull($blocks[0]->hint);
+        self::assertStringStartsWith('$out = [];', $blocks[0]->hint);
+    }
+
+    #[Test]
+    public function itReportsIdenticalBlocksInOneFileThatTouchWithoutSharingALine(): void
+    {
+        $block = <<<'PHP'
+    $x = alpha($a, 1, 2);
+    $y = beta($x, 3, 4);
+    $z = gamma($y, 5, 6);
+    $w = delta($z, 7, 8);
+    $v = epsilon($w, 9, 10);
+PHP;
+        $file = $this->createFile('touching.php', "<?php\nfunction f(\$a) {\n{$block}\n{$block}\n    return \$v;\n}\n");
+
+        $blocks = $this->inspect($this->createDetector(minTokens: 20, minLines: 5), [$file]);
+
+        self::assertCount(1, $blocks);
+        self::assertSame(
+            ['touching.php:3-7', 'touching.php:8-12'],
+            array_map($this->shortLocation(...), $blocks[0]->locations),
+        );
+        self::assertSame(5, $blocks[0]->lines);
+    }
+
+    #[Test]
+    public function itReportsEveryCopyOfARepeatedBlockInOneBlock(): void
+    {
+        $files = [];
+        foreach (['one', 'two', 'three'] as $name) {
+            $files[] = $this->createFile("{$name}.php", $this->repeatedClassFixture($name));
+        }
+
+        $blocks = $this->inspect($this->createDetector(minTokens: 20, minLines: 5), $files);
+
+        self::assertCount(1, $blocks);
+        self::assertSame(3, $blocks[0]->occurrences());
+    }
+
+    #[Test]
+    public function itReportsABlockRepeatedMoreThanAHundredTimes(): void
+    {
+        $files = [];
+        for ($i = 0; $i < 101; $i++) {
+            $files[] = $this->createFile("copy{$i}.php", $this->repeatedClassFixture("Copy{$i}"));
+        }
+
+        $blocks = $this->inspect($this->createDetector(minTokens: 20, minLines: 5), $files);
+
+        self::assertCount(1, $blocks, 'A block copied 101 times must be reported, not skipped');
+        self::assertSame(101, $blocks[0]->occurrences());
+    }
+
+    #[Test]
+    public function itKeepsTheLongerMatchOfTwoCopiesWhenAThirdCopyDivergesEarlier(): void
+    {
+        $shared = implode("\n", array_map(
+            static fn(int $i): string => "    \$v{$i} = shared{$i}(\$a, {$i});",
+            range(1, 6),
+        ));
+        $tail = implode("\n", array_map(
+            static fn(int $i): string => "    \$w{$i} = tail{$i}(\$a, {$i});",
+            range(1, 6),
+        ));
+        $long = "<?php\nfunction f(\$a) {\n{$shared}\n{$tail}\n}\n";
+        $short = "<?php\nfunction f(\$a) {\n{$shared}\n    echo \$a;\n    echo \$a;\n}\n";
+
+        $blocks = $this->inspect($this->createDetector(minTokens: 20, minLines: 3), [
+            $this->createFile('a.php', $long),
+            $this->createFile('b.php', $long),
+            $this->createFile('c.php', $short),
+        ]);
+
+        $shapes = array_map(
+            fn(DuplicateBlock $block): string => implode(', ', array_map($this->shortLocation(...), $block->locations)),
+            $blocks,
+        );
+        sort($shapes);
+
+        self::assertSame(
+            ['a.php:2-15, b.php:2-15', 'a.php:2-8, b.php:2-8, c.php:2-8'],
+            $shapes,
+        );
     }
 
     #[Test]
@@ -592,6 +709,34 @@ final class {$className}
         ],
     ];
 }
+PHP;
+    }
+
+    private function shortLocation(DuplicateLocation $location): string
+    {
+        return \sprintf('%s:%d-%d', basename($location->pathString()), $location->startLine, $location->endLine);
+    }
+
+    private function repeatedClassFixture(string $className): string
+    {
+        return <<<PHP
+<?php
+
+final class {$className}
+{
+    public function run(array \$rows, int \$limit): array
+    {
+        \$out = [];
+        foreach (\$rows as \$key => \$row) {
+            if (\$row['score'] > \$limit) {
+                \$out[\$key] = strtoupper(\$row['name']);
+            }
+        }
+        ksort(\$out);
+        return \$out;
+    }
+}
+
 PHP;
     }
 

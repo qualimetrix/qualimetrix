@@ -256,7 +256,11 @@ Qualimetrix implements a **simplified variant** of the Bieman & Kang (1995) TCC/
 - **Only public methods** are considered. The original B&K paper specifies "visible methods" (public + protected); Qualimetrix follows the stricter industry convention (public only), consistent with most tools (PHPMD, PHPMetrics).
 - **Only direct `$this->property` access** is counted. B&K also defines "invocation trees" where a public method calling a private helper that accesses a property counts as indirect access. This is **not implemented** -- delegation through private methods is not tracked. This means TCC may be **underestimated** for classes that heavily use the delegation pattern.
 - **Static methods and abstract methods** are excluded -- they do not operate on instance state.
-- **Classes with 0 or 1 tracked public methods** default to TCC = 1.0 and LCC = 1.0 (a single-method class is trivially cohesive).
+- **Classes with 0 or 1 tracked public methods** get no TCC or LCC value at all: with fewer than two methods there is no pair to connect, so the ratio is undefined (0/0). The metrics are absent from the class's output, not 1.0.
+- **Namespace and project aggregates** (`cohesion.tcc.avg`, `cohesion.tcc.min` and the LCC equivalents) are computed only over classes that have a value; `.count` states how many that is. Where TCC is absent, the class-level `health.cohesion` score substitutes 0.5 for a class with fewer than six methods and 0 — the incohesive end — for a larger one (see [Health Scores](../reference/health-scores.md)).
+
+!!! info "Deviation from original spec"
+    Classes that declare **no instance properties** also get no TCC or LCC value, even with two or more tracked methods. Under the Bieman & Kang formula such a class has method pairs but no shared instance variable, so TCC = LCC = 0. Qualimetrix treats cohesion through shared state as not applicable to a stateless class instead of reporting it as maximally incohesive, which would pull namespace averages down for every stateless service.
 
 !!! note "Comparing with other tools"
     Most tools (PHPMD, PHPMetrics, JArchitect) implement the same simplified variant -- direct property access only, no invocation trees. Values should be comparable across tools, though minor differences may arise from how constructors or static methods are handled.

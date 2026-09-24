@@ -9,6 +9,17 @@ performing AST traversal.
 
 The direct-superglobal checks are pattern detectors, not taint analysis. They
 do not follow values through variables, function calls, or object properties.
+Within one expression, `SuperglobalAnalyzer` looks through the wrappers that
+pass a value on — concatenation, interpolation, `??`, `?:` branches, `match`
+arm results, `(string)`, `@` and assignment — and stops at every other node, so
+any call (a sanitizer or not) and an `(int)`/`(float)` cast end the search.
+Command injection also treats the backtick operator as a sink.
+
+Because the search looks through concatenation and interpolation, a query
+function, `sprintf()` call or concatenation sees the same read as the queries
+built inside it. `SecurityPatternVisitor` therefore reports SQL injection once
+per outermost reporting node and skips the queries nested in it; a query behind
+any other call is still judged on its own.
 
 ## Structure
 
@@ -17,6 +28,7 @@ Security/
 ├── Credential/
 │   ├── CredentialLiterals.php
 │   ├── CredentialLocation.php
+│   ├── CredentialValue.php
 │   ├── HardcodedCredentialsCollector.php
 │   └── HardcodedCredentialsVisitor.php
 ├── CommandInjectionDetector.php
@@ -61,9 +73,19 @@ and sensitive-parameter rules retain their own evidence-to-finding mapping.
 
 `SensitiveNameMatcher` recognizes standalone credential words (`password`,
 `passwd`, `pwd`, `secret`, `credential`, `credentials`) and qualified `key`
-or `token` compounds. Its prefix/suffix blacklists keep names such as
-`passwordHash`, `tokenStorage`, `cacheKey`, and `OPTION_PASSWORD` out of the
-credential context.
+or `token` compounds. Names are split at case changes, underscores and
+letter/digit boundaries, and a segment that ends with a sensitive word is split
+off from its qualifier (`apikey`, `dbpassword`). Its prefix/suffix blacklists
+keep names such as `passwordHash`, `tokenStorage`, `cacheKey`, and
+`OPTION_PASSWORD` out of the credential context.
+
+`CredentialLiterals` finds a string literal stored under a name and
+`CredentialValue` judges the literal itself. The name comes from a variable,
+property or static property assignment (also `??=`), a string-keyed array
+element assignment, an array item, a class constant, `define()`, a property or
+parameter default, and an enum case. Values that are dotted identifiers (each
+segment starts with a letter or an underscore and may join words with hyphens;
+not a JWT) or messages of three or more whitespace-separated words are skipped.
 
 ## Lifecycle
 
@@ -78,9 +100,9 @@ contracts. Security publishes no additional contract.
 ## Tests
 
 `tests/Analysis/Evidence/Security/Unit/` covers all Security collectors,
-visitors, detectors, matcher cases, and rules. The suite contains 414 PHPUnit
-test IDs and specifically exercises credential literal filtering, security
-patterns, and sensitive-name matching.
+visitors, detectors, matcher cases, and rules, and specifically exercises
+credential literal filtering, every expression form a security pattern is
+looked for through, and sensitive-name matching.
 
 ## Definition of Done
 

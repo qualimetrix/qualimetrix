@@ -226,7 +226,7 @@ final class MetricHintCatalog
             'label' => 'ClassRank',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 0.02',
-            'badExplanation' => 'coupling hotspot, many depend on this',
+            'badExplanation' => 'coupling hotspot, much of the dependency graph leads here',
             'goodExplanation' => 'peripheral, low risk',
         ],
         MetricName::DESIGN_DIT => [

@@ -285,13 +285,14 @@ final class CouplingCollector implements GlobalContextCollectorInterface
      * CBO at namespace level counts uniquely coupled external namespaces (union of
      * incoming and outgoing namespace dependencies). If namespace A depends on B
      * and B depends on A, CBO(A) = 1 (not 2), mirroring the class-level C&K definition.
+     * It is taken over the same region as the published Ca and Ce: the subtree
+     * (see {@see CoupledNamespaces}).
      */
     private function computeNamespaceMetrics(
         DependencyGraphInterface $graph,
         MetricRepositoryInterface $repository,
     ): void {
-        // Pre-compute coupled namespace sets from the full dependency list
-        $coupledNamespaces = $this->buildCoupledNamespaceSets($graph);
+        $coupledNamespaces = CoupledNamespaces::of($graph);
 
         foreach ($graph->getAllNamespaces() as $symbolPath) {
             // Skip namespaces not in the repository (e.g. vendor namespaces)
@@ -301,8 +302,7 @@ final class CouplingCollector implements GlobalContextCollectorInterface
 
             $ca = $graph->getNamespaceCa($symbolPath);
             $ce = $graph->getNamespaceCe($symbolPath);
-            $nsKey = $symbolPath->namespace ?? '';
-            $cbo = \count($coupledNamespaces[$nsKey] ?? []);
+            $cbo = $coupledNamespaces->countFor($symbolPath->namespace ?? '');
             $instability = $this->computeInstability($ca, $ce);
             $ownCa = $graph->getNamespaceOwnCa($symbolPath);
             $ownCe = $graph->getNamespaceOwnCe($symbolPath);
@@ -318,34 +318,6 @@ final class CouplingCollector implements GlobalContextCollectorInterface
 
             $repository->add($symbolPath, $metrics, null, null);
         }
-    }
-
-    /**
-     * Builds a map of namespace -> set of uniquely coupled external namespaces.
-     *
-     * For each cross-namespace dependency, both the source and target namespace
-     * get the other namespace added to their coupled set.
-     *
-     * @return array<string, array<string, true>> Namespace name -> set of coupled namespace names
-     */
-    private function buildCoupledNamespaceSets(DependencyGraphInterface $graph): array
-    {
-        $coupled = [];
-
-        foreach ($graph->getAllDependencies() as $dep) {
-            $sourceNs = $dep->sourceLogical()->namespace ?? '';
-            $targetNs = $dep->targetLogical()->namespace ?? '';
-
-            // Only count cross-namespace dependencies
-            if ($sourceNs === $targetNs) {
-                continue;
-            }
-
-            $coupled[$sourceNs][$targetNs] = true;
-            $coupled[$targetNs][$sourceNs] = true;
-        }
-
-        return $coupled;
     }
 
     /**

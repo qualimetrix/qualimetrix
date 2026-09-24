@@ -71,8 +71,14 @@ final class DependencyGraphBuilderTest extends TestCase
         self::assertSame(1, $graph->getNamespaceCa(SymbolPath::forNamespace('App')));
     }
 
+    /**
+     * An `extends` edge to a PHP class stays in the edge list, where DIT and
+     * NOC read inheritance from, but counts toward no coupling: the same class
+     * written as `implements` or as a type hint already counts nothing, and
+     * how a class names PHP's type is not a measure of its coupling.
+     */
     #[Test]
-    public function itFiltersBuiltinCouplingButRetainsBuiltinInheritance(): void
+    public function itFiltersBuiltinCouplingButRetainsBuiltinInheritanceForInheritanceReadersOnly(): void
     {
         $filtered = self::dependency('App\Service', 'Exception', DependencyType::New_);
         $inheritance = self::dependency('App\Failure', 'Exception', DependencyType::Extends);
@@ -90,11 +96,31 @@ final class DependencyGraphBuilderTest extends TestCase
             ['class:App\Service', 'class:App\Failure', 'class:Exception'],
             self::canonicalPaths($graph->getAllClasses()),
         );
-        self::assertSame([$inheritance], $graph->getClassDependencies(SymbolPath::fromClassFqn('App\Failure')));
-        self::assertSame([$inheritance], $graph->getClassDependents(SymbolPath::fromClassFqn('Exception')));
+        self::assertSame([], $graph->getClassDependencies(SymbolPath::fromClassFqn('App\Failure')));
+        self::assertSame([], $graph->getClassDependents(SymbolPath::fromClassFqn('Exception')));
         self::assertSame(0, $graph->getClassCe(SymbolPath::fromClassFqn('App\Service')));
-        self::assertSame(1, $graph->getClassCe(SymbolPath::fromClassFqn('App\Failure')));
-        self::assertSame(1, $graph->getClassCa(SymbolPath::fromClassFqn('Exception')));
+        self::assertSame(0, $graph->getClassCe(SymbolPath::fromClassFqn('App\Failure')));
+        self::assertSame(0, $graph->getClassCa(SymbolPath::fromClassFqn('Exception')));
+        self::assertSame(0, $graph->getNamespaceCe(SymbolPath::forNamespace('App')));
+        self::assertSame(0, $graph->getNamespaceOwnCe(SymbolPath::forNamespace('App')));
+    }
+
+    /**
+     * The neighbour the exclusion must not reach: `extends` on a project or
+     * vendor class is coupling like any other edge.
+     */
+    #[Test]
+    public function itCountsAnExtendsEdgeToANonPhpClassAsCoupling(): void
+    {
+        $project = self::dependency('App\Domain\Child', 'App\Model\Base', DependencyType::Extends);
+        $vendor = self::dependency('App\Domain\Child', 'Vendor\Base', DependencyType::Extends);
+        $graph = (new DependencyGraphBuilder())->build([$project, $vendor], [self::logical('App\Domain\Child')]);
+
+        self::assertSame([$project, $vendor], $graph->getClassDependencies(SymbolPath::fromClassFqn('App\Domain\Child')));
+        self::assertSame(2, $graph->getClassCe(SymbolPath::fromClassFqn('App\Domain\Child')));
+        self::assertSame(1, $graph->getClassCa(SymbolPath::fromClassFqn('Vendor\Base')));
+        self::assertSame(2, $graph->getNamespaceCe(SymbolPath::forNamespace('App\Domain')));
+        self::assertSame(1, $graph->getNamespaceCe(SymbolPath::forNamespace('App')));
     }
 
     #[Test]

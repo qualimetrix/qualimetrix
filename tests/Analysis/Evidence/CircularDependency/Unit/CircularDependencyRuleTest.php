@@ -8,7 +8,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis;
-use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyDetector;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Cycle;
@@ -18,15 +17,20 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
+use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\FixedCycleDetector;
 
 #[CoversClass(CircularDependencyRule::class)]
 final class CircularDependencyRuleTest extends TestCase
 {
     private CircularDependencyAnalysis $analysis;
 
+    private FixedCycleDetector $detector;
+
     protected function setUp(): void
     {
-        $this->analysis = new CircularDependencyAnalysis(new CircularDependencyDetector());
+        $this->detector = new FixedCycleDetector();
+        $this->analysis = new CircularDependencyAnalysis($this->detector);
     }
 
     #[Test]
@@ -52,7 +56,7 @@ final class CircularDependencyRuleTest extends TestCase
             new Cycle($this->paths(['A', 'B']), $this->paths(['A', 'B', 'A'])),
         ];
 
-        $this->analysis->replace($cycles);
+        $this->prepare($cycles);
         $rule = $this->rule(new CircularDependencyOptions());
 
         $context = new AnalysisContext(
@@ -78,7 +82,7 @@ final class CircularDependencyRuleTest extends TestCase
     #[Test]
     public function itKeysOccurrenceToTheFrozenChannelSpellingNotToName(): void
     {
-        $this->analysis->replace([
+        $this->prepare([
             new Cycle($this->paths(['App\\A', 'App\\B']), $this->paths(['App\\A', 'App\\B', 'App\\A'])),
         ]);
         $rule = $this->rule(new CircularDependencyOptions());
@@ -101,11 +105,11 @@ final class CircularDependencyRuleTest extends TestCase
     {
         $rule = $this->rule(new CircularDependencyOptions());
 
-        $this->analysis->replace([new Cycle($this->paths(['App\\A', 'App\\B', 'App\\C']), $this->paths(['App\\A', 'App\\B', 'App\\C', 'App\\A']))]);
+        $this->prepare([new Cycle($this->paths(['App\\A', 'App\\B', 'App\\C']), $this->paths(['App\\A', 'App\\B', 'App\\C', 'App\\A']))]);
         $first = $rule->analyze(new AnalysisContext(
             metrics: new InMemoryMetricRepository(),
         ));
-        $this->analysis->replace([new Cycle($this->paths(['App\\C', 'App\\A', 'App\\B']), $this->paths(['App\\C', 'App\\A', 'App\\B', 'App\\C']))]);
+        $this->prepare([new Cycle($this->paths(['App\\C', 'App\\A', 'App\\B']), $this->paths(['App\\C', 'App\\A', 'App\\B', 'App\\C']))]);
         $second = $rule->analyze(new AnalysisContext(
             metrics: new InMemoryMetricRepository(),
         ));
@@ -117,7 +121,7 @@ final class CircularDependencyRuleTest extends TestCase
     #[Test]
     public function itDistinguishesCyclesWithDifferentCompleteMemberSets(): void
     {
-        $this->analysis->replace([
+        $this->prepare([
             new Cycle($this->paths(['App\\A', 'App\\B']), $this->paths(['App\\A', 'App\\B', 'App\\A'])),
             new Cycle($this->paths(['App\\A', 'App\\C']), $this->paths(['App\\A', 'App\\C', 'App\\A'])),
         ]);
@@ -137,7 +141,7 @@ final class CircularDependencyRuleTest extends TestCase
             new Cycle($this->paths(['A', 'B']), $this->paths(['A', 'B', 'A'])), // Size 2
         ];
 
-        $this->analysis->replace($cycles);
+        $this->prepare($cycles);
         $rule = $this->rule(new CircularDependencyOptions(directAsError: true));
 
         $context = new AnalysisContext(
@@ -157,7 +161,7 @@ final class CircularDependencyRuleTest extends TestCase
             new Cycle($this->paths(['A', 'B', 'C']), $this->paths(['A', 'B', 'C', 'A'])), // Size 3
         ];
 
-        $this->analysis->replace($cycles);
+        $this->prepare($cycles);
         $rule = $this->rule(new CircularDependencyOptions(directAsError: true));
 
         $context = new AnalysisContext(
@@ -178,7 +182,7 @@ final class CircularDependencyRuleTest extends TestCase
             new Cycle($this->paths(['C', 'D', 'E', 'F', 'G']), $this->paths(['C', 'D', 'E', 'F', 'G', 'C'])), // Size 5
         ];
 
-        $this->analysis->replace($cycles);
+        $this->prepare($cycles);
         $rule = $this->rule(new CircularDependencyOptions(maxCycleSize: 3));
 
         $context = new AnalysisContext(
@@ -198,7 +202,7 @@ final class CircularDependencyRuleTest extends TestCase
             new Cycle($this->paths(['A', 'B']), $this->paths(['A', 'B', 'A'])),
         ];
 
-        $this->analysis->replace($cycles);
+        $this->prepare($cycles);
         $rule = $this->rule(new CircularDependencyOptions(enabled: false));
 
         $context = new AnalysisContext(
@@ -231,7 +235,7 @@ final class CircularDependencyRuleTest extends TestCase
             new Cycle($this->paths(['A', 'B', 'C']), $this->paths(['A', 'B', 'C', 'A'])),
         ];
 
-        $this->analysis->replace($cycles);
+        $this->prepare($cycles);
         $rule = $this->rule(new CircularDependencyOptions());
 
         $context = new AnalysisContext(
@@ -290,7 +294,7 @@ final class CircularDependencyRuleTest extends TestCase
             new Cycle($this->paths(['A', 'B']), $this->paths(['A', 'B', 'A'])),
         ];
 
-        $this->analysis->replace($cycles);
+        $this->prepare($cycles);
         $rule = $this->rule(new CircularDependencyOptions());
 
         $context = new AnalysisContext(
@@ -315,7 +319,7 @@ final class CircularDependencyRuleTest extends TestCase
             new Cycle($this->paths($classNames), $this->paths($pathNames)),
         ];
 
-        $this->analysis->replace($cycles);
+        $this->prepare($cycles);
         $rule = $this->rule(new CircularDependencyOptions());
 
         $context = new AnalysisContext(
@@ -340,7 +344,7 @@ final class CircularDependencyRuleTest extends TestCase
             new Cycle($this->paths($classNames), $this->paths($pathNames)),
         ];
 
-        $this->analysis->replace($cycles);
+        $this->prepare($cycles);
         $rule = $this->rule(new CircularDependencyOptions());
 
         $context = new AnalysisContext(
@@ -362,7 +366,7 @@ final class CircularDependencyRuleTest extends TestCase
             new Cycle($this->paths(['A', 'B', 'C']), $this->paths(['A', 'B', 'C', 'A'])),
         ];
 
-        $this->analysis->replace($cycles);
+        $this->prepare($cycles);
         $rule = $this->rule(new CircularDependencyOptions());
 
         $context = new AnalysisContext(
@@ -402,7 +406,7 @@ final class CircularDependencyRuleTest extends TestCase
             ),
         ];
 
-        $this->analysis->replace($cycles);
+        $this->prepare($cycles);
         $rule = $this->rule(new CircularDependencyOptions());
 
         $context = new AnalysisContext(
@@ -444,7 +448,7 @@ final class CircularDependencyRuleTest extends TestCase
             new Cycle($this->paths($classNames), $this->paths($pathNames)),
         ];
 
-        $this->analysis->replace($cycles);
+        $this->prepare($cycles);
         $rule = $this->rule(new CircularDependencyOptions());
 
         $context = new AnalysisContext(
@@ -478,6 +482,13 @@ final class CircularDependencyRuleTest extends TestCase
             static fn(string $fqn): SymbolPath => SymbolPath::fromClassFqn($fqn),
             $fqns,
         );
+    }
+
+    /** @param list<Cycle> $cycles */
+    private function prepare(array $cycles): void
+    {
+        $this->detector->cycles = $cycles;
+        $this->analysis->prepare(AdjacencyGraphBuilder::empty());
     }
 
     private function rule(CircularDependencyOptions $options): CircularDependencyRule

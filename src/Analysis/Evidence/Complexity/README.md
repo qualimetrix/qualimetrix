@@ -76,6 +76,7 @@ CCN = 1 + number of branching points
 | `&&`, `\|\|`, `and`, `or` | +1           |
 | `?:` (ternary)            | +1           |
 | `??` (null coalescing)    | +1           |
+| `??=` (coalescing assign) | +1           |
 | `?->` (nullsafe)          | +1           |
 
 ### Interpretation
@@ -103,18 +104,28 @@ CCN = 1 + number of branching points
 | `a && b && c` | +3              | +1 (single chain)           |
 | Nesting       | Not considered  | +1 per level                |
 | `switch`      | +N cases        | +1                          |
+| `??`, `??=`   | +1 each         | 0 (shorthand)               |
 
 ### Algorithm
 
-**Base increments (+1):**
-- `if`, `elseif`, `else`, `switch`
-- `for`, `foreach`, `while`, `do-while`
-- `catch`, `goto`, `break LABEL`, `continue LABEL`
-- Recursive call
-- Logical chain (`&&`, `\|\|`)
-- Ternary `?:`, `??`, `match`
+Follows the SonarSource whitepaper (version 1.7, Appendix B); the deviations
+are listed in the visitor docblock and on the website rule page.
 
-**Nesting bonus:**
+**Base increments (+1):**
+- `if`, `elseif`, `else`, `switch`, `match`, ternary `?:`
+- `for`, `foreach`, `while`, `do-while`
+- `catch`, `goto`, `break N`, `continue N`
+- A method that calls itself (once per method)
+- Logical chain (`&&`, `\|\|`)
+
+**No increment:** `??`, `??=` and `?->` — the whitepaper ignores
+null-coalescing operators as shorthand ("Ignore shorthand", p. 6).
+
+**Nesting bonus** (`if`, ternary, `switch`, `match`, loops, `catch`): the
+nesting level rises inside their bodies and branches, not in their conditions.
+Closures and arrow functions add nothing to the enclosing callable; each is
+measured as its own unit with the nesting level continued one deeper
+(deviation: the whitepaper adds the lambda body to the enclosing method).
 
 ```php
 if ($a) {                    // +1 (nesting=0)
@@ -275,7 +286,7 @@ by name at both depths — the rule's own top level and inside a `callable`/
 Owned tests live under `tests/Analysis/Evidence/Complexity/`: thirteen unit
 test classes cover the three collector/visitor families and four rules; the
 integration test verifies WMC aggregation and reporting. The package is done
-when all 14 test classes (374 PHPUnit IDs) are discovered, collector
+when all 14 test classes (391 PHPUnit IDs) are discovered, collector
 `requires()`/`provides()` sets and all rule IDs/channels/options are unchanged,
 and no old Complexity production or test FQCN remains in this leaf.
 

@@ -15,7 +15,17 @@ previous cycle result.
 
 `CircularDependencyRule` reads the same leaf-owned analysis service. Cycle
 results never enter `AnalysisContext`, transitional enrichment, parallel-worker
-payloads, serialization, or cache entries.
+payloads, serialization, or cache entries. `prepare()` is the analysis's only
+source of cycles; tests hand it exact cycles through a detector double, never
+through a setter on the product class.
+
+`CircularDependencyDetector` walks the graph with Tarjan's algorithm over an
+explicit stack of frames, not the call stack: the walk is as deep as the
+longest dependency chain, and a recursive walk hit Xdebug's nesting limit on a
+chain of a few hundred classes. The displayed cycle path is a breadth-first
+search that keeps each node's predecessor rather than a copy of its path, so a
+long cycle is found in linear rather than quadratic time. Neither change moves
+the output: members, representative, path and order are what they were.
 
 ## Layout
 

@@ -56,13 +56,13 @@ final class ComputedMetricEntryKeys
         return RuleOptionKeySet::of([
             'description' => RuleOptionShape::text()->orNull(),
             'enabled' => RuleOptionShape::boolean()->orNull(),
-            'error' => RuleOptionShape::number()->orNull(),
+            'error' => RuleOptionShape::signedNumber()->orNull(),
             'formula' => RuleOptionShape::text()->orNull(),
             'formulas' => RuleOptionShape::block()->orNull(),
             'inverted' => RuleOptionShape::boolean()->orNull(),
             'levels' => RuleOptionShape::listOf(RuleOptionShape::text())->orNull(),
-            'threshold' => RuleOptionShape::number()->orNull(),
-            'warning' => RuleOptionShape::number()->orNull(),
+            'threshold' => RuleOptionShape::signedNumber()->orNull(),
+            'warning' => RuleOptionShape::signedNumber()->orNull(),
         ]);
     }
 

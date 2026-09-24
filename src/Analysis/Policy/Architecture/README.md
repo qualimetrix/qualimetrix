@@ -186,13 +186,19 @@ the one place that decides which of the `contended` column keeps a layer out of
 `architecture.unreachable-layer`. An analysed class the layer's own criteria
 matched counts. An analysed class the layer could not answer about counts only
 while some type its `attributes:`/`implements:`/`extends:` criteria name is one
-the run met — declared in the analysed paths, built into PHP, or at an end of a
-dependency edge (`KnownTypes`): a class with an unread
-parent leaves every such criterion unanswered, a mistyped name included. A
+the run met — declared in the analysed paths, built into PHP, at an end of a
+dependency edge, or declared by the analysed project's composer install
+(`KnownTypes`): a class with an unread parent leaves every such criterion
+unanswered, a mistyped name included. The install is read through Design's
+`ExternalParentSourceInterface`, the port DIT's ancestor walk reads it by,
+which `ArchitecturePolicy` takes by autowiring and hands down as a lookup when
+it binds the run; it answers only whether the type exists, so a criterion over
+a vendor chain stays undecidable and the layer is named by
+`architecture.doubted-assignment` rather than called empty. A
 symbol outside the analysed paths never counts, for the same reason. The
 finding says what it left out in the words true of each share: the unanswered
-symbols and the named types the run never met — a typo, or a type only unanalysed
-code reaches — or the outside symbols the layer matched that an earlier
+symbols and the named types the run never met — a typo, or, when no install
+was found to ask, a type only unanalysed code reaches — or the outside symbols the layer matched that an earlier
 unanswered `exclude:` holds. `LayerShadowing` draws a shadow only
 between `establishedMatches()`, the first of them shadowing the rest, and
 `debug:layer-assignment` reports its `shadowed` list and hint by the same rule.
@@ -268,8 +274,8 @@ positive criteria succeed, so a layer that matched nothing never offered it
 anything to remove. A clause that could not be answered for some symbol its
 layer caught is not reported: "removed nothing" has not been shown for it.
 The rule's third channel, `architecture.doubted-assignment`, is built by
-`DeclaredLayerReachability::doubtedAssignments()` beside the coverage text that
-names the same population.
+`DoubtedAssignmentDiagnostic`, reading the same population the coverage text
+names.
 `UnassignedClassRule` emits the magnitude channel
 `architecture.unassigned-class`, gated by its own single `mode` option and built
 by `UnassignedClassSummary`; both are ordinary debt a baseline may accept. Being
@@ -281,9 +287,16 @@ unprepared collector.
 `LayerDeclarationValidator` is the verdict on the **declaration** and is a
 `ConfigurationValidatorInterface`, not a rule — which is the whole statement
 that its five channels are configuration errors. `DeclaredLayerReachability`
-builds all five: `architecture.coverage-gap`, `architecture.unreachable-layer`,
-`architecture.pending-layer-matched`, `architecture.potential-shadow` and
-`architecture.empty-template`. The validator declares `architecture.layer-violation`
+builds four of them: `architecture.coverage-gap`, `architecture.unreachable-layer`,
+`architecture.pending-layer-matched` and `architecture.empty-template`;
+`PotentialShadowDiagnostic` renders `architecture.potential-shadow` from the
+shadow evidence, which no other verdict reads. `unreachable-layer` and
+`empty-template` say that no class matches a declaration, so the validator
+withholds them on a run whose paths do not cover the project's autoload roots
+(`AnalysisContext::$coversProjectScope`, the gate `architecture.unmatched-exclude`
+reads); the run's scope warning and the report's `projectScope` say so. A
+project whose manifest declares no readable production autoload is judged,
+with its analysed paths taken as the whole project. The validator declares `architecture.layer-violation`
 as its producer, so all five are registered, addressed, excluded, described and
 switched off exactly as they were while the rule declared them, and it runs in
 the rule's slot so their position in an unsorted report is unchanged.

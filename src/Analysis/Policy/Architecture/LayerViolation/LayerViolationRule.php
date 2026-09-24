@@ -39,7 +39,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * assignment could not be answered, or in no layer only because of one — and
  * names those layers. It is information, reported at `info` and never
  * gating, whatever the coverage mode, and
- * {@see DeclaredLayerReachability::doubtedAssignments()} says why it is not
+ * {@see DoubtedAssignmentDiagnostic::forDoubts()} says why it is not
  * the coverage gap.
  *
  * How much of the analysed code no layer claims is a fact about the run
@@ -155,9 +155,8 @@ final class LayerViolationRule extends AbstractRule
             // reported whatever its scope. The exclude diagnostic is the other
             // shape: "this clause removed nothing" is a fact about the pair
             // (configuration, run scope), and a run narrowed below the
-            // project's autoload roots — or one whose manifest declares no
-            // readable production autoload — cannot tell an inert clause from
-            // one whose classes are simply outside the slice. The gate is the
+            // project's autoload roots cannot tell an inert clause from one
+            // whose classes are simply outside the slice. The gate is the
             // same project-coverage predicate
             // UnmatchedFrameworkNamespaceRule asks.
             ...($context->coversProjectScope
@@ -168,7 +167,7 @@ final class LayerViolationRule extends AbstractRule
             // project class it left outside can be in doubt where a run over
             // the whole project decides it — which is why the advice for a
             // symbol outside the analysed paths names analysing it as well.
-            ...DeclaredLayerReachability::doubtedAssignments(
+            ...DoubtedAssignmentDiagnostic::forDoubts(
                 $evidence->coverageState,
                 $evidence->undecidedSymbolsByLayer(),
                 $evidence->ownsIfExcludedSymbolsByLayer(),

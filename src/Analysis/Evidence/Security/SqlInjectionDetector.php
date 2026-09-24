@@ -19,6 +19,11 @@ use PhpParser\Node\Scalar\InterpolatedString;
  * - String interpolation with SQL keywords and superglobals
  * - Direct superglobal usage in SQL function arguments (mysql_query, etc.)
  * - sprintf() with SQL format string and superglobal arguments
+ *
+ * A superglobal search looks through concatenation and interpolation, so a
+ * call or a concatenation already sees the read an interpolated or
+ * concatenated query nested in it holds; the caller reports only the
+ * outermost of them, see {@see SecurityPatternVisitor}.
  */
 final readonly class SqlInjectionDetector
 {
@@ -36,13 +41,28 @@ final readonly class SqlInjectionDetector
     ) {}
 
     /**
+     * Detect SQL injection in any node that can build or run a query.
+     *
+     * @return list<SecurityPatternLocation>
+     */
+    public function detect(Node $node): array
+    {
+        return match (true) {
+            $node instanceof FuncCall => $this->detectInFuncCall($node),
+            $node instanceof Concat => $this->detectInConcat($node),
+            $node instanceof InterpolatedString => $this->detectInInterpolation($node),
+            default => [],
+        };
+    }
+
+    /**
      * Detect SQL injection in a function call node.
      *
      * @return list<SecurityPatternLocation>
      */
     public function detectInFuncCall(FuncCall $node): array
     {
-        if (!$node->name instanceof Name) {
+        if (!$node->name instanceof Name || $node->isFirstClassCallable()) {
             return [];
         }
 
@@ -51,9 +71,8 @@ final readonly class SqlInjectionDetector
         // Check direct SQL functions
         if (\in_array($functionName, self::SQL_FUNCTIONS, true)) {
             foreach ($node->getArgs() as $arg) {
-                if ($this->superglobalAnalyzer->containsSuperglobal($arg->value)) {
-                    $varName = $this->superglobalAnalyzer->findSuperglobalName($arg->value);
-
+                $varName = $this->superglobalAnalyzer->findSuperglobal($arg->value);
+                if ($varName !== null) {
                     return [
                         new SecurityPatternLocation(
                             type: 'sql_injection',
@@ -90,9 +109,7 @@ final readonly class SqlInjectionDetector
                 $hasSqlKeyword = true;
             }
 
-            if ($superglobalName === null && $this->superglobalAnalyzer->containsSuperglobal($part)) {
-                $superglobalName = $this->superglobalAnalyzer->findSuperglobalName($part);
-            }
+            $superglobalName ??= $this->superglobalAnalyzer->findSuperglobal($part);
         }
 
         if ($hasSqlKeyword && $superglobalName !== null) {
@@ -123,8 +140,8 @@ final readonly class SqlInjectionDetector
                 $hasSqlKeyword = true;
             }
 
-            if ($superglobalName === null && $part instanceof Expr && $this->superglobalAnalyzer->containsSuperglobal($part)) {
-                $superglobalName = $this->superglobalAnalyzer->findSuperglobalName($part);
+            if ($superglobalName === null && $part instanceof Expr) {
+                $superglobalName = $this->superglobalAnalyzer->findSuperglobal($part);
             }
         }
 
@@ -139,18 +156,6 @@ final readonly class SqlInjectionDetector
         }
 
         return [];
-    }
-
-    /**
-     * Check if a FuncCall is a SQL-related function.
-     */
-    public function isSqlFuncCall(FuncCall $node): bool
-    {
-        if (!$node->name instanceof Name) {
-            return false;
-        }
-
-        return \in_array($node->name->toLowerString(), self::SQL_FUNCTIONS, true);
     }
 
     /**
@@ -176,9 +181,8 @@ final readonly class SqlInjectionDetector
 
         // Check remaining arguments for superglobals
         for ($i = 1, $count = \count($args); $i < $count; $i++) {
-            if ($this->superglobalAnalyzer->containsSuperglobal($args[$i]->value)) {
-                $varName = $this->superglobalAnalyzer->findSuperglobalName($args[$i]->value);
-
+            $varName = $this->superglobalAnalyzer->findSuperglobal($args[$i]->value);
+            if ($varName !== null) {
                 return [
                     new SecurityPatternLocation(
                         type: 'sql_injection',

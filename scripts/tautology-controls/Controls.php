@@ -13,10 +13,12 @@ namespace QmxTautologyControls;
  * compared an expression with itself and no edit to the product could have
  * moved one side without moving the other.
  *
- * All fourteen of the ledger's `tautology` rows are here, plus one `name-lies`
- * repair that shares a file with one of them — SymbolInfo's readonly promise —
- * because its edit is disjoint from the tautology's and the bench is the
- * cheapest place to say so.
+ * Thirteen of the ledger's fourteen `tautology` rows are here, plus one
+ * `name-lies` repair that shares a file with one of them — SymbolInfo's
+ * readonly promise — because its edit is disjoint from the tautology's and the
+ * bench is the cheapest place to say so. The fourteenth, `R127`, repaired the
+ * test of a null dependency graph the product no longer has: with the class
+ * gone there is no production edit left for its case to reject.
  */
 final class Controls
 {
@@ -25,8 +27,8 @@ final class Controls
      * here, plus SymbolInfo's readonly promise, which shares a file with a
      * tautology and is broken by a different edit.
      *
-     * Fifteen of the sixteen were written or rewritten by that repair. The
-     * sixteenth, `itUsesLoggerForDebugMessages`, was already there: `R169`'s
+     * Fourteen of the fifteen were written or rewritten by that repair. The
+     * fifteenth, `itUsesLoggerForDebugMessages`, was already there: `R169`'s
      * repair was the removal of five cases that asserted nothing, and this is
      * the case that carries what they were named for.
      *
@@ -43,7 +45,6 @@ final class Controls
             'Qualimetrix.Tests.Analysis.Evidence.ComputedMetrics.Health.Unit.HealthScoreTest::itRequiresEveryScoreToStateWhatItCovers',
             'Qualimetrix.Tests.Analysis.Evidence.Coupling.Unit.NamespaceInstabilityOptionsTest::itIsDisabledWhenTheEnabledFlagIsFalse',
             'Qualimetrix.Tests.Analysis.Evidence.DependencyModel.Unit.DependencyTest::itRefusesAWriteToAConstructedDependency',
-            'Qualimetrix.Tests.Analysis.Evidence.DependencyModel.Unit.EmptyDependencyGraphTest::itAnswersEveryMethodTheContractDeclaresWithNothing',
             'Qualimetrix.Tests.Analysis.Finding.Unit.LocationTest::itRefusesAWriteToAConstructedLocation',
             'Qualimetrix.Tests.Analysis.Policy.Baseline.Unit.ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared with data set "one-row"',
             'Qualimetrix.Tests.Infrastructure.DependencyInjection.Integration.ContainerFactoryTest::itLetsTheConfigurationPipelineAddressAProducerNoRuleClassDeclares',
@@ -133,21 +134,6 @@ final class Controls
                 'src/Analysis/Evidence/Coupling/NamespaceInstabilityOptions.php',
                 ['enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),' => 'enabled: true,'],
                 ['Qualimetrix.Tests.Analysis.Evidence.Coupling.Unit.NamespaceInstabilityOptionsTest::itIsDisabledWhenTheEnabledFlagIsFalse'],
-            ),
-
-            Control::breaking(
-                'empty-graph-answers-nothing',
-                'R127',
-                'every method DependencyGraphInterface declares answers emptily on the empty graph',
-                'src/Analysis/Evidence/DependencyModel/EmptyDependencyGraph.php',
-                [
-                    "    public function getClassCe(SymbolPath \$class): int\n    {\n        return 0;\n    }"
-                        => "    public function getClassCe(SymbolPath \$class): int\n    {\n        return 1;\n    }",
-                ],
-                ['Qualimetrix.Tests.Analysis.Evidence.DependencyModel.Unit.EmptyDependencyGraphTest::itAnswersEveryMethodTheContractDeclaresWithNothing'],
-            )->alsoReddens(
-                'the per-method case for getClassCe reads the same return',
-                ['Qualimetrix.Tests.Analysis.Evidence.DependencyModel.Unit.EmptyDependencyGraphTest::itGetClassCeReturnsZero'],
             ),
 
             Control::breaking(

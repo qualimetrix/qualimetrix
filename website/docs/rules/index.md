@@ -127,7 +127,7 @@ These rules detect common bad practices that are almost always wrong, regardless
 | ------------------------------------------- | -------------------------------------- | --------------------------------------------------------------- |
 | [Boolean Argument](code-smell.md)           | `code-smell.boolean-argument`          | `bool` parameters in method signatures                          |
 | [Count in Loop](code-smell.md)              | `code-smell.count-in-loop`             | Calling `count()` in a loop condition                           |
-| [Debug Code](code-smell.md)                 | `code-smell.debug-code`                | `var_dump`, `print_r`, `debug_backtrace`, etc.                  |
+| [Debug Code](code-smell.md)                 | `code-smell.debug-code`                | `var_dump`, `print_r`, `debug_print_backtrace`, etc.            |
 | [Empty Catch](code-smell.md)                | `code-smell.empty-catch`               | `catch` blocks with no body                                     |
 | [Error Suppression](code-smell.md)          | `code-smell.error-suppression`         | The `@` error suppression operator                              |
 | [Eval](code-smell.md)                       | `code-smell.eval`                      | Use of `eval()`                                                 |

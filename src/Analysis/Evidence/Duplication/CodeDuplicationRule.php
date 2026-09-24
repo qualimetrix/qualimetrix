@@ -39,6 +39,13 @@ final class CodeDuplicationRule extends AbstractRule
     public const int REMEDIATION_MINUTES = 15;
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
+
+    /**
+     * A block copied hundreds of times would otherwise put every copy's path
+     * into one message; the finding's related locations still carry them all.
+     */
+    private const int MESSAGE_LOCATION_LIMIT = 10;
+
     public function __construct(
         RuleOptionsInterface $options,
         private readonly DuplicationResultProvider $resultProvider,
@@ -106,8 +113,11 @@ final class CodeDuplicationRule extends AbstractRule
 
         $otherLocations = implode(', ', array_map(
             static fn($loc) => $loc->toString(),
-            $related,
+            \array_slice($related, 0, self::MESSAGE_LOCATION_LIMIT),
         ));
+        if (\count($related) > self::MESSAGE_LOCATION_LIMIT) {
+            $otherLocations .= \sprintf(' and %d more', \count($related) - self::MESSAGE_LOCATION_LIMIT);
+        }
 
         $hintPart = $block->hint !== null
             ? \sprintf(': "%s"', $block->hint)

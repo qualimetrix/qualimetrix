@@ -26,6 +26,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DeclaredLayerReachability;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DoubtedAssignmentDiagnostic;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
@@ -49,6 +50,7 @@ use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ProcessorBuilder;
  * could not answer. Before the clause existed, both printed the same sentence.
  */
 #[CoversClass(DeclaredLayerReachability::class)]
+#[CoversClass(DoubtedAssignmentDiagnostic::class)]
 final class UndecidableCoverageGapTest extends TestCase
 {
     private ArchitecturePolicy $processor;

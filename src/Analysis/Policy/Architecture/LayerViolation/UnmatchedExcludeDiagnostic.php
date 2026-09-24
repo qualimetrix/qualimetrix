@@ -105,6 +105,27 @@ final class UnmatchedExcludeDiagnostic
      */
     public static function forInertClauses(LayerEvidence $evidence, string $channelName): array
     {
+        $findings = [];
+
+        foreach (self::clauses($evidence) as $declaration => $clause) {
+            if (!self::isInert($clause)) {
+                continue;
+            }
+
+            $findings[] = self::finding($declaration, $clause, $channelName);
+        }
+
+        return $findings;
+    }
+
+    /**
+     * Each `exclude:` clause with its counts summed over every layer the
+     * declaration expands to.
+     *
+     * @return array<string, array{definition: LayerDefinition, matched: int, excluded: int, unanswered: int, instances: int}>
+     */
+    private static function clauses(LayerEvidence $evidence): array
+    {
         $matchedCounts = $evidence->matchedCounts();
         $excludedCounts = $evidence->excludedCounts();
         $unansweredCounts = $evidence->unansweredExcludeCounts();
@@ -127,17 +148,7 @@ final class UnmatchedExcludeDiagnostic
             ++$clauses[$declaration]['instances'];
         }
 
-        $findings = [];
-
-        foreach ($clauses as $declaration => $clause) {
-            if (!self::isInert($clause)) {
-                continue;
-            }
-
-            $findings[] = self::finding($declaration, $clause, $channelName);
-        }
-
-        return $findings;
+        return $clauses;
     }
 
     /**

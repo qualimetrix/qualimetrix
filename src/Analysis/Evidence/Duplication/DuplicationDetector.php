@@ -21,9 +21,9 @@ use SplFileInfo;
  *    cannot remove a real repeated hash.
  * 2. {@see retokenizeNeeded()} re-tokenizes only the files that participate
  *    in a hash match
- * 3. {@see DuplicateBlockFinder} verifies token matches, extends blocks,
- *    computes line ranges, and applies the data-table / self-duplication
- *    filters
+ * 3. {@see DuplicateBlockFinder} verifies token matches, extends every
+ *    group of copies into one block, computes line ranges, and applies the
+ *    data-table / self-duplication filters
  * 4. {@see filterAndDeduplicate()} drops blocks shorter than minLines and
  *    removes nested/overlapping blocks
  *

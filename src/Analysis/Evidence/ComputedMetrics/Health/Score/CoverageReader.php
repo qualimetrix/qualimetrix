@@ -56,23 +56,7 @@ final readonly class CoverageReader
                 continue;
             }
 
-            // An absent count is a measured zero, not a missing field: the
-            // aggregator publishes no key at all when nothing contributed
-            // (`AggregationHelper::applyAggregations()` skips an empty value
-            // list), the formula then read the aggregate through `?? 0` and
-            // scored the subject anyway. That is the case worth publishing
-            // loudest — a project of bare enums declares namespaces and gets no
-            // distance from any of them.
-            //
-            // It also means a mistyped key is indistinguishable from it here,
-            // which is why the key is not typed: it is derived from the line's
-            // own aggregate by {@see HealthDecompositionCatalog::countOf()}.
-            $candidate = HealthCoverage::over(
-                (int) ($readProjectMetric($spec['count']) ?? 0),
-                $eligible,
-                $spec['unit'],
-                $spec['count'],
-            );
+            $candidate = self::measured($spec['count'], $spec['unit'], $eligible, $readProjectMetric);
 
             if ($narrowest === null || $candidate->ratio < $narrowest->ratio) {
                 $narrowest = $candidate;
@@ -82,6 +66,26 @@ final readonly class CoverageReader
         return $narrowest ?? HealthCoverage::notApplicable(
             $emptyPopulation ?? $this->decomposition->coverageAbsenceReason($dimension),
         );
+    }
+
+    /**
+     * An absent count is a measured zero, not a missing field: the
+     * aggregator publishes no key at all when nothing contributed
+     * (`AggregationHelper::applyAggregations()` skips an empty value
+     * list), the formula then read the aggregate through `?? 0` and
+     * scored the subject anyway. That is the case worth publishing
+     * loudest — a project of bare enums declares namespaces and gets no
+     * distance from any of them.
+     *
+     * It also means a mistyped key is indistinguishable from it here,
+     * which is why the key is not typed: it is derived from the line's
+     * own aggregate by {@see HealthDecompositionCatalog::countOf()}.
+     *
+     * @param callable(string): (int|float|null) $readProjectMetric
+     */
+    private static function measured(string $count, CoverageUnit $unit, int $eligible, callable $readProjectMetric): HealthCoverage
+    {
+        return HealthCoverage::over((int) ($readProjectMetric($count) ?? 0), $eligible, $unit, $count);
     }
 
     /**

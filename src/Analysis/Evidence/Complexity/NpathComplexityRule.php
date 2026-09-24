@@ -179,10 +179,8 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
             $severity = $effectiveMethodOptions->getSeverity($npathValue);
 
             if ($severity !== null) {
-                $displayValue = $npathValue >= self::MAX_DISPLAY ? '> 1M' : (string) $npathValue;
-                $categoryLabel = $this->getCategoryLabel($npathValue);
                 $threshold = $severity === Severity::Error ? $effectiveMethodOptions->error : $effectiveMethodOptions->warning;
-                $chain = $this->formatChain($metrics);
+                $text = $this->describeCallableFinding($npathValue, $threshold, $metrics);
 
                 $findings[] = new Finding(
                     location: new Location($methodInfo->file, $methodInfo->line),
@@ -190,16 +188,31 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
                     symbolPath: $subject->toSymbolPath(),
                     ruleName: $this->getName(),
                     code: self::NAME,
-                    message: \sprintf('NPath complexity (execution paths) is %s (%s), exceeds threshold of %s.%s Reduce branching or extract methods', $displayValue, $categoryLabel, $threshold, $chain !== '' ? " {$chain}." : ''),
+                    message: $text['message'],
                     severity: $severity,
                     metricValue: $npathValue,
-                    recommendation: \sprintf('NPath complexity: %s (threshold: %s)%s — explosive number of execution paths', $displayValue, $threshold, $chain !== '' ? ". {$chain}" : ''),
+                    recommendation: $text['recommendation'],
                     threshold: (float) $threshold,
                 );
             }
         }
 
         return $findings;
+    }
+
+    /**
+     * @return array{message: string, recommendation: string}
+     */
+    private function describeCallableFinding(int $npathValue, int $threshold, MetricBag $metrics): array
+    {
+        $displayValue = $npathValue >= self::MAX_DISPLAY ? '> 1M' : (string) $npathValue;
+        $categoryLabel = $this->getCategoryLabel($npathValue);
+        $chain = $this->formatChain($metrics);
+
+        return [
+            'message' => \sprintf('NPath complexity (execution paths) is %s (%s), exceeds threshold of %s.%s Reduce branching or extract methods', $displayValue, $categoryLabel, $threshold, $chain !== '' ? " {$chain}." : ''),
+            'recommendation' => \sprintf('NPath complexity: %s (threshold: %s)%s — explosive number of execution paths', $displayValue, $threshold, $chain !== '' ? ". {$chain}" : ''),
+        ];
     }
 
     /**

@@ -712,6 +712,89 @@ PHP;
 
     // ── Helpers ─────────────────────────────────────────────────────
 
+    #[Test]
+    public function itFlagsADuplicateConditionContinuedThroughElseIf(): void
+    {
+        // `else if` parses as an else holding a single if: the chain goes on under another node shape.
+        $findings = $this->analyze(<<<'PHP'
+<?php
+if ($a) {
+    echo 'a';
+} else if ($b) {
+    echo 'b';
+} else {
+    if ($a) {
+        echo 'dead';
+    }
+}
+PHP);
+
+        self::assertSame([['duplicate_condition', 7]], array_map(static fn($f): array => [$f->type, $f->line], $findings));
+    }
+
+    #[Test]
+    public function itReportsADuplicateInsideAnElseIfContinuationOnce(): void
+    {
+        $findings = $this->analyze(<<<'PHP'
+<?php
+if ($a) {
+    echo 'a';
+} else if ($b) {
+    echo 'b';
+} elseif ($b) {
+    echo 'dead';
+} else if ($a) {
+    echo 'dead too';
+}
+PHP);
+
+        self::assertSame([['duplicate_condition', 6], ['duplicate_condition', 8]], array_map(static fn($f): array => [$f->type, $f->line], $findings));
+    }
+
+    #[Test]
+    public function itDoesNotContinueTheChainIntoAnElseHoldingMoreThanAnIf(): void
+    {
+        $findings = $this->analyze(<<<'PHP'
+<?php
+if ($a) {
+    echo 'a';
+} else {
+    $a = next($items);
+    if ($a) {
+        echo 'reachable';
+    }
+}
+PHP);
+
+        self::assertSame([], $findings);
+    }
+
+    #[Test]
+    public function itComparesCallsInRepeatedConditionsStructurally(): void
+    {
+        // Conditions keep calls on purpose: a repeated getter in an if/elseif chain is the typical copy-paste bug.
+        $findings = $this->analyze(<<<'PHP'
+<?php
+if ($order->isPaid()) {
+    echo 'a';
+} elseif ($order->isPaid()) {
+    echo 'b';
+}
+$x = $order->isPaid() === $order->isPaid();
+PHP);
+
+        self::assertSame([['duplicate_condition', 4]], array_map(static fn($f): array => [$f->type, $f->line], $findings));
+    }
+
+    #[Test]
+    public function itComparesNamesAsWrittenEvenWherePhpIgnoresTheirCase(): void
+    {
+        // Known limit: structural equality is exact, so `Foo::BAR` and `foo::BAR` count as different operands.
+        $findings = $this->analyze('<?php $x = Foo::BAR === foo::BAR; $y = TRUE === true;');
+
+        self::assertSame([], $findings);
+    }
+
     /**
      * @return list<IdenticalSubExpressionFinding>
      */

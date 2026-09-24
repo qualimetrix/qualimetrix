@@ -472,6 +472,215 @@ PHP;
         self::assertCount(0, $locations);
     }
 
+    #[Test]
+    public function itFlagsAnEmptyForeachCatchWhoseTryEndsWithAContinueThatSkipsNothing(): void
+    {
+        // Nothing follows the try in the loop body, so the continue is a no-op and the catch swallows every failure.
+        $visitor = $this->analyze(<<<'PHP'
+<?php
+class Worker {
+    public function run(array $items): void {
+        foreach ($items as $item) {
+            try {
+                $this->work($item);
+                continue;
+            } catch (\Throwable $e) {
+            }
+        }
+    }
+}
+PHP);
+
+        self::assertCount(1, $visitor->getLocationsByType('empty_catch'));
+    }
+
+    #[Test]
+    public function itKeepsTheChainExceptionForAContinueThatSkipsAFallback(): void
+    {
+        $visitor = $this->analyze(<<<'PHP'
+<?php
+class Worker {
+    public function run(array $items): void {
+        foreach ($items as $item) {
+            try {
+                $this->fast($item);
+                continue;
+            } catch (\Throwable $e) {
+            }
+            $this->slow($item);
+        }
+    }
+}
+PHP);
+
+        self::assertCount(0, $visitor->getLocationsByType('empty_catch'));
+    }
+
+    #[Test]
+    public function itKeepsTheChainExceptionForATryThatEndsByReturningAFoundValue(): void
+    {
+        $visitor = $this->analyze(<<<'PHP'
+<?php
+class Parser {
+    public function parse(string $input): ?int {
+        foreach ($this->parsers as $parser) {
+            try {
+                $result = $parser->parse($input);
+                if ($result !== null) {
+                    return $result;
+                }
+            } catch (\Throwable $e) {
+            }
+        }
+        return null;
+    }
+}
+PHP);
+
+        self::assertCount(0, $visitor->getLocationsByType('empty_catch'));
+    }
+
+    #[Test]
+    public function itKeepsTheChainExceptionForAnAttemptThatReturnsOnSuccessAndCollectsOtherwise(): void
+    {
+        // The any-of shape: return when an attempt validates, collect its errors otherwise, try the next on a throw.
+        $visitor = $this->analyze(<<<'PHP'
+<?php
+class AnyOf {
+    public function check(array $schemas): void {
+        foreach ($schemas as $schema) {
+            try {
+                $schema->check();
+                if ($schema->isValid()) {
+                    return;
+                }
+                $this->collect($schema->errors());
+            } catch (\RuntimeException $e) {
+            }
+        }
+    }
+}
+PHP);
+
+        self::assertCount(0, $visitor->getLocationsByType('empty_catch'));
+    }
+
+    #[Test]
+    public function itFlagsAnEmptyForeachCatchWhoseBranchContinueSkipsNothing(): void
+    {
+        $visitor = $this->analyze(<<<'PHP'
+<?php
+class Worker {
+    public function run(array $items): void {
+        foreach ($items as $item) {
+            try {
+                if ($item !== null) {
+                    $this->work($item);
+                    continue;
+                }
+                $this->other();
+            } catch (\Throwable $e) {
+            }
+        }
+    }
+}
+PHP);
+
+        self::assertCount(1, $visitor->getLocationsByType('empty_catch'));
+    }
+
+    #[Test]
+    public function itFlagsAnEmptyCatchInsideAClosureDeclaredInAForeach(): void
+    {
+        // The closure body is its own scope: its try is not an attempt of the enclosing loop.
+        $visitor = $this->analyze(<<<'PHP'
+<?php
+class Worker {
+    public function run(array $items): void {
+        foreach ($items as $item) {
+            $callback = function () use ($item) {
+                try {
+                    return $this->work($item);
+                } catch (\Throwable $e) {
+                }
+            };
+        }
+    }
+}
+PHP);
+
+        self::assertCount(1, $visitor->getLocationsByType('empty_catch'));
+    }
+
+    #[Test]
+    public function itFlagsAnEmptyCatchNestedBelowTheForeachBody(): void
+    {
+        $visitor = $this->analyze(<<<'PHP'
+<?php
+class Worker {
+    public function run(array $items): mixed {
+        foreach ($items as $item) {
+            if ($item !== null) {
+                try {
+                    return $this->work($item);
+                } catch (\Throwable $e) {
+                }
+            }
+        }
+        return null;
+    }
+}
+PHP);
+
+        self::assertCount(1, $visitor->getLocationsByType('empty_catch'));
+    }
+
+    #[Test]
+    public function itDetectsAFullyQualifiedExitCall(): void
+    {
+        // PHP 8.4 made exit()/die() functions: the fully qualified spelling parses as a function call.
+        $visitor = $this->analyze('<?php function stop(): void { \exit(1); } function halt(): void { \die("x"); } function plain(): void { exit(1); }');
+
+        self::assertCount(3, $visitor->getLocationsByType('exit'));
+    }
+
+    #[Test]
+    public function itDoesNotTreatAFirstClassExitReferenceAsAnExit(): void
+    {
+        $visitor = $this->analyze('<?php $stop = \exit(...);');
+
+        self::assertCount(0, $visitor->getLocationsByType('exit'));
+    }
+
+    #[Test]
+    public function itDoesNotDetectAVariableVariableSpellingOfASuperglobal(): void
+    {
+        // Known limit: only the plain variable name is read; `${'_GET'}` is absent from the benchmark corpus.
+        $visitor = $this->analyze('<?php function read(): mixed { return ${\'_GET\'}[\'id\'] ?? $_SERVER[\'x\']; }');
+
+        self::assertSame(['_SERVER'], array_map(static fn(CodeSmellLocation $l): ?string => $l->extra, $visitor->getLocationsByType('superglobals')));
+    }
+
+    #[Test]
+    public function itRecognizesFullyQualifiedAndUppercaseSpellingsOfNamedCalls(): void
+    {
+        $visitor = $this->analyze('<?php function f(array $a): void { @\FOPEN("x"); EVAL("1;"); for ($i = 0; $i < \COUNT($a); ++$i) {} \VAR_DUMP($a); }');
+
+        self::assertSame(['fopen'], array_map(static fn(CodeSmellLocation $l): ?string => $l->extra, $visitor->getLocationsByType('error_suppression')));
+        self::assertCount(1, $visitor->getLocationsByType('eval'));
+        self::assertCount(1, $visitor->getLocationsByType('count_in_loop'));
+        self::assertCount(1, $visitor->getLocationsByType('debug_code'));
+    }
+
+    #[Test]
+    public function itDoesNotResolveAnImportedCountAlias(): void
+    {
+        // Known limit: no name resolution runs during collection, so an alias is read as written.
+        $visitor = $this->analyze('<?php use function count as size; function f(array $a): void { for ($i = 0; $i < size($a); ++$i) {} }');
+
+        self::assertCount(0, $visitor->getLocationsByType('count_in_loop'));
+    }
+
     private function analyze(string $code): CodeSmellVisitor
     {
         $visitor = new CodeSmellVisitor();

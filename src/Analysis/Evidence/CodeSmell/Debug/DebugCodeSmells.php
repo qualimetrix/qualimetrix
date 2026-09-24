@@ -13,7 +13,19 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellLocation;
 /** Evaluates debug-call smells and their non-output exceptions. */
 final class DebugCodeSmells
 {
-    private const FUNCTIONS = ['var_dump', 'print_r', 'var_export', 'dd', 'dump', 'debug_print_backtrace', 'debug_zval_dump'];
+    /**
+     * Debug function => whether its second positional parameter is `$return`. Only print_r() and
+     * var_export() have one; for var_dump(), dd() and dump() a second argument is one more printed value.
+     */
+    private const FUNCTIONS = [
+        'var_dump' => false,
+        'print_r' => true,
+        'var_export' => true,
+        'dd' => false,
+        'dump' => false,
+        'debug_print_backtrace' => false,
+        'debug_zval_dump' => false,
+    ];
     private const API_METHODS = ['dump', 'dd', 'debug', 'dumprawsql', 'dumpsql', 'debuginfo', '__debuginfo'];
 
     public function location(FuncCall $node, ?string $method, string $subjectId): ?CodeSmellLocation
@@ -23,14 +35,14 @@ final class DebugCodeSmells
         }
 
         $name = $node->name->toLowerString();
-        if (!\in_array($name, self::FUNCTIONS, true) || $this->isReturnMode($node) || \in_array($method, self::API_METHODS, true)) {
+        if (!isset(self::FUNCTIONS[$name]) || $this->isReturnMode($node, self::FUNCTIONS[$name]) || \in_array($method, self::API_METHODS, true)) {
             return null;
         }
 
         return new CodeSmellLocation('debug_code', $node->getStartLine(), $node->getStartTokenPos(), $subjectId, $name);
     }
 
-    private function isReturnMode(FuncCall $node): bool
+    private function isReturnMode(FuncCall $node, bool $hasPositionalReturn): bool
     {
         foreach ($node->getArgs() as $argument) {
             if ($argument->name?->toString() === 'return') {
@@ -40,7 +52,7 @@ final class DebugCodeSmells
 
         $arguments = $node->getArgs();
 
-        return \count($arguments) > 1 && $this->isTrue($arguments[1]->value);
+        return $hasPositionalReturn && \count($arguments) > 1 && $this->isTrue($arguments[1]->value);
     }
 
     private function isTrue(mixed $value): bool

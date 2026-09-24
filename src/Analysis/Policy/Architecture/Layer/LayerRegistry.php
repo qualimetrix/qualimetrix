@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
+use Closure;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -150,10 +151,11 @@ final class LayerRegistry
      *                                                   {@see ClassContextFactory::bindGraph()}
      *                                                   for what omitting them
      *                                                   costs.
+     * @param (Closure(string): bool)|null $installDeclares Forwarded verbatim, like the declarations.
      */
-    public function bindGraph(?DependencyGraphInterface $graph, ?iterable $analysedClasses = null): void
+    public function bindGraph(?DependencyGraphInterface $graph, ?iterable $analysedClasses = null, ?Closure $installDeclares = null): void
     {
-        $this->contextFactory->bindGraph($graph, $analysedClasses);
+        $this->contextFactory->bindGraph($graph, $analysedClasses, $installDeclares);
         $this->matchCache = [];
     }
 

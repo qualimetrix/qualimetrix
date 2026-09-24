@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -86,6 +87,19 @@ final class MaintainabilityIndexCollectorTest extends TestCase
 
         // Without Halstead volume, MI cannot be calculated (e.g. class-level FQN)
         self::assertFalse($result->has('maintainability.mi'));
+    }
+
+    #[Test]
+    public function itRefusesACallableThatHasHalsteadAndStatementsButNoCcn(): void
+    {
+        $sourceBag = (new MetricBag())
+            ->with('maintainability.halstead.volume', 100.0)
+            ->with('size.method-statement-count', 20);
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('complexity.ccn');
+
+        $this->collector->calculate($sourceBag);
     }
 
     #[Test]

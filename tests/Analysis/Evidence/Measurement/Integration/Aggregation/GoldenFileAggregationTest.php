@@ -75,7 +75,7 @@ final class GoldenFileAggregationTest extends TestCase
             ['GoldenMetrics\App\Service', 'UserService', 'getUser', 2, 1, 2],
             ['GoldenMetrics\App\Service', 'UserService', 'createUser', 4, 4, 8],
             // foreach wrapper: body if=4 (|| + ?? + assignment + skip), plus loop exit path = 5.
-            ['GoldenMetrics\App\Service', 'UserService', 'listUsers', 5, 5, 5],
+            ['GoldenMetrics\App\Service', 'UserService', 'listUsers', 5, 4, 5],
             ['GoldenMetrics\App\Service', 'OrderService', '__construct', 1, 0, 1],
             ['GoldenMetrics\App\Service', 'OrderService', 'placeOrder', 3, 2, 4],
             ['GoldenMetrics\App\Service', 'OrderService', 'cancelOrder', 2, 1, 2],
@@ -437,7 +437,7 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertSame(46, $m->get('complexity.ccn.sum'), 'project ccn.sum');
         self::assertSame(5, $m->get('complexity.ccn.max'), 'project ccn.max');
         self::assertEqualsWithDelta(2.1905, $m->get('complexity.ccn.avg'), 0.01, 'project ccn.avg');
-        self::assertSame(482, $m->get('size.loc.sum'), 'project loc.sum counts each physical file once');
+        self::assertSame(473, $m->get('size.loc.sum'), 'project loc.sum counts each physical file once');
         self::assertSame(7, $m->get('size.class-count.sum'), 'project classCount.sum (excludes interfaces)');
         self::assertSame(1, $m->get('size.interface-count.sum'), 'project interfaceCount.sum');
         self::assertSame(21, $m->get(MetricName::SIZE_SYMBOL_METHOD_COUNT), 'project m["size.symbol-method-count"]');
@@ -504,6 +504,6 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertSame(2, $nsMetrics->get('complexity.ccn.sum'), 'global ns ccn.sum');
         self::assertSame(1, $nsMetrics->get(MetricName::SIZE_SYMBOL_METHOD_COUNT), 'global ns m["size.symbol-method-count"]');
         self::assertSame(1, $nsMetrics->get(MetricName::SIZE_SYMBOL_CLASS_COUNT), 'global ns symbolClassCount');
-        self::assertSame(29, $nsMetrics->get('size.loc.sum'), 'global ns loc.sum');
+        self::assertSame(28, $nsMetrics->get('size.loc.sum'), 'global ns loc.sum');
     }
 }

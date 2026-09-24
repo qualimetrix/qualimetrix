@@ -24,22 +24,23 @@ Coupling metrics measure dependencies between components. All collectors in this
 **Collector:** `CouplingCollector`
 **Type:** `GlobalContextCollectorInterface`
 **Provides:** `coupling.ca`, `coupling.ce`, `coupling.cbo`, `coupling.instability`, `coupling.ce-packages`, `coupling.cbo-app`, `coupling.ce-framework`, `coupling.ca-own`, `coupling.ce-own`, `coupling.instability-own`
-**Level:** Class, plus the namespace-level pair below
+**Level:** Class and Namespace (`coupling.ca`, `coupling.ce`, `coupling.cbo` and
+`coupling.instability` are published on both; the `-own` trio on namespaces only)
 
 ### Metrics
 
-| Metric                     | Description                                           | Formula                               |
-| -------------------------- | ----------------------------------------------------- | ------------------------------------- |
-| `coupling.ca`              | Afferent Coupling — incoming dependencies             | count(dependents)                     |
-| `coupling.ce`              | Efferent Coupling — outgoing dependencies             | count(dependencies)                   |
-| `coupling.cbo`             | Coupling Between Objects (C&K) — all dependencies     | \|Ca ∪ Ce\|                           |
-| `coupling.instability`     | Class instability (Qualimetrix extension)             | Ce / (Ca + Ce)                        |
-| `coupling.ce-packages`     | Distinct external top-level namespaces in Ce          | count(distinct external packages)     |
-| `coupling.cbo-app`         | Application-only CBO (excludes framework deps)        | \|Ca_app ∪ Ce_app\|                   |
-| `coupling.ce-framework`    | Framework efferent coupling (outgoing framework deps) | count(framework Ce targets)           |
-| `coupling.ca-own`          | Namespace Ca over its own declarations only           | count(dependents of this namespace)   |
-| `coupling.ce-own`          | Namespace Ce over its own declarations only           | count(dependencies of this namespace) |
-| `coupling.instability-own` | Instability of that own scope                         | Ce_own / (Ca_own + Ce_own)            |
+| Metric                     | Description                                           | Formula                                         |
+| -------------------------- | ----------------------------------------------------- | ----------------------------------------------- |
+| `coupling.ca`              | Afferent Coupling — incoming dependencies             | count(dependents)                               |
+| `coupling.ce`              | Efferent Coupling — outgoing dependencies             | count(dependencies)                             |
+| `coupling.cbo`             | Coupling Between Objects (C&K) — all dependencies     | \|Ca ∪ Ce\| (classes; see below for namespaces) |
+| `coupling.instability`     | Class instability (Qualimetrix extension)             | Ce / (Ca + Ce)                                  |
+| `coupling.ce-packages`     | Distinct external top-level namespaces in Ce          | count(distinct external packages)               |
+| `coupling.cbo-app`         | Application-only CBO (excludes framework deps)        | \|Ca_app ∪ Ce_app\|                             |
+| `coupling.ce-framework`    | Framework efferent coupling (outgoing framework deps) | count(framework Ce targets)                     |
+| `coupling.ca-own`          | Namespace Ca over its own declarations only           | count(dependents of this namespace)             |
+| `coupling.ce-own`          | Namespace Ce over its own declarations only           | count(dependencies of this namespace)           |
+| `coupling.instability-own` | Instability of that own scope                         | Ce_own / (Ca_own + Ce_own)                      |
 
 > **Note:** A namespace that both declares classes and contains sub-namespaces
 > has two coupling scopes, and both are published. `coupling.ca`/`coupling.ce`
@@ -51,22 +52,47 @@ Coupling metrics measure dependencies between components. All collectors in this
 > expects; the own scope is what folds into a project number, because only it
 > partitions the declarations.
 
+> **Note:** On a namespace `coupling.cbo` counts **namespaces**, not classes:
+> the distinct namespaces declaring a class on the far side of an edge that
+> crosses the namespace's region, in either direction. `coupling.ca` and
+> `coupling.ce` on the same namespace count classes, so CBO is usually smaller
+> than either. The region is the subtree, the same one the published Ca and Ce
+> are counted over (`CoupledNamespaces`): a parent namespace is coupled to what
+> lies outside it, never to its own sub-namespaces, and a leaf's answer is its
+> own. The far side is named by its declaring namespace and never truncated, so
+> the number depends on how finely the code outside is split into namespaces:
+> dividing a directory into sub-namespaces raises the CBO of its neighbours
+> while their Ca and Ce stay put. The namespace thresholds are the same numbers
+> as the class ones but measure this different quantity; they were not
+> calibrated separately.
+
+> **Note:** `CboRule` judges leaf namespaces only — those with no
+> sub-namespace among the run's namespaces. A parent's CBO is the subtree's and
+> grows with it, so the namespace thresholds do not model it; that includes a
+> namespace declaring classes beside its sub-namespaces. The value is still
+> published.
+> `CboRule` decides whether there is a finding; `CboFindingText` words it —
+> the dominant direction, the message and the recommendation with a class's
+> top dependencies.
+
 > **Note:** Robert C. Martin (1994) originally defined Instability only at the **package** (namespace) level. Qualimetrix extends it to the class level for finer-grained analysis. The namespace-level instability is the canonical metric per Martin's specification.
 
 > **Note:** The dependency graph is seeded with every named project class,
 > interface, trait, and enum, including degree-zero declarations. CBO/Ca/Ce
-> deduplicate logical endpoints, retain undeclared external targets, and remove
-> PHP built-ins except structural `extends` edges. One logical class score is
+> deduplicate logical endpoints, retain undeclared external targets, and count
+> no PHP built-in, however it is named: an `extends` edge to one stays in the
+> graph for DIT and NOC but is not in the per-class dependency lists these
+> metrics read. One logical class score is
 > projected to every exact owned declaration so declaration controls, baseline
 > identities, and fingerprints remain independent.
 
 ### Instability Interpretation
 
-| Value | Description                                     |
-| ----- | ----------------------------------------------- |
-| 0.0   | Maximally stable (only incoming dependencies)   |
-| 0.5   | Balanced                                        |
-| 1.0   | Maximally unstable (only outgoing dependencies) |
+| Value | Description                                                                                                           |
+| ----- | --------------------------------------------------------------------------------------------------------------------- |
+| 0.0   | Maximally stable (only incoming dependencies), or no dependencies at all (Ca = Ce = 0 is reported as 0 by convention) |
+| 0.5   | Balanced                                                                                                              |
+| 1.0   | Maximally unstable (only outgoing dependencies)                                                                       |
 
 **Stable classes (I ~ 0):** Used by many, depend on few. Difficult to change.
 
@@ -117,7 +143,7 @@ Two facts about the shape, both measured rather than chosen:
   `--disable-rule` and the baseline. Three mechanical guards hold that: the
   compiler pass refuses a channel declared by both producer kinds, the
   declared-channel fixture carries no `config-error` token, and an integration
-  case pins exit 0 under `--fail-on=none` against exit 2 under
+  case pins exit 0 under `--fail-on=none` against the warning exit 1 under
   `--fail-on=warning`.
 
 The binding universe is `FrameworkClassificationSites::names()` — the two
@@ -219,6 +245,16 @@ concrete types still computes as `1 / 6` rather than losing the abstraction in a
 D = |A + I - 1|
 ```
 
+A namespace missing either input gets no distance in that scope, not a
+distance computed from 0: a namespace declaring only functions is in the
+repository but not in the class graph, so it has no instability, and reading
+that as 0 used to publish D = 1.0 for it.
+
+`DistanceRule` does not judge a namespace with `Ca = Ce = 0`: its instability
+is 0 by convention, not by measurement, and a concrete namespace nothing
+touches would otherwise read as the worst zone of pain. The value itself is
+still published, and still enters `health.coupling` and the project average.
+
 `coupling.distance` stays the subtree value and carries **no project
 aggregation**. The project average is taken over `coupling.distance-own`, whose
 population is every namespace declaring at least one type. That population is a
@@ -262,6 +298,21 @@ Ideal packages lie on the line `A + I = 1`:
 - Abstract but unstable
 - Useless abstractions without real usage
 - Example: Over-engineering
+
+---
+
+## ClassRank
+
+**Collector:** `ClassRankCollector` (PageRank, damping 0.85, over project classes)
+**Provides:** `coupling.class-rank`
+**Level:** Class
+
+A class without outgoing project edges spreads its rank evenly over every class,
+so each class holds a floor of `(1 - d) / N + d · S / N`, where `S` is the total
+rank of such classes. On a small or loosely coupled project that floor alone
+clears the size-scaled threshold, so `ClassRankRule` never reports a class
+nothing depends on (`coupling.ca` = 0), and its recommendation names the
+measured number of dependents.
 
 ---
 

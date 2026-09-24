@@ -145,22 +145,26 @@ this ownership change does not alter the rule id, options, algorithm or output.
 !!! info "Constant and property arrays are always excluded"
     A duplicate block that lies **entirely** inside a `const` declaration or a static/instance property's array-literal initializer is never reported. Rows of a lookup table (e.g. `'key' => ['a' => ..., 'b' => ...]` repeated with different values) normalize to identical token sequences, but "extract a shared method" is not actionable advice for a data table — repeating the same field shape across rows is the normal, correct form of that table. A block spanning both a data declaration and executable code (or lying entirely in a method body) is still reported. This suppression is unconditional and cannot be turned off.
 
+!!! info "Every copy of a block is one finding"
+    All copies of one duplicated block are reported together as a single finding, however many there are — there is no upper limit on the number of copies. The message states the number of occurrences and names up to ten other copies, followed by `and N more` when there are more; the finding's related locations list every copy. When copies agree over different lengths, each longest agreeing set is reported: two copies that match for 40 lines and a third that matches them only for the first 10 give one finding for the two 40-line copies and one for all three over 10 lines.
+
+!!! info "Copies within one file"
+    Two occurrences in the same file that share a line are one repetitive structure matching itself at a shifted position, not two copies, and only the first is kept. Occurrences that merely touch — one ends on the line before the other starts — are two copies and are reported.
+
 !!! tip "IDE integration"
-    When using SARIF output (`--format=sarif`), duplicate copies are linked via `relatedLocations`. This means duplicate pairs appear as **clickable cross-references** in VS Code (SARIF Viewer extension) and JetBrains IDEs, making it easy to navigate between all copies of a duplicated block.
+    When using SARIF output (`--format=sarif`), duplicate copies are linked via `relatedLocations`. This means duplicate copies appear as **clickable cross-references** in VS Code (SARIF Viewer extension) and JetBrains IDEs, making it easy to navigate between all copies of a duplicated block.
 
 <!-- llms:skip-end -->
 
 ### Content preview hints
 
-Duplication violations include a content preview showing the first tokens of the duplicated block. This helps you quickly identify which code is duplicated without navigating to the file:
+Duplication findings include a content preview of the duplicated block. This helps you quickly identify which code is duplicated without navigating to the file:
 
 ```
-src/Service/OrderService.php:10-25: Duplicated block (16 lines, 120 tokens)
-  Preview: public function calculate ( $_ ) { $_ = 0.0 ; foreach ( ...
-  Also in: src/Service/InvoiceService.php:15-30
+Duplicated code block (16 lines, 2 occurrences): "$total = 0.0; foreach ($order->getItems() as $item) { $price =..." — also at src/Service/InvoiceService.php:15-30
 ```
 
-The preview uses normalized tokens (variables replaced with `$_`, strings with `'_'`), matching the internal representation used for detection.
+The preview is the source text of the first copy: up to three of its first ten lines, skipping blank and brace-only lines, with whitespace collapsed and cut to about 80 characters.
 
 ### Configuration
 
@@ -207,4 +211,4 @@ bin/qmx check src/ --disable-rule=duplication.clone
 ```
 
 !!! note "Memory usage"
-    Duplication detection uses the Rabin-Karp rolling hash algorithm, which requires storing normalized tokens for all files with matching hashes in memory simultaneously. On large codebases (500+ files), this can consume significant memory. Disabling the rule with `--disable-rule=duplication.clone` skips the detection phase entirely and frees the memory.
+    Duplication detection uses the Rabin-Karp rolling hash algorithm, which requires storing normalized tokens for all files with matching hashes in memory simultaneously. On large codebases (500+ files), this can consume significant memory. Disabling the rule — `--disable-rule=duplication.clone`, or `enabled: false` under `duplication.clone` in the configuration — skips the detection phase entirely and frees the memory.

@@ -100,8 +100,9 @@ and runs the detector's whole pipeline over them.
 One Functional class under `tests/Analysis/Evidence/Duplication/Functional/`:
 `DuplicationMemoryLimitProcessTest`, which builds a temporary project and runs
 `bin/qmx` in a real PHP subprocess under a `memory_limit`. It protects the
-bounded-memory candidate index and the real CLI path, and it is the reason the
-module has a Functional level at all.
+bounded-memory candidate index, the report of a block copied around a hundred
+times under a 128M limit, and the real CLI path, and it is the reason the module
+has a Functional level at all.
 
 Run the complete owned suite with:
 

@@ -43,4 +43,47 @@ final class DebugCodeSmellsTest extends TestCase
         self::assertNotNull($location);
         self::assertSame('debug_code', $location->type);
     }
+
+    #[Test]
+    public function itAppliesThePositionalReturnFlagOnlyToFunctionsThatHaveOne(): void
+    {
+        // var_dump(), dd() and dump() print every argument: a second `true` is one more printed value.
+        $calls = (new NodeFinder())->findInstanceOf(
+            (new ParserFactory())->createForHostVersion()->parse('<?php var_dump($x, true); dd($x, true); dump($x, true); print_r($x, true); var_export($x, TRUE); print_r($x, return: true); var_export($x, false);') ?? [],
+            FuncCall::class,
+        );
+        $smells = new DebugCodeSmells();
+
+        $flagged = [];
+        foreach ($calls as $call) {
+            $flagged[] = $smells->location($call, null, 'file')?->extra;
+        }
+
+        self::assertSame(['var_dump', 'dd', 'dump', null, null, null, 'var_export'], $flagged);
+    }
+
+    #[Test]
+    public function itDoesNotDetectDebugBacktraceBecauseItOnlyReturnsData(): void
+    {
+        $calls = (new NodeFinder())->findInstanceOf(
+            (new ParserFactory())->createForHostVersion()->parse('<?php debug_backtrace(); debug_print_backtrace();') ?? [],
+            FuncCall::class,
+        );
+        $smells = new DebugCodeSmells();
+
+        self::assertNull($smells->location($calls[0], null, 'file'));
+        self::assertSame('debug_print_backtrace', $smells->location($calls[1], null, 'file')?->extra);
+    }
+
+    #[Test]
+    public function itDoesNotResolveAnImportedFunctionAlias(): void
+    {
+        // Known limit: the collection pipeline runs no name resolver, so an alias is read as written.
+        $calls = (new NodeFinder())->findInstanceOf(
+            (new ParserFactory())->createForHostVersion()->parse('<?php use function var_dump as vd; vd($x);') ?? [],
+            FuncCall::class,
+        );
+
+        self::assertNull((new DebugCodeSmells())->location($calls[0], null, 'file'));
+    }
 }
