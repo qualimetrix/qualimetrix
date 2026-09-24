@@ -3087,6 +3087,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\DuplicateMatchCandidates": {
+      "path": "src/Analysis/Evidence/Duplication/DuplicateMatchCandidates.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Duplication",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Evidence\\Duplication\\DuplicateSearchRequest": {
       "path": "src/Analysis/Evidence/Duplication/DuplicateSearchRequest.php",
       "kind": "class",

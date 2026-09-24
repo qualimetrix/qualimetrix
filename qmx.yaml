@@ -326,6 +326,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlock'
         - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlockFinder'
         - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateLocation'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateMatchCandidates'
         - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateSearchRequest'
         - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector'
         - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider'

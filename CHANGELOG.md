@@ -433,24 +433,29 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   increments, labels `nested ternary`, and shows an `else if` as one `elseif`
   increment. `complexity.ccn` still counts `??`.
 - **`duplication.clone` reports one finding on each copy of a duplicated
-  block**, each copy under an identity of its own, instead of one finding per
-  pair. Each names up to ten other copies (message and SARIF
-  `relatedLocations`) and counts the rest, and there is no upper limit on
-  copies any more. A copy is keyed by the block's content, its file and its
-  place among the block's copies in that file — never by a line number — so
-  GitLab Code Quality and SARIF show one entry per copy and a new copy as
-  new; a new copy of an accepted block is a new finding on that copy alone,
-  `--report=git:*` reports it in the file it was pasted into, a deleted copy
-  leaves a stale baseline entry, and a copy moved to another file (or a
-  renamed file) is a new finding. Check what you rely on: a block of N copies
-  is N findings (v0.27.0 reported N − 1), so the violation count and the
-  technical debt grow by one finding per block; `suppress_paths` (global or
-  per rule) now silences only the copies inside its paths — list every file
-  a block has a copy in to silence it. A baseline captured before this change
-  matches none of the new findings — regenerate it with `baseline:generate`.
-  Inline directives on the channel stay refused, and the refusal now says
-  why: a file or next-line directive would silence one copy while the others
-  still report the block.
+  block**, each copy under an identity of its own and valued by the lines that
+  copy spans, instead of one finding per pair valued by the longest copy. Each
+  names up to ten other copies (message and SARIF `relatedLocations`) and
+  counts the rest, and there is no upper limit on copies any more. A copy is
+  keyed by the block's content, its file and its place among the block's
+  copies in that file — never by a line number — so GitLab Code Quality and
+  SARIF show one entry per copy. A new copy that agrees with the whole of an
+  accepted block is a new finding on that copy alone, `--report=git:*`
+  reports it in the file it was pasted into, a deleted copy leaves a stale
+  baseline entry, and a copy moved to another file (or a renamed file) is a
+  new finding. A copy agreeing with only part of an accepted block, an edit
+  inside one copy, or code inserted between a copy and the code around it
+  that the copies share changes the block: its other copies get new findings
+  too, in files the change never touched. A comment or blank line inside one
+  copy changes that copy's value only. Check what you rely on: a block of N
+  copies is N findings (v0.27.0 reported N − 1), so the violation count and
+  the technical debt grow by one finding per block; `suppress_paths` (global
+  or per rule) now silences only the copies inside its paths — list every
+  file a block has a copy in to silence it. A baseline captured before this
+  change matches none of the new findings — regenerate it with
+  `baseline:generate`. Inline directives on the channel stay refused, and the
+  refusal now says why: a file or next-line directive would silence one copy
+  while the others still report the block.
 - **`size.loc` no longer counts a file's final line break as a line of its
   own**, so `size.loc` (and `size.loc.sum`/`.avg`) is one lower per file that
   ends with a newline; a last line without a line break still counts, which
@@ -697,6 +702,9 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
 - The `--profile` summary marks spans that never stopped themselves (`| N
   never stopped, not timed`) and keeps their borrowed time out of the totals;
   Chrome tracing marks such spans' end events with `args.stopped: false`.
+- `baseline:explain` prints the occurrence of a boundary that carries one, and
+  the `file:line` its findings are reported at now, so the section of each
+  copy of a duplicate block can be told apart.
 
 ### Fixed
 
@@ -1068,6 +1076,10 @@ directions. See
   starting or ending with a brace on its own line was shifted one line up),
   and reports two identical blocks in one file that touch without sharing a
   line.
+- `duplication.clone` no longer runs out of memory on long runs of one
+  repeated statement across many files: 30 files of such runs needed 202 MB
+  and exhausted the default 128M limit, and now peak at 75 MB with the same
+  findings.
 - A first-class callable of a command or SQL function (`exec(...)`) no longer
   makes its file fail analysis.
 - `code-smell.unused-private`: a public or protected `__call`/`__callStatic`/

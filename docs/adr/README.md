@@ -55,7 +55,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0014 — Deptrac Retirement](0014-deptrac-retirement.md) — project-owned architecture enforcement replaces deptrac.
 - [0015 — Typed Paths](0015-relative-path-vo.md) — typed absolute and relative path boundaries.
 - [0016 — Subject Cohesion](0016-subject-cohesion.md) — directories and module boundaries follow subjects.
-- [0017 — Baseline Ceiling](0017-baseline-ceiling.md) — baselines cap the reported magnitude they accepted; amended 2026-09-24: the baseline commands accept the project-scope flags `--include-generated` and `--include-autoload-dev`, `baseline:migrate` is gone, and a copy of a duplicate block re-keys on its matched tokens and its file rather than on its first copy.
+- [0017 — Baseline Ceiling](0017-baseline-ceiling.md) — baselines cap the reported magnitude they accepted; amended 2026-09-24: the baseline commands accept the project-scope flags `--include-generated` and `--include-autoload-dev`, `baseline:migrate` is gone, and a copy of a duplicate block re-keys when the block the detector finds changes or the copy changes file, rather than when its first copy moves.
 - [0018 — Coverage, Verdict, and Projection](0018-analysis-coverage-verdict-and-output-projection.md) — analysis completeness is separate from verdict and presentation; its discovered population is widened by 0078.
 - [0019 — Namespace Metric Ownership](0019-namespace-metric-ownership-and-attribution.md) — explicit namespace contribution and attribution.
 - [0020 — Method Size and NPath](0020-method-size-and-npath-semantics.md) — method-size and recursive NPath semantics.
@@ -114,7 +114,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0082 — The Project Aggregate Is Typed, Not Spelled](0082-the-project-aggregate-is-typed-not-spelled.md) — only `SymbolPath::forProject()` yields the project type; its namespace field shows `(project)`, a form no PHP namespace can take, so a namespace named `__PROJECT__` is analysed as itself.
 - [0083 — A Number Option Declares Its Range in Its Form](0083-a-number-option-declares-its-range-in-its-form.md) — whole and fractional rule options accept 0 and above and a negative value is refused by the value; only computed-metric thresholds declare the signed form.
 - [0084 — A Project Scope Has Three States, and the Report Names It](0084-a-project-scope-has-three-states-and-the-report-names-it.md) — covered, narrowed or unknown; only a narrowed run withholds the whole-project channels, an unknown one leaves namespace values of suppressions unjudged, every format with a place for it publishes the state, and the suppression values a run skipped are named with the channels derived from them.
-- [0085 — A Copy of a Duplicate Block Is a Finding of Its Own](0085-a-copy-of-a-duplicate-block-is-a-finding-of-its-own.md) — `duplication.clone` reports one finding on each copy under an identity of its own, so a pasted copy is a new finding in its own file and to GitLab/SARIF.
+- [0085 — A Copy of a Duplicate Block Is a Finding of Its Own](0085-a-copy-of-a-duplicate-block-is-a-finding-of-its-own.md) — `duplication.clone` reports one finding on each copy under an identity of its own and valued by the lines that copy spans, so a pasted copy is a new finding in its own file and to GitLab/SARIF.
 
 ## Superseded history
 

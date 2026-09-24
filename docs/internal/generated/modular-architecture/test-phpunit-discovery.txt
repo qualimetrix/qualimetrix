@@ -3867,6 +3867,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"param"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"property"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"return"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyBaselineProcessTest::itKeepsTheAcceptedCopiesAcceptedWhenANewCopySpansMoreLines
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyBaselineProcessTest::itTellsTheExplainedCopiesApartByOccurrenceAndFile
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyFingerprintProcessTest::itGivesEachCopyItsOwnGitLabFingerprint
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyFingerprintProcessTest::itGivesEachCopyItsOwnSarifPartialFingerprint
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationGitScopeProcessTest::itReportsANewCopyStagedAloneOnTheCopyItself
@@ -3875,6 +3877,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itReportsEveryCopyOfABlockUnderTheDefaultMemoryLimit"100 copies"
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itReportsEveryCopyOfABlockUnderTheDefaultMemoryLimit"101 copies"
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itReportsEveryCopyOfABlockUnderTheDefaultMemoryLimit"99 copies"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itReportsRunsOfARepeatedStatementUnderALowMemoryLimit
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itKeepsTheBlockAndEveryCopysIdentityWhenAnExactCopyIsAdded
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itKeepsTheBlockAndEveryCopysIdentityWhenCodeOutsideTheMatchIsAdded
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itRekeysTheUntouchedCopiesWhenAPartialCopyRedefinesTheBlock
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itRekeysTheUntouchedCopyWhenCodeIsInsertedNextToAnotherCopy
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itValuesEachCopyByTheLinesThatCopySpans
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itAppliesMinLinesFilter
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itAppliesMinTokensFilter
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itDetectsExactDuplicateAcrossFiles
@@ -3950,6 +3958,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DuplicateBlockFinderTest::itReportsTwoCopiesAsOneBlock
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DuplicateBlockIdentityTest::itKeepsContentIdentityWhenPresentationLocationsArePermuted
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DuplicateBlockIdentityTest::itRejectsAnythingOtherThanAFullSha256ContentDigest
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DuplicateMatchCandidatesTest::itDropsAMatchWhoseCopiesAllLieInsideALongerOne
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DuplicateMatchCandidatesTest::itJudgesMatchesOfEqualLengthInTheOrderTheyWereAdded
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DuplicateMatchCandidatesTest::itKeepsAShorterMatchWithACopyOutsideEveryLongerOne
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\SaturatingCandidateFilterTest::itNeverDemotesATrueCandidateWhenACollisionOccurs
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\SaturatingCandidateFilterTest::itPromotesRepeatedHashesWithoutRetainingTheirPositions
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\TokenNormalizerTest::itAssignsASingleCharacterTokenTheLineItStandsOnAfterAMultiLineGap

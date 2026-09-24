@@ -259,6 +259,7 @@ src/Analysis/Evidence/Duplication/DataDeclarationTagger.php	Qualimetrix\Analysis
 src/Analysis/Evidence/Duplication/DuplicateBlock.php	Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlock	class	Analysis.Evidence.Duplication	internal	[]
 src/Analysis/Evidence/Duplication/DuplicateBlockFinder.php	Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlockFinder	class	Analysis.Evidence.Duplication	internal	[]
 src/Analysis/Evidence/Duplication/DuplicateLocation.php	Qualimetrix\Analysis\Evidence\Duplication\DuplicateLocation	class	Analysis.Evidence.Duplication	internal	[]
+src/Analysis/Evidence/Duplication/DuplicateMatchCandidates.php	Qualimetrix\Analysis\Evidence\Duplication\DuplicateMatchCandidates	class	Analysis.Evidence.Duplication	internal	[]
 src/Analysis/Evidence/Duplication/DuplicateSearchRequest.php	Qualimetrix\Analysis\Evidence\Duplication\DuplicateSearchRequest	class	Analysis.Evidence.Duplication	internal	[]
 src/Analysis/Evidence/Duplication/DuplicationDetector.php	Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector	class	Analysis.Evidence.Duplication	internal	[]
 src/Analysis/Evidence/Duplication/DuplicationResultProvider.php	Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider	class	Analysis.Evidence.Duplication	internal	[]
