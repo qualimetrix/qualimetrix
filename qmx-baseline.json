@@ -1,6 +1,6 @@
 {
   "version": 13,
-  "generated": "2026-09-24T10:14:53+00:00",
+  "generated": "2026-09-24T12:26:22+00:00",
   "scope": ["src"],
   "entries": {
     "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomOptions::fromArray@src/Analysis/Evidence/Cohesion/LcomOptions.php": [
@@ -377,16 +377,34 @@
       {"channel":"health.cohesion","magnitudes":[30]}
     ],
     "project:": [
-      {"channel":"duplication.clone","occurrence":"1eefcbbb02d84e4e","magnitudes":[17,17,17,17,17]},
-      {"channel":"duplication.clone","occurrence":"26a58f2d85548561","magnitudes":[31,31]},
-      {"channel":"duplication.clone","occurrence":"34b279d1e8cbb107","magnitudes":[22,22]},
-      {"channel":"duplication.clone","occurrence":"67c3f109dc2d3e97","magnitudes":[29,29,29]},
-      {"channel":"duplication.clone","occurrence":"9964fabbf3e849d9","magnitudes":[46,46]},
-      {"channel":"duplication.clone","occurrence":"cf1eed47dd349df2","magnitudes":[45,45]},
-      {"channel":"duplication.clone","occurrence":"d4a10c7cb6a1893d","magnitudes":[32,32]},
-      {"channel":"duplication.clone","occurrence":"fd45a3650ac682e6","magnitudes":[21,21,21,21]},
-      {"channel":"duplication.clone","occurrence":"ffe945d02651bf40","magnitudes":[24,24,24,24]},
-      {"channel":"duplication.clone","occurrence":"fffecc238d6441b0","magnitudes":[41,41]}
+      {"channel":"duplication.clone","occurrence":"031824eba3cbd977","magnitudes":[17]},
+      {"channel":"duplication.clone","occurrence":"1937eefedb68de6f","magnitudes":[45]},
+      {"channel":"duplication.clone","occurrence":"22f9b02a385ac3d1","magnitudes":[24]},
+      {"channel":"duplication.clone","occurrence":"3053cf69493df084","magnitudes":[46]},
+      {"channel":"duplication.clone","occurrence":"41e3a64147e48681","magnitudes":[29]},
+      {"channel":"duplication.clone","occurrence":"4a2a1c4969262dd4","magnitudes":[21]},
+      {"channel":"duplication.clone","occurrence":"4f11276562970622","magnitudes":[32]},
+      {"channel":"duplication.clone","occurrence":"53f63ab91de36f02","magnitudes":[31]},
+      {"channel":"duplication.clone","occurrence":"553db3e9369b7df3","magnitudes":[22]},
+      {"channel":"duplication.clone","occurrence":"5c5466db17de528d","magnitudes":[21]},
+      {"channel":"duplication.clone","occurrence":"603a58625e33b9b1","magnitudes":[46]},
+      {"channel":"duplication.clone","occurrence":"60c77e4a73734ab5","magnitudes":[41]},
+      {"channel":"duplication.clone","occurrence":"944bc35c83ba58f8","magnitudes":[31]},
+      {"channel":"duplication.clone","occurrence":"9b117d4037f4d1ea","magnitudes":[24]},
+      {"channel":"duplication.clone","occurrence":"9ceae9b5ce70bdc1","magnitudes":[24]},
+      {"channel":"duplication.clone","occurrence":"9eb77eaf4034da1d","magnitudes":[17]},
+      {"channel":"duplication.clone","occurrence":"a2d47b5d218ba759","magnitudes":[29]},
+      {"channel":"duplication.clone","occurrence":"af3a1bee5443101d","magnitudes":[22]},
+      {"channel":"duplication.clone","occurrence":"b7196a0d77cbd0ce","magnitudes":[41]},
+      {"channel":"duplication.clone","occurrence":"b78b98893b2c9c5f","magnitudes":[17]},
+      {"channel":"duplication.clone","occurrence":"c5769a5d1afb3d89","magnitudes":[29]},
+      {"channel":"duplication.clone","occurrence":"df94300e7ab82051","magnitudes":[21]},
+      {"channel":"duplication.clone","occurrence":"e18bbd4835d3dfba","magnitudes":[21]},
+      {"channel":"duplication.clone","occurrence":"e5419d1d54cd4abe","magnitudes":[32]},
+      {"channel":"duplication.clone","occurrence":"f4e6ab689fc486f3","magnitudes":[17]},
+      {"channel":"duplication.clone","occurrence":"f9dc80c1760b3333","magnitudes":[45]},
+      {"channel":"duplication.clone","occurrence":"fb9569882bab1ffa","magnitudes":[24]},
+      {"channel":"duplication.clone","occurrence":"ff7b0d855d48be89","magnitudes":[17]}
     ]
   }
 }

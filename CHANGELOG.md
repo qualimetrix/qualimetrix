@@ -433,15 +433,24 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   increments, labels `nested ternary`, and shows an `else if` as one `elseif`
   increment. `complexity.ccn` still counts `??`.
 - **`duplication.clone` reports one finding on each copy of a duplicated
-  block** instead of one finding per pair. Each names up to ten other copies
-  (message and SARIF `relatedLocations`) and counts the rest, and there is no
-  upper limit on copies any more. All copies share the block's identity, so a
-  baseline entry bounds the number of copies: a new copy of an accepted block
-  is a breach, `--report=git:*` reports it in the file it was pasted into, and
-  a baseline captured before this change breaches on every accepted block —
-  regenerate it with `baseline:generate`. Inline directives on the channel
-  stay refused, and the refusal now says why: a file or next-line directive
-  would silence one copy while the others still report the block.
+  block**, each copy under an identity of its own, instead of one finding per
+  pair. Each names up to ten other copies (message and SARIF
+  `relatedLocations`) and counts the rest, and there is no upper limit on
+  copies any more. A copy is keyed by the block's content, its file and its
+  place among the block's copies in that file — never by a line number — so
+  GitLab Code Quality and SARIF show one entry per copy and a new copy as
+  new; a new copy of an accepted block is a new finding on that copy alone,
+  `--report=git:*` reports it in the file it was pasted into, a deleted copy
+  leaves a stale baseline entry, and a copy moved to another file (or a
+  renamed file) is a new finding. Check what you rely on: a block of N copies
+  is N findings (v0.27.0 reported N − 1), so the violation count and the
+  technical debt grow by one finding per block; `suppress_paths` (global or
+  per rule) now silences only the copies inside its paths — list every file
+  a block has a copy in to silence it. A baseline captured before this change
+  matches none of the new findings — regenerate it with `baseline:generate`.
+  Inline directives on the channel stay refused, and the refusal now says
+  why: a file or next-line directive would silence one copy while the others
+  still report the block.
 - **`size.loc` no longer counts a file's final line break as a line of its
   own**, so `size.loc` (and `size.loc.sum`/`.avg`) is one lower per file that
   ends with a newline; a last line without a line break still counts, which
@@ -497,12 +506,15 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   subtree, the region its `coupling.ca`/`coupling.ce` cover, so a namespace
   holding only sub-namespaces no longer publishes 0. What `coupling.cbo` used
   to be, the count over the classes a namespace declares itself, is published
-  as the new `coupling.cbo-own`, and namespaces are still judged on it: a
-  namespace is reported whether or not its sub-namespaces are in the run's
-  paths, and one with no classes of its own gets no `coupling.cbo-own` and is
-  not judged. The namespace `min_class_count` now counts the classes the
-  namespace declares itself rather than its whole subtree, and the finding's
-  inbound/outbound counts are read from the same classes
+  as the new `coupling.cbo-own`, and namespaces are judged on it: which
+  namespaces are judged no longer depends on whether their sub-namespaces are
+  in the run's paths, and one with no classes of its own gets no
+  `coupling.cbo-own` and is not judged. The value, like every coupling
+  measure, counts only dependencies the run analysed: a run narrowed to part
+  of the project (`projectScope.state: narrowed`) can judge a namespace on a
+  lower value than a whole run. The namespace `min_class_count` now counts
+  the classes the namespace declares itself rather than its whole subtree,
+  and the finding's inbound/outbound counts are read from the same classes
   (`coupling.ca-own`/`coupling.ce-own`).
 - Health coverage is shown where the scores are. `--format=health` gains a
   `Coverage` column, the summary block prints each dimension's share beside
