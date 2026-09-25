@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\SelectorKind;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowValidator;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\LongFormAllowEntryNormalizer;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationWarning;
+use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 
 #[CoversClass(AllowValidator::class)]
 #[CoversClass(AllowAliasExpander::class)]
@@ -40,7 +41,7 @@ final class AllowValidatorTest extends TestCase
     public function itProducesAnEmptyEntryListForAnEmptyAllow(): void
     {
         $warnings = [];
-        $entries = $this->validator->validate([], ['controller'], $warnings);
+        $entries = $this->validator->validate(ArchitectureDocument::allow([]), ['controller'], $warnings);
 
         self::assertSame([], $entries);
         self::assertSame([], $warnings);
@@ -50,7 +51,7 @@ final class AllowValidatorTest extends TestCase
     public function itProducesAnEmptyEntryListForANullAllow(): void
     {
         $warnings = [];
-        $entries = $this->validator->validate(null, ['controller'], $warnings);
+        $entries = $this->validator->validate(ArchitectureDocument::allow(null), ['controller'], $warnings);
 
         self::assertSame([], $entries);
     }
@@ -60,7 +61,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
         $entries = $this->validator->validate(
-            ['controller' => ['service']],
+            ArchitectureDocument::allow(['controller' => ['service']]),
             ['controller', 'service'],
             $warnings,
         );
@@ -71,11 +72,27 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function itProducesAnEmptyTargetListForNullTargets(): void
+    public function itReadsATargetListWrittenAsTildeAsNotWritten(): void
+    {
+        // `~` is "not written" at every depth of the configuration document:
+        // the source name keeps whatever a lower layer allowed it — here none,
+        // so no entry at all. An empty list is the spelling for "allowed nothing".
+        $warnings = [];
+        $entries = $this->validator->validate(
+            ArchitectureDocument::allow(['controller' => null]),
+            ['controller'],
+            $warnings,
+        );
+
+        self::assertSame([], $entries);
+    }
+
+    #[Test]
+    public function itProducesAnEmptyTargetListForAnEmptyList(): void
     {
         $warnings = [];
         $entries = $this->validator->validate(
-            ['controller' => null],
+            ArchitectureDocument::allow(['controller' => []]),
             ['controller'],
             $warnings,
         );
@@ -93,7 +110,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
         $entries = $this->validator->validate(
-            ['controller' => ['controller', 'service']],
+            ArchitectureDocument::allow(['controller' => ['controller', 'service']]),
             ['controller', 'service'],
             $warnings,
         );
@@ -109,7 +126,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
         $entries = $this->validator->validate(
-            ['a' => ['b', 'b']],
+            ArchitectureDocument::allow(['a' => ['b', 'b']]),
             ['a', 'b'],
             $warnings,
         );
@@ -127,11 +144,11 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
         $entries = $this->validator->validate(
-            [
+            ArchitectureDocument::allow([
                 'controller' => [
                     ['target' => 'service'],
                 ],
-            ],
+            ]),
             ['controller', 'service'],
             $warnings,
         );
@@ -154,11 +171,11 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage("unknown long-form key 'types'");
 
         $this->validator->validate(
-            [
+            ArchitectureDocument::allow([
                 'controller' => [
                     ['target' => 'service', 'types' => ['method_call']],
                 ],
-            ],
+            ]),
             ['controller', 'service'],
             $warnings,
         );
@@ -173,11 +190,11 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage('architecture.allow.controller[0]');
 
         $this->validator->validate(
-            [
+            ArchitectureDocument::allow([
                 'controller' => [
                     ['relations' => ['extends']],
                 ],
-            ],
+            ]),
             ['controller', 'service'],
             $warnings,
         );
@@ -192,11 +209,11 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage('architecture.allow.controller[0]');
 
         $this->validator->validate(
-            [
+            ArchitectureDocument::allow([
                 'controller' => [
                     ['target' => ''],
                 ],
-            ],
+            ]),
             ['controller', 'service'],
             $warnings,
         );
@@ -211,11 +228,11 @@ final class AllowValidatorTest extends TestCase
         $warnings = [];
 
         $entries = $this->validator->validate(
-            [
+            ArchitectureDocument::allow([
                 'controller' => [
                     ['target' => 'service', 'relations' => ['extends', 'implements']],
                 ],
-            ],
+            ]),
             ['controller', 'service'],
             $warnings,
         );
@@ -235,11 +252,11 @@ final class AllowValidatorTest extends TestCase
         $warnings = [];
 
         $entries = $this->validator->validate(
-            [
+            ArchitectureDocument::allow([
                 'controller' => [
                     ['target' => 'service', 'relations' => ['inheritance']],
                 ],
-            ],
+            ]),
             ['controller', 'service'],
             $warnings,
         );
@@ -257,11 +274,11 @@ final class AllowValidatorTest extends TestCase
         $warnings = [];
 
         $entries = $this->validator->validate(
-            [
+            ArchitectureDocument::allow([
                 'controller' => [
                     ['target' => 'service', 'relations' => ['inheritance', 'extends', 'static_call']],
                 ],
-            ],
+            ]),
             ['controller', 'service'],
             $warnings,
         );
@@ -291,11 +308,11 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage('must list at least one relation kind');
 
         $this->validator->validate(
-            [
+            ArchitectureDocument::allow([
                 'controller' => [
                     ['target' => 'service', 'relations' => []],
                 ],
-            ],
+            ]),
             ['controller', 'service'],
             $warnings,
         );
@@ -310,11 +327,11 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage('architecture.allow.controller[0].relations: must be a list');
 
         $this->validator->validate(
-            [
+            ArchitectureDocument::allow([
                 'controller' => [
                     ['target' => 'service', 'relations' => 'extends'],
                 ],
-            ],
+            ]),
             ['controller', 'service'],
             $warnings,
         );
@@ -329,11 +346,11 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage("unknown relation kind 'tipes'");
 
         $this->validator->validate(
-            [
+            ArchitectureDocument::allow([
                 'controller' => [
                     ['target' => 'service', 'relations' => ['tipes']],
                 ],
-            ],
+            ]),
             ['controller', 'service'],
             $warnings,
         );
@@ -345,7 +362,7 @@ final class AllowValidatorTest extends TestCase
         $warnings = [];
 
         $entries = $this->validator->validate(
-            ['controller' => ['service']],
+            ArchitectureDocument::allow(['controller' => ['service']]),
             ['controller', 'service'],
             $warnings,
         );
@@ -365,12 +382,12 @@ final class AllowValidatorTest extends TestCase
         $warnings = [];
 
         $entries = $this->validator->validate(
-            [
+            ArchitectureDocument::allow([
                 'controller' => [
                     ['target' => 'service', 'relations' => ['extends']],
                     'service',
                 ],
-            ],
+            ]),
             ['controller', 'service'],
             $warnings,
         );
@@ -388,7 +405,7 @@ final class AllowValidatorTest extends TestCase
         $warnings = [];
 
         $entries = $this->validator->validate(
-            [
+            ArchitectureDocument::allow([
                 'app-{module}' => [
                     [
                         'target' => 'domain-{module}',
@@ -396,7 +413,7 @@ final class AllowValidatorTest extends TestCase
                         'allow_cross_instance' => true,
                     ],
                 ],
-            ],
+            ]),
             ['app-Order', 'domain-Order'],
             $warnings,
         );
@@ -416,11 +433,11 @@ final class AllowValidatorTest extends TestCase
         $warnings = [];
 
         $entries = $this->validator->validate(
-            [
+            ArchitectureDocument::allow([
                 'app-{m}' => [
                     ['target' => 'domain-{m}', 'allow_cross_instance' => true],
                 ],
-            ],
+            ]),
             ['app-Order', 'domain-Order'],
             $warnings,
         );
@@ -437,11 +454,11 @@ final class AllowValidatorTest extends TestCase
         $warnings = [];
 
         $entries = $this->validator->validate(
-            [
+            ArchitectureDocument::allow([
                 'app-{m}' => [
                     ['target' => 'domain-{m}'],
                 ],
-            ],
+            ]),
             ['app-Order', 'domain-Order'],
             $warnings,
         );
@@ -459,11 +476,11 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage("'allow_cross_instance' must be a boolean, got string");
 
         $this->validator->validate(
-            [
+            ArchitectureDocument::allow([
                 'app-{m}' => [
                     ['target' => 'domain-{m}', 'allow_cross_instance' => 'yes'],
                 ],
-            ],
+            ]),
             ['app-Order', 'domain-Order'],
             $warnings,
         );
@@ -478,11 +495,11 @@ final class AllowValidatorTest extends TestCase
         $warnings = [];
 
         $entries = $this->validator->validate(
-            [
+            ArchitectureDocument::allow([
                 'app-{m}' => [
                     ['target' => 'domain-{m}', 'allowCrossInstance' => true],
                 ],
-            ],
+            ]),
             ['app-Order', 'domain-Order'],
             $warnings,
         );
@@ -500,22 +517,22 @@ final class AllowValidatorTest extends TestCase
         // AllowTarget state must be bit-for-bit identical.
         $warnings = [];
         $snake = $this->validator->validate(
-            [
+            ArchitectureDocument::allow([
                 'app-{m}' => [
                     ['target' => 'domain-{m}', 'allow_cross_instance' => true],
                 ],
-            ],
+            ]),
             ['app-Order', 'domain-Order'],
             $warnings,
         );
 
         $warnings = [];
         $camel = $this->validator->validate(
-            [
+            ArchitectureDocument::allow([
                 'app-{m}' => [
                     ['target' => 'domain-{m}', 'allowCrossInstance' => true],
                 ],
-            ],
+            ]),
             ['app-Order', 'domain-Order'],
             $warnings,
         );
@@ -542,10 +559,10 @@ final class AllowValidatorTest extends TestCase
         $warnings = [];
 
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage("specify either 'allow_cross_instance' or 'allowCrossInstance', not both");
+        $this->expectExceptionMessage("'allow_cross_instance' and 'allowCrossInstance' are two spellings of one key; keep one of them.");
 
         $this->validator->validate(
-            [
+            ArchitectureDocument::allow([
                 'app-{m}' => [
                     [
                         'target' => 'domain-{m}',
@@ -553,7 +570,7 @@ final class AllowValidatorTest extends TestCase
                         'allowCrossInstance' => false,
                     ],
                 ],
-            ],
+            ]),
             ['app-Order', 'domain-Order'],
             $warnings,
         );
@@ -568,11 +585,11 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage("'allowCrossInstance' must be a boolean, got string");
 
         $this->validator->validate(
-            [
+            ArchitectureDocument::allow([
                 'app-{m}' => [
                     ['target' => 'domain-{m}', 'allowCrossInstance' => 'yes'],
                 ],
-            ],
+            ]),
             ['app-Order', 'domain-Order'],
             $warnings,
         );
@@ -590,11 +607,11 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage("unknown long-form key 'tipes'");
 
         $this->validator->validate(
-            [
+            ArchitectureDocument::allow([
                 'controller' => [
                     ['target' => 'service', 'tipes' => ['method_call']],
                 ],
-            ],
+            ]),
             ['controller', 'service'],
             $warnings,
         );
@@ -609,7 +626,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
         $entries = $this->validator->validate(
-            ['domain-*' => ['shared']],
+            ArchitectureDocument::allow(['domain-*' => ['shared']]),
             ['domain-Order', 'shared'],
             $warnings,
         );
@@ -628,7 +645,7 @@ final class AllowValidatorTest extends TestCase
         // cross-validated because Step D template-expansion may produce them.
         $warnings = [];
         $entries = $this->validator->validate(
-            ['unknown-*' => ['shared']],
+            ArchitectureDocument::allow(['unknown-*' => ['shared']]),
             ['shared'],
             $warnings,
         );
@@ -646,7 +663,7 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage('architecture.allow.controller: unknown layer');
 
         $this->validator->validate(
-            ['controller' => ['service']],
+            ArchitectureDocument::allow(['controller' => ['service']]),
             ['service'],
             $warnings,
         );
@@ -661,7 +678,7 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage("architecture.allow.controller[0]: unknown layer 'servise'");
 
         $this->validator->validate(
-            ['controller' => ['servise']],
+            ArchitectureDocument::allow(['controller' => ['servise']]),
             ['controller', 'service'],
             $warnings,
         );
@@ -674,7 +691,7 @@ final class AllowValidatorTest extends TestCase
         // cross-validated for the same reason as glob sources.
         $warnings = [];
         $entries = $this->validator->validate(
-            ['controller' => ['unknown-*']],
+            ArchitectureDocument::allow(['controller' => ['unknown-*']]),
             ['controller', 'service'],
             $warnings,
         );
@@ -689,7 +706,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
         $entries = $this->validator->validate(
-            ['app-{m}' => []],
+            ArchitectureDocument::allow(['app-{m}' => []]),
             ['app-Order'],
             $warnings,
         );
@@ -708,7 +725,7 @@ final class AllowValidatorTest extends TestCase
         // the same {@code m} variable.
         $warnings = [];
         $entries = $this->validator->validate(
-            ['app-{m}' => ['domain-{m}']],
+            ArchitectureDocument::allow(['app-{m}' => ['domain-{m}']]),
             ['app-Order', 'domain-Order'],
             $warnings,
         );
@@ -731,7 +748,7 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage('architecture.allow.controller[0]');
 
         $this->validator->validate(
-            ['controller' => ['domain-{m']],
+            ArchitectureDocument::allow(['controller' => ['domain-{m']]),
             ['controller'],
             $warnings,
         );
@@ -746,7 +763,7 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage("architecture.allow.controller[0]");
 
         $this->validator->validate(
-            ['controller' => ['domain-m}']],
+            ArchitectureDocument::allow(['controller' => ['domain-m}']]),
             ['controller'],
             $warnings,
         );
@@ -761,7 +778,7 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage('architecture.allow.app-{m');
 
         $this->validator->validate(
-            ['app-{m' => []],
+            ArchitectureDocument::allow(['app-{m' => []]),
             ['app-Order'],
             $warnings,
         );
@@ -776,7 +793,7 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage("only ':*' is supported");
 
         $this->validator->validate(
-            ['controller' => ['domain-{m:weird}']],
+            ArchitectureDocument::allow(['controller' => ['domain-{m:weird}']]),
             ['controller'],
             $warnings,
         );
@@ -791,7 +808,7 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage('invalid capture name');
 
         $this->validator->validate(
-            ['controller' => ['domain-{0bad}']],
+            ArchitectureDocument::allow(['controller' => ['domain-{0bad}']]),
             ['controller'],
             $warnings,
         );
@@ -809,7 +826,7 @@ final class AllowValidatorTest extends TestCase
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('architecture.allow');
 
-        $this->validator->validate(['a', 'b'], ['a'], $warnings);
+        $this->validator->validate(ArchitectureDocument::allow(['a', 'b']), ['a'], $warnings);
     }
 
     #[Test]
@@ -820,7 +837,7 @@ final class AllowValidatorTest extends TestCase
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('architecture.allow');
 
-        $this->validator->validate('wrong', ['a'], $warnings);
+        $this->validator->validate(ArchitectureDocument::allow('wrong'), ['a'], $warnings);
     }
 
     #[Test]
@@ -832,7 +849,7 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage('architecture.allow.controller');
 
         $this->validator->validate(
-            ['controller' => 'service'],
+            ArchitectureDocument::allow(['controller' => 'service']),
             ['controller', 'service'],
             $warnings,
         );
@@ -847,22 +864,23 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage('architecture.allow.controller[0]');
 
         $this->validator->validate(
-            ['controller' => ['']],
+            ArchitectureDocument::allow(['controller' => ['']]),
             ['controller'],
             $warnings,
         );
     }
 
     #[Test]
-    public function itAddressesTheResolvedDocumentForAllErrors(): void
+    public function itNamesTheWritingFileForAllErrors(): void
     {
         $warnings = [];
 
         try {
-            $this->validator->validate('wrong', ['a'], $warnings);
+            $this->validator->validate(ArchitectureDocument::allow('wrong'), ['a'], $warnings);
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->origin()->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->origin()->locator());
         }
     }
 
@@ -880,7 +898,7 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage("captured target 'domain-{y}' references variable(s) 'y' not declared by source 'app-{x}'");
 
         $this->validator->validate(
-            ['app-{x}' => ['domain-{y}']],
+            ArchitectureDocument::allow(['app-{x}' => ['domain-{y}']]),
             ['app-Order', 'domain-Order'],
             $warnings,
         );
@@ -896,7 +914,7 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage("source 'shared-*' is a glob selector and declares no capture variables");
 
         $this->validator->validate(
-            ['shared-*' => ['domain-{m}']],
+            ArchitectureDocument::allow(['shared-*' => ['domain-{m}']]),
             ['shared-Lib', 'domain-Order'],
             $warnings,
         );
@@ -912,7 +930,7 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage("source 'controller' is an exact layer name and declares no capture variables");
 
         $this->validator->validate(
-            ['controller' => ['domain-{m}']],
+            ArchitectureDocument::allow(['controller' => ['domain-{m}']]),
             ['controller', 'domain-Order'],
             $warnings,
         );
@@ -926,7 +944,7 @@ final class AllowValidatorTest extends TestCase
         $warnings = [];
 
         $entries = $this->validator->validate(
-            ['{a}-{b}' => ['domain-{a}']],
+            ArchitectureDocument::allow(['{a}-{b}' => ['domain-{a}']]),
             ['app-Order', 'domain-app'],
             $warnings,
         );
@@ -943,7 +961,7 @@ final class AllowValidatorTest extends TestCase
         $warnings = [];
 
         $entries = $this->validator->validate(
-            ['domain-{m}' => ['vendor']],
+            ArchitectureDocument::allow(['domain-{m}' => ['vendor']]),
             ['domain-Order', 'vendor'],
             $warnings,
         );
@@ -959,7 +977,7 @@ final class AllowValidatorTest extends TestCase
         $warnings = [];
 
         $entries = $this->validator->validate(
-            ['domain-{m}' => ['shared-*']],
+            ArchitectureDocument::allow(['domain-{m}' => ['shared-*']]),
             ['domain-Order', 'shared-Lib'],
             $warnings,
         );
@@ -979,7 +997,7 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage("quantifier ':**' is not supported");
 
         $this->validator->validate(
-            ['app-{m}' => ['domain-{m:**}']],
+            ArchitectureDocument::allow(['app-{m}' => ['domain-{m:**}']]),
             ['app-Order', 'domain-Order'],
             $warnings,
         );
@@ -995,7 +1013,7 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage("quantifier ':**' is not supported");
 
         $this->validator->validate(
-            ['app-{m:**}' => ['domain-{m}']],
+            ArchitectureDocument::allow(['app-{m:**}' => ['domain-{m}']]),
             ['app-Order', 'domain-Order'],
             $warnings,
         );
@@ -1008,7 +1026,7 @@ final class AllowValidatorTest extends TestCase
         $warnings = [];
 
         $entries = $this->validator->validate(
-            ['app-{m:*}' => ['domain-{m:*}']],
+            ArchitectureDocument::allow(['app-{m:*}' => ['domain-{m:*}']]),
             ['app-Order', 'domain-Order'],
             $warnings,
         );
@@ -1029,11 +1047,11 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage("captured target 'domain-{y}' references variable(s) 'y' not declared by source 'app-{x}'");
 
         $this->validator->validate(
-            [
+            ArchitectureDocument::allow([
                 'app-{x}' => [
                     ['target' => 'domain-{y}', 'allow_cross_instance' => true],
                 ],
-            ],
+            ]),
             ['app-Order', 'domain-Order'],
             $warnings,
         );

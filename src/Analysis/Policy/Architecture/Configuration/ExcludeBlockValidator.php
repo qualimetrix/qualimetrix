@@ -6,11 +6,9 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
-use Throwable;
 
 /**
  * Parses and validates the optional {@code exclude:} block inside a single
@@ -29,10 +27,13 @@ use Throwable;
  *   patterns) is enforced separately by
  *   {@see TemplateLayerDefinition}'s constructor.
  *
+ * The configuration engine has already recognised the block's keys and
+ * judged its shape: a block that writes nothing — {@code exclude: ~},
+ * {@code exclude: {}} — is no clause at all, like any other empty map.
+ *
  * The class is stateless: a single entry point
  * ({@see parse()}) drives the flow. Errors surface as
- * {@see ConfigurationRefusal} addressed to the resolved document so the
- * user sees a consistent error namespace.
+ * {@see ConfigurationRefusal} naming the layer that wrote the block.
  *
  * Lives in {@code Configuration/Architecture/Validation/} alongside
  * {@see LayersValidator}; the {@code architecture.layers[*].exclude}
@@ -41,38 +42,13 @@ use Throwable;
  */
 final class ExcludeBlockValidator
 {
-    /** Builds the refusal noise every throw site in this class shares: a position under the resolved document. */
-    private static function refuse(string $position, string $summary, ?Throwable $previous = null): never
-    {
-        throw ConfigurationRefusal::atResolvedKey(
-            RefusedPosition::open(explode('.', $position), $position),
-            $summary,
-            previous: $previous,
-        );
-    }
-
     /**
-     * Keys accepted inside an {@code exclude:} block. Mirrors the positive
-     * criterion set but without {@code name} (anonymous clause) and without
-     * a nested {@code exclude} (single-level filter).
-     */
-    private const array ALLOWED_EXCLUDE_KEYS = [
-        'patterns',
-        'suffix',
-        'attributes',
-        'implements',
-        'extends',
-        'match',
-    ];
-
-    /**
-     * Parses the raw {@code exclude:} value into an {@see ExcludeSpec} (or
-     * {@code null} when the block is omitted).
+     * Parses the resolved {@code exclude:} block into an {@see ExcludeSpec}
+     * (or {@code null} when the block is not written).
      *
      * @param int $index Layer-entry index — used for error path prefixes.
      * @param string $layerName Layer name — used for error path prefixes.
-     * @param mixed $value Raw value as it appeared under the {@code exclude:}
-     *                     key.
+     * @param SectionSpot $value The {@code exclude:} block of the entry.
      * @param bool $isTemplate True when the layer name contains capture
      *                         variables. Controls how strictly captures
      *                         inside the exclude block are scrutinised.
@@ -82,38 +58,32 @@ final class ExcludeBlockValidator
      *                                             FQN-shaped lists and the
      *                                             {@code match} mode).
      *
-     * @throws ConfigurationRefusal On any shape, key, or capture-placement
-     *                              violation.
+     * @throws ConfigurationRefusal On an empty or capture-misplacing block.
      */
     public static function parse(
         int $index,
         string $layerName,
-        mixed $value,
+        SectionSpot $value,
         bool $isTemplate,
         LayerCriterionNormalizer $normalizer,
     ): ?ExcludeSpec {
-        if ($value === null) {
+        if (!$value->isWritten()) {
             return null;
         }
 
-        self::assertMapShape($index, $layerName, $value);
-        \assert(\is_array($value));
-
-        self::rejectUnknownKeys($index, $layerName, $value);
-
         $criteria = self::normalizeCriteria($index, $layerName, $value, $normalizer);
-        self::rejectAllEmptyCriteria($index, $layerName, $criteria);
-        self::rejectInvalidCapturePlacements($index, $layerName, $criteria, $isTemplate);
+        self::rejectAllEmptyCriteria($index, $layerName, $criteria, $value);
+        self::rejectInvalidCapturePlacements($index, $layerName, $criteria, $isTemplate, $value);
 
-        $mode = $normalizer->normalizeMatchMode($index, $layerName . '.exclude', $value['match'] ?? null);
+        $mode = $normalizer->normalizeMatchMode($index, $layerName . '.exclude', $value->child('match'));
 
-        return self::buildExcludeSpec($index, $layerName, $criteria, $mode);
+        return self::buildExcludeSpec($index, $layerName, $criteria, $mode, $value);
     }
 
     /**
      * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
      */
-    private static function buildExcludeSpec(int $index, string $layerName, array $criteria, MatchMode $mode): ExcludeSpec
+    private static function buildExcludeSpec(int $index, string $layerName, array $criteria, MatchMode $mode, SectionSpot $spot): ExcludeSpec
     {
         try {
             return new ExcludeSpec(
@@ -125,111 +95,36 @@ final class ExcludeBlockValidator
                 mode: $mode,
             );
         } catch (InvalidArgumentException $e) {
-            self::refuse(
-                \sprintf('architecture.layers[%d].exclude', $index),
-                \sprintf('architecture.layers[%d] ("%s"): exclude — %s', $index, $layerName, $e->getMessage()),
-                $e,
-            );
-        }
-    }
-
-    private static function assertMapShape(int $index, string $layerName, mixed $value): void
-    {
-        if (!\is_array($value)) {
-            self::refuse(
-                \sprintf('architecture.layers[%d].exclude', $index),
-                \sprintf(
-                    'architecture.layers[%d] ("%s"): "exclude" must be a non-empty map of criterion keys (patterns / suffix / attributes / implements / extends / match), got %s.',
-                    $index,
-                    $layerName,
-                    get_debug_type($value),
-                ),
-            );
-        }
-
-        // `array_is_list([])` returns true, so this branch also rejects
-        // empty arrays ({@code exclude: []}) — omit the key entirely to
-        // leave the clause undeclared.
-        if (array_is_list($value)) {
-            self::refuse(
-                \sprintf('architecture.layers[%d].exclude', $index),
-                \sprintf(
-                    'architecture.layers[%d] ("%s"): "exclude" must be a non-empty map of criterion keys (patterns / suffix / attributes / implements / extends / match), got %s.',
-                    $index,
-                    $layerName,
-                    $value === [] ? 'empty list' : 'sequential list',
-                ),
-            );
+            throw $spot->refusal(\sprintf('architecture.layers[%d] ("%s"): exclude — %s', $index, $layerName, $e->getMessage()));
         }
     }
 
     /**
-     * @param array<string, mixed> $exclude
-     */
-    private static function rejectUnknownKeys(int $index, string $layerName, array $exclude): void
-    {
-        $unknown = array_diff(array_keys($exclude), self::ALLOWED_EXCLUDE_KEYS);
-        if ($unknown === []) {
-            return;
-        }
-
-        $reservedNested = \in_array('exclude', $unknown, true);
-        $quoted = '"' . implode('", "', $unknown) . '"';
-        $allowed = '"' . implode('", "', self::ALLOWED_EXCLUDE_KEYS) . '"';
-        $message = \sprintf(
-            'architecture.layers[%d] ("%s"): unknown key(s) %s inside "exclude". Allowed keys: %s.',
-            $index,
-            $layerName,
-            $quoted,
-            $allowed,
-        );
-
-        if ($reservedNested) {
-            $message .= ' Nested "exclude" is not supported — the exclude filter is single-level.';
-        }
-
-        $accepted = self::ALLOWED_EXCLUDE_KEYS;
-        sort($accepted);
-
-        throw ConfigurationRefusal::atResolvedKey(
-            RefusedPosition::closed(
-                ['architecture', 'layers', (string) $index, 'exclude'],
-                implode(', ', $unknown),
-                $accepted,
-            ),
-            $message,
-        );
-    }
-
-    /**
-     * @param array<string, mixed> $value
-     *
      * @return array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>}
      */
-    private static function normalizeCriteria(int $index, string $layerName, array $value, LayerCriterionNormalizer $normalizer): array
+    private static function normalizeCriteria(int $index, string $layerName, SectionSpot $value, LayerCriterionNormalizer $normalizer): array
     {
         $excludePath = $layerName . '.exclude';
 
         return [
-            'patterns' => $normalizer->normalizePatternList($index, $excludePath, $value['patterns'] ?? null),
-            'suffix' => $normalizer->normalizeSuffixList($index, $excludePath, $value['suffix'] ?? null),
-            'attributes' => $normalizer->normalizeFqnList($index, $excludePath, 'attributes', $value['attributes'] ?? null),
-            'implements' => $normalizer->normalizeFqnList($index, $excludePath, 'implements', $value['implements'] ?? null),
-            'extends' => $normalizer->normalizeFqnList($index, $excludePath, 'extends', $value['extends'] ?? null),
+            'patterns' => $normalizer->normalizePatternList($index, $excludePath, $value->child('patterns')),
+            'suffix' => $normalizer->normalizeSuffixList($index, $excludePath, $value->child('suffix')),
+            'attributes' => $normalizer->normalizeFqnList($index, $excludePath, 'attributes', $value->child('attributes')),
+            'implements' => $normalizer->normalizeFqnList($index, $excludePath, 'implements', $value->child('implements')),
+            'extends' => $normalizer->normalizeFqnList($index, $excludePath, 'extends', $value->child('extends')),
         ];
     }
 
     /**
      * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
      */
-    private static function rejectAllEmptyCriteria(int $index, string $layerName, array $criteria): void
+    private static function rejectAllEmptyCriteria(int $index, string $layerName, array $criteria, SectionSpot $spot): void
     {
         if (array_filter($criteria) !== []) {
             return;
         }
 
-        self::refuse(
-            \sprintf('architecture.layers[%d].exclude', $index),
+        throw $spot->refusal(
             \sprintf(
                 'architecture.layers[%d] ("%s"): "exclude" must declare at least one of "patterns", "suffix", "attributes", "implements" or "extends" (omit the "exclude" key to leave it undeclared).',
                 $index,
@@ -254,10 +149,11 @@ final class ExcludeBlockValidator
      *
      * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
      */
-    private static function rejectInvalidCapturePlacements(int $index, string $layerName, array $criteria, bool $isTemplate): void
+    private static function rejectInvalidCapturePlacements(int $index, string $layerName, array $criteria, bool $isTemplate, SectionSpot $spot): void
     {
         if ($isTemplate) {
             self::rejectCapturesInKinds(
+                $spot,
                 $index,
                 $layerName,
                 $criteria,
@@ -269,6 +165,7 @@ final class ExcludeBlockValidator
         }
 
         self::rejectCapturesInKinds(
+            $spot,
             $index,
             $layerName,
             $criteria,
@@ -285,6 +182,7 @@ final class ExcludeBlockValidator
      * @param list<string> $kindsToScan
      */
     private static function rejectCapturesInKinds(
+        SectionSpot $spot,
         int $index,
         string $layerName,
         array $criteria,
@@ -297,8 +195,8 @@ final class ExcludeBlockValidator
                     continue;
                 }
 
-                self::refuse(
-                    \sprintf('architecture.layers[%d].exclude.%s[%d]', $index, $kind, $entryIndex),
+                $kindSpot = $spot->child($kind);
+                throw (\is_array($kindSpot->value()) ? $kindSpot->child($entryIndex) : $kindSpot)->refusal(
                     \sprintf(
                         'architecture.layers[%d] ("%s"): exclude.%s entry at index %d "%s" contains a capture variable — %s',
                         $index,

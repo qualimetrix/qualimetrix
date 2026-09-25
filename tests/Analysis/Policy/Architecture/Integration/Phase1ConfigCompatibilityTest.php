@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfigur
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureViolationProjector;
 
 /**
@@ -62,7 +63,7 @@ final class Phase1ConfigCompatibilityTest extends TestCase
     private function runPhase1Scenario(array $configArray, string $goldenPath): void
     {
         $factory = new ArchitectureConfigurationFactory();
-        $result = $factory->fromArray($configArray);
+        $result = $factory->fromResolved(ArchitectureDocument::file($configArray));
 
         self::assertSame([], $result->warnings, 'Phase-1 config must not produce deferred warnings.');
 

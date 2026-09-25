@@ -24,6 +24,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 
 /**
  * Where an inheritance chain leaves the analysed set, read through the real
@@ -395,7 +396,7 @@ final class AncestryBorderIntegrationTest extends TestCase
 
         $holder = $container->get(ArchitecturePolicyConfiguratorInterface::class);
         self::assertInstanceOf(ArchitecturePolicy::class, $holder);
-        $holder->bind((new ArchitectureConfigurationFactory())->fromArray($config)->configuration);
+        $holder->bind((new ArchitectureConfigurationFactory())->fromResolved(ArchitectureDocument::file($config))->configuration);
 
         $pipeline = $container->get(AnalysisPipelineInterface::class);
         self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);

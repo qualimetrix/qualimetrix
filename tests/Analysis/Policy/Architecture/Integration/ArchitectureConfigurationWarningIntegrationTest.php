@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureSection;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use RecursiveDirectoryIterator;
@@ -129,6 +130,7 @@ YAML);
     private function createPipeline(): ConfigurationPipeline
     {
         $pipeline = new ConfigurationPipeline();
+        $pipeline->addSection(new ArchitectureSection());
         $pipeline->addStage(new DefaultsStage());
         $pipeline->addStage(new ComposerDiscoveryStage(new ComposerReader()));
         $pipeline->addStage(new ConfigFileStage(new YamlConfigLoader()));

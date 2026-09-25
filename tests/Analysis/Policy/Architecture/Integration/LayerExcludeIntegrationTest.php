@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 
 /**
  * End-to-end test for Phase 2 Step F (direction 3 — exclude clause).
@@ -25,13 +26,13 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
  * Runs the real analysis pipeline against {@code tests/Analysis/Policy/Architecture/Fixtures/ExcludeSample}
  * via two complementary paths:
  *
- * 1. Programmatic config through {@see ArchitectureConfigurationFactory::fromArray()}
+ * 1. Programmatic config through {@see ArchitectureConfigurationFactory::fromResolved()}
  *    — exercises the validator + downstream membership/exclusion evaluation
  *    end-to-end without going through YAML normalization.
  * 2. YAML config through {@see YamlConfigLoader} — pins the loader-layer
  *    behavior of the {@code exclude} block (catches the Step E lesson:
  *    every YAML-surfaced feature must be tested through the loader, not just
- *    through {@code fromArray()}).
+ *    through {@code fromResolved()}).
  *
  * The fixture has every classified class depend on a shared {@code Marker}
  * (which sits in its own self-only allow-list layer). With every layer
@@ -209,7 +210,7 @@ final class LayerExcludeIntegrationTest extends TestCase
     private function runPipelineWithConfig(array $configArray): AnalysisResult
     {
         $factory = new ArchitectureConfigurationFactory();
-        $result = $factory->fromArray($configArray);
+        $result = $factory->fromResolved(ArchitectureDocument::file($configArray));
 
         $container = (new ContainerFactory())->create();
 

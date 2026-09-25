@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureSection;
 use Qualimetrix\Core\Path\AbsolutePath;
 
 /**
@@ -116,7 +117,7 @@ final class MaxExpandedLayersFromYamlTest extends TestCase
         $document = $this->resolveFullPipeline();
 
         return (new ArchitectureConfigurationFactory())
-            ->fromContributions($document->contributions('architecture'))
+            ->fromResolved($document->resolved())
             ->configuration;
     }
 
@@ -132,6 +133,7 @@ final class MaxExpandedLayersFromYamlTest extends TestCase
         $composerReader = new ComposerReader();
 
         $pipeline = new ConfigurationPipeline();
+        $pipeline->addSection(new ArchitectureSection());
         $pipeline->addStage(new DefaultsStage());
         $pipeline->addStage(new ComposerDiscoveryStage($composerReader));
         $pipeline->addStage(new PresetStage($loader, $resolver));

@@ -6,7 +6,6 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
@@ -18,14 +17,14 @@ use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
  *
  * Stateless: a single instance is reused across all entry indexes within
  * one {@code architecture.layers} validation pass. Each helper takes the
- * raw value plus the path-prefixing fields ({@code $index},
- * {@code $layerName}, {@code $kind}) and either returns a normalized list
- * of strings (or {@see MatchMode}) or throws a
- * {@see ConfigurationRefusal} addressed to the resolved document.
+ * {@see SectionSpot} of the value plus the path-prefixing fields
+ * ({@code $index}, {@code $layerName}, {@code $kind}) and either returns a
+ * normalized list of strings (or {@see MatchMode}) or throws a
+ * {@see ConfigurationRefusal} naming the layer that wrote the value.
  *
  * Accepts three input shapes for criterion lists:
  *
- * - {@code null} — empty list (criterion not declared).
+ * - not written ({@code ~} or absent) — empty list (criterion not declared).
  * - bare string — singleton list (YAML scalar shorthand).
  * - sequential array of strings — the list itself.
  *
@@ -40,7 +39,7 @@ final class LayerCriterionNormalizer
     /**
      * @return list<string>
      */
-    public function normalizePatternList(int $index, string $layerName, mixed $value): array
+    public function normalizePatternList(int $index, string $layerName, SectionSpot $value): array
     {
         return self::normalizeStringList(
             $index,
@@ -62,7 +61,7 @@ final class LayerCriterionNormalizer
     /**
      * @return list<string>
      */
-    public function normalizeSuffixList(int $index, string $layerName, mixed $value): array
+    public function normalizeSuffixList(int $index, string $layerName, SectionSpot $value): array
     {
         return self::normalizeStringList(
             $index,
@@ -92,7 +91,7 @@ final class LayerCriterionNormalizer
      *
      * @return list<string>
      */
-    public function normalizeFqnList(int $index, string $layerName, string $kind, mixed $value): array
+    public function normalizeFqnList(int $index, string $layerName, string $kind, SectionSpot $value): array
     {
         $entries = self::normalizeStringList(
             $index,
@@ -127,39 +126,23 @@ final class LayerCriterionNormalizer
      * the layer describes code not written yet, so
      * {@code architecture.unreachable-layer} must not report it.
      *
-     * Only a real boolean is accepted. YAML already turns {@code yes}/{@code on}
-     * into `true`, so anything arriving here as a string is a value the author
-     * believed in and the parser did not — reading it as truthy is how a safety
-     * net gets switched off by accident.
-     *
      * A template entry is rejected rather than ignored: it expands per observed
      * tuple, so its instances have matched something by construction and the
      * flag could never do anything. A template that produced nothing is
      * {@code architecture.empty-template}, a different channel the flag
      * deliberately does not reach.
      *
-     * @param array<string, mixed> $entry The whole layer entry: the key is
-     *                                    optional, and reading it here keeps
-     *                                    its absence one decision rather than
-     *                                    two.
+     * The configuration engine has already refused anything but a boolean.
      */
-    public function normalizeLifecycle(int $index, string $layerName, array $entry, bool $isTemplate): LayerLifecycle
+    public function normalizeLifecycle(int $index, string $layerName, SectionSpot $pending, bool $isTemplate): LayerLifecycle
     {
-        $value = $entry['pending'] ?? null;
-
-        if ($value === null || $value === false) {
+        if ($pending->value() !== true) {
             return LayerLifecycle::Active;
-        }
-
-        if ($value !== true) {
-            throw $this->entryError($index, $layerName, \sprintf(
-                '"pending" must be a boolean, got %s.',
-                get_debug_type($value),
-            ));
         }
 
         if ($isTemplate) {
             throw $this->entryError(
+                $pending,
                 $index,
                 $layerName,
                 '"pending" is not applicable to a template layer — a template expands only from tuples observed '
@@ -175,16 +158,14 @@ final class LayerCriterionNormalizer
      * The `architecture.layers[i] ("name"): ...` prefix both entry-level
      * normalizers report against, so the two cannot drift apart.
      */
-    private function entryError(int $index, string $layerName, string $message): ConfigurationRefusal
+    private function entryError(SectionSpot $spot, int $index, string $layerName, string $message): ConfigurationRefusal
     {
-        return ConfigurationRefusal::atResolvedKey(
-            RefusedPosition::open(['architecture', 'layers', (string) $index], $layerName),
-            \sprintf('architecture.layers[%d] ("%s"): %s', $index, $layerName, $message),
-        );
+        return $spot->refusal(\sprintf('architecture.layers[%d] ("%s"): %s', $index, $layerName, $message));
     }
 
-    public function normalizeMatchMode(int $index, string $layerName, mixed $value): MatchMode
+    public function normalizeMatchMode(int $index, string $layerName, SectionSpot $match): MatchMode
     {
+        $value = $match->value();
         if ($value === null) {
             return MatchMode::Any;
         }
@@ -205,7 +186,7 @@ final class LayerCriterionNormalizer
             MatchMode::cases(),
         ));
 
-        throw $this->entryError($index, $layerName, \sprintf(
+        throw $this->entryError($match, $index, $layerName, \sprintf(
             '"match" must be one of %s, got %s.',
             $allowed,
             \is_string($value) ? '"' . $value . '"' : get_debug_type($value),
@@ -223,10 +204,10 @@ final class LayerCriterionNormalizer
         int $index,
         string $layerName,
         string $kind,
-        mixed $value,
+        SectionSpot $value,
         callable $semanticCheck,
     ): array {
-        if ($value === null) {
+        if (!$value->isWritten()) {
             return [];
         }
 
@@ -234,7 +215,8 @@ final class LayerCriterionNormalizer
 
         $normalized = [];
         foreach ($entries as $entryIndex => $entry) {
-            $normalized[] = self::validateListEntry($index, $layerName, $kind, $entryIndex, $entry, $semanticCheck);
+            $spot = \is_array($value->value()) ? $value->child($entryIndex) : $value;
+            $normalized[] = self::validateListEntry($index, $layerName, $kind, $entryIndex, $entry, $spot, $semanticCheck);
         }
 
         return $normalized;
@@ -243,13 +225,13 @@ final class LayerCriterionNormalizer
     /**
      * @return list<mixed>
      */
-    private static function coerceToStringList(int $index, string $layerName, string $kind, mixed $value): array
+    private static function coerceToStringList(int $index, string $layerName, string $kind, SectionSpot $spot): array
     {
+        $value = $spot->value();
         $entries = \is_string($value) ? [$value] : $value;
 
         if (!\is_array($entries)) {
-            throw ConfigurationRefusal::atResolvedKey(
-                RefusedPosition::open(['architecture', 'layers', (string) $index, $kind], $layerName),
+            throw $spot->refusal(
                 \sprintf(
                     'architecture.layers[%d] ("%s"): "%s" must be a string or a non-empty list of strings, got %s.',
                     $index,
@@ -264,8 +246,7 @@ final class LayerCriterionNormalizer
             // Associative map where an ordered list is required — the
             // typical mistake is using YAML mapping syntax ({@code key: val})
             // for what should be a sequence ({@code - val}).
-            throw ConfigurationRefusal::atResolvedKey(
-                RefusedPosition::open(['architecture', 'layers', (string) $index, $kind], $layerName),
+            throw $spot->refusal(
                 \sprintf(
                     'architecture.layers[%d] ("%s"): "%s" must be a string or a non-empty list of strings, got an associative map (keys: %s). Use sequence syntax (a "-" prefix per entry) or omit the key to leave the criterion undeclared.',
                     $index,
@@ -277,8 +258,7 @@ final class LayerCriterionNormalizer
         }
 
         if ($entries === []) {
-            throw ConfigurationRefusal::atResolvedKey(
-                RefusedPosition::open(['architecture', 'layers', (string) $index, $kind], $layerName),
+            throw $spot->refusal(
                 \sprintf(
                     'architecture.layers[%d] ("%s"): "%s" must contain at least one entry; omit the key to leave the criterion undeclared.',
                     $index,
@@ -317,11 +297,11 @@ final class LayerCriterionNormalizer
         string $kind,
         int $entryIndex,
         mixed $entry,
+        SectionSpot $spot,
         callable $semanticCheck,
     ): string {
         if (!\is_string($entry) || $entry === '') {
-            throw ConfigurationRefusal::atResolvedKey(
-                RefusedPosition::open(['architecture', 'layers', (string) $index, $kind, (string) $entryIndex], $layerName),
+            throw $spot->refusal(
                 \sprintf(
                     'architecture.layers[%d] ("%s"): "%s" entry at index %d must be a non-empty string (got %s).',
                     $index,
@@ -335,8 +315,7 @@ final class LayerCriterionNormalizer
 
         $semanticError = $semanticCheck($entry);
         if ($semanticError !== null) {
-            throw ConfigurationRefusal::atResolvedKey(
-                RefusedPosition::open(['architecture', 'layers', (string) $index, $kind, (string) $entryIndex], $entry),
+            throw $spot->refusal(
                 \sprintf(
                     'architecture.layers[%d] ("%s"): "%s" entry at index %d %s',
                     $index,

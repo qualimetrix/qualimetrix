@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 
 /**
  * End-to-end test for Phase 2 Step G (direction 4: dependency-type filter).
@@ -203,7 +204,7 @@ final class RelationsFilterIntegrationTest extends TestCase
     private function runPipelineWithConfig(array $configArray): AnalysisResult
     {
         $factory = new ArchitectureConfigurationFactory();
-        $result = $factory->fromArray($configArray);
+        $result = $factory->fromResolved(ArchitectureDocument::file($configArray));
 
         $container = (new ContainerFactory())->create();
 

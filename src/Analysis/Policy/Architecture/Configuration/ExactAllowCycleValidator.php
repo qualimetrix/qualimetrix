@@ -24,18 +24,22 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowListEntry;
 final class ExactAllowCycleValidator
 {
     /**
+     * The refusal names every layer that wrote an allow entry on the cycle:
+     * its edges can come from different configuration files.
+     *
      * @param list<AllowListEntry> $entries
      *
      * @throws ConfigurationRefusal
      */
-    public function validate(array $entries): void
+    public function validate(array $entries, SectionSpot $allow): void
     {
         $cycle = self::findCycle(self::projectExactGraph($entries));
         if ($cycle === null) {
             return;
         }
 
-        throw ConfigurationRefusal::aboutResolvedInput(
+        throw SectionSpot::refusalAcross(
+            array_map($allow->child(...), array_values(array_unique(\array_slice($cycle, 0, -1)))),
             \sprintf(
                 'architecture.allow: directed cycle detected in exact declared layer graph: %s. '
                 . 'Module dependencies must form a DAG; remove at least one allow edge from this cycle.',

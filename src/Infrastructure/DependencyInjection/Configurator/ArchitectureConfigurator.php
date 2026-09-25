@@ -25,6 +25,7 @@ use Symfony\Component\DependencyInjection\Reference;
 final class ArchitectureConfigurator implements ContainerConfiguratorInterface
 {
     private const string ARCHITECTURE_POLICY = 'Qualimetrix\\Analysis\\Policy\\Architecture\\ArchitecturePolicy';
+    private const string ARCHITECTURE_SECTION = 'Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ArchitectureSection';
     private const string LAYER_ASSIGNMENT_COMMAND = 'Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand';
     private const string LAYER_ASSIGNMENT_RESOLVER = 'Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver';
     private const string LAYER_DECLARATION_VALIDATOR = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerDeclarationValidator';
@@ -52,6 +53,8 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
 
         $container->register(self::ARCHITECTURE_POLICY)
             ->setAutowired(true);
+        $container->register(self::ARCHITECTURE_SECTION)
+            ->setAutoconfigured(true);
 
         $this->registerLayerVerdicts($container);
         $container->setAlias(ArchitecturePolicyConfiguratorInterface::class, self::ARCHITECTURE_POLICY)

@@ -15,7 +15,9 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowTarget;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelector;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelectorParser;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ExactAllowCycleValidator;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\SectionSpot;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\AllowListBuilder;
+use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 
 #[CoversClass(ExactAllowCycleValidator::class)]
 final class ExactAllowCycleValidatorTest extends TestCase
@@ -30,12 +32,14 @@ final class ExactAllowCycleValidatorTest extends TestCase
     #[Test]
     public function itAcceptsEmptyAndAcyclicExactGraphs(): void
     {
-        $this->validator->validate([]);
-        $this->validator->validate(AllowListBuilder::entriesFromExactMap([
+        $acyclic = [
             'application' => ['domain', 'persistence'],
             'domain' => ['persistence'],
             'persistence' => [],
-        ]));
+        ];
+
+        $this->validator->validate([], ArchitectureDocument::allow(null));
+        $this->validator->validate(AllowListBuilder::entriesFromExactMap($acyclic), ArchitectureDocument::allow($acyclic));
 
         self::addToAssertionCount(1);
     }
@@ -43,16 +47,18 @@ final class ExactAllowCycleValidatorTest extends TestCase
     #[Test]
     public function itReportsADeterministicClosedCyclePath(): void
     {
+        $cyclic = [
+            'persistence' => ['application'],
+            'application' => ['domain'],
+            'domain' => ['persistence'],
+        ];
+
         try {
-            $this->validator->validate(AllowListBuilder::entriesFromExactMap([
-                'persistence' => ['application'],
-                'application' => ['domain'],
-                'domain' => ['persistence'],
-            ]));
+            $this->validator->validate(AllowListBuilder::entriesFromExactMap($cyclic), ArchitectureDocument::allow($cyclic));
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $exception) {
-            self::assertSame(ConfigurationSource::Resolved, $exception->origin()->source());
-            self::assertNull($exception->position());
+            self::assertSame(ConfigurationSource::ConfigFile, $exception->origin()->source());
+            self::assertSame(ArchitectureDocument::FILE, $exception->origin()->locator());
             self::assertStringContainsString(
                 'application -> domain -> persistence -> application',
                 $exception->getMessage(),
@@ -77,7 +83,36 @@ final class ExactAllowCycleValidatorTest extends TestCase
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('application -> domain -> application');
 
-        $this->validator->validate($entries);
+        $this->validator->validate($entries, ArchitectureDocument::allow([
+            'application' => [['target' => 'domain', 'relations' => ['extends']]],
+            'domain' => [['target' => 'application', 'relations' => ['static_call']]],
+        ]));
+    }
+
+    #[Test]
+    public function itNamesEveryLayerThatWroteAnEdgeOfTheCycle(): void
+    {
+        // A preset allows one direction and the project file the other: the
+        // cycle exists only in the merged map, so neither file alone is the
+        // place to fix it.
+        $document = ArchitectureDocument::compose(
+            ArchitectureDocument::presetLayer(['allow' => ['application' => ['domain']]]),
+            ArchitectureDocument::fileLayer(['allow' => ['domain' => ['application']]]),
+        );
+        $allow = SectionSpot::section('architecture', $document->get('architecture'))->child('allow');
+
+        try {
+            $this->validator->validate(AllowListBuilder::entriesFromExactMap([
+                'application' => ['domain'],
+                'domain' => ['application'],
+            ]), $allow);
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $exception) {
+            self::assertSame(
+                [ConfigurationSource::Preset, ConfigurationSource::ConfigFile],
+                array_map(static fn($origin) => $origin->source(), $exception->sources()),
+            );
+        }
     }
 
     #[Test]
@@ -98,7 +133,11 @@ final class ExactAllowCycleValidatorTest extends TestCase
             ),
         ];
 
-        $this->validator->validate($entries);
+        $this->validator->validate($entries, ArchitectureDocument::allow([
+            'application' => ['domain-*'],
+            'domain-*' => ['application'],
+            'app-{module}' => ['domain-{module}'],
+        ]));
 
         self::addToAssertionCount(1);
     }

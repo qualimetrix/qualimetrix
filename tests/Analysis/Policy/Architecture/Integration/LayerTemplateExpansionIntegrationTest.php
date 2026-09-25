@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 
 /**
  * End-to-end test for Phase 2 direction 2 (template layers). Loads a YAML
@@ -178,7 +179,7 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
     private function runPipelineWithConfig(array $configArray): \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult
     {
         $factory = new ArchitectureConfigurationFactory();
-        $result = $factory->fromArray($configArray);
+        $result = $factory->fromResolved(ArchitectureDocument::file($configArray));
 
         $container = (new ContainerFactory())->create();
 

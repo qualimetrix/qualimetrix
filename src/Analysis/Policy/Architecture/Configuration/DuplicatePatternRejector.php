@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
@@ -70,11 +68,11 @@ final class DuplicatePatternRejector
     /**
      * @param list<LayerDefinition|TemplateLayerDefinition> $entries
      */
-    public static function reject(array $entries): void
+    public static function reject(array $entries, SectionSpot $layers): void
     {
         $owners = [];
         foreach ($entries as $entryIndex => $entry) {
-            self::rejectEntryPatterns($entry, $entryIndex, $owners);
+            self::rejectEntryPatterns($entry, $entryIndex, $owners, $layers);
         }
     }
 
@@ -86,7 +84,7 @@ final class DuplicatePatternRejector
      *
      * @param-out array<string, array{name: string, index: int}> $owners
      */
-    private static function rejectEntryPatterns(LayerDefinition|TemplateLayerDefinition $entry, int $entryIndex, array &$owners): void
+    private static function rejectEntryPatterns(LayerDefinition|TemplateLayerDefinition $entry, int $entryIndex, array &$owners, SectionSpot $layers): void
     {
         $entryName = $entry instanceof TemplateLayerDefinition ? $entry->nameTemplate() : $entry->name();
         $membership = $entry->membership();
@@ -99,7 +97,7 @@ final class DuplicatePatternRejector
             }
             $seenInThisEntry[$normalized] = true;
 
-            self::claimPattern($normalized, $entryName, $entryIndex, $membership, $owners);
+            self::claimPattern($normalized, $entryName, $entryIndex, $membership, $owners, $layers);
         }
     }
 
@@ -111,7 +109,7 @@ final class DuplicatePatternRejector
      *
      * @param-out array<string, array{name: string, index: int}> $owners
      */
-    private static function claimPattern(string $pattern, string $entryName, int $entryIndex, MembershipSpec $membership, array &$owners): void
+    private static function claimPattern(string $pattern, string $entryName, int $entryIndex, MembershipSpec $membership, array &$owners, SectionSpot $layers): void
     {
         $owner = $owners[$pattern] ?? null;
         if ($owner === null) {
@@ -123,17 +121,16 @@ final class DuplicatePatternRejector
         }
 
         if ($owner['name'] !== $entryName && !$membership->narrowsItsPatterns()) {
-            self::refuseCollision($pattern, $owner, $entryName, $entryIndex);
+            self::refuseCollision($pattern, $owner, $entryName, $entryIndex, $layers);
         }
     }
 
     /**
      * @param array{name: string, index: int} $owner
      */
-    private static function refuseCollision(string $pattern, array $owner, string $entryName, int $entryIndex): never
+    private static function refuseCollision(string $pattern, array $owner, string $entryName, int $entryIndex, SectionSpot $layers): never
     {
-        self::refuse(
-            'architecture.layers',
+        throw $layers->child($entryIndex)->child('patterns')->refusal(
             \sprintf(
                 'architecture.layers: pattern "%s" declared in both "%s" (architecture.layers[%d]) and "%s" (architecture.layers[%d]). Under declaration-order matching the second occurrence is unreachable; remove or refine one of them — an "exclude" on "%s" hands the classes it removes to "%s".',
                 $pattern,
@@ -144,15 +141,6 @@ final class DuplicatePatternRejector
                 $owner['name'],
                 $entryName,
             ),
-        );
-    }
-
-    /** Builds the refusal noise every throw site in this class shares: a position under the resolved document. */
-    private static function refuse(string $position, string $summary): never
-    {
-        throw ConfigurationRefusal::atResolvedKey(
-            RefusedPosition::open(explode('.', $position), $position),
-            $summary,
         );
     }
 }
