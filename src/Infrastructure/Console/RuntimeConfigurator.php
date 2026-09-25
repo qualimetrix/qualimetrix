@@ -137,8 +137,8 @@ final class RuntimeConfigurator
     {
         $value = null;
         foreach ($document->contributions(ConfigSchema::MEMORY_LIMIT) as $candidate) {
-            if (\is_string($candidate)) {
-                $value = $candidate;
+            if (\is_string($candidate) || \is_int($candidate)) {
+                $value = (string) $candidate;
             }
         }
 

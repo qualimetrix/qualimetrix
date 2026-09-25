@@ -24,6 +24,7 @@ use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Exception\ExceptionInterface as ConsoleExceptionInterface;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -221,10 +222,11 @@ final class CheckCommand extends Command
             $this->resultPresenter->writeDiagnostic($output, '<info>Cache cleared.</info>');
         }
 
-        $selectionWarning = $this->ruleInputValidator->conflictingSelectionWarning($findingConfiguration);
-        if ($selectionWarning !== null) {
-            $this->writeWarning($output, $selectionWarning);
-        }
+        $this->writeConfigurationWarnings(
+            $output,
+            $this->ruleInputValidator->conflictingSelectionWarning($findingConfiguration),
+            $this->configurationInputAdapter->diagnostics($document),
+        );
         if ($output->isVerbose() && $document->appliedSources() !== []) {
             $this->resultPresenter->writeDiagnostic($output, \sprintf(
                 '<info>Configuration loaded from: %s</info>',
@@ -364,6 +366,21 @@ final class CheckCommand extends Command
      * Writes a warning through the run's single error-stream owner, so it
      * cannot land inside a progress frame that is about to erase itself.
      */
+    /**
+     * Warnings about accepted configuration: legal, and still worth telling its author.
+     *
+     * @param list<string> $diagnostics
+     */
+    private function writeConfigurationWarnings(OutputInterface $output, ?string $selectionWarning, array $diagnostics): void
+    {
+        if ($selectionWarning !== null) {
+            $this->writeWarning($output, $selectionWarning);
+        }
+        foreach ($diagnostics as $diagnostic) {
+            $this->writeWarning($output, \sprintf('Warning: %s', OutputFormatter::escape($diagnostic)));
+        }
+    }
+
     private function writeWarning(OutputInterface $output, string $message): void
     {
         $this->resultPresenter->writeDiagnostic($output, \sprintf('<comment>%s</comment>', $message));

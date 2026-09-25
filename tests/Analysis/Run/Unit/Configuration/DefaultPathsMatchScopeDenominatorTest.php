@@ -10,7 +10,6 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ComposerDiscoveryStage;
@@ -20,6 +19,7 @@ use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Tests\Analysis\Run\Support\Configuration\LayeredDocument;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -304,7 +304,7 @@ final class DefaultPathsMatchScopeDenominatorTest extends TestCase
             $cli[ConfigSchema::PATHS] = $writtenPaths;
         }
 
-        $configuration = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))->resolve(new ConfigurationDocument([
+        $configuration = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))->resolve(LayeredDocument::of([
             ['source' => $layer->source, 'values' => $layer->values],
             ['source' => 'cli', 'values' => $cli],
         ], $root));

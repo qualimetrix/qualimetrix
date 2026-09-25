@@ -23,9 +23,9 @@ use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
  * 2. Add an entry to ENTRIES (if YAML-configurable)
  * 3. Add handling in the appropriate consumer
  *
- * @qmx-threshold coupling.cbo warning=24 -- Afferent by rule: every consumer names a
+ * @qmx-threshold coupling.cbo warning=25 -- Afferent by rule: every consumer names a
  * key through these constants instead of a literal, so CBO counts adoption, not
- * entanglement (Ce=1). Raw CBO 23 gets one-edge headroom.
+ * entanglement (Ce=1). Raw CBO 24 gets one-edge headroom.
  */
 final class ConfigSchema
 {
@@ -107,11 +107,9 @@ final class ConfigSchema
      * - 'mixed'   — array with special structure (rules, computed_metrics)
      * - null      — sub-key of a section (root is auto-typed as section)
      *
-     * Scalar type (only for keys whose leaf value must be a precise scalar):
-     * - 'boolean' — must be a bool (cache.enabled, include_generated, include_autoload_dev)
-     * - 'integer' — must be an int (parallel.workers)
-     * - 'string'  — must be a string (memory_limit)
-     * - null      — no precise scalar type (list/mixed/section/loose-scalar keys)
+     * Scalar type: no longer read. The form of a root's value is declared by
+     * {@see ConfigurationRoot} and judged by the document engine; the column
+     * stays until the rows themselves go.
      *
      * @var list<array{string, string, string|null, string|null}>
      */
@@ -370,38 +368,5 @@ final class ConfigSchema
         $lists[self::EXCLUDE_HEALTH] = true;
 
         return array_keys($lists);
-    }
-
-    /**
-     * True when {@code $value} is well-typed for the given scalar marker
-     * (one of the boolean|integer|string markers carried by {@see ENTRIES}).
-     *
-     * A marker unknown to the schema is a programming error and throws.
-     */
-    public static function matchesScalarType(mixed $value, string $scalarType): bool
-    {
-        return match ($scalarType) {
-            self::BOOLEAN => \is_bool($value),
-            self::INTEGER => \is_int($value),
-            self::STRING => \is_string($value),
-            default => throw new LogicException(\sprintf('Unknown scalar type marker "%s" in ConfigSchema::ENTRIES.', $scalarType)),
-        };
-    }
-
-    /**
-     * Human-readable scalar type name in the schema vocabulary (boolean,
-     * integer, string, float, array, null), used in validation messages.
-     */
-    public static function scalarTypeName(mixed $value): string
-    {
-        return match (true) {
-            \is_bool($value) => self::BOOLEAN,
-            \is_int($value) => self::INTEGER,
-            \is_float($value) => 'float',
-            \is_string($value) => self::STRING,
-            \is_array($value) => 'array',
-            $value === null => 'null',
-            default => get_debug_type($value),
-        };
     }
 }

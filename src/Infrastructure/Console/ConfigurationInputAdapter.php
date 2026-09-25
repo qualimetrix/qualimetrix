@@ -28,6 +28,16 @@ final class ConfigurationInputAdapter
         );
     }
 
+    /**
+     * The document's warnings about accepted configuration, as sentences.
+     *
+     * @return list<string>
+     */
+    public function diagnostics(ConfigurationDocument $document): array
+    {
+        return array_map(static fn($diagnostic): string => $diagnostic->message, $document->diagnostics());
+    }
+
     public function exitPolicy(ConfigurationDocument $document): ExitPolicy
     {
         return ExitPolicy::fromContributions($document->contributions(ConfigSchema::FAIL_ON));
@@ -37,11 +47,14 @@ final class ConfigurationInputAdapter
     {
         $this->refuseEmptyValues($input);
 
+        [$values, $optionNames] = $this->overrides($input);
+
         return new ConfigurationResolutionRequest(
             self::absoluteWorkingDirectory($workingDirectory),
             CommandLineSpelling::option($input, 'config'),
             CommandLineSpelling::options($input, 'preset'),
-            $this->overrides($input),
+            $values,
+            $optionNames,
         );
     }
 
@@ -79,37 +92,50 @@ final class ConfigurationInputAdapter
         }
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * The configuration keys the command line writes, and the option or
+     * argument that wrote each.
+     *
+     * An `--exclude` selector is checked here, where the option still names
+     * it, and handed on in the mapping form a document writes it in.
+     *
+     * @return array{array<string, mixed>, array<string, string>}
+     */
     private function overrides(InputInterface $input): array
     {
         $values = [];
-        $this->put($values, ConfigSchema::PATHS, CommandLineSpelling::arguments($input, 'paths'));
-        $this->put($values, ConfigSchema::EXCLUDES, array_map(
-            fn(string $selector) => $this->selectorDecoder->decodePath($selector, '--exclude'),
+        $names = [];
+        $this->put($values, $names, ConfigSchema::PATHS, CommandLineSpelling::arguments($input, 'paths'), 'paths');
+        $this->put($values, $names, ConfigSchema::EXCLUDES, array_map(
+            function (string $selector): array {
+                $definition = $this->selectorDecoder->decodePath($selector, '--exclude')->definition;
+
+                return [$definition->kind->value => $definition->value];
+            },
             CommandLineSpelling::options($input, 'exclude'),
-        ));
+        ), '--exclude');
         foreach (self::SINGLE_VALUED as $option => $key) {
-            $this->put($values, $key, CommandLineSpelling::option($input, $option));
+            $this->put($values, $names, $key, CommandLineSpelling::option($input, $option), '--' . $option);
         }
         foreach (self::REPEATABLE as $option => $key) {
-            $this->put($values, $key, CommandLineSpelling::options($input, $option));
+            $this->put($values, $names, $key, CommandLineSpelling::options($input, $option), '--' . $option);
         }
 
         if ($this->option($input, 'no-cache') === true) {
-            $values[ConfigSchema::CACHE_ENABLED] = false;
+            $this->put($values, $names, ConfigSchema::CACHE_ENABLED, false, '--no-cache');
         }
         if ($this->option($input, 'include-generated') === true) {
-            $values[ConfigSchema::INCLUDE_GENERATED] = true;
+            $this->put($values, $names, ConfigSchema::INCLUDE_GENERATED, true, '--include-generated');
         }
         if ($this->option($input, 'include-autoload-dev') === true) {
-            $values[ConfigSchema::INCLUDE_AUTOLOAD_DEV] = true;
+            $this->put($values, $names, ConfigSchema::INCLUDE_AUTOLOAD_DEV, true, '--include-autoload-dev');
         }
         $workers = CommandLineSpelling::option($input, 'workers');
         if ($workers !== null) {
-            $values[ConfigSchema::PARALLEL_WORKERS] = (int) $workers;
+            $this->put($values, $names, ConfigSchema::PARALLEL_WORKERS, (int) $workers, '--workers');
         }
 
-        return $values;
+        return [$values, $names];
     }
 
     /** @var array<string, string> single-valued option => configuration key */
@@ -139,11 +165,13 @@ final class ConfigurationInputAdapter
      * silently what the YAML door refuses.
      *
      * @param array<string, mixed> $values
+     * @param array<string, string> $names
      */
-    private function put(array &$values, string $key, mixed $value): void
+    private function put(array &$values, array &$names, string $key, mixed $value, string $writer): void
     {
         if ($value !== null && $value !== []) {
             $values[$key] = $value;
+            $names[$key] = $writer;
         }
     }
 

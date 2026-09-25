@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Configuration\Pipeline\Stage;
 
 use Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface;
-
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
 use Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
@@ -51,7 +53,7 @@ final class PresetStage implements ConfigurationStageInterface
             return null;
         }
 
-        $documents = $this->loadPresets($presetNames, $request->workingDirectory->value());
+        [$documents, $authored, $deferred] = $this->loadPresets($presetNames, $request->workingDirectory->value());
         if ($documents === []) {
             return null;
         }
@@ -60,6 +62,8 @@ final class PresetStage implements ConfigurationStageInterface
             'preset:' . implode(',', $presetNames),
             [],
             $documents,
+            $authored,
+            $deferred,
         );
     }
 
@@ -106,29 +110,33 @@ final class PresetStage implements ConfigurationStageInterface
     }
 
     /**
-     * Loads normalized preset source documents in precedence order.
+     * Loads each preset as its own layer, in precedence order: normalized for
+     * `contributions()`, and as written for the document engine.
      *
      * @param list<string> $presetNames
      *
-     * @return list<array<string, mixed>>
+     * @return array{list<array<string, mixed>>, list<AuthoredLayer>, list<ConfigurationRefusal>}
      */
     private function loadPresets(array $presetNames, string $workingDirectory): array
     {
         $documents = [];
+        $authored = [];
+        $deferred = [];
 
         foreach ($presetNames as $name) {
             $path = $this->resolver->resolve($name, $workingDirectory);
-            $data = $this->loader->load($path);
+            $loaded = $this->loader->read($path);
 
-            if ($this->knownRuleNamesProvider !== null) {
-                RuleNameValidator::validateRuleNames($data, "preset:{$name}", $this->knownRuleNamesProvider, $path);
+            if ($loaded->deferredRefusal !== null) {
+                $deferred[] = $loaded->deferredRefusal;
+            } elseif ($this->knownRuleNamesProvider !== null) {
+                RuleNameValidator::validateRuleNames($loaded->values, "preset:{$name}", $this->knownRuleNamesProvider, $path);
             }
 
-            $normalized = ConfigDataNormalizer::normalize($data);
-
-            $documents[] = $normalized;
+            $documents[] = ConfigDataNormalizer::normalize($loaded->values);
+            $authored[] = new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::Preset, $name), $loaded->authored);
         }
 
-        return $documents;
+        return [$documents, $authored, $deferred];
     }
 }

@@ -41,7 +41,7 @@ final class ConfigurationPipelineIntegrationTest extends TestCase
         file_put_contents($this->directory . '/composer.json', json_encode([
             'autoload' => ['psr-4' => ['App\\' => 'src/']],
         ], \JSON_THROW_ON_ERROR));
-        file_put_contents($this->directory . '/qmx.yaml', "paths: [lib]\nexclude: [build]\nformat: text\n");
+        file_put_contents($this->directory . '/qmx.yaml', "paths: [lib]\nexclude: [{subtree: build}]\nformat: text\n");
 
         $document = $this->pipeline()->resolve(new ConfigurationResolutionRequest(
             AbsolutePath::fromString($this->directory),
@@ -54,7 +54,12 @@ final class ConfigurationPipelineIntegrationTest extends TestCase
         self::assertSame([['lib'], ['app']], $document->contributions('paths'));
         self::assertSame([['src']], $document->contributions('discovered_autoload_paths'));
         self::assertSame(['text', 'json'], $document->contributions('format'));
-        self::assertSame([['build']], $document->contributions('excludes'));
+        self::assertSame([[['subtree' => 'build']]], $document->contributions('excludes'));
+
+        self::assertSame(['app'], $document->resolved()->get('paths')?->plain());
+        self::assertSame('json', $document->resolved()->get('format')?->plain());
+        self::assertSame([['subtree' => 'build']], $document->resolved()->get('exclude')?->plain());
+        self::assertNull($document->resolved()->get('discovered_autoload_paths'), 'Composer discovery is no written layer.');
     }
 
     #[Test]

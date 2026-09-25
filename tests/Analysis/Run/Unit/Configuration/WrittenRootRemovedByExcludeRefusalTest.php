@@ -8,13 +8,13 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Tests\Analysis\Run\Support\Configuration\LayeredDocument;
 
 /**
  * A directory the author named as a path and removed with their own `exclude:`
@@ -149,6 +149,6 @@ final class WrittenRootRemovedByExcludeRefusalTest extends TestCase
     private function resolve(array $sources): RunConfiguration
     {
         return (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))
-            ->resolve(new ConfigurationDocument($sources, AbsolutePath::fromString($this->root)));
+            ->resolve(LayeredDocument::of($sources, AbsolutePath::fromString($this->root)));
     }
 }

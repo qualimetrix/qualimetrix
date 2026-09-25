@@ -61,9 +61,9 @@ final readonly class RefusedPosition
     }
 
     /**
-     * What was rejected, as the throw site holds it: usually the last segment
-     * as written, the required key's name when that key is missing, and the
-     * schema key when a value of the wrong type is refused.
+     * What was rejected, as the throw site holds it: the last segment as
+     * written for anything the document engine refuses, the required key's
+     * name when that key is missing.
      */
     public function written(): string
     {

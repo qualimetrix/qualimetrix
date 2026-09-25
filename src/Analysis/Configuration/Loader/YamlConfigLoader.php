@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
@@ -16,7 +17,43 @@ final class YamlConfigLoader implements ConfigLoaderInterface
 {
     private const array SUPPORTED_EXTENSIONS = ['yaml', 'yml'];
 
+    /**
+     * The folded values alone, refused at once: for a reader that composes
+     * no document.
+     *
+     * @throws ConfigurationRefusal
+     *
+     * @return array<string, mixed>
+     */
     public function load(string $path): array
+    {
+        $parsed = $this->parse($path);
+
+        return $this->normalize($parsed, $path);
+    }
+
+    public function read(string $path): LoadedDocument
+    {
+        $parsed = $this->parse($path);
+
+        try {
+            return new LoadedDocument(AuthoredNode::fromPlain($parsed), $this->normalize($parsed, $path));
+        } catch (ConfigurationRefusal $refusal) {
+            return new LoadedDocument(AuthoredNode::fromPlain($parsed), [], $refusal);
+        }
+    }
+
+    /**
+     * The document as its author wrote it: refused only as a whole (missing,
+     * unreadable, unparseable, not a mapping) or for a retired root spelling,
+     * whose own sentence would otherwise be lost to the engine's unknown-key
+     * refusal.
+     *
+     * @throws ConfigurationRefusal
+     *
+     * @return array<string|int, mixed>
+     */
+    private function parse(string $path): array
     {
         if (!file_exists($path)) {
             throw ConfigurationRefusal::aboutConfigFileDocument(
@@ -53,14 +90,39 @@ final class YamlConfigLoader implements ConfigLoaderInterface
             );
         }
 
-        // Build reverse map (normalizedKey → originalKey) for user-facing error messages
         $keyMap = $this->buildRootKeyMap($content);
+        RetiredSuppressionOptions::refuseRootKey(
+            array_values(array_diff(array_keys($keyMap), ConfigSchema::allowedRootKeys())),
+            $path,
+            $keyMap,
+        );
 
-        $normalized = DocumentKeyNormalizer::normalize($content, $path);
+        return $content;
+    }
 
-        // Validate after key normalization so we only need camelCase allowed keys
-        // (derived from ConfigSchema — single source of truth)
-        $this->validateStructure($normalized, $path, $keyMap, $content);
+    /**
+     * The values the owners still folding `contributions()` read: keys folded
+     * to one spelling, and the checks of the roots the engine does not judge
+     * yet — the `rules` block, and the container and sub-keys of a root whose
+     * owner declares no section. A root the engine judges passes these checks
+     * whenever the engine accepted it.
+     *
+     * @param array<string|int, mixed> $parsed
+     *
+     * @throws ConfigurationRefusal
+     *
+     * @return array<string, mixed>
+     */
+    private function normalize(array $parsed, string $path): array
+    {
+        // Build reverse map (normalizedKey → originalKey) for user-facing error messages
+        $keyMap = $this->buildRootKeyMap($parsed);
+
+        $normalized = DocumentKeyNormalizer::normalize($parsed, $path);
+
+        $this->validateRulesSection($normalized, $path, $keyMap, $parsed);
+        RootContainerShapes::refuseWrongContainer($normalized, $path, $keyMap);
+        $this->validateSectionSubKeys($normalized, $path, $parsed);
 
         return $normalized;
     }
@@ -78,7 +140,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
      * Used to show the user's original key names in error messages,
      * even though validation runs on normalized (camelCase) keys.
      *
-     * @param array<string, mixed> $config Raw YAML config
+     * @param array<string|int, mixed> $config Raw YAML config
      *
      * @return array<string, string> normalizedKey → originalKey
      */
@@ -104,58 +166,6 @@ final class YamlConfigLoader implements ConfigLoaderInterface
     }
 
     /**
-     * Validates the structure of the normalized configuration.
-     *
-     * Allowed root keys, section keys, and list keys are all derived from
-     * ConfigSchema (single source of truth).
-     *
-     * @param array<string, mixed> $config Post-normalization config (camelCase keys)
-     * @param array<string, string> $keyMap normalizedKey → originalKey for error messages
-     * @param array<string, mixed> $rawConfig Pre-normalization config for sub-key error messages
-     */
-    private function validateStructure(array $config, string $path, array $keyMap, array $rawConfig): void
-    {
-        $this->validateRootKeys($config, $path, $keyMap);
-        $this->validateRulesSection($config, $path, $keyMap, $rawConfig);
-        RootContainerShapes::refuseWrongContainer($config, $path, $keyMap);
-        $this->validateSectionSubKeys($config, $path, $rawConfig);
-        $this->validateScalarTypes($config, $path);
-    }
-
-    /**
-     * @param array<string, mixed> $config
-     * @param array<string, string> $keyMap
-     */
-    private function validateRootKeys(array $config, string $path, array $keyMap): void
-    {
-        $allowedRootKeys = ConfigSchema::allowedRootKeys();
-        $unknownKeys = array_diff(array_keys($config), $allowedRootKeys);
-
-        if ($unknownKeys === []) {
-            return;
-        }
-
-        RetiredSuppressionOptions::refuseRootKey($unknownKeys, $path, $keyMap);
-
-        $messages = [];
-        foreach ($unknownKeys as $key) {
-            $original = $this->originalKey($key, $keyMap);
-            $suggestion = self::suggestSimilarKey($original, self::spelledLike($allowedRootKeys, $original));
-            $messages[] = $suggestion !== null
-                ? \sprintf('"%s" (did you mean "%s"?)', $original, $suggestion)
-                : \sprintf('"%s"', $original);
-        }
-
-        $firstOriginal = $this->originalKey($unknownKeys[array_key_first($unknownKeys)], $keyMap);
-
-        throw ConfigurationRefusal::atConfigFileKey(
-            $path,
-            RefusedPosition::closed([$firstOriginal], $firstOriginal, self::spelledLike($allowedRootKeys, $firstOriginal)),
-            \sprintf('Unknown configuration %s: %s', \count($messages) === 1 ? 'key' : 'keys', implode(', ', $messages)),
-        );
-    }
-
-    /**
      * The raw section is handed to {@see RetiredSuppressionOptions} rather than the
      * normalized one: the three spellings of an option key have already
      * collapsed into one by then, and that refusal exists to answer in the
@@ -163,7 +173,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
      *
      * @param array<string, mixed> $config
      * @param array<string, string> $keyMap
-     * @param array<string, mixed> $rawConfig
+     * @param array<string|int, mixed> $rawConfig
      */
     private function validateRulesSection(array $config, string $path, array $keyMap, array $rawConfig): void
     {
@@ -201,7 +211,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
      * Validates that section sub-keys are known.
      *
      * @param array<string, mixed> $config Post-normalization config
-     * @param array<string, mixed> $rawConfig Pre-normalization config for original key names
+     * @param array<string|int, mixed> $rawConfig Pre-normalization config for original key names
      */
     private function validateSectionSubKeys(array $config, string $path, array $rawConfig): void
     {
@@ -250,66 +260,9 @@ final class YamlConfigLoader implements ConfigLoaderInterface
     }
 
     /**
-     * Validates that scalar-typed leaves (cache.enabled, parallel.workers,
-     * include_generated, memory_limit) carry their documented value type.
-     *
-     * This closes the silent-misconfiguration class where a wrong-typed scalar
-     * (e.g. a quoted `cache.enabled: "false"`) is silently ignored by the
-     * downstream resolvers and falls back to a default.
-     *
-     * A `~` / null value is a valid "use the default" idiom and is not checked.
-     *
-     * @param array<string, mixed> $config Post-normalization config (camelCase keys)
-     */
-    private function validateScalarTypes(array $config, string $path): void
-    {
-        foreach (ConfigSchema::ENTRIES as [$sourcePath, $resultKey, , $scalarType]) {
-            if ($scalarType === null) {
-                continue;
-            }
-
-            $value = self::resolveNormalizedValue($config, $sourcePath);
-            if ($value === null) {
-                continue;
-            }
-
-            if (ConfigSchema::matchesScalarType($value, $scalarType)) {
-                continue;
-            }
-
-            throw ConfigurationRefusal::atConfigFileKey(
-                $path,
-                RefusedPosition::open(explode('.', $sourcePath), $resultKey),
-                \sprintf(
-                    'Invalid value for "%s": expected %s, got %s',
-                    $resultKey,
-                    $scalarType,
-                    ConfigSchema::scalarTypeName($value),
-                ),
-            );
-        }
-    }
-
-    /**
-     * Resolves a camelCase source path from the post-normalization config map.
-     *
-     * @param array<string, mixed> $config
-     */
-    private static function resolveNormalizedValue(array $config, string $sourcePath): mixed
-    {
-        if (str_contains($sourcePath, '.')) {
-            [$section, $key] = explode('.', $sourcePath, 2);
-
-            return \is_array($config[$section] ?? null) ? ($config[$section][$key] ?? null) : null;
-        }
-
-        return $config[$sourcePath] ?? null;
-    }
-
-    /**
      * Finds the original (pre-normalization) section name from raw config.
      *
-     * @param array<string, mixed> $rawConfig
+     * @param array<string|int, mixed> $rawConfig
      */
     private function findOriginalSectionName(string $normalizedSection, array $rawConfig): string
     {
@@ -325,7 +278,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
     /**
      * Finds the original (pre-normalization) sub-key name from raw config.
      *
-     * @param array<string, mixed> $rawConfig
+     * @param array<string|int, mixed> $rawConfig
      */
     private function findOriginalSubKey(string $normalizedSection, string $normalizedSubKey, array $rawConfig): string
     {

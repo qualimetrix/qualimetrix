@@ -29,13 +29,19 @@ Configuration/
 │                                  # let a throw site name its source without importing the vocabulary
 ├── Discovery/          # Composer metadata reader
 ├── Document/           # the engine composing written layers into the resolved document
-├── Loader/             # YAML load, section key normalization (one spelling per key), and the container shape of every root
+├── Loader/             # each source as a written layer for the engine (YAML file or preset →
+│                       # LoadedDocument; command line → CommandLineLayer), and the legacy
+│                       # folded values: key normalization and the checks of roots the engine
+│                       # does not judge yet
 ├── Pipeline/           # ordered stage runner, source-layer value, rule-name validator, the
 │   │                   # `~`-as-unwritten normalizer (ConfigDataNormalizer)
 │   └── Stage/          # defaults, Composer, preset, file, CLI stages
 ├── Preset/             # built-in and custom preset resolution
 ├── ConfigKeySpelling.php   # the snake/kebab/camel fold of a key, and its inverse
 ├── ConfigSchema.php        # every YAML key, its result key, type and normalization policy
+├── ConfigurationRoot.php   # the roots Configuration declares: key and schema of each
+├── DocumentRoots.php       # every root of the document and who declares it
+├── UndeclaredRoot.php      # the stand-in for a known root no owner has declared yet
 ├── SelectorYamlDecoder.php  # explicit selector mapping → Core path/namespace pattern
 └── RetiredSuppressionOptions.php # the retired `exclude*` spellings and the one refusal
 ```
@@ -61,8 +67,10 @@ discovery rule.
 
 A key is written once per document. `suppress_paths`, `suppress-paths` and
 `suppressPaths` fold into one key, so writing two of them in one mapping is
-refused by the loader rather than resolved by whichever comes last. A refusal
-about a key answers in the spelling its author used (`ConfigKeySpelling`).
+refused rather than resolved by whichever comes last. Any other spelling of
+the same words (`Fail_On`, `FAIL_ON`) is refused with the canonical key
+offered, at every depth the engine reads. A refusal about a key answers in the
+spelling its author used.
 `RetiredSuppressionOptions` holds the retired `exclude*` suppression spellings
 and the one sentence refusing them, for all four doors: the YAML root, a
 `rules:` block, `--rule-opt`, and the rule-option factory behind it. Each door
@@ -124,9 +132,30 @@ author spelled it, the line when the format reports one).
 - Diagnostics — warnings about accepted configuration — travel with the
   resolved document (`ConfigurationDocument::diagnostics()`).
 
-The engine runs beside `contributions()` while owners move to it: stages hand
-over written layers through `ConfigurationLayer::$authored`, and a root no
-section declares yet passes through unread instead of being refused.
+The engine runs in every resolution, beside `contributions()` while owners
+move to it. Every stage hands its sources over as written through
+`ConfigurationLayer::$authored`, read before any key is folded or any `~`
+erased: the defaults (empty), each preset as a layer of its own, the file, and
+the command line — a layer without positions whose every value carries the
+option that wrote it (`ConfigurationResolutionRequest::$cliOptionNames`), so a
+refusal names `option --format`. Composer discovery is not a written layer: its
+two target lists are internal keys no author may write, and Run reads them from
+`contributions()` until that goes.
+
+The root dictionary is closed: `ConfigurationRoot` declares every root outside
+the capability-owned `DOCUMENT_ROOTS` and `rules`; an owner declares its own
+root by registering its section autoconfigured (the container hands every such
+section to `ConfigurationPipeline`); a known root nobody declared yet is
+carried unread (`UndeclaredRoot`), and any other root is refused as unknown,
+`~` or not. A suggestion offers the canonical key, whatever the style of the
+key it answers.
+
+The loader still folds each file into the values `contributions()` returns,
+and still judges what the engine does not yet: the `rules` block, and the
+container and sub-keys of an undeclared root. A refusal from that fold is
+held in the layer (`LoadedDocument::$deferredRefusal`) and raised only after
+the engine accepted every layer, so a root the engine declares is refused in
+the engine's words, naming the layer that wrote it.
 
 `SelectorYamlDecoder` is the configuration ingress for the shared selector
 language. A selector list entry is exactly one mapping — `{exact: value}`,

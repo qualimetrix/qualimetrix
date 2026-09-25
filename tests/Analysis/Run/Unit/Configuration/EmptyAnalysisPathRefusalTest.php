@@ -7,12 +7,12 @@ namespace Qualimetrix\Tests\Analysis\Run\Unit\Configuration;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Tests\Analysis\Run\Support\Configuration\LayeredDocument;
 
 /**
  * What `paths:` refuses, and why each refusal exists.
@@ -53,7 +53,7 @@ final class EmptyAnalysisPathRefusalTest extends TestCase
     #[Test]
     public function itStillDefaultsToTheWorkingDirectory(): void
     {
-        $document = new ConfigurationDocument([], AbsolutePath::fromString('/project'));
+        $document = LayeredDocument::of([], AbsolutePath::fromString('/project'));
         $resolved = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))->resolve($document);
 
         self::assertSame(['/project'], array_map(static fn($path): string => $path->value(), $resolved->paths));
@@ -97,13 +97,19 @@ final class EmptyAnalysisPathRefusalTest extends TestCase
     /** A value that is not a list at all — the same question, asked of the whole key. */
     #[Test]
     #[TestWith(['src'])]
-    #[TestWith([null])]
     #[TestWith([['first' => 'src']])]
     public function itRefusesAPathsValueThatIsNotAList(mixed $paths): void
     {
         $this->expectException(ConfigurationRefusal::class);
 
         self::resolve($paths);
+    }
+
+    /** `paths: ~` is a key nobody wrote, as `~` is everywhere in the document: the default stands. */
+    #[Test]
+    public function itReadsANullPathsAsUnwritten(): void
+    {
+        self::assertSame(['/project'], array_map(static fn($path): string => $path->value(), self::resolve(null)->paths));
     }
 
     /**
@@ -114,7 +120,7 @@ final class EmptyAnalysisPathRefusalTest extends TestCase
     #[Test]
     public function itAcceptsAnEmptyContributionThatALaterSourceOverrides(): void
     {
-        $document = new ConfigurationDocument(
+        $document = LayeredDocument::of(
             [
                 ['source' => 'config', 'values' => ['paths' => []]],
                 ['source' => 'cli', 'values' => ['paths' => ['src']]],
@@ -136,7 +142,7 @@ final class EmptyAnalysisPathRefusalTest extends TestCase
     {
         $this->expectException(ConfigurationRefusal::class);
 
-        (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))->resolve(new ConfigurationDocument(
+        (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))->resolve(LayeredDocument::of(
             [
                 ['source' => 'config', 'values' => ['paths' => [2024]]],
                 ['source' => 'cli', 'values' => ['paths' => ['src']]],
@@ -147,7 +153,7 @@ final class EmptyAnalysisPathRefusalTest extends TestCase
 
     private static function resolve(mixed $paths): \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration
     {
-        $document = new ConfigurationDocument(
+        $document = LayeredDocument::of(
             [['source' => 'cli', 'values' => ['paths' => $paths]]],
             AbsolutePath::fromString('/project'),
         );

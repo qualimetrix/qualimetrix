@@ -12,6 +12,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
+use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\WrittenFile;
 
 #[CoversClass(YamlConfigLoader::class)]
 final class YamlConfigLoaderTest extends TestCase
@@ -196,6 +197,21 @@ YAML);
         self::assertSame(15, $config['rules']['cyclomaticComplexity']['warningThreshold']);
     }
 
+    /** The document as written reaches the engine even when its folded values are refused; the refusal waits. */
+    #[Test]
+    public function itHoldsARefusalOfTheFoldedValuesBesideTheWrittenDocument(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, "rules: 5\nFail_On: error\n");
+
+        $loaded = $this->loader->read($path);
+
+        self::assertSame(['rules' => 5, 'Fail_On' => 'error'], $loaded->authored->plain());
+        self::assertSame([], $loaded->values);
+        self::assertNotNull($loaded->deferredRefusal);
+        self::assertStringContainsString('"rules" must be an associative array', $loaded->deferredRefusal->summary());
+    }
+
     #[Test]
     public function itRejectsUnknownRootKeys(): void
     {
@@ -209,10 +225,10 @@ another_bad_key: true
 YAML);
 
         self::expectException(ConfigurationRefusal::class);
-        // Error message should show original key names (snake_case), not camelCase
-        self::expectExceptionMessage('"unknown_key", "another_bad_key"');
+        // The key as its author wrote it, not a folded spelling
+        self::expectExceptionMessage('Unknown key "unknown_key"');
 
-        $this->loader->load($path);
+        WrittenFile::compose($path);
     }
 
     /**
@@ -228,9 +244,9 @@ bogus_key: ~
 YAML);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Unknown configuration key: "bogus_key"');
+        self::expectExceptionMessage('Unknown key "bogus_key"');
 
-        $this->loader->load($path);
+        WrittenFile::compose($path);
     }
 
     #[Test]
@@ -418,9 +434,9 @@ YAML);
         file_put_contents($path, 'namespace: not_an_array');
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Unknown configuration key: "namespace"');
+        self::expectExceptionMessage('Unknown key "namespace"');
 
-        $this->loader->load($path);
+        WrittenFile::compose($path);
     }
 
     #[Test]
@@ -638,9 +654,9 @@ YAML);
         file_put_contents($path, "cache:\n  enabled: \"false\"\n");
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Invalid value for "cache.enabled": expected boolean, got string');
+        self::expectExceptionMessage('"cache.enabled" in configuration file "' . $path . '" must be boolean, got string.');
 
-        $this->loader->load($path);
+        WrittenFile::compose($path);
     }
 
     #[Test]
@@ -650,21 +666,33 @@ YAML);
         file_put_contents($path, "parallel:\n  workers: \"four\"\n");
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Invalid value for "parallel.workers": expected integer, got string');
+        self::expectExceptionMessage('"parallel.workers" in configuration file "' . $path . '" must be integer, got string.');
 
-        $this->loader->load($path);
+        WrittenFile::compose($path);
+    }
+
+    /** PHP reads an integer memory limit as bytes, and `-1` is the documented "no limit". */
+    #[Test]
+    #[TestWith([12345])]
+    #[TestWith([-1])]
+    public function itAcceptsAnIntegerMemoryLimit(int $limit): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, \sprintf("memory_limit: %d\n", $limit));
+
+        self::assertSame($limit, WrittenFile::compose($path)->get('memory_limit')?->plain());
     }
 
     #[Test]
-    public function itRejectsWrongTypeMemoryLimit(): void
+    public function itRejectsAMemoryLimitThatIsNeitherASizeNorANumber(): void
     {
         $path = $this->tempDir . '/config.yaml';
-        file_put_contents($path, "memory_limit: 12345\n");
+        file_put_contents($path, "memory_limit: true\n");
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Invalid value for "memory_limit": expected string, got integer');
+        self::expectExceptionMessage('"memory_limit" in configuration file "' . $path . '" must be string or integer, got bool.');
 
-        $this->loader->load($path);
+        WrittenFile::compose($path);
     }
 
     #[Test]
@@ -674,9 +702,9 @@ YAML);
         file_put_contents($path, "include_generated: \"yes\"\n");
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Invalid value for "include_generated": expected boolean, got string');
+        self::expectExceptionMessage('"include_generated" in configuration file "' . $path . '" must be boolean, got string.');
 
-        $this->loader->load($path);
+        WrittenFile::compose($path);
     }
 
     #[Test]
@@ -828,9 +856,9 @@ namespace:
 YAML);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Unknown configuration key: "namespace"');
+        self::expectExceptionMessage('Unknown key "namespace"');
 
-        $this->loader->load($path);
+        WrittenFile::compose($path);
     }
 
     /**
@@ -849,9 +877,9 @@ aggregation:
 YAML);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Unknown configuration key: "aggregation"');
+        self::expectExceptionMessage('Unknown key "aggregation"');
 
-        $this->loader->load($path);
+        WrittenFile::compose($path);
     }
 
     #[Test]
@@ -881,7 +909,7 @@ YAML);
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('did you mean "cache"?');
 
-        $this->loader->load($path);
+        WrittenFile::compose($path);
     }
 
     #[Test]
@@ -893,7 +921,7 @@ zzzzzzz: true
 YAML);
 
         try {
-            $this->loader->load($path);
+            WrittenFile::compose($path);
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
             self::assertStringContainsString('"zzzzzzz"', $e->getMessage());

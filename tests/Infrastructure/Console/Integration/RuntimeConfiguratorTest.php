@@ -389,6 +389,23 @@ final class RuntimeConfiguratorTest extends TestCase
         self::assertFalse($this->profile->isEnabled());
     }
 
+    /**
+     * An integer is a byte count the document accepts; dropped here, the run
+     * went on under the default limit the author wrote over.
+     */
+    #[Test]
+    public function itAppliesAnIntegerMemoryLimit(): void
+    {
+        $root = AbsolutePath::fromString($this->projectRoot);
+        $document = new ConfigurationDocument([['source' => 'custom', 'values' => ['memory_limit' => 1]]], $root);
+        $this->configurator->resetRunState();
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Cannot set requested memory_limit "1": the PHP runtime refused it.');
+
+        $this->configure($document, $root, $this->input([]), new BufferedOutput());
+    }
+
     #[Test]
     public function itRestoresThePreviousErrorHandlerAfterApplyFailure(): void
     {
