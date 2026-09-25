@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricContributionReader;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
@@ -19,19 +18,13 @@ final class ComputedMetricAnalysis implements
 
     public function __construct(
         private readonly ComputedMetricsConfigResolver $configResolver,
-        private readonly ComputedMetricContributionReader $contributionReader,
     ) {
         $this->definitions = new ResolvedComputedMetricDefinitions([]);
     }
 
     public function resolve(ConfigurationDocument $document): ResolvedComputedMetricDefinitions
     {
-        $computedMetrics = $this->contributionReader->computedMetrics($document);
-        $excludeHealth = $this->contributionReader->excludedHealthDimensions($document);
-
-        return new ResolvedComputedMetricDefinitions(
-            $this->configResolver->resolve($computedMetrics, $excludeHealth),
-        );
+        return new ResolvedComputedMetricDefinitions($this->configResolver->resolve($document->resolved()));
     }
 
     public function replace(ResolvedComputedMetricDefinitions $definitions): void
@@ -48,5 +41,4 @@ final class ComputedMetricAnalysis implements
     {
         return $this->definitions->find($name);
     }
-
 }

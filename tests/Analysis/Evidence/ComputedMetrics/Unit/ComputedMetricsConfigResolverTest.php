@@ -8,9 +8,17 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
+use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
+use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricsSection;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ExcludeHealthSection;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -33,7 +41,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[Test]
     public function itResolveWithEmptyConfigReturns6Defaults(): void
     {
-        $result = $this->resolver->resolve([]);
+        $result = $this->resolve([]);
 
         self::assertCount(6, $result);
 
@@ -49,7 +57,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[Test]
     public function itOverridesHealthThresholdOnly(): void
     {
-        $result = $this->resolver->resolve([
+        $result = $this->resolve([
             'health.complexity' => [
                 'warning' => 60.0,
                 'error' => 30.0,
@@ -68,7 +76,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[Test]
     public function itOverridesHealthFormulaSingular(): void
     {
-        $result = $this->resolver->resolve([
+        $result = $this->resolve([
             'health.complexity' => [
                 'formula' => '100 - m["complexity.ccn.avg"] * 10',
             ],
@@ -85,7 +93,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[Test]
     public function itOverridesHealthFormulasPerLevel(): void
     {
-        $result = $this->resolver->resolve([
+        $result = $this->resolve([
             'health.complexity' => [
                 'formulas' => [
                     'class' => '100 - m["complexity.ccn"] * 5',
@@ -106,7 +114,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     {
         // Disabling a single health.* dimension via `enabled: false` must NOT break
         // health.overall — instead, weights are renormalized exactly like exclude_health.
-        $result = $this->resolver->resolve([
+        $result = $this->resolve([
             'health.typing' => [
                 'enabled' => false,
             ],
@@ -135,7 +143,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     {
         // Disabling health.overall directly is also supported — it has no dependents,
         // so sub-dimensions are untouched.
-        $result = $this->resolver->resolve([
+        $result = $this->resolve([
             'health.overall' => [
                 'enabled' => false,
             ],
@@ -152,7 +160,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     {
         // Combining `enabled: false` on one dimension with `exclude_health` on another
         // removes both; health.overall is rebuilt with the remaining weights.
-        $result = $this->resolver->resolve(
+        $result = $this->resolve(
             [
                 'health.typing' => ['enabled' => false],
             ],
@@ -176,7 +184,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     {
         // Custom `computed.*` metrics disabled via `enabled: false` are simply removed —
         // no formula renormalization applies (no health.overall reference path).
-        $result = $this->resolver->resolve([
+        $result = $this->resolve([
             'computed.foo' => [
                 'formula' => 'm["size.loc.avg"] * 2',
                 'levels' => ['namespace'],
@@ -202,42 +210,40 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::expectExceptionMessage('Computed metric name "health.typying" is not a known "health.*" dimension');
         self::expectExceptionMessage('health.overall');
 
-        $this->resolver->resolve([
+        $this->resolve([
             'health.typying' => [
                 'enabled' => false,
             ],
         ]);
     }
 
-    /**
-     * A `health.*` name is sliced at the reserved prefix, so the position's last
-     * segment is the short dimension name, not the whole `health.typying`.
-     */
+    /** The position is the name as the author wrote it, closed on the six names. */
     #[Test]
-    public function itPositionsAnUnknownHealthDimensionAtTheShortName(): void
+    public function itPositionsAnUnknownHealthDimensionAtTheWrittenName(): void
     {
         try {
-            $this->resolver->resolve(['health.typying' => ['enabled' => false]]);
+            $this->resolve(['health.typying' => ['enabled' => false]]);
             self::fail('Expected a refusal.');
         } catch (ConfigurationRefusal $refusal) {
             $position = $refusal->position();
             self::assertNotNull($position);
-            self::assertSame(['computed_metrics', 'health', 'typying'], $position->segments());
-            self::assertSame('typying', $position->written());
+            self::assertSame(['computed_metrics', 'health.typying'], $position->segments());
+            self::assertSame('health.typying', $position->written());
             self::assertTrue($position->isClosed());
             self::assertSame(
-                ['cohesion', 'complexity', 'coupling', 'maintainability', 'overall', 'typing'],
+                ['health.cohesion', 'health.complexity', 'health.coupling', 'health.maintainability', 'health.overall', 'health.typing'],
                 $position->accepted(),
             );
+            self::assertSame(ConfigurationSource::ConfigFile, $refusal->origin()->source());
         }
     }
 
     #[Test]
     public function itExcludeHealthAcceptsBothNameForms(): void
     {
-        // Both bare ('typing') and fully-qualified ('health.typing') forms must be accepted
-        // in the excludeHealth arg, and dedupe across them.
-        $result = $this->resolver->resolve([], ['typing', 'health.typing']);
+        // Both bare ('typing') and fully-qualified ('health.typing') forms are
+        // accepted in exclude_health, and dedupe across them.
+        $result = $this->resolve([], ['typing', 'health.typing']);
 
         // 6 defaults - 1 excluded = 5
         self::assertCount(5, $result);
@@ -248,18 +254,16 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[Test]
     public function itThrowsForUnknownExcludeHealthArg(): void
     {
-        // Unknown name in the excludeHealth arg must surface as an error from
-        // HealthFormulaExcluder (different source than enabled:false, different message).
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessageMatches('/Unknown health dimension.*nonexistent/');
+        self::expectExceptionMessage('Unknown health dimension "nonexistent" in "exclude_health[0]" in configuration file "qmx.yaml".');
 
-        $this->resolver->resolve([], ['nonexistent']);
+        $this->resolve([], ['nonexistent']);
     }
 
     #[Test]
     public function itCreatesNewComputedMetric(): void
     {
-        $result = $this->resolver->resolve([
+        $result = $this->resolve([
             'computed.my-score' => [
                 'formula' => 'm["size.loc.avg"] * 2',
                 'description' => 'My custom score',
@@ -296,7 +300,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('declares the same level more than once');
 
-        $this->resolver->resolve([
+        $this->resolve([
             'computed.repeated' => [
                 'formula' => 'm["size.loc.avg"]',
                 'levels' => ['class', 'class'],
@@ -310,7 +314,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('declares the same level more than once');
 
-        $this->resolver->resolve([
+        $this->resolve([
             'health.overall' => ['levels' => ['namespace', 'namespace']],
         ]);
     }
@@ -329,7 +333,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('must not end in the level word "class"');
 
-        $this->resolver->resolve([
+        $this->resolve([
             'computed.foo.class' => [
                 'formula' => '1',
                 'levels' => ['class'],
@@ -359,7 +363,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     {
         self::expectException(ConfigurationRefusal::class);
 
-        $this->resolver->resolve([
+        $this->resolve([
             $name => [
                 'formula' => '1',
                 'levels' => ['namespace'],
@@ -373,7 +377,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('must be "health.<name>" or "computed.<name>"');
 
-        $this->resolver->resolve([
+        $this->resolve([
             'custom.my_score' => [
                 'formula' => 'loc * 2',
             ],
@@ -386,7 +390,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::expectException(RuntimeException::class);
         self::expectExceptionMessage('Invalid formula syntax');
 
-        $this->resolver->resolve([
+        $this->resolve([
             'computed.bad' => [
                 'formula' => 'loc +* 2',
                 'levels' => ['namespace'],
@@ -400,7 +404,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::expectException(RuntimeException::class);
         self::expectExceptionMessage('Circular dependency');
 
-        $this->resolver->resolve([
+        $this->resolve([
             'computed.a' => [
                 'formula' => 'm["computed.b"] + 1',
                 'levels' => ['namespace'],
@@ -418,7 +422,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::expectException(RuntimeException::class);
         self::expectExceptionMessage('references unknown metric "computed.nonexistent"');
 
-        $this->resolver->resolve([
+        $this->resolve([
             'computed.ref' => [
                 'formula' => 'm["computed.nonexistent"] + 1',
                 'levels' => ['namespace'],
@@ -429,7 +433,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[Test]
     public function itAcceptsAFormulaReferencingAKnownCatalogKey(): void
     {
-        $result = $this->resolver->resolve([
+        $result = $this->resolve([
             'computed.valid' => [
                 'formula' => 'm["size.loc"] * 2',
                 'levels' => ['namespace'],
@@ -445,7 +449,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::expectException(RuntimeException::class);
         self::expectExceptionMessage('references unknown metric key "complexity.cnn"');
 
-        $this->resolver->resolve([
+        $this->resolve([
             'computed.typo' => [
                 'formula' => 'm["complexity.cnn"] + 1',
                 'levels' => ['namespace'],
@@ -458,7 +462,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     {
         // health.*/computed.* stay owned by validateComputedMetricReferences() above the
         // catalog check: a valid cross-reference must not be rejected as an unknown key.
-        $result = $this->resolver->resolve([
+        $result = $this->resolve([
             'computed.derived' => [
                 'formula' => 'm["health.complexity"] + 1',
                 'levels' => ['namespace'],
@@ -478,7 +482,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     public function itRefusesAnUnguardedReadOfAComputedMetricNotPublishedAtTheFormulasLevel(): void
     {
         try {
-            $this->resolver->resolve([
+            $this->resolve([
                 'computed.cls-only' => ['formula' => 'm["size.method-count"] + 1', 'levels' => ['class']],
                 'computed.proj-reads' => ['formula' => 'm["computed.cls-only"] + 1', 'levels' => ['project']],
             ]);
@@ -503,7 +507,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('reads "computed.ns-only" at level "project", where it is not published (published at: namespace)');
 
-        $this->resolver->resolve([
+        $this->resolve([
             'computed.ns-only' => ['formula' => 'm["size.loc"] + 1', 'levels' => ['namespace']],
             'computed.reader' => [
                 'formulas' => ['namespace' => 'm["computed.ns-only"] * 2'],
@@ -519,7 +523,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('reads "computed.cls-only" at level "namespace"');
 
-        $this->resolver->resolve([
+        $this->resolve([
             'computed.cls-only' => ['formula' => 'm["size.method-count"] + 1', 'levels' => ['class']],
             'computed.reader' => [
                 'formulas' => [
@@ -541,7 +545,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[Test]
     public function itAcceptsACrossLevelReadThatIsGuardedOrNeverReached(): void
     {
-        $result = $this->resolver->resolve([
+        $result = $this->resolve([
             'computed.cls-only' => ['formula' => 'm["size.method-count"] + 1', 'levels' => ['class']],
             'computed.everywhere' => ['formula' => '1', 'levels' => ['class', 'namespace', 'project']],
             'computed.guarded' => ['formula' => 'm["computed.cls-only"] ?? 0', 'levels' => ['project']],
@@ -572,7 +576,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[Test]
     public function itAcceptsACrossLevelReadOnlyATernaryBranchMakes(): void
     {
-        $result = $this->resolver->resolve([
+        $result = $this->resolve([
             'computed.cls-only' => ['formula' => 'm["size.method-count"] + 1', 'levels' => ['class']],
             'computed.branch' => [
                 'formula' => 'm["size.loc"] > 0 ? 1 : m["computed.cls-only"]',
@@ -589,7 +593,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('reads "computed.cls-only" at level "project", where it is not published (published at: class)');
 
-        $this->resolver->resolve([
+        $this->resolve([
             'computed.cls-only' => ['formula' => 'm["size.method-count"] + 1', 'levels' => ['class']],
             'computed.condition' => [
                 'formula' => 'm["computed.cls-only"] > 0 ? 1 : 0',
@@ -601,7 +605,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[Test]
     public function itAcceptsAKnownAggregationSuffixOnACatalogKey(): void
     {
-        $result = $this->resolver->resolve([
+        $result = $this->resolve([
             'computed.aggregate' => [
                 'formula' => 'm["complexity.ccn.max"] + 1',
                 'levels' => ['namespace'],
@@ -617,7 +621,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::expectException(RuntimeException::class);
         self::expectExceptionMessage('references unknown metric key "complexity.ccn.bogus"');
 
-        $this->resolver->resolve([
+        $this->resolve([
             'computed.bad-suffix' => [
                 'formula' => 'm["complexity.ccn.bogus"] + 1',
                 'levels' => ['namespace'],
@@ -638,7 +642,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::expectException(RuntimeException::class);
         self::expectExceptionMessage('references unknown metric key "complexity.cnn"');
 
-        $this->resolver->resolve([
+        $this->resolve([
             'health.complexity' => [
                 'formula' => 'm["complexity.cnn"] * 10',
             ],
@@ -651,7 +655,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::expectException(RuntimeException::class);
         self::expectExceptionMessage('has no formula for level');
 
-        $this->resolver->resolve([
+        $this->resolve([
             'computed.partial' => [
                 'formulas' => [
                     'namespace' => 'm["size.loc.avg"] * 2',
@@ -673,7 +677,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Computed metric name "health.custom" is not a known "health.*" dimension');
 
-        $this->resolver->resolve([
+        $this->resolve([
             'health.custom' => [
                 'formula' => 'm["complexity.ccn.avg"] * 10',
             ],
@@ -683,7 +687,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[Test]
     public function itHandlesFormulaAndFormulasInteraction(): void
     {
-        $result = $this->resolver->resolve([
+        $result = $this->resolve([
             'health.complexity' => [
                 'formula' => 'm["complexity.ccn.avg"] * 10',
                 'formulas' => [
@@ -724,7 +728,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[DataProvider('provideLevelSpellingsAcceptedForAComputedMetric')]
     public function itAcceptsEveryLevelSpellingTheOldPrivateWordListAccepted(string $spelling, SymbolLevel $expected): void
     {
-        $result = $this->resolver->resolve([
+        $result = $this->resolve([
             'computed.spelling' => [
                 'formula' => 'm["size.loc.avg"]',
                 'levels' => [$spelling],
@@ -766,7 +770,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
             $spelling,
         ));
 
-        $this->resolver->resolve([
+        $this->resolve([
             'computed.unsupported' => [
                 'formula' => 'm["size.loc.avg"]',
                 'levels' => [$spelling],
@@ -780,7 +784,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Invalid computed metric level: "bogus"');
 
-        $this->resolver->resolve([
+        $this->resolve([
             'computed.bogus' => [
                 'formula' => 'm["size.loc.avg"]',
                 'levels' => ['bogus'],
@@ -791,7 +795,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[Test]
     public function itSupportsLevelsFullReplacement(): void
     {
-        $result = $this->resolver->resolve([
+        $result = $this->resolve([
             'health.complexity' => [
                 'levels' => ['class'],
             ],
@@ -805,7 +809,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[Test]
     public function itUsesDefaultLevelsForUserDefined(): void
     {
-        $result = $this->resolver->resolve([
+        $result = $this->resolve([
             'computed.simple' => [
                 'formula' => 'm["size.loc.avg"]',
             ],
@@ -822,7 +826,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[Test]
     public function itThresholdShorthandSetsBothValues(): void
     {
-        $result = $this->resolver->resolve([
+        $result = $this->resolve([
             'health.complexity' => [
                 'threshold' => 45.0,
             ],
@@ -835,9 +839,19 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsTheBuiltInErrorWhenOnlyWarningIsWritten(): void
+    {
+        $complexity = $this->findByName($this->resolve(['health.complexity' => ['warning' => 70]]), 'health.complexity');
+
+        self::assertNotNull($complexity);
+        self::assertSame(70.0, $complexity->warningThreshold);
+        self::assertSame(25.0, $complexity->errorThreshold);
+    }
+
+    #[Test]
     public function itThresholdNullFallsBackToDefaults(): void
     {
-        $result = $this->resolver->resolve([
+        $result = $this->resolve([
             'health.complexity' => [
                 'threshold' => null,
             ],
@@ -850,31 +864,22 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertSame(25.0, $complexity->errorThreshold);
     }
 
-    #[Test]
-    public function itThrowsWhenThresholdMixedWithWarning(): void
+    /** @return iterable<string, array{array<string, mixed>}> */
+    public static function provideThresholdMixedWithItsTargets(): iterable
     {
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Cannot mix "threshold"');
-
-        $this->resolver->resolve([
-            'health.complexity' => [
-                'threshold' => 45.0,
-                'warning' => 60.0,
-            ],
-        ]);
+        yield 'warning' => [['threshold' => 45.0, 'warning' => 60.0]];
+        yield 'error' => [['threshold' => 45.0, 'error' => 30.0]];
     }
 
+    /** @param array<string, mixed> $entry */
     #[Test]
-    public function itThrowsWhenThresholdMixedWithError(): void
+    #[DataProvider('provideThresholdMixedWithItsTargets')]
+    public function itRefusesTheThresholdShorthandBesideOneOfItsTargetsInOneLayer(array $entry): void
     {
         self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('"threshold" is shorthand for "warning" and "error"');
 
-        $this->resolver->resolve([
-            'health.complexity' => [
-                'threshold' => 45.0,
-                'error' => 30.0,
-            ],
-        ]);
+        $this->resolve(['health.complexity' => $entry]);
     }
 
     /**
@@ -886,7 +891,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     public function itRefusesAMapWhereLevelsExpectsAListInsteadOfCrashing(): void
     {
         try {
-            $this->resolver->resolve([
+            $this->resolve([
                 'computed.x' => [
                     'formula' => '1+1',
                     'levels' => ['class' => ['warning' => 1]],
@@ -904,159 +909,95 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     public function itRefusesTheFirstUnknownKeyInDocumentOrder(): void
     {
         try {
-            $this->resolver->resolve([
+            $this->resolve([
                 'health.complexity' => ['warnign' => 60, 'erorr' => 30],
             ]);
             self::fail('Expected a refusal.');
         } catch (ConfigurationRefusal $refusal) {
             $position = $refusal->position();
             self::assertNotNull($position);
-            self::assertSame(['computed_metrics', 'health', 'complexity', 'warnign'], $position->segments());
+            self::assertSame(['computed_metrics', 'health.complexity', 'warnign'], $position->segments());
             self::assertSame('warnign', $position->written());
-            self::assertSame(
-                ['description', 'enabled', 'error', 'formula', 'formulas', 'inverted', 'levels', 'threshold', 'warning'],
-                $position->accepted(),
-            );
             self::assertTrue($position->isClosed());
+            self::assertStringContainsString('(did you mean "warning"?)', $refusal->summary());
         }
     }
 
-    /**
-     * An unknown key on a *record* refuses even when the entry also carries
-     * `enabled: false` — the ordering this stage's §6 fixes, because the walk
-     * now runs before the `enabled` branch instead of never running at all.
-     */
+    /** A disabled entry is read in full: its unknown key is still refused. */
     #[Test]
     public function itRefusesAnUnknownKeyEvenWhenTheEntryIsDisabled(): void
     {
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Option "bogusKey"');
+        self::expectExceptionMessage('Unknown key "computed_metrics.computed.x.bogusKey"');
 
-        $this->resolver->resolve([
+        $this->resolve([
             'computed.x' => ['formula' => '1', 'enabled' => false, 'bogusKey' => 1],
         ]);
     }
 
     #[Test]
-    public function itRefusesAnEntryThatIsNotAMap(): void
-    {
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('must be a map of options');
-
-        $this->resolver->resolve(['computed.x' => 5]);
-    }
-
-    #[Test]
     public function itAcceptsANullEntryAsAnAbsentOverride(): void
     {
-        $result = $this->resolver->resolve(['health.complexity' => null]);
+        $result = $this->resolve(['health.complexity' => null]);
 
         self::assertCount(6, $result);
     }
 
-    #[Test]
-    public function itRefusesAnEntryThatIsFalseWithAHintAboutEnabledFalse(): void
+    /** @return iterable<string, array{array<string, mixed>, string}> */
+    public static function provideValuesOfTheWrongForm(): iterable
     {
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('{enabled: false}');
-
-        $this->resolver->resolve(['computed.x' => false]);
-    }
-
-    #[Test]
-    public function itRefusesANonStringFormulaShorthand(): void
-    {
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Option "formula" of computed metric "computed.x" must be a string');
-
-        $this->resolver->resolve([
-            'computed.x' => ['formula' => 5, 'levels' => ['namespace']],
-        ]);
-    }
-
-    #[Test]
-    public function itRefusesANonStringDescription(): void
-    {
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Option "description" of computed metric "computed.x" must be a string');
-
-        $this->resolver->resolve([
-            'computed.x' => ['formula' => '1', 'levels' => ['namespace'], 'description' => 5],
-        ]);
-    }
-
-    #[Test]
-    public function itRefusesANonBooleanInverted(): void
-    {
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Option "inverted" of computed metric "computed.x" must be a boolean');
-
-        $this->resolver->resolve([
-            'computed.x' => ['formula' => '1', 'levels' => ['namespace'], 'inverted' => 'yes'],
-        ]);
-    }
-
-    #[Test]
-    public function itRefusesANonBooleanEnabled(): void
-    {
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Option "enabled" of computed metric "health.complexity" must be a boolean');
-
-        $this->resolver->resolve(['health.complexity' => ['enabled' => 'false']]);
-    }
-
-    #[Test]
-    public function itRefusesANonNumericThreshold(): void
-    {
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Option "threshold" of computed metric "health.complexity" must be a number or null');
-
-        $this->resolver->resolve(['health.complexity' => ['threshold' => 'abc']]);
+        yield 'entry not a map' => [['computed.x' => 5], '"computed_metrics.computed.x" in configuration file "qmx.yaml" must be a map, got int.'];
+        yield 'entry false' => [['computed.x' => false], '"computed_metrics.computed.x" in configuration file "qmx.yaml" must be a map, got bool.'];
+        yield 'formula not a string' => [['computed.x' => ['formula' => 5]], '"computed_metrics.computed.x.formula" in configuration file "qmx.yaml" must be string, got int.'];
+        yield 'description not a string' => [['computed.x' => ['formula' => '1', 'description' => 5]], '"computed_metrics.computed.x.description" in configuration file "qmx.yaml" must be string, got int.'];
+        yield 'inverted not a boolean' => [['computed.x' => ['formula' => '1', 'inverted' => 'yes']], '"computed_metrics.computed.x.inverted" in configuration file "qmx.yaml" must be boolean, got string.'];
+        yield 'enabled not a boolean' => [['health.complexity' => ['enabled' => 'false']], '"computed_metrics.health.complexity.enabled" in configuration file "qmx.yaml" must be boolean, got string.'];
+        yield 'threshold not a number' => [['health.complexity' => ['threshold' => 'abc']], '"computed_metrics.health.complexity.threshold" in configuration file "qmx.yaml" must be number, got string.'];
+        yield 'warning not a number' => [['health.complexity' => ['warning' => 'abc']], '"computed_metrics.health.complexity.warning" in configuration file "qmx.yaml" must be number, got string.'];
+        yield 'error not a number' => [['health.complexity' => ['error' => 'abc']], '"computed_metrics.health.complexity.error" in configuration file "qmx.yaml" must be number, got string.'];
+        yield 'formulas element not a string' => [['computed.x' => ['formulas' => ['class' => 5]]], '"computed_metrics.computed.x.formulas.class" in configuration file "qmx.yaml" must be string, got int.'];
+        yield 'formulas not a map' => [['computed.x' => ['formulas' => '1+1']], '"computed_metrics.computed.x.formulas" in configuration file "qmx.yaml" must be a map, got string.'];
+        yield 'levels a scalar' => [['computed.x' => ['formula' => '1', 'levels' => 'class']], '"computed_metrics.computed.x.levels" in configuration file "qmx.yaml" must be a list, got string.'];
+        yield 'levels a map' => [['computed.x' => ['formula' => '1', 'levels' => ['class' => 'x']]], '"computed_metrics.computed.x.levels" in configuration file "qmx.yaml" must be a list, got a map.'];
+        yield 'levels item not a string' => [['computed.x' => ['formula' => '1', 'levels' => [5]]], '"computed_metrics.computed.x.levels[0]" in configuration file "qmx.yaml" must be string, got int.'];
     }
 
     /**
-     * `warning: abc` used to silently drop the threshold to `null` instead of
-     * refusing — a change in behaviour, not just a missed value, because it
-     * altered which findings the metric produced without saying a word.
+     * The form of every value is judged by the document, in the words of
+     * the file: the key path as written and the file that wrote it.
+     *
+     * @param array<string, mixed> $computedMetrics
      */
     #[Test]
-    public function itRefusesANonNumericWarning(): void
+    #[DataProvider('provideValuesOfTheWrongForm')]
+    public function itRefusesAValueOfTheWrongFormInTheFilesWords(array $computedMetrics, string $expected): void
     {
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Option "warning" of computed metric "health.complexity" must be a number or null');
+        self::expectExceptionMessage($expected);
 
-        $this->resolver->resolve(['health.complexity' => ['warning' => 'abc']]);
+        $this->resolve($computedMetrics);
     }
 
-    #[Test]
-    public function itRefusesANonNumericError(): void
+    /**
+     * One configuration file writing the two sections, read by the document
+     * engine the way `qmx.yaml` is.
+     *
+     * @param array<string, mixed> $computedMetrics
+     * @param list<mixed> $excludeHealth
+     *
+     * @return list<ComputedMetricDefinition>
+     */
+    private function resolve(array $computedMetrics = [], array $excludeHealth = []): array
     {
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Option "error" of computed metric "health.complexity" must be a number or null');
+        $written = array_filter(
+            [ComputedMetricsSection::KEY => $computedMetrics, ExcludeHealthSection::KEY => $excludeHealth],
+            static fn(array $section): bool => $section !== [],
+        );
 
-        $this->resolver->resolve(['health.complexity' => ['error' => 'abc']]);
-    }
-
-    #[Test]
-    public function itRefusesANonStringFormulasElement(): void
-    {
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('The "formulas.class" value of computed metric "computed.x" must be a string');
-
-        $this->resolver->resolve([
-            'computed.x' => ['formulas' => ['class' => 5], 'levels' => ['class']],
-        ]);
-    }
-
-    #[Test]
-    public function itRefusesLevelsWrittenAsAScalarInsteadOfAList(): void
-    {
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('"levels" of computed metric "computed.x" must be a list');
-
-        $this->resolver->resolve([
-            'computed.x' => ['formula' => '1', 'levels' => 'class'],
-        ]);
+        return $this->resolver->resolve(DocumentComposer::compose(
+            new DocumentSchema([new ComputedMetricsSection(), new ExcludeHealthSection()]),
+            [new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml'), AuthoredNode::fromPlain($written))],
+        ));
     }
 
     /**

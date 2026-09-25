@@ -30,12 +30,16 @@ final class ComputedMetricsConfigurator implements ContainerConfiguratorInterfac
     {
         $formulaValidator = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricFormulaValidator';
         $configResolver = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver';
-        $contributionReader = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricContributionReader';
         $findingBuilder = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Finding\\ComputedMetricFindingBuilder';
         $evaluator = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator';
         $analysis = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricAnalysis';
         $healthFormulaExcluder = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\HealthFormulaExcluder';
         $delegatingLogger = 'Qualimetrix\\Infrastructure\\Logging\\DelegatingLogger';
+        $computedMetricsSection = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricsSection';
+        $excludeHealthSection = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ExcludeHealthSection';
+
+        $container->register($computedMetricsSection)->setAutoconfigured(true);
+        $container->register($excludeHealthSection)->setAutoconfigured(true);
 
         $container->register($healthFormulaExcluder);
         $container->setAlias(self::HEALTH_EXCLUSION, $healthFormulaExcluder)->setPublic(true);
@@ -44,11 +48,9 @@ final class ComputedMetricsConfigurator implements ContainerConfiguratorInterfac
             new Reference($formulaValidator),
             new Reference(self::HEALTH_EXCLUSION),
         ]);
-        $container->register($contributionReader);
         $container->register($findingBuilder);
         $container->register($analysis)->setArguments([
             new Reference($configResolver),
-            new Reference($contributionReader),
         ]);
         $container->register($evaluator)->setArguments([
             new Reference(self::CATALOG),
