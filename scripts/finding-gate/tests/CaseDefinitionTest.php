@@ -110,7 +110,7 @@ final class CaseDefinitionTest extends TestCase
     #[Test]
     public function itRefusesAnOutputOptionEvenInsideTheCase(): void
     {
-        $this->assertRefused('which writes', args: ['--output=report.json']);
+        $this->assertRefused('carries the output option --output', args: ['--output=report.json']);
     }
 
     #[Test]

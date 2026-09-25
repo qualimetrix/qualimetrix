@@ -97,7 +97,7 @@ final class WitnessRegistryTest extends TestCase
     {
         $sites = array_map(
             static fn(array $site): string => $site['class'],
-            RaiseSites::of(\dirname(__DIR__))->sites,
+            RaiseSites::of(\dirname(__DIR__), RaiseSites::DECLARED_NAMES)->sites,
         );
 
         self::assertSame([], WitnessRegistry::problems(FailureClass::ALL, $sites, array_keys($sites), WitnessRegistry::PENDING));

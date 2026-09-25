@@ -163,9 +163,14 @@ final class Harness
      * The commit a reference names, resolved in the developer's repository.
      *
      * A control's clone carries refs and objects only, so `@{u}`, the reflog
-     * forms and `ORIG_HEAD` mean something here and nothing there. The commit
-     * itself is in the clone, reachable or not: a local clone links every
-     * object.
+     * forms and `ORIG_HEAD` mean something here and nothing there. From a full
+     * checkout the commit itself is in the clone, reachable or not: a local
+     * clone links every object. From a shallow one git clones over its
+     * transport and takes only what refs reach, so a commit reachable only
+     * through the reflog is resolved here and missing there, and every
+     * control's gate refuses it loudly: `Cannot check out reference "<sha>":
+     * fatal: invalid reference: <sha>`, in English under the `LC_ALL=C` every
+     * child runs with.
      */
     public static function resolveReference(string $repository, string $reference): string
     {

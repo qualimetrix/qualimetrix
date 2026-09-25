@@ -77,7 +77,7 @@ final class RaiseSitesTest extends TestCase
         $this->write('SelfTestCheck.php', "<?php\n\$r->fail(FailureClass::RUN_FAILED, 'a', 'b');\n");
         $this->write('tests/CheckTest.php', "<?php\n\$r->fail(FailureClass::RUN_FAILED, 'a', 'b');\n");
 
-        $read = RaiseSites::of($this->directory);
+        $read = RaiseSites::of($this->directory, []);
 
         self::assertSame([], $read->problems);
         self::assertSame(
@@ -99,7 +99,7 @@ final class RaiseSitesTest extends TestCase
     {
         $this->write('Nested/Deep.php', "<?php\nfinal class Deep\n{\n    public function x(): void\n    {\n        \$this->report->fail(FailureClass::RUN_FAILED, 'a', 'b');\n    }\n}\n");
 
-        self::assertSame(['Deep::x'], array_keys(RaiseSites::of($this->directory)->sites));
+        self::assertSame(['Deep::x'], array_keys(RaiseSites::of($this->directory, [])->sites));
     }
 
     #[Test]
@@ -125,13 +125,12 @@ final class RaiseSitesTest extends TestCase
             PHP);
         $this->write('GateReport.php', "<?php\nclass GateReport\n{\n    public function fail(): void {}\n}\n");
 
-        $problems = RaiseSites::of($this->directory)->problems;
+        $problems = RaiseSites::of($this->directory, [])->problems;
         $lines = array_map(static fn(string $problem): string => (string) preg_replace('~^.*?\.php:(\d+) (.*?), which.*$~', '$1 $2', $problem), $problems);
 
         self::assertSame(
             [
                 '7 raises a failure whose class is not a FailureClass constant, or reaches fail() another way',
-                '8 calls a callable',
                 '8 names "fail" as a string',
                 '9 calls a method whose name is a variable',
                 '10 calls a method whose name is a variable',
@@ -144,59 +143,221 @@ final class RaiseSitesTest extends TestCase
     }
 
     #[Test]
-    public function itRefusesEveryCallerItCannotTieToAClass(): void
+    public function itRefusesEveryOccurrenceOfALeadingNameThatIsNotADeclarationOrADirectCall(): void
     {
         $this->write('Alpha.php', <<<'PHP'
             <?php
 
             namespace QmxFindingGate;
 
-            use QmxFindingGate\Alpha as Renamed;
-
-            final class Alpha
+            class Alpha
             {
-                public static function check($report): void
+                public const string NAME = 'check';
+
+                public function check($report): void
                 {
                     $report->fail(FailureClass::RUN_FAILED, 'a', 'b');
+                }
+
+                public static function run($report): void
+                {
+                    $report->fail(FailureClass::MAP_STALE, 'a', 'b');
+                }
+
+                public static function helper(): void {}
+            }
+            PHP);
+        $this->write('Beta.php', <<<'PHP'
+            <?php
+
+            namespace QmxFindingGate;
+
+            use QmxFindingGate\Alpha as Renamed;
+
+            final class Beta extends Alpha
+            {
+                public function forms(string $class, string $name): void
+                {
+                    array_map([
+                        $this->alpha,
+                        'check',
+                    ], []);
+                    array_map(array(1 => 'CHECK', 0 => $this->alpha), []);
+                    array_map([self::class, Alpha::NAME], []);
+                    \Closure::fromCallable([$this->alpha, $name]);
+                    array_map("QmxFindingGate\\Alpha::Run", []);
+                    $first = $this->alpha->check(...);
+                    $second = namespace\Alpha::run(...);
+                    $third = parent::CHECK(...);
+                    $class::run($this->report);
+                    Renamed::run($this->report);
+                    Unscanned::check($this->report);
+                    $this->check;
+                }
+            }
+            PHP);
+
+        self::assertSame(
+            [
+                'Alpha.php:7',
+                'Beta.php:13',
+                'Beta.php:15',
+                'Beta.php:18',
+                'Beta.php:19',
+                'Beta.php:20',
+                'Beta.php:21',
+                'Beta.php:22',
+                'Beta.php:23',
+                'Beta.php:24',
+                'Beta.php:25',
+            ],
+            array_map(
+                static fn(string $problem): string => (string) preg_replace('~^.*?/(\w+\.php):(\d+) names .*$~', '$1:$2', $problem),
+                RaiseSites::of($this->directory, [])->problems,
+            ),
+        );
+    }
+
+    #[Test]
+    public function itFollowsEveryDirectCallWhateverItsCaseOrQualification(): void
+    {
+        $this->write('Alpha.php', <<<'PHP'
+            <?php
+
+            namespace QmxFindingGate;
+
+            class Alpha
+            {
+                public function check($report): void
+                {
+                    $report->fail(FailureClass::RUN_FAILED, 'a', 'b');
+                }
+
+                public static function run($report): void
+                {
+                    $report->fail(FailureClass::MAP_STALE, 'a', 'b');
+                }
+
+                public function viaSelf($report): void
+                {
+                    self::RUN($report);
                 }
             }
             PHP);
         $this->write('Beta.php', <<<'PHP'
             <?php
 
-            final class Beta
+            namespace QmxFindingGate;
+
+            final class Beta extends Alpha
             {
-                public function callers(string $class): void
+                public function viaParent(): void
                 {
-                    Alpha::check($this->report);
-                    \QmxFindingGate\Alpha::check($this->report);
-                    $class::check($this->report);
-                    \call_user_func([Alpha::class, 'check'], $this->report);
-                    array_map('Alpha::check', []);
+                    parent::check($this->report);
+                }
+
+                public function viaInstance(): void
+                {
+                    $this->alpha->Check($this->report);
+                }
+
+                public function viaRelative(): void
+                {
+                    namespace\ALPHA::run($this->report);
+                }
+
+                public function viaQualified(): void
+                {
+                    \QmxFindingGate\Alpha::run($this->report);
+                }
+
+                public function viaInherited(): void
+                {
+                    $this->viaSelf($this->report);
                 }
             }
             PHP);
-        $this->write('Nested/Alpha.php', "<?php\nfinal class Alpha\n{\n}\n");
 
-        $read = RaiseSites::of($this->directory);
-        $lines = array_map(
-            static fn(string $problem): string => (string) preg_replace('~^.*?/([\w/]+\.php)(?::(\d+))? (.*?)(?:, which.*|\.)$~', '$1:$2 $3', $problem),
-            $read->problems,
-        );
+        $read = RaiseSites::of($this->directory, []);
 
-        self::assertSame(['Alpha::check <- Beta::callers'], array_keys($read->sites));
+        self::assertSame([], $read->problems);
         self::assertSame(
             [
-                'Alpha.php:5 imports a class under another name',
-                'Beta.php:8 calls a static method through a qualified class name',
-                'Beta.php:9 calls a static method on a class held in a variable',
-                'Beta.php:10 calls a callable',
-                'Beta.php:10 builds a callable from a class and a method name',
-                'Beta.php:11 names a static method as a string',
-                'Nested/Alpha.php: declares a second class named Alpha, and callers are told apart by short name only',
+                'Alpha::check <- Beta::viaInstance',
+                'Alpha::check <- Beta::viaParent',
+                'Alpha::run <- Beta::viaInherited',
+                'Alpha::run <- Beta::viaQualified',
+                'Alpha::run <- Beta::viaRelative',
             ],
-            $lines,
+            array_keys($read->sites),
         );
+    }
+
+    #[Test]
+    public function itAcceptsADeclaredLineOnceAndRefusesOneThatMatchesNoneOrMore(): void
+    {
+        $this->write('Alpha.php', <<<'PHP'
+            <?php
+
+            final class Alpha
+            {
+                public const string MODE = 'check';
+
+                public function check($report): void
+                {
+                    $report->fail(FailureClass::RUN_FAILED, 'a', 'b');
+                }
+
+                public function data(): array
+                {
+                    return [['check', 1], ['check', 1]];
+                }
+            }
+            PHP);
+
+        $declared = [
+            ['Alpha.php', "public const string MODE = 'check';", 'the name of a mode'],
+            ['Alpha.php', "return [['check', 1], ['check', 1]];", 'a pair of data'],
+            ['Alpha.php', 'nothing like this line', 'stale'],
+            ['Alpha.php', "public const string MODE = 'check';", ' '],
+        ];
+        $problems = RaiseSites::of($this->directory, $declared)->problems;
+
+        self::assertSame(
+            [
+                '/Alpha.php:5 is declared 2 times in RaiseSites::DECLARED_NAMES; declare it once.',
+                'the declared name at Alpha.php "return [[\'check\', 1], [\'check\', 1]];" matches 2 occurrence(s)',
+                'the declared name at Alpha.php "nothing like this line" matches 0 occurrence(s)',
+                'the declared name at Alpha.php "public const string MODE = \'check\';" gives no reason.',
+            ],
+            array_map(
+                static fn(string $problem): string => (string) preg_replace(
+                    ['~^witness registry: (.*?)(?: of a leading.*)?$~', '~^.*(/Alpha\.php:)~'],
+                    ['$1', '$1'],
+                    $problem,
+                ),
+                $problems,
+            ),
+        );
+        self::assertSame(
+            ['Alpha.php:14', 'Alpha.php:14'],
+            array_map(
+                static fn(string $problem): string => (string) preg_replace('~^.*?/(\w+\.php):(\d+) names .*$~', '$1:$2', $problem),
+                RaiseSites::of($this->directory, \array_slice($declared, 0, 1))->problems,
+            ),
+        );
+    }
+
+    #[Test]
+    public function itRefusesTwoScannedClassesWithOneShortNameInAnyCase(): void
+    {
+        $this->write('Alpha.php', "<?php\nfinal class Alpha\n{\n}\n");
+        $this->write('Nested/alpha.php', "<?php\nfinal class alpha\n{\n}\n");
+
+        $problems = RaiseSites::of($this->directory, [])->problems;
+
+        self::assertCount(1, $problems);
+        self::assertStringContainsString('declares a second class named alpha', $problems[0]);
     }
 
     private function write(string $relative, string $content): void

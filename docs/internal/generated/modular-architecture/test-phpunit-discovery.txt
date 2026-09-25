@@ -94,9 +94,12 @@ Available tests:
  - QmxFindingGate\Tests\GateModesTest::itExitsOneWhenTheSelfTestFails
  - QmxFindingGate\Tests\GateModesTest::itExitsThreeWhenTheGateCannotRun
  - QmxFindingGate\Tests\GateModesTest::itExitsZeroWhenTheSelfTestIsGreen
+ - QmxFindingGate\Tests\RaiseSitesTest::itAcceptsADeclaredLineOnceAndRefusesOneThatMatchesNoneOrMore
+ - QmxFindingGate\Tests\RaiseSitesTest::itFollowsEveryDirectCallWhateverItsCaseOrQualification
  - QmxFindingGate\Tests\RaiseSitesTest::itNamesEverySiteOncePerCallerFromAnotherClass
- - QmxFindingGate\Tests\RaiseSitesTest::itRefusesEveryCallerItCannotTieToAClass
  - QmxFindingGate\Tests\RaiseSitesTest::itRefusesEveryFormItCannotRead
+ - QmxFindingGate\Tests\RaiseSitesTest::itRefusesEveryOccurrenceOfALeadingNameThatIsNotADeclarationOrADirectCall
+ - QmxFindingGate\Tests\RaiseSitesTest::itRefusesTwoScannedClassesWithOneShortNameInAnyCase
  - QmxFindingGate\Tests\RaiseSitesTest::itScansSubdirectories
  - QmxFindingGate\Tests\WitnessRegistryTest::itAcceptsTheTrackedPendingRowsWhileTheirClassesAreRaisedNowhere
  - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a class raised nowhere"

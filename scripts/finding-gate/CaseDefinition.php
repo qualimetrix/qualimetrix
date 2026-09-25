@@ -43,10 +43,11 @@ final class CaseDefinition
     public const WORKING_DIRECTORY_OPTION = ['--working-dir' => '-d'];
 
     /**
-     * The product options that write somewhere. Refused in `args` outright: the
-     * run's working directory is the case directory, so a relative destination
+     * The product's output options. Refused in `args` outright: the run's
+     * working directory is the case directory, so a relative destination
      * writes into the tracked corpus, and everything a run publishes the gate
-     * captures itself.
+     * captures itself. `--profile` writes only with a value; without one its
+     * summary lands on stderr, a compared surface it has no business in.
      */
     public const OUTPUT_OPTIONS = [
         '--output' => '-o',
@@ -318,7 +319,7 @@ final class CaseDefinition
     private function writes(string $option): GateError
     {
         return new GateError(\sprintf(
-            '%s: "args" carries %s, which writes. A case writes nothing: its working directory is the tracked'
+            '%s: "args" carries the output option %s. A case writes nothing: its working directory is the tracked'
             . ' corpus, and the gate captures what a run publishes itself.',
             $this->directory . '/case.json',
             $option,

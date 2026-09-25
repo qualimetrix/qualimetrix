@@ -51,7 +51,7 @@ final class SelfTestRegistries extends SelfTestGroup
      */
     public function witnessedFailureClasses(): void
     {
-        $sites = RaiseSites::of(__DIR__);
+        $sites = RaiseSites::of(__DIR__, RaiseSites::DECLARED_NAMES);
         $witnesses = CheckWitnesses::observe($sites);
 
         $problems = [
