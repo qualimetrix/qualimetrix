@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace QmxFindingGateControls;
 
+use QmxFindingGate\GateReport;
 use RuntimeException;
 
 /**
@@ -23,6 +24,7 @@ final class HarnessSelfTest
     {
         $this->controlCloneOwnsItsRepository();
         $this->referenceResolvesBeforeTheClone();
+        $this->greenIsHeldToEveryDeclarationCount();
 
         return $this->failures;
     }
@@ -161,6 +163,41 @@ final class HarnessSelfTest
      * `vendor/` is committed so the linked worktree checks it out: a clone
      * refuses a tree without one.
      */
+    /**
+     * A green control is held to every declaration form's count, not only to
+     * the declared deltas and field moves: a declaration its mutation did not
+     * state would otherwise be what turned it green.
+     */
+    private function greenIsHeldToEveryDeclarationCount(): void
+    {
+        $directory = Shell::temporaryDirectory('harness-self-test-counts-');
+        $report = $directory . '/report.json';
+        $run = ['stdout' => '', 'stderr' => '', 'exit' => 0];
+
+        try {
+            $counts = array_fill_keys(array_keys(GateReport::DECLARATION_COUNTS), 0);
+            file_put_contents($report, (string) json_encode(['failures' => [], 'declaredDeltaCount' => 0, 'fieldMoveCount' => 0, ...$counts, 'declaredRecordCount' => 1]));
+
+            $this->same(
+                false,
+                Outcome::of(Control::green('probe', 'a green run'), $run, $report)->asDeclared,
+                'a green control whose run states a declared record nobody planted is not as declared',
+            );
+            $this->same(
+                true,
+                Outcome::of(Control::greenWith('probe', 'a planted record', Mutation::none(), ['declaredRecordCount' => 1]), $run, $report)->asDeclared,
+                'a green control that states the record its mutation plants is as declared',
+            );
+            $this->same(
+                true,
+                Outcome::of(Control::green('probe', 'the repository\'s record'), $run, $report, declarationCounts: ['declaredRecordCount' => 1])->asDeclared,
+                'a green control is held to the declarations the repository states',
+            );
+        } finally {
+            Shell::removeRecursively($directory);
+        }
+    }
+
     private static function throwawayRepository(): string
     {
         $root = Shell::temporaryDirectory('harness-self-test-repository-');

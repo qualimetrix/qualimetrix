@@ -13,7 +13,9 @@ namespace QmxFindingGate;
  *
  * This class runs the trees and fixes the order the checks run in, which is the
  * order a report prints their failures in; each subject's checks live in its
- * own class.
+ * own class. A declaration form adds its checks through its wiring file
+ * ({@see Wiring}): per case, as a step of a surface's comparison, over the
+ * whole run, and to the derive run.
  */
 final class Gate
 {
@@ -23,6 +25,8 @@ final class Gate
     private readonly MetricVocabulary $vocabulary;
 
     private readonly Corpus $corpus;
+
+    private readonly Declarations $declarations;
 
     private readonly DeclaredDelta $declaredDelta;
 
@@ -48,6 +52,17 @@ final class Gate
 
     private readonly CoverageCheck $coverageCheck;
 
+    private readonly StaleDeclarationCheck $staleDeclarationCheck;
+
+    /** @var list<CaseCheck> */
+    private readonly array $caseChecks;
+
+    /** @var list<RunCheck> */
+    private readonly array $runChecks;
+
+    /** @var list<Derivation> */
+    private readonly array $derivations;
+
     /** @var array<string, list<array<string, mixed>>> */
     private array $findingsByCase = [];
 
@@ -59,8 +74,9 @@ final class Gate
         $normalization = Normalization::load($root . '/normalization.tsv');
         $this->vocabulary = MetricVocabulary::ofTree($this->options->candidateRoot);
         $this->maps = RenameMaps::load($root . '/maps', $this->vocabulary);
-        $this->declaredDelta = DeclaredDelta::load($root);
-        $this->declaredFieldMoves = DeclaredFieldMoves::load($root);
+        $this->declarations = Declarations::load($this->options->candidateRoot);
+        $this->declaredDelta = $this->declarations->delta;
+        $this->declaredFieldMoves = $this->declarations->fieldMoves;
         $this->split = ChannelSplit::of($this->maps);
         $this->corpus = Corpus::load($this->options->candidateRoot, $this->options->cases);
         $witness = new ChannelWitness($this->options->candidateRoot);
@@ -78,6 +94,34 @@ final class Gate
             $this->declaredFieldMoves,
             $this->split,
         );
+        $this->coverageCheck = new CoverageCheck($this->options, $this->report, $this->corpus, $witness);
+        $this->staleDeclarationCheck = new StaleDeclarationCheck($this->report, $this->declarations);
+
+        $run = new RunContext(
+            $this->options,
+            $this->report,
+            $this->corpus,
+            $this->maps,
+            $this->split,
+            $this->vocabulary,
+            $normalization,
+            $this->declarations,
+            $this->temporaryDirectory,
+        );
+        $wiring = Wiring::of(__DIR__);
+        $this->caseChecks = self::registered($wiring, 'caseChecks', CaseCheck::class, $run);
+        $this->runChecks = self::registered($wiring, 'runChecks', RunCheck::class, $run);
+        $this->derivations = self::registered($wiring, 'derivations', Derivation::class, $run);
+
+        foreach ($this->caseChecks as $check) {
+            CaseOutcome::applies($check->name(), CaseOutcome::ANALYSIS);
+        }
+
+        CaseOutcome::assertVerifiable(
+            $this->corpus,
+            array_map(static fn(CaseCheck $check): string => $check->name(), $this->caseChecks),
+        );
+
         $this->surfaceComparison = new SurfaceComparison(
             $this->report,
             $this->corpus,
@@ -86,8 +130,8 @@ final class Gate
             $this->fingerprintCheck,
             $this->declaredDeltaCheck,
             $this->temporaryDirectory,
+            self::registered($wiring, 'surfaceStages', SurfaceStage::class, $run),
         );
-        $this->coverageCheck = new CoverageCheck($this->options, $this->report, $this->corpus, $witness);
     }
 
     public function compare(): void
@@ -137,6 +181,16 @@ final class Gate
             ));
         }
 
+        foreach ($this->declarations->counts() as $reportKey => $count) {
+            $this->report->countDeclarations($reportKey, $count);
+        }
+
+        $this->report->fact('declared forms', \sprintf(
+            '%d record(s), %d value intent(s), %d field change(s), %d outcome(s), %d surface change(s), %d structural'
+            . ' map row(s)',
+            ...array_values($this->declarations->counts()),
+        ));
+
         if ($this->options->cases !== []) {
             $this->report->limit('the corpus was restricted to ' . implode(', ', $this->options->cases) . ' by --cases');
         }
@@ -167,6 +221,10 @@ final class Gate
             $this->renameMapCheck->checkSplitExplanation($first, $referenceArtifacts);
             $this->surfaceComparison->compareSurfaces($first, $referenceArtifacts);
 
+            foreach ($this->runChecks as $check) {
+                $check->checkRun($first, $referenceArtifacts);
+            }
+
             // Said out loud for the same reason the declared-delta count is: a
             // reader of a GREEN run has to be able to see that one published
             // value was compared as the identity it hashes rather than as the
@@ -183,6 +241,7 @@ final class Gate
             $this->renameMapCheck->checkStaleMaps();
             $this->declaredDeltaCheck->checkStaleDeclaredDelta();
             $this->declaredDeltaCheck->checkStaleFieldMoves();
+            $this->staleDeclarationCheck->checkStaleDeclarations();
         } finally {
             $reference->remove();
             $this->cleanUp();
@@ -222,8 +281,12 @@ final class Gate
     }
 
     /**
-     * Measures every surface that differs and writes it out as the declared
-     * delta, so no declaration is a diff somebody typed.
+     * Measures every declaration a run can measure — the declared delta of
+     * every surface that differs, and what each form's registered
+     * {@see Derivation} derives under its intents — and writes them out, so no
+     * declaration is a diff somebody typed. One pass for every form: each
+     * absorbs only what it derives and the run judges everything else, so a
+     * change no intent covers keeps the run red and nothing is written.
      *
      * A run that failed writes nothing, and this is where that has to be
      * decided. The entry point already refuses to call such a run a write and
@@ -234,9 +297,15 @@ final class Gate
      *
      * @return list<string> the files written
      */
-    public function deriveDeclaredDelta(): array
+    public function deriveDeclarations(): array
     {
-        $this->declaredDeltaCheck->startDeriving();
+        $derivations = [$this->declaredDeltaCheck, ...$this->derivations];
+
+        foreach ($derivations as $derivation) {
+            $derivation->startDeriving();
+        }
+
+        $this->staleDeclarationCheck->startDeriving();
         $this->compare();
 
         if ($this->report->exitCode() !== GateReport::EXIT_GREEN) {
@@ -250,7 +319,13 @@ final class Gate
             return [];
         }
 
-        return $this->declaredDeltaCheck->rewriteDerived();
+        $written = [];
+
+        foreach ($derivations as $derivation) {
+            $written = [...$written, ...$derivation->rewriteDerived()];
+        }
+
+        return $written;
     }
 
     public function cleanUp(): void
@@ -277,26 +352,84 @@ final class Gate
         return $artifacts;
     }
 
-    /** @param array<string, string> $artifacts */
+    /**
+     * Each case of one side, by the checks its outcome leaves something to
+     * check ({@see CaseOutcome::CHECKS}); a case whose findings could not be
+     * read is reported once and checked no further.
+     *
+     * @param array<string, string> $artifacts
+     */
     private function checkFindings(string $side, array $artifacts, bool $trackObserved): void
     {
         $tuple = EquivalenceTuple::load($this->options->candidateRoot);
 
         foreach ($this->corpus->cases as $case) {
             $key = Surfaces::key('case:' . $case->id, 'format:json');
-            $findings = $this->caseOutcomeCheck->findingsOf($side, $case, $artifacts);
+            $outcome = CaseOutcome::of($case, $side);
 
-            if ($findings === null) {
-                continue;
+            if (CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, $outcome)) {
+                $findings = $this->caseOutcomeCheck->findingsOf($side, $case, $artifacts);
+
+                if ($findings === null) {
+                    continue;
+                }
+
+                if (CaseOutcome::applies(CaseOutcome::CHECK_TUPLE, $outcome)) {
+                    $this->tupleCheck->checkTupleAgainstFindings($side, $case, $tuple, $findings);
+                }
+
+                if (CaseOutcome::applies(CaseOutcome::CHECK_NORMALIZATION_LEAVES_FINDINGS, $outcome)) {
+                    $this->normalizationCheck->checkNormalizationLeavesFindings($side, $case, $artifacts[$key], $findings);
+                }
+
+                if (CaseOutcome::applies(CaseOutcome::CHECK_FINGERPRINTS, $outcome)) {
+                    $this->fingerprintCheck->checkFingerprints($side, $case, $findings, $artifacts);
+                }
+
+                if ($trackObserved && CaseOutcome::applies(CaseOutcome::CHECK_COVERAGE, $outcome)) {
+                    $this->findingsByCase[$case->id] = $findings;
+                }
             }
 
-            $this->tupleCheck->checkTupleAgainstFindings($side, $case, $tuple, $findings);
-            $this->normalizationCheck->checkNormalizationLeavesFindings($side, $case, $artifacts[$key], $findings);
-            $this->fingerprintCheck->checkFingerprints($side, $case, $findings, $artifacts);
-
-            if ($trackObserved) {
-                $this->findingsByCase[$case->id] = $findings;
+            foreach ($this->caseChecks as $check) {
+                if (CaseOutcome::applies($check->name(), $outcome)) {
+                    $check->checkCase($side, $case, $outcome, $artifacts);
+                }
             }
         }
+    }
+
+    /**
+     * The classes the forms registered under one key, built for this run.
+     *
+     * @template T of object
+     *
+     * @param class-string<T> $contract
+     *
+     * @return list<T>
+     */
+    private static function registered(Wiring $wiring, string $key, string $contract, RunContext $run): array
+    {
+        $built = [];
+
+        foreach ($wiring->list($key) as $class) {
+            $qualified = __NAMESPACE__ . '\\' . $class;
+
+            if (!is_subclass_of($qualified, GateExtension::class) || !is_subclass_of($qualified, $contract)) {
+                throw new GateError(\sprintf(
+                    '%s is registered under "%s" and does not implement %s and %s.',
+                    $class,
+                    $key,
+                    GateExtension::class,
+                    $contract,
+                ));
+            }
+
+            $instance = $qualified::create($run);
+            \assert($instance instanceof $contract);
+            $built[] = $instance;
+        }
+
+        return $built;
     }
 }

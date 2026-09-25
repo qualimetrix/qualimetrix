@@ -21,21 +21,14 @@ namespace QmxFindingGate;
  * `composer check` nor in CI, so a class a control requires is a declaration
  * nobody executes on the way to a merge.
  *
- * A class whose producer a later package introduces may stand here as
- * `pending: S01b/P<n>` with a reason. A pending class that is raised anywhere
- * is a stale row and fails like a stale map row does.
+ * A class whose producer a later package introduces may stand pending as
+ * `pending: S01b/P<n>` with a reason, in that package's own wiring file
+ * ({@see Wiring}), so the package that gives it a producer removes the row
+ * without touching anyone else's. A pending class that is raised anywhere is a
+ * stale row and fails like a stale map row does.
  */
 final class WitnessRegistry
 {
-    /** @var array<string, array{0: string, 1: string}> class => [marker, reason] */
-    public const array PENDING = [
-        FailureClass::CORPUS_INVALID => [
-            'pending: S01b/P5',
-            'Declared and raised nowhere: a corpus defect is a GateError with exit 3 today. S01b/P5 gives case'
-            . ' inputs their refusal, and this class its producer.',
-        ],
-    ];
-
     private const string MARKER = '~^pending: S01b/P[2-8]$~';
 
     /**

@@ -10,7 +10,8 @@ namespace QmxFindingGate;
 final class SelfTestRegistries extends SelfTestGroup
 {
     /**
-     * The shared loader names exactly the classes on disk.
+     * The shared loader and the forms' wiring files together name exactly the
+     * classes on disk.
      *
      * The loader exists because a hand-picked subset of requires broke every
      * consumer that had not guessed a new dependency. A list that drifts from
@@ -32,7 +33,7 @@ final class SelfTestRegistries extends SelfTestGroup
         }
 
         sort($onDisk);
-        $listed = [];
+        $listed = Wiring::gate()->list('classes');
 
         foreach (explode("\n", Fs::read(__DIR__ . '/classes.php')) as $line) {
             if (preg_match("~^\\s*'([A-Z]\\w+)',~", $line, $matched) === 1) {
@@ -61,7 +62,7 @@ final class SelfTestRegistries extends SelfTestGroup
                 FailureClass::ALL,
                 array_map(static fn(array $site): string => $site['class'], $sites->sites),
                 $witnesses['observed'],
-                WitnessRegistry::PENDING,
+                Wiring::gate()->pending,
             ),
         ];
 

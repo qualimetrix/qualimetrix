@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace QmxFindingGateControls;
 
 use QmxFindingGate\FailureClass;
+use QmxFindingGate\GateReport;
 use RuntimeException;
 
 /** What one control's gate run produced, and whether that is what it declared. */
@@ -61,6 +62,7 @@ final class Outcome
      * @param list<string> $touched declared survivors the run changed after all
      * @param list<string> $unrestored declarations the run was supposed to write back and did not
      * @param int $declaredFieldMoves how many moves of a compared field this repository licenses
+     * @param array<string, int> $declarationCounts what this repository declares in every other form, by report key
      */
     public static function of(
         Control $control,
@@ -71,6 +73,7 @@ final class Outcome
         array $touched = [],
         array $unrestored = [],
         int $declaredFieldMoves = 0,
+        array $declarationCounts = [],
     ): self {
         $failures = self::failures($reportPath, $run);
         $reasons = [];
@@ -151,6 +154,26 @@ final class Outcome
                         $declaredFieldMoves,
                         $licensed,
                     );
+            }
+        }
+
+        // And for every other declaration form: a green control is held to what
+        // the repository declares, or to the count it states for the
+        // declaration its own mutation plants — never to a declaration that
+        // appeared on the way.
+        if ($control->expectsGreen && !$declarationReplaced) {
+            foreach (array_keys(GateReport::DECLARATION_COUNTS) as $reportKey) {
+                $expected = $control->declarationCounts[$reportKey] ?? $declarationCounts[$reportKey] ?? 0;
+                $reported = self::countIn($reportPath, $reportKey);
+
+                if ($reported !== $expected) {
+                    $reasons[] = \sprintf(
+                        'expected the report to state %d for %s; it states %s',
+                        $expected,
+                        $reportKey,
+                        $reported === null ? 'nothing' : (string) $reported,
+                    );
+                }
             }
         }
 

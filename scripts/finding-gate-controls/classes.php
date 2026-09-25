@@ -5,7 +5,8 @@ declare(strict_types=1);
 /**
  * Loads the controls harness's classes for its entry point. One list, for the
  * reason the gate's own `classes.php` gives; the gate's classes are loaded
- * first by whoever requires this. The gate itself never requires it.
+ * first by whoever requires this. The gate itself never requires it. The
+ * classes a declaration form adds come last, from its wiring file.
  */
 
 foreach (
@@ -29,3 +30,5 @@ foreach (
 ) {
     require_once __DIR__ . '/' . $class . '.php';
 }
+
+\QmxFindingGate\Wiring::gate()->loadControls(__DIR__);

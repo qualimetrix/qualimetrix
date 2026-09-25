@@ -22,7 +22,22 @@ final class CaseDefinition
      */
     public const COVERAGE_AUXILIARY = 'auxiliary';
 
-    private const KNOWN_KEYS = ['id', 'description', 'coverage', 'paths', 'config', 'args', 'channels', 'explainSubjects'];
+    /**
+     * Every key `case.json` may carry. `outcome` is absent for a case that
+     * analyses, and `{"kind": "refusal"|"incomplete", "exit": N}` for one that
+     * exists to end otherwise; see {@see CaseOutcome}.
+     */
+    public const array SCHEMA = [
+        'id' => 'the directory name',
+        'description' => 'what the case is for',
+        'coverage' => 'authoritative (default) or auxiliary',
+        'paths' => 'analysis paths inside the case',
+        'config' => 'the configuration file inside the case',
+        'args' => 'further product arguments',
+        'channels' => 'the channel@level pairs the case fires',
+        'explainSubjects' => 'subjects baseline:explain is asked about',
+        'outcome' => 'how the case ends when it does not analyse',
+    ];
 
     /**
      * The product options that read a file-system path, by long name, with the
@@ -61,6 +76,8 @@ final class CaseDefinition
      * @param list<string> $args
      * @param list<string> $channels each entry is a `rule#code@level` pair; see SubjectLevel
      * @param list<string> $explainSubjects
+     * @param string $outcome one of {@see CaseOutcome::ALL}
+     * @param int|null $outcomeExit the exit a case that does not analyse must end with
      */
     private function __construct(
         public readonly string $id,
@@ -72,6 +89,8 @@ final class CaseDefinition
         public readonly array $args,
         public readonly array $channels,
         public readonly array $explainSubjects,
+        public readonly string $outcome,
+        public readonly ?int $outcomeExit,
     ) {}
 
     public function isAuxiliary(): bool
@@ -90,7 +109,7 @@ final class CaseDefinition
             throw new GateError(\sprintf('%s does not contain a JSON object.', $file));
         }
 
-        $unknown = array_diff(array_keys($decoded), self::KNOWN_KEYS);
+        $unknown = array_diff(array_keys($decoded), array_keys(self::SCHEMA));
 
         if ($unknown !== []) {
             throw new GateError(\sprintf('%s declares unknown key(s): %s.', $file, implode(', ', $unknown)));
@@ -107,6 +126,8 @@ final class CaseDefinition
             ));
         }
 
+        [$outcome, $outcomeExit] = self::outcome($decoded, $file);
+
         $case = new self(
             self::string($decoded, 'id', $file),
             $directory,
@@ -117,6 +138,8 @@ final class CaseDefinition
             self::strings($decoded, 'args', $file, optional: true),
             self::strings($decoded, 'channels', $file),
             self::strings($decoded, 'explainSubjects', $file, optional: true),
+            $outcome,
+            $outcomeExit,
         );
 
         if ($case->id !== $id) {
@@ -136,7 +159,7 @@ final class CaseDefinition
             ));
         }
 
-        foreach ([...$case->paths, $case->config, ...$case->argumentPaths()] as $path) {
+        foreach ([...$case->paths, ...array_column($case->inputFiles(), 'path')] as $path) {
             $case->assertInside($path);
         }
 
@@ -199,6 +222,36 @@ final class CaseDefinition
     }
 
     /**
+     * Every file the case hands the product besides its analysis paths, with
+     * the option that hands it over — the configuration first, then each path
+     * value of {@see self::INPUT_OPTIONS} in `args`. The one list of what a
+     * case reads: the containment rule judges it, and it is what the reference
+     * has to be handed in its own vocabulary.
+     *
+     * @return list<array{option: string, path: string}>
+     */
+    public function inputFiles(): array
+    {
+        $files = [['option' => '--config', 'path' => $this->config]];
+
+        foreach ($this->argumentInputs() as [$option, $path]) {
+            $files[] = ['option' => $option, 'path' => $path];
+        }
+
+        return $files;
+    }
+
+    /**
+     * Every file-system path the case's `args` read.
+     *
+     * @return list<string>
+     */
+    public function argumentPaths(): array
+    {
+        return array_map(static fn(array $input): string => $input[1], $this->argumentInputs());
+    }
+
+    /**
      * Every file-system path the case's `args` read, as values of
      * {@see self::INPUT_OPTIONS}. Only `--preset` is a comma-separated list, as
      * the product reads it; a preset that is not spelled as a file is a
@@ -212,9 +265,9 @@ final class CaseDefinition
      * would be exact, so the case is refused instead. So is any of
      * {@see self::OUTPUT_OPTIONS} and {@see self::WORKING_DIRECTORY_OPTION}.
      *
-     * @return list<string>
+     * @return list<array{0: string, 1: string}> option => path
      */
-    public function argumentPaths(): array
+    private function argumentInputs(): array
     {
         $file = $this->directory . '/case.json';
         $values = [];
@@ -294,14 +347,14 @@ final class CaseDefinition
 
         foreach ($values as [$option, $value]) {
             if ($option !== '--preset') {
-                $paths[] = $value;
+                $paths[] = [$option, $value];
 
                 continue;
             }
 
             foreach (explode(',', $value) as $preset) {
                 if (self::namesPresetFile($preset)) {
-                    $paths[] = $preset;
+                    $paths[] = [$option, $preset];
                 }
             }
         }
@@ -334,6 +387,34 @@ final class CaseDefinition
             $this->directory . '/case.json',
             $option,
         ));
+    }
+
+    /**
+     * @param array<array-key, mixed> $decoded
+     *
+     * @return array{0: string, 1: int|null}
+     */
+    private static function outcome(array $decoded, string $file): array
+    {
+        if (!\array_key_exists('outcome', $decoded)) {
+            return [CaseOutcome::ANALYSIS, null];
+        }
+
+        $outcome = $decoded['outcome'];
+        $kinds = [CaseOutcome::REFUSAL, CaseOutcome::INCOMPLETE];
+
+        if (!\is_array($outcome) || array_keys($outcome) !== ['kind', 'exit'] || !\in_array($outcome['kind'], $kinds, true)
+            || !\is_int($outcome['exit']) || $outcome['exit'] < 1 || $outcome['exit'] > 255
+        ) {
+            throw new GateError(\sprintf(
+                '%s: "outcome" must be {"kind": "%s", "exit": N} with N in 1-255; a case that analyses carries no'
+                . ' outcome at all.',
+                $file,
+                implode('"|"', $kinds),
+            ));
+        }
+
+        return [$outcome['kind'], $outcome['exit']];
     }
 
     /** @param array<array-key, mixed> $decoded */

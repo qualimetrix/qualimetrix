@@ -50,24 +50,24 @@ use Throwable;
 final class CheckWitnesses
 {
     /** `env-mismatch` returns before the reference is run, so what it stops cannot share its run. */
-    private const string BEFORE_THE_REFERENCE = 'pre-reference';
+    public const string BEFORE_THE_REFERENCE = 'pre-reference';
 
-    private const string WHOLE_RUN = 'whole';
+    public const string WHOLE_RUN = 'whole';
 
     /**
      * `map-stale` is judged only on a run that raised no `run-failed` and no
      * `reference-input-untranslated`, so the declarations the run is held to
      * cannot share a run with the plants that raise either.
      */
-    private const string DECLARATIONS = 'declarations';
+    public const string DECLARATIONS = 'declarations';
 
     private const string NORMALIZATION_REFUSED = 'derive-normalization refused';
 
     private const string NORMALIZATION_WRITTEN = 'derive-normalization written';
 
-    private const string DECLARED_DELTA_REFUSED = 'derive-declared-delta refused';
+    private const string DECLARED_DELTA_REFUSED = 'derive-declarations refused';
 
-    private const string DECLARED_DELTA_WRITTEN = 'derive-declared-delta written';
+    private const string DECLARED_DELTA_WRITTEN = 'derive-declarations written';
 
     private const string TUPLE_WRITTEN = 'derive-tuple written';
 
@@ -93,12 +93,12 @@ final class CheckWitnesses
             'writes' => ['finding-gate/normalization.tsv'],
         ],
         self::DECLARED_DELTA_REFUSED => [
-            'flags' => ['--derive-declared-delta'],
+            'flags' => ['--derive-declarations'],
             'exit' => GateModes::MEASUREMENT_FAILED,
             'writes' => [],
         ],
         self::DECLARED_DELTA_WRITTEN => [
-            'flags' => ['--derive-declared-delta'],
+            'flags' => ['--derive-declarations'],
             'exit' => GateModes::WROTE,
             'writes' => ['finding-gate/declared-delta.tsv', 'finding-gate/declared-delta/*'],
         ],
@@ -331,8 +331,49 @@ final class CheckWitnesses
         return $problems;
     }
 
-    /** @return list<Witness> */
+    /**
+     * The witnesses of the gate's own checks, then each declaration form's,
+     * from its wiring file.
+     *
+     * @return list<Witness>
+     */
     private static function witnesses(): array
+    {
+        return [...self::ownWitnesses(), ...self::registered(Wiring::gate())];
+    }
+
+    /**
+     * The witnesses the forms register, each driven by a scenario this class
+     * runs — an unknown one would silently become a plain comparison.
+     *
+     * @return list<Witness>
+     */
+    public static function registered(Wiring $wiring): array
+    {
+        $witnesses = [];
+
+        foreach ($wiring->factories('witnesses', __NAMESPACE__) as $factory) {
+            /** @var list<Witness> $registered */
+            $registered = $factory();
+
+            foreach ($registered as $witness) {
+                if (!\array_key_exists($witness['scenario'], self::MODES)) {
+                    throw new GateError(\sprintf(
+                        'Check witness %s names the scenario "%s", which is no scenario of CheckWitnesses::MODES.',
+                        $witness['id'],
+                        $witness['scenario'],
+                    ));
+                }
+            }
+
+            $witnesses = [...$witnesses, ...$registered];
+        }
+
+        return $witnesses;
+    }
+
+    /** @return list<Witness> */
+    private static function ownWitnesses(): array
     {
         return [
             self::witness(
@@ -493,7 +534,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::REPORT_PAYLOAD_UNREADABLE, 'case:alpha|format:html', 'SurfaceComparison::compareSurfaces#2 <- Gate::compare']],
+                [[FailureClass::REPORT_PAYLOAD_UNREADABLE, 'case:alpha|format:html', 'SurfaceComparison::payload <- Gate::compare']],
             ),
             self::witness(
                 'run-failed',
@@ -630,7 +671,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::FINGERPRINT_OPAQUE, '* / case:alpha|format:gitlab', 'FingerprintCheck::substituteFingerprints <- SurfaceComparison::compareSurfaces']],
+                [[FailureClass::FINGERPRINT_OPAQUE, '* / case:alpha|format:gitlab', 'FingerprintCheck::substituteFingerprints <- SurfaceComparison::fingerprints']],
             ),
             self::witness(
                 'published-order',
@@ -655,7 +696,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::SURFACE_MISMATCH, 'case:alpha|stderr:format:github', 'SurfaceComparison::compareSurfaces#1 <- Gate::compare']],
+                [[FailureClass::SURFACE_MISMATCH, 'case:alpha|stderr:format:github', 'SurfaceComparison::presence <- Gate::compare']],
             ),
             self::witness(
                 'surface-differs',
@@ -665,7 +706,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::SURFACE_MISMATCH, 'case:alpha|format:checkstyle', 'DeclaredDeltaCheck::checkDifference <- SurfaceComparison::compareSurfaces']],
+                [[FailureClass::SURFACE_MISMATCH, 'case:alpha|format:checkstyle', 'DeclaredDeltaCheck::checkDifference <- SurfaceComparison::difference']],
             ),
             self::witness(
                 'finding-count',
@@ -691,7 +732,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::DELTA_MISMATCH, 'case:alpha|format:summary', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#3 <- SurfaceComparison::compareSurfaces']],
+                [[FailureClass::DELTA_MISMATCH, 'case:alpha|format:summary', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#3 <- SurfaceComparison::difference']],
             ),
             self::witness(
                 'delta-too-large',
@@ -708,7 +749,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::DELTA_TOO_LARGE, 'case:alpha|format:text-verbose', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#1 <- SurfaceComparison::compareSurfaces']],
+                [[FailureClass::DELTA_TOO_LARGE, 'case:alpha|format:text-verbose', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#1 <- SurfaceComparison::difference']],
                 [[FailureClass::DELTA_MISMATCH, 'case:alpha|format:text-verbose']],
             ),
             self::witness(
@@ -722,7 +763,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::DELTA_OVERREACH, 'case:alpha|format:json', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#2 <- SurfaceComparison::compareSurfaces']],
+                [[FailureClass::DELTA_OVERREACH, 'case:alpha|format:json', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#2 <- SurfaceComparison::difference']],
                 [[FailureClass::DELTA_MISMATCH, 'case:alpha|format:json']],
             ),
             self::witness(
@@ -744,6 +785,46 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [[FailureClass::FIELD_MOVE_STALE, 'case:alpha|format:json', 'DeclaredDeltaCheck::checkStaleFieldMoves <- Gate::compare']],
+            ),
+            self::witness(
+                'stale-declarations',
+                self::DECLARATIONS,
+                static function (array $tree): array {
+                    $record = SyntheticTree::finding($tree['tuple'], 'replay.alpha', 'declaration:callable:Replay\Alpha::run@src/Alpha.php');
+                    $record['message'] = 'a record no side publishes';
+                    $tree['declarations'] = [
+                        DeclaredRecords::INDEX => Tsv::render(DeclaredRecords::COLUMNS, [
+                            [DeclaredRecords::INTRODUCED, 'alpha', 'json', DeclaredRecords::canonical($record), 'self-test'],
+                        ]),
+                        DeclaredValues::INDEX => Tsv::render(DeclaredValues::COLUMNS, [
+                            [DeclaredValues::METRIC, 'ccn', DeclaredValues::EVERY_LEVEL, 'self-test'],
+                        ]),
+                        DeclaredFields::INDEX => Tsv::render(DeclaredFields::COLUMNS, [
+                            [DeclaredFields::REMOVED, 'retired', 'self-test'],
+                        ]),
+                        DeclaredOutcomes::INDEX => Tsv::render(DeclaredOutcomes::COLUMNS, [
+                            ['alpha', DeclaredOutcomes::ANALYSIS_TO_REFUSAL, DeclaredOutcomes::DIRECTORY . '/alpha.txt', 'self-test'],
+                        ]),
+                        DeclaredOutcomes::DIRECTORY . '/alpha.txt' => "a refusal nobody printed\n",
+                        DeclaredSurfaces::INDEX => Tsv::render(DeclaredSurfaces::COLUMNS, [
+                            [DeclaredSurfaces::WITHDRAWN, 'format:retired', DeclaredSurfaces::DIRECTORY . '/retired.txt', 'self-test'],
+                        ]),
+                        DeclaredSurfaces::DIRECTORY . '/retired.txt' => "a refusal nobody printed\n",
+                        DeclaredStructuralMaps::INDEX => Tsv::render(DeclaredStructuralMaps::COLUMNS, [
+                            ['config', 'old.key', 'new.key', DeclaredStructuralMaps::SHAPE_SAME, 'self-test'],
+                        ]),
+                    ];
+
+                    return $tree;
+                },
+                [
+                    [FailureClass::RECORD_STALE, 'case:alpha|format:json', 'StaleDeclarationCheck::checkStaleDeclarations#1 <- Gate::compare'],
+                    [FailureClass::VALUE_STALE, DeclaredValues::INDEX, 'StaleDeclarationCheck::checkStaleDeclarations#2 <- Gate::compare'],
+                    [FailureClass::FIELD_DECLARATION_STALE, DeclaredFields::INDEX, 'StaleDeclarationCheck::checkStaleDeclarations#3 <- Gate::compare'],
+                    [FailureClass::OUTCOME_DECLARATION_STALE, 'case:alpha', 'StaleDeclarationCheck::checkStaleDeclarations#4 <- Gate::compare'],
+                    [FailureClass::SURFACE_DECLARATION_STALE, 'format:retired', 'StaleDeclarationCheck::checkStaleDeclarations#5 <- Gate::compare'],
+                    [FailureClass::STRUCTURAL_MAP_STALE, DeclaredStructuralMaps::INDEX, 'StaleDeclarationCheck::checkStaleDeclarations#6 <- Gate::compare'],
+                ],
             ),
             self::witness(
                 'derive-normalization-refuses-a-dead-pass',
@@ -786,17 +867,17 @@ final class CheckWitnesses
                 [],
             ),
             self::witness(
-                'derive-declared-delta-refuses-a-failed-comparison',
+                'derive-declarations-refuses-a-failed-comparison',
                 self::DECLARED_DELTA_REFUSED,
                 static function (array $tree): array {
                     $tree['candidateLock'] = "{\"replay\": \"another lock\"}\n";
 
                     return $tree;
                 },
-                [[FailureClass::ENV_MISMATCH, 'reference tree', 'Gate::compare <- GateModes::deriveDeclaredDelta']],
+                [[FailureClass::ENV_MISMATCH, 'reference tree', 'Gate::compare <- GateModes::deriveDeclarations']],
             ),
             self::witness(
-                'derive-declared-delta-writes-a-measured-diff',
+                'derive-declarations-writes-a-measured-diff',
                 self::DECLARED_DELTA_WRITTEN,
                 static function (array $tree): array {
                     $tree['candidateAnswers']['case:alpha|format:checkstyle'] = ['stdout' => "another checkstyle of alpha\n"];
@@ -825,7 +906,7 @@ final class CheckWitnesses
      *
      * @return Witness
      */
-    private static function witness(string $id, string $scenario, callable $plant, array $expect, array $tolerate = []): array
+    public static function witness(string $id, string $scenario, callable $plant, array $expect, array $tolerate = []): array
     {
         return ['id' => $id, 'scenario' => $scenario, 'plant' => $plant, 'expect' => $expect, 'tolerate' => $tolerate];
     }

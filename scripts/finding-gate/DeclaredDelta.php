@@ -12,7 +12,7 @@ namespace QmxFindingGate;
  * into three, or adds rows to the rule inventory. That is a structural change to
  * a surface, and it is declared as the exact diff of that surface — index row
  * plus a file holding the whole unified diff, produced by
- * `--derive-declared-delta` rather than written by hand.
+ * `--derive-declarations` rather than written by hand.
  *
  * Four properties keep this from becoming a rubber stamp, and they live in Gate
  * because three of them need the measured diff: the computed diff must equal the

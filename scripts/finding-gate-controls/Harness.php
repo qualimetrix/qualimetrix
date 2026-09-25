@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace QmxFindingGateControls;
 
+use QmxFindingGate\Declarations;
 use QmxFindingGate\DeclaredDelta;
 use QmxFindingGate\DeclaredFieldMoves;
 use RuntimeException;
@@ -484,6 +485,7 @@ final class Harness
                 self::touched($attempt['scratch'], $attempt['survivors']),
                 self::touched($attempt['scratch'], $attempt['tracked']),
                 $this->declaredFieldMoveCount(),
+                Declarations::load($this->repository)->counts(),
             );
         } catch (Throwable $error) {
             return Outcome::crashed($attempt['control'], $error->getMessage());

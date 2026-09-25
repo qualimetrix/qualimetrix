@@ -62,6 +62,33 @@ final class GateReport
      */
     private int $fieldMoveCount = 0;
 
+    /**
+     * The other declaration forms a run can be green under, by the report key
+     * each count is published as, in the order the verdict sentence names them.
+     *
+     * @var array<string, string> report key => what one unit of it is
+     */
+    public const array DECLARATION_COUNTS = [
+        'declaredRecordCount' => 'declared record(s)',
+        'declaredValueCount' => 'declared value intent(s)',
+        'declaredFieldCount' => 'declared field change(s)',
+        'declaredOutcomeCount' => 'declared case outcome(s)',
+        'declaredSurfaceCount' => 'declared surface change(s)',
+        'structuralMapCount' => 'structural map row(s)',
+    ];
+
+    /** @var array<string, int> */
+    private array $declarationCounts = [];
+
+    public function countDeclarations(string $reportKey, int $count): void
+    {
+        if (!isset(self::DECLARATION_COUNTS[$reportKey])) {
+            throw new GateError(\sprintf('Unknown declaration count "%s".', $reportKey));
+        }
+
+        $this->declarationCounts[$reportKey] = $count;
+    }
+
     public function countDeclaredDeltas(int $count): void
     {
         $this->declaredDeltaCount = $count;
@@ -176,7 +203,7 @@ final class GateReport
             // quotes. "Under the declared maps" read as if nothing else had been
             // waived.
             self::VERDICT_GREEN => \sprintf(
-                '  GREEN — the two trees are finding-equivalent under the declared maps%s.',
+                '  GREEN — the two trees are finding-equivalent under the declared maps%s%s.',
                 $this->declaredDeltaCount === 0 && $this->fieldMoveCount === 0
                     ? ''
                     : \sprintf(
@@ -184,6 +211,7 @@ final class GateReport
                         $this->declaredDeltaCount,
                         $this->fieldMoveCount,
                     ),
+                $this->otherDeclarations(),
             ),
             self::VERDICT_PARTIAL => \sprintf(
                 "  PARTIAL — no equivalence is claimed: %s.\n"
@@ -212,9 +240,35 @@ final class GateReport
             // it stayed green without a declared delta absorbing the difference.
             'declaredDeltaCount' => $this->declaredDeltaCount,
             'fieldMoveCount' => $this->fieldMoveCount,
+            ...$this->declarationCounts(),
         ];
 
         Fs::write($path, json_encode($payload, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n");
+    }
+
+    /** @return array<string, int> every declaration count, zero where none was declared */
+    private function declarationCounts(): array
+    {
+        $counts = [];
+
+        foreach (array_keys(self::DECLARATION_COUNTS) as $reportKey) {
+            $counts[$reportKey] = $this->declarationCounts[$reportKey] ?? 0;
+        }
+
+        return $counts;
+    }
+
+    private function otherDeclarations(): string
+    {
+        $named = [];
+
+        foreach ($this->declarationCounts() as $reportKey => $count) {
+            if ($count !== 0) {
+                $named[] = $count . ' ' . self::DECLARATION_COUNTS[$reportKey];
+            }
+        }
+
+        return $named === [] ? '' : ', with ' . implode(', ', $named);
     }
 
     private static function scalar(mixed $value): string

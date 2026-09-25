@@ -19,6 +19,11 @@ use stdClass;
  * A rule "fires" when its locator matches a field, not when that field's two
  * values happen to differ. Firing on divergence would make every rule look
  * stale on the run where the nondeterminism did not surface.
+ *
+ * A JSON surface stays the bytes it was published in: an excluded field is cut
+ * out of the text in place ({@see JsonText}) rather than the document being
+ * decoded and re-encoded, so its layout, escaping and number spelling remain
+ * compared.
  */
 final class Normalization
 {
@@ -27,12 +32,6 @@ final class Normalization
     public const REDACTED = '<normalized>';
 
     public const MEASURED_REASON = 'diverged across repeated runs of one unchanged tree';
-
-    private const ENCODE_FLAGS = \JSON_PRETTY_PRINT
-        | \JSON_UNESCAPED_SLASHES
-        | \JSON_UNESCAPED_UNICODE
-        | \JSON_PRESERVE_ZERO_FRACTION
-        | \JSON_THROW_ON_ERROR;
 
     private const REPORT_DATA_PATTERN = '~(<script type="application/json" id="report-data">)(.*?)(</script>)~s';
 
@@ -64,16 +63,14 @@ final class Normalization
         $decoded = json_decode($content, false);
 
         if ($decoded instanceof stdClass || \is_array($decoded)) {
-            $this->applyPaths($surface, NormalizationRule::KIND_JSON_PATH, $decoded);
+            $content = $this->applyPaths($surface, NormalizationRule::KIND_JSON_PATH, $content);
 
             // The report payload arrives as a document of its own: the HTML
             // surface is compared through it, and the reduction happens before
-            // anything is normalized. Its rules address a path into a decoded
+            // anything is normalized. Its rules address a path into that
             // document, which is what this branch already has — the two kinds
             // differ in where the document was carried, not in how it is read.
-            $this->applyPaths($surface, NormalizationRule::KIND_HTML_REPORT_DATA_PATH, $decoded);
-
-            return self::encode($decoded);
+            return $this->applyPaths($surface, NormalizationRule::KIND_HTML_REPORT_DATA_PATH, $content);
         }
 
         return $this->applyLineRegex($surface, $this->normalizeReportData($surface, $content));
@@ -135,12 +132,9 @@ final class Normalization
 
         return (string) preg_replace_callback(
             self::REPORT_DATA_PATTERN,
-            function (array $matches) use ($surface): string {
-                $decoded = json_decode($matches[2], false, flags: \JSON_THROW_ON_ERROR);
-                $this->applyPaths($surface, NormalizationRule::KIND_HTML_REPORT_DATA_PATH, $decoded);
-
-                return $matches[1] . self::encode($decoded) . $matches[3];
-            },
+            fn(array $matches): string => $matches[1]
+                . $this->applyPaths($surface, NormalizationRule::KIND_HTML_REPORT_DATA_PATH, $matches[2])
+                . $matches[3],
             $content,
         );
     }
@@ -156,13 +150,14 @@ final class Normalization
         return $content;
     }
 
-    private function applyPaths(string $surface, string $kind, mixed &$data): void
+    private function applyPaths(string $surface, string $kind, string $text): string
     {
         foreach ($this->rulesFor($surface, $kind) as $index => $rule) {
-            $hits = 0;
-            self::redact($data, explode('.', $rule->locator), $hits);
+            [$text, $hits] = JsonText::redact($text, explode('.', $rule->locator), '"' . self::REDACTED . '"');
             $this->hits[$index] = ($this->hits[$index] ?? 0) + $hits;
         }
+
+        return $text;
     }
 
     /** @return array<int, NormalizationRule> */
@@ -177,88 +172,5 @@ final class Normalization
         }
 
         return $matching;
-    }
-
-    /**
-     * `*` stands for every key at that depth, which is what makes one row cover
-     * a list of findings; any other segment must match a key exactly. Redaction
-     * is by reference all the way down because a JSON list decodes to a PHP
-     * array, and a value-semantics descent would count a hit while changing
-     * nothing.
-     *
-     * @param list<string> $segments
-     */
-    private static function redact(mixed &$data, array $segments, int &$hits): void
-    {
-        $segment = array_shift($segments);
-
-        if ($segment === null) {
-            return;
-        }
-
-        if ($data instanceof stdClass) {
-            foreach (self::matchingKeys(array_keys(get_object_vars($data)), $segment) as $key) {
-                if ($segments === []) {
-                    $data->{$key} = self::REDACTED;
-                    ++$hits;
-
-                    continue;
-                }
-
-                self::redact($data->{$key}, $segments, $hits);
-            }
-
-            return;
-        }
-
-        if (!\is_array($data)) {
-            return;
-        }
-
-        foreach (self::matchingKeys(array_keys($data), $segment) as $key) {
-            if ($segments === []) {
-                $data[$key] = self::REDACTED;
-                ++$hits;
-
-                continue;
-            }
-
-            self::redact($data[$key], $segments, $hits);
-        }
-    }
-
-    /**
-     * @param list<string|int> $keys
-     *
-     * @return list<string|int>
-     */
-    private static function matchingKeys(array $keys, string $segment): array
-    {
-        if ($segment === '*') {
-            return $keys;
-        }
-
-        return \in_array($segment, array_map(strval(...), $keys), true)
-            ? [self::sameTypeKey($keys, $segment)]
-            : [];
-    }
-
-    /**
-     * @param list<string|int> $keys
-     */
-    private static function sameTypeKey(array $keys, string $segment): string|int
-    {
-        foreach ($keys as $key) {
-            if ((string) $key === $segment) {
-                return $key;
-            }
-        }
-
-        return $segment;
-    }
-
-    private static function encode(mixed $data): string
-    {
-        return json_encode($data, self::ENCODE_FLAGS);
     }
 }

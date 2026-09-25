@@ -17,7 +17,8 @@ namespace QmxFindingGate;
  * The committed state is the reference and the working tree is the candidate:
  * the specification is written, committed, and then only the `candidate*`
  * overrides are written over it. The declarations (`maps`, `declaredDelta`,
- * `fieldMoves`) land in both, and only the candidate's are read.
+ * `fieldMoves`, and any other file under `finding-gate/` named in
+ * `declarations`) land in both, and only the candidate's are read.
  *
  * @phpstan-type Answer array{stdout?: string, stderr?: string, stderrOnce?: bool, exit?: int}
  * @phpstan-type Finding array<string, mixed>
@@ -37,6 +38,7 @@ namespace QmxFindingGate;
  *     maps: array<string, list<string>>,
  *     declaredDelta: array<string, string>,
  *     fieldMoves: list<array{0: string, 1: string, 2: string, 3: string}>,
+ *     declarations: array<string, string>,
  *     lock: string,
  *     candidateLock: string|null,
  * }
@@ -81,6 +83,7 @@ final class SyntheticTree
             'maps' => [],
             'declaredDelta' => [],
             'fieldMoves' => [],
+            'declarations' => [],
             'lock' => "{\"replay\": \"lock\"}\n",
             'candidateLock' => null,
         ];
@@ -225,6 +228,11 @@ final class SyntheticTree
             ], \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n";
             $files['finding-gate/cases/' . $id . '/qmx.yaml'] = "# replayed\n";
             $files['finding-gate/cases/' . $id . '/src/' . ucfirst($id) . '.php'] = "<?php\n";
+        }
+
+        // Last, so a declared file may also stand in for one this tree writes itself, such as a `case.json`.
+        foreach ($specification['declarations'] as $path => $content) {
+            $files['finding-gate/' . $path] = $content;
         }
 
         return $files;

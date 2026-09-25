@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace QmxFindingGate\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\CaseDefinition;
+use QmxFindingGate\CaseOutcome;
 use QmxFindingGate\Fs;
 use QmxFindingGate\GateError;
 
@@ -128,6 +130,75 @@ final class CaseDefinitionTest extends TestCase
         $this->assertRefused('does not exist', args: ['--preset=strict,missing.yaml']);
     }
 
+    #[Test]
+    public function itListsEveryInputFileWithTheOptionThatHandsItOver(): void
+    {
+        Fs::write($this->case . '/preset.yaml', "suppress_paths: []\n");
+        Fs::write($this->case . '/baseline.json', "{}\n");
+
+        self::assertSame(
+            [
+                ['option' => '--config', 'path' => 'qmx.yaml'],
+                ['option' => '--preset', 'path' => 'preset.yaml'],
+                ['option' => '--baseline', 'path' => 'baseline.json'],
+            ],
+            $this->load(args: ['--preset=strict,preset.yaml', '--baseline', 'baseline.json'])->inputFiles(),
+        );
+    }
+
+    #[Test]
+    public function itJudgesEveryInputFileByTheContainmentRule(): void
+    {
+        Fs::write($this->root . '/outside/preset.yaml', "suppress_paths: []\n");
+
+        $this->assertRefused('outside its own directory', args: ['--preset=../../outside/preset.yaml']);
+    }
+
+    #[Test]
+    public function itReadsACaseWithoutAnOutcomeAsAnAnalysis(): void
+    {
+        $case = $this->load();
+
+        self::assertSame(CaseOutcome::ANALYSIS, $case->outcome);
+        self::assertNull($case->outcomeExit);
+    }
+
+    #[Test]
+    public function itReadsTheExpectedOutcomeAndExit(): void
+    {
+        $case = $this->load(outcome: ['kind' => 'incomplete', 'exit' => 4]);
+
+        self::assertSame(CaseOutcome::INCOMPLETE, $case->outcome);
+        self::assertSame(4, $case->outcomeExit);
+    }
+
+    /** @return iterable<string, array{mixed}> */
+    public static function provideMalformedOutcomes(): iterable
+    {
+        yield 'an analysis spelled out' => [['kind' => 'analysis', 'exit' => 0]];
+        yield 'no exit' => [['kind' => 'refusal']];
+        yield 'an exit of zero' => [['kind' => 'refusal', 'exit' => 0]];
+        yield 'an exit as a string' => [['kind' => 'refusal', 'exit' => '3']];
+        yield 'an unknown kind' => [['kind' => 'crash', 'exit' => 3]];
+        yield 'an extra key' => [['kind' => 'refusal', 'exit' => 3, 'why' => 'x']];
+        yield 'a bare string' => ['refusal'];
+    }
+
+    #[Test]
+    #[DataProvider('provideMalformedOutcomes')]
+    public function itRefusesAMalformedOutcome(mixed $outcome): void
+    {
+        try {
+            $this->load(outcome: $outcome);
+        } catch (GateError $error) {
+            self::assertStringContainsString('"outcome" must be', $error->getMessage());
+
+            return;
+        }
+
+        self::fail('The case was accepted.');
+    }
+
     /**
      * @param list<string> $paths
      * @param list<string> $args
@@ -149,16 +220,22 @@ final class CaseDefinitionTest extends TestCase
      * @param list<string> $paths
      * @param list<string> $args
      */
-    private function load(array $paths = ['src'], string $config = 'qmx.yaml', array $args = []): CaseDefinition
+    private function load(array $paths = ['src'], string $config = 'qmx.yaml', array $args = [], mixed $outcome = null): CaseDefinition
     {
-        Fs::write($this->case . '/case.json', (string) json_encode([
+        $definition = [
             'id' => 'probe',
             'description' => 'A case written by the test.',
             'paths' => $paths,
             'config' => $config,
             'args' => $args,
             'channels' => ['a.code@class'],
-        ]));
+        ];
+
+        if ($outcome !== null) {
+            $definition['outcome'] = $outcome;
+        }
+
+        Fs::write($this->case . '/case.json', (string) json_encode($definition));
 
         return CaseDefinition::load($this->case);
     }

@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\FailureClass;
 use QmxFindingGate\RaiseSites;
+use QmxFindingGate\Wiring;
 use QmxFindingGate\WitnessRegistry;
 
 /**
@@ -100,6 +101,6 @@ final class WitnessRegistryTest extends TestCase
             RaiseSites::of(\dirname(__DIR__), RaiseSites::DECLARED_NAMES)->sites,
         );
 
-        self::assertSame([], WitnessRegistry::problems(FailureClass::ALL, $sites, array_keys($sites), WitnessRegistry::PENDING));
+        self::assertSame([], WitnessRegistry::problems(FailureClass::ALL, $sites, array_keys($sites), Wiring::gate()->pending));
     }
 }

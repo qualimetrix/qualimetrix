@@ -55,6 +55,12 @@ finding-gate/
 ├── declared-field-moves.tsv # one exact (surface, field, from, to) pair each,
 │                          # licensing a compared field to move inside a
 │                          # declared diff. Typed, not derived
+├── declared-records.tsv   # declaration forms landing in S01b, each read by its own
+├── declared-values.tsv    # check; until that check exists every row of one is
+├── declared-fields.tsv    # stale and the run is red. Absent means none. See
+├── declared-outcomes.tsv  # "Declaration forms" below
+├── declared-surfaces.tsv
+├── declared-structural-maps.tsv
 ├── normalization.tsv      # fields excluded from comparison, each with its reason
 ├── equivalence-tuple.tsv  # the finding fields the gate compares, derived from code
 ├── enumeration-renames.tsv        # current measured vocabulary and pending decisions
@@ -99,9 +105,20 @@ moves, and stale declarations.
   "config": "qmx.yaml",                // relative to the case directory
   "args": ["--rule-opt=complexity.wmc:threshold=0"],   // extra CLI options; optional, defaults to []; a value is written attached (--option=value), except after a path option
   "channels": ["code-smell.eval@callable"],             // channel AND level pairs this case owns
-  "explainSubjects": ["declaration:callable:Corpus\\Smells\\Smells::report@src/Smells.php"]  // subjects for baseline:explain
+  "explainSubjects": ["declaration:callable:Corpus\\Smells\\Smells::report@src/Smells.php"],  // subjects for baseline:explain
+  "outcome": {"kind": "incomplete", "exit": 4}         // optional: a case that exists to be refused ("refusal") or to
+                                                       // analyse incompletely; absent means the case analyses
 }
 ```
+
+`CaseDefinition::SCHEMA` is the list of keys; any other key is refused. Every
+file a case hands the product — `config` and each path value of
+`CaseDefinition::INPUT_OPTIONS` in `args` — is one list,
+`CaseDefinition::inputFiles()`: the containment rule judges it, and it is what
+the reference has to be handed in its own vocabulary. Which checks apply to a
+case that does not analyse is one table, `CaseOutcome::CHECKS`; a case whose
+outcome no registered check verifies is refused before anything runs, so an
+`outcome` cannot switch the other checks off unexamined.
 
 `channels` is a claim the gate verifies per case, not documentation: a case that
 stops firing a pair it claims fails, and a declared pair no case fires fails the
@@ -490,7 +507,18 @@ comparison it is part of:
   excluding a compared field would retire it from the comparison while the tuple
   still claims it is guarded.
 
-The derivation is judged before it writes, exactly as `--derive-declared-delta`
+JSON surfaces are compared as the bytes they were published in, not as decoded
+values: a row cuts its field out of the text in place (`JsonText`), and every
+other byte — layout, escaping, the spelling of a number, a repeated key — stays
+under comparison. Decoding both sides equated every one of those changes: a
+formatter that stopped pretty-printing ran PARTIAL with no failure. Measured on
+2026-09-25 with that change planted (`--cases=smells --incomplete-corpus`): the
+decoded comparison exits 2 with no failure, the byte comparison fails
+`surface-mismatch` on `case:smells|format:json`. The HTML report's payload is the
+one exception: it is the gate that re-encodes it (`ReportPayload`), because the
+bundle, not a reader, consumes it.
+
+The derivation is judged before it writes, exactly as `--derive-declarations`
 is, and for the same reason: a list measured from runs that produced nothing
 describes the breakage, and the next ordinary run reproduces it and goes green
 against it. Every pass is judged, not only the one the rules are read from. It
@@ -834,7 +862,7 @@ Some of what a step changes is neither a rename nor an excluded field: splitting
 one rule turns one aggregate group into three and adds rows to the rule
 inventory. `declared-delta.tsv` (`surface`, `file`, `reason`) plus one exact
 unified diff per surface is how that is stated, and the diff files are produced
-by `--derive-declared-delta`, never typed. The `reason` is the one thing a run
+by `--derive-declarations`, never typed. The `reason` is the one thing a run
 cannot measure: a re-derivation carries existing reasons over and writes `?` for
 a new row, and loading refuses `?`.
 
@@ -953,6 +981,39 @@ A row is written against one reference. Once the step is merged, the next step's
 reference already contains the change, both sides agree, and the row becomes
 stale: **the following step empties this file**, exactly as it empties the maps
 and the declared delta.
+
+## Declaration forms
+
+Six more tables declare what a step changed besides a rename, a structural
+delta or a licensed field move. Each has a model that loads it, refuses a row
+it could not apply and knows which rows nothing consumed; the check that
+consumes each lands with its form in S01b, and until then every row of a
+non-empty table is reported stale by its own class, so a declaration no check
+reads is never accepted as one.
+
+| table                                                 | declares                                                                                               | stale as                    |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------- |
+| `declared-records.tsv`                                | a record withdrawn from or introduced into one report of one case, keyed by the whole canonical record | `record-stale`              |
+| `declared-values.tsv` + `declared-values.derived.tsv` | an intent that a field or metric key may move, and the exact values that moved under it                | `value-stale`               |
+| `declared-fields.tsv` + `declared-fields.derived.tsv` | a field every finding gained or lost, and where the gained one appears                                 | `field-declaration-stale`   |
+| `declared-outcomes.tsv` + `declared-outcomes/`        | a case the candidate now refuses, with the refusal's measured output                                   | `outcome-declaration-stale` |
+| `declared-surfaces.tsv` + `declared-surfaces/`        | a surface introduced or withdrawn, with the refusal a withdrawn one must now meet                      | `surface-declaration-stale` |
+| `declared-structural-maps.tsv`                        | a configuration key moved within the schema, applied to the reference's inputs                         | `structural-map-stale`      |
+
+`--derive-declarations` is the one mode that writes what a run measures: the
+declared delta and, under each form's declared intents, that form's derived
+table (`DerivedTable`). A change no intent covers is not absorbed, so the run
+stays red and writes nothing.
+
+A form joins the gate through its own wiring file,
+`scripts/finding-gate/wiring-<form>.php` (`Wiring::FILES`, one per S01b package; the
+corpus has one too, for the controls only its cases make red): the classes it adds,
+its controls, self-test groups and check witnesses, the checks it runs per case
+(`CaseCheck`), as a step of a surface's comparison (`SurfaceStage`, placed
+before a step of `SurfaceComparison::STAGES`), over the whole run (`RunCheck`)
+and in the derive run (`Derivation`), and the pending rows of the failure
+classes it will raise. Every failure class a form needs is already declared in
+`FailureClass`; a class nothing raises yet is pending in its form's wiring file.
 
 ## Who reads the corpus
 
@@ -1256,7 +1317,7 @@ differs. Three properties of the declaration are worth knowing before adding one
   licensing a move on a surface where nothing moves; the step's own licence goes
   with the replacement, so the move that *does* happen returns to being
   `delta-overreach` on a surface the step declares and is absorbed as declaration
-  noise. `derive-refuses-broken-run` runs `--derive-declared-delta` over a tree
+  noise. `derive-refuses-broken-run` runs `--derive-declarations` over a tree
   with one finding dropped: the comparison fails, the run must exit non-zero with
   `finding-count-mismatch`, and `declared-delta.tsv` and `declared-delta/` must
   come out of it byte-identical. That last half is checked by digesting the two

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace QmxFindingGateControls;
 
+use LogicException;
+use QmxFindingGate\Wiring;
+
 /**
  * The controls, as a list.
  *
@@ -79,6 +82,18 @@ final class Controls
             RenameControls::reportValueRenamed(),
             RenameControls::reportValueWithoutRow(),
         ];
+
+        // Each declaration form's own controls follow the fixed table, from its
+        // wiring file, in the order the forms are listed there.
+        foreach (Wiring::gate()->factories('controls', __NAMESPACE__) as $factory) {
+            $control = $factory();
+
+            if (!$control instanceof Control) {
+                throw new LogicException('A control registered in a wiring file returned no Control.');
+            }
+
+            $controls[] = $control;
+        }
 
         return array_map(
             static fn(Control $control): Control => self::force($control, $forcedExpectations),

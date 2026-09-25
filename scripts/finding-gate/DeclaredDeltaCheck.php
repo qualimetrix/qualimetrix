@@ -8,7 +8,7 @@ namespace QmxFindingGate;
  * A surface that differs, held to the delta declared for it and the field moves licensed inside it — or,
  * while deriving, measured into the declaration instead — and every declaration that nothing performed.
  */
-final class DeclaredDeltaCheck
+final class DeclaredDeltaCheck implements Derivation
 {
     /**
      * Surface key => measured diff, while deriving the declared delta instead of
@@ -108,7 +108,7 @@ final class DeclaredDeltaCheck
             FailureClass::DELTA_MISMATCH,
             $key,
             \sprintf(
-                'The measured diff is not the declared one (%s). Re-derive it with --derive-declared-delta and review'
+                'The measured diff is not the declared one (%s). Re-derive it with --derive-declarations and review'
                 . ' what moved.',
                 $this->declaredDelta->fileOf($key),
             ),

@@ -32,20 +32,24 @@ final class TreeRun
 
     private int $sequence = 0;
 
+    private readonly CaseInputTranslation $inputs;
+
     public function __construct(
         private readonly string $treeRoot,
         private readonly string $temporaryDirectory,
         private readonly string $label,
-        private readonly RenameMaps $maps,
-        private readonly bool $reverseInput,
-    ) {}
+        RenameMaps $maps,
+        bool $reverseInput,
+    ) {
+        $this->inputs = new CaseInputTranslation($maps, $reverseInput, $temporaryDirectory, $label);
+    }
 
     /** @return array<string, string> */
     public function forCase(CaseDefinition $case): array
     {
         $scope = 'case:' . $case->id;
-        $config = $this->configurationArgument($case);
-        $arguments = $this->reverseInput ? $this->maps->reverseArguments($case->args) : $case->args;
+        $config = $this->inputs->configuration($case);
+        $arguments = $this->inputs->arguments($case);
         $artifacts = [];
 
         foreach (Surfaces::FORMATS as $format) {
@@ -76,7 +80,7 @@ final class TreeRun
             $artifacts += $this->capture(
                 $scope,
                 'explain:' . $subject,
-                ['baseline:explain', $this->reverseInput ? $this->maps->reverse($subject) : $subject, ...$case->paths, '--no-ansi', '-c', $config, ...$arguments],
+                ['baseline:explain', $this->inputs->subject($subject), ...$case->paths, '--no-ansi', '-c', $config, ...$arguments],
                 $case->directory,
             );
         }
@@ -193,31 +197,5 @@ final class TreeRun
         }
 
         return $result;
-    }
-
-    /**
-     * The reference binary cannot be addressed in a vocabulary it does not know
-     * yet, so its configuration is rewritten through the reverse map. When the
-     * rewrite changes nothing the case's own file is used as is — and then no
-     * artifact can name a temporary path, which is why this is not just an
-     * optimisation.
-     */
-    private function configurationArgument(CaseDefinition $case): string
-    {
-        if (!$this->reverseInput || $this->maps->isIdentity()) {
-            return $case->config;
-        }
-
-        $original = Fs::read($case->directory . '/' . $case->config);
-        $reversed = $this->maps->reverse($original);
-
-        if ($reversed === $original) {
-            return $case->config;
-        }
-
-        $path = \sprintf('%s/config-%s-%s-%s', $this->temporaryDirectory, $this->label, $case->id, basename($case->config));
-        Fs::write($path, $reversed);
-
-        return $path;
     }
 }

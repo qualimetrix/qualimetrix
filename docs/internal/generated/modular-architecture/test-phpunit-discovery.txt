@@ -65,15 +65,28 @@ Available tests:
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itRefusesToScanATreeItCannotRead
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itScansATreeAndSkipsWhatIsNotPhp
  - QmxFindingGate\Tests\CaseDefinitionTest::itAcceptsANameThatOnlyContainsTwoDots
+ - QmxFindingGate\Tests\CaseDefinitionTest::itJudgesEveryInputFileByTheContainmentRule
+ - QmxFindingGate\Tests\CaseDefinitionTest::itListsEveryInputFileWithTheOptionThatHandsItOver
+ - QmxFindingGate\Tests\CaseDefinitionTest::itReadsACaseWithoutAnOutcomeAsAnAnalysis
  - QmxFindingGate\Tests\CaseDefinitionTest::itReadsAConfigWithACommaAsOnePath
  - QmxFindingGate\Tests\CaseDefinitionTest::itReadsANamedPresetAsNoPathAndAPresetFileAsOne
+ - QmxFindingGate\Tests\CaseDefinitionTest::itReadsTheExpectedOutcomeAndExit
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesACaseDirectoryThatIsALink
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAConfigThatLinksOutsideTheCase
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAMalformedOutcome"a bare string"
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAMalformedOutcome"an analysis spelled out"
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAMalformedOutcome"an exit as a string"
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAMalformedOutcome"an exit of zero"
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAMalformedOutcome"an extra key"
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAMalformedOutcome"an unknown kind"
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAMalformedOutcome"no exit"
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAPathThatDoesNotExist
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAWorkingDirectoryEvenInsideTheCase
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAnAnalysisPathThatLinksOutsideTheCase
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAnInputOptionThatLinksOutsideTheCase
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAnOutputOptionEvenInsideTheCase
+ - QmxFindingGate\Tests\CaseOutcomeCheckTest::itDoesNotHoldAnIncompleteAnalysisToABaselineFileItCannotWrite
+ - QmxFindingGate\Tests\CaseOutcomeCheckTest::itHoldsAnAnalysisToItsBaselineFile
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"chain"
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"collapse-two-olds-onto-one-new"
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"comment-and-blank-lines"
@@ -91,9 +104,50 @@ Available tests:
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"trailing-space-in-new"
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"two-rows-for-one-old"
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"wrong-header"
+ - QmxFindingGate\Tests\DeclarationsTest::itClaimsIdenticalRecordRowsOneInstanceEach
+ - QmxFindingGate\Tests\DeclarationsTest::itDerivesTheReferenceFieldsFromTheCandidates
+ - QmxFindingGate\Tests\DeclarationsTest::itDerivesTheReferenceSurfacesFromTheCandidates
+ - QmxFindingGate\Tests\DeclarationsTest::itJudgesAWithdrawnRecordByTheReferenceFields
+ - QmxFindingGate\Tests\DeclarationsTest::itKeepsAReasonOnlyWhileItsRowIsUnchanged
+ - QmxFindingGate\Tests\DeclarationsTest::itKeepsTheDerivedValueTableAsBytesAndAnIntentUncreditedIsStale
+ - QmxFindingGate\Tests\DeclarationsTest::itReadsAMissingTableAsNoDeclaration
+ - QmxFindingGate\Tests\DeclarationsTest::itRefusesADerivedValueNoIntentDeclares
+ - QmxFindingGate\Tests\DeclarationsTest::itRefusesARecordRowThatCouldNotMatchExactlyOneRecord"a field the side does not compare"
+ - QmxFindingGate\Tests\DeclarationsTest::itRefusesARecordRowThatCouldNotMatchExactlyOneRecord"a suppressed entry that is no entry"
+ - QmxFindingGate\Tests\DeclarationsTest::itRefusesARecordRowThatCouldNotMatchExactlyOneRecord"an unexplained row"
+ - QmxFindingGate\Tests\DeclarationsTest::itRefusesARecordRowThatCouldNotMatchExactlyOneRecord"an unknown change"
+ - QmxFindingGate\Tests\DeclarationsTest::itRefusesARecordRowThatCouldNotMatchExactlyOneRecord"an unknown report"
+ - QmxFindingGate\Tests\DeclarationsTest::itRefusesARecordRowThatCouldNotMatchExactlyOneRecord"not JSON"
+ - QmxFindingGate\Tests\DeclarationsTest::itRefusesARecordRowThatCouldNotMatchExactlyOneRecord"not an object"
+ - QmxFindingGate\Tests\DeclarationsTest::itRefusesARecordRowThatCouldNotMatchExactlyOneRecord"not canonical"
+ - QmxFindingGate\Tests\DeclarationsTest::itRefusesARecordRowThatCouldNotMatchExactlyOneRecord"partial"
+ - QmxFindingGate\Tests\DeclarationsTest::itRefusesAStructuralMapRowItCouldNotApply"a move onto itself"
+ - QmxFindingGate\Tests\DeclarationsTest::itRefusesAStructuralMapRowItCouldNotApply"a path that is no key path"
+ - QmxFindingGate\Tests\DeclarationsTest::itRefusesAStructuralMapRowItCouldNotApply"an unknown document"
+ - QmxFindingGate\Tests\DeclarationsTest::itRefusesAStructuralMapRowItCouldNotApply"an unknown shape"
+ - QmxFindingGate\Tests\DeclarationsTest::itRefusesASurfaceOfOneScope
+ - QmxFindingGate\Tests\DeclarationsTest::itRefusesAValueTableForAFieldNoRowAdds
+ - QmxFindingGate\Tests\DeclarationsTest::itRefusesAWithdrawnSurfaceWithoutItsMeasuredRefusal
+ - QmxFindingGate\Tests\DeclarationsTest::itRefusesAnIntentAtALevelTheProductDoesNotHave
+ - QmxFindingGate\Tests\DeclarationsTest::itRefusesAnOutcomeFileOutsideItsDirectory
+ - QmxFindingGate\Tests\DeclarationsTest::itRefusesAnOutcomeWithoutItsMeasuredOutput
+ - QmxFindingGate\Tests\DeclarationsTest::itWritesADerivedTableOnlyUnderADeclaredIntentAndInOneOrder
  - QmxFindingGate\Tests\GateModesTest::itExitsOneWhenTheSelfTestFails
  - QmxFindingGate\Tests\GateModesTest::itExitsThreeWhenTheGateCannotRun
  - QmxFindingGate\Tests\GateModesTest::itExitsZeroWhenTheSelfTestIsGreen
+ - QmxFindingGate\Tests\GateReportTest::itPublishesEveryDeclarationCountAndNamesTheOnesAGreenRunUsed
+ - QmxFindingGate\Tests\GateReportTest::itRefusesACountNoFormPublishes
+ - QmxFindingGate\Tests\GateTest::itRefusesACaseWhoseOutcomeNoRegisteredCheckVerifies
+ - QmxFindingGate\Tests\JsonTextTest::itReplacesOnlyTheValueSpanItAddresses"a key"
+ - QmxFindingGate\Tests\JsonTextTest::itReplacesOnlyTheValueSpanItAddresses"a nested key"
+ - QmxFindingGate\Tests\JsonTextTest::itReplacesOnlyTheValueSpanItAddresses"a whole object"
+ - QmxFindingGate\Tests\JsonTextTest::itReplacesOnlyTheValueSpanItAddresses"an escaped key"
+ - QmxFindingGate\Tests\JsonTextTest::itReplacesOnlyTheValueSpanItAddresses"an index"
+ - QmxFindingGate\Tests\JsonTextTest::itReplacesOnlyTheValueSpanItAddresses"every element"
+ - QmxFindingGate\Tests\JsonTextTest::itReplacesOnlyTheValueSpanItAddresses"nothing at a deeper path"
+ - QmxFindingGate\Tests\JsonTextTest::itReplacesOnlyTheValueSpanItAddresses"nothing at a shallower path"
+ - QmxFindingGate\Tests\JsonTextTest::itReplacesOnlyTheValueSpanItAddresses"numbers of every spelling"
+ - QmxFindingGate\Tests\JsonTextTest::itReplacesOnlyTheValueSpanItAddresses"strings that look like structure"
  - QmxFindingGate\Tests\RaiseSitesTest::itAcceptsADeclaredLineOnceAndRefusesOneThatMatchesNoneOrMore
  - QmxFindingGate\Tests\RaiseSitesTest::itFollowsEveryDirectCallWhateverItsCaseOrQualification
  - QmxFindingGate\Tests\RaiseSitesTest::itKeepsARaiseWithItsMethodPastAnAnonymousClass
@@ -107,6 +161,18 @@ Available tests:
  - QmxFindingGate\Tests\RaiseSitesTest::itResolvesAnImportedClassAndRefusesAGroupImport
  - QmxFindingGate\Tests\RaiseSitesTest::itScansSubdirectories
  - QmxFindingGate\Tests\RaiseSitesTest::itTellsACallFromAPropertyANamedArgumentAndAPhantomReceiver
+ - QmxFindingGate\Tests\SurfaceComparisonTest::itRefusesAStageBeforeAStepThatDoesNotExist
+ - QmxFindingGate\Tests\SurfaceComparisonTest::itRunsARegisteredStageBeforeTheStepItNames
+ - QmxFindingGate\Tests\WiringTest::itHoldsThePendingRowsOfEveryForm
+ - QmxFindingGate\Tests\WiringTest::itLoadsAClassAFormListsInItsOwnFile
+ - QmxFindingGate\Tests\WiringTest::itLoadsAFormsClassesThroughTheLoadersEveryEntryPointRequires
+ - QmxFindingGate\Tests\WiringTest::itReadsEveryFormsEntriesInTheOrderOfTheFixedList
+ - QmxFindingGate\Tests\WiringTest::itRefusesAFormWhoseFileIsMissing
+ - QmxFindingGate\Tests\WiringTest::itRefusesAPendingRowOfAnotherPackage
+ - QmxFindingGate\Tests\WiringTest::itRefusesARegisteredCheckItDoesNotLoad
+ - QmxFindingGate\Tests\WiringTest::itRefusesAWiringFileNoFormOwns
+ - QmxFindingGate\Tests\WiringTest::itRefusesAWitnessOfAnUnknownScenario
+ - QmxFindingGate\Tests\WiringTest::itRefusesAnUnknownKey
  - QmxFindingGate\Tests\WitnessRegistryTest::itAcceptsTheTrackedPendingRowsWhileTheirClassesAreRaisedNowhere
  - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a class raised nowhere"
  - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending class that is raised"

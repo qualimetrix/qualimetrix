@@ -73,9 +73,9 @@ final class DeclaredDeltaControls
     {
         return Control::writing(
             'derive-refuses-broken-run',
-            'a --derive-declared-delta run whose comparison failed, which must write nothing',
+            'a --derive-declarations run whose comparison failed, which must write nothing',
             FindingControls::droppedFindingMutation(),
-            '--derive-declared-delta',
+            '--derive-declarations',
             [new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:design')],
             ['finding-gate/' . DeclaredDelta::INDEX, 'finding-gate/' . DeclaredDelta::DIRECTORY],
         );
@@ -114,12 +114,12 @@ final class DeclaredDeltaControls
     {
         return Control::rewriting(
             'derive-writes-green-run',
-            'a --derive-declared-delta run whose comparison passed, which must write the declaration back',
+            'a --derive-declarations run whose comparison passed, which must write the declaration back',
             self::declaredDeltaIndexWrite(
                 self::declaredDeltaIndexOrHeader() . "# planted: a line the loader skips and a derivation cannot reproduce\n",
                 'a comment in the declaration index that only a real rewrite removes',
             ),
-            '--derive-declared-delta',
+            '--derive-declarations',
             ['finding-gate/' . DeclaredDelta::INDEX, 'finding-gate/' . DeclaredDelta::DIRECTORY],
             // This repository's declared-delta.tsv holds no declared rows, so
             // its own file cannot state "a correct run restores the header

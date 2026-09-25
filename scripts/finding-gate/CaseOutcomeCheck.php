@@ -62,7 +62,9 @@ final class CaseOutcomeCheck
             );
         }
 
-        $this->checkBaselineSurface($side, $case, $artifacts);
+        if (CaseOutcome::applies(CaseOutcome::CHECK_BASELINE_FILE, CaseOutcome::of($case, $side))) {
+            $this->checkBaselineSurface($side, $case, $artifacts);
+        }
 
         /** @var list<array<string, mixed>> $findings */
         $findings = array_values($report['violations']);

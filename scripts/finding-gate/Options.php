@@ -9,7 +9,7 @@ final class Options
     public const MODE_COMPARE = 'compare';
     public const MODE_DERIVE_TUPLE = 'derive-tuple';
     public const MODE_DERIVE_NORMALIZATION = 'derive-normalization';
-    public const MODE_DERIVE_DECLARED_DELTA = 'derive-declared-delta';
+    public const MODE_DERIVE_DECLARATIONS = 'derive-declarations';
     public const MODE_SELF_TEST = 'self-test';
     public const MODE_CASE_WORKER = 'case-worker';
 
@@ -55,7 +55,7 @@ final class Options
             match (true) {
                 $argument === '--derive-tuple' => $mode = self::MODE_DERIVE_TUPLE,
                 $argument === '--derive-normalization' => $mode = self::MODE_DERIVE_NORMALIZATION,
-                $argument === '--derive-declared-delta' => $mode = self::MODE_DERIVE_DECLARED_DELTA,
+                $argument === '--derive-declarations' => $mode = self::MODE_DERIVE_DECLARATIONS,
                 $argument === '--self-test' => $mode = self::MODE_SELF_TEST,
                 $argument === '--worker-reverse-input' => $workerReverseInput = true,
                 $argument === '--incomplete-corpus' => $incomplete = true,
@@ -72,7 +72,7 @@ final class Options
             };
         }
 
-        if (\in_array($mode, [self::MODE_COMPARE, self::MODE_DERIVE_DECLARED_DELTA], true) && $reference === null) {
+        if (\in_array($mode, [self::MODE_COMPARE, self::MODE_DERIVE_DECLARATIONS], true) && $reference === null) {
             throw new GateError("--reference=<git-ref> is required.\n" . self::usage());
         }
 
@@ -86,7 +86,7 @@ final class Options
         // at all, and that holds for the normalization list word for word: a
         // rule no narrowed run exercised leaves as stale, and the next full run
         // is then judged against a list measured from part of the corpus.
-        $deriving = [self::MODE_DERIVE_DECLARED_DELTA => '--derive-declared-delta', self::MODE_DERIVE_NORMALIZATION => '--derive-normalization'];
+        $deriving = [self::MODE_DERIVE_DECLARATIONS => '--derive-declarations', self::MODE_DERIVE_NORMALIZATION => '--derive-normalization'];
 
         if (isset($deriving[$mode]) && ($cases !== [] || $incomplete)) {
             throw new GateError(\sprintf(
@@ -139,10 +139,12 @@ final class Options
                                       Such a run reports PARTIAL and exits 2, never GREEN.
               --derive-tuple          Regenerate finding-gate/equivalence-tuple.tsv from the publishing code.
               --derive-normalization  Regenerate finding-gate/normalization.tsv by measuring two runs.
-              --derive-declared-delta Regenerate finding-gate/declared-delta.tsv and its diff files by measuring
-                                      every surface that differs from --reference. The `reason` column of an
-                                      existing row is kept; a new row gets "?" and the run refuses to load it
-                                      until someone writes why the surface changed.
+              --derive-declarations   Regenerate every declaration a run measures against --reference, in one
+                                      pass: finding-gate/declared-delta.tsv and its diff files for every surface
+                                      that differs, and each declaration form's derived table under the intents
+                                      it declares. A change no declaration covers keeps the run red, and a red
+                                      run writes nothing. The `reason` of an unchanged row is kept; a new row
+                                      gets "?" and the run refuses to load it until someone writes why.
               --self-test             Check the gate's own map and normalization mechanics.
             TEXT;
     }

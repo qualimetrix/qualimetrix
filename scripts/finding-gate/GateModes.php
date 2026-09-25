@@ -51,7 +51,7 @@ final class GateModes
         return match ($options->mode) {
             Options::MODE_DERIVE_TUPLE => self::deriveTuple($options),
             Options::MODE_DERIVE_NORMALIZATION => self::deriveNormalization($options, $report),
-            Options::MODE_DERIVE_DECLARED_DELTA => self::deriveDeclaredDelta($options, $report),
+            Options::MODE_DERIVE_DECLARATIONS => self::deriveDeclarations($options, $report),
             Options::MODE_COMPARE => self::compare($options, $report),
             default => throw new GateError(\sprintf('The mode "%s" neither compares nor writes.', $options->mode)),
         };
@@ -176,11 +176,11 @@ final class GateModes
         return self::WROTE;
     }
 
-    /** Rewrites the declared delta and its diff files from a full comparison. */
-    private static function deriveDeclaredDelta(Options $options, GateReport $report): int
+    /** Rewrites every measured declaration from a full comparison. */
+    private static function deriveDeclarations(Options $options, GateReport $report): int
     {
         $gate = new Gate($options, $report);
-        $written = $gate->deriveDeclaredDelta();
+        $written = $gate->deriveDeclarations();
         echo $report->render();
 
         // A derive run's verdict is what decides whether anything was written, so
@@ -200,9 +200,9 @@ final class GateModes
             return self::MEASUREMENT_FAILED;
         }
 
-        echo 'Measured the declared delta into: ' . implode(', ', $written) . "\n";
+        echo 'Measured the declarations into: ' . implode(', ', $written) . "\n";
         echo "Fill in the reason of every row marked \"?\" — the gate refuses to load one that is not explained.\n";
-        echo "This was a write, not a check: re-run without --derive-declared-delta to be judged against it.\n";
+        echo "This was a write, not a check: re-run without --derive-declarations to be judged against it.\n";
 
         return self::WROTE;
     }
