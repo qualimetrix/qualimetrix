@@ -1583,6 +1583,13 @@ final class Controls
      * touches; `LcomVisitor.php` declares
      * neither `self::NAME` nor `ChannelDeclaration`, so a future rename there
      * cannot collide with this fragment.
+     *
+     * The renamed channel also gets `describedAs()`, because the product refuses
+     * the rename without it: a channel not named after its producer must carry
+     * its own description (ADR 0081), and a container that does not compile
+     * stops the gate at its channel probe, before any comparison. The text is
+     * the producer's own `getDescription()`, so every published description
+     * stays byte-identical and the channel name remains the only thing moved.
      */
     private static function lcomChannelMutation(): Mutation
     {
@@ -1590,9 +1597,12 @@ final class Controls
             'src/Analysis/Evidence/Cohesion/LcomRule.php',
             [
                 'self::NAME => ChannelDeclaration::judging(' => "'cohesion.lcom4' => ChannelDeclaration::judging(",
+                "                SymbolLevel::Class_,\n            ),\n        ];"
+                    => "                SymbolLevel::Class_,\n            )->describedAs("
+                    . "'Checks Lack of Cohesion of Methods (high values indicate class should be split)'),\n        ];",
                 'code: self::NAME,' => "code: 'cohesion.lcom4',",
             ],
-            'channel cohesion.lcom -> cohesion.lcom4, the producing rule name left alone',
+            'channel cohesion.lcom -> cohesion.lcom4, described in its producer\'s own words, the producing rule name left alone',
         );
     }
 
