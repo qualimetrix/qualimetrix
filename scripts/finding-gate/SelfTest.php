@@ -50,6 +50,7 @@ final class SelfTest
         $this->interruptedRunReleasesEverything();
         $this->releasedWhenKilledDuringCheckout();
         $this->loaderNamesEveryClass();
+        $this->witnessedFailureClasses();
 
         // Last, and this is not cosmetic: it releases the process-wide registry
         // and suppresses raising, so any case that ran after it would be judged
@@ -2686,6 +2687,26 @@ final class SelfTest
 
         sort($listed);
         $this->same($onDisk, $listed, 'the shared loader names every class file in the directory, and no other');
+    }
+
+    /**
+     * Every failure class is seen raised by a whole run, required by a control,
+     * or pending with the package that introduces its producer.
+     */
+    private function witnessedFailureClasses(): void
+    {
+        $witnesses = CheckWitnesses::observe();
+
+        $this->failures = [
+            ...$this->failures,
+            ...$witnesses['failures'],
+            ...WitnessRegistry::problems(
+                FailureClass::ALL,
+                $witnesses['observed'],
+                WitnessRegistry::requiredByControls(),
+                WitnessRegistry::PENDING,
+            ),
+        ];
     }
 
     /** The registry's own shape: reverse order, run once, and one failure does not strand the rest. */

@@ -62,6 +62,9 @@ foreach (
         'CaseScheduler',
         'ReferenceTree',
         'Gate',
+        'SyntheticTree',
+        'CheckWitnesses',
+        'WitnessRegistry',
         'SelfTest',
     ] as $class
 ) {
