@@ -65,9 +65,12 @@ Available tests:
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itRefusesToScanATreeItCannotRead
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itScansATreeAndSkipsWhatIsNotPhp
  - QmxFindingGate\Tests\CaseDefinitionTest::itAcceptsANameThatOnlyContainsTwoDots
+ - QmxFindingGate\Tests\CaseDefinitionTest::itReadsAConfigWithACommaAsOnePath
  - QmxFindingGate\Tests\CaseDefinitionTest::itReadsANamedPresetAsNoPathAndAPresetFileAsOne
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesACaseDirectoryThatIsALink
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAConfigThatLinksOutsideTheCase
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAPathThatDoesNotExist
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAWorkingDirectoryEvenInsideTheCase
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAnAnalysisPathThatLinksOutsideTheCase
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAnInputOptionThatLinksOutsideTheCase
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAnOutputOptionEvenInsideTheCase
@@ -88,6 +91,9 @@ Available tests:
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"trailing-space-in-new"
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"two-rows-for-one-old"
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"wrong-header"
+ - QmxFindingGate\Tests\RaiseSitesTest::itNamesEverySiteOncePerCallerFromAnotherClass
+ - QmxFindingGate\Tests\RaiseSitesTest::itRefusesEveryFormItCannotRead
+ - QmxFindingGate\Tests\RaiseSitesTest::itScansSubdirectories
  - QmxFindingGate\Tests\WitnessRegistryTest::itAcceptsTheTrackedPendingRowsWhileTheirClassesAreRaisedNowhere
  - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a class raised nowhere"
  - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending class that is raised"
@@ -97,7 +103,6 @@ Available tests:
  - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending row without a reason"
  - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a second site of an observed class"
  - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"every site observed"
- - QmxFindingGate\Tests\WitnessRegistryTest::itReadsEveryRaiseSiteOffTheSourceAndRefusesOneWithoutAClassConstant
  - QmxTautologyControls\Tests\TautologyControlDeclarationTest::itDeclaresExactlyOnePositiveControlAndNoRepeatedId
  - QmxTautologyControls\Tests\TautologyControlDeclarationTest::itNamesOnlyCasesThatExist
  - QmxTautologyControls\Tests\TautologyControlDeclarationTest::itPlantsEachBreakageInProductionCodeThatStillLooksLikeThat

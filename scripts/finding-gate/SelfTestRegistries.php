@@ -45,21 +45,21 @@ final class SelfTestRegistries extends SelfTestGroup
     }
 
     /**
-     * Every place a failure class is raised is seen raising it in a whole run,
-     * and a class raised nowhere is pending with the package that introduces
-     * its producer.
+     * Every place a failure class is raised, per caller, is seen raising it in
+     * a whole run, every mode is seen deciding what it writes, and a class
+     * raised nowhere is pending with the package that introduces its producer.
      */
     public function witnessedFailureClasses(): void
     {
-        $sites = WitnessRegistry::sites(__DIR__);
-        $witnesses = CheckWitnesses::observe($sites['sites']);
+        $sites = RaiseSites::of(__DIR__);
+        $witnesses = CheckWitnesses::observe($sites);
 
         $problems = [
-            ...$sites['problems'],
+            ...$sites->problems,
             ...$witnesses['failures'],
             ...WitnessRegistry::problems(
                 FailureClass::ALL,
-                array_map(static fn(array $site): string => $site['class'], $sites['sites']),
+                array_map(static fn(array $site): string => $site['class'], $sites->sites),
                 $witnesses['observed'],
                 WitnessRegistry::PENDING,
             ),

@@ -28,12 +28,13 @@ final class GateReport
     private array $failures = [];
 
     /**
-     * Where each failure was raised, parallel to `$failures` and never
-     * published: the witness registry holds every raise site to a run that
+     * Where each failure was raised and the methods on the way to it,
+     * innermost first, parallel to `$failures` and never published: the
+     * witness registry holds every raise site, per caller, to a run that
      * observed it, and a class raised by several checks cannot say which one
      * spoke.
      *
-     * @var list<array{file: string, line: int}>
+     * @var list<array{file: string, line: int, chain: list<string>}>
      */
     private array $raisedAt = [];
 
@@ -79,11 +80,19 @@ final class GateReport
         }
 
         $this->failures[] = ['class' => $failureClass, 'scope' => $scope, 'detail' => $detail, 'diff' => $diff];
-        $caller = debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-        $this->raisedAt[] = ['file' => $caller['file'] ?? '?', 'line' => $caller['line'] ?? 0];
+        $frames = debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS);
+        $chain = [];
+
+        foreach (\array_slice($frames, 1) as $frame) {
+            if (isset($frame['class']) && !str_starts_with($frame['function'], '{closure')) {
+                $chain[] = substr((string) strrchr('\\' . $frame['class'], '\\'), 1) . '::' . $frame['function'];
+            }
+        }
+
+        $this->raisedAt[] = ['file' => $frames[0]['file'] ?? '?', 'line' => $frames[0]['line'] ?? 0, 'chain' => $chain];
     }
 
-    /** @return list<array{class: string, scope: string, detail: string, file: string, line: int}> */
+    /** @return list<array{class: string, scope: string, detail: string, file: string, line: int, chain: list<string>}> */
     public function raised(): array
     {
         $raised = [];

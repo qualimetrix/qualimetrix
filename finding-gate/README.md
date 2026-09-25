@@ -10,14 +10,18 @@ supposed to measure: renaming the class `Violation` would shift the subjects of
 the findings the gate compares. Nothing under `cases/` may be product code, and
 no case may point at a path outside its own directory: not in `paths`, not in
 `config`, and not in the value of any option in `args` that reads a path (`-c`,
-`--config`, `--preset` given as a file, `--baseline`, `-d`; the one list is
+`--config`, `--preset` given as a file, `--baseline`; the one list is
 `CaseDefinition::INPUT_OPTIONS`). The rule is judged where a path leads once
-links are resolved, not how it is spelled: a symlink out of the case directory
-is refused, a path that does not exist is refused, and so is an absolute path,
-while a name like `a..b` is just a name. An option that writes (`-o`,
-`--output`, `--log-file`, `--profile`, `--cache-dir`; `CaseDefinition::OUTPUT_OPTIONS`)
-is refused in `args` wherever it points: the run's working directory is the
-case directory, and the gate captures what a run publishes itself.
+links are resolved, not how it is spelled: a case directory that is itself a
+link is refused, so is a symlink out of it, a path that does not exist and an
+absolute path, while a name like `a..b` is just a name. Only `--preset` is a
+comma-separated list, as the product reads it; `--config=a,b.yaml` is one file.
+An option that writes (`-o`, `--output`, `--log-file`, `--profile`,
+`--cache-dir`; `CaseDefinition::OUTPUT_OPTIONS`) is refused in `args` wherever it
+points: the run's working directory is the case directory, and the gate captures
+what a run publishes itself. So is `-d`/`--working-dir`: the product would
+resolve every other path from it, while the rule judges them from the case
+directory.
 
 ## Layout
 
@@ -1065,9 +1069,10 @@ its own — a local mirror of the developer's with the checkout's `HEAD` and
 the clone, never in the repository the harness was started from, also when that
 is a linked worktree whose `.git` is only a pointer file. Making it needs git
 2.31 or later (`rev-parse --path-format`). A mirror carries `refs/` and objects
-and nothing else, so `--reference` has to name a ref or a commit: `@{u}`,
-`HEAD@{1}` and the other reflog forms, `ORIG_HEAD` and `FETCH_HEAD` do not
-resolve in the clone, and every control fails on them loudly. The red controls
+and nothing else, so the harness resolves `--reference` to a commit in the
+developer's repository before it clones anything: `@{u}`, `HEAD@{1}` and the
+other reflog forms, and `ORIG_HEAD` work, and a reference that names no commit
+is refused there. The red controls
 are each required to produce a named failure class at a named surface, except
 the derive controls, which are judged by what the run left on disk instead.
 `composer gate:self-test` runs the harness's own self-test after the gate's;
@@ -1076,7 +1081,14 @@ the gate never loads the harness.
 What the controls require is not what makes a failure class witnessed. They run
 neither in `composer check` nor in CI, so the gate's self-test holds every place
 a class is raised to a synthetic run of its own (`CheckWitnesses`, judged by
-`WitnessRegistry` per raise site), and a control only adds to that.
+`WitnessRegistry`), and a control only adds to that. The unit is a raise site
+per caller (`RaiseSites`): a check reached through a shared wrapper from two
+modes needs a run through each. Every mode of the command line is driven the
+same way and held to its exit code and to exactly the declarations it changed,
+and a failure raised from a place the scan of the source does not enumerate is
+itself a failure. What stays unseen: two paths into a site that share the same
+nearest caller, and the decisions a signal arriving in the tail of a derive run
+takes.
 `moved-aggregated-spelling`
 is the control on the suffix expansion: the metrics
 surface publishes `<key>.pct95` where the product computed `<key>.p95`, the base

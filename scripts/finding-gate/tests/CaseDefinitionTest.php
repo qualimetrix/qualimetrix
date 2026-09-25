@@ -64,6 +64,44 @@ final class CaseDefinitionTest extends TestCase
     }
 
     #[Test]
+    public function itRefusesACaseDirectoryThatIsALink(): void
+    {
+        mkdir($this->root . '/outside/src');
+        Fs::write($this->root . '/outside/case.json', (string) json_encode([
+            'id' => 'linked',
+            'description' => 'A case whose directory is a link.',
+            'paths' => ['src'],
+            'config' => 'qmx.yaml',
+            'channels' => ['a.code@class'],
+        ]));
+        symlink($this->root . '/outside', $this->root . '/cases/linked');
+
+        try {
+            CaseDefinition::load($this->root . '/cases/linked');
+        } catch (GateError $error) {
+            self::assertStringContainsString('may not be a link', $error->getMessage());
+
+            return;
+        }
+
+        self::fail('The linked case directory was accepted.');
+    }
+
+    #[Test]
+    public function itReadsAConfigWithACommaAsOnePath(): void
+    {
+        Fs::write($this->case . '/a,b.yaml', "suppress_paths: []\n");
+
+        self::assertSame(['a,b.yaml'], $this->load(config: 'a,b.yaml', args: ['--config=a,b.yaml'])->argumentPaths());
+    }
+
+    #[Test]
+    public function itRefusesAWorkingDirectoryEvenInsideTheCase(): void
+    {
+        $this->assertRefused('The gate runs a case in its own directory', args: ['-d', 'src']);
+    }
+
+    #[Test]
     public function itRefusesAPathThatDoesNotExist(): void
     {
         $this->assertRefused('does not exist', paths: ['missing']);

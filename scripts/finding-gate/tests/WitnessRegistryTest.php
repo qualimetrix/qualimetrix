@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\FailureClass;
-use QmxFindingGate\Fs;
+use QmxFindingGate\RaiseSites;
 use QmxFindingGate\WitnessRegistry;
 
 /**
@@ -93,53 +93,11 @@ final class WitnessRegistryTest extends TestCase
     }
 
     #[Test]
-    public function itReadsEveryRaiseSiteOffTheSourceAndRefusesOneWithoutAClassConstant(): void
-    {
-        $directory = sys_get_temp_dir() . '/witness-registry-' . bin2hex(random_bytes(8));
-        mkdir($directory);
-
-        try {
-            file_put_contents($directory . '/Check.php', <<<'PHP'
-                <?php
-
-                final class Check
-                {
-                    public function one(): void
-                    {
-                        $this->report->fail(FailureClass::RUN_FAILED, 'a', 'b');
-                        $this->report
-                            ->fail(FailureClass::PATH_LEAK, 'a', 'b');
-                    }
-
-                    public static function two($report, string $class): void
-                    {
-                        $report->fail(FailureClass::MAP_STALE, 'a', 'b');
-                        $report->fail($class, 'a', 'b');
-                        self::fail();
-                    }
-                }
-                PHP);
-            file_put_contents($directory . '/SelfTestCheck.php', "<?php\n\$r->fail(FailureClass::RUN_FAILED, 'a', 'b');\n");
-
-            $read = WitnessRegistry::sites($directory);
-        } finally {
-            Fs::removeRecursively($directory);
-        }
-
-        self::assertSame(
-            ['Check::one#1' => ['run-failed', 7], 'Check::one#2' => ['path-leak', 9], 'Check::two' => ['map-stale', 14]],
-            array_map(static fn(array $site): array => [$site['class'], $site['line']], $read['sites']),
-        );
-        self::assertCount(1, $read['problems']);
-        self::assertStringContainsString('Check.php:15 raises a failure whose class is not a FailureClass constant', $read['problems'][0]);
-    }
-
-    #[Test]
     public function itAcceptsTheTrackedPendingRowsWhileTheirClassesAreRaisedNowhere(): void
     {
         $sites = array_map(
             static fn(array $site): string => $site['class'],
-            WitnessRegistry::sites(\dirname(__DIR__))['sites'],
+            RaiseSites::of(\dirname(__DIR__))->sites,
         );
 
         self::assertSame([], WitnessRegistry::problems(FailureClass::ALL, $sites, array_keys($sites), WitnessRegistry::PENDING));

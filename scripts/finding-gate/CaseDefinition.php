@@ -33,8 +33,14 @@ final class CaseDefinition
         '--config' => '-c',
         '--preset' => null,
         '--baseline' => null,
-        '--working-dir' => '-d',
     ];
+
+    /**
+     * Refused in `args`: the product resolves every other relative path from
+     * the directory this names, while the containment rule resolves them from
+     * the case directory the gate runs the case in.
+     */
+    public const WORKING_DIRECTORY_OPTION = ['--working-dir' => '-d'];
 
     /**
      * The product options that write somewhere. Refused in `args` outright: the
@@ -76,6 +82,7 @@ final class CaseDefinition
     {
         $id = basename($directory);
         $file = $directory . '/case.json';
+        self::assertOwnEntry($directory);
         $decoded = json_decode(Fs::read($file), true);
 
         if (!\is_array($decoded)) {
@@ -140,6 +147,26 @@ final class CaseDefinition
     }
 
     /**
+     * The case directory is the root every path of the case is judged
+     * against, so it has to be the corpus entry it is named as, not a link to a
+     * directory somewhere else — or to another case's.
+     */
+    private static function assertOwnEntry(string $directory): void
+    {
+        $corpus = realpath(\dirname($directory));
+        $resolved = realpath($directory);
+
+        if ($corpus === false || $resolved !== $corpus . '/' . basename($directory)) {
+            throw new GateError(\sprintf(
+                'The case directory %s leads to %s, not to its own entry of the corpus; a case directory may not be a'
+                . ' link.',
+                $directory,
+                $resolved === false ? 'nothing' : $resolved,
+            ));
+        }
+    }
+
+    /**
      * Judged where the path leads, not how it is spelled: a link inside the case
      * directory reaches whatever it points at, and `a..b` is a name like any
      * other. A path that does not exist leads nowhere that could be judged.
@@ -172,16 +199,17 @@ final class CaseDefinition
 
     /**
      * Every file-system path the case's `args` read, as values of
-     * {@see self::INPUT_OPTIONS}, each comma-separated part on its own. A
-     * preset that is not spelled as a file is a built-in name, read from the
-     * product rather than from the case, by the same test the product applies.
+     * {@see self::INPUT_OPTIONS}. Only `--preset` is a comma-separated list, as
+     * the product reads it; a preset that is not spelled as a file is a
+     * built-in name, read from the product rather than from the case, by the
+     * same test the product applies.
      *
      * A bare token is accepted only as the separated value of one of those
      * options. Anywhere else it is either a positional analysis path, which
      * belongs in `paths`, or the separated value of an option this list does not
      * know — and without knowing which, no answer about what the case reads
      * would be exact, so the case is refused instead. So is any of
-     * {@see self::OUTPUT_OPTIONS}.
+     * {@see self::OUTPUT_OPTIONS} and {@see self::WORKING_DIRECTORY_OPTION}.
      *
      * @return list<string>
      */
@@ -216,6 +244,10 @@ final class CaseDefinition
                     throw $this->writes($name);
                 }
 
+                if (\array_key_exists($name, self::WORKING_DIRECTORY_OPTION)) {
+                    throw $this->movesWorkingDirectory($name);
+                }
+
                 if (\array_key_exists($name, self::INPUT_OPTIONS)) {
                     $value === null ? $pending = $name : $values[] = [$name, $value];
                 }
@@ -230,6 +262,10 @@ final class CaseDefinition
                 foreach (str_split(substr($argument, 1)) as $offset => $shortcut) {
                     if (\in_array('-' . $shortcut, self::OUTPUT_OPTIONS, true)) {
                         throw $this->writes('-' . $shortcut);
+                    }
+
+                    if (\in_array('-' . $shortcut, self::WORKING_DIRECTORY_OPTION, true)) {
+                        throw $this->movesWorkingDirectory('-' . $shortcut);
                     }
 
                     $name = array_search('-' . $shortcut, self::INPUT_OPTIONS, true);
@@ -256,12 +292,16 @@ final class CaseDefinition
         $paths = [];
 
         foreach ($values as [$option, $value]) {
-            foreach (explode(',', $value) as $part) {
-                if ($option === '--preset' && !self::namesPresetFile($part)) {
-                    continue;
-                }
+            if ($option !== '--preset') {
+                $paths[] = $value;
 
-                $paths[] = $part;
+                continue;
+            }
+
+            foreach (explode(',', $value) as $preset) {
+                if (self::namesPresetFile($preset)) {
+                    $paths[] = $preset;
+                }
             }
         }
 
@@ -280,6 +320,16 @@ final class CaseDefinition
         return new GateError(\sprintf(
             '%s: "args" carries %s, which writes. A case writes nothing: its working directory is the tracked'
             . ' corpus, and the gate captures what a run publishes itself.',
+            $this->directory . '/case.json',
+            $option,
+        ));
+    }
+
+    private function movesWorkingDirectory(string $option): GateError
+    {
+        return new GateError(\sprintf(
+            '%s: "args" carries %s. The gate runs a case in its own directory, and every path of the case is judged'
+            . ' from there; a second working directory would move what the product reads away from what was judged.',
             $this->directory . '/case.json',
             $option,
         ));

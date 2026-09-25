@@ -22,6 +22,7 @@ final class HarnessSelfTest
     public function run(): array
     {
         $this->controlCloneOwnsItsRepository();
+        $this->referenceResolvesBeforeTheClone();
 
         return $this->failures;
     }
@@ -93,6 +94,63 @@ final class HarnessSelfTest
 
             if ($outside !== null) {
                 Shell::removeRecursively($outside);
+            }
+        }
+    }
+
+    /**
+     * A reference only the developer's repository can resolve still reaches
+     * every control, as the commit it names.
+     *
+     * The clone carries refs and objects, not reflogs, pseudo-refs or branch
+     * configuration: `HEAD@{1}` and `ORIG_HEAD` resolve in the checkout and
+     * nowhere else. Here both name a commit no ref reaches any more.
+     */
+    private function referenceResolvesBeforeTheClone(): void
+    {
+        $repository = null;
+        $scratch = null;
+
+        try {
+            $repository = self::throwawayRepository();
+            file_put_contents($repository . '/dropped.txt', "dropped\n");
+            self::git($repository, 'add', 'dropped.txt');
+            self::git($repository, '-c', 'user.email=self-test@qmx', '-c', 'user.name=self-test', 'commit', '--quiet', '--message', 'dropped');
+            $dropped = self::git($repository, 'rev-parse', 'HEAD');
+            self::git($repository, 'reset', '--quiet', '--hard', 'HEAD~1');
+
+            foreach (['HEAD@{1}', 'ORIG_HEAD', $dropped] as $reference) {
+                $this->same($dropped, Harness::resolveReference($repository, $reference), \sprintf('"%s" resolves to the commit it names', $reference));
+            }
+
+            $scratch = Scratch::cloneOf($repository);
+            $this->same(
+                $dropped,
+                self::git($scratch->tree, 'rev-parse', '--verify', '--quiet', $dropped . '^{commit}'),
+                'the clone carries that commit although no ref reaches it',
+            );
+            $this->same(
+                1,
+                Shell::run(['git', 'rev-parse', '--verify', '--quiet', 'HEAD@{1}'], $scratch->tree)['exit'],
+                'while the reflog form the developer wrote means nothing there',
+            );
+
+            $refused = false;
+
+            try {
+                Harness::resolveReference($repository, str_repeat('0', 40));
+            } catch (RuntimeException) {
+                $refused = true;
+            }
+
+            $this->same(true, $refused, 'a reference that names no commit is refused before any clone is made');
+        } catch (RuntimeException $error) {
+            $this->failures[] = 'a reference resolves before the clone (' . $error->getMessage() . ')';
+        } finally {
+            $scratch?->remove();
+
+            if ($repository !== null) {
+                Shell::removeRecursively($repository);
             }
         }
     }

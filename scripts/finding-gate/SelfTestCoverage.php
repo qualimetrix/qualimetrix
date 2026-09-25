@@ -350,7 +350,6 @@ final class SelfTestCoverage extends SelfTestGroup
             'a preset path' => ['--preset=../../../preset.yaml'],
             'a preset hidden in a comma list' => ['--preset=strict,/elsewhere/preset.yaml'],
             'a baseline' => ['--baseline=/elsewhere/baseline.json'],
-            'a working directory' => ['--working-dir=..'],
         ] as $what => $args) {
             $this->assert(!$loads('qmx.yaml', $args), \sprintf('%s outside the case directory is refused', $what));
         }
@@ -362,8 +361,10 @@ final class SelfTestCoverage extends SelfTestGroup
             'a log file' => ['--log-file=qmx.log'],
             'a cache directory' => ['--cache-dir=cache'],
             'a profile without a file' => ['--profile'],
+            'a separated working directory' => ['-d', 'src'],
+            'an attached --working-dir' => ['--working-dir=src'],
         ] as $what => $args) {
-            $this->assert(!$loads('qmx.yaml', $args), \sprintf('%s is refused wherever it writes', $what));
+            $this->assert(!$loads('qmx.yaml', $args), \sprintf('%s is refused wherever it points', $what));
         }
 
         $this->assert(
