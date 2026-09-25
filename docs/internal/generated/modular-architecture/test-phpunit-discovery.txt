@@ -96,11 +96,17 @@ Available tests:
  - QmxFindingGate\Tests\GateModesTest::itExitsZeroWhenTheSelfTestIsGreen
  - QmxFindingGate\Tests\RaiseSitesTest::itAcceptsADeclaredLineOnceAndRefusesOneThatMatchesNoneOrMore
  - QmxFindingGate\Tests\RaiseSitesTest::itFollowsEveryDirectCallWhateverItsCaseOrQualification
+ - QmxFindingGate\Tests\RaiseSitesTest::itKeepsARaiseWithItsMethodPastAnAnonymousClass
  - QmxFindingGate\Tests\RaiseSitesTest::itNamesEverySiteOncePerCallerFromAnotherClass
+ - QmxFindingGate\Tests\RaiseSitesTest::itReadsAStringsValueAsPhpDoes
+ - QmxFindingGate\Tests\RaiseSitesTest::itRefusesAFileThatDoesNotParse
  - QmxFindingGate\Tests\RaiseSitesTest::itRefusesEveryFormItCannotRead
  - QmxFindingGate\Tests\RaiseSitesTest::itRefusesEveryOccurrenceOfALeadingNameThatIsNotADeclarationOrADirectCall
+ - QmxFindingGate\Tests\RaiseSitesTest::itRefusesEveryUseOfAConstantCarryingALeadingName
  - QmxFindingGate\Tests\RaiseSitesTest::itRefusesTwoScannedClassesWithOneShortNameInAnyCase
+ - QmxFindingGate\Tests\RaiseSitesTest::itResolvesAnImportedClassAndRefusesAGroupImport
  - QmxFindingGate\Tests\RaiseSitesTest::itScansSubdirectories
+ - QmxFindingGate\Tests\RaiseSitesTest::itTellsACallFromAPropertyANamedArgumentAndAPhantomReceiver
  - QmxFindingGate\Tests\WitnessRegistryTest::itAcceptsTheTrackedPendingRowsWhileTheirClassesAreRaisedNowhere
  - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a class raised nowhere"
  - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending class that is raised"

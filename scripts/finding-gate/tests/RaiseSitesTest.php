@@ -202,14 +202,13 @@ final class RaiseSitesTest extends TestCase
                 'Alpha.php:7',
                 'Beta.php:13',
                 'Beta.php:15',
+                'Beta.php:16',
                 'Beta.php:18',
                 'Beta.php:19',
                 'Beta.php:20',
                 'Beta.php:21',
                 'Beta.php:22',
-                'Beta.php:23',
                 'Beta.php:24',
-                'Beta.php:25',
             ],
             array_map(
                 static fn(string $problem): string => (string) preg_replace('~^.*?/(\w+\.php):(\d+) names .*$~', '$1:$2', $problem),
@@ -358,6 +357,284 @@ final class RaiseSitesTest extends TestCase
 
         self::assertCount(1, $problems);
         self::assertStringContainsString('declares a second class named alpha', $problems[0]);
+    }
+
+    #[Test]
+    public function itReadsAStringsValueAsPhpDoes(): void
+    {
+        $this->write('Alpha.php', <<<'PHP'
+            <?php
+
+            final class Alpha
+            {
+                public function check($report): void
+                {
+                    $report->fail(FailureClass::RUN_FAILED, 'a', 'b');
+                }
+            }
+            PHP);
+        $this->write('Beta.php', <<<'PHP'
+            <?php
+
+            final class Beta
+            {
+                public function forms($x): void
+                {
+                    $a = b'check';
+                    $b = "ch\u{65}ck";
+                    $c = "\x63heck";
+                    $d = "\143heck";
+                    $e = B"Alpha::CHECK";
+                    $f = <<<E
+                        Alpha::ch\x65ck
+                        E;
+                    $g = <<<'E'
+                        check
+                        E;
+                    $h = "{$x}::ch\u{65}ck";
+                    $i = <<<E
+                        {$x} Alpha::ch\x65ck
+                        E;
+                    $j = "f\x61il";
+                    $k = b'FAIL';
+                    $l = "chec";
+                    $m = 'check ';
+                }
+            }
+            PHP);
+
+        self::assertSame(
+            [
+                'Beta.php:22 names "fail" as a string',
+                'Beta.php:23 names "fail" as a string',
+                'Beta.php:7 names Alpha::check',
+                'Beta.php:8 names Alpha::check',
+                'Beta.php:9 names Alpha::check',
+                'Beta.php:10 names Alpha::check',
+                'Beta.php:11 names Alpha::check',
+                'Beta.php:13 names Alpha::check',
+                'Beta.php:16 names Alpha::check',
+                'Beta.php:18 names Alpha::check',
+                'Beta.php:20 names Alpha::check',
+            ],
+            self::briefly(RaiseSites::of($this->directory, [])->problems),
+        );
+    }
+
+    #[Test]
+    public function itRefusesEveryUseOfAConstantCarryingALeadingName(): void
+    {
+        $this->write('Alpha.php', <<<'PHP'
+            <?php
+
+            namespace QmxFindingGate;
+
+            const GLOBAL_NAME = 'check';
+            \define('DEFINED_NAME', 'Alpha::check');
+
+            class Alpha
+            {
+                public const string NAME = 'check';
+                public const int OTHER = 1;
+
+                public function check($report): void
+                {
+                    $report->fail(FailureClass::RUN_FAILED, 'a', 'b');
+                }
+            }
+            PHP);
+        $this->write('Beta.php', <<<'PHP'
+            <?php
+
+            namespace QmxFindingGate;
+
+            final class Beta extends Alpha
+            {
+                public function uses($x): array
+                {
+                    return [
+                        [$x, Alpha::NAME],
+                        [$x, self::NAME],
+                        [$x, static::NAME],
+                        [$x, \QmxFindingGate\Alpha::NAME],
+                        [$x, parent::NAME],
+                        \constant('QmxFindingGate\Alpha::NAME'),
+                        [$x, GLOBAL_NAME],
+                        [$x, DEFINED_NAME],
+                        Alpha::OTHER,
+                        Unscanned::NAME,
+                    ];
+                }
+            }
+            PHP);
+
+        $declared = [
+            ['Alpha.php', "const GLOBAL_NAME = 'check';", 'data'],
+            ['Alpha.php', "\\define('DEFINED_NAME', 'Alpha::check');", 'data'],
+            ['Alpha.php', "public const string NAME = 'check';", 'data'],
+        ];
+
+        self::assertSame(
+            [
+                'Beta.php:10 names Alpha::check',
+                'Beta.php:11 names Alpha::check',
+                'Beta.php:12 names Alpha::check',
+                'Beta.php:13 names Alpha::check',
+                'Beta.php:14 names Alpha::check',
+                'Beta.php:15 names Alpha::check',
+                'Beta.php:16 names Alpha::check',
+                'Beta.php:17 names Alpha::check',
+                'Beta.php:19 names Alpha::check',
+            ],
+            self::briefly(RaiseSites::of($this->directory, $declared)->problems),
+        );
+    }
+
+    #[Test]
+    public function itResolvesAnImportedClassAndRefusesAGroupImport(): void
+    {
+        $this->write('Coverage.php', <<<'PHP'
+            <?php
+
+            namespace QmxFindingGate;
+
+            final class Coverage
+            {
+                public static function check($report): void
+                {
+                    $report->fail(FailureClass::RUN_FAILED, 'a', 'b');
+                }
+            }
+            PHP);
+        $this->write('Diff.php', "<?php\nnamespace QmxFindingGate;\nfinal class Diff\n{\n}\n");
+        $this->write('Beta.php', <<<'PHP'
+            <?php
+
+            namespace QmxFindingGate;
+
+            use QmxFindingGate\Coverage as Diff;
+            use Vendor\Elsewhere as Unknown;
+
+            final class Beta
+            {
+                public function aliased(): void
+                {
+                    Diff::check($this->report);
+                }
+
+                public function elsewhere(): void
+                {
+                    Unknown::check($this->report);
+                }
+            }
+            PHP);
+        $this->write('Gamma.php', "<?php\nnamespace QmxFindingGate;\nuse Vendor\\{A, B};\nfinal class Gamma\n{\n}\n");
+
+        $read = RaiseSites::of($this->directory, []);
+
+        self::assertSame(['Coverage::check <- Beta::aliased'], array_keys($read->sites));
+        self::assertSame(
+            ['Gamma.php:3 imports through a group `use`', 'Beta.php:17 names Coverage::check'],
+            self::briefly($read->problems),
+        );
+    }
+
+    #[Test]
+    public function itKeepsARaiseWithItsMethodPastAnAnonymousClass(): void
+    {
+        $this->write('Alpha.php', <<<'PHP'
+            <?php
+
+            final class Alpha
+            {
+                public function outer($report): void
+                {
+                    $helper = new class {
+                        public function inner(): void {}
+                    };
+                    $report->fail(FailureClass::RUN_FAILED, 'a', 'b');
+                }
+            }
+            PHP);
+
+        self::assertSame(['Alpha::outer'], array_keys(RaiseSites::of($this->directory, [])->sites));
+    }
+
+    #[Test]
+    public function itTellsACallFromAPropertyANamedArgumentAndAPhantomReceiver(): void
+    {
+        $this->write('Alpha.php', <<<'PHP'
+            <?php
+
+            final class Alpha
+            {
+                public function compare($report): void
+                {
+                    $report->fail(FailureClass::RUN_FAILED, 'a', 'b');
+                }
+            }
+            PHP);
+        $this->write('Beta.php', <<<'PHP'
+            <?php
+
+            final class Beta
+            {
+                public function spread(array $args): void
+                {
+                    $this->alpha->compare(...$args);
+                    $read = $this->alpha->compare;
+                    $this->format(compare: 1);
+                }
+
+                public function collator(\Collator $collator): int
+                {
+                    return $collator->compare('a', 'b');
+                }
+
+                public function function(): void
+                {
+                    \Vendor\compare($this->report);
+                }
+            }
+            PHP);
+
+        $declared = [['Beta.php', "return \$collator->compare('a', 'b');", 'a Collator, not a scanned class']];
+        $read = RaiseSites::of($this->directory, $declared);
+
+        self::assertSame(['Alpha::compare <- Beta::spread'], array_keys($read->sites));
+        self::assertSame(['Beta.php:19 names Alpha::compare'], self::briefly($read->problems));
+        self::assertSame(
+            ['Alpha::compare <- Beta::collator', 'Alpha::compare <- Beta::spread'],
+            array_keys(RaiseSites::of($this->directory, [])->sites),
+        );
+    }
+
+    #[Test]
+    public function itRefusesAFileThatDoesNotParse(): void
+    {
+        $this->write('Broken.php', "<?php\nfinal class Broken\n{\n    public function (\n}\n");
+
+        $problems = RaiseSites::of($this->directory, [])->problems;
+
+        self::assertCount(1, $problems);
+        self::assertStringContainsString('Broken.php does not parse', $problems[0]);
+    }
+
+    /**
+     * @param list<string> $problems
+     *
+     * @return list<string>
+     */
+    private static function briefly(array $problems): array
+    {
+        return array_map(
+            static fn(string $problem): string => (string) preg_replace(
+                '~^witness registry: .*?/(\w+\.php):(\d+) (names (?:"fail" as a string|[\w:]+)|imports through a group `use`).*$~s',
+                '$1:$2 $3',
+                $problem,
+            ),
+            $problems,
+        );
     }
 
     private function write(string $relative, string $content): void

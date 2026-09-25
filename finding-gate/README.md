@@ -1111,23 +1111,41 @@ line is witnessed its own way:
 mode a scenario already drives.
 
 The scan denies by default. For every method that leads to a raise, each
-occurrence of its name in the scanned files — an identifier, or a string literal
-whose value is the name or ends in `::name`, compared without case as PHP
-resolves names — must be one of three things: its declaration; a direct call
-with arguments on a class the scan resolves (`->m(`, `$this->m(`, `self::`,
-`static::`, `parent::` of a scanned `extends`, `X::m(` for a scanned `X`
-however it is qualified, `namespace\X::m(` included); or a line declared in
-`RaiseSites::DECLARED_NAMES` with the reason it is data. Anything else is refused
-by place and name — a callable in any spelling, a first-class callable, a call
-on a class held in a variable or known under another name — without a list of
-forms to outgrow. A declared line that matches no occurrence or more than one,
-or gives no reason, is refused too. The name `fail` is reserved the same way: a
-`fail` that is not `$report->fail(FailureClass::X, ...)`, `'fail'` as a string,
-a method called through a variable name, a second `fail()` definition and an
-extendable `GateReport` are refused. What stays unseen: a name assembled at run
-time from parts — concatenation, `sprintf`, a value read from data — two paths
-into a site that share the same nearest caller, and the decisions a signal
-arriving in the tail of a derive run takes.
+occurrence of its name in the scanned files must be one of three things: its
+declaration; a direct call with arguments (`(...$spread)` included, `(...)`
+not) — `$this->m(`, `self::`/`static::m(`, `parent::m(` of a scanned `extends`,
+`X::m(` for a scanned `X` however it is qualified or imported, and `$object->m(`
+on any other receiver, which is matched to every scanned class declaring `m`,
+wide on purpose since the receiver's type is not read; or a line declared in
+`RaiseSites::DECLARED_NAMES` with its reason — data that only happens to spell
+the name, or an `$object->m(` whose receiver is declared not to be a scanned
+class, which then leaves the call graph. Names compare without case, as PHP
+resolves them, and an imported class is resolved through its `use`.
+
+An occurrence is an identifier, the last segment of a qualified name, a string
+whose value is the name or ends in `::name` — a whole literal (`b'...'`, heredoc
+and nowdoc included) as PHP computes its value, a part of an interpolated string
+read raw, trimmed and, when it holds a `\`, decoded too — and every use of a
+constant whose literal value is such a name (`X::C`, `self::C`, `static::C`,
+`parent::C`, a global `const` or `define()`, a string naming it). A property
+access `->m` and a named argument `m:` are not. Everything else is refused by
+place and name, without a list of forms to outgrow. A declared line covers that
+line only, never the uses of a constant it defines; one that matches no
+occurrence or more than one, or gives no reason, is refused, and so are a file
+that does not parse and a group `use`. The name `fail` is reserved the same
+way: a `fail` that is not `$report->fail(FailureClass::X, ...)`, a string whose
+value is `fail`, a method called through a variable name, a second `fail()`
+definition and an extendable `GateReport` are refused.
+
+What stays unseen, the same list as `RaiseSites`' docblock:
+
+- a name assembled at run time from parts — concatenation, `sprintf`,
+  interpolation, a value read from data;
+- a call through `$this->m()` that PHP dispatches to a subclass overriding `m`,
+  which is attributed to the declaring class only;
+- two paths into a site that share the same nearest caller;
+- the decisions a signal arriving in the tail of a derive run takes.
+
 `moved-aggregated-spelling`
 is the control on the suffix expansion: the metrics
 surface publishes `<key>.pct95` where the product computed `<key>.p95`, the base
