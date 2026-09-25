@@ -654,12 +654,12 @@ vendor/bin/qmx check src/ --preset=./my-preset.yaml
 ```
 
 <!-- llms:skip-begin -->
-**Priority order:** Presets are applied after `composer.json` discovery but before `qmx.yaml`. Your config file always overrides preset values.
+**Priority order:** Presets are applied after `composer.json` discovery but before `qmx.yaml`, left to right. Your config file sits above every preset, and the command line above the file.
 
-**Multiple presets:** When combining presets, they are merged left-to-right — later presets override earlier ones, except list keys like `disabled_rules` which accumulate. For example, `--preset=legacy,ci` gives you legacy thresholds with CI fail behavior.
+**Multiple presets:** Presets combine with each other exactly as a preset combines with your file — each key by its own policy, described in [How layers combine](#how-layers-combine). For example, `--preset=legacy,ci` gives you legacy thresholds with CI fail behavior, because `fail_on` is a scalar the later layer wins.
 
 !!! warning
-    `only_rules` is **not** accumulated across presets — the last preset's `only_rules` completely replaces any earlier one. This is intentional: `only_rules` is a restrictive filter, and union would widen the scope.
+    `only_rules` is **not** accumulated across layers — the last layer that writes it replaces the list whole. This is intentional: `only_rules` is a restrictive filter, and union would widen the scope. `disabled_rules` does accumulate, so a rule an earlier preset disables stays disabled.
 
 **Custom presets:** Any YAML file with the same structure as `qmx.yaml` can be used as a preset. Pass the file path instead of a built-in name.
 <!-- llms:skip-end -->
@@ -742,13 +742,103 @@ vendor/bin/qmx check src/ --suppress-path='subtree:src/Generated'
 
 This makes it easy to experiment without editing the config file.
 
-### What a higher layer replaces, and what it leaves alone
+---
+<!-- llms:skip-end -->
 
-A layer replaces the keys it writes, and nothing else.
+## How layers combine {#how-layers-combine}
 
-`threshold: N` is shorthand for both halves of a `warning`/`error` band, so a
-higher layer that rewrites only one half keeps the shorthand's value in the
-other:
+Every source of configuration is a **layer**: the built-in defaults, what
+`composer.json` discovery finds, each preset in the order given, `qmx.yaml`, and
+the command line — each one above the ones before it.
+
+Each layer is read as it was written. Its keys are recognised and the form of
+every value it writes is judged in that layer, before anything is merged, so a
+misspelt key or a wrong value in a preset is refused even when your file
+overrides it. Then the layers are merged, each key by the policy it declares.
+What the merged value means — a layer name `architecture.allow` refers to, a
+formula that has to compile — is judged once, on the merged value. A refusal
+about a key in the table below, and every warning, names the layer that wrote
+the value it is about; in `--format=json` that is the `source` field (see
+[Output Formats](../usage/output-formats.md)). A few values — `memory_limit`,
+`fail_on`, `format`, `cache`, `parallel.workers` — still have their meaning
+judged after the merge without the layer that wrote them, and such a refusal
+names the key instead.
+
+Five rules hold at every key outside the two roots their owners merge
+([`rules` and `coupling`](#owner-merged-keys)):
+
+- **`~` means "not written".** A key written `~`, or left empty (`key:`), leaves
+  the value to the layer below. The key itself is still recognised: a misspelt
+  key is refused even when its value is `~`. Under a map keyed by names
+  (`computed_metrics`, `architecture.allow`), `name: ~` still has its name
+  checked.
+- **An empty map changes nothing.** `cache: {}` or `computed_metrics: {}` over a
+  preset keeps every value the preset wrote. An empty map does not reset a
+  section to its defaults; write the values you want instead.
+- **A list replaces or accumulates, by key.** `paths`, `only_rules`,
+  `architecture.layers`, one layer's target list under `architecture.allow` and
+  a computed metric's `levels` are replaced whole by the last layer that writes
+  them — `[]` included. `exclude`, `suppress_paths`, `suppress_namespaces`,
+  `disabled_rules` and `exclude_health` accumulate: every layer adds to them. An
+  item of a list is a value, not an unwritten key, so an item written `~` is
+  refused.
+- **A shorthand is expanded in the layer that wrote it**, before any merge.
+  `threshold: 5` in a preset is `warning: 5` and `error: 5` in that preset, so a
+  file that writes only `warning: 3` over it gets `warning 3` and `error 5`.
+  Writing a shorthand beside one of its keys in the same layer is refused.
+- **A key has three spellings**: the snake_case, kebab-case and camelCase of its
+  words — `fail_on`, `fail-on`, `failOn`. Any other spelling of the same words
+  (`Fail_On`, `FAILON`, `failon`) is refused with the accepted one, for every
+  key in the table below.
+
+```yaml
+# preset
+computed_metrics:
+  computed.risk:
+    formula: "m['complexity.ccn.max'] ?? 0"
+    levels: [class]
+    threshold: 20          # warning: 20 and error: 20, in the preset
+```
+
+```yaml
+# qmx.yaml
+computed_metrics:
+  computed.risk:
+    warning: 10            # the formula, levels and error 20 still come from the preset
+  health.typing:
+    enabled: false         # the only way to remove a metric a lower layer wrote
+```
+
+### What cannot be written {#what-cannot-be-written}
+
+Three things have no spelling, deliberately:
+
+- **Removing a key a lower layer wrote.** A higher layer cannot delete a
+  preset's computed metric or its `architecture.allow` entry for a layer. A
+  computed metric is switched off with `enabled: false`; a layer's allow list
+  can be replaced, `[]` included — which allows that layer nothing, rather than
+  removing the entry.
+- **Replacing a preset's whole set of computed metrics.** Each metric merges on
+  its own, by name.
+- **Returning to the default without writing it.** `~` and `{}` both keep the
+  layer below; to get a default value back over a preset, write that value.
+
+An empty map reset its section in earlier releases; see the
+[changelog](../changelog.md) for what changed.
+
+### Keys whose owner merges them {#owner-merged-keys}
+
+The table marks two roots "read by its owner": the document engine checks their
+spelling and carries each layer's value to the owner, which merges them.
+
+- **`coupling`** — `framework_namespaces` written by a later layer replaces the
+  earlier list; `[]` turns framework classification off.
+- **`rules`** — a rule's options and level blocks merge key by key, a
+  `threshold` shorthand is expanded in the layer that wrote it, `~` keeps the
+  layer below, and `false` switches the rule off. Two spellings behave
+  differently today: `{}` written for a rule or one of its levels, and
+  `rule: true`, reset that rule's options to their defaults instead of changing
+  nothing.
 
 ```yaml
 # preset
@@ -763,29 +853,73 @@ vendor/bin/qmx check src/ --preset=my-preset.yaml \
 The result is `warning 2` from the command line and `error 5` from the preset's
 shorthand — not the rule's compiled default.
 
-A key written `~` writes nothing: it leaves the value to whatever it would
-otherwise be, which across layers means the layer below.
+### Configuration warnings {#configuration-warnings}
 
-```yaml
-# preset sets warning 2 / error 3; this leaves both of them standing
-rules: {complexity.ccn: {callable: {warning: ~}}}
+A configuration that is legal but probably not what was meant is accepted with
+a warning rather than refused. Every command that reads the configuration
+prints its warnings to stderr, prefixed `Warning:`, and `--format=json` also
+lists them under `configurationDiagnostics`, each with the layers it is about.
+For example, `only_rules: []` in `qmx.yaml` over a preset that filters the
+rules is lawful — an empty `only_rules` applies no filter — and says so:
 
-# and this leaves the whole rule's configuration standing
-rules: {complexity.ccn: ~}
+```
+Warning: "only_rules" is written empty in configuration file "qmx.yaml" and replaces the list preset "./ci-filter.yaml" wrote. An empty only_rules applies no rule filter: every enabled rule runs.
 ```
 
-To switch a rule off, write `false` rather than `~`:
+### Every key {#every-key}
 
-```yaml
-rules: {complexity.ccn: false}
-```
+The table is generated from the declarations the configuration engine merges
+by. `<name>` stands for a name you choose. The owner of a key may still refuse a
+merged value the policy let through — a formula that does not compile, a layer
+that allows a layer `layers` does not declare.
 
-Mixing `threshold` with `warning`/`error` in the SAME layer is still refused —
-they are two spellings of one thing, and writing both says nothing about which
-was meant.
+<!-- generated:configuration-merge-table:begin (php scripts/generate-configuration-merge-table.php) -->
+
+| Key                                          | Value                                                                               | Across layers                                                                                                                                                                            | Written `~`                                                          | Written empty (`{}`, `[]`)                                                                      |
+| -------------------------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `architecture`                               | map                                                                                 | Merged key by key; a written empty map changes nothing.                                                                                                                                  | Not written: the layer below stands.                                 | Changes nothing.                                                                                |
+| `architecture.layers`                        | list (item: map)                                                                    | The last layer that writes the list replaces it whole; an empty list replaces too.                                                                                                       | Not written: the layer below stands. An item written `~` is refused. | Replaces the list below with an empty one.                                                      |
+| `architecture.allow`                         | map by name: names checked against `architecture.layers` once every layer is merged | Merged entry by entry, keyed by name; each entry merges by its own policy.                                                                                                               | Not written: the layer below stands.                                 | Changes nothing.                                                                                |
+| `architecture.allow.<name>`                  | list (item: read by its owner)                                                      | The last layer that writes the list replaces it whole; an empty list replaces too.                                                                                                       | The name is judged; the body stays with the layer below.             | Replaces the list below with an empty one.                                                      |
+| `architecture.coverage-gap`                  | string                                                                              | The last layer that writes the value wins.                                                                                                                                               | Not written: the layer below stands.                                 | Refused: a scalar is expected.                                                                  |
+| `architecture.max_expanded_layers`           | integer                                                                             | The last layer that writes the value wins.                                                                                                                                               | Not written: the layer below stands.                                 | Refused: a scalar is expected.                                                                  |
+| `cache`                                      | map                                                                                 | Merged key by key; a written empty map changes nothing.                                                                                                                                  | Not written: the layer below stands.                                 | Changes nothing.                                                                                |
+| `cache.dir`                                  | string                                                                              | The last layer that writes the value wins.                                                                                                                                               | Not written: the layer below stands.                                 | Refused: a scalar is expected.                                                                  |
+| `cache.enabled`                              | boolean                                                                             | The last layer that writes the value wins.                                                                                                                                               | Not written: the layer below stands.                                 | Refused: a scalar is expected.                                                                  |
+| `computed_metrics`                           | map by name: a name judged by the section's grammar in the layer that wrote it      | Merged entry by entry, keyed by name; each entry merges by its own policy.                                                                                                               | Not written: the layer below stands.                                 | Changes nothing.                                                                                |
+| `computed_metrics.<name>`                    | map                                                                                 | Merged key by key; a written empty map changes nothing.                                                                                                                                  | The name is judged; the body stays with the layer below.             | Changes nothing.                                                                                |
+| `computed_metrics.<name>.description`        | string                                                                              | The last layer that writes the value wins.                                                                                                                                               | Not written: the layer below stands.                                 | Refused: a scalar is expected.                                                                  |
+| `computed_metrics.<name>.enabled`            | boolean                                                                             | The last layer that writes the value wins.                                                                                                                                               | Not written: the layer below stands.                                 | Refused: a scalar is expected.                                                                  |
+| `computed_metrics.<name>.error`              | number                                                                              | The last layer that writes the value wins.                                                                                                                                               | Not written: the layer below stands.                                 | Refused: a scalar is expected.                                                                  |
+| `computed_metrics.<name>.formula`            | string                                                                              | The last layer that writes the value wins.                                                                                                                                               | Not written: the layer below stands.                                 | Refused: a scalar is expected.                                                                  |
+| `computed_metrics.<name>.formulas`           | map                                                                                 | Merged key by key; a written empty map changes nothing.                                                                                                                                  | Not written: the layer below stands.                                 | Changes nothing.                                                                                |
+| `computed_metrics.<name>.formulas.class`     | string                                                                              | The last layer that writes the value wins.                                                                                                                                               | Not written: the layer below stands.                                 | Refused: a scalar is expected.                                                                  |
+| `computed_metrics.<name>.formulas.namespace` | string                                                                              | The last layer that writes the value wins.                                                                                                                                               | Not written: the layer below stands.                                 | Refused: a scalar is expected.                                                                  |
+| `computed_metrics.<name>.formulas.project`   | string                                                                              | The last layer that writes the value wins.                                                                                                                                               | Not written: the layer below stands.                                 | Refused: a scalar is expected.                                                                  |
+| `computed_metrics.<name>.inverted`           | boolean                                                                             | The last layer that writes the value wins.                                                                                                                                               | Not written: the layer below stands.                                 | Refused: a scalar is expected.                                                                  |
+| `computed_metrics.<name>.levels`             | list (item: string)                                                                 | The last layer that writes the list replaces it whole; an empty list replaces too.                                                                                                       | Not written: the layer below stands. An item written `~` is refused. | Replaces the list below with an empty one.                                                      |
+| `computed_metrics.<name>.warning`            | number                                                                              | The last layer that writes the value wins.                                                                                                                                               | Not written: the layer below stands.                                 | Refused: a scalar is expected.                                                                  |
+| `computed_metrics.<name>.threshold`          | number                                                                              | Shorthand for `warning` and `error`: expanded in the layer that wrote it, before any merge; each key then merges on its own. Writing it beside one of them in the same layer is refused. | Not written: the layer below stands.                                 | Refused: a scalar is expected.                                                                  |
+| `coupling`                                   | read by its owner                                                                   | Kept per layer, unmerged, for its owner to fold.                                                                                                                                         | Not written: the layer below stands.                                 | Its owner decides.                                                                              |
+| `disabled_rules`                             | list (item: string)                                                                 | Every layer adds its elements; duplicates collapse.                                                                                                                                      | Not written: the layer below stands. An item written `~` is refused. | Adds nothing.                                                                                   |
+| `exclude`                                    | list (item: map)                                                                    | Every layer adds its elements; duplicates collapse.                                                                                                                                      | Not written: the layer below stands. An item written `~` is refused. | Adds nothing.                                                                                   |
+| `exclude_health`                             | list (item: string)                                                                 | Every layer adds its elements; duplicates collapse.                                                                                                                                      | Not written: the layer below stands. An item written `~` is refused. | Adds nothing.                                                                                   |
+| `fail_on`                                    | string                                                                              | The last layer that writes the value wins.                                                                                                                                               | Not written: the layer below stands.                                 | Refused: a scalar is expected.                                                                  |
+| `format`                                     | string                                                                              | The last layer that writes the value wins.                                                                                                                                               | Not written: the layer below stands.                                 | Refused: a scalar is expected.                                                                  |
+| `include_autoload_dev`                       | boolean                                                                             | The last layer that writes the value wins.                                                                                                                                               | Not written: the layer below stands.                                 | Refused: a scalar is expected.                                                                  |
+| `include_generated`                          | boolean                                                                             | The last layer that writes the value wins.                                                                                                                                               | Not written: the layer below stands.                                 | Refused: a scalar is expected.                                                                  |
+| `memory_limit`                               | string or integer                                                                   | The last layer that writes the value wins.                                                                                                                                               | Not written: the layer below stands.                                 | Refused: a scalar is expected.                                                                  |
+| `only_rules`                                 | list (item: string)                                                                 | The last layer that writes the list replaces it whole; an empty list replaces too.                                                                                                       | Not written: the layer below stands. An item written `~` is refused. | Replaces the list below with an empty one. A warning says so when the list below was not empty. |
+| `parallel`                                   | map                                                                                 | Merged key by key; a written empty map changes nothing.                                                                                                                                  | Not written: the layer below stands.                                 | Changes nothing.                                                                                |
+| `parallel.workers`                           | integer                                                                             | The last layer that writes the value wins.                                                                                                                                               | Not written: the layer below stands.                                 | Refused: a scalar is expected.                                                                  |
+| `paths`                                      | list (item: string)                                                                 | The last layer that writes the list replaces it whole; an empty list replaces too.                                                                                                       | Not written: the layer below stands. An item written `~` is refused. | Replaces the list below with an empty one.                                                      |
+| `rules`                                      | read by its owner                                                                   | Kept per layer, unmerged, for its owner to fold.                                                                                                                                         | Not written: the layer below stands.                                 | Its owner decides.                                                                              |
+| `suppress_namespaces`                        | list (item: map)                                                                    | Every layer adds its elements; duplicates collapse.                                                                                                                                      | Not written: the layer below stands. An item written `~` is refused. | Adds nothing.                                                                                   |
+| `suppress_paths`                             | list (item: map)                                                                    | Every layer adds its elements; duplicates collapse.                                                                                                                                      | Not written: the layer below stands. An item written `~` is refused. | Adds nothing.                                                                                   |
+
+<!-- generated:configuration-merge-table:end -->
 
 ---
-<!-- llms:skip-end -->
 
 ## Configuration Validation
 
@@ -796,7 +930,17 @@ Qualimetrix validates your configuration file and reports clear errors for commo
 Any unrecognized key — at the root level or inside a section — produces an error with a suggestion:
 
 ```
-Configuration error: Unknown key in "parallel" section: "workes" (did you mean "workers"?). Allowed keys: workers
+Configuration error: Unknown key "parallel.workes" in configuration file "qmx.yaml" (did you mean "workers"?). Accepted keys: workers.
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+```
+
+A key is unknown whatever its value, `~` included, and in whichever layer it is
+written: a preset's typo is refused like your file's. A key written in a
+spelling other than its three accepted ones is refused with the accepted
+spelling:
+
+```
+Configuration error: Key "Fail_On" in configuration file "qmx.yaml" is not written in an accepted spelling; write "fail_on" (its snake_case, camelCase and kebab-case spellings are accepted).
 Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
@@ -805,7 +949,7 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 If a value has the wrong type, you'll get a clear message instead of silent fallback to defaults:
 
 ```
-Configuration error: Invalid value for "cache.enabled": expected boolean, got string
+Configuration error: "cache.enabled" in configuration file "qmx.yaml" must be boolean, got string.
 Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
@@ -861,8 +1005,8 @@ overrides it, because a value nobody will use is still a value somebody wrote:
 
 ```
 Configuration error: Option "warning" of rule "complexity.ccn" at level "callable" must be a non-negative whole number or null, got a string.
-Configuration error: Invalid value for "only_rules": expected a list of entries, got a map.
-Configuration error: Invalid value for "cache": expected a section of named keys (dir, enabled), got a list.
+Configuration error: "only_rules" in configuration file "qmx.yaml" must be a list, got a map.
+Configuration error: "cache" in configuration file "qmx.yaml" must be a map, got a list.
 ```
 
 These are three separate runs, one mistake apiece — a real run stops at its own
@@ -993,8 +1137,8 @@ rules:
 
 An **element of a list** is the one place this does not apply, and for a reason:
 an element is a value, not a key that was left unwritten, so there is nothing for
-it to mean. Where the list is declared to hold non-empty strings, a `~` element
-is refused:
+it to mean. A `~` element is refused in every list outside `rules:`, with its
+index, and in the `rules:` lists declared to hold non-empty strings:
 
 ```yaml
 rules:
@@ -1003,15 +1147,6 @@ rules:
       - App\Legacy
       - ~              # refused: exit 3
 ```
-
----
-
-## Configuration Processing
-
-The configuration file format and CLI behavior are stable. Internally,
-Qualimetrix resolves defaults, presets, files, Composer discovery, and CLI
-options through the Analysis Configuration boundary. This implementation detail
-does not change any documented key or precedence rule.
 
 ---
 

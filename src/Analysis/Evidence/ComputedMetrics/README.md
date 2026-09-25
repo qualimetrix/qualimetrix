@@ -210,7 +210,9 @@ The two sections are declared to the configuration document
 (`ComputedMetricsSection`, `ExcludeHealthSection`); the document engine reads
 every layer — defaults, presets, the configuration file, the command line —
 recognises its keys, judges the form of its values and merges the layers.
-The owner reads the merged result.
+The owner reads the merged result. The policy of every key is published in the
+generated table of `website/docs/getting-started/configuration.md`; the
+decision is [ADR 0086](../../../../docs/adr/0086-one-configuration-document-merged-by-declared-policy.md).
 
 - `computed_metrics` merges by metric name, and each metric key by key: a
   layer changes only the keys it writes. `threshold` stands for `warning` plus

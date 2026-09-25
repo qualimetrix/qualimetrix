@@ -260,13 +260,6 @@ loose criterion matches, and the first instance in expansion order — which is
 binding-value alphabetical — wins it. Write `match: all` for the narrowing this
 almost certainly meant, or a static layer for the global net.
 
-**`relations:` written with no value is refused.** `relations:` followed by
-nothing — an empty list, commented-out items, a lost indent — parsed as "no
-filter declared", so a policy meant to be narrowed was silently widened to every
-relation kind. `relations: []` was already refused for exactly that reason; both
-spellings of the same slip now refuse alike. Drop the key entirely to keep "any
-relation allowed".
-
 **`architecture.coverage-gap: warn` or `error` with no `architecture.layers`
 is refused** with exit 3. With no layers every class is outside every layer,
 and the run reported none of them — so the strictest setting of the option was also the
@@ -383,12 +376,15 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   analyze", `directives` refused without saying why. Name a file or a directory
   inside it instead (`bin/qmx check vendor/acme/`); a `vendor` directory inside
   a path you name is still skipped, without a refusal.
-- **The JSON refusal envelope is `{error, exit_code, position}`** (was
+- **The JSON refusal envelope is `{error, exit_code, position, source}`** (was
   `{error, exit_code}`): `position` is `{path, written, accepted, closed}` when
   the refusal was raised at a place in a configuration document, and `null`
   otherwise — including a merged value such as `memory_limit: 010M` whose
-  message names the key. A consumer comparing the key set exactly must accept
-  the new key.
+  message names the key. `source` lists the configuration layers the refusal
+  is about, each `{kind, name, imported_by}` (`kind` is `defaults`, `composer`,
+  `preset`, `file`, `cli`, `baseline`, or `resolved` for a value not yet traced
+  to one layer), and is `null` for an outcome that is not a configuration
+  refusal. A consumer comparing the key set exactly must accept the new keys.
 - **`--format=json` `topIssues[].message` and every `--format=suppressed`
   entry's `message` are now the finding's message**, as in
   `violations[].message`; the recommendation they carried moved to a new
@@ -436,8 +432,9 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   `suppressPaths`) instead of the later silently winning; `memory_limit: 0`, a
   leading zero (`010M`, read by PHP as octal) and a limit the runtime rejects,
   each with the value quoted; and a `computed_metrics` entry written as
-  `name: ~`, now read as `name: {}`, so an invalid or unknown name or a user
-  metric without a formula is refused instead of silently dropped.
+  `name: ~` or `name: {}`, whose name is now judged whatever its body, so an
+  invalid or unknown name, or a user metric no layer gives a formula, is
+  refused instead of silently dropped.
 
 - **`complexity.cognitive` follows the SonarSource whitepaper (v1.7) where it
   did not.** A ternary gets the nesting increment and nests its branches; a
@@ -533,8 +530,58 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   each span gains `stopped` and loses `peak_memory_delta_bytes`, which was not
   a peak (memory is sampled only at span boundaries).
 
+**Configuration layers merge by one policy per key, declared by the key.**
+Defaults, presets, `qmx.yaml` and the command line used to be combined by each
+section its own way. They now combine by the policy the configuration page's
+generated table lists for every key; see
+[ADR 0086](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0086-one-configuration-document-merged-by-declared-policy.md).
+What changes for a configuration you already have:
+
+- `computed_metrics` merges metric by metric and key by key (was: a later
+  layer's `computed_metrics` replaced the earlier one whole, and a metric it
+  named was replaced whole). A preset's metric your file does not name now
+  stays; a file's `warning` over a preset's `threshold` keeps the preset's
+  `formula` and `error` instead of failing on the missing formula or resetting
+  `error` to the default.
+- A computed metric a lower layer wrote is removed only by `enabled: false`;
+  there is no way to replace a preset's whole set of computed metrics.
+- Outside `rules:`, `{}` and `~` never reset anything: `computed_metrics: {}` and
+  `health.complexity: ~` (or `: {}`) over a preset keep the preset's values
+  (was: back to the built-in defaults). To return to a default, write it.
+- A misspelt key is refused even when its value is `~` — under `architecture`
+  (the section, a `layers` entry, an `exclude:` block) and under a
+  `computed_metrics` entry, `formulas:` included (was: silently accepted). A
+  name under `architecture.allow` that `layers` does not declare is refused
+  even when written with `~` or `{}`.
+- A key is accepted in the snake_case, kebab-case or camelCase of its words,
+  at the root and in every section outside `rules:`; any other spelling of the same words
+  (`Fail_On`, `FAILON`, `failon`) is refused with the accepted one (was: folded
+  silently at the root, and read differently inside each section).
+- A list item that is not a string, `~` included, is refused with its index —
+  `only_rules: [~]`, `disabled_rules: [5]`, `exclude: [~]` (was: a `~` item in
+  `only_rules` or `disabled_rules` silently accepted, and one in `exclude`
+  refused with a message about bare strings).
+- A value of the wrong shape is refused in whichever layer wrote it, even when
+  a later layer overrides it: a preset's `memory_limit: [1G]` is refused under
+  a file that sets `memory_limit: 1G` (was: skipped).
+- `check --format=json` has a new top-level key, `configurationDiagnostics`:
+  the warnings about the configuration the run accepted, `[]` when there are
+  none. A consumer comparing the key set exactly must accept it.
+
 ### Changed
 
+- A configuration error names the layer that wrote the value — the preset,
+  the file, the command-line option — and quotes the key as you spelled it; an
+  error about two keys, or about a value several layers wrote, names each
+  layer. The meaning of `memory_limit`, `fail_on`, `format`, `cache` and
+  `parallel.workers` is still judged after the merge, and such an error names
+  the key only.
+- Warnings about a configuration that is legal but probably not what was meant
+  are printed on stderr by every command that reads the configuration. The
+  first is `only_rules: []` over a layer that filters the rules: it lifts the
+  filter, and now says so.
+- `memory_limit` accepts an unquoted integer, so `memory_limit: -1` means "no
+  limit" as it does in `php.ini`.
 - Namespace-level `coupling.cbo` is now counted over the namespace's whole
   subtree, the region its `coupling.ca`/`coupling.ce` cover, so a namespace
   holding only sub-namespaces no longer publishes 0. What `coupling.cbo` used

@@ -63,7 +63,10 @@ configuration document engine (`DocumentSectionSchemaInterface`): its keys at
 every level, the form of each value and how the configuration layers that
 wrote it merge. The engine recognises and shapes every layer before merging,
 so a misspelt key — in the section, a `layers[i]` entry or its `exclude:` — is
-refused with its writer and spelling whatever its value, `~` included.
+refused with its writer and spelling whatever its value, `~` included. The
+same policies are published, generated from `ArchitectureSection`, in the table
+of `website/docs/getting-started/configuration.md`; the decision is
+[ADR 0086](../../../../docs/adr/0086-one-configuration-document-merged-by-declared-policy.md).
 
 | Node                                  | Merge                                                                 |
 | ------------------------------------- | --------------------------------------------------------------------- |

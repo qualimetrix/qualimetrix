@@ -148,6 +148,16 @@ author spelled it, the line when the format reports one).
   publishes them under `configurationDiagnostics`; both are written by
   `Infrastructure\Console\ConfigurationInputAdapter`.
 
+The author-facing table of every node's policy, `~` and empty value is
+generated from these declarations — the sections the container registers,
+completed by `DocumentRoots::completing()` exactly as the pipeline completes
+them — into `website/docs/getting-started/configuration.md` and its Russian
+twin by `scripts/generate-configuration-merge-table.php`
+(`composer configuration:merge-table`). `configuration:merge-table:check`, in
+`check:artifacts`, fails when a declaration changed and the page did not. The
+decision and what it leaves unexpressible are recorded in
+[ADR 0086](../../../docs/adr/0086-one-configuration-document-merged-by-declared-policy.md).
+
 The engine runs in every resolution, beside `contributions()` while owners
 move to it. Every stage hands its sources over as written through
 `ConfigurationLayer::$authored`, read before any key is folded or any `~`

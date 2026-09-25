@@ -133,6 +133,8 @@
         "html-bundle:check": "php scripts/check-html-bundle-freshness.php",
         "input-doors:grid": "php scripts/generate-input-door-table.php",
         "input-doors:grid:check": "php scripts/generate-input-door-table.php --check",
+        "configuration:merge-table": "php scripts/generate-configuration-merge-table.php",
+        "configuration:merge-table:check": "php scripts/generate-configuration-merge-table.php --check",
         "input-doors": [
             "Composer\\Config::disableProcessTimeout",
             "php scripts/input-doors.php"
@@ -242,6 +244,7 @@
             "@suppression-snapshot:check",
             "@html-bundle:check",
             "@input-doors:grid:check",
+            "@configuration:merge-table:check",
             "@promise-effect:p1-set:check",
             "@promise-effect:grid:check"
         ],
@@ -288,6 +291,8 @@
         "check": "Everything below, in the order a failure is cheapest to read",
         "check:code": "What a code change invalidates: style, the dangling-name census, static analysis, tests",
         "check:docs": "What a website change invalidates: a strict mkdocs build",
+        "configuration:merge-table": "Regenerate the table of how each configuration key combines across layers in website/docs/getting-started/configuration.md (EN and RU) from the section declarations",
+        "configuration:merge-table:check": "Fail if that table differs from what the section declarations generate",
         "check:artifacts": "What a manifest, config or corpus change invalidates: every generated artifact against a fresh measurement",
         "check:self": "What the product says about this repository: the qmx ratchet and the directive audit",
         "directives:controls": "Plant one breakage at a time in the threshold audit and prove the suite goes red for it, then run directives:controls:coverage",

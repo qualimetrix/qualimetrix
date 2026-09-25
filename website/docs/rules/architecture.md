@@ -286,7 +286,7 @@ architecture:
 
 The catch-all replaces the older `coverage-gap: warn` recipe for "show me everything I haven't classified yet". The `architecture.coverage-gap` mechanism still works (see "Coverage modes" below), but with a catch-all layer it is usually unnecessary.
 
-**YAML merge semantics.** When a preset and a project config both define `architecture.layers`, the **later source replaces the entire list** — order is the user's disambiguation tool, and merging two ordered lists would silently destroy intent. The `architecture.allow` map continues to merge by source layer, and the scalar `architecture.coverage-gap` is overridden by the later source.
+**YAML merge semantics.** When a preset and a project config both define `architecture.layers`, the **later source replaces the entire list** — order is the user's disambiguation tool, and merging two ordered lists would silently destroy intent. The `architecture.allow` map merges by source layer name, and the target list of one source layer is replaced whole by a later source that writes it — `[]` included, which allows that layer nothing. A higher source cannot delete a lower source's entry. Each source name under `allow` is checked against the layers `layers` declares once every source is merged, so a file may allow a layer its preset declares; a name written with `~` is still checked. Scalars such as `architecture.coverage-gap` are overridden by the later source. The same rules for every configuration key are in [How layers combine](../getting-started/configuration.md#how-layers-combine).
 
 #### Configuration example with vendor and shared layers
 
@@ -663,6 +663,8 @@ question is unaffected by whether the target belongs to the enclosing class
 or to an anonymous class nested inside it. This is the one place the two
 cases stay symmetric: membership (above) treats them differently, `relations:`
 does not.
+
+`relations: ~` is the same as leaving `relations:` out: the target allows any relation.
 
 When multiple allow targets within one source resolve to the same target layer (for instance via overlapping glob selectors), their permissions **union**. If any matching entry uses the bare/short form (no `relations:`), the union is "all relations allowed" — short-form dominates.
 

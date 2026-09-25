@@ -44,6 +44,12 @@ the working directory. The same holds for `--baseline=`, `--output=`, `--report=
 `--preset=` (including an empty name in a list such as `--preset=strict,`): leave the option
 out to get its default.
 
+Warnings about a configuration a command accepted — `only_rules: []` lifting a
+preset's filter, for example — are written to stderr as `Warning:` lines by every
+command that reads the configuration, and `check --format=json` also carries them
+under `configurationDiagnostics`. See
+[Configuration warnings](../getting-started/configuration.md#configuration-warnings).
+
 ### `--exclude`
 
 Exclude directories from analysis with an explicit path selector. Can be repeated:
@@ -1048,7 +1054,7 @@ bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
 - `contendingMatches` lists, in the same form, every other match after `assigned`: the matches whose `exclude:` went unanswered and, when one stands in front of it, `shadowedBy`. Which of them owns the class depends on those clauses, so `reported` is always `false`. Together with `shadowed` it is every match the text report lists after the assignment.
 - `undecided` names the layers the run could not answer that bear on the assignment, `contenders` the layers that could own the class once they are answered, and `chainStopsAt` where the class's inheritance chain left the analysed paths; all three are empty when the run answered every layer. `assigned: null` beside a non-empty `undecided` means "could not tell", not "no layer claims this class". See [Inspecting layer assignment for a single class](../rules/architecture.md#debug-layer-assignment) for the full rules.
 - `hasLayers` distinguishes "no layers configured" (`false`) from "layers configured but none matched this class" (`true` with `assigned: null`).
-- On error, `--format=json` prints `{"error": "...", "exit_code": N, "position": ...}` to stdout instead of the human `<error>` line, and an unrecognized `--format` value exits with code 3 regardless of format.
+- On error, `--format=json` prints `{"error": "...", "exit_code": N, "position": ..., "source": ...}` to stdout instead of the human `<error>` line, and an unrecognized `--format` value exits with code 3 regardless of format.
 
 ### directives
 
@@ -1105,7 +1111,7 @@ The `applied-boundary-only` verdict deliberately makes no claim about direction.
 
 Where a rule publishes no boundary alongside its finding, an `inert` verdict carries a note saying so, and **does not fail the build**: a boundary the value had already passed would have looked identical, so demanding the directive be deleted would report an unasked question as proven debt. `--format=json` reports it as `"boundary_observable": false`.
 
-On error, `--format=json` prints `{"error": "...", "exit_code": N, "position": ...}` to stdout instead of the human `<error>` line.
+On error, `--format=json` prints `{"error": "...", "exit_code": N, "position": ..., "source": ...}` to stdout instead of the human `<error>` line.
 
 ### graph:export
 

@@ -1026,13 +1026,23 @@ format, not the tool's) the way `metrics` keeps its own.
 
 Not every JSON output carries the addresses. `gitlab` is a bare array with no
 object to hold them; `graph:export`'s DOT output has no envelope at all; a
-refusal is always exactly `{"error": ..., "exit_code": ..., "position": ...}`,
+refusal is always exactly
+`{"error": ..., "exit_code": ..., "position": ..., "source": ...}`,
 `position` being `null` unless the refusal was raised at a place in a
 configuration document — a command-line value, a whole file and a merged value
 such as `memory_limit: 010M` carry `null` even when the message names the key.
 When present, `position` locates the refused spot as the check found it: for a
-required key that was left out, `path` ends at that key and `written` names it;
-and the baseline
+required key that was left out, `path` ends at that key and `written` names it.
+`source` lists the configuration layers the refusal is about, lowest precedence
+first — one for a value a single layer wrote, every contributing layer for a
+constraint between keys — each as `{"kind": ..., "name": ..., "imported_by": ...}`.
+`kind` is `defaults`, `composer`, `preset`, `file`, `cli`, `baseline` or
+`resolved`; `name` is the preset name, file path or option. `resolved` is what a
+refusal names when its owner still reads the merged value without the layer
+that wrote it — `memory_limit: 010M` and `--fail-on=bogus` today — and its
+`name` is the key. `source` is `null` for an internal error and for a refusal
+raised without a configuration source, such as `parallel.workers: -3`. The
+baseline
 file — written by `baseline:generate`, `update`, `cleanup`, and rewritten in
 place by `baseline:rename-channels` — is a versioned input artifact the tool
 reads back, with its own schema, not a report.
