@@ -333,10 +333,6 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver"
-        },
-        {
-          "owner": "Analysis.Evidence.ComputedMetrics",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricAuthorship"
         }
       ]
     },
@@ -474,6 +470,13 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ArchitectureSection"
         }
       ]
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\KeyDictionary": {
+      "path": "src/Analysis/Configuration/Contract/Document/Schema/KeyDictionary.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
     },
     "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\MergePolicy": {
       "path": "src/Analysis/Configuration/Contract/Document/Schema/MergePolicy.php",
@@ -620,10 +623,6 @@
       "owner": "Analysis.Configuration",
       "visibility": "contract",
       "consumers": [
-        {
-          "owner": "Analysis.Evidence.ComputedMetrics",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricAuthorship"
-        },
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsFactory"
@@ -873,10 +872,6 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Evidence.ComputedMetrics",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricAuthorship"
-        },
-        {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsFactory"
         },
@@ -894,11 +889,11 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricFormulaValidator"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricAuthorship"
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricAuthorship"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricsSection"
         },
         {
           "owner": "Analysis.Evidence.Coupling",
@@ -1003,6 +998,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\KeyClaims": {
+      "path": "src/Analysis/Configuration/Document/KeyClaims.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Configuration\\Document\\KeyRecognition": {
       "path": "src/Analysis/Configuration/Document/KeyRecognition.php",
       "kind": "class",
@@ -1040,6 +1042,20 @@
     },
     "Qualimetrix\\Analysis\\Configuration\\Document\\ReadingContext": {
       "path": "src/Analysis/Configuration/Document/ReadingContext.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\WrittenForm": {
+      "path": "src/Analysis/Configuration/Document/WrittenForm.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\WrittenNames": {
+      "path": "src/Analysis/Configuration/Document/WrittenNames.php",
       "kind": "class",
       "owner": "Analysis.Configuration",
       "visibility": "internal",

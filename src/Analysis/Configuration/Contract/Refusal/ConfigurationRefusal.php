@@ -30,10 +30,6 @@ use Throwable;
  * folding empty values into defaults. Splitting the kind to lower the rank would
  * buy a number and a second way to spell a refusal, which is what the
  * single-kind design exists to prevent.
- *
- * @qmx-threshold coupling.class-rank warning=0.03 -- The paragraph above is the
- * reason. The tag takes the rule's unscaled units: raw rank 0.0079 at 1027 classes is
- * 0.0252 before scaling, against the default 0.02; the error bound stays the default.
  */
 final class ConfigurationRefusal extends RuntimeException
 {
@@ -118,6 +114,15 @@ final class ConfigurationRefusal extends RuntimeException
         ?Throwable $previous = null,
     ): self {
         return self::at(ConfigurationOrigin::of(ConfigurationSource::Preset, $preset), $position, $summary, $previous);
+    }
+
+    /** A key position of a built-in value no layer wrote. */
+    public static function atDefaultsKey(
+        RefusedPosition $position,
+        string $summary,
+        ?Throwable $previous = null,
+    ): self {
+        return self::at(ConfigurationOrigin::of(ConfigurationSource::Defaults), $position, $summary, $previous);
     }
 
     /**

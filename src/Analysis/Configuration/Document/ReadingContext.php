@@ -29,14 +29,33 @@ final readonly class ReadingContext
         return new self($layer->origin, $layer->positioned, [], [], false);
     }
 
-    public function child(string $authored, string $canonical, AuthoredNode $node, bool $listItem = false): self
+    public function child(string $authored, string $canonical, AuthoredNode $node): self
+    {
+        return $this->descend($authored, $canonical, $node->locator);
+    }
+
+    /** An item of this list: everything below it is inside a list. */
+    public function item(int $index, AuthoredNode $node): self
+    {
+        $at = $this->child((string) $index, (string) $index, $node);
+
+        return new self($at->origin, $at->positioned, $at->authoredPath, $at->canonicalPath, true);
+    }
+
+    /** A key of this map as a spot of its own, whatever value is written there. */
+    public function key(string $authored, string $canonical): self
+    {
+        return $this->descend($authored, $canonical, null);
+    }
+
+    private function descend(string $authored, string $canonical, ?string $locator): self
     {
         return new self(
-            $node->locator === null ? $this->origin : $this->origin->locatedAt($node->locator),
+            $locator === null ? $this->origin : $this->origin->locatedAt($locator),
             $this->positioned,
             [...$this->authoredPath, $authored],
             [...$this->canonicalPath, $canonical],
-            $this->insideList || $listItem,
+            $this->insideList,
         );
     }
 

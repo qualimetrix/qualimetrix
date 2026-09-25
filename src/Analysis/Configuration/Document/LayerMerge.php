@@ -33,14 +33,22 @@ final class LayerMerge
             return $upper ?? $lower;
         }
 
-        if ($upper instanceof ResolvedBareName) {
-            return $lower instanceof ResolvedBareName ? $lower->writtenAgainBy($upper) : $lower;
+        if ($upper instanceof ResolvedBareName || $lower instanceof ResolvedBareName) {
+            return self::besideBareName($lower, $upper);
         }
 
-        if ($lower instanceof ResolvedBareName) {
-            return $upper;
-        }
+        return $this->mergeBodies($schema, $lower, $upper);
+    }
 
+    /** @return list<ConfigurationDiagnostic> */
+    public function diagnostics(): array
+    {
+        return $this->diagnostics;
+    }
+
+    /** Two written bodies, folded by the node's policy. */
+    private function mergeBodies(NodeSchema $schema, ResolvedValueInterface $lower, ResolvedValueInterface $upper): ResolvedValueInterface
+    {
         return match ($schema->policy) {
             MergePolicy::LastWriterWins => $upper,
             MergePolicy::DeepMerge, MergePolicy::ByName => $this->mergeMaps($schema, self::map($lower), self::map($upper)),
@@ -50,10 +58,14 @@ final class LayerMerge
         };
     }
 
-    /** @return list<ConfigurationDiagnostic> */
-    public function diagnostics(): array
+    /** A body on either side stands; a name written bare by both keeps every writer. */
+    private static function besideBareName(ResolvedValueInterface $lower, ResolvedValueInterface $upper): ResolvedValueInterface
     {
-        return $this->diagnostics;
+        if ($upper instanceof ResolvedBareName) {
+            return $lower instanceof ResolvedBareName ? $lower->writtenAgainBy($upper) : $lower;
+        }
+
+        return $upper;
     }
 
     private function mergeMaps(NodeSchema $schema, ResolvedMap $lower, ResolvedMap $upper): ResolvedMap

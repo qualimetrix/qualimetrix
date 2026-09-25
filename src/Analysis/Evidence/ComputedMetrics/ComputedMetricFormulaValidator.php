@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricAuthorship;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricsSection;
@@ -315,7 +314,7 @@ final class ComputedMetricFormulaValidator
         string $formula,
     ): never {
         throw ConfigurationRefusal::atResolvedKey(
-            RefusedPosition::open([ComputedMetricsSection::KEY, $definitionName], $definitionName),
+            ComputedMetricsSection::position($definitionName),
             ComputedMetricRefusalWording::referencesMetricAbsentAtLevel($definitionName, $keys, $level, $formula),
         );
     }

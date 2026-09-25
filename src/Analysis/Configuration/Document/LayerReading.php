@@ -4,16 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Document;
 
-use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareName;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedList;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMap;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaque;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedScalar;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
-use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 
 /**
@@ -28,164 +25,135 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
  */
 final class LayerReading
 {
-    /** @var list<PendingName> */
-    private array $pendingNames = [];
+    private readonly WrittenNames $names;
 
-    public function __construct(private readonly bool $admitsUndeclaredRoots = false) {}
+    public function __construct(private readonly bool $admitsUndeclaredRoots = false)
+    {
+        $this->names = new WrittenNames();
+    }
 
     /**
      * @throws ConfigurationRefusal
      */
     public function readRoot(NodeSchema $root, AuthoredLayer $layer): ?ResolvedValueInterface
     {
-        return $this->readMap($root, $layer->root, ReadingContext::of($layer), $this->admitsUndeclaredRoots);
+        $at = ReadingContext::of($layer);
+        $keys = $this->admitsUndeclaredRoots
+            ? KeyClaims::admittingUndeclared($root->keys()->keys(), $at)
+            : KeyClaims::of($root->keys()->keys(), $at);
+
+        return $this->readMap($root, $layer->root, $at, $keys);
     }
 
     /** @return list<PendingName> */
     public function pendingNames(): array
     {
-        return $this->pendingNames;
+        return $this->names->pending();
     }
 
     private function read(NodeSchema $schema, AuthoredNode $node, ReadingContext $at): ?ResolvedValueInterface
     {
         return match ($schema->policy) {
-            MergePolicy::LastWriterWins => $this->readScalar($schema, $node, $at),
-            MergePolicy::DeepMerge => $this->readMap($schema, $node, $at),
+            MergePolicy::LastWriterWins => WrittenForm::scalar($schema, $node, $at),
+            MergePolicy::DeepMerge => $this->readMap($schema, $node, $at, KeyClaims::of($schema->keys()->keys(), $at)),
             MergePolicy::Replace, MergePolicy::Accumulate => $this->readList($schema, $node, $at),
             MergePolicy::ByName => $this->readNamedMap($schema, $node, $at),
             MergePolicy::PerLayer => $node->isUnwritten() ? null : self::opaque($node, $at),
         };
     }
 
-    private function readScalar(NodeSchema $schema, AuthoredNode $node, ReadingContext $at): ?ResolvedScalar
+    private function readMap(NodeSchema $schema, AuthoredNode $node, ReadingContext $at, KeyClaims $keys): ?ResolvedMap
     {
-        if ($node->isUnwritten()) {
+        if (!WrittenForm::isMap($schema, $node, $at)) {
             return null;
         }
 
-        $forms = $schema->scalarForms();
-        $expected = $forms === [] ? 'a scalar' : implode(' or ', array_map(static fn(ScalarForm $form): string => $form->value, $forms));
+        [$entries, $shorthandNodes] = $this->readFields($schema, $node, $at, $keys);
+        $entries = $this->spreadShorthands($schema, $at, $keys, $entries, $shorthandNodes);
 
-        if ($node->shape !== AuthoredShape::Scalar || $node->scalar === null) {
-            throw $at->refusal(self::hinted(\sprintf('%s must be %s, got %s.', ucfirst($at->where()), $expected, self::shapeName($node)), $schema));
-        }
-
-        foreach ($forms as $form) {
-            if ($form->accepts($node->scalar)) {
-                return new ResolvedScalar($node->scalar, $at->provenance($node));
-            }
-        }
-
-        if ($forms !== []) {
-            throw $at->refusal(self::hinted(\sprintf('%s must be %s, got %s.', ucfirst($at->where()), $expected, get_debug_type($node->scalar)), $schema));
-        }
-
-        return new ResolvedScalar($node->scalar, $at->provenance($node));
+        return $entries === [] ? null : new ResolvedMap($entries, [$at->provenance($node)]);
     }
 
-    private function readMap(NodeSchema $schema, AuthoredNode $node, ReadingContext $at, bool $admitUndeclared = false): ?ResolvedMap
+    /**
+     * Every key of the map in written order; a shorthand is only collected,
+     * to be spread once every full key of the layer is read.
+     *
+     * @return array{array<string, ResolvedValueInterface>, array<string, array{string, AuthoredNode}>}
+     */
+    private function readFields(NodeSchema $schema, AuthoredNode $node, ReadingContext $at, KeyClaims $keys): array
     {
-        if (!$this->isMapShaped($schema, $node, $at)) {
-            return null;
-        }
-
-        $fields = $schema->fields();
-        $shorthands = [];
-        foreach ($schema->shorthands() as $shorthand) {
-            $shorthands[$shorthand->key] = $shorthand;
-        }
-
-        $dictionary = [...array_keys($fields), ...array_keys($shorthands)];
-        $claimed = [];
+        $dictionary = $schema->keys();
         $entries = [];
         $shorthandNodes = [];
 
         foreach ($node->children as $writtenKey => $child) {
             $written = (string) $writtenKey;
-            $canonical = KeyRecognition::recognise($written, $dictionary, $at->child($written, $written, $child), $admitUndeclared);
-
-            if ($canonical === null) {
-                if (!$child->isUnwritten()) {
-                    $entries[$written] = self::opaque($child, $at->child($written, $written, $child));
-                }
-
-                continue;
-            }
-
-            self::claim($claimed, $canonical, $written, $at);
+            $canonical = $keys->claim($written, $child);
 
             if ($child->isUnwritten()) {
                 continue;
             }
 
-            if (isset($shorthands[$canonical])) {
+            if ($canonical === null) {
+                $entries[$written] = self::opaque($child, $at->child($written, $written, $child));
+            } elseif ($dictionary->shorthand($canonical) !== null) {
                 $shorthandNodes[$canonical] = [$written, $child];
-
-                continue;
-            }
-
-            $value = $this->read($fields[$canonical], $child, $at->child($written, $canonical, $child));
-            if ($value !== null) {
-                $entries[$canonical] = $value;
+            } else {
+                $entries = self::with($entries, $canonical, $this->read($dictionary->fields()[$canonical], $child, $at->child($written, $canonical, $child)));
             }
         }
 
+        return [$entries, $shorthandNodes];
+    }
+
+    /**
+     * @param array<string, ResolvedValueInterface> $entries
+     * @param array<string, array{string, AuthoredNode}> $shorthandNodes canonical shorthand => [written key, node]
+     *
+     * @return array<string, ResolvedValueInterface>
+     */
+    private function spreadShorthands(NodeSchema $schema, ReadingContext $at, KeyClaims $keys, array $entries, array $shorthandNodes): array
+    {
+        $dictionary = $schema->keys();
+
         foreach ($shorthandNodes as $key => [$written, $child]) {
-            foreach ($shorthands[$key]->targets as $target) {
+            $targets = $dictionary->shorthand($key)->targets ?? [];
+
+            foreach ($targets as $target) {
                 if (\array_key_exists($target, $entries)) {
                     throw $at->child($written, $key, $child)->refusal(\sprintf(
                         '%s writes both "%s" and "%s"; "%s" is shorthand for %s — write either the shorthand or the full keys in one layer.',
                         ucfirst($at->where()),
                         $written,
-                        $claimed[$target],
+                        $keys->spellingOf($target),
                         $key,
-                        '"' . implode('" and "', $shorthands[$key]->targets) . '"',
+                        '"' . implode('" and "', $targets) . '"',
                     ));
                 }
             }
 
-            foreach ($shorthands[$key]->targets as $target) {
-                $value = $this->read($fields[$target], $child, $at->child($written, $target, $child));
-                if ($value !== null) {
-                    $entries[$target] = $value;
-                }
+            foreach ($targets as $target) {
+                $entries = self::with($entries, $target, $this->read($dictionary->fields()[$target], $child, $at->child($written, $target, $child)));
             }
         }
 
-        return $entries === [] ? null : new ResolvedMap($entries, [$at->provenance($node)]);
+        return $entries;
     }
 
     private function readNamedMap(NodeSchema $schema, AuthoredNode $node, ReadingContext $at): ?ResolvedMap
     {
-        if (!$this->isMapShaped($schema, $node, $at)) {
+        if (!WrittenForm::isMap($schema, $node, $at)) {
             return null;
         }
 
-        $vocabulary = $schema->names();
-        if ($vocabulary?->isFromSibling() === true && $at->insideList) {
-            throw new LogicException(\sprintf('"%s": a name vocabulary drawn from a sibling cannot be judged inside a list item.', implode('.', $at->canonicalPath)));
-        }
-
-        $claimed = [];
+        $vocabulary = WrittenNames::vocabulary($schema, $at);
+        $fixed = $vocabulary?->isFixed() === true ? KeyClaims::of($vocabulary->fixedNames(), $at) : null;
         $entries = [];
 
         foreach ($node->children as $writtenKey => $child) {
             $written = (string) $writtenKey;
             $childAt = $at->child($written, $written, $child);
-            $name = $written;
-
-            if ($vocabulary?->isFixed() === true) {
-                $name = (string) KeyRecognition::recognise($written, $vocabulary->fixedNames(), $childAt);
-                self::claim($claimed, $name, $written, $at);
-            } elseif ($vocabulary?->isPredicate() === true) {
-                $refused = $vocabulary->refuse($written);
-                if ($refused !== null) {
-                    throw $childAt->refusal($refused->summary, $written, $refused->accepted);
-                }
-            } elseif ($vocabulary !== null) {
-                $this->pendingNames[] = new PendingName($at->canonicalPath, $written, $vocabulary, $childAt->provenance($child));
-            }
+            $name = $this->names->nameOf($written, $child, $at, $vocabulary, $fixed);
 
             $value = $child->isUnwritten() ? null : $this->read($schema->element(), $child, $at->child($written, $name, $child));
             $entries[$name] = $value ?? new ResolvedBareName([$childAt->provenance($child)]);
@@ -196,98 +164,60 @@ final class LayerReading
 
     private function readList(NodeSchema $schema, AuthoredNode $node, ReadingContext $at): ?ResolvedList
     {
-        if ($node->isUnwritten()) {
+        if (!WrittenForm::isList($schema, $node, $at)) {
             return null;
         }
 
-        if ($node->shape === AuthoredShape::Scalar || $node->shape === AuthoredShape::Mapping) {
-            throw $at->refusal(self::hinted(\sprintf('%s must be a list, got %s.', ucfirst($at->where()), self::shapeName($node)), $schema));
-        }
-
-        $element = $schema->element();
         $items = [];
-
         foreach ($node->children as $index => $child) {
-            $itemAt = $at->child((string) $index, (string) $index, $child, true);
-
-            if ($element->policy === MergePolicy::PerLayer) {
-                $items[] = self::opaque($child, $itemAt);
-
-                continue;
-            }
-
-            if ($child->isUnwritten()) {
-                throw $itemAt->refusal(\sprintf(
-                    'Item %d of %s is null (`~`); a list item is a value, not an unwritten key — remove it or write a value.',
-                    $index,
-                    $at->where(),
-                ));
-            }
-
-            // Unwritten nodes are refused above, so null here is an item that
-            // is an empty map, or a map of nothing but `~`: dropping it would
-            // shorten the list without a trace.
-            $items[] = $this->read($element, $child, $itemAt) ?? throw $itemAt->refusal(\sprintf(
-                'Item %d of %s writes nothing; remove it or give it a value.',
-                $index,
-                $at->where(),
-            ));
+            $items[] = $this->readItem($schema->element(), (int) $index, $child, $at);
         }
 
         return new ResolvedList($items, [$at->provenance($node)]);
     }
 
-    /** False for `~`; refuses a scalar or a non-empty list where a map is declared. */
-    private function isMapShaped(NodeSchema $schema, AuthoredNode $node, ReadingContext $at): bool
+    private function readItem(NodeSchema $element, int $index, AuthoredNode $child, ReadingContext $at): ResolvedValueInterface
     {
-        if ($node->isUnwritten()) {
-            return false;
+        $itemAt = $at->item($index, $child);
+
+        if ($element->policy === MergePolicy::PerLayer) {
+            return self::opaque($child, $itemAt);
         }
 
-        if ($node->shape === AuthoredShape::Scalar || ($node->shape === AuthoredShape::Sequence && $node->children !== [])) {
-            throw $at->refusal(self::hinted(\sprintf('%s must be a map, got %s.', ucfirst($at->where()), self::shapeName($node)), $schema));
-        }
-
-        return true;
-    }
-
-    private static function hinted(string $refusal, NodeSchema $schema): string
-    {
-        $hint = $schema->hint();
-
-        return $hint === null ? $refusal : $refusal . ' ' . $hint;
-    }
-
-    /**
-     * @param array<string, string> $claimed canonical key => the spelling that claimed it
-     */
-    private static function claim(array &$claimed, string $canonical, string $written, ReadingContext $at): void
-    {
-        $first = $claimed[$canonical] ?? null;
-        $claimed[$canonical] = $first ?? $written;
-
-        if ($first !== null) {
-            throw $at->child($written, $canonical, AuthoredNode::scalar(null))->refusal(\sprintf(
-                'Keys "%s" and "%s" in %s are two spellings of one key, and a layer may set it only once. Keep one of them.',
-                $first,
-                $written,
+        if ($child->isUnwritten()) {
+            throw $itemAt->refusal(\sprintf(
+                'Item %d of %s is null (`~`); a list item is a value, not an unwritten key — remove it or write a value.',
+                $index,
                 $at->where(),
             ));
         }
+
+        // Unwritten nodes are refused above, so null here is an item that
+        // is an empty map, or a map of nothing but `~`: dropping it would
+        // shorten the list without a trace.
+        return $this->read($element, $child, $itemAt) ?? throw $itemAt->refusal(\sprintf(
+            'Item %d of %s writes nothing; remove it or give it a value.',
+            $index,
+            $at->where(),
+        ));
+    }
+
+    /**
+     * @param array<string, ResolvedValueInterface> $entries
+     *
+     * @return array<string, ResolvedValueInterface>
+     */
+    private static function with(array $entries, string $key, ?ResolvedValueInterface $value): array
+    {
+        if ($value !== null) {
+            $entries[$key] = $value;
+        }
+
+        return $entries;
     }
 
     private static function opaque(AuthoredNode $node, ReadingContext $at): ResolvedOpaque
     {
         return new ResolvedOpaque([['provenance' => $at->provenance($node), 'value' => $node->plain()]]);
-    }
-
-    private static function shapeName(AuthoredNode $node): string
-    {
-        return match ($node->shape) {
-            AuthoredShape::Scalar => $node->scalar === null ? 'null' : get_debug_type($node->scalar),
-            AuthoredShape::Mapping => 'a map',
-            AuthoredShape::Sequence => 'a list',
-            AuthoredShape::EmptyCollection => 'an empty collection',
-        };
     }
 }

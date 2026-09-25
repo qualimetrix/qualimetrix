@@ -112,7 +112,7 @@ ComputedMetrics/
 │   │   └── ComputedMetricBranchTrace.php # the conditional operands one evaluation entered
 │   └── Finding/                      # computed finding channel family
 ├── Configuration/
-│   ├── ComputedMetricsSection.php            # the `computed_metrics:` section declared to the document
+│   ├── ComputedMetricsSection.php            # the `computed_metrics:` section declared to the document, and where an entry sits in it
 │   ├── ExcludeHealthSection.php              # the `exclude_health:` section declared to the document
 │   ├── ComputedMetricEntryKeys.php           # one entry's schema, reporting levels, six health names
 │   ├── ComputedMetricAuthorship.php          # which layers wrote each metric, for a refusal to name

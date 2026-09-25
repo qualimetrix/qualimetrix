@@ -261,6 +261,44 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     }
 
     #[Test]
+    public function itOffersEveryExcludableDimensionButOverallForAnUnknownExclusion(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage(
+            'Valid dimensions: health.complexity, health.cohesion, health.coupling, health.typing, health.maintainability.',
+        );
+
+        $this->resolve([], ['nonexistent']);
+    }
+
+    #[Test]
+    public function itAttributesARefusalOfAnUntouchedDefinitionToTheDefaultsAtTheKeyItLacks(): void
+    {
+        $definition = new ComputedMetricDefinition('computed.x', [], 'x', [SymbolLevel::Class_]);
+
+        try {
+            (new ComputedMetricFormulaValidator())->validate([$definition]);
+            self::fail('Expected a ConfigurationRefusal.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame(ConfigurationSource::Defaults, $refusal->origin()->source());
+            self::assertSame(['computed_metrics', 'computed.x', 'formulas', 'class'], $refusal->position()?->segments);
+            self::assertSame('class', $refusal->position()->written);
+        }
+    }
+
+    #[Test]
+    public function itPositionsARefusalOfAMetricAbsentAtALevelAtTheMetricEntry(): void
+    {
+        try {
+            ComputedMetricFormulaValidator::refuseMetricsAbsentAtLevel('computed.x', ['size.loc'], 'class', 'm["size.loc"]');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame(ConfigurationSource::Resolved, $refusal->origin()->source());
+            self::assertSame(['computed_metrics', 'computed.x'], $refusal->position()?->segments);
+            self::assertSame('computed.x', $refusal->position()->written);
+        }
+    }
+
+    #[Test]
     public function itCreatesNewComputedMetric(): void
     {
         $result = $this->resolve([

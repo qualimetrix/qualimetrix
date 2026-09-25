@@ -6,6 +6,8 @@ namespace Qualimetrix\Analysis\Configuration\Document;
 
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMap;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 
 /**
@@ -27,29 +29,50 @@ final class DocumentComposer
      */
     public static function compose(DocumentSchema $schema, array $layers): ResolvedDocument
     {
-        $root = $schema->root();
+        [$read, $pending] = self::readEach($schema, $layers);
+        $document = self::merge($schema->root(), $read);
+        NameRecognition::judge($document, $pending);
+
+        return $document;
+    }
+
+    /**
+     * Phase 1.
+     *
+     * @param list<AuthoredLayer> $layers
+     *
+     * @return array{list<?ResolvedValueInterface>, list<PendingName>}
+     */
+    private static function readEach(DocumentSchema $schema, array $layers): array
+    {
         $read = [];
         $pending = [];
 
         foreach ($layers as $layer) {
             $reading = new LayerReading($schema->admitsUndeclaredRoots);
-            $read[] = $reading->readRoot($root, $layer);
+            $read[] = $reading->readRoot($schema->root(), $layer);
             $pending = [...$pending, ...$reading->pendingNames()];
         }
 
+        return [$read, $pending];
+    }
+
+    /**
+     * Phase 2.
+     *
+     * @param list<?ResolvedValueInterface> $read one value per layer, lowest precedence first
+     */
+    private static function merge(NodeSchema $root, array $read): ResolvedDocument
+    {
         $merge = new LayerMerge();
         $merged = null;
         foreach ($read as $value) {
             $merged = $merge->merge($root, $merged, $value);
         }
 
-        $document = new ResolvedDocument(
+        return new ResolvedDocument(
             $merged instanceof ResolvedMap ? $merged->entries() : [],
             $merge->diagnostics(),
         );
-
-        NameRecognition::judge($document, $pending);
-
-        return $document;
     }
 }

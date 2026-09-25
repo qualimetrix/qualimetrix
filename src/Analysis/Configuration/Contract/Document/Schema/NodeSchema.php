@@ -23,16 +23,11 @@ use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
  */
 final readonly class NodeSchema
 {
-    /**
-     * @param list<ScalarForm> $scalarForms
-     * @param array<string, self> $fields
-     * @param list<Shorthand> $shorthands
-     */
+    /** @param list<ScalarForm> $scalarForms */
     private function __construct(
         public MergePolicy $policy,
         private array $scalarForms = [],
-        private array $fields = [],
-        private array $shorthands = [],
+        private ?KeyDictionary $keys = null,
         private ?self $element = null,
         private ?NameVocabulary $names = null,
         private ?string $emptyOverrideNotice = null,
@@ -52,31 +47,7 @@ final readonly class NodeSchema
      */
     public static function map(array $fields, Shorthand ...$shorthands): self
     {
-        foreach (array_keys($fields) as $key) {
-            self::assertCanonical($key);
-        }
-
-        $spreadTo = [];
-        foreach ($shorthands as $shorthand) {
-            self::assertCanonical($shorthand->key);
-            if (isset($fields[$shorthand->key])) {
-                throw new LogicException(\sprintf('Shorthand "%s" is also declared as a key of the same map.', $shorthand->key));
-            }
-
-            foreach ($shorthand->targets as $target) {
-                if (!isset($fields[$target])) {
-                    throw new LogicException(\sprintf('Shorthand "%s" spreads to "%s", which the map does not declare.', $shorthand->key, $target));
-                }
-
-                if (isset($spreadTo[$target])) {
-                    throw new LogicException(\sprintf('Shorthands "%s" and "%s" both spread to "%s".', $spreadTo[$target], $shorthand->key, $target));
-                }
-
-                $spreadTo[$target] = $shorthand->key;
-            }
-        }
-
-        return new self(MergePolicy::DeepMerge, fields: $fields, shorthands: array_values($shorthands));
+        return new self(MergePolicy::DeepMerge, keys: KeyDictionary::of($fields, array_values($shorthands)));
     }
 
     /** A list whose last writer replaces it whole. */
@@ -124,7 +95,7 @@ final readonly class NodeSchema
             throw new LogicException('Only a replaced list can announce an empty override.');
         }
 
-        return new self($this->policy, $this->scalarForms, $this->fields, $this->shorthands, $this->element, $this->names, $notice, $this->hint);
+        return new self($this->policy, $this->scalarForms, $this->keys, $this->element, $this->names, $notice, $this->hint);
     }
 
     /**
@@ -134,7 +105,7 @@ final readonly class NodeSchema
      */
     public function withHint(string $hint): self
     {
-        return new self($this->policy, $this->scalarForms, $this->fields, $this->shorthands, $this->element, $this->names, $this->emptyOverrideNotice, $hint);
+        return new self($this->policy, $this->scalarForms, $this->keys, $this->element, $this->names, $this->emptyOverrideNotice, $hint);
     }
 
     /** @return list<ScalarForm> */
@@ -143,16 +114,22 @@ final readonly class NodeSchema
         return $this->scalarForms;
     }
 
+    /** The keys of a map; none for any other node. */
+    public function keys(): KeyDictionary
+    {
+        return $this->keys ?? KeyDictionary::none();
+    }
+
     /** @return array<string, self> */
     public function fields(): array
     {
-        return $this->fields;
+        return $this->keys()->fields();
     }
 
     /** @return list<Shorthand> */
     public function shorthands(): array
     {
-        return $this->shorthands;
+        return $this->keys()->shorthands();
     }
 
     /** The element of a list or set, the entry of a named map. */
@@ -174,12 +151,5 @@ final readonly class NodeSchema
     public function hint(): ?string
     {
         return $this->hint;
-    }
-
-    private static function assertCanonical(string $key): void
-    {
-        if (!\in_array($key, ConfigKeySpelling::acceptedSpellings($key), true) || strtolower($key) !== $key) {
-            throw new LogicException(\sprintf('Schema key "%s" is not canonical: lowercase words joined by "_" or "-".', $key));
-        }
     }
 }

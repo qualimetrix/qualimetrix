@@ -19,9 +19,11 @@ use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Configuration\Document\LayerReading;
+use Qualimetrix\Analysis\Configuration\Document\WrittenForm;
 
 /** A node's hint follows the engine's refusal of the form written at that node, and only there. */
 #[CoversClass(LayerReading::class)]
+#[CoversClass(WrittenForm::class)]
 final class ShapeRefusalHintTest extends TestCase
 {
     /** @return iterable<string, array{array<string, mixed>, non-empty-string}> */

@@ -73,9 +73,7 @@ final readonly class SectionSpot
         $path = [...$this->path, $key];
 
         if ($this->below === [] && ($this->anchor instanceof ResolvedMap || $this->anchor instanceof ResolvedList)) {
-            $node = $this->anchor instanceof ResolvedMap
-                ? $this->anchor->get($key)
-                : (ctype_digit($key) ? $this->anchor->items()[(int) $key] ?? null : null);
+            $node = self::resolvedChild($this->anchor, $key);
 
             return $node === null
                 ? new self($this->anchor, [$key], null, $path)
@@ -85,6 +83,15 @@ final readonly class SectionSpot
         $value = \is_array($this->value) ? $this->value[$key] ?? null : null;
 
         return new self($this->anchor, [...$this->below, $key], $value, $path);
+    }
+
+    private static function resolvedChild(ResolvedMap|ResolvedList $parent, string $key): ?ResolvedValueInterface
+    {
+        if ($parent instanceof ResolvedMap) {
+            return $parent->get($key);
+        }
+
+        return ctype_digit($key) ? $parent->items()[(int) $key] ?? null : null;
     }
 
     /** `architecture.layers[0].name` — the canonical path for a sentence. */

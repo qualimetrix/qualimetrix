@@ -25,6 +25,10 @@ final readonly class AuthoredNode
         public ?string $locator,
     ) {}
 
+    /**
+     * @qmx-ignore code-smell.boolean-argument -- `$value` is the scalar as written, and a
+     * written `true` is a value like any other: nothing here branches on it.
+     */
     public static function scalar(int|float|string|bool|null $value, ?int $line = null, ?string $locator = null): self
     {
         return new self(AuthoredShape::Scalar, $value, [], $line, $locator);

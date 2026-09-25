@@ -5,12 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration;
 
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareName;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMap;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 
 /**
@@ -20,13 +17,8 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
  */
 final readonly class ComputedMetricAuthorship
 {
-    /** @param array<string, ResolvedMap|ResolvedBareName> $entries metric name => its merged entry */
+    /** @param array<string, ResolvedValueInterface> $entries metric name => its merged entry */
     public function __construct(private array $entries = []) {}
-
-    public function entry(string $metricName): ResolvedMap|ResolvedBareName|null
-    {
-        return $this->entries[$metricName] ?? null;
-    }
 
     public function refuseMetric(string $metricName, string $summary): ConfigurationRefusal
     {
@@ -88,6 +80,11 @@ final readonly class ComputedMetricAuthorship
         return $writers === [] ? self::defaults($metricNames[0] ?? '', $summary) : Provenance::refusalOf($writers, $summary);
     }
 
+    private function entry(string $metricName): ?ResolvedValueInterface
+    {
+        return $this->entries[$metricName] ?? null;
+    }
+
     private function formulaWriter(string $metricName, string $level): ?ResolvedValueInterface
     {
         $entry = $this->entry($metricName);
@@ -104,12 +101,6 @@ final readonly class ComputedMetricAuthorship
     /** @param list<string> $below the key path under the metric */
     private static function defaults(string $metricName, string $summary, array $below = []): ConfigurationRefusal
     {
-        $path = [ComputedMetricsSection::KEY, $metricName, ...$below];
-
-        return ConfigurationRefusal::at(
-            ConfigurationOrigin::of(ConfigurationSource::Defaults),
-            RefusedPosition::open($path, $path[\count($path) - 1]),
-            $summary,
-        );
+        return ConfigurationRefusal::atDefaultsKey(ComputedMetricsSection::position($metricName, ...$below), $summary);
     }
 }

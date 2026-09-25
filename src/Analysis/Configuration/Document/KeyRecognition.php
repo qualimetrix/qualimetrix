@@ -20,9 +20,40 @@ final class KeyRecognition
      *
      * @throws ConfigurationRefusal
      *
-     * @return ?string the canonical key; null for an unknown key when `$admitUnknown`
+     * @return string the canonical key
      */
-    public static function recognise(string $written, array $dictionary, ReadingContext $at, bool $admitUnknown = false): ?string
+    public static function recognise(string $written, array $dictionary, ReadingContext $at): string
+    {
+        $canonical = self::recogniseIfDeclared($written, $dictionary, $at);
+        if ($canonical !== null) {
+            return $canonical;
+        }
+
+        $suggestion = self::closest($written, $dictionary);
+
+        throw $at->refusal(
+            \sprintf(
+                'Unknown key %s%s. Accepted keys: %s.',
+                $at->where(),
+                $suggestion === null ? '' : \sprintf(' (did you mean "%s"?)', $suggestion),
+                $dictionary === [] ? '(none)' : implode(', ', $dictionary),
+            ),
+            $written,
+            $dictionary,
+        );
+    }
+
+    /**
+     * Like {@see recognise()}, but a key that is none of the dictionary is
+     * left to the caller; a key that is one of it misspelt is still refused.
+     *
+     * @param list<string> $dictionary canonical keys
+     *
+     * @throws ConfigurationRefusal
+     *
+     * @return ?string the canonical key; null for an undeclared key
+     */
+    public static function recogniseIfDeclared(string $written, array $dictionary, ReadingContext $at): ?string
     {
         foreach ($dictionary as $canonical) {
             if (\in_array($written, ConfigKeySpelling::acceptedSpellings($canonical), true)) {
@@ -44,22 +75,7 @@ final class KeyRecognition
             }
         }
 
-        if ($admitUnknown) {
-            return null;
-        }
-
-        $suggestion = self::closest($written, $dictionary);
-
-        throw $at->refusal(
-            \sprintf(
-                'Unknown key %s%s. Accepted keys: %s.',
-                $at->where(),
-                $suggestion === null ? '' : \sprintf(' (did you mean "%s"?)', $suggestion),
-                $dictionary === [] ? '(none)' : implode(', ', $dictionary),
-            ),
-            $written,
-            $dictionary,
-        );
+        return null;
     }
 
     /** @param list<string> $candidates */

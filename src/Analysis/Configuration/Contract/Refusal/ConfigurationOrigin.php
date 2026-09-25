@@ -59,16 +59,34 @@ final readonly class ConfigurationOrigin
     /** The source as a sentence fragment: `preset "strict"`, `option --fail-on`. */
     public function describe(): string
     {
-        $own = match ($this->source) {
-            ConfigurationSource::Defaults => 'the built-in defaults',
-            ConfigurationSource::ComposerJson => $this->locator === null ? 'composer.json' : \sprintf('"%s"', $this->locator),
-            ConfigurationSource::Preset => \sprintf('preset "%s"', $this->locator ?? '?'),
-            ConfigurationSource::ConfigFile => \sprintf('configuration file "%s"', $this->locator ?? '?'),
-            ConfigurationSource::CommandLine => $this->locator === null ? 'the command line' : \sprintf('option %s', $this->locator),
-            ConfigurationSource::BaselineFile => \sprintf('baseline file "%s"', $this->locator ?? '?'),
-            ConfigurationSource::Resolved => 'the merged configuration',
-        };
+        $own = $this->locator === null ? $this->unnamed() : $this->named($this->locator);
 
         return $this->importer === null ? $own : \sprintf('%s (imported by %s)', $own, $this->importer->describe());
+    }
+
+    private function unnamed(): string
+    {
+        return match ($this->source) {
+            ConfigurationSource::Defaults => 'the built-in defaults',
+            ConfigurationSource::ComposerJson => 'composer.json',
+            ConfigurationSource::Preset => 'preset "?"',
+            ConfigurationSource::ConfigFile => 'configuration file "?"',
+            ConfigurationSource::CommandLine => 'the command line',
+            ConfigurationSource::BaselineFile => 'baseline file "?"',
+            ConfigurationSource::Resolved => 'the merged configuration',
+        };
+    }
+
+    private function named(string $locator): string
+    {
+        return match ($this->source) {
+            ConfigurationSource::Defaults => 'the built-in defaults',
+            ConfigurationSource::ComposerJson => \sprintf('"%s"', $locator),
+            ConfigurationSource::Preset => \sprintf('preset "%s"', $locator),
+            ConfigurationSource::ConfigFile => \sprintf('configuration file "%s"', $locator),
+            ConfigurationSource::CommandLine => \sprintf('option %s', $locator),
+            ConfigurationSource::BaselineFile => \sprintf('baseline file "%s"', $locator),
+            ConfigurationSource::Resolved => 'the merged configuration',
+        };
     }
 }

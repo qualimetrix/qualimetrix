@@ -5,19 +5,27 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Configuration\Unit\Document;
 
 use Closure;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaque;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedScalar;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
+use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
+use Qualimetrix\Analysis\Configuration\Document\KeyClaims;
 use Qualimetrix\Analysis\Configuration\Document\KeyRecognition;
 use Qualimetrix\Analysis\Configuration\Document\LayerReading;
 use Qualimetrix\Analysis\Configuration\Document\NameRecognition;
+use Qualimetrix\Analysis\Configuration\Document\WrittenForm;
+use Qualimetrix\Analysis\Configuration\Document\WrittenNames;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\SampleDocument;
 
 /**
@@ -29,6 +37,9 @@ use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\SampleDocument;
 #[CoversClass(LayerReading::class)]
 #[CoversClass(KeyRecognition::class)]
 #[CoversClass(NameRecognition::class)]
+#[CoversClass(KeyClaims::class)]
+#[CoversClass(WrittenForm::class)]
+#[CoversClass(WrittenNames::class)]
 final class DocumentPhaseTest extends TestCase
 {
     #[Test]
@@ -301,6 +312,35 @@ final class DocumentPhaseTest extends TestCase
         ));
 
         self::assertSame(['paths'], $refusal->position()?->accepted);
+    }
+
+    #[Test]
+    public function itRejectsASiblingVocabularyAnywhereBelowAListItemAsASchemaDefect(): void
+    {
+        $section = new readonly class implements DocumentSectionSchemaInterface {
+            public function key(): string
+            {
+                return 'groups';
+            }
+
+            public function schema(): NodeSchema
+            {
+                return NodeSchema::list(NodeSchema::map([
+                    'members' => NodeSchema::map([
+                        'names' => NodeSchema::stringList(),
+                        'allow' => NodeSchema::namedMap(
+                            NodeSchema::stringList(),
+                            NameVocabulary::fromSibling('names', static fn(mixed $names): array => \is_array($names) ? array_values(array_filter($names, 'is_string')) : []),
+                        ),
+                    ]),
+                ]));
+            }
+        };
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('"groups.0.members.allow": a name vocabulary drawn from a sibling cannot be judged inside a list item.');
+
+        DocumentComposer::compose(new DocumentSchema([$section]), [SampleDocument::file(['groups' => [['members' => ['allow' => ['a' => []]]]]])]);
     }
 
     #[Test]

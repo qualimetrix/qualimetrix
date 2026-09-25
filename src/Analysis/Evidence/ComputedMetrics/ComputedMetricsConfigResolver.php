@@ -162,13 +162,7 @@ final class ComputedMetricsConfigResolver
             throw self::undeclared(ExcludeHealthSection::class);
         }
 
-        $known = [];
-        foreach (array_keys($definitions) as $name) {
-            if (str_starts_with($name, 'health.') && $name !== HealthDimension::Overall->value) {
-                $known[] = $name;
-            }
-        }
-
+        $known = self::excludableDimensions($definitions);
         $excluded = [];
         foreach ($section->items() as $item) {
             $written = (string) $item->plain();
@@ -186,6 +180,25 @@ final class ComputedMetricsConfigResolver
         }
 
         return $excluded;
+    }
+
+    /**
+     * The health dimensions defined after every layer, `health.overall` aside.
+     *
+     * @param array<string, ComputedMetricDefinition> $definitions
+     *
+     * @return list<string>
+     */
+    private static function excludableDimensions(array $definitions): array
+    {
+        $known = [];
+        foreach (array_keys($definitions) as $name) {
+            if (str_starts_with($name, 'health.') && $name !== HealthDimension::Overall->value) {
+                $known[] = $name;
+            }
+        }
+
+        return $known;
     }
 
     /** @param class-string $section */

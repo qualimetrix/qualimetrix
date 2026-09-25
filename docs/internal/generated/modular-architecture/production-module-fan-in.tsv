@@ -5,7 +5,7 @@ Qualimetrix\Analysis\Configuration\ConfigurationRoot	Analysis.Configuration	1	1
 Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	23	9
 Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface	Analysis.Configuration	5	3
 Qualimetrix\Analysis\Configuration\Contract\Document\Provenance	Analysis.Configuration	5	4
-Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareName	Analysis.Configuration	3	1
+Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareName	Analysis.Configuration	2	1
 Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedList	Analysis.Configuration	4	3
 Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMap	Analysis.Configuration	4	2
@@ -20,9 +20,9 @@ Qualimetrix\Analysis\Configuration\Contract\Document\Schema\Shorthand	Analysis.C
 Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface	Analysis.Configuration	3	2
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest	Analysis.Configuration	1	1
-Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	Analysis.Configuration	4	4
+Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	Analysis.Configuration	3	3
 Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	55	10
-Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	Analysis.Configuration	3	3
+Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	15	6
 Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions	Analysis.Configuration	3	2
 Qualimetrix\Analysis\Configuration\SelectorYamlDecoder	Analysis.Configuration	2	2

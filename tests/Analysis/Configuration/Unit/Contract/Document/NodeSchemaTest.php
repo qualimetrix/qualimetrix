@@ -8,12 +8,14 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\KeyDictionary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\Shorthand;
 
 #[CoversClass(NodeSchema::class)]
+#[CoversClass(KeyDictionary::class)]
 final class NodeSchemaTest extends TestCase
 {
     #[Test]

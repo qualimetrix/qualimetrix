@@ -40,6 +40,9 @@ rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Symbol/SymbolType.
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Reporting/CoverageFailure.php	Qualimetrix\Reporting	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Reporting/Formatter/AcceptedLevelNarrator.php	Qualimetrix\Reporting\Formatter	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Reporting/Formatter/Summary/FindingSummaryRenderer.php	Qualimetrix\Reporting\Formatter\Summary	warning	1
+rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	warning	1
+rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Configuration/Contract/Refusal/ConfigurationSource.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	warning	1
+rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	warning	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/Finding.php	Qualimetrix\Analysis\Finding\Contract\Finding	warning	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/FindingChannel.php	Qualimetrix\Analysis\Finding\Contract\FindingChannel	warning	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/Severity.php	Qualimetrix\Analysis\Finding\Contract\Severity	warning	1
@@ -244,6 +247,7 @@ rule-path-suppression	health.cohesion	health.cohesion	src/Infrastructure/Console
 rule-path-suppression	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php	Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand	warning	1
 rule-path-suppression	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/GraphExportCommand.php	Qualimetrix\Infrastructure\Console\Command\GraphExportCommand	warning	1
 rule-path-suppression	size.property-count	size.property-count	src/Analysis/Evidence/Size/MethodCountMetrics.php	Qualimetrix\Analysis\Evidence\Size\MethodCountMetrics	error	1
+suppression	src/Analysis/Configuration/Document/AuthoredNode.php	code-smell.boolean-argument	src/Analysis/Configuration/Document/AuthoredNode.php	src/Analysis/Configuration/Document/AuthoredNode.php	warning	1
 suppression	src/Analysis/Evidence/DependencyModel/DependencyGraph.php	health.cohesion	src/Analysis/Evidence/DependencyModel/DependencyGraph.php	Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph	error	1
 suppression	src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	health.cohesion	src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorMethodContext	warning	1
 suppression	src/Analysis/Evidence/Prioritization/Impact/ClassRankIndex.php	health.cohesion	src/Analysis/Evidence/Prioritization/Impact/ClassRankIndex.php	Qualimetrix\Analysis\Evidence\Prioritization\Impact\ClassRankIndex	warning	1

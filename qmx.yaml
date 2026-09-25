@@ -61,6 +61,7 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedScalar'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\KeyDictionary'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema'
@@ -81,12 +82,15 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Document\AuthoredShape'
         - 'Qualimetrix\Analysis\Configuration\Document\DocumentComposer'
         - 'Qualimetrix\Analysis\Configuration\Document\DocumentSchema'
+        - 'Qualimetrix\Analysis\Configuration\Document\KeyClaims'
         - 'Qualimetrix\Analysis\Configuration\Document\KeyRecognition'
         - 'Qualimetrix\Analysis\Configuration\Document\LayerMerge'
         - 'Qualimetrix\Analysis\Configuration\Document\LayerReading'
         - 'Qualimetrix\Analysis\Configuration\Document\NameRecognition'
         - 'Qualimetrix\Analysis\Configuration\Document\PendingName'
         - 'Qualimetrix\Analysis\Configuration\Document\ReadingContext'
+        - 'Qualimetrix\Analysis\Configuration\Document\WrittenForm'
+        - 'Qualimetrix\Analysis\Configuration\Document\WrittenNames'
         - 'Qualimetrix\Analysis\Configuration\Loader\CommandLineLayer'
         - 'Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface'
         - 'Qualimetrix\Analysis\Configuration\Loader\DocumentKeyNormalizer'
@@ -1699,14 +1703,24 @@ rules:
       - subtree: Qualimetrix\Analysis\Finding\Rule
       - subtree: Qualimetrix\Analysis\Evidence\DependencyModel\Contract
       - subtree: Qualimetrix\Core\Path
-      # X15's entry for the refusal carrier's own namespace is gone. It was
-      # added on a measurement — ConfigurationSource at 0.0071 against 0.0066 —
-      # that X16 invalidated when the carrier grew one shortcut per form and
-      # source: a call site now names one type instead of three, ConfigurationSource
-      # lost the inbound edges its rank came from, and the entry suppressed
-      # nothing. `docs/internal/generated/suppression/inert.tsv` is the oracle
-      # that said so, and a suppressor under which nothing is suppressed is the
-      # very thing this round exists to report.
+      # The refusal carrier's own root: the one kind of exit code 3, the
+      # origin and position it is built from, and the source enum. The
+      # configuration document is where the rank now comes from, by design:
+      # every resolved node refuses itself naming its writers, so
+      # `ResolvedValueInterface`, whose only project dependency is the
+      # carrier its `refusal()` returns, passes it all of its own rank, and
+      # `Provenance` and the resolved map, list and opaque node pass it a share.
+      # From there the carrier passes it to `ConfigurationOrigin` and
+      # `RefusedPosition`, and the origin, which names nothing else, passes
+      # all of its own to `ConfigurationSource`. Measured on the tree that
+      # added the document: 0.0080, 0.0057 and 0.0056 before it, 0.0114,
+      # 0.0066 and 0.0087 after it, for the carrier, the position and the
+      # source. A second refusal type or a node that does not refuse itself
+      # would lower the numbers at the cost of the design, so this suppresses
+      # the channel for the root instead of raising a threshold every time an
+      # owner starts refusing through the document. It replaces the carrier's
+      # own inline threshold, which a root entry would leave doing nothing.
+      - exact: Qualimetrix\Analysis\Configuration\Contract\Refusal
 
   # Distance: leaf namespaces holding pure value objects, enums, and exceptions
   # are maximally concrete with few abstractions — that is the point of a

@@ -1728,9 +1728,24 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itCarriesTheSourceAndLocatorItWasBuiltWith
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDefaultsTheLocatorToNull
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDescribesEverySourceKind
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDescribesEverySourceWithAndWithoutALocator"baseline"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDescribesEverySourceWithAndWithoutALocator"baseline, named"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDescribesEverySourceWithAndWithoutALocator"command line"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDescribesEverySourceWithAndWithoutALocator"command line, named"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDescribesEverySourceWithAndWithoutALocator"composer"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDescribesEverySourceWithAndWithoutALocator"composer, named"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDescribesEverySourceWithAndWithoutALocator"defaults"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDescribesEverySourceWithAndWithoutALocator"defaults, named"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDescribesEverySourceWithAndWithoutALocator"file"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDescribesEverySourceWithAndWithoutALocator"file, named"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDescribesEverySourceWithAndWithoutALocator"preset"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDescribesEverySourceWithAndWithoutALocator"preset, named"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDescribesEverySourceWithAndWithoutALocator"resolved"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDescribesEverySourceWithAndWithoutALocator"resolved, named"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itKeepsTheImporterOfAnImportedFile
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itNarrowsTheLocatorAndKeepsTheImporter
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itAddressesAPositionedShorthandToItsOwnSource"config file"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itAddressesAPositionedShorthandToItsOwnSource"defaults"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itAddressesAPositionedShorthandToItsOwnSource"preset"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itAddressesAPositionedShorthandToItsOwnSource"resolved with a diagnostic key"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itAddressesAPositionedShorthandToItsOwnSource"resolved without a key"
@@ -1844,6 +1859,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAnyOtherSpellingOfAKeyWithTheCanonicalOne"upper snake root"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAnyOtherSpellingOfAKeyWithTheCanonicalOne"upper-case fixed name"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesTwoSpellingsOfOneKeyInOneMapping
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRejectsASiblingVocabularyAnywhereBelowAListItemAsASchemaDefect
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itStillAppliesTheSpellingRuleToADeclaredRootWhenUndeclaredOnesAreAdmitted
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itSuggestsTheClosestKeyOfAnUnknownOne
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\NamedEntryTest::itAdmitsASiblingDrawnNameTheVocabularysJudgeRefersToTheDeclaredOnes
@@ -3628,6 +3644,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itAcceptsEveryLevelSpellingTheOldPrivateWordListAccepted"namespace"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itAcceptsEveryLevelSpellingTheOldPrivateWordListAccepted"project"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itAppliesTheCatalogCheckToAnOverriddenBuiltInFormulaTheSameWayAsAUserFormula
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itAttributesARefusalOfAnUntouchedDefinitionToTheDefaultsAtTheKeyItLacks
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itCombinesEnabledFalseAndExcludeHealth
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itCreatesNewComputedMetric
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itDisablesHealthMetricAndRebuildsOverall
@@ -3638,9 +3655,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itExcludeHealthAcceptsBothNameForms
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itHandlesFormulaAndFormulasInteraction
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itKeepsTheBuiltInErrorWhenOnlyWarningIsWritten
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itOffersEveryExcludableDimensionButOverallForAnUnknownExclusion
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itOverridesHealthFormulaSingular
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itOverridesHealthFormulasPerLevel
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itOverridesHealthThresholdOnly
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itPositionsARefusalOfAMetricAbsentAtALevelAtTheMetricEntry
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itPositionsAnUnknownHealthDimensionAtTheWrittenName
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesACrossLevelReadInATernaryCondition
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesAMapWhereLevelsExpectsAListInsteadOfCrashing

@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionS
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\RefusedName;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -37,6 +38,14 @@ final readonly class ComputedMetricsSection implements DocumentSectionSchemaInte
             ComputedMetricEntryKeys::entrySchema(),
             NameVocabulary::predicate(self::refuseName(...)),
         );
+    }
+
+    /** The refused spot of a metric's entry, or of a key below it. */
+    public static function position(string $metricName, string ...$below): RefusedPosition
+    {
+        $path = [self::KEY, $metricName, ...array_values($below)];
+
+        return RefusedPosition::open($path, $path[\count($path) - 1]);
     }
 
     private static function refuseName(string $name): ?RefusedName

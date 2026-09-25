@@ -70,6 +70,12 @@ final class ConfigurationRefusalTest extends TestCase
             ConfigurationSource::Preset,
             'strict',
         ];
+        yield 'defaults' => [
+            static fn(RefusedPosition $p): ConfigurationRefusal
+                => ConfigurationRefusal::atDefaultsKey($p, 'Refused.'),
+            ConfigurationSource::Defaults,
+            null,
+        ];
         yield 'resolved without a key' => [
             static fn(RefusedPosition $p): ConfigurationRefusal
                 => ConfigurationRefusal::atResolvedKey($p, 'Refused.'),
