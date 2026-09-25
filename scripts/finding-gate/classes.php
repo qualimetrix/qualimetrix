@@ -13,7 +13,7 @@ declare(strict_types=1);
  * `Process` gaining a call to `Interruption` did exactly that on 2026-09-14 —
  * `composer check` went red in the directive audit, whose subset stopped at
  * `Process.php`, with a fatal three frames inside a file it had loaded
- * correctly. `finding-gate-controls.php` carries the same scar in a comment:
+ * correctly. The controls harness's entry point carries the same scar in a comment:
  * "Measured the hard way: without these, every control crashed on a missing
  * class."
  *

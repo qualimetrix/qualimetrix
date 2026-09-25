@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\FailureClass;
+use QmxFindingGate\Fs;
 use QmxFindingGate\WitnessRegistry;
 
 /**
@@ -22,19 +23,26 @@ final class WitnessRegistryTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{list<string>, list<string>, list<string>, array<string, array{0: string, 1: string}>, list<non-empty-string>}>
+     * @return iterable<string, array{list<string>, array<string, string>, list<string>, array<string, array{0: string, 1: string}>, list<non-empty-string>}>
      */
     public static function provideRegistries(): iterable
     {
-        yield 'every class witnessed once' => [['a', 'b'], ['a'], ['b'], [], []];
-        yield 'a class nobody witnesses' => [['a', 'b'], ['a'], [], [], ['witness registry: b has no witness']];
-        yield 'a pending class' => [['a', 'b'], ['a'], [], ['b' => ['pending: S01b/P5', 'because']], []];
-        yield 'a pending class that is witnessed' => [
+        yield 'every site observed' => [['a', 'b'], ['A::x' => 'a', 'B::y' => 'b'], ['A::x', 'B::y'], [], []];
+        yield 'a second site of an observed class' => [
             ['a'],
+            ['A::x#1' => 'a', 'A::x#2' => 'a'],
+            ['A::x#1'],
             [],
+            ['witness registry: a raised at A::x#2 has no witness'],
+        ];
+        yield 'a class raised nowhere' => [['a', 'b'], ['A::x' => 'a'], ['A::x'], [], ['witness registry: b is raised nowhere']];
+        yield 'a pending class' => [['a', 'b'], ['A::x' => 'a'], ['A::x'], ['b' => ['pending: S01b/P5', 'because']], []];
+        yield 'a pending class that is raised' => [
             ['a'],
+            ['A::x' => 'a'],
+            ['A::x'],
             ['a' => ['pending: S01b/P5', 'because']],
-            ['witness registry: a is witnessed and still stands'],
+            ['witness registry: a is raised at A::x and still stands'],
         ];
         yield 'a pending row naming no S01b package' => [
             ['a'],
@@ -52,8 +60,8 @@ final class WitnessRegistryTest extends TestCase
         ];
         yield 'a pending row naming no class' => [
             ['a'],
-            ['a'],
-            [],
+            ['A::x' => 'a'],
+            ['A::x'],
             ['z' => ['pending: S01b/P5', 'because']],
             ['witness registry: the pending row names "z"'],
         ];
@@ -61,21 +69,21 @@ final class WitnessRegistryTest extends TestCase
 
     /**
      * @param list<string> $classes
+     * @param array<string, string> $sites
      * @param list<string> $observed
-     * @param list<string> $required
      * @param array<string, array{0: string, 1: string}> $pending
      * @param list<non-empty-string> $expectedPrefixes
      */
     #[Test]
     #[DataProvider('provideRegistries')]
-    public function itNamesEveryClassWithoutAWitnessAndEveryStalePendingRow(
+    public function itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow(
         array $classes,
+        array $sites,
         array $observed,
-        array $required,
         array $pending,
         array $expectedPrefixes,
     ): void {
-        $problems = WitnessRegistry::problems($classes, $observed, $required, $pending);
+        $problems = WitnessRegistry::problems($classes, $sites, $observed, $pending);
 
         self::assertCount(\count($expectedPrefixes), $problems, implode("\n", $problems));
 
@@ -85,10 +93,55 @@ final class WitnessRegistryTest extends TestCase
     }
 
     #[Test]
-    public function itAcceptsTheTrackedPendingRowsWhileTheirClassesAreUnwitnessed(): void
+    public function itReadsEveryRaiseSiteOffTheSourceAndRefusesOneWithoutAClassConstant(): void
     {
-        $witnessed = array_values(array_diff(FailureClass::ALL, array_keys(WitnessRegistry::PENDING)));
+        $directory = sys_get_temp_dir() . '/witness-registry-' . bin2hex(random_bytes(8));
+        mkdir($directory);
 
-        self::assertSame([], WitnessRegistry::problems(FailureClass::ALL, $witnessed, [], WitnessRegistry::PENDING));
+        try {
+            file_put_contents($directory . '/Check.php', <<<'PHP'
+                <?php
+
+                final class Check
+                {
+                    public function one(): void
+                    {
+                        $this->report->fail(FailureClass::RUN_FAILED, 'a', 'b');
+                        $this->report
+                            ->fail(FailureClass::PATH_LEAK, 'a', 'b');
+                    }
+
+                    public static function two($report, string $class): void
+                    {
+                        $report->fail(FailureClass::MAP_STALE, 'a', 'b');
+                        $report->fail($class, 'a', 'b');
+                        self::fail();
+                    }
+                }
+                PHP);
+            file_put_contents($directory . '/SelfTestCheck.php', "<?php\n\$r->fail(FailureClass::RUN_FAILED, 'a', 'b');\n");
+
+            $read = WitnessRegistry::sites($directory);
+        } finally {
+            Fs::removeRecursively($directory);
+        }
+
+        self::assertSame(
+            ['Check::one#1' => ['run-failed', 7], 'Check::one#2' => ['path-leak', 9], 'Check::two' => ['map-stale', 14]],
+            array_map(static fn(array $site): array => [$site['class'], $site['line']], $read['sites']),
+        );
+        self::assertCount(1, $read['problems']);
+        self::assertStringContainsString('Check.php:15 raises a failure whose class is not a FailureClass constant', $read['problems'][0]);
+    }
+
+    #[Test]
+    public function itAcceptsTheTrackedPendingRowsWhileTheirClassesAreRaisedNowhere(): void
+    {
+        $sites = array_map(
+            static fn(array $site): string => $site['class'],
+            WitnessRegistry::sites(\dirname(__DIR__))['sites'],
+        );
+
+        self::assertSame([], WitnessRegistry::problems(FailureClass::ALL, $sites, array_keys($sites), WitnessRegistry::PENDING));
     }
 }

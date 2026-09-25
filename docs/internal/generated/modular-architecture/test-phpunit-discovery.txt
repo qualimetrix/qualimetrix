@@ -64,6 +64,13 @@ Available tests:
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"underscore"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itRefusesToScanATreeItCannotRead
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itScansATreeAndSkipsWhatIsNotPhp
+ - QmxFindingGate\Tests\CaseDefinitionTest::itAcceptsANameThatOnlyContainsTwoDots
+ - QmxFindingGate\Tests\CaseDefinitionTest::itReadsANamedPresetAsNoPathAndAPresetFileAsOne
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAConfigThatLinksOutsideTheCase
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAPathThatDoesNotExist
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAnAnalysisPathThatLinksOutsideTheCase
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAnInputOptionThatLinksOutsideTheCase
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAnOutputOptionEvenInsideTheCase
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"chain"
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"collapse-two-olds-onto-one-new"
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"comment-and-blank-lines"
@@ -81,14 +88,16 @@ Available tests:
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"trailing-space-in-new"
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"two-rows-for-one-old"
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"wrong-header"
- - QmxFindingGate\Tests\WitnessRegistryTest::itAcceptsTheTrackedPendingRowsWhileTheirClassesAreUnwitnessed
- - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEveryClassWithoutAWitnessAndEveryStalePendingRow"a class nobody witnesses"
- - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEveryClassWithoutAWitnessAndEveryStalePendingRow"a pending class that is witnessed"
- - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEveryClassWithoutAWitnessAndEveryStalePendingRow"a pending class"
- - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEveryClassWithoutAWitnessAndEveryStalePendingRow"a pending row naming no S01b package"
- - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEveryClassWithoutAWitnessAndEveryStalePendingRow"a pending row naming no class"
- - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEveryClassWithoutAWitnessAndEveryStalePendingRow"a pending row without a reason"
- - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEveryClassWithoutAWitnessAndEveryStalePendingRow"every class witnessed once"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itAcceptsTheTrackedPendingRowsWhileTheirClassesAreRaisedNowhere
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a class raised nowhere"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending class that is raised"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending class"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending row naming no S01b package"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending row naming no class"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending row without a reason"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a second site of an observed class"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"every site observed"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itReadsEveryRaiseSiteOffTheSourceAndRefusesOneWithoutAClassConstant
  - QmxTautologyControls\Tests\TautologyControlDeclarationTest::itDeclaresExactlyOnePositiveControlAndNoRepeatedId
  - QmxTautologyControls\Tests\TautologyControlDeclarationTest::itNamesOnlyCasesThatExist
  - QmxTautologyControls\Tests\TautologyControlDeclarationTest::itPlantsEachBreakageInProductionCodeThatStillLooksLikeThat

@@ -11,7 +11,7 @@ use Throwable;
  * directories, and the reference worktree registered in the developer's
  * repository.
  *
- * Not the controls harness's `QmxFindingGateControls\Scratch`, which is a
+ * Not the controls harness's own `Scratch`, which is a
  * hardlink clone of a working tree. This one holds no content of its own; it
  * holds the releases.
  *

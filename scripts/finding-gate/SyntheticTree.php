@@ -16,13 +16,16 @@ namespace QmxFindingGate;
  *
  * The committed state is the reference and the working tree is the candidate:
  * the specification is written, committed, and then only the `candidate*`
- * overrides are written over it.
+ * overrides are written over it. The declarations (`maps`, `declaredDelta`,
+ * `fieldMoves`) land in both, and only the candidate's are read.
  *
  * @phpstan-type Answer array{stdout?: string, stderr?: string, stderrOnce?: bool, exit?: int}
  * @phpstan-type Finding array<string, mixed>
  * @phpstan-type Specification array{
  *     cases: array<string, list<string>>,
  *     findings: array<string, list<Finding>>,
+ *     candidateFindings: array<string, list<Finding>>,
+ *     truncated: list<string>,
  *     answers: array<string, Answer>,
  *     candidateAnswers: array<string, Answer>,
  *     tuple: list<string>,
@@ -31,6 +34,9 @@ namespace QmxFindingGate;
  *     static: array<string, list<string>>,
  *     fixture: array<string, list<string>>,
  *     levels: list<string>,
+ *     maps: array<string, list<string>>,
+ *     declaredDelta: array<string, string>,
+ *     fieldMoves: list<array{0: string, 1: string, 2: string, 3: string}>,
  *     lock: string,
  *     candidateLock: string|null,
  * }
@@ -62,6 +68,8 @@ final class SyntheticTree
         return [
             'cases' => ['alpha' => ['replay.alpha@callable']],
             'findings' => ['alpha' => [self::finding($fields, 'replay.alpha', 'declaration:callable:Replay\Alpha::run@src/Alpha.php')]],
+            'candidateFindings' => [],
+            'truncated' => [],
             'answers' => [],
             'candidateAnswers' => [],
             'tuple' => $fields,
@@ -70,6 +78,9 @@ final class SyntheticTree
             'static' => ['replay.alpha' => ['callable']],
             'fixture' => ['replay.alpha' => ['callable']],
             'levels' => SubjectLevel::levels(),
+            'maps' => [],
+            'declaredDelta' => [],
+            'fieldMoves' => [],
             'lock' => "{\"replay\": \"lock\"}\n",
             'candidateLock' => null,
         ];
@@ -100,7 +111,7 @@ final class SyntheticTree
     public static function create(array $specification): string
     {
         $root = Fs::temporaryDirectory('self-test-synthetic-tree-');
-        $reference = self::files($specification, $specification['answers'], $specification['lock']);
+        $reference = self::files($specification, $specification['findings'], $specification['answers'], $specification['lock']);
 
         foreach ($reference as $path => $content) {
             Fs::write($root . '/' . $path, $content);
@@ -122,6 +133,7 @@ final class SyntheticTree
 
         $candidate = self::files(
             $specification,
+            [...$specification['findings'], ...$specification['candidateFindings']],
             [...$specification['answers'], ...$specification['candidateAnswers']],
             $specification['candidateLock'] ?? $specification['lock'],
         );
@@ -142,16 +154,17 @@ final class SyntheticTree
 
     /**
      * @param Specification $specification
+     * @param array<string, list<Finding>> $findings
      * @param array<string, Answer> $overrides
      *
      * @return array<string, string> path => content
      */
-    private static function files(array $specification, array $overrides, string $lock): array
+    private static function files(array $specification, array $findings, array $overrides, string $lock): array
     {
         $answers = ['tree|rules' => ['stdout' => "replayed rules\n"]];
 
         foreach ($specification['cases'] as $id => $claims) {
-            $answers += self::caseAnswers($id, $specification['findings'][$id] ?? []);
+            $answers += self::caseAnswers($id, $findings[$id] ?? [], \in_array($id, $specification['truncated'], true));
         }
 
         $files = [
@@ -179,7 +192,27 @@ final class SyntheticTree
         ];
 
         foreach (['channels', 'inputs', 'metric-keys', 'report-values', 'symbols'] as $map) {
-            $files['finding-gate/maps/' . $map . '.tsv'] = "old\tnew\treason\n";
+            $files['finding-gate/maps/' . $map . '.tsv'] = "old\tnew\treason\n"
+                . implode('', array_map(static fn(string $row): string => $row . "\n", $specification['maps'][$map] ?? []));
+        }
+
+        if ($specification['declaredDelta'] !== []) {
+            $rows = [];
+
+            foreach ($specification['declaredDelta'] as $surface => $diff) {
+                $file = DeclaredDelta::DIRECTORY . '/' . md5($surface) . '.diff';
+                $files['finding-gate/' . $file] = $diff;
+                $rows[] = [$surface, $file, 'self-test'];
+            }
+
+            $files['finding-gate/' . DeclaredDelta::INDEX] = Tsv::render(DeclaredDelta::COLUMNS, $rows);
+        }
+
+        if ($specification['fieldMoves'] !== []) {
+            $files['finding-gate/' . DeclaredFieldMoves::INDEX] = Tsv::render(
+                DeclaredFieldMoves::COLUMNS,
+                array_map(static fn(array $move): array => [...$move, 'self-test'], $specification['fieldMoves']),
+            );
         }
 
         foreach ($specification['cases'] as $id => $claims) {
@@ -191,6 +224,7 @@ final class SyntheticTree
                 'channels' => $claims,
             ], \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n";
             $files['finding-gate/cases/' . $id . '/qmx.yaml'] = "# replayed\n";
+            $files['finding-gate/cases/' . $id . '/src/' . ucfirst($id) . '.php'] = "<?php\n";
         }
 
         return $files;
@@ -203,7 +237,7 @@ final class SyntheticTree
      *
      * @return array<string, Answer>
      */
-    private static function caseAnswers(string $id, array $findings): array
+    private static function caseAnswers(string $id, array $findings, bool $truncated): array
     {
         $scope = 'case:' . $id;
         $expected = Fingerprints::expected($findings);
@@ -213,7 +247,9 @@ final class SyntheticTree
             $answers[Surfaces::key($scope, 'format:' . $format)] = ['stdout' => \sprintf("replayed %s of %s\n", $format, $id)];
         }
 
-        $answers[Surfaces::key($scope, 'format:json')] = ['stdout' => self::json(['violations' => $findings])];
+        $answers[Surfaces::key($scope, 'format:json')] = ['stdout' => self::json(
+            $truncated ? ['violations' => $findings, 'violationsMeta' => ['truncated' => true]] : ['violations' => $findings],
+        )];
         $answers[Surfaces::key($scope, 'format:sarif')] = ['stdout' => self::json(['runs' => [[
             'results' => array_map(
                 static fn(string $preimage): array => ['partialFingerprints' => ['primaryLocationLineHash' => $preimage]],

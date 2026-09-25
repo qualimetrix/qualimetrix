@@ -74,6 +74,10 @@ final class Harness
                 return 0;
             }
 
+            if ($argument === '--self-test') {
+                return self::selfTest();
+            }
+
             if (str_starts_with($argument, '--reference=')) {
                 $reference = $value;
             } elseif (str_starts_with($argument, '--only=')) {
@@ -157,10 +161,24 @@ final class Harness
         ));
     }
 
+    private static function selfTest(): int
+    {
+        $failures = (new HarnessSelfTest())->run();
+
+        foreach ($failures as $failure) {
+            echo '  FAIL  ', $failure, "\n";
+        }
+
+        echo $failures === [] ? "  harness self-test green\n" : \sprintf("  harness self-test RED (%d)\n", \count($failures));
+
+        return $failures === [] ? 0 : 1;
+    }
+
     private static function usage(): string
     {
         return <<<'TEXT'
             Usage: php scripts/finding-gate-controls.php --reference=<git-ref> [options]
+                   php scripts/finding-gate-controls.php --self-test
 
               --reference=<git-ref>       Passed to the gate as the tree to compare against. Required.
               --only=<a,b>                Run these controls only. Default: all.
@@ -172,6 +190,7 @@ final class Harness
                                           where the failure detail lives when a control misbehaves.
               --force-expect=<id>:<class> Replace a control's declared failure class, to show that a
                                           wrong expectation fails the harness. Not for regular runs.
+              --self-test                 Check the harness's own mechanics, run no control, and exit.
               --detached                  Do not stop when the launching process disappears. By default it
                                           does: an interrupt that reaches only `composer` once left the gate
                                           running invisibly for seven minutes. Pass this to outlive a

@@ -3,10 +3,9 @@
 declare(strict_types=1);
 
 /**
- * Loads the controls harness's classes, for its entry point and for the gate's
- * self-test, which reads what the controls require. One list, for the reason
- * the gate's own `classes.php` gives; the gate's classes are loaded first by
- * whoever requires this.
+ * Loads the controls harness's classes for its entry point. One list, for the
+ * reason the gate's own `classes.php` gives; the gate's classes are loaded
+ * first by whoever requires this. The gate itself never requires it.
  */
 
 foreach (
@@ -24,6 +23,7 @@ foreach (
         'FingerprintControls',
         'RenameControls',
         'Controls',
+        'HarnessSelfTest',
         'Harness',
     ] as $class
 ) {

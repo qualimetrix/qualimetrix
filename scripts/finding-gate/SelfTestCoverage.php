@@ -261,7 +261,7 @@ final class SelfTestCoverage extends SelfTestGroup
     {
         $root = Fs::temporaryDirectory('self-test-claim-');
         $directory = $root . '/probe';
-        mkdir($directory);
+        mkdir($directory . '/src', 0o777, true);
         Fs::write($directory . '/qmx.yaml', "suppress_paths: []\n");
 
         $write = static function (array $channels) use ($directory): void {
@@ -315,9 +315,10 @@ final class SelfTestCoverage extends SelfTestGroup
     {
         $root = Fs::temporaryDirectory('self-test-corpus-');
         $directory = $root . '/finding-gate/cases/probe';
-        mkdir($directory, 0o777, true);
+        mkdir($directory . '/src', 0o777, true);
         Fs::write($directory . '/qmx.yaml', "suppress_paths: []\n");
         Fs::write($directory . '/preset.yaml', "rules: {}\n");
+        Fs::write(\dirname($directory) . '/qmx.yaml', "suppress_paths: []\n");
 
         $loads = static function (string $config, array $args) use ($root, $directory): bool {
             Fs::write($directory . '/case.json', (string) json_encode([
@@ -336,7 +337,9 @@ final class SelfTestCoverage extends SelfTestGroup
             $loads('qmx.yaml', ['--preset=strict', '--preset=preset.yaml', '-c', 'qmx.yaml', '--rule-opt=a.b:c=1']),
             'a case whose config, presets and path arguments stay in its directory loads',
         );
-        $this->assert(!$loads('../probe/qmx.yaml', []), 'a config reached through ".." is refused');
+        $this->assert(!$loads('../qmx.yaml', []), 'a config reached through ".." outside the directory is refused');
+        $this->assert($loads('../probe/qmx.yaml', []), 'while one whose ".." leads back inside loads');
+        $this->assert(!$loads('missing.yaml', []), 'and a config that does not exist is refused');
 
         foreach ([
             'an absolute config as a separated -c' => ['-c', '/elsewhere/qmx.yaml'],
@@ -347,10 +350,20 @@ final class SelfTestCoverage extends SelfTestGroup
             'a preset path' => ['--preset=../../../preset.yaml'],
             'a preset hidden in a comma list' => ['--preset=strict,/elsewhere/preset.yaml'],
             'a baseline' => ['--baseline=/elsewhere/baseline.json'],
-            'an output file' => ['-o', '/elsewhere/report.json'],
             'a working directory' => ['--working-dir=..'],
         ] as $what => $args) {
             $this->assert(!$loads('qmx.yaml', $args), \sprintf('%s outside the case directory is refused', $what));
+        }
+
+        foreach ([
+            'a separated -o' => ['-o', 'report.json'],
+            'a -o inside a short-option cluster' => ['-qoreport.json'],
+            'an attached --output' => ['--output=report.json'],
+            'a log file' => ['--log-file=qmx.log'],
+            'a cache directory' => ['--cache-dir=cache'],
+            'a profile without a file' => ['--profile'],
+        ] as $what => $args) {
+            $this->assert(!$loads('qmx.yaml', $args), \sprintf('%s is refused wherever it writes', $what));
         }
 
         $this->assert(

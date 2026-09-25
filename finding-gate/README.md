@@ -9,10 +9,15 @@ corpus containing `src/` would move its own input with every step it is
 supposed to measure: renaming the class `Violation` would shift the subjects of
 the findings the gate compares. Nothing under `cases/` may be product code, and
 no case may point at a path outside its own directory: not in `paths`, not in
-`config`, and not in the value of any path-valued option in `args` (`-c`,
-`--config`, `--preset`, `--baseline`, `--output`, …; the one list is
-`CaseDefinition::PATH_OPTIONS`). An absolute path or one containing `..` is
-refused when the case loads.
+`config`, and not in the value of any option in `args` that reads a path (`-c`,
+`--config`, `--preset` given as a file, `--baseline`, `-d`; the one list is
+`CaseDefinition::INPUT_OPTIONS`). The rule is judged where a path leads once
+links are resolved, not how it is spelled: a symlink out of the case directory
+is refused, a path that does not exist is refused, and so is an absolute path,
+while a name like `a..b` is just a name. An option that writes (`-o`,
+`--output`, `--log-file`, `--profile`, `--cache-dir`; `CaseDefinition::OUTPUT_OPTIONS`)
+is refused in `args` wherever it points: the run's working directory is the
+case directory, and the gate captures what a run publishes itself.
 
 ## Layout
 
@@ -1053,15 +1058,26 @@ own parent.
 
 ## The controls
 
-`composer gate:controls` runs twenty-three controls, each on its own hardlink
-clone: nineteen planted breakages and four green ones. The clone's repository is
+`composer gate:controls` runs the controls `Controls::all()` lists, each on its
+own hardlink clone: planted breakages and green ones. The clone's repository is
 its own — a local mirror of the developer's with the checkout's `HEAD` and
 `index` — so the reference checkout each control's gate takes is registered in
 the clone, never in the repository the harness was started from, also when that
-is a linked worktree whose `.git` is only a pointer file. Seventeen of the
-nineteen are each required to produce a named failure class at a named
-surface; the two derive controls are judged by what the run left on disk
-instead. `moved-aggregated-spelling`
+is a linked worktree whose `.git` is only a pointer file. Making it needs git
+2.31 or later (`rev-parse --path-format`). A mirror carries `refs/` and objects
+and nothing else, so `--reference` has to name a ref or a commit: `@{u}`,
+`HEAD@{1}` and the other reflog forms, `ORIG_HEAD` and `FETCH_HEAD` do not
+resolve in the clone, and every control fails on them loudly. The red controls
+are each required to produce a named failure class at a named surface, except
+the derive controls, which are judged by what the run left on disk instead.
+`composer gate:self-test` runs the harness's own self-test after the gate's;
+the gate never loads the harness.
+
+What the controls require is not what makes a failure class witnessed. They run
+neither in `composer check` nor in CI, so the gate's self-test holds every place
+a class is raised to a synthetic run of its own (`CheckWitnesses`, judged by
+`WitnessRegistry` per raise site), and a control only adds to that.
+`moved-aggregated-spelling`
 is the control on the suffix expansion: the metrics
 surface publishes `<key>.pct95` where the product computed `<key>.p95`, the base
 keys stay exactly where they are, and the gate has to be red rather than absorbing

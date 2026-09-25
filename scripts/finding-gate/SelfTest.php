@@ -66,7 +66,6 @@ final class SelfTest
         $resources->lockedRegistrationIsStillReleased();
         $resources->interruptedRunReleasesEverything();
         $resources->releasedWhenKilledDuringCheckout();
-        $resources->controlCloneOwnsItsRepository();
         $registries->loaderNamesEveryClass();
         $registries->witnessedFailureClasses();
 

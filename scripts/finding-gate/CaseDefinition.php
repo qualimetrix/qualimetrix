@@ -25,19 +25,28 @@ final class CaseDefinition
     private const KNOWN_KEYS = ['id', 'description', 'coverage', 'paths', 'config', 'args', 'channels', 'explainSubjects'];
 
     /**
-     * The product options whose value is a file-system path, by long name, with
-     * the shortcut where one exists. The one list the containment rule and
+     * The product options that read a file-system path, by long name, with the
+     * shortcut where one exists. The one list the containment rule and
      * {@see argumentPaths()} read; an option missing here is not checked.
      */
-    public const PATH_OPTIONS = [
+    public const INPUT_OPTIONS = [
         '--config' => '-c',
         '--preset' => null,
         '--baseline' => null,
+        '--working-dir' => '-d',
+    ];
+
+    /**
+     * The product options that write somewhere. Refused in `args` outright: the
+     * run's working directory is the case directory, so a relative destination
+     * writes into the tracked corpus, and everything a run publishes the gate
+     * captures itself.
+     */
+    public const OUTPUT_OPTIONS = [
         '--output' => '-o',
         '--cache-dir' => null,
         '--log-file' => null,
         '--profile' => null,
-        '--working-dir' => '-d',
     ];
 
     /**
@@ -120,9 +129,7 @@ final class CaseDefinition
         }
 
         foreach ([...$case->paths, $case->config, ...$case->argumentPaths()] as $path) {
-            if (str_starts_with($path, '/') || str_contains($path, '..')) {
-                throw new GateError(\sprintf('%s names path "%s" outside its own directory.', $file, $path));
-            }
+            $case->assertInside($path);
         }
 
         if (!is_file($directory . '/' . $case->config)) {
@@ -133,14 +140,48 @@ final class CaseDefinition
     }
 
     /**
-     * Every file-system path the case's `args` name, as values of
-     * {@see self::PATH_OPTIONS}, each comma-separated part on its own.
+     * Judged where the path leads, not how it is spelled: a link inside the case
+     * directory reaches whatever it points at, and `a..b` is a name like any
+     * other. A path that does not exist leads nowhere that could be judged.
+     * Absolute paths are refused as spelled, because they name a checkout.
+     */
+    private function assertInside(string $path): void
+    {
+        $file = $this->directory . '/case.json';
+
+        if (str_starts_with($path, '/')) {
+            throw new GateError(\sprintf('%s names the absolute path "%s"; a case names paths inside its own directory.', $file, $path));
+        }
+
+        $root = realpath($this->directory);
+        $resolved = realpath($this->directory . '/' . $path);
+
+        if ($root === false || $resolved === false) {
+            throw new GateError(\sprintf('%s names path "%s", which does not exist.', $file, $path));
+        }
+
+        if ($resolved !== $root && !str_starts_with($resolved, $root . '/')) {
+            throw new GateError(\sprintf(
+                '%s names path "%s", which leads to %s, outside its own directory.',
+                $file,
+                $path,
+                $resolved,
+            ));
+        }
+    }
+
+    /**
+     * Every file-system path the case's `args` read, as values of
+     * {@see self::INPUT_OPTIONS}, each comma-separated part on its own. A
+     * preset that is not spelled as a file is a built-in name, read from the
+     * product rather than from the case, by the same test the product applies.
      *
      * A bare token is accepted only as the separated value of one of those
      * options. Anywhere else it is either a positional analysis path, which
      * belongs in `paths`, or the separated value of an option this list does not
      * know — and without knowing which, no answer about what the case reads
-     * would be exact, so the case is refused instead.
+     * would be exact, so the case is refused instead. So is any of
+     * {@see self::OUTPUT_OPTIONS}.
      *
      * @return list<string>
      */
@@ -152,10 +193,11 @@ final class CaseDefinition
 
         foreach ($this->args as $argument) {
             if ($pending !== null) {
+                $option = $pending;
                 $pending = null;
 
                 if (!str_starts_with($argument, '-')) {
-                    $values[] = $argument;
+                    $values[] = [$option, $argument];
 
                     continue;
                 }
@@ -170,8 +212,12 @@ final class CaseDefinition
                 $name = $equals === false ? $argument : substr($argument, 0, $equals);
                 $value = $equals === false ? null : substr($argument, $equals + 1);
 
-                if (\array_key_exists($name, self::PATH_OPTIONS)) {
-                    $value === null ? $pending = $name : $values[] = $value;
+                if (\array_key_exists($name, self::OUTPUT_OPTIONS)) {
+                    throw $this->writes($name);
+                }
+
+                if (\array_key_exists($name, self::INPUT_OPTIONS)) {
+                    $value === null ? $pending = $name : $values[] = [$name, $value];
                 }
 
                 continue;
@@ -182,9 +228,15 @@ final class CaseDefinition
                 // of its first option that takes one; any path shortcut in the
                 // cluster is treated as that option, which can only over-refuse.
                 foreach (str_split(substr($argument, 1)) as $offset => $shortcut) {
-                    if (\in_array('-' . $shortcut, self::PATH_OPTIONS, true)) {
+                    if (\in_array('-' . $shortcut, self::OUTPUT_OPTIONS, true)) {
+                        throw $this->writes('-' . $shortcut);
+                    }
+
+                    $name = array_search('-' . $shortcut, self::INPUT_OPTIONS, true);
+
+                    if (\is_string($name)) {
                         $value = ltrim(substr($argument, $offset + 2), '=');
-                        $value === '' ? $pending = $shortcut : $values[] = $value;
+                        $value === '' ? $pending = $name : $values[] = [$name, $value];
 
                         break;
                     }
@@ -203,13 +255,34 @@ final class CaseDefinition
 
         $paths = [];
 
-        foreach ($values as $value) {
+        foreach ($values as [$option, $value]) {
             foreach (explode(',', $value) as $part) {
+                if ($option === '--preset' && !self::namesPresetFile($part)) {
+                    continue;
+                }
+
                 $paths[] = $part;
             }
         }
 
         return $paths;
+    }
+
+    /** The product's own test for a preset given as a file rather than by name. */
+    private static function namesPresetFile(string $preset): bool
+    {
+        return str_contains($preset, '/') || str_contains($preset, '\\')
+            || str_ends_with($preset, '.yaml') || str_ends_with($preset, '.yml');
+    }
+
+    private function writes(string $option): GateError
+    {
+        return new GateError(\sprintf(
+            '%s: "args" carries %s, which writes. A case writes nothing: its working directory is the tracked'
+            . ' corpus, and the gate captures what a run publishes itself.',
+            $this->directory . '/case.json',
+            $option,
+        ));
     }
 
     /** @param array<array-key, mixed> $decoded */

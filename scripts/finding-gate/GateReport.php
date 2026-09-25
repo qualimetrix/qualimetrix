@@ -27,6 +27,16 @@ final class GateReport
     /** @var list<array{class: string, scope: string, detail: string, diff: list<string>}> */
     private array $failures = [];
 
+    /**
+     * Where each failure was raised, parallel to `$failures` and never
+     * published: the witness registry holds every raise site to a run that
+     * observed it, and a class raised by several checks cannot say which one
+     * spoke.
+     *
+     * @var list<array{file: string, line: int}>
+     */
+    private array $raisedAt = [];
+
     /** @var list<string> */
     private array $warnings = [];
 
@@ -69,6 +79,25 @@ final class GateReport
         }
 
         $this->failures[] = ['class' => $failureClass, 'scope' => $scope, 'detail' => $detail, 'diff' => $diff];
+        $caller = debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+        $this->raisedAt[] = ['file' => $caller['file'] ?? '?', 'line' => $caller['line'] ?? 0];
+    }
+
+    /** @return list<array{class: string, scope: string, detail: string, file: string, line: int}> */
+    public function raised(): array
+    {
+        $raised = [];
+
+        foreach ($this->failures as $index => $failure) {
+            $raised[] = [
+                'class' => $failure['class'],
+                'scope' => $failure['scope'],
+                'detail' => $failure['detail'],
+                ...$this->raisedAt[$index],
+            ];
+        }
+
+        return $raised;
     }
 
     public function warn(string $message): void

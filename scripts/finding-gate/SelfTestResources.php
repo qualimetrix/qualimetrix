@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace QmxFindingGate;
 
-use QmxFindingGateControls\Scratch as ControlScratch;
-use RuntimeException;
-
 /**
  * What the gate takes from the machine and gives back: files it writes and removes, child processes,
  * reference checkouts and the scratch registry that releases them when a run is stopped.
@@ -493,76 +490,6 @@ final class SelfTestResources extends SelfTestGroup
         proc_close($child['handle']);
 
         return -1;
-    }
-
-    /**
-     * A control's clone is a repository of its own, also when what it clones
-     * is a linked worktree.
-     *
-     * There `.git` is a `gitdir:` pointer file, and the copy the clone used to
-     * take of it pointed straight back: every control's gate then added, pruned
-     * and removed its reference checkout in the developer's repository, several
-     * at once. The linked worktree carries a commit and a staged file of its
-     * own, so the clone is also held to reading as that checkout does.
-     */
-    public function controlCloneOwnsItsRepository(): void
-    {
-        require_once \dirname(__DIR__) . '/finding-gate-controls/classes.php';
-
-        $repository = $this->throwawayRepository(withVendor: true);
-        $outside = Fs::temporaryDirectory('self-test-linked-worktree-');
-        $linked = $outside . '/linked';
-        $scratch = null;
-        $git = static function (string $directory, string ...$arguments): string {
-            $result = Process::run(['git', ...array_values($arguments)], $directory);
-
-            if ($result['exit'] !== 0) {
-                throw new GateError(\sprintf("git %s failed:\n%s", implode(' ', $arguments), $result['stderr']));
-            }
-
-            return trim($result['stdout']);
-        };
-
-        try {
-            $branch = $git($repository, 'symbolic-ref', '--short', 'HEAD');
-            $git($repository, 'worktree', 'add', '--quiet', '-b', 'linked', $linked, 'HEAD');
-            Fs::write($linked . '/committed.txt', "linked\n");
-            $git($linked, 'add', 'committed.txt');
-            $git($linked, '-c', 'user.email=self-test@qmx', '-c', 'user.name=self-test', 'commit', '--quiet', '--message', 'linked');
-            Fs::write($linked . '/staged.txt', "staged\n");
-            $git($linked, 'add', 'staged.txt');
-            $registered = self::registeredWorktrees($repository);
-
-            $scratch = ControlScratch::cloneOf($linked);
-            $this->same(
-                realpath($scratch->tree . '/.git'),
-                realpath($git($scratch->tree, 'rev-parse', '--path-format=absolute', '--git-common-dir')),
-                'the clone of a linked worktree resolves to a repository of its own',
-            );
-            $this->same(
-                $git($linked, 'rev-parse', 'HEAD', $branch),
-                $git($scratch->tree, 'rev-parse', 'HEAD', $branch),
-                'the clone reads the worktree\'s HEAD and every branch of its repository',
-            );
-            $this->same(
-                $git($linked, 'diff', '--cached', '--name-only'),
-                $git($scratch->tree, 'diff', '--cached', '--name-only'),
-                'and the worktree\'s staged state',
-            );
-
-            $git($scratch->tree, 'worktree', 'add', '--quiet', '--detach', $scratch->beside('reference') . '/tree', 'HEAD');
-            $this->same(
-                $registered,
-                self::registeredWorktrees($repository),
-                'a worktree the clone adds is registered in the clone, never in the repository it was cloned from',
-            );
-        } catch (RuntimeException $error) {
-            $this->failures[] = 'a control\'s clone owns its repository (' . $error->getMessage() . ')';
-        } finally {
-            $scratch?->remove();
-            self::discard($repository);
-            Fs::removeRecursively($outside);
-        }
     }
 
     /**
