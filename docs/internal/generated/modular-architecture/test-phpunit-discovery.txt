@@ -91,7 +91,11 @@ Available tests:
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"trailing-space-in-new"
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"two-rows-for-one-old"
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"wrong-header"
+ - QmxFindingGate\Tests\GateModesTest::itExitsOneWhenTheSelfTestFails
+ - QmxFindingGate\Tests\GateModesTest::itExitsThreeWhenTheGateCannotRun
+ - QmxFindingGate\Tests\GateModesTest::itExitsZeroWhenTheSelfTestIsGreen
  - QmxFindingGate\Tests\RaiseSitesTest::itNamesEverySiteOncePerCallerFromAnotherClass
+ - QmxFindingGate\Tests\RaiseSitesTest::itRefusesEveryCallerItCannotTieToAClass
  - QmxFindingGate\Tests\RaiseSitesTest::itRefusesEveryFormItCannotRead
  - QmxFindingGate\Tests\RaiseSitesTest::itScansSubdirectories
  - QmxFindingGate\Tests\WitnessRegistryTest::itAcceptsTheTrackedPendingRowsWhileTheirClassesAreRaisedNowhere

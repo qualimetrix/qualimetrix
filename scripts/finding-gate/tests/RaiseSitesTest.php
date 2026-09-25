@@ -131,12 +131,69 @@ final class RaiseSitesTest extends TestCase
         self::assertSame(
             [
                 '7 raises a failure whose class is not a FailureClass constant, or reaches fail() another way',
+                '8 calls a callable',
                 '8 names "fail" as a string',
                 '9 calls a method whose name is a variable',
                 '10 calls a method whose name is a variable',
                 '11 raises a failure whose class is not a FailureClass constant, or reaches fail() another way',
                 '15 declares a method fail()',
                 '1 declares a GateReport that can be extended, so fail() could be overridden',
+            ],
+            $lines,
+        );
+    }
+
+    #[Test]
+    public function itRefusesEveryCallerItCannotTieToAClass(): void
+    {
+        $this->write('Alpha.php', <<<'PHP'
+            <?php
+
+            namespace QmxFindingGate;
+
+            use QmxFindingGate\Alpha as Renamed;
+
+            final class Alpha
+            {
+                public static function check($report): void
+                {
+                    $report->fail(FailureClass::RUN_FAILED, 'a', 'b');
+                }
+            }
+            PHP);
+        $this->write('Beta.php', <<<'PHP'
+            <?php
+
+            final class Beta
+            {
+                public function callers(string $class): void
+                {
+                    Alpha::check($this->report);
+                    \QmxFindingGate\Alpha::check($this->report);
+                    $class::check($this->report);
+                    \call_user_func([Alpha::class, 'check'], $this->report);
+                    array_map('Alpha::check', []);
+                }
+            }
+            PHP);
+        $this->write('Nested/Alpha.php', "<?php\nfinal class Alpha\n{\n}\n");
+
+        $read = RaiseSites::of($this->directory);
+        $lines = array_map(
+            static fn(string $problem): string => (string) preg_replace('~^.*?/([\w/]+\.php)(?::(\d+))? (.*?)(?:, which.*|\.)$~', '$1:$2 $3', $problem),
+            $read->problems,
+        );
+
+        self::assertSame(['Alpha::check <- Beta::callers'], array_keys($read->sites));
+        self::assertSame(
+            [
+                'Alpha.php:5 imports a class under another name',
+                'Beta.php:8 calls a static method through a qualified class name',
+                'Beta.php:9 calls a static method on a class held in a variable',
+                'Beta.php:10 calls a callable',
+                'Beta.php:10 builds a callable from a class and a method name',
+                'Beta.php:11 names a static method as a string',
+                'Nested/Alpha.php: declares a second class named Alpha, and callers are told apart by short name only',
             ],
             $lines,
         );

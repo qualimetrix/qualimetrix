@@ -109,10 +109,24 @@ final class CheckWitnesses
         ],
     ];
 
-    /** Modes no scenario drives, and why each is witnessed anyway. */
-    private const array WITNESSED_BY_CONSTRUCTION = [
-        Options::MODE_SELF_TEST => 'the self-test is the run these witnesses are part of',
-        Options::MODE_CASE_WORKER => 'every scenario that runs a tree runs each case in a worker of this mode',
+    /**
+     * Modes no scenario drives: the PHPUnit test that runs the mode as a
+     * subprocess (file under this directory, method), or null and why the
+     * scenarios reach it anyway.
+     *
+     * @var array<string, array{0: string|null, 1: string|null, 2: string}>
+     */
+    private const array WITNESSED_OUTSIDE_A_SCENARIO = [
+        Options::MODE_SELF_TEST => [
+            'tests/GateModesTest.php',
+            'itExitsOneWhenTheSelfTestFails',
+            'a self-test cannot see its own exit code, so a copy of the gate with a failing self-test runs as a subprocess',
+        ],
+        Options::MODE_CASE_WORKER => [
+            null,
+            null,
+            'every scenario that runs a tree runs each of its cases in a worker of this mode',
+        ],
     ];
 
     private const string NO_DIFF = "a diff nobody measured\n";
@@ -203,17 +217,52 @@ final class CheckWitnesses
         }
 
         $problems = [];
+        $modes = [];
 
         foreach ((new ReflectionClass(Options::class))->getConstants() as $name => $value) {
-            if (!str_starts_with($name, 'MODE_') || !\is_string($value)) {
-                continue;
+            if (str_starts_with($name, 'MODE_') && \is_string($value)) {
+                $modes[] = $value;
             }
+        }
 
-            if (!\in_array($value, $driven, true) && !isset(self::WITNESSED_BY_CONSTRUCTION[$value])) {
+        foreach ($modes as $mode) {
+            if (!\in_array($mode, $driven, true) && !isset(self::WITNESSED_OUTSIDE_A_SCENARIO[$mode])) {
                 $problems[] = \sprintf(
                     'check witness modes: the gate mode "%s" is driven by no scenario, so what it decides and writes is'
                     . ' seen by nothing.',
-                    $value,
+                    $mode,
+                );
+            }
+        }
+
+        foreach (self::WITNESSED_OUTSIDE_A_SCENARIO as $mode => [$file, $method, $reason]) {
+            if (!\in_array($mode, $modes, true)) {
+                $problems[] = \sprintf('check witness modes: "%s" is listed as witnessed outside a scenario and is no gate mode.', $mode);
+
+                continue;
+            }
+
+            if (\in_array($mode, $driven, true)) {
+                $problems[] = \sprintf(
+                    'check witness modes: "%s" is listed as witnessed outside a scenario and a scenario drives it.'
+                    . ' Remove the entry.',
+                    $mode,
+                );
+            }
+
+            if ($file === null) {
+                continue;
+            }
+
+            $path = __DIR__ . '/' . $file;
+
+            if (!is_file($path) || preg_match('~function ' . preg_quote((string) $method, '~') . '\\(~', Fs::read($path)) !== 1) {
+                $problems[] = \sprintf(
+                    'check witness modes: "%s" is witnessed by %s::%s, which does not exist (%s).',
+                    $mode,
+                    $file,
+                    $method,
+                    $reason,
                 );
             }
         }

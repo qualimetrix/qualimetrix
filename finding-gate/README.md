@@ -1086,9 +1086,16 @@ per caller (`RaiseSites`): a check reached through a shared wrapper from two
 modes needs a run through each. Every mode of the command line is driven the
 same way and held to its exit code and to exactly the declarations it changed,
 and a failure raised from a place the scan of the source does not enumerate is
-itself a failure. What stays unseen: two paths into a site that share the same
-nearest caller, and the decisions a signal arriving in the tail of a derive run
-takes.
+itself a failure. The two exit codes the self-test cannot see from inside —
+its own verdict, and 3 for a gate that cannot run — are held by
+`scripts/finding-gate/tests/GateModesTest.php`, which runs the entry point as a
+subprocess. The scan refuses what it cannot read instead of skipping it, so
+inside `scripts/finding-gate` the name `fail` is reserved for
+`$report->fail(FailureClass::X, ...)`: any other method, string or callable
+named `fail` turns the self-test red, and so does a caller it cannot tie to a
+class (a qualified or variable class name, a renamed import, a callable). What
+stays unseen: two paths into a site that share the same nearest caller, and the
+decisions a signal arriving in the tail of a derive run takes.
 `moved-aggregated-spelling`
 is the control on the suffix expansion: the metrics
 surface publishes `<key>.pct95` where the product computed `<key>.p95`, the base
