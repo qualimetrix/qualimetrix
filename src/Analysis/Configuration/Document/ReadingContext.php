@@ -1,0 +1,74 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Analysis\Configuration\Document;
+
+use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
+
+/** Where in one layer the reading stands: source, authored path, canonical path. */
+final readonly class ReadingContext
+{
+    /**
+     * @param list<string> $authoredPath
+     * @param list<string> $canonicalPath
+     */
+    private function __construct(
+        public ConfigurationOrigin $origin,
+        public bool $positioned,
+        public array $authoredPath,
+        public array $canonicalPath,
+        public bool $insideList,
+    ) {}
+
+    public static function of(AuthoredLayer $layer): self
+    {
+        return new self($layer->origin, $layer->positioned, [], [], false);
+    }
+
+    public function child(string $authored, string $canonical, AuthoredNode $node, bool $listItem = false): self
+    {
+        return new self(
+            $node->locator === null ? $this->origin : $this->origin->locatedAt($node->locator),
+            $this->positioned,
+            [...$this->authoredPath, $authored],
+            [...$this->canonicalPath, $canonical],
+            $this->insideList || $listItem,
+        );
+    }
+
+    public function provenance(AuthoredNode $node): Provenance
+    {
+        return new Provenance($this->origin, $this->positioned ? $this->authoredPath : null, $node->line);
+    }
+
+    /** The spot for a sentence: `"cache.enabled" in configuration file "qmx.yaml"`. */
+    public function where(): string
+    {
+        return $this->positioned && $this->authoredPath !== []
+            ? \sprintf('"%s" in %s', Provenance::display($this->authoredPath), $this->origin->describe())
+            : $this->origin->describe();
+    }
+
+    /**
+     * A refusal of what this layer wrote at this spot.
+     *
+     * @param ?list<string> $accepted non-null for a closed position
+     */
+    public function refusal(string $summary, ?string $written = null, ?array $accepted = null): ConfigurationRefusal
+    {
+        if (!$this->positioned) {
+            return ConfigurationRefusal::aboutInput($this->origin, $summary);
+        }
+
+        $written ??= $this->authoredPath[\count($this->authoredPath) - 1] ?? '';
+        $position = $accepted === null
+            ? RefusedPosition::open($this->authoredPath, $written)
+            : RefusedPosition::closed($this->authoredPath, $written, $accepted);
+
+        return ConfigurationRefusal::at($this->origin, $position, $summary);
+    }
+}

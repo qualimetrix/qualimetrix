@@ -12,17 +12,16 @@ use Throwable;
  * selector, a form — anything the configuration's author is responsible for.
  *
  * The single carried kind for exit code 3. There is no
- * public constructor: every refusal is one of the three named forms below, and
- * every form is built through a named factory rather than a shared one with a
- * boolean flag, so an impossible combination (a closed position with nothing
- * accepted) cannot be constructed at all.
+ * public constructor: every refusal is one of the four named forms below —
+ * `at()`, `aboutDocument()`, `aboutInput()` and `acrossLayers()` — each built
+ * through a named factory rather than a shared one with a boolean flag.
  *
- * The per-source factories that follow the three forms are shorthands, not a
- * fourth form: each delegates to `at()`, `aboutDocument()` or `aboutInput()`
+ * The per-source factories that follow the forms are shorthands, not a
+ * further form: each delegates to `at()`, `aboutDocument()` or `aboutInput()`
  * with the origin built here. A throw site that names its source literally
  * would otherwise have to import {@see ConfigurationOrigin} and
  * {@see ConfigurationSource} for no reason but to assemble a constant — three
- * type dependencies where one would do. The three general forms stay public
+ * type dependencies where one would do. The general forms stay public
  * for the sites that compute their source or forward an origin they were given.
  *
  * ClassRank measures how much of the graph flows into a type, and for the one
@@ -38,11 +37,13 @@ use Throwable;
  */
 final class ConfigurationRefusal extends RuntimeException
 {
+    /** @param list<ConfigurationOrigin> $contributors */
     private function __construct(
         private readonly ConfigurationOrigin $origin,
         private readonly ?RefusedPosition $position,
         private readonly string $summary,
         ?Throwable $previous = null,
+        private readonly array $contributors = [],
     ) {
         parent::__construct($summary, 0, $previous);
     }
@@ -73,6 +74,22 @@ final class ConfigurationRefusal extends RuntimeException
         ?Throwable $previous = null,
     ): self {
         return new self($origin, null, $summary, $previous);
+    }
+
+    /**
+     * A refusal about a value composed from several layers, or a relation
+     * between values different layers wrote: every contributing layer is at
+     * fault, and each is named. The origin is {@see ConfigurationSource::Resolved}.
+     *
+     * @param non-empty-list<ConfigurationOrigin> $contributors lowest precedence first
+     */
+    public static function acrossLayers(
+        array $contributors,
+        ?RefusedPosition $position,
+        string $summary,
+        ?Throwable $previous = null,
+    ): self {
+        return new self(ConfigurationOrigin::of(ConfigurationSource::Resolved), $position, $summary, $previous, $contributors);
     }
 
     /**
@@ -199,6 +216,17 @@ final class ConfigurationRefusal extends RuntimeException
     public function origin(): ConfigurationOrigin
     {
         return $this->origin;
+    }
+
+    /**
+     * Every source the refusal names: the contributing layers of an
+     * {@see self::acrossLayers()} refusal, otherwise the one origin.
+     *
+     * @return non-empty-list<ConfigurationOrigin>
+     */
+    public function sources(): array
+    {
+        return $this->contributors === [] ? [$this->origin] : $this->contributors;
     }
 
     /** Null for the {@see self::aboutDocument()}/{@see self::aboutInput()} forms — there is no position by construction. */

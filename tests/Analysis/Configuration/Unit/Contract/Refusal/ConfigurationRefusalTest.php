@@ -170,6 +170,31 @@ final class ConfigurationRefusalTest extends TestCase
     }
 
     #[Test]
+    public function itNamesItsOneOriginAsItsOnlySource(): void
+    {
+        $origin = ConfigurationOrigin::of(ConfigurationSource::Preset, 'strict');
+
+        $refusal = ConfigurationRefusal::aboutInput($origin, 'Refused.');
+
+        self::assertSame([$origin], $refusal->sources());
+    }
+
+    #[Test]
+    public function itNamesEveryContributingLayerOfARefusalAcrossLayers(): void
+    {
+        $preset = ConfigurationOrigin::of(ConfigurationSource::Preset, 'strict');
+        $file = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml');
+        $position = RefusedPosition::open(['architecture', 'allow'], 'allow');
+
+        $refusal = ConfigurationRefusal::acrossLayers([$preset, $file], $position, 'The allow graph has a cycle.');
+
+        self::assertSame([$preset, $file], $refusal->sources());
+        self::assertSame(ConfigurationSource::Resolved, $refusal->origin()->source());
+        self::assertSame($position, $refusal->position());
+        self::assertSame('The allow graph has a cycle.', $refusal->summary());
+    }
+
+    #[Test]
     public function itBuildsADocumentRefusalWithoutAPosition(): void
     {
         $origin = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml');

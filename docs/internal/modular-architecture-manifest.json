@@ -285,6 +285,104 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\ConfigurationDiagnostic": {
+      "path": "src/Analysis/Configuration/Contract/Document/ConfigurationDiagnostic.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Provenance": {
+      "path": "src/Analysis/Configuration/Contract/Document/Provenance.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\ResolvedDocument": {
+      "path": "src/Analysis/Configuration/Contract/Document/ResolvedDocument.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\ResolvedList": {
+      "path": "src/Analysis/Configuration/Contract/Document/ResolvedList.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\ResolvedMap": {
+      "path": "src/Analysis/Configuration/Contract/Document/ResolvedMap.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\ResolvedOpaque": {
+      "path": "src/Analysis/Configuration/Contract/Document/ResolvedOpaque.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\ResolvedScalar": {
+      "path": "src/Analysis/Configuration/Contract/Document/ResolvedScalar.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\ResolvedValueInterface": {
+      "path": "src/Analysis/Configuration/Contract/Document/ResolvedValueInterface.php",
+      "kind": "interface",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\DocumentSectionSchemaInterface": {
+      "path": "src/Analysis/Configuration/Contract/Document/Schema/DocumentSectionSchemaInterface.php",
+      "kind": "interface",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\MergePolicy": {
+      "path": "src/Analysis/Configuration/Contract/Document/Schema/MergePolicy.php",
+      "kind": "enum",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\NameVocabulary": {
+      "path": "src/Analysis/Configuration/Contract/Document/Schema/NameVocabulary.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\NodeSchema": {
+      "path": "src/Analysis/Configuration/Contract/Document/Schema/NodeSchema.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\ScalarForm": {
+      "path": "src/Analysis/Configuration/Contract/Document/Schema/ScalarForm.php",
+      "kind": "enum",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\Shorthand": {
+      "path": "src/Analysis/Configuration/Contract/Document/Schema/Shorthand.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Configuration\\Contract\\KnownRuleNamesProviderInterface": {
       "path": "src/Analysis/Configuration/Contract/KnownRuleNamesProviderInterface.php",
       "kind": "interface",
@@ -346,6 +444,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\RunConfigurationResolver"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter"
         },
         {
           "owner": "Reporting",
@@ -767,6 +869,83 @@
     },
     "Qualimetrix\\Analysis\\Configuration\\Discovery\\ComposerReader": {
       "path": "src/Analysis/Configuration/Discovery/ComposerReader.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\AuthoredLayer": {
+      "path": "src/Analysis/Configuration/Document/AuthoredLayer.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\AuthoredNode": {
+      "path": "src/Analysis/Configuration/Document/AuthoredNode.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\AuthoredShape": {
+      "path": "src/Analysis/Configuration/Document/AuthoredShape.php",
+      "kind": "enum",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\DocumentComposer": {
+      "path": "src/Analysis/Configuration/Document/DocumentComposer.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\DocumentSchema": {
+      "path": "src/Analysis/Configuration/Document/DocumentSchema.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\KeyRecognition": {
+      "path": "src/Analysis/Configuration/Document/KeyRecognition.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\LayerMerge": {
+      "path": "src/Analysis/Configuration/Document/LayerMerge.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\LayerReading": {
+      "path": "src/Analysis/Configuration/Document/LayerReading.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\NameRecognition": {
+      "path": "src/Analysis/Configuration/Document/NameRecognition.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\PendingName": {
+      "path": "src/Analysis/Configuration/Document/PendingName.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\ReadingContext": {
+      "path": "src/Analysis/Configuration/Document/ReadingContext.php",
       "kind": "class",
       "owner": "Analysis.Configuration",
       "visibility": "internal",

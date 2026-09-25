@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Contract\Refusal;
 
-use LogicException;
-
 /**
  * The position within a configuration document that a refusal is addressed to,
  * as its throw site located it.
@@ -29,22 +27,17 @@ final readonly class RefusedPosition
     ) {}
 
     /**
-     * A closed position: the list of accepted spellings is exhaustive.
+     * A closed position: the list of accepted spellings is exhaustive. It may
+     * be empty — a vocabulary drawn from the document itself (the layers a
+     * configuration declares) can legitimately hold nothing, and then nothing
+     * is accepted here; that is still the author's input to fix.
      *
      * @param list<string> $segments path of the key, top to bottom
      * @param string $written the last segment as the throw site received it
-     * @param list<string> $accepted must not be empty — an empty list at a closed
-     *                               position would mean "nothing is legal here",
-     *                               a position that does not exist in the product
+     * @param list<string> $accepted
      */
     public static function closed(array $segments, string $written, array $accepted): self
     {
-        if ($accepted === []) {
-            throw new LogicException(
-                'A closed position must name at least one accepted spelling; an empty list means "nothing is legal here".',
-            );
-        }
-
         return new self($segments, $written, $accepted, true);
     }
 
@@ -65,12 +58,6 @@ final readonly class RefusedPosition
     public function segments(): array
     {
         return $this->segments;
-    }
-
-    /** The same path for printing, dot-joined. */
-    public function display(): string
-    {
-        return implode('.', $this->segments);
     }
 
     /**

@@ -1,5 +1,7 @@
 path	fqcn	proposed_owner	state_scope	mutable_static_properties	mutable_instance_properties	lifecycle_methods
-src/Analysis/Configuration/Pipeline/ConfigurationPipeline.php	Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline	Analysis.Configuration	"runtime or composition registry"	-	stages	addStage
+src/Analysis/Configuration/Document/LayerMerge.php	Qualimetrix\Analysis\Configuration\Document\LayerMerge	Analysis.Configuration	"request scratch or mutable internal value"	-	diagnostics	-
+src/Analysis/Configuration/Document/LayerReading.php	Qualimetrix\Analysis\Configuration\Document\LayerReading	Analysis.Configuration	"request scratch or mutable internal value"	-	pendingNames	-
+src/Analysis/Configuration/Pipeline/ConfigurationPipeline.php	Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline	Analysis.Configuration	"runtime or composition registry"	-	sections,stages	addSection,addStage
 src/Analysis/Evidence/CircularDependency/CircularDependencyAnalysis.php	Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis	Analysis.Evidence.CircularDependency	"request scratch or mutable internal value"	-	cycles	prepare,reset
 src/Analysis/Evidence/CircularDependency/CircularDependencyDetector.php	Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyDetector	Analysis.Evidence.CircularDependency	"request scratch or mutable internal value"	-	index,indices,lowlinks,onStack,sccs,stack,symbolPathMap	collectComponentRootedAt,detect,reset
 src/Analysis/Evidence/CodeSmell/CodeSmellVisitor.php	Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellVisitor	Analysis.Evidence.CodeSmell	"per-file or derivation state"	-	chainAttempts,locations,methodStack	reset

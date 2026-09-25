@@ -18,14 +18,17 @@ universal invocation context, or a carrier for feature fields.
 ```text
 Configuration/
 ├── Contract/
-│   ├── ConfigurationDocument.php # immutable ordered source contributions
+│   ├── ConfigurationDocument.php # ordered source contributions + the resolved document
 │   ├── Discovery/                # Composer autoload-path reader
+│   ├── Document/                 # the resolved document: values with provenance, diagnostics
+│   │   └── Schema/               # the port an owner declares its section through
 │   ├── Pipeline/                 # resolution request and pipeline contracts
 │   └── Refusal/                  # ConfigurationRefusal — the one carrier for a configuration
 │                                  # refusal by user input, and its origin/position vocabulary;
 │                                  # per-source shorthands (atResolvedKey, aboutCommandLineInput, …)
 │                                  # let a throw site name its source without importing the vocabulary
 ├── Discovery/          # Composer metadata reader
+├── Document/           # the engine composing written layers into the resolved document
 ├── Loader/             # YAML load, section key normalization (one spelling per key), and the container shape of every root
 ├── Pipeline/           # ordered stage runner, source-layer value, rule-name validator, the
 │   │                   # `~`-as-unwritten normalizer (ConfigDataNormalizer)
@@ -84,6 +87,46 @@ instance-owned catalog only after full validation. Coupling likewise folds the
 canonical `coupling.framework_namespaces` contribution into its own run-scoped
 state. The document root remains normalized and schema-governed even though the
 mixed carrier copies that value.
+
+## Document engine
+
+`Document/DocumentComposer` composes the layers, lowest precedence first, into
+`Contract/Document/ResolvedDocument` in four fixed phases: (1) each layer alone
+— every dictionary key recognised, every written value's form judged,
+shorthands expanded, `~` dropped as "not written" at any depth; (2) the layers
+merged by each node's declared `MergePolicy`; (3) names whose vocabulary is
+another node (`allow` keyed by the layer names `layers` declares) judged
+against that node as merged; (4) every leaf keeps the layer that won it and
+every merged node its contributors (`Provenance`: source, the key path as the
+author spelled it, the line when the format reports one).
+
+- An owner declares its root through
+  `Contract/Document/Schema/DocumentSectionSchemaInterface` — a key and a
+  `NodeSchema` built from `scalar`, `map` (with `Shorthand`s), `list`
+  (replaced whole), `set` (accumulated), `namedMap` (with a `NameVocabulary`)
+  or `opaque` (kept per layer for an owner that still folds it) — and
+  `ConfigurationPipeline::addSection()` registers it. An empty collection reads
+  by the declaration: a map it changes nothing, a list it replaces, a set it
+  adds nothing to.
+- A dictionary key is accepted in its snake_case, camelCase or kebab-case
+  spelling (`ConfigKeySpelling::acceptedSpellings()`); the same words in any
+  other style are refused with the canonical key offered. Names from the
+  document are compared exactly.
+- The engine never learns the format: a loader hands it an `AuthoredLayer` —
+  the source's `ConfigurationOrigin` and an `AuthoredNode` tree with the keys as
+  written. A new format is a loader producing that tree (with lines, if it has
+  them); an imported file is a layer whose origin names its importer through
+  `ConfigurationOrigin::importedThrough()`, so a refusal names both files.
+- A refusal of a resolved value comes from the value itself —
+  `ResolvedValueInterface::refusal()` names the winning layer of a leaf, or every
+  contributor of a merged node through `ConfigurationRefusal::acrossLayers()`.
+  The JSON refusal envelope publishes those sources as `source`.
+- Diagnostics — warnings about accepted configuration — travel with the
+  resolved document (`ConfigurationDocument::diagnostics()`).
+
+The engine runs beside `contributions()` while owners move to it: stages hand
+over written layers through `ConfigurationLayer::$authored`, and a root no
+section declares yet passes through unread instead of being refused.
 
 `SelectorYamlDecoder` is the configuration ingress for the shared selector
 language. A selector list entry is exactly one mapping — `{exact: value}`,

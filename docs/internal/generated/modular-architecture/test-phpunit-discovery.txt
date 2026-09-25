@@ -1688,8 +1688,17 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\ConfigSchemaTest::itReturnsOnlyListTypeKeys
  - Qualimetrix\Tests\Analysis\Configuration\Unit\ConfigurationHolderTest::itDoesNotProvideMutableReplacementOperations
  - Qualimetrix\Tests\Analysis\Configuration\Unit\ConfigurationHolderTest::itTracksAppliedSourcesInPrecedenceOrder
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itAnnouncesAnEmptyOverrideOnlyOnAReplacedList
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itDeclaresOnePolicyPerFactory
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesAShorthandSpreadingToAnUndeclaredKey
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesAShorthandThatIsAlsoAKey
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesToDeclareANonCanonicalKey
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesTwoShorthandsSpreadingToOneKey
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itCarriesTheSourceAndLocatorItWasBuiltWith
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDefaultsTheLocatorToNull
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDescribesEverySourceKind
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itKeepsTheImporterOfAnImportedFile
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itNarrowsTheLocatorAndKeepsTheImporter
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itAddressesAPositionedShorthandToItsOwnSource"config file"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itAddressesAPositionedShorthandToItsOwnSource"preset"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itAddressesAPositionedShorthandToItsOwnSource"resolved with a diagnostic key"
@@ -1707,10 +1716,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itLeavesAPositionlessShorthandWithoutAPosition"preset document"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itLeavesAPositionlessShorthandWithoutAPosition"resolved input with a diagnostic key"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itLeavesAPositionlessShorthandWithoutAPosition"resolved input without a key"
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationSourceTest::itHasExactlyFiveCases
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itNamesEveryContributingLayerOfARefusalAcrossLayers
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itNamesItsOneOriginAsItsOnlySource
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationSourceTest::itPublishesOneKindPerSource
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\RefusedPositionTest::itBuildsAClosedPositionThatAcceptsNothing
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\RefusedPositionTest::itBuildsAClosedPositionWithItsAcceptedSpellings
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\RefusedPositionTest::itBuildsAnOpenPositionWithoutAnAcceptedList
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\RefusedPositionTest::itRefusesToBuildAClosedPositionWithNoAcceptedSpelling
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itAnswersForAPathSharedByBothSectionsInEach
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itAnswersNullWhenAutoloadDevDeclaresNothing
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itAnswersNullWhenTheComposerFileDoesNotExist
@@ -1742,6 +1753,64 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReadsEveryProductionAutoloadSectionAsPaths"psr-4 alone"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReadsEveryProductionAutoloadSectionAsPaths"the same path declared twice is one target"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itStripsTrailingSlashesFromExtractedPaths
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\AuthoredNodeTest::itGivesTheLocatorToTheNodeItWasReadFor
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\AuthoredNodeTest::itReadsAParsedTreeKeepingTheAuthoredKeysAndTilde
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itAccumulatesASetAcrossLayersAndKeepsEachItemsWriter
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itAddsNothingToASetForAWrittenEmptyList
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itAnnouncesAnEmptyListThatLiftsALowerLayersFilter
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itExpandsAShorthandInItsOwnLayerBeforeTheMerge
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itKeepsAnOpaqueSubtreePerLayerForItsOwner
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itLetsTheLastLayerThatWritesAScalarWinIt
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itMergesAMapKeyByKeyAndNamesEveryContributor
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itMergesAllowByLayerNameAndReplacesTheTargetsOfEachLayer
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itMergesComputedMetricsByNameKeepingEveryPresetMetric
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itReadsAWrittenEmptyMapAsChangingNothing
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itRefusesAMergedNodeNamingEveryContributingLayer
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itRefusesAWinningLeafNamingOnlyTheLayerThatWonIt
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itReplacesAListWholeWithTheLastWrittenOne
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itReplacesAListWithAWrittenEmptyList
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itSaysNothingWhenAnEmptyListReplacesNothing
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itAcceptsEitherDeclaredScalarForm
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itAcceptsTheSnakeCamelAndKebabSpellingOfAKey"camel"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itAcceptsTheSnakeCamelAndKebabSpellingOfAKey"kebab canonical, camel written"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itAcceptsTheSnakeCamelAndKebabSpellingOfAKey"kebab canonical, snake written"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itAcceptsTheSnakeCamelAndKebabSpellingOfAKey"kebab"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itAcceptsTheSnakeCamelAndKebabSpellingOfAKey"snake"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itCarriesAnUndeclaredRootThroughOnlyWhenAdmitted
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itComposesNoLayersIntoAnEmptyDocument
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itJudgesANameDrawnFromTheDocumentAfterMergingTheLayersThatDeclareIt
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itLeavesAKeyOnlyEverWrittenAsTildeAbsent
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itNamesEveryLayerThatWroteAnUnknownName
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itNamesTheOptionOfACommandLineValueAndGivesItNoPosition
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itReadsAKnownKeyWrittenAsTildeAsUnwrittenSoTheLowerLayerStands
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAMalformedValueInALayerAHigherLayerOverrides
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesANameTheMergedDocumentDoesNotDeclareNamingItsWriter
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAShorthandMixedWithItsFullFormInOneLayer
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAValueOfTheWrongShape"boolean string list item"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAValueOfTheWrongShape"empty map list item"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAValueOfTheWrongShape"integer string list item"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAValueOfTheWrongShape"list for a map"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAValueOfTheWrongShape"list item of nothing but tilde"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAValueOfTheWrongShape"map for a list"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAValueOfTheWrongShape"map for a scalar"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAValueOfTheWrongShape"map string list item"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAValueOfTheWrongShape"null set item"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAValueOfTheWrongShape"null string list item"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAValueOfTheWrongShape"scalar for a list"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAValueOfTheWrongShape"scalar for a map"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAnUnknownKeyWhateverItsValueIncludingTilde"entry of a named map"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAnUnknownKeyWhateverItsValueIncludingTilde"root"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAnUnknownKeyWhateverItsValueIncludingTilde"section"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAnUnknownKeyWhateverItsValueIncludingTilde"with a value"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAnUnknownNameWrittenAsTilde
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAnyOtherSpellingOfAKeyWithTheCanonicalOne"Title-case in a section"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAnyOtherSpellingOfAKeyWithTheCanonicalOne"Title-case root"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAnyOtherSpellingOfAKeyWithTheCanonicalOne"joined lowercase root"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAnyOtherSpellingOfAKeyWithTheCanonicalOne"upper snake root"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAnyOtherSpellingOfAKeyWithTheCanonicalOne"upper-case fixed name"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesTwoSpellingsOfOneKeyInOneMapping
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itStillAppliesTheSpellingRuleToADeclaredRootWhenUndeclaredOnesAreAdmitted
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itSuggestsTheClosestKeyOfAnUnknownOne
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderKeySpellingTest::itAcceptsOneSpellingAndRepeatsAcrossSiblings
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderKeySpellingTest::itListsSectionKeysInTheAuthorsSpelling"camel"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderKeySpellingTest::itListsSectionKeysInTheAuthorsSpelling"kebab"
@@ -1850,7 +1919,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itRenamesIncludeGeneratedToSnakeCase
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itRenamesMemoryLimitToSnakeCase
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReturnsAnEmptyArrayForEmptyInput
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itComposesTheAuthoredLayersBesideTheContributions
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itExpandsMultiDocumentLayersWithoutCollapsingThem
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itResolvesAnEmptyDocumentWhenNoStageHandsOverAWrittenLayer
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itRetainsOrderedContributionsInsteadOfApplyingFeatureMergeSemantics
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itReturnsAnEmptyDocumentWithTheInvocationDirectoryWhenThereAreNoStages
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itSkipsStagesThatDoNotContribute
@@ -9822,6 +9893,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itNeverPrintsATraceForARefusal
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itOmitsTheTraceBelowVerboseVerbosity
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itPrintsTheTraceFromVerboseUpwardsForAnInternalErrorOnly
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itPublishesEverySourceARefusalNames
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itPublishesTheRefusedPositionInTheEnvelope
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itStopsALiveProgressFrameBeforePresenting
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itAcceptsAChannelExclusionKeyNamingTheChannel

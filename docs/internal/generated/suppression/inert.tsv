@@ -1,4 +1,5 @@
 mechanism	suppressor
+rule-namespace-suppression	coupling.class-rank: subtree:Qualimetrix\Analysis\Evidence\DependencyModel\Contract
 rule-namespace-suppression	coupling.class-rank: subtree:Qualimetrix\Analysis\Finding\Rule
 rule-namespace-suppression	health.cohesion: health.cohesion exact:Qualimetrix\Analysis\Run\ExcludeBinding
 rule-path-suppression	complexity.ccn: exact:src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php
@@ -13,3 +14,5 @@ rule-path-suppression	complexity.wmc: regex:src/Analysis/Evidence/Security/.*Vis
 rule-path-suppression	coupling.cbo: regex:src/Analysis/Evidence/Design/.*Visitor\.php
 rule-path-suppression	coupling.cbo: regex:src/Analysis/Evidence/Security/.*Visitor\.php
 rule-path-suppression	coupling.instability: exact:src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php
+rule-path-suppression	health.cohesion: exact:src/Analysis/Configuration/Contract/Refusal/ConfigurationOrigin.php
+rule-path-suppression	health.cohesion: exact:src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php

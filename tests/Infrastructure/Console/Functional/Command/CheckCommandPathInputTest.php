@@ -173,7 +173,7 @@ final class CheckCommandPathInputTest extends TestCase
         // The refusal envelope is the only stdout document: no report was started.
         $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertIsArray($envelope);
-        self::assertSame(['error', 'exit_code', 'position'], array_keys($envelope));
+        self::assertSame(['error', 'exit_code', 'position', 'source'], array_keys($envelope));
         self::assertIsString($envelope['error']);
         self::assertStringContainsString('"lib/vendor" is a vendor, node_modules or .git directory', $envelope['error']);
     }

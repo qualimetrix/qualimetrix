@@ -20,6 +20,7 @@ final class ConfigurationOriginTest extends TestCase
 
         self::assertSame(ConfigurationSource::ConfigFile, $origin->source());
         self::assertSame('qmx.yaml', $origin->locator());
+        self::assertNull($origin->importer());
     }
 
     #[Test]
@@ -28,5 +29,45 @@ final class ConfigurationOriginTest extends TestCase
         $origin = ConfigurationOrigin::of(ConfigurationSource::Resolved);
 
         self::assertNull($origin->locator());
+    }
+
+    #[Test]
+    public function itKeepsTheImporterOfAnImportedFile(): void
+    {
+        $importer = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml');
+
+        $imported = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'shared.yaml')->importedThrough($importer);
+
+        self::assertSame($importer, $imported->importer());
+        self::assertSame(
+            'configuration file "shared.yaml" (imported by configuration file "qmx.yaml")',
+            $imported->describe(),
+        );
+    }
+
+    #[Test]
+    public function itNarrowsTheLocatorAndKeepsTheImporter(): void
+    {
+        $importer = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml');
+        $origin = ConfigurationOrigin::of(ConfigurationSource::CommandLine)->importedThrough($importer);
+
+        $option = $origin->locatedAt('--fail-on');
+
+        self::assertSame('--fail-on', $option->locator());
+        self::assertSame($importer, $option->importer());
+        self::assertSame(ConfigurationSource::CommandLine, $option->source());
+    }
+
+    #[Test]
+    public function itDescribesEverySourceKind(): void
+    {
+        self::assertSame('the built-in defaults', ConfigurationOrigin::of(ConfigurationSource::Defaults)->describe());
+        self::assertSame('composer.json', ConfigurationOrigin::of(ConfigurationSource::ComposerJson)->describe());
+        self::assertSame('preset "strict"', ConfigurationOrigin::of(ConfigurationSource::Preset, 'strict')->describe());
+        self::assertSame('configuration file "qmx.yaml"', ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml')->describe());
+        self::assertSame('the command line', ConfigurationOrigin::of(ConfigurationSource::CommandLine)->describe());
+        self::assertSame('option --fail-on', ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--fail-on')->describe());
+        self::assertSame('baseline file "b.json"', ConfigurationOrigin::of(ConfigurationSource::BaselineFile, 'b.json')->describe());
+        self::assertSame('the merged configuration', ConfigurationOrigin::of(ConfigurationSource::Resolved)->describe());
     }
 }

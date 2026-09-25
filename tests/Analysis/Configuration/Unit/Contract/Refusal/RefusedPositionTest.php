@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal;
 
-use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -19,18 +18,22 @@ final class RefusedPositionTest extends TestCase
         $position = RefusedPosition::closed(['rules', 'complexity'], 'treshold', ['threshold']);
 
         self::assertSame(['rules', 'complexity'], $position->segments());
-        self::assertSame('rules.complexity', $position->display());
         self::assertSame('treshold', $position->written());
         self::assertSame(['threshold'], $position->accepted());
         self::assertTrue($position->isClosed());
     }
 
+    /**
+     * A vocabulary drawn from the document can be empty — no layer declared —
+     * and the author's input is still what is refused, not a product defect.
+     */
     #[Test]
-    public function itRefusesToBuildAClosedPositionWithNoAcceptedSpelling(): void
+    public function itBuildsAClosedPositionThatAcceptsNothing(): void
     {
-        $this->expectException(LogicException::class);
+        $position = RefusedPosition::closed(['architecture', 'allow', 'infra'], 'infra', []);
 
-        RefusedPosition::closed(['rules'], 'anything', []);
+        self::assertSame([], $position->accepted());
+        self::assertTrue($position->isClosed());
     }
 
     #[Test]
@@ -39,7 +42,6 @@ final class RefusedPositionTest extends TestCase
         $position = RefusedPosition::open(['computedMetrics', 'health'], 'not-a-number');
 
         self::assertSame(['computedMetrics', 'health'], $position->segments());
-        self::assertSame('computedMetrics.health', $position->display());
         self::assertSame('not-a-number', $position->written());
         self::assertSame([], $position->accepted());
         self::assertFalse($position->isClosed());
