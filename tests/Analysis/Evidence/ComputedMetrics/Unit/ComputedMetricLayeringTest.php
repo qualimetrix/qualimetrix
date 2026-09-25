@@ -209,7 +209,7 @@ final class ComputedMetricLayeringTest extends TestCase
     }
 
     #[Test]
-    public function itNamesEveryLayerThatWroteAnUnknownHealthName(): void
+    public function itRefusesAnUnknownHealthNameInTheLayerThatWroteItFirst(): void
     {
         $refusal = $this->refusal(
             self::preset(['computed_metrics' => ['health.typng' => ['warning' => 60]]]),
@@ -217,7 +217,9 @@ final class ComputedMetricLayeringTest extends TestCase
         );
 
         self::assertStringContainsString('"health.typng" is not a known "health.*" dimension', $refusal->summary());
-        self::assertSame(['preset "strict"', 'configuration file "/p/qmx.yaml"'], self::described($refusal));
+        self::assertSame(['preset "strict"'], self::described($refusal));
+        self::assertTrue($refusal->position()?->isClosed());
+        self::assertContains('health.typing', $refusal->position()->accepted());
     }
 
     #[Test]

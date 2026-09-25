@@ -6,12 +6,12 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
 use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareName;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedList;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMap;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricAuthorship;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeys;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording;
@@ -26,8 +26,11 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDime
  * built-in definitions and validates the result (syntax, coverage, circular
  * deps, references).
  *
- * A metric's name is judged before anything about its body is read, so a
- * disabled entry cannot hide a misspelled name.
+ * A metric's name is judged by the configuration document, in the layer
+ * that wrote it ({@see ComputedMetricsSection}). A name written without a
+ * body changes nothing about a metric that exists, and defines a new one with
+ * nothing — which the formula validator then refuses for its missing formula,
+ * naming the layer that wrote the name.
  */
 final class ComputedMetricsConfigResolver
 {
@@ -78,7 +81,7 @@ final class ComputedMetricsConfigResolver
     }
 
     /**
-     * @return array<string, ResolvedMap>
+     * @return array<string, ResolvedMap|ResolvedBareName>
      */
     private static function entries(?ResolvedValueInterface $section): array
     {
@@ -92,9 +95,9 @@ final class ComputedMetricsConfigResolver
 
         $entries = [];
         foreach ($section->entries() as $name => $entry) {
-            $entries[$name] = $entry instanceof ResolvedMap
+            $entries[$name] = $entry instanceof ResolvedMap || $entry instanceof ResolvedBareName
                 ? $entry
-                : throw new LogicException('A computed_metrics entry resolves to a map.');
+                : throw new LogicException('A computed_metrics entry resolves to a map or a bare name.');
         }
 
         return $entries;
@@ -109,17 +112,17 @@ final class ComputedMetricsConfigResolver
      *
      * @throws ConfigurationRefusal
      */
-    private function applyEntry(string $name, ResolvedMap $entry, array &$definitions, array &$exclusions): void
+    private function applyEntry(string $name, ResolvedMap|ResolvedBareName $entry, array &$definitions, array &$exclusions): void
     {
+        if ($entry instanceof ResolvedBareName) {
+            if (!isset($definitions[$name])) {
+                $definitions[$name] = ComputedMetricOverrideReader::create($name, $entry);
+            }
+
+            return;
+        }
+
         $isHealth = str_starts_with($name, 'health.');
-        if ($isHealth && !isset($definitions[$name])) {
-            throw self::unknownHealthDimension($name, $entry);
-        }
-
-        if (!$isHealth && !ComputedMetricDefinition::isValidName($name)) {
-            throw $entry->refusal(ComputedMetricRefusalWording::nameGrammar($name, ComputedMetricDefinition::NAME_TEMPLATE));
-        }
-
         $enabled = $entry->get(ComputedMetricEntryKeys::ENABLED);
         if ($enabled !== null && $enabled->plain() === false) {
             if ($isHealth && $name !== HealthDimension::Overall->value) {
@@ -197,26 +200,5 @@ final class ComputedMetricsConfigResolver
         return $writer->path === null || $writer->path === []
             ? $writer->origin->describe()
             : \sprintf('"%s" in %s', $writer->displayPath(), $writer->origin->describe());
-    }
-
-    /**
-     * One refusal for every intent behind an unknown `health.*` name —
-     * a formula, a threshold or `enabled: false` — because each is the same
-     * mistake: a typo in one of the six names.
-     */
-    private static function unknownHealthDimension(string $name, ResolvedMap $entry): ConfigurationRefusal
-    {
-        $accepted = ComputedMetricEntryKeys::acceptedHealthNames();
-        $writers = $entry->contributors();
-        $last = $writers[\count($writers) - 1];
-
-        return Provenance::refusalOf(
-            $writers,
-            ComputedMetricRefusalWording::unknownHealthDimension($name, $accepted),
-            $last->path === null ? null : RefusedPosition::closed($last->path, $name, array_map(
-                static fn(string $short): string => 'health.' . $short,
-                $accepted,
-            )),
-        );
     }
 }

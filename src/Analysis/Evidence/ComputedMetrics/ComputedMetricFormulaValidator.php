@@ -105,8 +105,9 @@ final class ComputedMetricFormulaValidator
                 if ($formula === null) {
                     $levelKey = $level->value;
 
-                    throw $authorship->refuseMetric(
+                    throw $authorship->refuseMissingFormula(
                         $definition->name,
+                        $levelKey,
                         ComputedMetricRefusalWording::noFormulaForLevel($definition->name, $levelKey),
                     );
                 }

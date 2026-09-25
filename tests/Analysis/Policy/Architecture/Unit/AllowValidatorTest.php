@@ -655,21 +655,6 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function itStillRejectsAnUnknownLayerForAnExactSource(): void
-    {
-        $warnings = [];
-
-        $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('architecture.allow.controller: unknown layer');
-
-        $this->validator->validate(
-            ArchitectureDocument::allow(['controller' => ['service']]),
-            ['service'],
-            $warnings,
-        );
-    }
-
-    #[Test]
     public function itRejectsAnExactTargetReferencingAnUnknownLayer(): void
     {
         $warnings = [];

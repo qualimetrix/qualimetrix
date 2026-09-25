@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Configuration\Document;
 
 use LogicException;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareName;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedList;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMap;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaque;
@@ -21,7 +22,9 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
  * it returns carries that layer's provenance and is ready to merge.
  *
  * A name whose vocabulary comes from a sibling node is collected for phase 3
- * instead of judged here.
+ * instead of judged here. A named entry written without a body is kept as a
+ * {@see ResolvedBareName}: dropping it would take the name out of every
+ * judgement after this one.
  */
 final class LayerReading
 {
@@ -65,7 +68,7 @@ final class LayerReading
         $expected = $forms === [] ? 'a scalar' : implode(' or ', array_map(static fn(ScalarForm $form): string => $form->value, $forms));
 
         if ($node->shape !== AuthoredShape::Scalar || $node->scalar === null) {
-            throw $at->refusal(\sprintf('%s must be %s, got %s.', ucfirst($at->where()), $expected, self::shapeName($node)));
+            throw $at->refusal(self::hinted(\sprintf('%s must be %s, got %s.', ucfirst($at->where()), $expected, self::shapeName($node)), $schema));
         }
 
         foreach ($forms as $form) {
@@ -75,7 +78,7 @@ final class LayerReading
         }
 
         if ($forms !== []) {
-            throw $at->refusal(\sprintf('%s must be %s, got %s.', ucfirst($at->where()), $expected, get_debug_type($node->scalar)));
+            throw $at->refusal(self::hinted(\sprintf('%s must be %s, got %s.', ucfirst($at->where()), $expected, get_debug_type($node->scalar)), $schema));
         }
 
         return new ResolvedScalar($node->scalar, $at->provenance($node));
@@ -83,7 +86,7 @@ final class LayerReading
 
     private function readMap(NodeSchema $schema, AuthoredNode $node, ReadingContext $at, bool $admitUndeclared = false): ?ResolvedMap
     {
-        if (!$this->isMapShaped($node, $at)) {
+        if (!$this->isMapShaped($schema, $node, $at)) {
             return null;
         }
 
@@ -155,12 +158,12 @@ final class LayerReading
 
     private function readNamedMap(NodeSchema $schema, AuthoredNode $node, ReadingContext $at): ?ResolvedMap
     {
-        if (!$this->isMapShaped($node, $at)) {
+        if (!$this->isMapShaped($schema, $node, $at)) {
             return null;
         }
 
         $vocabulary = $schema->names();
-        if ($vocabulary !== null && !$vocabulary->isFixed() && $at->insideList) {
+        if ($vocabulary?->isFromSibling() === true && $at->insideList) {
             throw new LogicException(\sprintf('"%s": a name vocabulary drawn from a sibling cannot be judged inside a list item.', implode('.', $at->canonicalPath)));
         }
 
@@ -175,18 +178,17 @@ final class LayerReading
             if ($vocabulary?->isFixed() === true) {
                 $name = (string) KeyRecognition::recognise($written, $vocabulary->fixedNames(), $childAt);
                 self::claim($claimed, $name, $written, $at);
+            } elseif ($vocabulary?->isPredicate() === true) {
+                $refused = $vocabulary->refuse($written);
+                if ($refused !== null) {
+                    throw $childAt->refusal($refused->summary, $written, $refused->accepted);
+                }
             } elseif ($vocabulary !== null) {
                 $this->pendingNames[] = new PendingName($at->canonicalPath, $written, $vocabulary, $childAt->provenance($child));
             }
 
-            if ($child->isUnwritten()) {
-                continue;
-            }
-
-            $value = $this->read($schema->element(), $child, $at->child($written, $name, $child));
-            if ($value !== null) {
-                $entries[$name] = $value;
-            }
+            $value = $child->isUnwritten() ? null : $this->read($schema->element(), $child, $at->child($written, $name, $child));
+            $entries[$name] = $value ?? new ResolvedBareName([$childAt->provenance($child)]);
         }
 
         return $entries === [] ? null : new ResolvedMap($entries, [$at->provenance($node)]);
@@ -199,7 +201,7 @@ final class LayerReading
         }
 
         if ($node->shape === AuthoredShape::Scalar || $node->shape === AuthoredShape::Mapping) {
-            throw $at->refusal(\sprintf('%s must be a list, got %s.', ucfirst($at->where()), self::shapeName($node)));
+            throw $at->refusal(self::hinted(\sprintf('%s must be a list, got %s.', ucfirst($at->where()), self::shapeName($node)), $schema));
         }
 
         $element = $schema->element();
@@ -236,17 +238,24 @@ final class LayerReading
     }
 
     /** False for `~`; refuses a scalar or a non-empty list where a map is declared. */
-    private function isMapShaped(AuthoredNode $node, ReadingContext $at): bool
+    private function isMapShaped(NodeSchema $schema, AuthoredNode $node, ReadingContext $at): bool
     {
         if ($node->isUnwritten()) {
             return false;
         }
 
         if ($node->shape === AuthoredShape::Scalar || ($node->shape === AuthoredShape::Sequence && $node->children !== [])) {
-            throw $at->refusal(\sprintf('%s must be a map, got %s.', ucfirst($at->where()), self::shapeName($node)));
+            throw $at->refusal(self::hinted(\sprintf('%s must be a map, got %s.', ucfirst($at->where()), self::shapeName($node)), $schema));
         }
 
         return true;
+    }
+
+    private static function hinted(string $refusal, NodeSchema $schema): string
+    {
+        $hint = $schema->hint();
+
+        return $hint === null ? $refusal : $refusal . ' ' . $hint;
     }
 
     /**

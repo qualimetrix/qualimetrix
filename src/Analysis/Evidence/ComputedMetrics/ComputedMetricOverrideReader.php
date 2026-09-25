@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareName;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedList;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMap;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
@@ -11,17 +12,16 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeys;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * One merged `computed_metrics` entry, read into a definition.
  *
  * The document engine has already judged every key and the form of every
- * value, and merged the layers key by key; what is left here is what a key's
- * meaning adds — which words are levels, which names a metric may not have —
- * and laying the entry over the definition it overrides. Each refusal names
- * the layers that wrote the value it is about.
+ * value, judged the metric's name, and merged the layers key by key; what is
+ * left here is what a key's meaning adds — which words are levels — and
+ * laying the entry over the definition it overrides. Each refusal names the
+ * layers that wrote the value it is about.
  */
 final class ComputedMetricOverrideReader
 {
@@ -46,14 +46,12 @@ final class ComputedMetricOverrideReader
     /**
      * Creates a user-defined metric: no formula, no description, not
      * inverted, and namespace plus project unless the entry says otherwise.
+     * A bare name says otherwise about nothing.
      *
      * @throws ConfigurationRefusal
      */
-    public static function create(string $name, ResolvedMap $entry): ComputedMetricDefinition
+    public static function create(string $name, ResolvedMap|ResolvedBareName $entry): ComputedMetricDefinition
     {
-        self::refuseInvalidNameGrammar($name, $entry);
-        self::assertNameDoesNotEndInALevel($name, $entry);
-
         return new ComputedMetricDefinition(
             name: $name,
             formulas: self::formulas($entry, []),
@@ -73,7 +71,7 @@ final class ComputedMetricOverrideReader
      *
      * @return array<string, string>
      */
-    private static function formulas(ResolvedMap $entry, array $defaults): array
+    private static function formulas(ResolvedMap|ResolvedBareName $entry, array $defaults): array
     {
         $formulas = $defaults;
 
@@ -84,7 +82,7 @@ final class ComputedMetricOverrideReader
             }
         }
 
-        $perLevel = $entry->get(ComputedMetricEntryKeys::FORMULAS);
+        $perLevel = self::field($entry, ComputedMetricEntryKeys::FORMULAS);
         foreach ($perLevel instanceof ResolvedMap ? $perLevel->plain() : [] as $level => $levelFormula) {
             $formulas[$level] = (string) $levelFormula;
         }
@@ -99,9 +97,9 @@ final class ComputedMetricOverrideReader
      *
      * @return list<SymbolLevel>
      */
-    private static function levels(ResolvedMap $entry, array $defaults, string $name): array
+    private static function levels(ResolvedMap|ResolvedBareName $entry, array $defaults, string $name): array
     {
-        $written = $entry->get(ComputedMetricEntryKeys::LEVELS);
+        $written = self::field($entry, ComputedMetricEntryKeys::LEVELS);
         if (!$written instanceof ResolvedList) {
             return $defaults;
         }
@@ -139,33 +137,6 @@ final class ComputedMetricOverrideReader
         return $level;
     }
 
-    /**
-     * A channel's level is a coordinate beside the channel name
-     * ({@see FindingChannel}); a name ending in a level word would put it back
-     * inside the name.
-     *
-     * @throws ConfigurationRefusal
-     */
-    private static function assertNameDoesNotEndInALevel(string $name, ResolvedMap $entry): void
-    {
-        $lastDot = strrpos($name, '.');
-        $lastSegment = $lastDot === false ? $name : substr($name, $lastDot + 1);
-
-        if (SymbolLevel::tryFrom($lastSegment) !== null) {
-            throw $entry->refusal(
-                ComputedMetricRefusalWording::nameEndsInALevelWord($name, $lastSegment, FindingChannel::LEVEL_SEPARATOR),
-            );
-        }
-    }
-
-    /** @throws ConfigurationRefusal */
-    private static function refuseInvalidNameGrammar(string $name, ResolvedMap $entry): void
-    {
-        if (!ComputedMetricDefinition::isValidName($name)) {
-            throw $entry->refusal(ComputedMetricRefusalWording::nameGrammar($name, ComputedMetricDefinition::NAME_TEMPLATE));
-        }
-    }
-
     /** @return list<string> */
     private static function reportingLevelWords(): array
     {
@@ -175,23 +146,28 @@ final class ComputedMetricOverrideReader
         );
     }
 
-    private static function string(ResolvedMap $entry, string $key): ?string
+    private static function field(ResolvedMap|ResolvedBareName $entry, string $key): ?ResolvedValueInterface
     {
-        $value = $entry->get($key)?->plain();
+        return $entry instanceof ResolvedMap ? $entry->get($key) : null;
+    }
+
+    private static function string(ResolvedMap|ResolvedBareName $entry, string $key): ?string
+    {
+        $value = self::field($entry, $key)?->plain();
 
         return \is_string($value) ? $value : null;
     }
 
-    private static function bool(ResolvedMap $entry, string $key): ?bool
+    private static function bool(ResolvedMap|ResolvedBareName $entry, string $key): ?bool
     {
-        $value = $entry->get($key)?->plain();
+        $value = self::field($entry, $key)?->plain();
 
         return \is_bool($value) ? $value : null;
     }
 
-    private static function number(ResolvedMap $entry, string $key): ?float
+    private static function number(ResolvedMap|ResolvedBareName $entry, string $key): ?float
     {
-        $value = $entry->get($key)?->plain();
+        $value = self::field($entry, $key)?->plain();
 
         return \is_int($value) || \is_float($value) ? (float) $value : null;
     }

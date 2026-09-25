@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
@@ -25,8 +26,9 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Symfony\Component\Yaml\Yaml;
 
 /**
- * A metric written `~` or `{}` in YAML writes nothing: the metric below it —
- * a built-in dimension or a preset's metric — stands unchanged.
+ * A metric written `~` or `{}` in YAML writes nothing under its name: the
+ * metric below it — a built-in dimension or a preset's metric — stands
+ * unchanged, and a name nothing below defines is a metric without a formula.
  */
 #[CoversClass(ComputedMetricsConfigResolver::class)]
 final class UnwrittenEntryBodyTest extends TestCase
@@ -59,19 +61,31 @@ final class UnwrittenEntryBodyTest extends TestCase
         self::assertSame(3.0, $analysis->find('computed.mine')?->warningThreshold);
     }
 
-    /**
-     * Pins the state until the document engine can judge an open name before
-     * dropping its empty body: the name `computed.mine` is then no longer
-     * refused for a missing formula, and an invalid name is not refused at
-     * all — a regression against the refusal this file used to pin.
-     */
     #[Test]
     #[DataProvider('provideEmptyBodies')]
-    public function itDefinesNoMetricFromAnEmptyBodyAlone(string $body): void
+    public function itRefusesANewMetricNamedWithAnEmptyBodyForItsMissingFormulaNamingTheFile(string $body): void
     {
-        $analysis = $this->analysis(\sprintf("computed_metrics:\n  computed.mine: %s\n", $body));
+        try {
+            $this->analysis(\sprintf("computed_metrics:\n  computed.mine: %s\n", $body));
+            self::fail('Expected a refusal.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('Computed metric "computed.mine" has no formula for level "namespace"', $refusal->summary());
+            self::assertSame('qmx.yaml', $refusal->origin()->locator());
+            self::assertSame(['computed_metrics', 'computed.mine', 'formulas', 'namespace'], $refusal->position()?->segments());
+        }
+    }
 
-        self::assertNull($analysis->find('computed.mine'));
+    #[Test]
+    #[DataProvider('provideEmptyBodies')]
+    public function itRefusesAnInvalidNameWrittenWithAnEmptyBody(string $body): void
+    {
+        try {
+            $this->analysis(\sprintf("computed_metrics:\n  health.typng: %s\n  my-metric: %s\n", $body, $body));
+            self::fail('Expected a refusal.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString('"health.typng" is not a known "health.*" dimension', $refusal->summary());
+            self::assertSame(['computed_metrics', 'health.typng'], $refusal->position()?->segments());
+        }
     }
 
     private function analysis(string $fileYaml, ?string $presetYaml = null): ComputedMetricAnalysis

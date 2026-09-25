@@ -101,10 +101,12 @@ mixed carrier copies that value.
 `Document/DocumentComposer` composes the layers, lowest precedence first, into
 `Contract/Document/ResolvedDocument` in four fixed phases: (1) each layer alone
 — every dictionary key recognised, every written value's form judged,
-shorthands expanded, `~` dropped as "not written" at any depth; (2) the layers
+shorthands expanded, `~` dropped as "not written" at any depth (a named-map
+entry keeps its name, see below); (2) the layers
 merged by each node's declared `MergePolicy`; (3) names whose vocabulary is
 another node (`allow` keyed by the layer names `layers` declares) judged
-against that node as merged; (4) every leaf keeps the layer that won it and
+against that node as merged, in the words of every layer that wrote the name;
+(4) every leaf keeps the layer that won it and
 every merged node its contributors (`Provenance`: source, the key path as the
 author spelled it, the line when the format reports one).
 
@@ -118,8 +120,19 @@ author spelled it, the line when the format reports one).
   adds nothing to.
 - A dictionary key is accepted in its snake_case, camelCase or kebab-case
   spelling (`ConfigKeySpelling::acceptedSpellings()`); the same words in any
-  other style are refused with the canonical key offered. Names from the
-  document are compared exactly.
+  other style are refused with the canonical key offered.
+- A `namedMap`'s `NameVocabulary` is `fixed` (a dictionary, spelling rule
+  included), `predicate` (an open grammar judged in the writing layer; a
+  `RefusedName` says why and, for a few alternatives, which) or `fromSibling`
+  (names another node declares, judged after the merge; exact unless the
+  vocabulary's own judge says how a written name refers to the declared ones).
+  A name is judged whatever is written under it: an entry whose body is `~`,
+  `{}` or nothing but `~` stays in the document as `ResolvedBareName`, which a
+  body any layer wrote stands over, and its owner says what naming it alone
+  means.
+- A node may carry a hint (`NodeSchema::withHint()`): the engine adds it to its
+  refusal of the form written at that node — `paths: [2024]` is told to quote
+  the name, a bare string in `exclude` is shown the selector kinds.
 - The engine never learns the format: a loader hands it an `AuthoredLayer` —
   the source's `ConfigurationOrigin` and an `AuthoredNode` tree with the keys as
   written. A new format is a loader producing that tree (with lines, if it has

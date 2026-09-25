@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Configuration\Document;
 use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareName;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedList;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMap;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaque;
@@ -17,7 +18,9 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 /**
  * Phase 2: folds one layer's read value over everything below it, by the
  * policy each node declares. An absent value on either side leaves the other
- * standing — that is all `~` means once phase 1 has dropped it.
+ * standing — that is all `~` means once phase 1 has dropped it. A named entry
+ * written without a body is absent in the same sense, except that it stands
+ * when no layer gave the name a body.
  */
 final class LayerMerge
 {
@@ -28,6 +31,14 @@ final class LayerMerge
     {
         if ($upper === null || $lower === null) {
             return $upper ?? $lower;
+        }
+
+        if ($upper instanceof ResolvedBareName) {
+            return $lower instanceof ResolvedBareName ? $lower->writtenAgainBy($upper) : $lower;
+        }
+
+        if ($lower instanceof ResolvedBareName) {
+            return $upper;
         }
 
         return match ($schema->policy) {

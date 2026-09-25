@@ -20,13 +20,18 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationW
  * grammar (exact / glob / captured); the result is a {@see AllowListEntry}
  * list in user declaration order.
  *
- * Cross-validation against the registry's layer names runs only for
- * {@see LayerSelector}s of kind {@code exact} — glob and captured selectors
- * are intentionally not validated against the current registry, because
- * template-layer expansion produces concrete layer names after config load.
- * A glob source that matches no concrete layer today may still be
- * the intent (the user may add layers later, or the template-expansion stage
- * may produce them); the rule executor will simply skip non-matching entries.
+ * A source name is judged against the declared layers by the configuration
+ * document ({@see ArchitectureSection}), in the layer that wrote it, whatever
+ * is written under it. A source written without targets allows nothing and
+ * adds no entry, once its selector parses.
+ *
+ * Cross-validation of a target against the registry's layer names runs only
+ * for {@see LayerSelector}s of kind {@code exact} — glob and captured
+ * selectors are intentionally not validated against the current registry,
+ * because template-layer expansion produces concrete layer names after config
+ * load. A glob that matches no concrete layer today may still be the intent
+ * (the user may add layers later, or the template-expansion stage may produce
+ * them); the rule executor will simply skip non-matching entries.
  *
  * The long form ({@code [target: 'service', relations: ['static_call']]}) is
  * fully wired: {@code relations:} expands through
@@ -56,8 +61,8 @@ final class AllowValidator
                 $targets,
             );
 
-            if ($sourceSelector->isExact() && !isset($layerSet[$sourceRaw])) {
-                throw $targets->refusal(\sprintf('architecture.allow.%s: unknown layer.', $sourceRaw));
+            if (!$targets->isWritten()) {
+                continue;
             }
 
             $allowTargets = $this->normalizeAllowTargets($sourceRaw, $sourceSelector, $targets, $layerSet);

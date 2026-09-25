@@ -96,7 +96,10 @@ final class ExactAllowCycleValidatorTest extends TestCase
         // cycle exists only in the merged map, so neither file alone is the
         // place to fix it.
         $document = ArchitectureDocument::compose(
-            ArchitectureDocument::presetLayer(['allow' => ['application' => ['domain']]]),
+            ArchitectureDocument::presetLayer([
+                'layers' => [['name' => 'application'], ['name' => 'domain']],
+                'allow' => ['application' => ['domain']],
+            ]),
             ArchitectureDocument::fileLayer(['allow' => ['domain' => ['application']]]),
         );
         $allow = SectionSpot::section('architecture', $document->get('architecture'))->child('allow');

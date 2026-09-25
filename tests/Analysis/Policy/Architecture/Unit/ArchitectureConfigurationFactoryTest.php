@@ -288,10 +288,8 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     #[Test]
     public function itRejectsAnAllowEntryNamingALayerTheLayersValidatorDidNotProduce(): void
     {
-        // Demonstrates the orchestration handoff: the registry's layerNames()
-        // is what AllowValidator consults.
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('architecture.allow.controller: unknown layer');
+        $this->expectExceptionMessage('Unknown name "controller" under "architecture.allow"');
 
         $this->factory->fromResolved(ArchitectureDocument::file([
             'layers' => [['name' => 'service', 'patterns' => ['App\\Service']]],

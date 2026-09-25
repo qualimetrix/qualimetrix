@@ -47,10 +47,10 @@ final class DocumentPhaseTest extends TestCase
     #[Test]
     public function itLeavesAKeyOnlyEverWrittenAsTildeAbsent(): void
     {
-        $document = SampleDocument::compose(SampleDocument::file(['fail_on' => null, 'computed_metrics' => ['health.x' => null]]));
+        $document = SampleDocument::compose(SampleDocument::file(['fail_on' => null, 'cache' => ['dir' => null]]));
 
         self::assertNull($document->get('fail_on'));
-        self::assertNull($document->get('computed_metrics'));
+        self::assertNull($document->get('cache'));
     }
 
     /**

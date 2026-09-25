@@ -81,8 +81,13 @@ criterion (`patterns`, `suffix`, … — one string or a list) and an allow targ
 (a layer name or a long-form map). `LayerCriterionNormalizer` and
 `LongFormAllowEntryNormalizer` judge them; the latter recognises the long-form
 keys by the document's spelling rule (snake_case, kebab-case or camelCase).
-An allow source name is judged here too, after the merge, because a glob or
-captured selector names layers only template expansion produces.
+An allow source name is judged by the engine after the merge, against the
+names the merged `layers` declares and in the words of the layer that wrote
+it, whatever is written under it (`allow: {infrq: ~}` is refused): an exact
+name must be declared, a glob or captured selector passes because it names
+layers only template expansion produces, and a malformed selector is left to
+`AllowValidator` and the selector grammar. A source written `~` keeps the
+targets a lower layer gave it; with none, it allows nothing.
 
 `ArchitectureConfigurationFactory::fromResolved()` reads the section from
 `ConfigurationDocument::resolved()` through `SectionSpot`, which pairs each

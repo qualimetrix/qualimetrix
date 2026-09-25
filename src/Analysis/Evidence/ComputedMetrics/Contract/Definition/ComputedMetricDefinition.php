@@ -167,9 +167,9 @@ final readonly class ComputedMetricDefinition
 
     /**
      * The predicate {@see validateName()} and
-     * {@see \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricOverrideReader::create()}
-     * both ask, so the grammar is spelled once: the reader refuses a bad name
-     * before ever constructing a definition, and this invariant still holds
+     * {@see \Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricsSection}
+     * both ask, so the grammar is spelled once: the configuration refuses a bad
+     * name before ever constructing a definition, and this invariant still holds
      * for a caller that constructs one directly.
      */
     public static function isValidName(string $name): bool

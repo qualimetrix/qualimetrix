@@ -48,7 +48,9 @@ enum ConfigurationRoot: string implements DocumentSectionSchemaInterface
         $selectors = self::selectorSet();
 
         return [
-            self::Paths->value => NodeSchema::stringList(),
+            self::Paths->value => NodeSchema::list(
+                NodeSchema::scalar(ScalarForm::String)->withHint('Quote a name that reads as a number or a keyword ("2024", "true").'),
+            ),
             self::Exclude->value => $selectors,
             self::Format->value => $string,
             self::FailOn->value => $string,
@@ -75,10 +77,16 @@ enum ConfigurationRoot: string implements DocumentSectionSchemaInterface
     private static function selectorSet(): NodeSchema
     {
         $kinds = [];
+        $forms = [];
         foreach (SelectorKind::cases() as $kind) {
             $kinds[$kind->value] = NodeSchema::scalar(ScalarForm::String);
+            $forms[] = \sprintf('{%s: value}', $kind->value);
         }
 
-        return NodeSchema::set(NodeSchema::map($kinds));
+        $last = array_pop($forms);
+
+        return NodeSchema::set(NodeSchema::map($kinds)->withHint(
+            \sprintf('A selector names its kind: %s, or %s.', implode(', ', $forms), $last),
+        ));
     }
 }

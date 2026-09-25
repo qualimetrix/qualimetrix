@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration;
 
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareName;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMap;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
@@ -19,10 +20,10 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
  */
 final readonly class ComputedMetricAuthorship
 {
-    /** @param array<string, ResolvedMap> $entries metric name => its merged entry */
+    /** @param array<string, ResolvedMap|ResolvedBareName> $entries metric name => its merged entry */
     public function __construct(private array $entries = []) {}
 
-    public function entry(string $metricName): ?ResolvedMap
+    public function entry(string $metricName): ResolvedMap|ResolvedBareName|null
     {
         return $this->entries[$metricName] ?? null;
     }
@@ -39,6 +40,26 @@ final readonly class ComputedMetricAuthorship
     public function refuseFormula(string $metricName, string $level, string $summary): ConfigurationRefusal
     {
         return $this->formulaWriter($metricName, $level)?->refusal($summary) ?? $this->refuseMetric($metricName, $summary);
+    }
+
+    /**
+     * A level the metric reports at with no formula: the layers that wrote the
+     * metric, at the key the author left out.
+     */
+    public function refuseMissingFormula(string $metricName, string $level, string $summary): ConfigurationRefusal
+    {
+        $writers = $this->entry($metricName)?->contributors() ?? [];
+        if ($writers === []) {
+            return self::defaults($metricName, $summary, [ComputedMetricEntryKeys::FORMULAS, $level]);
+        }
+
+        $last = $writers[\count($writers) - 1];
+
+        return Provenance::refusalOf(
+            $writers,
+            $summary,
+            $last->path === null ? null : RefusedPosition::open([...$last->path, ComputedMetricEntryKeys::FORMULAS, $level], $level),
+        );
     }
 
     /**
@@ -70,17 +91,24 @@ final readonly class ComputedMetricAuthorship
     private function formulaWriter(string $metricName, string $level): ?ResolvedValueInterface
     {
         $entry = $this->entry($metricName);
-        $formulas = $entry?->get(ComputedMetricEntryKeys::FORMULAS);
+        if (!$entry instanceof ResolvedMap) {
+            return null;
+        }
+
+        $formulas = $entry->get(ComputedMetricEntryKeys::FORMULAS);
 
         return ($formulas instanceof ResolvedMap ? $formulas->get($level) : null)
-            ?? $entry?->get(ComputedMetricEntryKeys::FORMULA);
+            ?? $entry->get(ComputedMetricEntryKeys::FORMULA);
     }
 
-    private static function defaults(string $metricName, string $summary): ConfigurationRefusal
+    /** @param list<string> $below the key path under the metric */
+    private static function defaults(string $metricName, string $summary, array $below = []): ConfigurationRefusal
     {
+        $path = [ComputedMetricsSection::KEY, $metricName, ...$below];
+
         return ConfigurationRefusal::at(
             ConfigurationOrigin::of(ConfigurationSource::Defaults),
-            RefusedPosition::open([ComputedMetricsSection::KEY, $metricName], $metricName),
+            RefusedPosition::open($path, $path[\count($path) - 1]),
             $summary,
         );
     }

@@ -16,8 +16,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  *
  * The metric name itself is not a dictionary key: a user name is open,
  * described by a grammar ({@see \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition}),
- * so the resolver judges it once the layers are merged. The `health.*` half
- * of the names is closed on six and is declared here.
+ * judged by {@see ComputedMetricsSection} in the layer that wrote it. The
+ * `health.*` half of the names is closed on six and is declared here.
  */
 final class ComputedMetricEntryKeys
 {

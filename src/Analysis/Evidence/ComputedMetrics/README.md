@@ -220,9 +220,11 @@ The owner reads the merged result.
 - `formula` is the formula of every reporting level; `formulas.<level>`
   refines one level beside it, whichever layer wrote either.
 - `levels` is replaced whole by the last layer that writes it.
-- `~` and `{}` write nothing: a metric written either way leaves the metric
-  below it — a built-in dimension or a preset's metric — unchanged. A lower
-  layer's metric is removed only by `enabled: false`.
+- `~` and `{}` write nothing under the name: a metric written either way
+  leaves the metric below it — a built-in dimension or a preset's metric —
+  unchanged, and a name nothing below defines is a user metric without a
+  formula, refused with the layer that wrote the name. A lower layer's metric
+  is removed only by `enabled: false`.
 - `exclude_health` accumulates across layers and deduplicates; `[]` adds
   nothing. Each item is judged in the words of the layer that wrote it: a
   file's typo names the file and the item's path, an option's names the
@@ -231,17 +233,13 @@ The owner reads the merged result.
   validation and `health.overall` weight normalization.
 - Definitions may reference other computed metrics; cycles and unknown
   references fail configuration before publication.
-- A metric name is judged after the merge: a `health.*` name must be one of
+- A metric name is judged by the document engine in the layer that wrote it,
+  whatever is written under it (`ComputedMetricsSection`'s name predicate): a
+  `health.*` name must be one of
   `ComputedMetricEntryKeys::acceptedHealthNames()`, any other must follow the
-  name grammar. Every refusal about a resolved definition names the layers
-  that wrote it (`ComputedMetricAuthorship`); a built-in definition no layer
-  touched is attributed to the defaults.
-
-> **Note:** open defect — a metric name written with a `~` or `{}` body writes
-> nothing and is therefore not judged: `health.typng: ~` and `my-metric: ~` are
-> accepted silently. The document engine drops such an entry before any
-> owner sees its name; closing this needs the engine to judge an open name by a
-> predicate in the layer that wrote it.
+  name grammar and not end in a level word. Every refusal about a resolved
+  definition names the layers that wrote it (`ComputedMetricAuthorship`); a
+  built-in definition no layer touched is attributed to the defaults.
 
 ## Tests
 

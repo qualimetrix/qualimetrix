@@ -83,16 +83,35 @@ final class ArchitectureDocument
         return self::spot(['layers' => $layers], 'layers');
     }
 
-    /** `architecture.allow`, as one file writes it. */
+    /**
+     * `architecture.allow`, as one file writes it beside a layer for every
+     * source it names, so the document admits each source name.
+     */
     public static function allow(mixed $allow): SectionSpot
     {
-        return self::spot(['allow' => $allow], 'allow');
+        return self::spot(self::withSourceLayers($allow), 'allow');
+    }
+
+    /**
+     * An `architecture:` section writing `$allow` and declaring a layer named
+     * by every source key of it.
+     *
+     * @return array<string, mixed>
+     */
+    public static function withSourceLayers(mixed $allow): array
+    {
+        $layers = [];
+        foreach (\is_array($allow) ? array_keys($allow) : [] as $source) {
+            $layers[] = ['name' => (string) $source, 'patterns' => ['App\\' . $source]];
+        }
+
+        return $layers === [] ? ['allow' => $allow] : ['layers' => $layers, 'allow' => $allow];
     }
 
     /** `architecture.allow.<source>[<index>]` of a file writing one long-form target. */
     public static function allowTarget(mixed $target, string $source = 'app'): SectionSpot
     {
-        return self::spot(['allow' => [$source => [$target]]], 'allow', $source, 0);
+        return self::spot(self::withSourceLayers([$source => [$target]]), 'allow', $source, 0);
     }
 
     /** `architecture.allow.app[0].relations`, as one file writes it. */

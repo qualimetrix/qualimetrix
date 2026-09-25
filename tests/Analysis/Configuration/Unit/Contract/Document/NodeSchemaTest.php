@@ -74,4 +74,25 @@ final class NodeSchemaTest extends TestCase
 
         NodeSchema::set(NodeSchema::scalar())->announcingEmptyOverride('never');
     }
+
+    #[Test]
+    public function itKeepsEveryDeclarationWhenAHintAndAnEmptyOverrideNoticeAreAdded(): void
+    {
+        $element = NodeSchema::scalar(ScalarForm::String);
+        $hintedThenAnnounced = NodeSchema::list($element)->withHint('Quote it.')->announcingEmptyOverride('Lifted.');
+        $announcedThenHinted = NodeSchema::list($element)->announcingEmptyOverride('Lifted.')->withHint('Quote it.');
+
+        foreach ([$hintedThenAnnounced, $announcedThenHinted] as $schema) {
+            self::assertSame('Quote it.', $schema->hint());
+            self::assertSame('Lifted.', $schema->emptyOverrideNotice());
+            self::assertSame($element, $schema->element());
+            self::assertSame(MergePolicy::Replace, $schema->policy);
+        }
+
+        $map = NodeSchema::map(['dir' => $element], Shorthand::spreading('all', ['dir']))->withHint('Name a kind.');
+        self::assertSame(['dir' => $element], $map->fields());
+        self::assertCount(1, $map->shorthands());
+        self::assertSame([ScalarForm::String], $element->withHint('x')->scalarForms());
+        self::assertNull($element->hint());
+    }
 }

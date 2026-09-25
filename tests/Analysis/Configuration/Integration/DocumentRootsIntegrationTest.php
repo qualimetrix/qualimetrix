@@ -166,6 +166,35 @@ fail_on: error
         self::assertStringContainsString(\sprintf($expected, $this->directory . '/qmx.yaml'), $refusal->summary());
     }
 
+    /** @return iterable<string, array{string, string}> */
+    public static function provideLikelyIntents(): iterable
+    {
+        yield 'paths, an unquoted year' => ["paths: [2024]\n", 'got int. Quote a name that reads as a number or a keyword ("2024", "true").'];
+        yield 'paths, an unquoted keyword' => ["paths: [true]\n", 'got bool. Quote a name that reads as a number or a keyword'];
+        yield 'exclude, a bare string' => ["exclude: [src]\n", 'got string. A selector names its kind: {exact: value}, {subtree: value}, or {regex: value}.'];
+        yield 'suppress_paths, a bare string' => ["suppress_paths: [src]\n", 'got string. A selector names its kind'];
+        yield 'suppress_namespaces, a list' => ["suppress_namespaces: [[App]]\n", 'got a list. A selector names its kind'];
+    }
+
+    /**
+     * R-05: the form alone does not say what the author meant, so the root
+     * says it — the words the owner's own refusals used to carry.
+     */
+    #[Test]
+    #[DataProvider('provideLikelyIntents')]
+    public function itTellsTheLikelyIntentBehindAMalformedRootValue(string $yaml, string $expected): void
+    {
+        self::assertStringContainsString($expected, $this->refusal($yaml)->summary());
+    }
+
+    #[Test]
+    public function itKeepsTheIntentHintToTheFormItExplains(): void
+    {
+        self::assertStringNotContainsString('Quote', $this->refusal("paths: [~]\n")->summary());
+        self::assertStringNotContainsString('Quote', $this->refusal("paths: src\n")->summary());
+        self::assertStringNotContainsString('selector', $this->refusal("only_rules: [5]\n")->summary());
+    }
+
     /**
      * Form is judged in every layer: a malformed value a later layer overrides
      * is still refused, and the refusal names the layer that wrote it.

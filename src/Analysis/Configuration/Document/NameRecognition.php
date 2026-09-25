@@ -13,7 +13,8 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
  * Phase 3: judges the names whose vocabulary is another node of the document
  * — `allow` keys against the layer names `layers` declares — against that
  * node as merged across every layer, so a name a preset declares is known to
- * the file that uses it. A name is compared exactly: it is the author's
+ * the file that uses it. A name is compared exactly, unless the vocabulary
+ * says how a name refers to the declared ones: it is the author's
  * identifier, not a schema key with spellings.
  */
 final class NameRecognition
@@ -38,7 +39,7 @@ final class NameRecognition
                 : $document->get(...[...$parentPath, $first->vocabulary->siblingKey]);
             $known = $first->vocabulary->namesFrom($sibling?->plain());
 
-            if (\in_array($first->name, $known, true)) {
+            if ($first->vocabulary->admits($first->name, $known)) {
                 continue;
             }
 

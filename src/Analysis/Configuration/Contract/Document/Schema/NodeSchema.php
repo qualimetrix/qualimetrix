@@ -36,6 +36,7 @@ final readonly class NodeSchema
         private ?self $element = null,
         private ?NameVocabulary $names = null,
         private ?string $emptyOverrideNotice = null,
+        private ?string $hint = null,
     ) {}
 
     /** A scalar leaf written as one of `$forms`; no form accepts any scalar. */
@@ -123,7 +124,17 @@ final readonly class NodeSchema
             throw new LogicException('Only a replaced list can announce an empty override.');
         }
 
-        return new self($this->policy, element: $this->element, emptyOverrideNotice: $notice);
+        return new self($this->policy, $this->scalarForms, $this->fields, $this->shorthands, $this->element, $this->names, $notice, $this->hint);
+    }
+
+    /**
+     * A sentence the engine adds when it refuses the form of a value written
+     * here — what the author most likely meant, where the form alone does not
+     * say it: an unquoted `2024` read as a number where a path is due.
+     */
+    public function withHint(string $hint): self
+    {
+        return new self($this->policy, $this->scalarForms, $this->fields, $this->shorthands, $this->element, $this->names, $this->emptyOverrideNotice, $hint);
     }
 
     /** @return list<ScalarForm> */
@@ -158,6 +169,11 @@ final readonly class NodeSchema
     public function emptyOverrideNotice(): ?string
     {
         return $this->emptyOverrideNotice;
+    }
+
+    public function hint(): ?string
+    {
+        return $this->hint;
     }
 
     private static function assertCanonical(string $key): void

@@ -96,7 +96,59 @@ final class ArchitectureSectionTest extends TestCase
 
         self::assertSame([ConfigurationSource::ConfigFile], self::kinds($refusal));
         self::assertSame(['architecture', 'allow', 'infrq'], $refusal->position()?->segments());
-        self::assertStringContainsString('architecture.allow.infrq: unknown layer.', $refusal->getMessage());
+        self::assertStringContainsString('Unknown name "infrq" under "architecture.allow"', $refusal->getMessage());
+    }
+
+    #[Test]
+    public function itRefusesAnAllowSourceNamingNoLayerWhateverIsWrittenUnderIt(): void
+    {
+        $refusal = self::refusal(static fn() => ArchitectureDocument::file(['layers' => self::LAYERS, 'allow' => ['infrq' => null]]));
+
+        self::assertSame([ConfigurationSource::ConfigFile], self::kinds($refusal));
+        self::assertSame(['architecture', 'allow', 'infrq'], $refusal->position()?->segments());
+        self::assertSame(['domain', 'infra'], $refusal->position()->accepted());
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function provideSourcesNamingLayersAfterExpansion(): iterable
+    {
+        yield 'glob' => ['app-*'];
+        yield 'captured' => ['app-{m}'];
+    }
+
+    #[Test]
+    #[DataProvider('provideSourcesNamingLayersAfterExpansion')]
+    public function itAdmitsAnAllowSourceThatNamesLayersOnlyTemplateExpansionProduces(string $source): void
+    {
+        $result = self::configure(ArchitectureDocument::file([
+            'layers' => [...self::LAYERS, ['name' => 'app-{m}', 'patterns' => ['App\\{m}']]],
+            'allow' => [$source => ['domain']],
+        ]));
+
+        self::assertTrue($result->configuration->policy()->isAllowed('app-billing', 'domain'));
+    }
+
+    #[Test]
+    public function itLeavesAMalformedSourceSelectorToTheSelectorGrammar(): void
+    {
+        $refusal = self::refusal(static fn() => self::configure(ArchitectureDocument::file([
+            'layers' => self::LAYERS,
+            'allow' => ['in[fra' => null],
+        ])));
+
+        self::assertStringContainsString('character classes are not part of the selector grammar', $refusal->summary());
+        self::assertSame(['architecture', 'allow', 'in[fra'], $refusal->position()?->segments());
+    }
+
+    #[Test]
+    public function itKeepsALowerLayersTargetsUnderASourceWrittenAsTilde(): void
+    {
+        $result = self::configure(ArchitectureDocument::compose(
+            ArchitectureDocument::presetLayer(['layers' => self::LAYERS, 'allow' => ['infra' => ['domain']]]),
+            ArchitectureDocument::fileLayer(['allow' => ['infra' => null]]),
+        ));
+
+        self::assertTrue($result->configuration->policy()->isAllowed('infra', 'domain'));
     }
 
     #[Test]
