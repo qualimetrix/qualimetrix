@@ -215,8 +215,13 @@ final class RefusalPresenter
         $output->write($payload, false, OutputInterface::OUTPUT_RAW | OutputInterface::VERBOSITY_QUIET);
     }
 
-    /** @return array{kind: string, name: ?string, imported_by: ?array<string, mixed>} */
-    private static function sourceDocument(ConfigurationOrigin $origin): array
+    /**
+     * One source as every structured document publishes it: the refusal
+     * envelope's `source` entries and a report's configuration diagnostics.
+     *
+     * @return array{kind: string, name: ?string, imported_by: ?array<string, mixed>}
+     */
+    public static function sourceDocument(ConfigurationOrigin $origin): array
     {
         return [
             'kind' => $origin->source()->value,
@@ -233,10 +238,10 @@ final class RefusalPresenter
         }
 
         return [
-            'path' => $position->segments(),
-            'written' => $position->written(),
-            'accepted' => $position->accepted(),
-            'closed' => $position->isClosed(),
+            'path' => $position->segments,
+            'written' => $position->written,
+            'accepted' => $position->accepted,
+            'closed' => $position->closed,
         ];
     }
 }

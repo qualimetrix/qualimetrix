@@ -14,5 +14,3 @@ rule-path-suppression	complexity.wmc: regex:src/Analysis/Evidence/Security/.*Vis
 rule-path-suppression	coupling.cbo: regex:src/Analysis/Evidence/Design/.*Visitor\.php
 rule-path-suppression	coupling.cbo: regex:src/Analysis/Evidence/Security/.*Visitor\.php
 rule-path-suppression	coupling.instability: exact:src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php
-rule-path-suppression	health.cohesion: exact:src/Analysis/Configuration/Contract/Refusal/ConfigurationOrigin.php
-rule-path-suppression	health.cohesion: exact:src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php

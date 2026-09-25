@@ -12,7 +12,7 @@ use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Tests\Analysis\Run\Support\Configuration\LayeredDocument;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 /**
  * What `paths:` refuses, and why each refusal exists.

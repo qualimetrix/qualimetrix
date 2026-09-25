@@ -78,9 +78,9 @@ final class ArchitectureSectionTest extends TestCase
 
         self::assertSame(ConfigurationSource::ConfigFile, $refusal->origin()->source());
         self::assertSame(ArchitectureDocument::FILE, $refusal->origin()->locator());
-        self::assertSame($path, $refusal->position()?->segments());
-        self::assertSame($path[\count($path) - 1], $refusal->position()->written());
-        self::assertTrue($refusal->position()->isClosed());
+        self::assertSame($path, $refusal->position()?->segments);
+        self::assertSame($path[\count($path) - 1], $refusal->position()->written);
+        self::assertTrue($refusal->position()->closed);
     }
 
     #[Test]
@@ -95,7 +95,7 @@ final class ArchitectureSectionTest extends TestCase
         )));
 
         self::assertSame([ConfigurationSource::ConfigFile], self::kinds($refusal));
-        self::assertSame(['architecture', 'allow', 'infrq'], $refusal->position()?->segments());
+        self::assertSame(['architecture', 'allow', 'infrq'], $refusal->position()?->segments);
         self::assertStringContainsString('Unknown name "infrq" under "architecture.allow"', $refusal->getMessage());
     }
 
@@ -105,8 +105,8 @@ final class ArchitectureSectionTest extends TestCase
         $refusal = self::refusal(static fn() => ArchitectureDocument::file(['layers' => self::LAYERS, 'allow' => ['infrq' => null]]));
 
         self::assertSame([ConfigurationSource::ConfigFile], self::kinds($refusal));
-        self::assertSame(['architecture', 'allow', 'infrq'], $refusal->position()?->segments());
-        self::assertSame(['domain', 'infra'], $refusal->position()->accepted());
+        self::assertSame(['architecture', 'allow', 'infrq'], $refusal->position()?->segments);
+        self::assertSame(['domain', 'infra'], $refusal->position()->accepted);
     }
 
     /** @return iterable<string, array{string}> */
@@ -137,7 +137,7 @@ final class ArchitectureSectionTest extends TestCase
         ])));
 
         self::assertStringContainsString('character classes are not part of the selector grammar', $refusal->summary());
-        self::assertSame(['architecture', 'allow', 'in[fra'], $refusal->position()?->segments());
+        self::assertSame(['architecture', 'allow', 'in[fra'], $refusal->position()?->segments);
     }
 
     #[Test]
@@ -233,7 +233,7 @@ final class ArchitectureSectionTest extends TestCase
 
         self::assertSame([ConfigurationSource::Preset], self::kinds($refusal));
         self::assertSame('strict', $refusal->origin()->locator());
-        self::assertSame(['architecture', 'layers', '0', 'patterns', '0'], $refusal->position()?->segments());
+        self::assertSame(['architecture', 'layers', '0', 'patterns', '0'], $refusal->position()?->segments);
     }
 
     #[Test]
@@ -272,7 +272,7 @@ final class ArchitectureSectionTest extends TestCase
         ])));
 
         self::assertStringContainsString("write 'target'", $refusal->getMessage());
-        self::assertSame(['architecture', 'allow', 'infra', '0', 'Target'], $refusal->position()?->segments());
+        self::assertSame(['architecture', 'allow', 'infra', '0', 'Target'], $refusal->position()?->segments);
     }
 
     #[Test]

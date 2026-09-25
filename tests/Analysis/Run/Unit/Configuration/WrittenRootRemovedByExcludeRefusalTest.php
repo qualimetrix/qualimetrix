@@ -14,7 +14,7 @@ use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Tests\Analysis\Run\Support\Configuration\LayeredDocument;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 /**
  * A directory the author named as a path and removed with their own `exclude:`

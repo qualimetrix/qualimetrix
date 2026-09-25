@@ -110,8 +110,8 @@ final class NamedEntryTest extends TestCase
 
         self::assertSame('"health.typng" is no health dimension.', $refusal->summary());
         self::assertSame([ConfigurationSource::Preset], array_map(static fn(ConfigurationOrigin $origin): ConfigurationSource => $origin->source(), $refusal->sources()));
-        self::assertSame(['metrics', 'health.typng'], $refusal->position()?->segments());
-        self::assertSame(['health.typing'], $refusal->position()->accepted());
+        self::assertSame(['metrics', 'health.typng'], $refusal->position()?->segments);
+        self::assertSame(['health.typing'], $refusal->position()->accepted);
     }
 
     #[Test]
@@ -120,7 +120,7 @@ final class NamedEntryTest extends TestCase
         $refusal = self::refusal(static fn() => self::compose(self::file(['metrics' => ['my-metric' => null]])));
 
         self::assertSame('"my-metric" breaks the grammar.', $refusal->summary());
-        self::assertFalse($refusal->position()?->isClosed());
+        self::assertFalse($refusal->position()?->closed);
     }
 
     #[Test]
@@ -145,8 +145,8 @@ final class NamedEntryTest extends TestCase
             self::file(['layers' => ['domain', 'infra'], 'allow' => ['infrq' => null]]),
         ));
 
-        self::assertSame(['allow', 'infrq'], $refusal->position()?->segments());
-        self::assertSame(['domain', 'infra'], $refusal->position()->accepted());
+        self::assertSame(['allow', 'infrq'], $refusal->position()?->segments);
+        self::assertSame(['domain', 'infra'], $refusal->position()->accepted);
     }
 
     #[Test]
@@ -178,7 +178,7 @@ final class NamedEntryTest extends TestCase
         $refusal = self::refusal(static fn() => DocumentComposer::compose($schema, [self::file(['groups' => [['ok' => 1, 'bad' => null]]])]));
 
         self::assertSame('Not ok.', $refusal->summary());
-        self::assertSame(['groups', '0', 'bad'], $refusal->position()?->segments());
+        self::assertSame(['groups', '0', 'bad'], $refusal->position()?->segments);
     }
 
     private static function compose(AuthoredLayer ...$layers): ResolvedDocument

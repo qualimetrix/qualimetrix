@@ -145,7 +145,7 @@ final class ConfigurationPipelineTest extends TestCase
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString('Unknown key "fail_onn"', $refusal->summary());
             self::assertStringContainsString('did you mean "fail_on"?', $refusal->summary());
-            self::assertSame(['fail_onn'], $refusal->position()?->segments());
+            self::assertSame(['fail_onn'], $refusal->position()?->segments);
         }
     }
 

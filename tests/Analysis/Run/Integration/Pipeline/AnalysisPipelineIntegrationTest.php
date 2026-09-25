@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyDetector;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions;
@@ -94,6 +95,7 @@ use Qualimetrix\Infrastructure\Profiler\ProfileSession;
 use Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 use Qualimetrix\Tests\Analysis\Run\Support\Pipeline\TestPipelineBuilder;
 use ReflectionProperty;
@@ -295,7 +297,10 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $ruleInputValidator = (new ReflectionProperty(CheckCommand::class, 'ruleInputValidator'))->getValue($checkCommand);
         self::assertInstanceOf(RuleInputValidator::class, $ruleInputValidator);
 
-        $architectureDocument = new ConfigurationDocument([[
+        $configurationPipeline = $container->get(ConfigurationPipelineInterface::class);
+        self::assertInstanceOf(ConfigurationPipelineInterface::class, $configurationPipeline);
+        $pipelineSections = LayeredDocument::sectionsOf($configurationPipeline);
+        $architectureDocument = LayeredDocument::of([[
             'source' => 'test',
             'values' => ['architecture' => [
                 'layers' => [
@@ -305,7 +310,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                 'allow' => ['controller' => [], 'repository' => []],
                 'coverage-gap' => 'ignore',
             ]],
-        ]], AbsolutePath::fromString($fixtureRoot));
+        ]], AbsolutePath::fromString($fixtureRoot), ...$pipelineSections);
 
         /**
          * @return array{\Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult, array<string, array{total: float, count: int, unstopped: int}>}
@@ -346,7 +351,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             self::assertNotEmpty(self::findingsNamed($first->findings, LayerViolationRule::NAME));
             self::assertNotEmpty(self::findingsNamed($first->findings, CircularDependencyRule::NAME));
 
-            [$second] = $run($cleanRoot, new ConfigurationDocument([], AbsolutePath::fromString($fixtureRoot)));
+            [$second] = $run($cleanRoot, LayeredDocument::of([], AbsolutePath::fromString($fixtureRoot), ...$pipelineSections));
             self::assertSame([], self::findingsNamed($second->findings, LayerViolationRule::NAME));
             self::assertSame([], self::findingsNamed($second->findings, CircularDependencyRule::NAME));
 

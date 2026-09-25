@@ -199,7 +199,9 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 
 **Когда использовать:** Пользовательские скрипты, дашборды, программная обработка.
 
-**Ключи верхнего уровня:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (см. [Охват проекта во всех форматах](#project-scope-in-every-format)), `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, плюс `violationGroups`, когда передан `--group-by` — без него ключа нет вовсе, это не пустой объект.
+**Ключи верхнего уровня:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (см. [Охват проекта во всех форматах](#project-scope-in-every-format)), `configurationDiagnostics`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, плюс `violationGroups`, когда передан `--group-by` — без него ключа нет вовсе, это не пустой объект.
+
+`configurationDiagnostics` перечисляет предупреждения о конфигурации, которую прогон принял, — те же, что `check` печатает в stderr, — и равен `[]`, когда их нет. Каждая запись — `{"message": "…", "source": [{"kind": "preset", "name": "…", "imported_by": null}, …]}`: `source` называет каждый слой, о котором предупреждение, от младшего к старшему, в той же форме, что `source` ошибки конфигурации. Например, `only_rules: []` в `qmx.yaml` поверх пресета, фильтрующего правила, законно и даёт одну запись, называющую оба слоя.
 
 `meta` называет инструмент, записавший документ: `version`, `package`, `timestamp` и два адреса документации — `docs`, сайт документации, и `llmsTxt`, индекс для ИИ-агентов. Оба адреса есть в каждом JSON-отчёте, у которого есть объект-конверт; см. исключения в [Адреса документации в JSON-отчётах](#documentation-addresses).
 
@@ -228,6 +230,7 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
     },
     "outOfScope": null,
     "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
+    "configurationDiagnostics": [],
     "health": {
         "complexity": {
             "score": 78.0,

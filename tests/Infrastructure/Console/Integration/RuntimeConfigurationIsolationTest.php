@@ -7,7 +7,10 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Integration;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
@@ -27,6 +30,7 @@ use Qualimetrix\Infrastructure\Parallel\Configuration\ParallelConfigurationResol
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface;
 use Qualimetrix\Infrastructure\Profiler\Contract\ProfileReportInterface;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use ReflectionProperty;
 use RuntimeException;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -35,6 +39,9 @@ use Symfony\Component\Console\Output\BufferedOutput;
 final class RuntimeConfigurationIsolationTest extends TestCase
 {
     private string $temporaryDirectory;
+
+    /** @var list<DocumentSectionSchemaInterface> the sections the compiled pipeline composes with */
+    private array $sections = [];
 
     protected function setUp(): void
     {
@@ -139,8 +146,14 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         [$runtimeConfigurator, $command, $ruleInputValidator] = $this->runtimeServices();
         $runtimeConfigurator->resetRunState();
         $projectRoot = \Qualimetrix\Core\Path\AbsolutePath::fromString($this->temporaryDirectory);
+        // Well-formed for the engine, so the document composes and the refusal
+        // comes from the architecture owner inside configure(), after the
+        // owners resolved before it.
         $invalidDocument = $this->document([
-            'architecture' => ['layers' => ['not-an-ordered-list']],
+            'architecture' => ['layers' => [
+                ['name' => 'app', 'patterns' => ['App\\First']],
+                ['name' => 'app', 'patterns' => ['App\\Second']],
+            ]],
         ]);
         $input = new ArrayInput(['--profile' => true], $command->getDefinition());
 
@@ -155,7 +168,8 @@ final class RuntimeConfigurationIsolationTest extends TestCase
                 new BufferedOutput(),
             );
             self::fail('Invalid architecture configuration must fail before mutating owner stores or effects.');
-        } catch (ConfigurationRefusal) {
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString('duplicate layer name "app"', $refusal->getMessage());
         }
 
         $this->assertDefaultOwnerState($runtimeConfigurator);
@@ -209,8 +223,8 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         $projectRoot = \Qualimetrix\Core\Path\AbsolutePath::fromString($this->temporaryDirectory);
 
         $first = $this->document([
-            'computedMetrics' => ['computed.first' => ['formula' => '1', 'levels' => ['class']]],
-            'onlyRules' => ['computed.first'],
+            ConfigSchema::COMPUTED_METRICS => ['computed.first' => ['formula' => '1', 'levels' => ['class']]],
+            ConfigSchema::ONLY_RULES => ['computed.first'],
         ]);
         $firstInput = new ArrayInput([], $command->getDefinition());
         $runtimeConfigurator->resetRunState();
@@ -226,8 +240,8 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         self::assertContains('computed.first', $this->computedChannels($runtimeConfigurator));
 
         $second = $this->document([
-            'computedMetrics' => ['computed.second' => ['formula' => '1', 'levels' => ['class']]],
-            'onlyRules' => ['computed.second'],
+            ConfigSchema::COMPUTED_METRICS => ['computed.second' => ['formula' => '1', 'levels' => ['class']]],
+            ConfigSchema::ONLY_RULES => ['computed.second'],
         ]);
         $secondInput = new ArrayInput([], $command->getDefinition());
         $runtimeConfigurator->resetRunState();
@@ -244,7 +258,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         self::assertNotContains('computed.first', $this->computedChannels($runtimeConfigurator));
 
         $invalid = $this->document([
-            'computedMetrics' => ['computed.invalid' => ['formula' => '(', 'levels' => ['class']]],
+            ConfigSchema::COMPUTED_METRICS => ['computed.invalid' => ['formula' => '(', 'levels' => ['class']]],
         ]);
         $invalidInput = new ArrayInput([], $command->getDefinition());
         $runtimeConfigurator->resetRunState();
@@ -278,6 +292,9 @@ final class RuntimeConfigurationIsolationTest extends TestCase
 
         $ruleInputValidator = (new ReflectionProperty(CheckCommand::class, 'ruleInputValidator'))->getValue($command);
         self::assertInstanceOf(RuleInputValidator::class, $ruleInputValidator);
+        $pipeline = $container->get(ConfigurationPipelineInterface::class);
+        self::assertInstanceOf(ConfigurationPipelineInterface::class, $pipeline);
+        $this->sections = LayeredDocument::sectionsOf($pipeline);
 
         return [$runtimeConfigurator, $command, $ruleInputValidator];
     }
@@ -285,9 +302,10 @@ final class RuntimeConfigurationIsolationTest extends TestCase
     /** @param array<string, mixed> $values */
     private function document(array $values): ConfigurationDocument
     {
-        return new ConfigurationDocument(
+        return LayeredDocument::of(
             [['source' => 'test', 'values' => $values]],
             \Qualimetrix\Core\Path\AbsolutePath::fromString($this->temporaryDirectory),
+            ...$this->sections,
         );
     }
 

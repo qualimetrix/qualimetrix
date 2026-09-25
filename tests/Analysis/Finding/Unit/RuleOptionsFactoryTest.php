@@ -893,8 +893,8 @@ final class RuleOptionsFactoryTest extends TestCase
             self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
             self::assertNull($e->origin()->locator());
             self::assertNotNull($e->position());
-            self::assertSame('warningThreshold', $e->position()->written());
-            self::assertFalse($e->position()->isClosed());
+            self::assertSame('warningThreshold', $e->position()->written);
+            self::assertFalse($e->position()->closed);
         }
     }
 

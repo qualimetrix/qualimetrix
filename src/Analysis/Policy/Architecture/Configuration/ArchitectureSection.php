@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
-use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
@@ -35,9 +34,11 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelectorPa
  */
 final readonly class ArchitectureSection implements DocumentSectionSchemaInterface
 {
+    public const string KEY = 'architecture';
+
     public function key(): string
     {
-        return ConfigSchema::ARCHITECTURE;
+        return self::KEY;
     }
 
     public function schema(): NodeSchema

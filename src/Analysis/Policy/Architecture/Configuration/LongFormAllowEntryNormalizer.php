@@ -74,8 +74,8 @@ final class LongFormAllowEntryNormalizer
     /**
      * Not written — absent or {@code ~} — is the documented default, "any
      * relation allowed", the same as a bare target. A written list is a
-     * filter: {@see AllowAliasExpander::parseList()} owns its shape (non-list,
-     * empty) and its vocabulary.
+     * filter: {@see parseRelationList()} owns its shape (non-list, empty) and
+     * {@see AllowAliasExpander} its vocabulary.
      *
      * @return list<DependencyType>|null
      */
@@ -85,7 +85,60 @@ final class LongFormAllowEntryNormalizer
             return null;
         }
 
-        return AllowAliasExpander::parseList($relations, \sprintf('architecture.allow.%s[%d]', $source, $index));
+        return self::parseRelationList($relations, \sprintf('architecture.allow.%s[%d]', $source, $index));
+    }
+
+    /**
+     * A written {@code relations:} list: a non-empty list of non-empty
+     * strings, each a direct {@see DependencyType} value or an alias, expanded
+     * in declaration order with later duplicates absorbed. Null when nothing
+     * is written, which the caller reads as "any relation allowed".
+     *
+     * @param string $context the entry's path, e.g. {@code architecture.allow.app[0]}
+     *
+     * @throws ConfigurationRefusal through the layer that wrote the list
+     *
+     * @return list<DependencyType>|null
+     */
+    public static function parseRelationList(SectionSpot $relations, string $context): ?array
+    {
+        $raw = $relations->value();
+        if ($raw === null) {
+            return null;
+        }
+
+        if (!\is_array($raw) || !array_is_list($raw)) {
+            throw $relations->refusal(\sprintf('%s.relations: must be a list of relation kinds or aliases.', $context));
+        }
+
+        if ($raw === []) {
+            throw $relations->refusal(\sprintf(
+                "%s.relations: must list at least one relation kind. " .
+                'Use a bare target (e.g. `- target_layer` instead of `- target: target_layer`) ' .
+                'to keep the "any relation allowed" semantics.',
+                $context,
+            ));
+        }
+
+        $expanded = [];
+        foreach ($raw as $index => $token) {
+            foreach (self::expandToken($relations->child($index), $token, $context, $index) as $type) {
+                $expanded[$type->value] ??= $type;
+            }
+        }
+
+        return array_values($expanded);
+    }
+
+    /** @return non-empty-list<DependencyType> */
+    private static function expandToken(SectionSpot $spot, mixed $token, string $context, int $index): array
+    {
+        if (!\is_string($token) || $token === '') {
+            throw $spot->refusal(\sprintf('%s.relations[%d]: each entry must be a non-empty string.', $context, $index));
+        }
+
+        return AllowAliasExpander::expand($token)
+            ?? throw $spot->refusal(AllowAliasExpander::unknownTokenMessage($context, $token), AllowAliasExpander::acceptedTokens(), $token);
     }
 
     /**

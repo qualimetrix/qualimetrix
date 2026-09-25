@@ -227,12 +227,12 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         } catch (ConfigurationRefusal $refusal) {
             $position = $refusal->position();
             self::assertNotNull($position);
-            self::assertSame(['computed_metrics', 'health.typying'], $position->segments());
-            self::assertSame('health.typying', $position->written());
-            self::assertTrue($position->isClosed());
+            self::assertSame(['computed_metrics', 'health.typying'], $position->segments);
+            self::assertSame('health.typying', $position->written);
+            self::assertTrue($position->closed);
             self::assertSame(
                 ['health.cohesion', 'health.complexity', 'health.coupling', 'health.maintainability', 'health.overall', 'health.typing'],
-                $position->accepted(),
+                $position->accepted,
             );
             self::assertSame(ConfigurationSource::ConfigFile, $refusal->origin()->source());
         }
@@ -901,7 +901,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         } catch (ConfigurationRefusal $refusal) {
             $position = $refusal->position();
             self::assertNotNull($position);
-            self::assertSame(['computed_metrics', 'computed.x', 'levels'], $position->segments());
+            self::assertSame(['computed_metrics', 'computed.x', 'levels'], $position->segments);
         }
     }
 
@@ -916,9 +916,9 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         } catch (ConfigurationRefusal $refusal) {
             $position = $refusal->position();
             self::assertNotNull($position);
-            self::assertSame(['computed_metrics', 'health.complexity', 'warnign'], $position->segments());
-            self::assertSame('warnign', $position->written());
-            self::assertTrue($position->isClosed());
+            self::assertSame(['computed_metrics', 'health.complexity', 'warnign'], $position->segments);
+            self::assertSame('warnign', $position->written);
+            self::assertTrue($position->closed);
             self::assertStringContainsString('(did you mean "warning"?)', $refusal->summary());
         }
     }

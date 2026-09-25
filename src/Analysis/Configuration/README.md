@@ -143,7 +143,10 @@ author spelled it, the line when the format reports one).
   contributor of a merged node through `ConfigurationRefusal::acrossLayers()`.
   The JSON refusal envelope publishes those sources as `source`.
 - Diagnostics — warnings about accepted configuration — travel with the
-  resolved document (`ConfigurationDocument::diagnostics()`).
+  resolved document (`ConfigurationDocument::diagnostics()`). Every command
+  that resolves the document prints them on stderr, and `check`'s JSON report
+  publishes them under `configurationDiagnostics`; both are written by
+  `Infrastructure\Console\ConfigurationInputAdapter`.
 
 The engine runs in every resolution, beside `contributions()` while owners
 move to it. Every stage hands its sources over as written through

@@ -305,6 +305,7 @@ final readonly class Report
         public ?SuppressionComposition $suppressionComposition = null,
         public ?OutOfScopeFindings $outOfScope = null, // what a --namespace/--class selection left out; null without one
         public ?ReportProjectScope $projectScope = null, // how the run's paths stood against composer.json autoload; set on every check run
+        public array $configurationDiagnostics = [], // list<{message, source}> — warnings about the accepted configuration, already published
     ) {}
 
     public function isEmpty(): bool;
@@ -493,6 +494,8 @@ and three commands outside `check` (`directives`,
 **`outOfScope`:** always present. `null` without `--namespace`/`--class`; under a selection, `{violationCount, errorCount, warningCount, infoCount}` of the run's findings the selection left out, zeroes when it left none. The exit code is resolved over `summary` and `outOfScope` together. `metrics` publishes the same key in its own vocabulary; `sarif`, `github` and `html` add one diagnostic entry under `drill-down.out-of-scope` only when something lies outside (see `DrillDown\OutOfScopeFindings`). `gitlab` and `checkstyle` have no entry that is not a finding to their consumer, so `OutOfScopeFindings::FORMATS_WITHOUT_A_PLACE` names them and the command line refuses a selection under them. `suppressed` has none: a selection does not narrow it.
 
 **`projectScope`:** always present, and of one shape: `{state, uncoveredAutoloadTargets, unjudgedChannels, unjudgedValues}`, `state` being `covered`, `narrowed` or `unknown` (see `ReportProjectScope`). `uncoveredAutoloadTargets` is empty unless the run was narrowed below the project's autoload targets; `unjudgedChannels` then names the channels judged only on a whole-project run, and `unjudgedValues` is empty. On `covered` and `unknown` `unjudgedValues` lists each configured suppression value the run skipped as `{option, pattern}`, and `unjudgedChannels` is derived from them. `metrics` and `suppressed` publish the same object; `sarif` (`QMX-RUN-PROJECT-SCOPE`), `github` (`run.project-scope`), `html` and the human formats add an entry whenever `describe()` has a sentence: `narrowed`, `unknown`, and a `covered` run that skipped a value. `gitlab` and `checkstyle` publish nothing: every entry there is a finding to its consumer, and a narrowed run is the caller's choice, not a defect — unlike a selection, it is not refused.
+
+**`configurationDiagnostics`:** always present, `[]` when the configuration drew no warning. Each entry is `{message, source}`: the warning as `check` also prints it on stderr, and `source` every layer it is about, lowest precedence first, each as the refusal envelope's `source` entries are — `{kind, name, imported_by}`. The entries arrive already published (`Infrastructure\Console\ConfigurationInputAdapter::publishedDiagnostics()`), so `Reporting` does not read the configuration document.
 
 **`invalidUtf8Replaced`:** present only when strings from the analysed source were not valid UTF-8; each invalid byte was replaced by U+FFFD and the key counts the strings repaired. `metrics`, `suppressed` and the HTML payload publish the same key; `sarif`, `gitlab` and `checkstyle` publish the repair in their own diagnostic channel (see `Formatter\PublishedUtf8`). SARIF repairs a path before percent-encoding it, because `%FF` is valid ASCII the encoder would never refuse.
 
@@ -761,6 +764,7 @@ $report->debtPer1kLoc     // ?float — debt density (minutes per 1K LOC)
 $report->topIssues        // list<RankedIssue> — top findings by impact score
 $report->coverage         // ?ReportCoverage — discovered/analyzed/generated/failed verdict
 $report->projectScope     // ?ReportProjectScope — covered/narrowed/unknown against composer.json autoload
+$report->configurationDiagnostics // list<{message, source}> — warnings about the accepted configuration
 ```
 
 ADR 0062 publishes a health score's coverage alongside the score, and every

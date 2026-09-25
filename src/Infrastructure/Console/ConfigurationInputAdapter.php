@@ -6,18 +6,30 @@ namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
-/** Converts the Symfony CLI ingress into the Configuration-owned request. */
+/**
+ * Converts the Symfony CLI ingress into the Configuration-owned request, and
+ * answers the author about what the resolved document accepted.
+ *
+ * Every command that reads the document resolves it here, which is why its
+ * warnings are written here: a command that forgets to print them runs on a
+ * configuration whose author was never told what it did.
+ */
 final class ConfigurationInputAdapter
 {
     public function __construct(
         private readonly ConfigurationPipelineInterface $configurationPipeline,
+        private readonly ErrorStream $errorStream,
         private readonly CliSelectorDecoder $selectorDecoder = new CliSelectorDecoder(),
     ) {}
 
@@ -28,14 +40,34 @@ final class ConfigurationInputAdapter
         );
     }
 
-    /**
-     * The document's warnings about accepted configuration, as sentences.
-     *
-     * @return list<string>
-     */
-    public function diagnostics(ConfigurationDocument $document): array
+    /** The document's warnings about accepted configuration, one `Warning:` line each on the error stream. */
+    public function writeDiagnostics(ConfigurationDocument $document, OutputInterface $output): void
     {
-        return array_map(static fn($diagnostic): string => $diagnostic->message, $document->diagnostics());
+        foreach ($document->diagnostics() as $diagnostic) {
+            $this->errorStream->write($output, \sprintf('<comment>Warning: %s</comment>', OutputFormatter::escape($diagnostic->message)));
+        }
+    }
+
+    /**
+     * The same warnings as a structured report publishes them, each with every
+     * layer it is about.
+     *
+     * @return list<array{message: string, source: list<array<string, mixed>>}>
+     */
+    public function publishedDiagnostics(ConfigurationDocument $document): array
+    {
+        $published = [];
+        foreach ($document->diagnostics() as $diagnostic) {
+            $published[] = [
+                'message' => $diagnostic->message,
+                'source' => array_map(
+                    static fn(Provenance $provenance): array => RefusalPresenter::sourceDocument($provenance->origin),
+                    $diagnostic->sources,
+                ),
+            ];
+        }
+
+        return $published;
     }
 
     public function exitPolicy(ConfigurationDocument $document): ExitPolicy

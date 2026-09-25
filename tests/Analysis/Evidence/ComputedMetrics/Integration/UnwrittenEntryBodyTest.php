@@ -71,7 +71,7 @@ final class UnwrittenEntryBodyTest extends TestCase
         } catch (ConfigurationRefusal $refusal) {
             self::assertSame('Computed metric "computed.mine" has no formula for level "namespace"', $refusal->summary());
             self::assertSame('qmx.yaml', $refusal->origin()->locator());
-            self::assertSame(['computed_metrics', 'computed.mine', 'formulas', 'namespace'], $refusal->position()?->segments());
+            self::assertSame(['computed_metrics', 'computed.mine', 'formulas', 'namespace'], $refusal->position()?->segments);
         }
     }
 
@@ -84,7 +84,7 @@ final class UnwrittenEntryBodyTest extends TestCase
             self::fail('Expected a refusal.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString('"health.typng" is not a known "health.*" dimension', $refusal->summary());
-            self::assertSame(['computed_metrics', 'health.typng'], $refusal->position()?->segments());
+            self::assertSame(['computed_metrics', 'health.typng'], $refusal->position()?->segments);
         }
     }
 

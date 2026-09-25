@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineIn
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -119,6 +120,6 @@ final class EmptyCliValueReachesItsOwnerTest extends TestCase
             }
         };
 
-        return (new ConfigurationInputAdapter($pipeline))->adapt($input, '/project');
+        return (new ConfigurationInputAdapter($pipeline, new ErrorStream()))->adapt($input, '/project');
     }
 }

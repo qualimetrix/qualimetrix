@@ -17,10 +17,10 @@ final class RefusedPositionTest extends TestCase
     {
         $position = RefusedPosition::closed(['rules', 'complexity'], 'treshold', ['threshold']);
 
-        self::assertSame(['rules', 'complexity'], $position->segments());
-        self::assertSame('treshold', $position->written());
-        self::assertSame(['threshold'], $position->accepted());
-        self::assertTrue($position->isClosed());
+        self::assertSame(['rules', 'complexity'], $position->segments);
+        self::assertSame('treshold', $position->written);
+        self::assertSame(['threshold'], $position->accepted);
+        self::assertTrue($position->closed);
     }
 
     /**
@@ -32,8 +32,8 @@ final class RefusedPositionTest extends TestCase
     {
         $position = RefusedPosition::closed(['architecture', 'allow', 'infra'], 'infra', []);
 
-        self::assertSame([], $position->accepted());
-        self::assertTrue($position->isClosed());
+        self::assertSame([], $position->accepted);
+        self::assertTrue($position->closed);
     }
 
     #[Test]
@@ -41,9 +41,9 @@ final class RefusedPositionTest extends TestCase
     {
         $position = RefusedPosition::open(['computedMetrics', 'health'], 'not-a-number');
 
-        self::assertSame(['computedMetrics', 'health'], $position->segments());
-        self::assertSame('not-a-number', $position->written());
-        self::assertSame([], $position->accepted());
-        self::assertFalse($position->isClosed());
+        self::assertSame(['computedMetrics', 'health'], $position->segments);
+        self::assertSame('not-a-number', $position->written);
+        self::assertSame([], $position->accepted);
+        self::assertFalse($position->closed);
     }
 }

@@ -329,7 +329,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             self::assertSame(ArchitectureDocument::FILE, $e->origin()->locator());
             self::assertStringContainsString('layres', $e->getMessage());
             self::assertStringContainsString('did you mean "layers"', $e->getMessage());
-            self::assertSame(['architecture', 'layres'], $e->position()?->segments());
+            self::assertSame(['architecture', 'layres'], $e->position()?->segments);
         }
     }
 
@@ -362,7 +362,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
             self::assertSame(ArchitectureDocument::FILE, $e->origin()->locator());
-            self::assertSame('coverage_gapp', $e->position()?->written());
+            self::assertSame('coverage_gapp', $e->position()?->written);
             self::assertStringContainsString('Unknown key "architecture.coverage_gapp"', $e->getMessage());
         }
     }

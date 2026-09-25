@@ -108,7 +108,6 @@ final class PromiseEffectP1Set
         'src/Analysis/Finding/Contract/Rule/RuleOptionsInterface.php' => 'contract stating acceptedOptionKeys()',
         'src/Analysis/Finding/Contract/Rule/LevelOptionsInterface.php' => 'contract stating a level slot key set',
         'src/Analysis/Finding/Contract/Rule/HierarchicalRuleOptionsInterface.php' => 'contract stating levelOptionsClasses(), the source of slot existence',
-        'src/Analysis/Evidence/ComputedMetrics/Configuration/ComputedMetricEntryKeys.php' => 'builds a RuleOptionKeySet for the user sub-tree and is owned by no producer',
         'src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php' => 'the consumer: refusal must read the declaration, not a substring of the key name',
         'src/Analysis/Finding/RuleConfiguration/RuleOptionKeyRecognition.php' => 'the consumer asking the set what it knows',
         'src/Analysis/Finding/Contract/Rule/RuleOptionRefusalWording.php' => 'the words of every rule-option refusal, including the one about a value\'s form',

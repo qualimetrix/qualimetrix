@@ -15,7 +15,7 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\PathPattern;
-use Qualimetrix\Tests\Analysis\Run\Support\Configuration\LayeredDocument;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 final class RunConfigurationResolverTest extends TestCase
 {

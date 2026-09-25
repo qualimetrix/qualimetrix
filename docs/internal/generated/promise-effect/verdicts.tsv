@@ -5901,14 +5901,14 @@ D	form|yaml|architecture.allow.<layer>[*].target|map	map	report	NOT OBSERVABLE	n
 D	form|yaml|architecture.allow.<layer>[*].target|null	null	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
 D	form|yaml|architecture.allow.<layer>[*].target|string-nonnumber	string-nonnumber	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
 D	form|yaml|architecture.allow.<layer>[*].target|string-number	string-number	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>|bool	bool	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>|float	float	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>|int	int	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>|bool	bool	report	REFUSES	no	DECIDED	refused
+D	form|yaml|architecture.allow.<layer>|float	float	report	REFUSES	no	DECIDED	refused
+D	form|yaml|architecture.allow.<layer>|int	int	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.allow.<layer>|list	list	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>|map	map	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>|map	map	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.allow.<layer>|null	null	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>|string-nonnumber	string-nonnumber	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>|string-number	string-number	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>|string-nonnumber	string-nonnumber	report	REFUSES	no	DECIDED	refused
+D	form|yaml|architecture.allow.<layer>|string-number	string-number	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.allow|bool	bool	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.allow|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.allow|int	int	report	REFUSES	no	PROMISED	refused
@@ -6013,11 +6013,11 @@ D	form|yaml|architecture.layers[*].match|map	map	report	REFUSES	no	DECIDED	refus
 D	form|yaml|architecture.layers[*].match|null	null	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
 D	form|yaml|architecture.layers[*].match|string-nonnumber	string-nonnumber	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.layers[*].match|string-number	string-number	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.layers[*].name|bool	bool	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
-D	form|yaml|architecture.layers[*].name|float	float	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
-D	form|yaml|architecture.layers[*].name|int	int	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
-D	form|yaml|architecture.layers[*].name|list	list	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
-D	form|yaml|architecture.layers[*].name|map	map	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.layers[*].name|bool	bool	report	REFUSES	no	DECIDED	refused
+D	form|yaml|architecture.layers[*].name|float	float	report	REFUSES	no	DECIDED	refused
+D	form|yaml|architecture.layers[*].name|int	int	report	REFUSES	no	DECIDED	refused
+D	form|yaml|architecture.layers[*].name|list	list	report	REFUSES	no	DECIDED	refused
+D	form|yaml|architecture.layers[*].name|map	map	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.layers[*].name|null	null	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
 D	form|yaml|architecture.layers[*].name|string-nonnumber	string-nonnumber	report	OK	no	DECIDED	effect distinguishable and the producer reachable
 D	form|yaml|architecture.layers[*].name|string-number	string-number	report	REFUSES	no	DECIDED	refused

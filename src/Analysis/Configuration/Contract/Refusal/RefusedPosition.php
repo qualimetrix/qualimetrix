@@ -16,14 +16,22 @@ namespace Qualimetrix\Analysis\Configuration\Contract\Refusal;
 final readonly class RefusedPosition
 {
     /**
-     * @param list<string> $segments
-     * @param list<string> $accepted
+     * @param list<string> $segments path of the key, top to bottom
+     * @param string $written what was rejected, as the throw site holds it: the
+     *                        last segment as written for anything the document
+     *                        engine refuses, the required key's name when that
+     *                        key is missing
+     * @param list<string> $accepted spellings accepted at this position, in the
+     *                               order and spelling the throw site gave them;
+     *                               empty for {@see self::open()}
+     * @param bool $closed true for {@see self::closed()}, false for {@see self::open()};
+     *                     read, not set independently of the form
      */
     private function __construct(
-        private array $segments,
-        private string $written,
-        private array $accepted,
-        private bool $closed,
+        public array $segments,
+        public string $written,
+        public array $accepted,
+        public bool $closed,
     ) {}
 
     /**
@@ -52,38 +60,5 @@ final readonly class RefusedPosition
     public static function open(array $segments, string $written): self
     {
         return new self($segments, $written, [], false);
-    }
-
-    /** @return list<string> */
-    public function segments(): array
-    {
-        return $this->segments;
-    }
-
-    /**
-     * What was rejected, as the throw site holds it: the last segment as
-     * written for anything the document engine refuses, the required key's
-     * name when that key is missing.
-     */
-    public function written(): string
-    {
-        return $this->written;
-    }
-
-    /**
-     * Spellings accepted at this position, in the order and spelling the throw
-     * site gave them; empty for {@see self::open()}.
-     *
-     * @return list<string>
-     */
-    public function accepted(): array
-    {
-        return $this->accepted;
-    }
-
-    /** True for {@see self::closed()}, false for {@see self::open()}. Read, not set independently of the form. */
-    public function isClosed(): bool
-    {
-        return $this->closed;
     }
 }

@@ -387,7 +387,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
             {
                 throw $this->refusal;
             }
-        });
+        }, new ErrorStream());
     }
 
     private function realRuntimeConfigurator(): RuntimeConfigurator

@@ -65,9 +65,9 @@ final class DocumentPhaseTest extends TestCase
 
         self::assertSame([ConfigurationSource::ConfigFile], self::kinds($refusal));
         self::assertSame('/p/qmx.yaml', $refusal->origin()->locator());
-        self::assertSame($path, $refusal->position()?->segments());
-        self::assertSame($written, $refusal->position()->written());
-        self::assertTrue($refusal->position()->isClosed());
+        self::assertSame($path, $refusal->position()?->segments);
+        self::assertSame($written, $refusal->position()->written);
+        self::assertTrue($refusal->position()->closed);
         self::assertStringContainsString(\sprintf('"%s"', implode('.', $path)), $refusal->summary());
     }
 
@@ -116,8 +116,8 @@ final class DocumentPhaseTest extends TestCase
     {
         $refusal = self::refusal(static fn() => SampleDocument::compose(SampleDocument::file($document)));
 
-        self::assertSame($path, $refusal->position()?->segments());
-        self::assertSame([$canonical], $refusal->position()->accepted());
+        self::assertSame($path, $refusal->position()?->segments);
+        self::assertSame([$canonical], $refusal->position()->accepted);
         self::assertStringContainsString(\sprintf('write "%s"', $canonical), $refusal->summary());
     }
 
@@ -145,7 +145,7 @@ final class DocumentPhaseTest extends TestCase
         $refusal = self::refusal(static fn() => SampleDocument::compose(SampleDocument::file(['fail_on' => 'error', 'failOn' => 'warning'])));
 
         self::assertStringContainsString('"fail_on" and "failOn"', $refusal->summary());
-        self::assertSame(['failOn'], $refusal->position()?->segments());
+        self::assertSame(['failOn'], $refusal->position()?->segments);
     }
 
     #[Test]
@@ -157,7 +157,7 @@ final class DocumentPhaseTest extends TestCase
         ));
 
         self::assertSame('strict', $refusal->origin()->locator());
-        self::assertSame(['cache', 'enabled'], $refusal->position()?->segments());
+        self::assertSame(['cache', 'enabled'], $refusal->position()?->segments);
         self::assertStringContainsString('must be boolean, got string', $refusal->summary());
     }
 
@@ -171,7 +171,7 @@ final class DocumentPhaseTest extends TestCase
     {
         $refusal = self::refusal(static fn() => SampleDocument::compose(SampleDocument::file($document)));
 
-        self::assertSame($path, $refusal->position()?->segments());
+        self::assertSame($path, $refusal->position()?->segments);
         self::assertStringContainsString($message, $refusal->summary());
     }
 
@@ -207,7 +207,7 @@ final class DocumentPhaseTest extends TestCase
         ));
 
         self::assertSame('/p/qmx.yaml', $refusal->origin()->locator());
-        self::assertSame(['computed_metrics', 'health.x', 'threshold'], $refusal->position()?->segments());
+        self::assertSame(['computed_metrics', 'health.x', 'threshold'], $refusal->position()?->segments);
         self::assertStringContainsString('both "threshold" and "warning"', $refusal->summary());
     }
 
@@ -231,8 +231,8 @@ final class DocumentPhaseTest extends TestCase
         ));
 
         self::assertSame([ConfigurationSource::ConfigFile], self::kinds($refusal));
-        self::assertSame(['architecture', 'allow', 'infr'], $refusal->position()?->segments());
-        self::assertSame(['domain', 'infra'], $refusal->position()->accepted());
+        self::assertSame(['architecture', 'allow', 'infr'], $refusal->position()?->segments);
+        self::assertSame(['domain', 'infra'], $refusal->position()->accepted);
         self::assertStringContainsString('(did you mean "infra"?)', $refusal->summary());
     }
 
@@ -243,7 +243,7 @@ final class DocumentPhaseTest extends TestCase
             SampleDocument::file(['architecture' => ['layers' => [['name' => 'domain']], 'allow' => ['infra' => null]]]),
         ));
 
-        self::assertSame(['architecture', 'allow', 'infra'], $refusal->position()?->segments());
+        self::assertSame(['architecture', 'allow', 'infra'], $refusal->position()?->segments);
         self::assertSame('/p/qmx.yaml', $refusal->origin()->locator());
     }
 
@@ -256,7 +256,7 @@ final class DocumentPhaseTest extends TestCase
         ));
 
         self::assertSame(['strict', '/p/qmx.yaml'], array_map(static fn(ConfigurationOrigin $origin): ?string => $origin->locator(), $refusal->sources()));
-        self::assertSame([], $refusal->position()?->accepted(), 'No layer is declared, so nothing is accepted.');
+        self::assertSame([], $refusal->position()?->accepted, 'No layer is declared, so nothing is accepted.');
     }
 
     #[Test]
@@ -289,7 +289,7 @@ final class DocumentPhaseTest extends TestCase
         self::assertSame([['x' => 1]], $admitted->get('legacy_root')->plain());
 
         $refusal = self::refusal(static fn() => DocumentComposer::compose(SampleDocument::schema(), [$layer]));
-        self::assertSame(['legacy_root'], $refusal->position()?->segments());
+        self::assertSame(['legacy_root'], $refusal->position()?->segments);
     }
 
     #[Test]
@@ -300,7 +300,7 @@ final class DocumentPhaseTest extends TestCase
             [SampleDocument::file(['Paths' => ['src']])],
         ));
 
-        self::assertSame(['paths'], $refusal->position()?->accepted());
+        self::assertSame(['paths'], $refusal->position()?->accepted);
     }
 
     #[Test]

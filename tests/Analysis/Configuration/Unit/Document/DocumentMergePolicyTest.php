@@ -230,7 +230,7 @@ final class DocumentMergePolicyTest extends TestCase
 
         self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
         self::assertSame(['strict', '/p/qmx.yaml'], array_map(static fn($origin): ?string => $origin->locator(), $refusal->sources()));
-        self::assertSame(['cache'], $refusal->position()?->segments());
+        self::assertSame(['cache'], $refusal->position()?->segments);
     }
 
     #[Test]
@@ -246,7 +246,7 @@ final class DocumentMergePolicyTest extends TestCase
         self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
         self::assertSame(['/p/qmx.yaml'], array_map(static fn($origin): ?string => $origin->locator(), $refusal->sources()));
         self::assertSame(ConfigurationSource::ConfigFile, $refusal->origin()->source());
-        self::assertSame(['memory_limit'], $refusal->position()?->segments());
+        self::assertSame(['memory_limit'], $refusal->position()?->segments);
     }
 
     private static function scalar(?ResolvedValueInterface $value): ResolvedScalar

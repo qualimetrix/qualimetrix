@@ -75,9 +75,9 @@ final class DocumentRootsIntegrationTest extends TestCase
 
         self::assertStringStartsWith(\sprintf('Key "%s" in configuration file', Provenance::display($path)), $refusal->summary());
         self::assertStringContainsString(\sprintf('write "%s"', $canonical), $refusal->summary());
-        self::assertSame($path, $refusal->position()?->segments());
-        self::assertSame($written, $refusal->position()->written());
-        self::assertSame([$canonical], $refusal->position()->accepted());
+        self::assertSame($path, $refusal->position()?->segments);
+        self::assertSame($written, $refusal->position()->written);
+        self::assertSame([$canonical], $refusal->position()->accepted);
     }
 
     /**
@@ -94,8 +94,8 @@ final class DocumentRootsIntegrationTest extends TestCase
             \sprintf('"%s" in configuration file "%s" must be boolean, got int.', $key, $this->directory . '/qmx.yaml'),
             $refusal->summary(),
         );
-        self::assertSame([$key], $refusal->position()?->segments());
-        self::assertSame($key, $refusal->position()->written());
+        self::assertSame([$key], $refusal->position()?->segments);
+        self::assertSame($key, $refusal->position()->written);
         self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
     }
 

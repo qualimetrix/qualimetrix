@@ -40,8 +40,8 @@ final class RetiredSuppressionOptionsTest extends TestCase
             self::assertSame(ConfigurationSource::CommandLine, $e->origin()->source());
             self::assertSame('--rule-opt', $e->origin()->locator());
             self::assertNotNull($e->position());
-            self::assertSame('exclude_paths', $e->position()->written());
-            self::assertFalse($e->position()->isClosed());
+            self::assertSame('exclude_paths', $e->position()->written);
+            self::assertFalse($e->position()->closed);
         }
     }
 
@@ -81,8 +81,8 @@ final class RetiredSuppressionOptionsTest extends TestCase
             self::assertSame(ConfigurationSource::ConfigFile, $e->origin()->source());
             self::assertSame('/tmp/qmx.yaml', $e->origin()->locator());
             self::assertNotNull($e->position());
-            self::assertSame('exclude_paths', $e->position()->written());
-            self::assertFalse($e->position()->isClosed());
+            self::assertSame('exclude_paths', $e->position()->written);
+            self::assertFalse($e->position()->closed);
         }
     }
 
@@ -100,8 +100,8 @@ final class RetiredSuppressionOptionsTest extends TestCase
             self::assertSame(ConfigurationSource::ConfigFile, $e->origin()->source());
             self::assertSame('/tmp/qmx.yaml', $e->origin()->locator());
             self::assertNotNull($e->position());
-            self::assertSame('exclude_namespaces', $e->position()->written());
-            self::assertSame(['rules', 'exclude_namespaces'], $e->position()->segments());
+            self::assertSame('exclude_namespaces', $e->position()->written);
+            self::assertSame(['rules', 'exclude_namespaces'], $e->position()->segments);
         }
     }
 }

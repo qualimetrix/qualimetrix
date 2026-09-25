@@ -172,7 +172,7 @@ final class ComputedMetricLayeringTest extends TestCase
     {
         $refusal = $this->refusal(self::file(['computed_metrics' => $section]));
 
-        self::assertSame($path, $refusal->position()?->segments());
+        self::assertSame($path, $refusal->position()?->segments);
         self::assertStringStartsWith('Unknown key', $refusal->summary());
         self::assertSame(ConfigurationSource::ConfigFile, $refusal->origin()->source());
     }
@@ -187,7 +187,7 @@ final class ComputedMetricLayeringTest extends TestCase
         );
 
         self::assertSame('preset "strict"', $refusal->origin()->describe());
-        self::assertSame(['computed_metrics', 'health.complexity', 'warnin'], $refusal->position()?->segments());
+        self::assertSame(['computed_metrics', 'health.complexity', 'warnin'], $refusal->position()?->segments);
     }
 
     #[Test]
@@ -218,8 +218,8 @@ final class ComputedMetricLayeringTest extends TestCase
 
         self::assertStringContainsString('"health.typng" is not a known "health.*" dimension', $refusal->summary());
         self::assertSame(['preset "strict"'], self::described($refusal));
-        self::assertTrue($refusal->position()?->isClosed());
-        self::assertContains('health.typing', $refusal->position()->accepted());
+        self::assertTrue($refusal->position()?->closed);
+        self::assertContains('health.typing', $refusal->position()->accepted);
     }
 
     #[Test]
@@ -232,7 +232,7 @@ final class ComputedMetricLayeringTest extends TestCase
 
         self::assertStringContainsString('Invalid formula syntax', $refusal->summary());
         self::assertSame(['preset "strict"'], self::described($refusal));
-        self::assertSame(['computed_metrics', 'computed.x', 'formula'], $refusal->position()?->segments());
+        self::assertSame(['computed_metrics', 'computed.x', 'formula'], $refusal->position()?->segments);
     }
 
     #[Test]
@@ -253,7 +253,7 @@ final class ComputedMetricLayeringTest extends TestCase
         $refusal = $this->refusal(self::file(['computed_metrics' => ['computed.x' => ['formula' => '4', 'levels' => ['project', 'callable']]]]));
 
         self::assertStringContainsString('"callable" is not supported', $refusal->summary());
-        self::assertSame(['computed_metrics', 'computed.x', 'levels', '1'], $refusal->position()?->segments());
+        self::assertSame(['computed_metrics', 'computed.x', 'levels', '1'], $refusal->position()?->segments);
     }
 
     #[Test]
@@ -278,7 +278,7 @@ final class ComputedMetricLayeringTest extends TestCase
 
         self::assertStringStartsWith('Unknown health dimension "typng" in "exclude_health[1]" in configuration file "/p/qmx.yaml".', $refusal->summary());
         self::assertStringNotContainsString('--exclude-health', $refusal->summary());
-        self::assertSame(['exclude_health', '1'], $refusal->position()?->segments());
+        self::assertSame(['exclude_health', '1'], $refusal->position()?->segments);
     }
 
     #[Test]
@@ -295,7 +295,7 @@ final class ComputedMetricLayeringTest extends TestCase
     {
         $refusal = $this->refusal(self::file(['exclude_health' => [null]]));
 
-        self::assertSame(['exclude_health', '0'], $refusal->position()?->segments());
+        self::assertSame(['exclude_health', '0'], $refusal->position()?->segments);
     }
 
     #[Test]

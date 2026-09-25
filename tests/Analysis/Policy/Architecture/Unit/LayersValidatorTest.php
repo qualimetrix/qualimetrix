@@ -261,7 +261,7 @@ final class LayersValidatorTest extends TestCase
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
             self::assertSame(ArchitectureDocument::FILE, $e->origin()->locator());
-            self::assertSame(['architecture', 'layers', '0', 'sufix'], $e->position()?->segments());
+            self::assertSame(['architecture', 'layers', '0', 'sufix'], $e->position()?->segments);
             self::assertStringContainsString('did you mean "suffix"', $e->getMessage());
         }
     }
@@ -1256,7 +1256,7 @@ final class LayersValidatorTest extends TestCase
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
             self::assertSame(ArchitectureDocument::FILE, $e->origin()->locator());
-            self::assertSame(['architecture', 'layers', '0', 'exclude', 'sufix'], $e->position()?->segments());
+            self::assertSame(['architecture', 'layers', '0', 'exclude', 'sufix'], $e->position()?->segments);
         }
     }
 

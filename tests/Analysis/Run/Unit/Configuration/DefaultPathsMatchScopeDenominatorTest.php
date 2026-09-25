@@ -19,7 +19,7 @@ use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Tests\Analysis\Run\Support\Configuration\LayeredDocument;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;

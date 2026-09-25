@@ -1,6 +1,6 @@
 {
   "version": 13,
-  "generated": "2026-09-24T15:24:55+00:00",
+  "generated": "2026-09-25T12:26:17+00:00",
   "scope": ["src"],
   "entries": {
     "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomOptions::fromArray@src/Analysis/Evidence/Cohesion/LcomOptions.php": [
@@ -217,7 +217,6 @@
       {"channel":"code-smell.boolean-argument","occurrence":"79aecf1e084dd904","count":1}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Configuration\\Loader\\YamlConfigLoader@src/Analysis/Configuration/Loader/YamlConfigLoader.php": [
-      {"channel":"complexity.wmc","magnitudes":[57]},
       {"channel":"health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyOptions@src/Analysis/Evidence/CircularDependency/CircularDependencyOptions.php": [
@@ -318,9 +317,6 @@
     ],
     "declaration:class:Qualimetrix\\Reporting\\Health\\SummaryEnricher@src/Reporting/Health/SummaryEnricher.php": [
       {"channel":"coupling.instability","magnitudes":[0.818182]}
-    ],
-    "ns:Qualimetrix\\Analysis\\Configuration\\Contract": [
-      {"channel":"health.cohesion","magnitudes":[36.5]}
     ],
     "ns:Qualimetrix\\Analysis\\Configuration\\Pipeline\\Stage": [
       {"channel":"health.cohesion","magnitudes":[25]}

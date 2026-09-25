@@ -6,7 +6,6 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use InvalidArgumentException;
 use LogicException;
-use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaque;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
@@ -91,16 +90,16 @@ final class ArchitectureConfigurationFactory
      */
     public function fromResolved(ResolvedDocument $document): ArchitectureFactoryResult
     {
-        $node = $document->get(ConfigSchema::ARCHITECTURE);
+        $node = $document->get(ArchitectureSection::KEY);
         if ($node instanceof ResolvedOpaque) {
             throw new LogicException(\sprintf(
                 'The "%s" section reached the configuration document undeclared; %s must be registered with the configuration pipeline.',
-                ConfigSchema::ARCHITECTURE,
+                ArchitectureSection::KEY,
                 ArchitectureSection::class,
             ));
         }
 
-        return $this->fromSection(SectionSpot::section(ConfigSchema::ARCHITECTURE, $node));
+        return $this->fromSection(SectionSpot::section(ArchitectureSection::KEY, $node));
     }
 
     private function fromSection(SectionSpot $section): ArchitectureFactoryResult
