@@ -113,7 +113,7 @@ final class TreeRun
         // The file this command writes is the surface. Its stdout is not: it
         // echoes the path the gate itself chose, which differs per run by
         // construction and belongs to no tree. Its absence is not silence
-        // either: Gate::checkBaselineSurfaces fails on an empty one, so two
+        // either: CaseOutcomeCheck::checkBaselineSurface fails on an empty one, so two
         // failed runs cannot agree by both producing nothing.
         $artifacts = [
             Surfaces::key($scope, 'baseline-file') => is_file($file) ? Fs::read($file) : '',

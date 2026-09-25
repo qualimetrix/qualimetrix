@@ -39,10 +39,7 @@ final class WitnessRegistry
      */
     public static function requiredByControls(): array
     {
-        // The controls harness has no loader of its own; this is its entry point's list.
-        foreach (['Shell', 'Scratch', 'Mutation', 'Expectation', 'Control', 'Outcome', 'Controls'] as $part) {
-            require_once \dirname(__DIR__) . '/finding-gate-controls/' . $part . '.php';
-        }
+        require_once \dirname(__DIR__) . '/finding-gate-controls/classes.php';
 
         $required = [];
 
