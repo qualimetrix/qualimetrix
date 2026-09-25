@@ -108,22 +108,36 @@ function sections(): array
 
 /**
  * One row per node an author writes: every key of a map, every named entry and
- * every shorthand. A list's items are values taken whole with their list, so a
- * walk stops at the list.
+ * every shorthand, and the keys of a list item that is a map, under `<list>[]`.
+ * An item's keys never merge — the list is taken whole from the layer that
+ * wrote it — so their rows say what `~` and an empty value mean inside the item.
  *
- * @param list<array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string}> $rows
+ * @param list<array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string, inItem: bool}> $rows
  *
- * @return list<array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string}>
+ * @return list<array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string, inItem: bool}>
  */
-function walk(NodeSchema $node, string $path, string $kind, string $parent, array $rows): array
+function walk(NodeSchema $node, string $path, string $kind, string $parent, array $rows, bool $inItem = false): array
 {
-    $rows[] = ['path' => $path, 'node' => $node, 'kind' => $kind, 'shorthand' => null, 'parent' => $parent];
+    $rows[] = ['path' => $path, 'node' => $node, 'kind' => $kind, 'shorthand' => null, 'parent' => $parent, 'inItem' => $inItem];
 
+    return below($node, $path, $rows, $inItem);
+}
+
+/**
+ * The rows under a node: its keys and shorthands, its named entries, the keys
+ * of its list items.
+ *
+ * @param list<array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string, inItem: bool}> $rows
+ *
+ * @return list<array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string, inItem: bool}>
+ */
+function below(NodeSchema $node, string $path, array $rows, bool $inItem): array
+{
     if ($node->policy === MergePolicy::DeepMerge) {
         $fields = $node->fields();
 
         foreach ($fields as $key => $child) {
-            $rows = walk($child, $path . '.' . $key, KEY, $path, $rows);
+            $rows = walk($child, $path . '.' . $key, KEY, $path, $rows, $inItem);
         }
 
         foreach ($node->shorthands() as $shorthand) {
@@ -133,12 +147,18 @@ function walk(NodeSchema $node, string $path, string $kind, string $parent, arra
                 'kind' => SHORTHAND,
                 'shorthand' => $shorthand,
                 'parent' => $path,
+                'inItem' => $inItem,
             ];
         }
     }
 
     if ($node->policy === MergePolicy::ByName) {
-        $rows = walk($node->element(), $path . '.<name>', ENTRY, $path, $rows);
+        $rows = walk($node->element(), $path . '.<name>', ENTRY, $path, $rows, $inItem);
+    }
+
+    $isList = $node->policy === MergePolicy::Replace || $node->policy === MergePolicy::Accumulate;
+    if ($isList && $node->element()->policy === MergePolicy::DeepMerge) {
+        $rows = below($node->element(), $path . '[]', $rows, true);
     }
 
     return $rows;
@@ -212,7 +232,7 @@ function vocabulary(?NameVocabulary $names, string $parent, string $language): s
     return ($ru ? 'одно из: ' : 'one of: ') . $fixed;
 }
 
-/** @param array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string} $row */
+/** @param array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string, inItem: bool} $row */
 function valueCell(array $row, string $language): string
 {
     $node = $row['node'];
@@ -251,10 +271,16 @@ function policy(MergePolicy $policy, string $language): string
     };
 }
 
-/** @param array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string} $row */
+/** @param array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string, inItem: bool} $row */
 function acrossCell(array $row, string $language): string
 {
     $shorthand = $row['shorthand'];
+
+    if ($row['inItem'] && $shorthand === null) {
+        return $language === 'ru'
+            ? 'Читается из слоя, записавшего список; между слоями не сливается.'
+            : 'Read from the layer that wrote the list; never merged across layers.';
+    }
 
     if ($shorthand === null) {
         return policy($row['node']->policy, $language);
@@ -267,13 +293,15 @@ function acrossCell(array $row, string $language): string
         : \sprintf('Shorthand for %s: expanded in the layer that wrote it, before any merge; each key then merges on its own. Writing it beside one of them in the same layer is refused.', $targets);
 }
 
-/** @param array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string} $row */
+/** @param array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string, inItem: bool} $row */
 function tildeCell(array $row, string $language): string
 {
     $ru = $language === 'ru';
-    $cell = $row['kind'] === ENTRY
-        ? ($ru ? 'Имя проверяется; тело остаётся за нижним слоем.' : 'The name is judged; the body stays with the layer below.')
-        : ($ru ? 'Не записано: остаётся значение нижнего слоя.' : 'Not written: the layer below stands.');
+    $cell = match (true) {
+        $row['inItem'] => $ru ? 'Не записано: как если бы ключа не было.' : 'Not written: as if the key were absent.',
+        $row['kind'] === ENTRY => $ru ? 'Имя проверяется; тело остаётся за нижним слоем.' : 'The name is judged; the body stays with the layer below.',
+        default => $ru ? 'Не записано: остаётся значение нижнего слоя.' : 'Not written: the layer below stands.',
+    };
 
     $node = $row['node'];
     $isList = $node->policy === MergePolicy::Replace || $node->policy === MergePolicy::Accumulate;
@@ -285,11 +313,20 @@ function tildeCell(array $row, string $language): string
     return $cell;
 }
 
-/** @param array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string} $row */
+/** @param array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string, inItem: bool} $row */
 function emptyCell(array $row, string $language): string
 {
     $node = $row['node'];
     $ru = $language === 'ru';
+
+    if ($row['inItem']) {
+        return match ($node->policy) {
+            MergePolicy::LastWriterWins => $ru ? 'Отказ: ожидается скаляр.' : 'Refused: a scalar is expected.',
+            MergePolicy::DeepMerge, MergePolicy::ByName => $ru ? 'Ничего не записывает: как если бы ключа не было.' : 'Writes nothing: as if the key were absent.',
+            MergePolicy::Replace, MergePolicy::Accumulate => $ru ? 'Пустой список.' : 'An empty list.',
+            MergePolicy::PerLayer => $ru ? 'Решает владелец.' : 'Its owner decides.',
+        };
+    }
 
     return match ($node->policy) {
         MergePolicy::LastWriterWins => $ru ? 'Отказ: ожидается скаляр.' : 'Refused: a scalar is expected.',
@@ -304,7 +341,7 @@ function emptyCell(array $row, string $language): string
 }
 
 /**
- * @param list<array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string}> $rows
+ * @param list<array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string, inItem: bool}> $rows
  */
 function table(array $rows, string $language): string
 {

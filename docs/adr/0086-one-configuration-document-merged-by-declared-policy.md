@@ -44,8 +44,10 @@ registered in the container — the port belongs to its consumer (ADR 0022), and
 the engine never branches on an owner.
 
 **2. One engine, in a fixed order of phases.** (1) Each layer alone: every key
-with a literal dictionary is recognised, every written value's form judged, and
-shorthands expanded into their full keys — before any merge, so a lower layer's
+with a literal dictionary is recognised, every written value's form judged —
+below a node the engine carries unread (an `architecture` criterion or allow
+target, written in more than one shape), by a judgement its owner declares on
+the node — and shorthands expanded into their full keys — before any merge, so a lower layer's
 mistake is refused even when a higher layer overrides it, and a misspelt key is
 refused whatever its value, `~` included. (2) The layers merge by each node's
 policy. (3) Names whose dictionary is another node are judged once that node is
@@ -77,7 +79,8 @@ prints it on stderr, and the JSON report publishes it under
 `configurationDiagnostics`.
 
 **6. The author's table is generated.** The table of every node's policy, what
-`~` and an empty value mean there, and its shorthands is generated from the
+`~` and an empty value mean there — inside a list item too — and its shorthands
+is generated from the
 declarations into the configuration page, both languages, and a freshness check
 in `check:artifacts` fails when a declaration changes and the page does not.
 

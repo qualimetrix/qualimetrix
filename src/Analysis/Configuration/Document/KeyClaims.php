@@ -19,41 +19,22 @@ final class KeyClaims
     private function __construct(
         private readonly array $dictionary,
         private readonly ReadingContext $at,
-        private readonly bool $admitsUndeclared,
     ) {}
 
     /** @param list<string> $dictionary canonical keys */
     public static function of(array $dictionary, ReadingContext $at): self
     {
-        return new self($dictionary, $at, false);
-    }
-
-    /**
-     * A map that carries a key its dictionary does not declare instead of
-     * refusing it.
-     *
-     * @param list<string> $dictionary canonical keys
-     */
-    public static function admittingUndeclared(array $dictionary, ReadingContext $at): self
-    {
-        return new self($dictionary, $at, true);
+        return new self($dictionary, $at);
     }
 
     /**
      * @throws ConfigurationRefusal for a key the map does not accept, or a second spelling of a claimed one
      *
-     * @return ?string the canonical key; null for an undeclared key the map admits
+     * @return string the canonical key
      */
-    public function claim(string $written, AuthoredNode $node): ?string
+    public function claim(string $written, AuthoredNode $node): string
     {
-        $keyAt = $this->at->child($written, $written, $node);
-        $canonical = $this->admitsUndeclared
-            ? KeyRecognition::recogniseIfDeclared($written, $this->dictionary, $keyAt)
-            : KeyRecognition::recognise($written, $this->dictionary, $keyAt);
-
-        if ($canonical === null) {
-            return null;
-        }
+        $canonical = KeyRecognition::recognise($written, $this->dictionary, $this->at->child($written, $written, $node));
 
         $first = $this->claimed[$canonical] ?? null;
         if ($first !== null) {

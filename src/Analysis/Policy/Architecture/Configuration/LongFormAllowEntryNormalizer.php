@@ -52,6 +52,39 @@ final class LongFormAllowEntryNormalizer
      */
     public static function normalize(string $source, int $index, SectionSpot $entry): array
     {
+        [$keys, $targetRaw] = self::judgeKeysAndTarget($source, $index, $entry);
+
+        return [
+            $targetRaw,
+            self::parseAllowCrossInstanceFlag($source, $index, $entry->child($keys['allow_cross_instance'] ?? 'allow_cross_instance')),
+            self::parseRelations($source, $index, $entry->child($keys['relations'] ?? 'relations')),
+        ];
+    }
+
+    /**
+     * The form of a long-form entry as one configuration layer wrote it: its
+     * keys, a non-empty `target`, a boolean flag and a relation list of
+     * strings. Whether the target selector parses and each relation is a
+     * known kind is judged on the merged value, by {@see normalize()}.
+     *
+     * @throws ConfigurationRefusal naming the layer that wrote the entry
+     */
+    public static function judgeForm(string $source, int $index, SectionSpot $entry): void
+    {
+        [$keys] = self::judgeKeysAndTarget($source, $index, $entry);
+        self::parseAllowCrossInstanceFlag($source, $index, $entry->child($keys['allow_cross_instance'] ?? 'allow_cross_instance'));
+
+        $relations = $entry->child($keys['relations'] ?? 'relations');
+        if ($relations->isWritten()) {
+            self::relationTokens($relations, \sprintf('architecture.allow.%s[%d]', $source, $index));
+        }
+    }
+
+    /**
+     * @return array{array<string, string>, string} the recognised keys and the written target
+     */
+    private static function judgeKeysAndTarget(string $source, int $index, SectionSpot $entry): array
+    {
         $keys = self::recogniseKeys($source, $index, $entry);
 
         $target = $entry->child($keys['target'] ?? 'target');
@@ -64,11 +97,7 @@ final class LongFormAllowEntryNormalizer
             ));
         }
 
-        return [
-            $targetRaw,
-            self::parseAllowCrossInstanceFlag($source, $index, $entry->child($keys['allow_cross_instance'] ?? 'allow_cross_instance')),
-            self::parseRelations($source, $index, $entry->child($keys['relations'] ?? 'relations')),
-        ];
+        return [$keys, $targetRaw];
     }
 
     /**
@@ -102,10 +131,30 @@ final class LongFormAllowEntryNormalizer
      */
     public static function parseRelationList(SectionSpot $relations, string $context): ?array
     {
-        $raw = $relations->value();
-        if ($raw === null) {
+        if (!$relations->isWritten()) {
             return null;
         }
+
+        $expanded = [];
+        foreach (self::relationTokens($relations, $context) as $index => $token) {
+            foreach (self::expandToken($relations->child($index), $token, $context) as $type) {
+                $expanded[$type->value] ??= $type;
+            }
+        }
+
+        return array_values($expanded);
+    }
+
+    /**
+     * The form of a written relation list: a non-empty list of non-empty strings.
+     *
+     * @throws ConfigurationRefusal through the layer that wrote the list
+     *
+     * @return list<string>
+     */
+    private static function relationTokens(SectionSpot $relations, string $context): array
+    {
+        $raw = $relations->value();
 
         if (!\is_array($raw) || !array_is_list($raw)) {
             throw $relations->refusal(\sprintf('%s.relations: must be a list of relation kinds or aliases.', $context));
@@ -120,23 +169,21 @@ final class LongFormAllowEntryNormalizer
             ));
         }
 
-        $expanded = [];
+        $tokens = [];
         foreach ($raw as $index => $token) {
-            foreach (self::expandToken($relations->child($index), $token, $context, $index) as $type) {
-                $expanded[$type->value] ??= $type;
+            if (!\is_string($token) || $token === '') {
+                throw $relations->child($index)->refusal(\sprintf('%s.relations[%d]: each entry must be a non-empty string.', $context, $index));
             }
+
+            $tokens[] = $token;
         }
 
-        return array_values($expanded);
+        return $tokens;
     }
 
     /** @return non-empty-list<DependencyType> */
-    private static function expandToken(SectionSpot $spot, mixed $token, string $context, int $index): array
+    private static function expandToken(SectionSpot $spot, string $token, string $context): array
     {
-        if (!\is_string($token) || $token === '') {
-            throw $spot->refusal(\sprintf('%s.relations[%d]: each entry must be a non-empty string.', $context, $index));
-        }
-
         return AllowAliasExpander::expand($token)
             ?? throw $spot->refusal(AllowAliasExpander::unknownTokenMessage($context, $token), AllowAliasExpander::acceptedTokens(), $token);
     }

@@ -17,7 +17,7 @@ use ReflectionClass;
 use ReflectionMethod;
 
 /**
- * Static guard for YAML key reachability through {@see YamlConfigLoader::load()}.
+ * Static guard for YAML key reachability through {@see YamlConfigLoader::read()}.
  *
  * This test exists because of three recurring bugs caused by the loader's
  * default snake_case → camelCase normalization model:
@@ -33,7 +33,7 @@ use ReflectionMethod;
  * entry), this test:
  *
  *  - Writes a minimal YAML containing the key at its documented path.
- *  - Loads it through {@see YamlConfigLoader::load()} (the same entry point
+ *  - Loads it through {@see YamlConfigLoader::read()} (the same entry point
  *    used by {@see \Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage}).
  *  - Asserts the key reaches the expected post-normalization path with the
  *    expected value.
@@ -693,7 +693,9 @@ final class YamlKeyReachabilityTest extends TestCase
         $path = $this->tempDir . '/config_' . bin2hex(random_bytes(6)) . '.yaml';
         file_put_contents($path, $yaml);
 
-        return $this->loader->load($path);
+        $loaded = $this->loader->read($path);
+
+        return $loaded->deferredRefusal === null ? $loaded->values : throw $loaded->deferredRefusal;
     }
 
     /**

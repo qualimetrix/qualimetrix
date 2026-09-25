@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Contract\Document\Schema;
 
+use Closure;
 use LogicException;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 
 /**
  * What one node of the configuration document may hold and how the layers
@@ -23,15 +25,18 @@ use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
  */
 final readonly class NodeSchema
 {
-    /** @param list<ScalarForm> $scalarForms */
+    /**
+     * @param list<ScalarForm> $scalarForms
+     * @param ?Closure(ResolvedValueInterface, list<string>): void $layerJudge
+     */
     private function __construct(
         public MergePolicy $policy,
         private array $scalarForms = [],
         private ?KeyDictionary $keys = null,
         private ?self $element = null,
         private ?NameVocabulary $names = null,
-        private ?string $emptyOverrideNotice = null,
-        private ?string $hint = null,
+        private NodeWording $wording = new NodeWording(),
+        private ?Closure $layerJudge = null,
     ) {}
 
     /** A scalar leaf written as one of `$forms`; no form accepts any scalar. */
@@ -95,7 +100,7 @@ final readonly class NodeSchema
             throw new LogicException('Only a replaced list can announce an empty override.');
         }
 
-        return new self($this->policy, $this->scalarForms, $this->keys, $this->element, $this->names, $notice, $this->hint);
+        return new self($this->policy, $this->scalarForms, $this->keys, $this->element, $this->names, $this->wording->with(emptyOverrideNotice: $notice), $this->layerJudge);
     }
 
     /**
@@ -105,7 +110,31 @@ final readonly class NodeSchema
      */
     public function withHint(string $hint): self
     {
-        return new self($this->policy, $this->scalarForms, $this->keys, $this->element, $this->names, $this->emptyOverrideNotice, $hint);
+        return new self($this->policy, $this->scalarForms, $this->keys, $this->element, $this->names, $this->wording->with(hint: $hint), $this->layerJudge);
+    }
+
+    /**
+     * A form the owner judges on every layer's written value of this node, in
+     * phase 1 before any merge — for what the engine carries unread below it —
+     * so a lower layer's mistake is refused even where a higher layer replaces
+     * the value. The judge receives the value as that one layer wrote it and
+     * the node's canonical path, and refuses by throwing.
+     *
+     * @param Closure(ResolvedValueInterface, list<string>): void $judge
+     */
+    public function judgedInEachLayer(Closure $judge): self
+    {
+        return new self($this->policy, $this->scalarForms, $this->keys, $this->element, $this->names, $this->wording, $judge);
+    }
+
+    /**
+     * The owner's judgement of each layer's value; null when the node declares none.
+     *
+     * @return ?Closure(ResolvedValueInterface, list<string>): void
+     */
+    public function layerJudge(): ?Closure
+    {
+        return $this->layerJudge;
     }
 
     /** @return list<ScalarForm> */
@@ -145,11 +174,11 @@ final readonly class NodeSchema
 
     public function emptyOverrideNotice(): ?string
     {
-        return $this->emptyOverrideNotice;
+        return $this->wording->emptyOverrideNotice;
     }
 
     public function hint(): ?string
     {
-        return $this->hint;
+        return $this->wording->hint;
     }
 }

@@ -986,6 +986,7 @@ Available tests:
  - Qualimetrix\Governance\FormatOptionKeys\OutputFormatSchemaConsistencyTest::itRejectsDocumentationOnlySchemaDrift
  - Qualimetrix\Governance\FormatOptionKeys\OutputFormatSchemaConsistencyTest::itRejectsProductOnlySchemaDrift
  - Qualimetrix\Governance\FrameworkClassification\FrameworkClassificationSiteCountTest::itPinsTheNumberOfClassificationSitesTheUniverseMirrors
+ - Qualimetrix\Governance\GeneratedArtifactFreshness\ConfigurationMergeTableFreshnessTest::itDescribesTheKeysInsideAListItem
  - Qualimetrix\Governance\GeneratedArtifactFreshness\ConfigurationMergeTableFreshnessTest::itMatchesWhatTheSectionDeclarationsGenerate
  - Qualimetrix\Governance\GeneratedArtifactFreshness\ConfigurationMergeTableFreshnessTest::itReddensOnAHandEditedCellInEitherLanguage
  - Qualimetrix\Governance\GeneratedArtifactFreshness\HtmlBundleFreshnessTest::itMatchesAFreshBuildOfHtmlReportSrc
@@ -1816,11 +1817,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itMergesAMapKeyByKeyAndNamesEveryContributor
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itMergesAllowByLayerNameAndReplacesTheTargetsOfEachLayer
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itMergesComputedMetricsByNameKeepingEveryPresetMetric
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itNamesTheLiftedFilterWhenAnotherEmptyListIsWrittenAbove
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itReadsAWrittenEmptyMapAsChangingNothing
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itRefusesAMergedNodeNamingEveryContributingLayer
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itRefusesAWinningLeafNamingOnlyTheLayerThatWonIt
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itReplacesAListWholeWithTheLastWrittenOne
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itReplacesAListWithAWrittenEmptyList
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itSaysNothingWhenAHigherLayerWritesTheFilterAgain
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itSaysNothingWhenAnEmptyListReplacesNothing
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itAcceptsEitherDeclaredScalarForm
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itAcceptsTheSnakeCamelAndKebabSpellingOfAKey"camel"
@@ -1828,7 +1831,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itAcceptsTheSnakeCamelAndKebabSpellingOfAKey"kebab canonical, snake written"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itAcceptsTheSnakeCamelAndKebabSpellingOfAKey"kebab"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itAcceptsTheSnakeCamelAndKebabSpellingOfAKey"snake"
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itCarriesAnUndeclaredRootThroughOnlyWhenAdmitted
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itAppliesTheSpellingRuleToARootNoOwnerDeclaredYet
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itCarriesAKnownRootNoOwnerDeclaredYetAndRefusesAnyOtherRoot
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itComposesNoLayersIntoAnEmptyDocument
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itJudgesANameDrawnFromTheDocumentAfterMergingTheLayersThatDeclareIt
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itLeavesAKeyOnlyEverWrittenAsTildeAbsent
@@ -1862,7 +1866,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAnyOtherSpellingOfAKeyWithTheCanonicalOne"upper-case fixed name"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesTwoSpellingsOfOneKeyInOneMapping
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRejectsASiblingVocabularyAnywhereBelowAListItemAsASchemaDefect
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itStillAppliesTheSpellingRuleToADeclaredRootWhenUndeclaredOnesAreAdmitted
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itSuggestsTheClosestKeyOfAnUnknownOne
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\NamedEntryTest::itAdmitsASiblingDrawnNameTheVocabularysJudgeRefersToTheDeclaredOnes
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\NamedEntryTest::itComparesASiblingDrawnNameExactlyWithoutAJudge
@@ -3595,6 +3598,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesALevelWordToTheLayerThatWroteTheList
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itExpandsTheThresholdShorthandInTheLayerThatWroteIt
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itKeepsALowerRefinementUnderAFormulaFromAbove
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itKeepsAMetricAPresetSwitchedOffWhenTheFileWritesOnlyAThreshold
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itKeepsAPresetErrorWhenTheFileWritesOnlyWarning
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itKeepsAPresetMetricTheFileDoesNotName
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itLeavesTheLowerLayerStandingUnderAWritingThatChangesNothing"a null metric"
@@ -6817,20 +6821,35 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itAdmitsAnAllowSourceThatNamesLayersOnlyTemplateExpansionProduces"captured"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itAdmitsAnAllowSourceThatNamesLayersOnlyTemplateExpansionProduces"glob"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itJudgesTheMeaningOfTheLayersOnlyInTheListThatWon
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itJudgesWhatAnAllowTargetMeansOnlyInTheListThatWon
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itKeepsALowerLayersTargetsUnderASourceWrittenAsTilde
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itLeavesAMalformedSourceSelectorToTheSelectorGrammar
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itNamesBothWritersOfACoverageModeLeftWithNoLayers
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itNamesThePresetWhenTheLayerListThatWonIsThePresets
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itPublishesTheRefusedValueAsWritten"capture in a static layer"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itPublishesTheRefusedValueAsWritten"pattern syntax"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itPublishesTheRefusedValueAsWritten"pattern written as one string"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itPublishesTheRefusedValueAsWritten"unknown allow target"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itPublishesTheRefusedValueAsWritten"unparsable allow target"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itReadsANeverWrittenSectionAsNoPolicy
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itReadsAnEmptyAllowMapAsWritingNothing
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itReadsAnExcludeBlockThatWritesNothingAsNoExclusion"criteria written as tilde"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itReadsAnExcludeBlockThatWritesNothingAsNoExclusion"empty map"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itReadsRelationsWrittenAsTildeAsAnyRelationEvenOverAPresetFilter
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesALongFormKeyInAStyleNoSpellingHasWithTheCanonicalOne
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt"allow target of the wrong shape"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt"criterion list item of a layer"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt"criterion of a layer"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt"criterion of an exclude block"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt"misspelt long-form key of an allow target"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt"relation list of an allow target"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMisspeltKeyWrittenAsTildeNamingItsFileAndSpelling"exclude block"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMisspeltKeyWrittenAsTildeNamingItsFileAndSpelling"layer entry"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMisspeltKeyWrittenAsTildeNamingItsFileAndSpelling"long-form allow target"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMisspeltKeyWrittenAsTildeNamingItsFileAndSpelling"section"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAnAllowSourceNamingNoLayerWhateverIsWrittenUnderIt
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAnAllowSourceNamingNoLayerWithTheFileThatWroteIt
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAnExcludeBlockThatWritesOnlyMatch
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesToReadASectionTheDocumentCarriedUndeclared
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itReplacesOneSourcesTargetListAndKeepsTheOtherSources
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itAppendsAnUnrelatedDirectTokenAfterAliasMembers
@@ -9283,6 +9302,9 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itAcceptsRelativePath
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itAcceptsSymlinkedPath
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itAnalysesANamedRootThatContainsAVendorDirectory
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itNamesTheLayerThatWroteAMissingPath"command line"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itNamesTheLayerThatWroteAMissingPath"configuration file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itNamesTheLayerThatWroteAMissingPath"preset"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itRefusesANamedRootThatIsAVendorDirectoryBeforeAnyReport
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itRejectsNonExistentPath
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itExportsInAnAcceptedFormat"chrome-tracing"
@@ -9441,6 +9463,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"the level the directive sits on"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"the whole rule"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesTheBannedChannelInsideEveryStageAfterSuppression
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itNamesTheFileThatWroteANonExistentPath
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itNoLongerLetsAFormWithoutARuleFilterSilenceTheBannedChannel
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itNoLongerLetsTheNonPrimaryCopyProduceAnUnusedDirectiveInstead
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itOmitsTheDocsPointerFromJsonOutput

@@ -26,6 +26,7 @@ use Qualimetrix\Analysis\Configuration\Document\LayerReading;
 use Qualimetrix\Analysis\Configuration\Document\NameRecognition;
 use Qualimetrix\Analysis\Configuration\Document\WrittenForm;
 use Qualimetrix\Analysis\Configuration\Document\WrittenNames;
+use Qualimetrix\Analysis\Configuration\UndeclaredRoot;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\SampleDocument;
 
 /**
@@ -291,27 +292,27 @@ final class DocumentPhaseTest extends TestCase
     }
 
     #[Test]
-    public function itCarriesAnUndeclaredRootThroughOnlyWhenAdmitted(): void
+    public function itCarriesAKnownRootNoOwnerDeclaredYetAndRefusesAnyOtherRoot(): void
     {
         $layer = SampleDocument::file(['legacy_root' => ['x' => 1]]);
 
-        $admitted = DocumentComposer::compose(SampleDocument::schema(admitsUndeclaredRoots: true), [$layer]);
-        self::assertInstanceOf(ResolvedOpaque::class, $admitted->get('legacy_root'));
-        self::assertSame([['x' => 1]], $admitted->get('legacy_root')->plain());
+        $carried = DocumentComposer::compose(new DocumentSchema([new UndeclaredRoot('legacy_root')]), [$layer]);
+        self::assertInstanceOf(ResolvedOpaque::class, $carried->get('legacy_root'));
+        self::assertSame([['x' => 1]], $carried->get('legacy_root')->plain());
 
         $refusal = self::refusal(static fn() => DocumentComposer::compose(SampleDocument::schema(), [$layer]));
         self::assertSame(['legacy_root'], $refusal->position()?->segments);
     }
 
     #[Test]
-    public function itStillAppliesTheSpellingRuleToADeclaredRootWhenUndeclaredOnesAreAdmitted(): void
+    public function itAppliesTheSpellingRuleToARootNoOwnerDeclaredYet(): void
     {
         $refusal = self::refusal(static fn() => DocumentComposer::compose(
-            SampleDocument::schema(admitsUndeclaredRoots: true),
-            [SampleDocument::file(['Paths' => ['src']])],
+            new DocumentSchema([new UndeclaredRoot('legacy_root')]),
+            [SampleDocument::file(['Legacy_Root' => ['x' => 1]])],
         ));
 
-        self::assertSame(['paths'], $refusal->position()?->accepted);
+        self::assertSame(['legacy_root'], $refusal->position()?->accepted);
     }
 
     #[Test]

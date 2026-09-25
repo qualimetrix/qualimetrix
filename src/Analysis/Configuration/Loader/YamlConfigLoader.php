@@ -17,21 +17,6 @@ final class YamlConfigLoader implements ConfigLoaderInterface
 {
     private const array SUPPORTED_EXTENSIONS = ['yaml', 'yml'];
 
-    /**
-     * The folded values alone, refused at once: for a reader that composes
-     * no document.
-     *
-     * @throws ConfigurationRefusal
-     *
-     * @return array<string, mixed>
-     */
-    public function load(string $path): array
-    {
-        $parsed = $this->parse($path);
-
-        return $this->normalize($parsed, $path);
-    }
-
     public function read(string $path): LoadedDocument
     {
         $parsed = $this->parse($path);

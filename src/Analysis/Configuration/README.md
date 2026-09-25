@@ -115,7 +115,11 @@ author spelled it, the line when the format reports one).
   `NodeSchema` built from `scalar`, `map` (with `Shorthand`s), `list`
   (replaced whole), `set` (accumulated), `namedMap` (with a `NameVocabulary`)
   or `opaque` (kept per layer for an owner that still folds it) — and
-  `ConfigurationPipeline::addSection()` registers it. An empty collection reads
+  `ConfigurationPipeline::addSection()` registers it. What the engine tells an
+  author about a node beyond its form — `withHint()`, `announcingEmptyOverride()`
+  — travels as its `NodeWording`. A node may add `judgedInEachLayer()`: the owner's judgement of what the engine carries
+  unread below it, run in phase 1 on each layer's value, so a malformed value a
+  higher layer replaces is still refused in the layer that wrote it. An empty collection reads
   by the declaration: a map it changes nothing, a list it replaces, a set it
   adds nothing to.
 - A dictionary key is accepted in its snake_case, camelCase or kebab-case

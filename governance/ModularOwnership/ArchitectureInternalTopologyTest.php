@@ -39,6 +39,7 @@ final class ArchitectureInternalTopologyTest extends TestCase
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureFactoryResult',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureSection',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\CarriedValueForm',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageValidator',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\DuplicatePatternRejector',

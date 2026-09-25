@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
+use Qualimetrix\Analysis\Configuration\UndeclaredRoot;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureFactoryResult;
@@ -223,6 +224,83 @@ final class ArchitectureSectionTest extends TestCase
         self::assertSame(['domain', 'infra'], $result->configuration->registry()->layerNames());
     }
 
+    /**
+     * A criterion and an allow target are carried unread by the engine, so
+     * their form is judged by the section's own judgements in each layer: a
+     * higher layer replacing the value must not hide the lower layer's
+     * mistake.
+     *
+     * @return iterable<string, array{array<string, mixed>, array<string, mixed>, list<string>}>
+     */
+    public static function provideMalformedValuesAHigherLayerReplaces(): iterable
+    {
+        yield 'criterion of a layer' => [
+            ['layers' => [['name' => 'old', 'patterns' => 42]]],
+            ['layers' => self::LAYERS],
+            ['architecture', 'layers', '0', 'patterns'],
+        ];
+        yield 'criterion list item of a layer' => [
+            ['layers' => [['name' => 'old', 'implements' => ['App\\Port', 5]]]],
+            ['layers' => self::LAYERS],
+            ['architecture', 'layers', '0', 'implements', '1'],
+        ];
+        yield 'criterion of an exclude block' => [
+            ['layers' => [['name' => 'old', 'patterns' => ['App\\Old'], 'exclude' => ['suffix' => []]]]],
+            ['layers' => self::LAYERS],
+            ['architecture', 'layers', '0', 'exclude', 'suffix'],
+        ];
+        yield 'allow target of the wrong shape' => [
+            ['layers' => self::LAYERS, 'allow' => ['infra' => [42]]],
+            ['allow' => ['infra' => ['domain']]],
+            ['architecture', 'allow', 'infra', '0'],
+        ];
+        yield 'misspelt long-form key of an allow target' => [
+            ['layers' => self::LAYERS, 'allow' => ['infra' => [['target' => 'domain', 'relashions' => ['extends']]]]],
+            ['allow' => ['infra' => ['domain']]],
+            ['architecture', 'allow', 'infra', '0', 'relashions'],
+        ];
+        yield 'relation list of an allow target' => [
+            ['layers' => self::LAYERS, 'allow' => ['infra' => [['target' => 'domain', 'relations' => 'extends']]]],
+            ['allow' => ['infra' => ['domain']]],
+            ['architecture', 'allow', 'infra', '0', 'relations'],
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $preset
+     * @param array<string, mixed> $file
+     * @param list<string> $path
+     */
+    #[Test]
+    #[DataProvider('provideMalformedValuesAHigherLayerReplaces')]
+    public function itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt(array $preset, array $file, array $path): void
+    {
+        $refusal = self::refusal(static fn() => self::configure(ArchitectureDocument::compose(
+            ArchitectureDocument::presetLayer($preset, 'team'),
+            ArchitectureDocument::fileLayer($file),
+        )));
+
+        self::assertSame([ConfigurationSource::Preset], self::kinds($refusal));
+        self::assertSame('team', $refusal->origin()->locator());
+        self::assertSame($path, $refusal->position()?->segments);
+    }
+
+    #[Test]
+    public function itJudgesWhatAnAllowTargetMeansOnlyInTheListThatWon(): void
+    {
+        // A relation kind and a selector's grammar are meaning, not form: the
+        // file's target list replaced the preset's, so neither is judged.
+        $result = self::configure(ArchitectureDocument::compose(
+            ArchitectureDocument::presetLayer(['layers' => self::LAYERS, 'allow' => ['infra' => [
+                ['target' => 'domain', 'relations' => ['extnds']],
+                'dom{ain',
+            ]]]),
+            ArchitectureDocument::fileLayer(['allow' => ['infra' => ['domain']]]),
+        ));
+
+        self::assertTrue($result->configuration->policy()->isAllowed('infra', 'domain', DependencyType::StaticCall));
+    }
+
     #[Test]
     public function itNamesThePresetWhenTheLayerListThatWonIsThePresets(): void
     {
@@ -234,6 +312,89 @@ final class ArchitectureSectionTest extends TestCase
         self::assertSame([ConfigurationSource::Preset], self::kinds($refusal));
         self::assertSame('strict', $refusal->origin()->locator());
         self::assertSame(['architecture', 'layers', '0', 'patterns', '0'], $refusal->position()?->segments);
+    }
+
+    /**
+     * A refused list item is addressed by its index, and `written` carries
+     * what the author wrote there, not the index again.
+     *
+     * @return iterable<string, array{array<string, mixed>, list<string>, string}>
+     */
+    public static function provideRefusedItemValues(): iterable
+    {
+        yield 'pattern syntax' => [
+            ['layers' => [['name' => 'domain', 'patterns' => ['App\\[bad']]]],
+            ['architecture', 'layers', '0', 'patterns', '0'],
+            'App\\[bad',
+        ];
+        yield 'pattern written as one string' => [
+            ['layers' => [['name' => 'domain', 'patterns' => 'App\\[bad']]],
+            ['architecture', 'layers', '0', 'patterns'],
+            'App\\[bad',
+        ];
+        yield 'capture in a static layer' => [
+            ['layers' => [['name' => 'domain', 'patterns' => ['App\\{m}\\**']]]],
+            ['architecture', 'layers', '0', 'patterns', '0'],
+            'App\\{m}\\**',
+        ];
+        yield 'unknown allow target' => [
+            ['layers' => self::LAYERS, 'allow' => ['infra' => ['domain', 'nowhere']]],
+            ['architecture', 'allow', 'infra', '1'],
+            'nowhere',
+        ];
+        yield 'unparsable allow target' => [
+            ['layers' => self::LAYERS, 'allow' => ['infra' => ['dom{ain']]],
+            ['architecture', 'allow', 'infra', '0'],
+            'dom{ain',
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $section
+     * @param list<string> $path
+     */
+    #[Test]
+    #[DataProvider('provideRefusedItemValues')]
+    public function itPublishesTheRefusedValueAsWritten(array $section, array $path, string $written): void
+    {
+        $refusal = self::refusal(static fn() => self::configure(ArchitectureDocument::file($section)));
+
+        self::assertSame($path, $refusal->position()?->segments);
+        self::assertSame($written, $refusal->position()->written);
+    }
+
+    /**
+     * An `exclude:` block that writes nothing is an empty map, which changes
+     * nothing anywhere in the document; a block that writes a key but no
+     * criterion is still refused.
+     *
+     * @return iterable<string, array{mixed}>
+     */
+    public static function provideExcludeBlocksThatWriteNothing(): iterable
+    {
+        yield 'empty map' => [[]];
+        yield 'criteria written as tilde' => [['patterns' => null, 'suffix' => null]];
+    }
+
+    #[Test]
+    #[DataProvider('provideExcludeBlocksThatWriteNothing')]
+    public function itReadsAnExcludeBlockThatWritesNothingAsNoExclusion(mixed $exclude): void
+    {
+        $result = self::configure(ArchitectureDocument::file([
+            'layers' => [['name' => 'domain', 'patterns' => ['App\\Domain\\**'], 'exclude' => $exclude]],
+        ]));
+
+        self::assertSame(['domain'], $result->configuration->registry()->layerNames());
+    }
+
+    #[Test]
+    public function itRefusesAnExcludeBlockThatWritesOnlyMatch(): void
+    {
+        $refusal = self::refusal(static fn() => self::configure(ArchitectureDocument::file([
+            'layers' => [['name' => 'domain', 'patterns' => ['App\\Domain\\**'], 'exclude' => ['match' => 'all']]],
+        ])));
+
+        self::assertStringContainsString('"exclude" must declare at least one of', $refusal->summary());
     }
 
     #[Test]
@@ -286,7 +447,7 @@ final class ArchitectureSectionTest extends TestCase
     {
         // An undeclared root rides through the engine unread; reading it as
         // "no policy" would drop every layer without a word.
-        $document = DocumentComposer::compose(new DocumentSchema([], admitsUndeclaredRoots: true), [
+        $document = DocumentComposer::compose(new DocumentSchema([new UndeclaredRoot(ArchitectureSection::KEY)]), [
             new AuthoredLayer(
                 ConfigurationOrigin::of(ConfigurationSource::ConfigFile, ArchitectureDocument::FILE),
                 AuthoredNode::fromPlain(['architecture' => ['layers' => self::LAYERS]]),

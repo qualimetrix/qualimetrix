@@ -238,10 +238,7 @@ final class CheckCommand extends Command
 
         $pathErrors = $this->validatePaths($scopeResolution->paths);
         if ($pathErrors !== []) {
-            throw ConfigurationRefusal::aboutCommandLineInput(
-                'paths',
-                implode(' ', $pathErrors),
-            );
+            throw ConfigurationInputAdapter::pathsRefusal($document, implode(' ', $pathErrors));
         }
 
         $projectRoot = $runConfiguration->projectRoot;

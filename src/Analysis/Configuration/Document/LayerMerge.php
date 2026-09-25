@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaque;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
+use SplObjectStorage;
 
 /**
  * Phase 2: folds one layer's read value over everything below it, by the
@@ -24,8 +25,20 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
  */
 final class LayerMerge
 {
-    /** @var list<ConfigurationDiagnostic> */
-    private array $diagnostics = [];
+    /**
+     * An empty list that replaced a non-empty one, with the layer that wrote
+     * the non-empty one. Kept only while the empty list stands: a higher
+     * layer that replaces it again decides the node, so what was said about
+     * the lower fold would describe a value the run does not use.
+     *
+     * @var SplObjectStorage<ResolvedList, array{Provenance, Provenance, string}>
+     */
+    private SplObjectStorage $emptyOverrides;
+
+    public function __construct()
+    {
+        $this->emptyOverrides = new SplObjectStorage();
+    }
 
     public function merge(NodeSchema $schema, ?ResolvedValueInterface $lower, ?ResolvedValueInterface $upper): ?ResolvedValueInterface
     {
@@ -40,10 +53,30 @@ final class LayerMerge
         return $this->mergeBodies($schema, $lower, $upper);
     }
 
-    /** @return list<ConfigurationDiagnostic> */
+    /**
+     * What the merged document says about itself: only the folds whose
+     * result every layer above left standing.
+     *
+     * @return list<ConfigurationDiagnostic>
+     */
     public function diagnostics(): array
     {
-        return $this->diagnostics;
+        $diagnostics = [];
+        foreach ($this->emptyOverrides as $list) {
+            [$upperWriter, $lowerWriter, $notice] = $this->emptyOverrides[$list];
+            $diagnostics[] = new ConfigurationDiagnostic(
+                \sprintf(
+                    '%s is written empty in %s and replaces the list %s wrote. %s',
+                    self::named($upperWriter),
+                    $upperWriter->origin->describe(),
+                    $lowerWriter->origin->describe(),
+                    $notice,
+                ),
+                [$lowerWriter, $upperWriter],
+            );
+        }
+
+        return $diagnostics;
     }
 
     /** Two written bodies, folded by the node's policy. */
@@ -86,21 +119,21 @@ final class LayerMerge
     private function replace(NodeSchema $schema, ResolvedList $lower, ResolvedList $upper): ResolvedList
     {
         $notice = $schema->emptyOverrideNotice();
+        $replaced = isset($this->emptyOverrides[$lower]) ? $this->emptyOverrides[$lower] : null;
+        unset($this->emptyOverrides[$lower]);
 
-        if ($notice !== null && $upper->items() === [] && $lower->items() !== []) {
-            $upperWriter = $upper->contributors()[0];
-            $lowerWriter = $lower->contributors()[\count($lower->contributors()) - 1];
+        if ($notice === null || $upper->items() !== []) {
+            return $upper;
+        }
 
-            $this->diagnostics[] = new ConfigurationDiagnostic(
-                \sprintf(
-                    '%s is written empty in %s and replaces the list %s wrote. %s',
-                    self::named($upperWriter),
-                    $upperWriter->origin->describe(),
-                    $lowerWriter->origin->describe(),
-                    $notice,
-                ),
-                [$lowerWriter, $upperWriter],
-            );
+        // An empty list over an empty one that already lifted a filter keeps
+        // naming the layer whose filter was lifted.
+        $lowerWriter = $lower->items() !== []
+            ? $lower->contributors()[\count($lower->contributors()) - 1]
+            : $replaced[1] ?? null;
+
+        if ($lowerWriter !== null) {
+            $this->emptyOverrides[$upper] = [$upper->contributors()[0], $lowerWriter, $notice];
         }
 
         return $upper;

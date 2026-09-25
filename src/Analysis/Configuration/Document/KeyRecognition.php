@@ -44,8 +44,8 @@ final class KeyRecognition
     }
 
     /**
-     * Like {@see recognise()}, but a key that is none of the dictionary is
-     * left to the caller; a key that is one of it misspelt is still refused.
+     * A key that is one of the dictionary misspelt is refused; one that is
+     * none of it is left to the caller.
      *
      * @param list<string> $dictionary canonical keys
      *
@@ -53,7 +53,7 @@ final class KeyRecognition
      *
      * @return ?string the canonical key; null for an undeclared key
      */
-    public static function recogniseIfDeclared(string $written, array $dictionary, ReadingContext $at): ?string
+    private static function recogniseIfDeclared(string $written, array $dictionary, ReadingContext $at): ?string
     {
         foreach ($dictionary as $canonical) {
             if (\in_array($written, ConfigKeySpelling::acceptedSpellings($canonical), true)) {

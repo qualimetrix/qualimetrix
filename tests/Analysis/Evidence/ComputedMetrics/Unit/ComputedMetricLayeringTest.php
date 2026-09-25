@@ -112,6 +112,23 @@ final class ComputedMetricLayeringTest extends TestCase
         self::assertNull($analysis->find('computed.x'));
     }
 
+    /**
+     * `enabled` is a key like any other: a file that writes a threshold for a
+     * metric a preset switched off leaves it off, and must write
+     * `enabled: true` to switch it back on.
+     */
+    #[Test]
+    public function itKeepsAMetricAPresetSwitchedOffWhenTheFileWritesOnlyAThreshold(): void
+    {
+        $preset = self::preset(['computed_metrics' => ['health.complexity' => ['enabled' => false]]]);
+
+        self::assertNull($this->configure([$preset, self::file(['computed_metrics' => ['health.complexity' => ['warning' => 95]]])])->find('health.complexity'));
+        self::assertSame(
+            95.0,
+            $this->metric('health.complexity', $preset, self::file(['computed_metrics' => ['health.complexity' => ['enabled' => true, 'warning' => 95]]]))->warningThreshold,
+        );
+    }
+
     #[Test]
     public function itRefinesOneLevelOverAFormulaFromBelow(): void
     {
@@ -198,7 +215,7 @@ final class ComputedMetricLayeringTest extends TestCase
         self::assertStringContainsString('"threshold" is shorthand for "warning" and "error"', $refusal->summary());
     }
 
-    /** X-07: the written shape is named in the author's terms, not PHP's. */
+    /** A map where a list is due is named in the author's terms, not PHP's. */
     #[Test]
     public function itNamesAMapWrittenAsLevelsAMap(): void
     {
@@ -270,7 +287,7 @@ final class ComputedMetricLayeringTest extends TestCase
         self::assertSame(['health.typing', 'health.complexity', 'health.cohesion', 'health.coupling'], $recorder->excluded);
     }
 
-    /** M-26: a file's typo is named in the file's words, not the option's. */
+    /** A file's typo is named in the file's words, not the option's. */
     #[Test]
     public function itRefusesAFilesUnknownHealthExclusionInTheFilesWords(): void
     {

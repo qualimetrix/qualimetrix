@@ -84,6 +84,12 @@ criterion (`patterns`, `suffix`, … — one string or a list) and an allow targ
 (a layer name or a long-form map). `LayerCriterionNormalizer` and
 `LongFormAllowEntryNormalizer` judge them; the latter recognises the long-form
 keys by the document's spelling rule (snake_case, kebab-case or camelCase).
+Their form is judged in every layer that writes them, before the merge —
+`ArchitectureSection` declares `CarriedValueForm::ofLayerEntry()` on a layer
+entry and `CarriedValueForm::ofAllowTarget()` on a target — so a preset's
+malformed criterion or target is refused even under a file that replaces
+`layers` or the target list. What they mean (a pattern's syntax, a selector, a
+relation kind, the layer a target names) is judged on the merged value only.
 An allow source name is judged by the engine after the merge, against the
 names the merged `layers` declares and in the words of the layer that wrote
 it, whatever is written under it (`allow: {infrq: ~}` is refused): an exact

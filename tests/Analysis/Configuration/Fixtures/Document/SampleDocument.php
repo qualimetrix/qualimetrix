@@ -28,7 +28,7 @@ final class SampleDocument
         return DocumentComposer::compose(self::schema(), array_values($layers));
     }
 
-    public static function schema(bool $admitsUndeclaredRoots = false): DocumentSchema
+    public static function schema(): DocumentSchema
     {
         return new DocumentSchema([
             self::section('fail_on', NodeSchema::scalar(ScalarForm::String)),
@@ -65,7 +65,7 @@ final class SampleDocument
                 Shorthand::spreading('threshold', ['warning', 'error']),
             ))),
             self::section('rules', NodeSchema::opaque()),
-        ], $admitsUndeclaredRoots);
+        ]);
     }
 
     /** @param array<string, mixed> $document */

@@ -15,8 +15,9 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 
 /**
  * Phase 1, one layer: recognises every dictionary key, judges the form of
- * every written value, expands shorthands, and drops `~` as unwritten. What
- * it returns carries that layer's provenance and is ready to merge.
+ * every written value — and passes it to its owner's judgement where the node
+ * declares one — expands shorthands, and drops `~` as unwritten. What it
+ * returns carries that layer's provenance and is ready to merge.
  *
  * A name whose vocabulary comes from a sibling node is collected for phase 3
  * instead of judged here. A named entry written without a body is kept as a
@@ -27,7 +28,7 @@ final class LayerReading
 {
     private readonly WrittenNames $names;
 
-    public function __construct(private readonly bool $admitsUndeclaredRoots = false)
+    public function __construct()
     {
         $this->names = new WrittenNames();
     }
@@ -38,11 +39,8 @@ final class LayerReading
     public function readRoot(NodeSchema $root, AuthoredLayer $layer): ?ResolvedValueInterface
     {
         $at = ReadingContext::of($layer);
-        $keys = $this->admitsUndeclaredRoots
-            ? KeyClaims::admittingUndeclared($root->keys()->keys(), $at)
-            : KeyClaims::of($root->keys()->keys(), $at);
 
-        return $this->readMap($root, $layer->root, $at, $keys);
+        return $this->readMap($root, $layer->root, $at, KeyClaims::of($root->keys()->keys(), $at));
     }
 
     /** @return list<PendingName> */
@@ -53,13 +51,24 @@ final class LayerReading
 
     private function read(NodeSchema $schema, AuthoredNode $node, ReadingContext $at): ?ResolvedValueInterface
     {
-        return match ($schema->policy) {
+        return self::judged($schema, $at, match ($schema->policy) {
             MergePolicy::LastWriterWins => WrittenForm::scalar($schema, $node, $at),
             MergePolicy::DeepMerge => $this->readMap($schema, $node, $at, KeyClaims::of($schema->keys()->keys(), $at)),
             MergePolicy::Replace, MergePolicy::Accumulate => $this->readList($schema, $node, $at),
             MergePolicy::ByName => $this->readNamedMap($schema, $node, $at),
             MergePolicy::PerLayer => $node->isUnwritten() ? null : self::opaque($node, $at),
-        };
+        });
+    }
+
+    /** The value as this layer wrote it, once its owner's judgement of it passes. */
+    private static function judged(NodeSchema $schema, ReadingContext $at, ?ResolvedValueInterface $value): ?ResolvedValueInterface
+    {
+        $judge = $schema->layerJudge();
+        if ($value !== null && $judge !== null) {
+            $judge($value, $at->canonicalPath);
+        }
+
+        return $value;
     }
 
     private function readMap(NodeSchema $schema, AuthoredNode $node, ReadingContext $at, KeyClaims $keys): ?ResolvedMap
@@ -94,9 +103,7 @@ final class LayerReading
                 continue;
             }
 
-            if ($canonical === null) {
-                $entries[$written] = self::opaque($child, $at->child($written, $written, $child));
-            } elseif ($dictionary->shorthand($canonical) !== null) {
+            if ($dictionary->shorthand($canonical) !== null) {
                 $shorthandNodes[$canonical] = [$written, $child];
             } else {
                 $entries = self::with($entries, $canonical, $this->read($dictionary->fields()[$canonical], $child, $at->child($written, $canonical, $child)));
@@ -181,7 +188,10 @@ final class LayerReading
         $itemAt = $at->item($index, $child);
 
         if ($element->policy === MergePolicy::PerLayer) {
-            return self::opaque($child, $itemAt);
+            $item = self::opaque($child, $itemAt);
+            self::judged($element, $itemAt, $item);
+
+            return $item;
         }
 
         if ($child->isUnwritten()) {

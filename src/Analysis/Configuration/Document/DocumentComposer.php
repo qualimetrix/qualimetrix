@@ -49,7 +49,7 @@ final class DocumentComposer
         $pending = [];
 
         foreach ($layers as $layer) {
-            $reading = new LayerReading($schema->admitsUndeclaredRoots);
+            $reading = new LayerReading();
             $read[] = $reading->readRoot($schema->root(), $layer);
             $pending = [...$pending, ...$reading->pendingNames()];
         }

@@ -70,6 +70,17 @@ final class ConfigurationInputAdapter
         return $published;
     }
 
+    /**
+     * A refusal of the analysed paths naming the layer that wrote them: the
+     * `paths` argument when the command line wrote them, the file or preset
+     * otherwise.
+     */
+    public static function pathsRefusal(ConfigurationDocument $document, string $summary): ConfigurationRefusal
+    {
+        return $document->resolved()->get(ConfigSchema::PATHS)?->refusal($summary)
+            ?? ConfigurationRefusal::aboutResolvedInput($summary, ConfigSchema::PATHS);
+    }
+
     public function exitPolicy(ConfigurationDocument $document): ExitPolicy
     {
         return ExitPolicy::fromContributions($document->contributions(ConfigSchema::FAIL_ON));

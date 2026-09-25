@@ -24,7 +24,9 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelectorPa
  * criterion (`patterns`, `suffix`, …), written as one string or a list of
  * them, and an allow target, written as a layer name or a long-form map. The
  * keys of a long-form target are therefore recognised by
- * {@see LongFormAllowEntryNormalizer}, not here.
+ * {@see LongFormAllowEntryNormalizer}, not here. Both are judged in every
+ * layer that writes them, before the layers merge, by {@see CarriedValueForm},
+ * so a malformed value a higher layer replaces is refused all the same.
  *
  * An allow source is judged against the layer names `layers` declares once
  * every layer is merged, so a preset's layer is known to the file that allows
@@ -58,9 +60,9 @@ final readonly class ArchitectureSection implements DocumentSectionSchemaInterfa
                 ...$criteria,
                 'pending' => NodeSchema::scalar(ScalarForm::Boolean),
                 'exclude' => NodeSchema::map($criteria),
-            ])),
+            ])->judgedInEachLayer(CarriedValueForm::ofLayerEntry(...))),
             'allow' => NodeSchema::namedMap(
-                NodeSchema::list(NodeSchema::opaque()),
+                NodeSchema::list(NodeSchema::opaque()->judgedInEachLayer(CarriedValueForm::ofAllowTarget(...))),
                 NameVocabulary::fromSibling('layers', self::layerNames(...), self::refersToALayer(...)),
             ),
             'coverage-gap' => NodeSchema::scalar(ScalarForm::String),

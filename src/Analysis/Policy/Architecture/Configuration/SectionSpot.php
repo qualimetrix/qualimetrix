@@ -43,7 +43,18 @@ final readonly class SectionSpot
     /** The section as resolved; null when no layer wrote it. */
     public static function section(string $key, ?ResolvedValueInterface $node): self
     {
-        return new self($node, [], $node === null ? null : self::unwrap($node), [$key]);
+        return self::node([$key], $node);
+    }
+
+    /**
+     * A node of the section at its canonical path — the whole section, or one
+     * value as a single configuration layer wrote it.
+     *
+     * @param list<string> $path
+     */
+    public static function node(array $path, ?ResolvedValueInterface $node): self
+    {
+        return new self($node, [], $node === null ? null : self::unwrap($node), $path);
     }
 
     public function isWritten(): bool

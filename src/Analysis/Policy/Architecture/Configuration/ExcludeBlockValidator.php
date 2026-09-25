@@ -58,7 +58,8 @@ final class ExcludeBlockValidator
      *                                             FQN-shaped lists and the
      *                                             {@code match} mode).
      *
-     * @throws ConfigurationRefusal On an empty or capture-misplacing block.
+     * @throws ConfigurationRefusal On a block that writes no criterion beside
+     *                              `match`, or misplaces a capture.
      */
     public static function parse(
         int $index,
@@ -206,6 +207,7 @@ final class ExcludeBlockValidator
                         $entry,
                         $rejectionReason,
                     ),
+                    written: $entry,
                 );
             }
         }

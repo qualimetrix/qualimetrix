@@ -53,7 +53,7 @@ final class YamlConfigLoaderKeySpellingTest extends TestCase
         file_put_contents($this->path, $yaml);
 
         try {
-            (new YamlConfigLoader())->load($this->path);
+            WrittenFile::foldedValues($this->path);
             self::fail('Two spellings of one key must be refused.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString(\sprintf('"%s"', $first), $refusal->summary());
@@ -70,7 +70,7 @@ final class YamlConfigLoaderKeySpellingTest extends TestCase
             "suppressPaths: []\nrules:\n  complexity.ccn:\n    class: {max_warning: 1}\n    callable: {max_warning: 2}\n",
         );
 
-        $config = (new YamlConfigLoader())->load($this->path);
+        $config = WrittenFile::foldedValues($this->path);
 
         self::assertSame([], $config['suppressPaths']);
     }
@@ -114,7 +114,7 @@ final class YamlConfigLoaderKeySpellingTest extends TestCase
         file_put_contents($this->path, \sprintf("coupling:\n  %s: []\n", $written));
 
         try {
-            (new YamlConfigLoader())->load($this->path);
+            WrittenFile::foldedValues($this->path);
             self::fail('An unknown section key must be refused.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString($expected, $refusal->summary());

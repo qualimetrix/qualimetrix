@@ -41,7 +41,8 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
  * co-located.
  *
  * The configuration engine has already recognised every key of an entry and
- * judged the form of its name, `match` and `pending`; what is left here is
+ * judged the form of its name, `match` and `pending`, and, through
+ * {@see CarriedValueForm}, the criteria it carries unread; what is left here is
  * what a value means. Every refusal names the layer that wrote the entry,
  * through its {@see SectionSpot}.
  */
@@ -96,7 +97,7 @@ final class LayersValidator
      */
     private function buildSingleLayerEntry(int $index, SectionSpot $entry, array &$seenNames): LayerDefinition|TemplateLayerDefinition
     {
-        $name = self::extractValidName($index, $entry);
+        $name = CarriedValueForm::layerName($index, $entry);
         self::rejectDuplicateName($index, $name, $entry, $seenNames);
         $seenNames[$name] = true;
 
@@ -285,19 +286,9 @@ final class LayersValidator
                     $name,
                     $pattern,
                 ),
+                written: $pattern,
             );
         }
-    }
-
-    private static function extractValidName(int $index, SectionSpot $entry): string
-    {
-        $name = $entry->child('name');
-        $value = $name->value();
-        if (!\is_string($value) || $value === '') {
-            throw $name->refusal(\sprintf('architecture.layers[%d]: missing or empty "name" (must be a non-empty string).', $index));
-        }
-
-        return $value;
     }
 
     /**

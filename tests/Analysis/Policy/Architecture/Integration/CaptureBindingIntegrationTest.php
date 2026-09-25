@@ -7,7 +7,6 @@ namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Integration;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
@@ -17,6 +16,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\WrittenFile;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 
 /**
@@ -108,7 +108,7 @@ final class CaptureBindingIntegrationTest extends TestCase
             YAML);
 
         try {
-            $loaded = (new YamlConfigLoader())->load($yamlPath);
+            $loaded = WrittenFile::foldedValues($yamlPath);
             $analysis = $this->runPipelineWithConfig($loaded['architecture']);
 
             $layerViolations = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);

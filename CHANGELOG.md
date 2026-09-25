@@ -554,16 +554,30 @@ What changes for a configuration you already have:
   name under `architecture.allow` that `layers` does not declare is refused
   even when written with `~` or `{}`.
 - A key is accepted in the snake_case, kebab-case or camelCase of its words,
-  at the root and in every section outside `rules:`; any other spelling of the same words
-  (`Fail_On`, `FAILON`, `failon`) is refused with the accepted one (was: folded
-  silently at the root, and read differently inside each section).
+  at the root and in every section except `rules:` and `coupling:`, whose
+  owners still read their keys themselves; any other spelling of the same words
+  is refused as a misspelling, with the accepted one (was: `Fail_On` folded
+  silently at the root, `FAILON` and `failon` refused as unknown keys with a
+  did-you-mean hint, and each section reading spellings its own way).
 - A list item that is not a string, `~` included, is refused with its index —
   `only_rules: [~]`, `disabled_rules: [5]`, `exclude: [~]` (was: a `~` item in
   `only_rules` or `disabled_rules` silently accepted, and one in `exclude`
   refused with a message about bare strings).
 - A value of the wrong shape is refused in whichever layer wrote it, even when
-  a later layer overrides it: a preset's `memory_limit: [1G]` is refused under
-  a file that sets `memory_limit: 1G` (was: skipped).
+  a later layer overrides it: a preset's `fail_on: 5` under a file that sets
+  `fail_on: error`, a preset's `architecture.coverage-gap: 5`, and a preset's
+  `architecture.layers` entry with `patterns: 42` or an allow target with a
+  misspelt key under a file that writes its own `layers` or `allow` list (was:
+  skipped).
+- An `exclude:` block of an `architecture.layers` entry that writes nothing —
+  `exclude: {}`, `exclude: []`, or criteria written only as `~` — excludes
+  nothing, like any other empty map (was: refused as an empty block). A block
+  that writes only `match`, or a criterion written as an empty list, is still
+  refused.
+- A computed metric a lower layer switched off with `enabled: false` stays off
+  when a higher layer writes only its thresholds or formula; write
+  `enabled: true` beside them to switch it back on (was: the higher layer's
+  metric replaced the lower one whole, switching it on).
 - `check --format=json` has a new top-level key, `configurationDiagnostics`:
   the warnings about the configuration the run accepted, `[]` when there are
   none. A consumer comparing the key set exactly must accept it.
@@ -573,13 +587,14 @@ What changes for a configuration you already have:
 - A configuration error names the layer that wrote the value — the preset,
   the file, the command-line option — and quotes the key as you spelled it; an
   error about two keys, or about a value several layers wrote, names each
-  layer. The meaning of `memory_limit`, `fail_on`, `format`, `cache` and
-  `parallel.workers` is still judged after the merge, and such an error names
-  the key only.
+  layer; a path to analyse that does not exist names the file, preset or
+  argument that wrote it. Values whose owners still judge them on the merged
+  configuration — listed in ADR 0086 — name the merged configuration instead,
+  with the key when the owner knows it, and a few name no source at all.
 - Warnings about a configuration that is legal but probably not what was meant
   are printed on stderr by every command that reads the configuration. The
   first is `only_rules: []` over a layer that filters the rules: it lifts the
-  filter, and now says so.
+  filter, and now says so unless a layer above writes a filter again.
 - `memory_limit` accepts an unquoted integer, so `memory_limit: -1` means "no
   limit" as it does in `php.ini`.
 - Namespace-level `coupling.cbo` is now counted over the namespace's whole

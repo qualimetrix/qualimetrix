@@ -194,6 +194,37 @@ final class DocumentMergePolicyTest extends TestCase
     }
 
     #[Test]
+    public function itSaysNothingWhenAHigherLayerWritesTheFilterAgain(): void
+    {
+        // The warning describes the merged document: a filter the command line
+        // writes over the file's empty list is the filter the run applies.
+        $document = SampleDocument::compose(
+            SampleDocument::preset(['only_rules' => ['complexity']]),
+            SampleDocument::file(['only_rules' => []]),
+            SampleDocument::cli(['only_rules' => ['size']], ['only_rules' => '--only-rule']),
+        );
+
+        self::assertSame(['size'], $document->get('only_rules')?->plain());
+        self::assertSame([], $document->diagnostics());
+    }
+
+    #[Test]
+    public function itNamesTheLiftedFilterWhenAnotherEmptyListIsWrittenAbove(): void
+    {
+        $document = SampleDocument::compose(
+            SampleDocument::preset(['only_rules' => ['complexity']]),
+            SampleDocument::preset(['only_rules' => []], 'relaxed'),
+            SampleDocument::file(['only_rules' => []]),
+        );
+
+        self::assertCount(1, $document->diagnostics());
+        self::assertSame(
+            ['strict', '/p/qmx.yaml'],
+            array_map(static fn(Provenance $source): ?string => $source->origin->locator(), $document->diagnostics()[0]->sources),
+        );
+    }
+
+    #[Test]
     public function itSaysNothingWhenAnEmptyListReplacesNothing(): void
     {
         $document = SampleDocument::compose(

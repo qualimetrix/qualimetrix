@@ -36,4 +36,22 @@ final class WrittenFile
 
         return $document;
     }
+
+    /**
+     * The folded values the owners still read, with the refusal the loader
+     * holds for after the engine's judgement raised here instead.
+     *
+     * @throws ConfigurationRefusal
+     *
+     * @return array<string, mixed>
+     */
+    public static function foldedValues(string $path): array
+    {
+        $loaded = (new YamlConfigLoader())->read($path);
+        if ($loaded->deferredRefusal !== null) {
+            throw $loaded->deferredRefusal;
+        }
+
+        return $loaded->values;
+    }
 }

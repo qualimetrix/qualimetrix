@@ -1040,8 +1040,10 @@ constraint between keys — each as `{"kind": ..., "name": ..., "imported_by": .
 `resolved`; `name` is the preset name, file path or option. `resolved` is what a
 refusal names when its owner still reads the merged value without the layer
 that wrote it — `memory_limit: 010M` and `--fail-on=bogus` today — and its
-`name` is the key. `source` is `null` for an internal error and for a refusal
-raised without a configuration source, such as `parallel.workers: -3`. The
+`name` is the key when the owner knows it, otherwise `null` (a rule selector in
+`only_rules` or `disabled_rules`). `source` is `null` for an internal error and
+for a refusal raised without a configuration source, such as
+`parallel.workers: -3`. The
 baseline
 file — written by `baseline:generate`, `update`, `cleanup`, and rewritten in
 place by `baseline:rename-channels` — is a versioned input artifact the tool

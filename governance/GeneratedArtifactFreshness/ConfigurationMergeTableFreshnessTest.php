@@ -86,6 +86,28 @@ final class ConfigurationMergeTableFreshnessTest extends TestCase
         }
     }
 
+    /**
+     * A list item's keys are declared like any other and their `~` means
+     * something else there — nothing lower to fall back to — so the table
+     * describes them too, in both languages, down to a nested map's keys.
+     */
+    #[Test]
+    public function itDescribesTheKeysInsideAListItem(): void
+    {
+        $scratch = $this->scratchCopy();
+        [$written, $writeOutput] = $this->generator('--root=' . $scratch);
+        self::assertSame(0, $written, $writeOutput);
+
+        foreach (self::PAGES as $page) {
+            $content = file_get_contents($scratch . '/' . $page);
+            self::assertIsString($content);
+
+            foreach (['architecture.layers[].pending', 'architecture.layers[].exclude.patterns'] as $key) {
+                self::assertMatchesRegularExpression('/^\| `' . preg_quote($key, '/') . '` +\|/m', $content, $page . ' has no row for ' . $key);
+            }
+        }
+    }
+
     private function scratchCopy(): string
     {
         $this->scratch = sys_get_temp_dir() . '/qmx-merge-table-' . bin2hex(random_bytes(8));

@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\WrittenFile;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 
 /**
@@ -174,7 +175,7 @@ final class LayerExcludeIntegrationTest extends TestCase
             YAML);
 
         try {
-            $loaded = (new YamlConfigLoader())->load($yamlPath);
+            $loaded = WrittenFile::foldedValues($yamlPath);
             $analysis = $this->runPipelineWithConfig($loaded['architecture']);
 
             $findings = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);

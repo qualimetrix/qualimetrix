@@ -170,6 +170,7 @@ final class AllowValidator
                     $targetSelector,
                     $undeclared,
                 ),
+                written: $targetSelector->originalString(),
             );
         }
 
@@ -182,6 +183,7 @@ final class AllowValidator
                     $targetSelector,
                     $shapeMismatches,
                 ),
+                written: $targetSelector->originalString(),
             );
         }
     }
@@ -321,7 +323,7 @@ final class AllowValidator
         $targetName = $targetSelector->originalString();
 
         if (!isset($layerSet[$targetName])) {
-            throw $entry->refusal(\sprintf("architecture.allow.%s[%d]: unknown layer '%s'.", $source, $index, $targetName));
+            throw $entry->refusal(\sprintf("architecture.allow.%s[%d]: unknown layer '%s'.", $source, $index, $targetName), written: $targetName);
         }
 
         if (!$isBare) {
@@ -357,28 +359,21 @@ final class AllowValidator
     private function normalizeAllowEntry(string $source, int $index, SectionSpot $entry): array
     {
         $context = \sprintf('architecture.allow.%s[%d]', $source, $index);
-        $value = $entry->value();
 
-        if (\is_string($value)) {
-            if ($value === '') {
-                throw $entry->refusal(\sprintf('%s: target must be a non-empty string.', $context));
-            }
-
-            return [$this->parseSelector($value, $context, $entry), false, null];
-        }
-
-        if (\is_array($value) && !array_is_list($value)) {
+        if (self::isLongForm($entry)) {
             [$targetRaw, $allowCrossInstance, $relations] = LongFormAllowEntryNormalizer::normalize($source, $index, $entry);
 
             return [$this->parseSelector($targetRaw, $context, $entry->child('target')), $allowCrossInstance, $relations];
         }
 
-        throw $entry->refusal(
-            \sprintf(
-                "%s: each target must be a layer name (string) or a map with a non-empty 'target' key.",
-                $context,
-            ),
-        );
+        return [$this->parseSelector(CarriedValueForm::selector($source, $index, $entry), $context, $entry), false, null];
+    }
+
+    private static function isLongForm(SectionSpot $entry): bool
+    {
+        $value = $entry->value();
+
+        return \is_array($value) && !array_is_list($value);
     }
 
     /**
@@ -391,7 +386,7 @@ final class AllowValidator
         try {
             return LayerSelectorParser::parse($raw);
         } catch (InvalidSelectorException $e) {
-            throw $spot->refusal(\sprintf('%s: %s', $context, $e->getMessage()));
+            throw $spot->refusal(\sprintf('%s: %s', $context, $e->getMessage()), written: $raw);
         }
     }
 }

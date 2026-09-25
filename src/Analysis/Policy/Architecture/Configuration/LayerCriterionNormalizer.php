@@ -12,8 +12,9 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 
 /**
- * Per-criterion shape and semantic validator shared by {@see LayersValidator}
- * (positive criteria) and {@see ExcludeBlockValidator} (exclude criteria).
+ * Per-criterion semantic validator shared by {@see LayersValidator}
+ * (positive criteria) and {@see ExcludeBlockValidator} (exclude criteria);
+ * the form of a criterion is {@see CarriedValueForm}'s.
  *
  * Stateless: a single instance is reused across all entry indexes within
  * one {@code architecture.layers} validation pass. Each helper takes the
@@ -21,12 +22,6 @@ use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
  * ({@code $index}, {@code $layerName}, {@code $kind}) and either returns a
  * normalized list of strings (or {@see MatchMode}) or throws a
  * {@see ConfigurationRefusal} naming the layer that wrote the value.
- *
- * Accepts three input shapes for criterion lists:
- *
- * - not written ({@code ~} or absent) — empty list (criterion not declared).
- * - bare string — singleton list (YAML scalar shorthand).
- * - sequential array of strings — the list itself.
  *
  * The semantic check (suffix shape, FQN shape, etc.) is supplied by the
  * caller-specific helper ({@see normalizeSuffixList},
@@ -207,85 +202,12 @@ final class LayerCriterionNormalizer
         SectionSpot $value,
         callable $semanticCheck,
     ): array {
-        if (!$value->isWritten()) {
-            return [];
-        }
-
-        $entries = self::coerceToStringList($index, $layerName, $kind, $value);
-
         $normalized = [];
-        foreach ($entries as $entryIndex => $entry) {
-            $spot = \is_array($value->value()) ? $value->child($entryIndex) : $value;
+        foreach (CarriedValueForm::criterionEntries($index, $layerName, $kind, $value) as $entryIndex => [$entry, $spot]) {
             $normalized[] = self::validateListEntry($index, $layerName, $kind, $entryIndex, $entry, $spot, $semanticCheck);
         }
 
         return $normalized;
-    }
-
-    /**
-     * @return list<mixed>
-     */
-    private static function coerceToStringList(int $index, string $layerName, string $kind, SectionSpot $spot): array
-    {
-        $value = $spot->value();
-        $entries = \is_string($value) ? [$value] : $value;
-
-        if (!\is_array($entries)) {
-            throw $spot->refusal(
-                \sprintf(
-                    'architecture.layers[%d] ("%s"): "%s" must be a string or a non-empty list of strings, got %s.',
-                    $index,
-                    $layerName,
-                    $kind,
-                    get_debug_type($value),
-                ),
-            );
-        }
-
-        if (!array_is_list($entries)) {
-            // Associative map where an ordered list is required — the
-            // typical mistake is using YAML mapping syntax ({@code key: val})
-            // for what should be a sequence ({@code - val}).
-            throw $spot->refusal(
-                \sprintf(
-                    'architecture.layers[%d] ("%s"): "%s" must be a string or a non-empty list of strings, got an associative map (keys: %s). Use sequence syntax (a "-" prefix per entry) or omit the key to leave the criterion undeclared.',
-                    $index,
-                    $layerName,
-                    $kind,
-                    self::renderMapKeysForError($entries),
-                ),
-            );
-        }
-
-        if ($entries === []) {
-            throw $spot->refusal(
-                \sprintf(
-                    'architecture.layers[%d] ("%s"): "%s" must contain at least one entry; omit the key to leave the criterion undeclared.',
-                    $index,
-                    $layerName,
-                    $kind,
-                ),
-            );
-        }
-
-        return $entries;
-    }
-
-    /**
-     * Renders the keys of an associative map in a stable, bounded form for
-     * inclusion in an error message. Caps the list at four keys to keep the
-     * error one-line readable when the user paste a large map by accident.
-     *
-     * @param array<array-key, mixed> $map
-     */
-    private static function renderMapKeysForError(array $map): string
-    {
-        $keys = array_keys($map);
-        $shown = \array_slice($keys, 0, 4);
-        $quoted = array_map(static fn(int|string $k): string => '"' . (string) $k . '"', $shown);
-        $tail = \count($keys) > 4 ? ', …' : '';
-
-        return implode(', ', $quoted) . $tail;
     }
 
     /**
@@ -296,23 +218,10 @@ final class LayerCriterionNormalizer
         string $layerName,
         string $kind,
         int $entryIndex,
-        mixed $entry,
+        string $entry,
         SectionSpot $spot,
         callable $semanticCheck,
     ): string {
-        if (!\is_string($entry) || $entry === '') {
-            throw $spot->refusal(
-                \sprintf(
-                    'architecture.layers[%d] ("%s"): "%s" entry at index %d must be a non-empty string (got %s).',
-                    $index,
-                    $layerName,
-                    $kind,
-                    $entryIndex,
-                    \is_string($entry) ? "''" : get_debug_type($entry),
-                ),
-            );
-        }
-
         $semanticError = $semanticCheck($entry);
         if ($semanticError !== null) {
             throw $spot->refusal(
@@ -324,6 +233,7 @@ final class LayerCriterionNormalizer
                     $entryIndex,
                     $semanticError,
                 ),
+                written: $entry,
             );
         }
 

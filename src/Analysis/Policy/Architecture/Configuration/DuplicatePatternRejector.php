@@ -141,6 +141,7 @@ final class DuplicatePatternRejector
                 $owner['name'],
                 $entryName,
             ),
+            written: $pattern,
         );
     }
 }

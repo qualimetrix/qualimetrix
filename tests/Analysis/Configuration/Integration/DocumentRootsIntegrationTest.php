@@ -61,9 +61,9 @@ final class DocumentRootsIntegrationTest extends TestCase
     }
 
     /**
-     * M-20: the root folded Title-case while other depths did not, and a
-     * refusal printed the folded name nobody wrote. One rule now, everywhere:
-     * the written key is refused and the canonical one offered.
+     * One spelling rule at every depth: a key in none of the three accepted
+     * spellings is refused as written, with the canonical one offered, rather
+     * than folded at the root into a name nobody wrote.
      *
      * @param list<string> $path
      */
@@ -81,8 +81,8 @@ final class DocumentRootsIntegrationTest extends TestCase
     }
 
     /**
-     * X-03 and Y-07: a root's type refusal named the schema key whatever the
-     * author wrote, and published a path to a key absent from the document.
+     * A root's type refusal names the key as its author wrote it, and its
+     * published path is a key the document holds, not the schema's spelling.
      */
     #[Test]
     #[DataProvider('provideTypeRefusalSpellings')]
@@ -127,7 +127,7 @@ fail_on: error
         self::assertStringContainsString('"rules" must be an associative array', $folded->summary());
     }
 
-    /** X-04: an integer is a byte count to PHP, and `-1` is the documented "no limit". */
+    /** An integer is a byte count to PHP, and `-1` is the documented "no limit". */
     #[Test]
     public function itAcceptsAnIntegerMemoryLimit(): void
     {
@@ -152,10 +152,9 @@ fail_on: error
     }
 
     /**
-     * claude-seams-05, M-13, R-05: a list element that is not a string used
-     * to be filtered away in silence — `only_rules: [5]` then ran every rule —
-     * and a null one was refused in words about bare strings. The form is the
-     * node's now, judged in the layer that wrote it, with the index.
+     * A list element that is not a string is refused with its index, in the
+     * layer that wrote it: filtered away, `only_rules: [5]` would run every
+     * rule, and a null element is a form mistake, not a bare-string one.
      */
     #[Test]
     #[DataProvider('provideNonStringListElements')]
@@ -177,8 +176,8 @@ fail_on: error
     }
 
     /**
-     * R-05: the form alone does not say what the author meant, so the root
-     * says it — the words the owner's own refusals used to carry.
+     * The form alone does not say what the author meant, so the root's
+     * declaration adds it to the refusal.
      */
     #[Test]
     #[DataProvider('provideLikelyIntents')]

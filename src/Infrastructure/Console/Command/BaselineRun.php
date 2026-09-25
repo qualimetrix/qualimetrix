@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
@@ -74,7 +75,7 @@ final readonly class BaselineRun implements BaselineRunInterface
             $output,
         );
         $this->configurationInputAdapter->writeDiagnostics($document, $output);
-        $this->assertPathsExist($configuration->paths);
+        $this->assertPathsExist($document, $configuration->paths);
 
         $run = $this->measuredFindingSet->run(
             $configuration,
@@ -109,7 +110,7 @@ final readonly class BaselineRun implements BaselineRunInterface
      *
      * @throws ConfigurationRefusal
      */
-    private function assertPathsExist(array $paths): void
+    private function assertPathsExist(ConfigurationDocument $document, array $paths): void
     {
         $missing = [];
 
@@ -120,10 +121,7 @@ final readonly class BaselineRun implements BaselineRunInterface
         }
 
         if ($missing !== []) {
-            throw ConfigurationRefusal::aboutCommandLineInput(
-                'paths',
-                \sprintf('Path(s) do not exist: %s', implode(', ', $missing)),
-            );
+            throw ConfigurationInputAdapter::pathsRefusal($document, \sprintf('Path(s) do not exist: %s', implode(', ', $missing)));
         }
     }
 

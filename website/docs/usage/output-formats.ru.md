@@ -1041,9 +1041,10 @@ bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
 `composer`, `preset`, `file`, `cli`, `baseline` или `resolved`; `name` — имя
 пресета, путь файла или опция. `resolved` называет отказ, владелец которого
 пока читает слитое значение без написавшего его слоя, — сегодня это
-`memory_limit: 010M` и `--fail-on=bogus`, — и его `name` — ключ. `source`
-равен `null` при внутренней ошибке и при отказе без источника в конфигурации,
-например `parallel.workers: -3`. А baseline-файл — который пишут
+`memory_limit: 010M` и `--fail-on=bogus`, — и его `name` — ключ, если владелец
+его знает, иначе `null` (селектор правила в `only_rules` или `disabled_rules`).
+`source` равен `null` при внутренней ошибке и при отказе без источника в
+конфигурации, например `parallel.workers: -3`. А baseline-файл — который пишут
 `baseline:generate`, `update`, `cleanup` и переписывает на месте
 `baseline:rename-channels` — это версионированный входной артефакт, который
 инструмент читает обратно, со своей схемой, а не отчёт.

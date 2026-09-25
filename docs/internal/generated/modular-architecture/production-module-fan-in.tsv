@@ -2,7 +2,7 @@ target_contract_fqcn	target_owner	distinct_consumer_fqcns	distinct_consumer_owne
 Qualimetrix\Analysis\Configuration\ConfigKeySpelling	Analysis.Configuration	9	3
 Qualimetrix\Analysis\Configuration\ConfigSchema	Analysis.Configuration	13	7
 Qualimetrix\Analysis\Configuration\ConfigurationRoot	Analysis.Configuration	1	1
-Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	23	9
+Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	25	9
 Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface	Analysis.Configuration	5	3
 Qualimetrix\Analysis\Configuration\Contract\Document\Provenance	Analysis.Configuration	5	4
 Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareName	Analysis.Configuration	2	1
@@ -10,7 +10,7 @@ Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument	Analysis.C
 Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedList	Analysis.Configuration	4	3
 Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMap	Analysis.Configuration	4	2
 Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaque	Analysis.Configuration	2	1
-Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface	Analysis.Configuration	5	3
+Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface	Analysis.Configuration	6	3
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface	Analysis.Configuration	3	2
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema	Analysis.Configuration	4	2
@@ -21,7 +21,7 @@ Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface	Anal
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface	Analysis.Configuration	3	2
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest	Analysis.Configuration	1	1
 Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	Analysis.Configuration	3	3
-Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	55	10
+Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	54	10
 Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	15	6
 Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions	Analysis.Configuration	3	2
@@ -226,7 +226,7 @@ Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ExecutionStrategyInterface
 Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ParallelCapableInterface	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface	Analysis.Run	3	2
 Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy	Analysis.Run	1	1
-Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	8	2
+Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	7	2
 Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface	Analysis.Run	4	2
 Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface	Analysis.Run	7	3
 Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface	Analysis.Run	6	3
