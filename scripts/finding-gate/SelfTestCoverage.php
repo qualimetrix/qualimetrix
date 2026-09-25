@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace QmxFindingGate;
 
 /**
- * Coverage and the case claims it is built from: row shapes, claimed channel-and-level pairs, and the
- * level vocabulary.
+ * Coverage and the case claims it is built from: row shapes, claimed channel-and-level pairs, the
+ * level vocabulary, and the corpus those claims come from — which cases a run selects and what a case
+ * may point at.
  */
 final class SelfTestCoverage extends SelfTestGroup
 {
@@ -295,6 +296,85 @@ final class SelfTestCoverage extends SelfTestGroup
         $this->assert(
             self::throws(static fn(): mixed => CaseDefinition::load($directory)),
             'a claim still written as a "rule#code" pair is refused: no channel carries that name',
+        );
+
+        Fs::removeRecursively($root);
+    }
+
+    /**
+     * The corpus is external and self-contained, and a restricted run says
+     * which cases it ran.
+     *
+     * Both halves are exercised on a written corpus rather than on the loader's
+     * arguments, for the reason {@see claimShapeOnLoad()} gives. Every refusal
+     * below loaded before its check existed: `paths` was the only value held to
+     * the case directory, and a misspelt `--cases` name beside a real one was
+     * dropped while the limit line still named it.
+     */
+    public function corpusBoundaries(): void
+    {
+        $root = Fs::temporaryDirectory('self-test-corpus-');
+        $directory = $root . '/finding-gate/cases/probe';
+        mkdir($directory, 0o777, true);
+        Fs::write($directory . '/qmx.yaml', "suppress_paths: []\n");
+        Fs::write($directory . '/preset.yaml', "rules: {}\n");
+
+        $loads = static function (string $config, array $args) use ($root, $directory): bool {
+            Fs::write($directory . '/case.json', (string) json_encode([
+                'id' => 'probe',
+                'description' => 'a written case, so what it may point at is checked where a case is loaded',
+                'paths' => ['src'],
+                'config' => $config,
+                'args' => $args,
+                'channels' => ['a.code@class'],
+            ]));
+
+            return !self::throws(static fn(): mixed => Corpus::load($root, []));
+        };
+
+        $this->assert(
+            $loads('qmx.yaml', ['--preset=strict', '--preset=preset.yaml', '-c', 'qmx.yaml', '--rule-opt=a.b:c=1']),
+            'a case whose config, presets and path arguments stay in its directory loads',
+        );
+        $this->assert(!$loads('../probe/qmx.yaml', []), 'a config reached through ".." is refused');
+
+        foreach ([
+            'an absolute config as a separated -c' => ['-c', '/elsewhere/qmx.yaml'],
+            'an attached -c' => ['-c/elsewhere/qmx.yaml'],
+            'a -c inside a short-option cluster' => ['-qc/elsewhere/qmx.yaml'],
+            'an attached --config' => ['--config=/elsewhere/qmx.yaml'],
+            'a separated --config' => ['--config', '../../qmx.yaml'],
+            'a preset path' => ['--preset=../../../preset.yaml'],
+            'a preset hidden in a comma list' => ['--preset=strict,/elsewhere/preset.yaml'],
+            'a baseline' => ['--baseline=/elsewhere/baseline.json'],
+            'an output file' => ['-o', '/elsewhere/report.json'],
+            'a working directory' => ['--working-dir=..'],
+        ] as $what => $args) {
+            $this->assert(!$loads('qmx.yaml', $args), \sprintf('%s outside the case directory is refused', $what));
+        }
+
+        $this->assert(
+            !$loads('qmx.yaml', ['--format', 'json']),
+            'a bare token that is no path option\'s value is refused: whether it names a path cannot be known',
+        );
+        $this->assert(!$loads('qmx.yaml', ['--', 'src']), 'and so is ending option parsing, after which every token is one');
+
+        $loads('qmx.yaml', []);
+        $unmatched = null;
+
+        try {
+            Corpus::load($root, ['probe', 'nope']);
+        } catch (GateError $error) {
+            $unmatched = $error->getMessage();
+        }
+
+        $this->assert(
+            $unmatched !== null && str_contains($unmatched, 'nope'),
+            'a --cases name that selects no case is refused by name even beside one that does',
+        );
+        $this->assert(
+            !self::throws(static fn(): mixed => Corpus::load($root, ['probe'])),
+            'while a --cases list whose every name selects a case loads',
         );
 
         Fs::removeRecursively($root);

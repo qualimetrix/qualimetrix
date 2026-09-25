@@ -44,6 +44,7 @@ final class SelfTest
         $metricKeys->metricKeys();
         $coverage->channelRowShapes();
         $coverage->claims();
+        $coverage->corpusBoundaries();
         $coverage->coverage();
         $coverage->levelVocabulary();
         $maps->ambiguities();
@@ -65,6 +66,7 @@ final class SelfTest
         $resources->lockedRegistrationIsStillReleased();
         $resources->interruptedRunReleasesEverything();
         $resources->releasedWhenKilledDuringCheckout();
+        $resources->controlCloneOwnsItsRepository();
         $registries->loaderNamesEveryClass();
         $registries->witnessedFailureClasses();
 

@@ -177,10 +177,10 @@ final class Harness
                                           running invisibly for seven minutes. Pass this to outlive a
                                           launcher on purpose.
 
-            Each control clones this working tree — git-listed content and `vendor/` hardlinked,
-            `.git` copied, everything git ignores left out — plants one breakage, runs THAT clone's
-            own gate, and asserts the exit code and the failure class. The clone is what makes the
-            harness survive Ш5's rewrite of the comparator.
+            Each control clones this working tree — git-listed content and `vendor/` hardlinked, the
+            repository cloned rather than shared, everything git ignores left out — plants one
+            breakage, runs THAT clone's own gate, and asserts the exit code and the failure class.
+            The clone is what makes the harness survive Ш5's rewrite of the comparator.
             TEXT;
     }
 

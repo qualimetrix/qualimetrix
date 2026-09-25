@@ -25,6 +25,22 @@ final class CaseDefinition
     private const KNOWN_KEYS = ['id', 'description', 'coverage', 'paths', 'config', 'args', 'channels', 'explainSubjects'];
 
     /**
+     * The product options whose value is a file-system path, by long name, with
+     * the shortcut where one exists. The one list the containment rule and
+     * {@see argumentPaths()} read; an option missing here is not checked.
+     */
+    public const PATH_OPTIONS = [
+        '--config' => '-c',
+        '--preset' => null,
+        '--baseline' => null,
+        '--output' => '-o',
+        '--cache-dir' => null,
+        '--log-file' => null,
+        '--profile' => null,
+        '--working-dir' => '-d',
+    ];
+
+    /**
      * @param list<string> $paths
      * @param list<string> $args
      * @param list<string> $channels each entry is a `rule#code@level` pair; see SubjectLevel
@@ -103,17 +119,97 @@ final class CaseDefinition
             ));
         }
 
-        if (!is_file($directory . '/' . $case->config)) {
-            throw new GateError(\sprintf('%s names config "%s", which does not exist.', $file, $case->config));
-        }
-
-        foreach ($case->paths as $path) {
+        foreach ([...$case->paths, $case->config, ...$case->argumentPaths()] as $path) {
             if (str_starts_with($path, '/') || str_contains($path, '..')) {
                 throw new GateError(\sprintf('%s names path "%s" outside its own directory.', $file, $path));
             }
         }
 
+        if (!is_file($directory . '/' . $case->config)) {
+            throw new GateError(\sprintf('%s names config "%s", which does not exist.', $file, $case->config));
+        }
+
         return $case;
+    }
+
+    /**
+     * Every file-system path the case's `args` name, as values of
+     * {@see self::PATH_OPTIONS}, each comma-separated part on its own.
+     *
+     * A bare token is accepted only as the separated value of one of those
+     * options. Anywhere else it is either a positional analysis path, which
+     * belongs in `paths`, or the separated value of an option this list does not
+     * know — and without knowing which, no answer about what the case reads
+     * would be exact, so the case is refused instead.
+     *
+     * @return list<string>
+     */
+    public function argumentPaths(): array
+    {
+        $file = $this->directory . '/case.json';
+        $values = [];
+        $pending = null;
+
+        foreach ($this->args as $argument) {
+            if ($pending !== null) {
+                $pending = null;
+
+                if (!str_starts_with($argument, '-')) {
+                    $values[] = $argument;
+
+                    continue;
+                }
+            }
+
+            if ($argument === '--') {
+                throw new GateError(\sprintf('%s: "args" may not end option parsing with "--".', $file));
+            }
+
+            if (str_starts_with($argument, '--')) {
+                $equals = strpos($argument, '=');
+                $name = $equals === false ? $argument : substr($argument, 0, $equals);
+                $value = $equals === false ? null : substr($argument, $equals + 1);
+
+                if (\array_key_exists($name, self::PATH_OPTIONS)) {
+                    $value === null ? $pending = $name : $values[] = $value;
+                }
+
+                continue;
+            }
+
+            if (str_starts_with($argument, '-')) {
+                // Symfony reads the rest of a short-option cluster as the value
+                // of its first option that takes one; any path shortcut in the
+                // cluster is treated as that option, which can only over-refuse.
+                foreach (str_split(substr($argument, 1)) as $offset => $shortcut) {
+                    if (\in_array('-' . $shortcut, self::PATH_OPTIONS, true)) {
+                        $value = ltrim(substr($argument, $offset + 2), '=');
+                        $value === '' ? $pending = $shortcut : $values[] = $value;
+
+                        break;
+                    }
+                }
+
+                continue;
+            }
+
+            throw new GateError(\sprintf(
+                '%s: "args" carries the bare token "%s", which is no value of a path option. Analysis paths'
+                . ' belong in "paths"; any other option value is written attached, as --option=value.',
+                $file,
+                $argument,
+            ));
+        }
+
+        $paths = [];
+
+        foreach ($values as $value) {
+            foreach (explode(',', $value) as $part) {
+                $paths[] = $part;
+            }
+        }
+
+        return $paths;
     }
 
     /** @param array<array-key, mixed> $decoded */

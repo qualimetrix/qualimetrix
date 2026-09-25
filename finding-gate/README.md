@@ -8,7 +8,11 @@ The corpus is **external code by construction**. We dogfood ourselves, so a
 corpus containing `src/` would move its own input with every step it is
 supposed to measure: renaming the class `Violation` would shift the subjects of
 the findings the gate compares. Nothing under `cases/` may be product code, and
-no case may point at a path outside its own directory.
+no case may point at a path outside its own directory: not in `paths`, not in
+`config`, and not in the value of any path-valued option in `args` (`-c`,
+`--config`, `--preset`, `--baseline`, `--output`, …; the one list is
+`CaseDefinition::PATH_OPTIONS`). An absolute path or one containing `..` is
+refused when the case loads.
 
 ## Layout
 
@@ -80,7 +84,7 @@ moves, and stale declarations.
   "coverage": "authoritative",         // or "auxiliary"; optional, defaults to authoritative
   "paths": ["src"],                    // relative to the case directory
   "config": "qmx.yaml",                // relative to the case directory
-  "args": ["--rule-opt=complexity.wmc:threshold=0"],   // extra CLI arguments; optional, defaults to []
+  "args": ["--rule-opt=complexity.wmc:threshold=0"],   // extra CLI options; optional, defaults to []; a value is written attached (--option=value), except after a path option
   "channels": ["code-smell.eval@callable"],             // channel AND level pairs this case owns
   "explainSubjects": ["declaration:callable:Corpus\\Smells\\Smells::report@src/Smells.php"]  // subjects for baseline:explain
 }
@@ -334,6 +338,9 @@ the `bin/qmx rules` snapshot.
 | `RED`     | 1     | At least one failure class fired.                          |
 | —         | 3     | The gate could not run (bad corpus, bad map, no tree).     |
 | —         | 128+n | A signal stopped the run: 130 for SIGINT, 143 for SIGTERM. |
+
+A `--cases=` name that selects no case is refused (exit 3), also beside names
+that do select one, so the restriction a run reports is the one it ran under.
 
 A run is `PARTIAL`, never `GREEN`, when `--cases=` restricted the corpus or when
 `--incomplete-corpus` downgraded a coverage shortfall to a warning. Only a
@@ -1047,7 +1054,11 @@ own parent.
 ## The controls
 
 `composer gate:controls` runs twenty-three controls, each on its own hardlink
-clone: nineteen planted breakages and four green ones. Seventeen of the
+clone: nineteen planted breakages and four green ones. The clone's repository is
+its own — a local mirror of the developer's with the checkout's `HEAD` and
+`index` — so the reference checkout each control's gate takes is registered in
+the clone, never in the repository the harness was started from, also when that
+is a linked worktree whose `.git` is only a pointer file. Seventeen of the
 nineteen are each required to produce a named failure class at a named
 surface; the two derive controls are judged by what the run left on disk
 instead. `moved-aggregated-spelling`
