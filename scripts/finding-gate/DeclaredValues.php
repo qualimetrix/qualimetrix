@@ -34,6 +34,10 @@ final class DeclaredValues
 
     public const string METRIC = 'metric';
 
+    public const string EXIT = 'exit';
+
+    public const array COMMANDS = ['check', 'directives', 'graph:export', 'rules', 'baseline:generate', 'baseline:explain', 'baseline:update', 'baseline:cleanup', 'baseline:rename-channels', 'debug:layer-assignment'];
+
     public const string EVERY_LEVEL = '*';
 
     /** @var array<string, true> intent key => credited */
@@ -54,8 +58,11 @@ final class DeclaredValues
         $intents = [];
 
         foreach (DeclarationTable::rows($root, self::INDEX, self::COLUMNS) as $index => $row) {
-            DeclarationTable::oneOf(self::INDEX, $index + 1, 'kind', $row['kind'], [self::FIELD, self::METRIC]);
+            DeclarationTable::oneOf(self::INDEX, $index + 1, 'kind', $row['kind'], [self::FIELD, self::METRIC, self::EXIT]);
             DeclarationTable::oneOf(self::INDEX, $index + 1, 'level', $row['level'], [self::EVERY_LEVEL, ...SubjectLevel::levels()]);
+            if ($row['kind'] === self::EXIT && ($row['level'] !== '*' || !\in_array($row['key'], self::COMMANDS, true))) {
+                throw new GateError('An exit intention requires an exact command class and level *.');
+            }
             $key = self::intentKey($row['kind'], $row['key']);
 
             if (isset($intents[$key])) {

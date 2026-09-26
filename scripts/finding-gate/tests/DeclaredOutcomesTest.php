@@ -60,6 +60,31 @@ final class DeclaredOutcomesTest extends TestCase
         $this->assertRefused(static fn(string $root): mixed => DeclaredOutcomes::load($root), 'is not a file under declared-outcomes/');
     }
 
+    #[Test]
+    public function itRefusesAnOutcomeFileThatEscapesThroughALink(): void
+    {
+        Fs::write($this->root . '/outside.txt', 'An outside snapshot.');
+        mkdir($this->root . '/' . DeclaredOutcomes::DIRECTORY);
+        symlink('../outside.txt', $this->root . '/declared-outcomes/linked.txt');
+        $this->write(DeclaredOutcomes::INDEX, DeclaredOutcomes::COLUMNS, [['alpha', DeclaredOutcomes::ANALYSIS_TO_REFUSAL, 'declared-outcomes/linked.txt', 'why']]);
+        $this->assertRefused(static fn(string $root): mixed => DeclaredOutcomes::load($root), 'remain inside');
+    }
+
+    #[Test]
+    public function itRefusesSharedSnapshotFilesAndUnknownCredit(): void
+    {
+        Fs::write($this->root . '/declared-outcomes/shared.txt', 'Measured output.');
+        $this->write(DeclaredOutcomes::INDEX, DeclaredOutcomes::COLUMNS, [
+            ['alpha', DeclaredOutcomes::ANALYSIS_TO_REFUSAL, 'declared-outcomes/shared.txt', 'why'],
+            ['beta', DeclaredOutcomes::ANALYSIS_TO_REFUSAL, 'declared-outcomes/shared.txt', 'why'],
+        ]);
+        $this->assertRefused(static fn(string $root): mixed => DeclaredOutcomes::load($root), 'two cases');
+        $this->write(DeclaredOutcomes::INDEX, DeclaredOutcomes::COLUMNS, []);
+        $outcomes = DeclaredOutcomes::load($this->root);
+        $this->expectException(GateError::class);
+        $outcomes->credit('alpha');
+    }
+
     /**
      * @param list<string> $columns
      * @param list<list<string>> $rows

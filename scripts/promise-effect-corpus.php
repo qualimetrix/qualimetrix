@@ -33,6 +33,8 @@ declare(strict_types=1);
 namespace Qualimetrix\PromiseEffectCorpus;
 
 use FilesystemIterator;
+use QmxFindingGate\CaseOutcome;
+use QmxFindingGate\Corpus;
 use Qualimetrix\Subprocess\ChildProcess;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -41,6 +43,7 @@ use RuntimeException;
 $repositoryRoot = \dirname(__DIR__);
 require $repositoryRoot . '/vendor/autoload.php';
 require_once __DIR__ . '/subprocess/ChildProcess.php';
+require_once __DIR__ . '/finding-gate/classes.php';
 
 final class Document
 {
@@ -102,28 +105,16 @@ function buildCorpus(string $repositoryRoot): array
 {
     $documents = [];
 
-    // 18 finding-gate corpus cases: each case.json names its own paths,
-    // config file and extra CLI arguments. Read dynamically so this corpus
-    // never drifts from what the gate itself runs.
-    $caseDirectories = glob($repositoryRoot . '/finding-gate/cases/*', \GLOB_ONLYDIR);
-    $caseDirectories = $caseDirectories === false ? [] : $caseDirectories;
-    sort($caseDirectories);
-
-    foreach ($caseDirectories as $caseDirectory) {
-        $caseFile = $caseDirectory . '/case.json';
-
-        if (!is_file($caseFile)) {
+    foreach (Corpus::load($repositoryRoot)->cases as $case) {
+        if (CaseOutcome::of($case, 'candidate') !== CaseOutcome::ANALYSIS) {
             continue;
         }
-
-        $case = json_decode((string) file_get_contents($caseFile), true, flags: \JSON_THROW_ON_ERROR);
-
         $documents[] = new Document(
-            identifier: 'finding-gate/cases/' . basename($caseDirectory),
-            directory: $caseDirectory,
-            config: $case['config'],
-            paths: $case['paths'],
-            extraArguments: $case['args'] ?? [],
+            identifier: 'finding-gate/cases/' . $case->id,
+            directory: $case->directory,
+            config: $case->config,
+            paths: $case->paths,
+            extraArguments: $case->args,
         );
     }
 

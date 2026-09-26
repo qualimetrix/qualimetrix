@@ -46,7 +46,7 @@ final class CapturePlanTest extends TestCase
     public function itMapsEveryInvocationAndFileToItsExactCommand(): void
     {
         $plan = $this->plan();
-        foreach (['format:json', 'show-suppressed', 'check:baseline', 'check:output', 'check:parallel'] as $surface) {
+        foreach (['format:json', 'show-suppressed', 'check:baseline-source', 'check:baseline', 'check:output', 'check:parallel'] as $surface) {
             self::assertSame('check', $plan->commandClassOf('case:alpha|' . $surface));
         }
         self::assertSame('rules', $plan->commandClassOf('tree|rules'));
@@ -64,6 +64,40 @@ final class CapturePlanTest extends TestCase
         self::assertContains('case:alpha|stderr:format:json', $plan->artifactsOf('case:alpha|format:json'));
         self::assertNotEmpty($plan->invocations());
         self::assertSame('check:output:file', $plan->descriptorOf('case:alpha|check:output')['outputFileKind']);
+    }
+
+    #[Test]
+    public function itPlansVariantAuthorityBeforeGenerationOnlyWhenTheVariantExists(): void
+    {
+        $views = array_column($this->plan()->invocations(), 'surface');
+        self::assertContains('check:baseline-source', $views);
+        self::assertLessThan(
+            array_search('baseline-file', $views, true),
+            array_search('check:baseline-source', $views, true),
+        );
+        self::assertSame(
+            'case:alpha|check:baseline-source',
+            $this->plan()->invocationOf('case:alpha|stderr:check:baseline-source'),
+        );
+        Fs::removeRecursively($this->root . '/finding-gate/cases/alpha/baseline-src');
+        self::assertNotContains('check:baseline-source', array_column($this->plan()->invocations(), 'surface'));
+    }
+
+    #[Test]
+    public function itRequestsAnIntroducedSurfaceOnlyFromTheCandidate(): void
+    {
+        Fs::write($this->root . '/finding-gate/' . DeclaredSurfaces::INDEX, "change\tsurface\tfile\treason\nintroduced\tformat:json\t-\tnew report\n");
+        $plan = $this->plan();
+        self::assertTrue($plan->requiredOn('case:alpha|format:json', 'candidate'));
+        self::assertFalse($plan->requiredOn('case:alpha|format:json', 'reference'));
+        self::assertTrue($plan->requiredOn('case:alpha|format:metrics', 'reference'));
+    }
+
+    #[Test]
+    public function itRefusesAnUnknownCaptureSide(): void
+    {
+        $this->expectException(GateError::class);
+        $this->plan()->requiredOn('case:alpha|format:json', 'other');
     }
 
     #[Test]

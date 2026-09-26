@@ -64,7 +64,7 @@ final class GateTest extends TestCase
                 $root,
             ], $runtime);
             self::assertSame(0, $run['exit'], $run['stderr']);
-            self::assertStringContainsString('no registered check ("refusal")', $run['stdout']);
+            self::assertStringContainsString('no registered check ("outcomes")', $run['stdout']);
         } finally {
             Fs::removeRecursively($runtime);
             SyntheticTree::remove($root);

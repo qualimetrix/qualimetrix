@@ -54,6 +54,71 @@ final class DeclaredStructuralMapsTest extends TestCase
         $this->assertRefused(static fn(string $root): mixed => DeclaredStructuralMaps::load($root), $reason);
     }
 
+    #[Test]
+    public function itMovesOriginalValuesSimultaneouslyWithoutInventingCredit(): void
+    {
+        $this->write(DeclaredStructuralMaps::INDEX, DeclaredStructuralMaps::COLUMNS, [
+            ['config', 'a', 'b', 'same', 'First original value.'],
+            ['config', 'b', 'c', 'same', 'Second original value.'],
+        ]);
+        $maps = DeclaredStructuralMaps::load($this->root);
+        $text = $maps->reverseDocument('config', "b: 1\nc: 2\nneighbor: retained\n");
+        self::assertStringContainsString('a: 1', $text);
+        self::assertStringContainsString('b: 2', $text);
+        self::assertStringContainsString('neighbor: retained', $text);
+        self::assertSame([], $maps->stale());
+        self::assertSame(["config\0a" => 1, "config\0b" => 1], $maps->firedRows());
+        $parent = DeclaredStructuralMaps::load($this->root);
+        $parent->creditRowsFiredElsewhere($maps->firedRows());
+        self::assertSame([], $parent->stale());
+    }
+
+    #[Test]
+    public function itPreservesIdleInputBytesAndKeepsTheMoveStale(): void
+    {
+        $this->write(DeclaredStructuralMaps::INDEX, DeclaredStructuralMaps::COLUMNS, [['config', 'old', 'new', 'same', 'An unused move.']]);
+        $maps = DeclaredStructuralMaps::load($this->root);
+        $original = "# Keep layout\r\nneighbor: 'retained'\r\n";
+        self::assertSame($original, $maps->reverseDocument('config', $original));
+        self::assertCount(1, $maps->stale());
+        self::assertSame([], $maps->firedRows());
+    }
+
+    #[Test]
+    public function itRefusesConflictingMovesWithoutCreditingThem(): void
+    {
+        $this->write(DeclaredStructuralMaps::INDEX, DeclaredStructuralMaps::COLUMNS, [['config', 'old', 'new', 'same', 'Move a value.']]);
+        $maps = DeclaredStructuralMaps::load($this->root);
+        try {
+            $maps->reverseDocument('config', "old: retained\nnew: 7\n");
+            self::fail('A destination collision was accepted.');
+        } catch (GateError $error) {
+            self::assertStringContainsString('collides', $error->getMessage());
+        }
+        self::assertSame([], $maps->firedRows());
+        foreach ([["unknown\0old" => 1], ["config\0old" => 0]] as $hits) {
+            try {
+                $maps->creditRowsFiredElsewhere($hits);
+                self::fail('Invalid worker credit was accepted.');
+            } catch (GateError $error) {
+                self::assertStringContainsString('unknown or invalid', $error->getMessage());
+            }
+        }
+    }
+
+    #[Test]
+    public function itRefusesOverlappingSourcePathsInsteadOfApplyingARowTwice(): void
+    {
+        $this->write(DeclaredStructuralMaps::INDEX, DeclaredStructuralMaps::COLUMNS, [
+            ['config', 'old', 'new', 'same', 'Move the parent.'],
+            ['config', 'other', 'new.child', 'same', 'Move its child.'],
+        ]);
+        $maps = DeclaredStructuralMaps::load($this->root);
+        $this->expectException(GateError::class);
+        $this->expectExceptionMessage('disjoint');
+        $maps->reverseDocument('config', "new:\n  child: 7\n");
+    }
+
     /**
      * @param list<string> $columns
      * @param list<list<string>> $rows

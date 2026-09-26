@@ -36,6 +36,10 @@ final class Surfaces
     {
         $surface = substr($artifactKey, (int) strpos($artifactKey, '|') + 1);
 
+        if ($surface === 'stderr:check:output') {
+            return $surface;
+        }
+
         foreach (['explain:', 'stderr:'] as $prefix) {
             if (str_starts_with($surface, $prefix)) {
                 return rtrim($prefix, ':');

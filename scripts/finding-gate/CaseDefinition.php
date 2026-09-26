@@ -101,14 +101,35 @@ final class CaseDefinition
         public readonly ?int $outcomeExit,
         private readonly array $layerSubjects,
         private readonly ?string $channelMap,
+        public readonly ?string $transition = null,
     ) {}
+
+    public function withDirectory(string $directory): self
+    {
+        return new self(
+            $this->id,
+            $directory,
+            $this->description,
+            $this->coverage,
+            $this->paths,
+            $this->config,
+            $this->args,
+            $this->channels,
+            $this->explainSubjects,
+            $this->outcome,
+            $this->outcomeExit,
+            $this->layerSubjects,
+            $this->channelMap,
+            $this->transition,
+        );
+    }
 
     public function isAuxiliary(): bool
     {
         return $this->coverage === self::COVERAGE_AUXILIARY;
     }
 
-    public static function load(string $directory): self
+    public static function load(string $directory, ?string $transition = null): self
     {
         $id = basename($directory);
         $file = $directory . '/case.json';
@@ -156,6 +177,7 @@ final class CaseDefinition
             $outcomeExit,
             self::strings($decoded, 'layerAssignmentSubjects', $file, optional: true),
             \array_key_exists('renameChannelsMap', $decoded) ? self::string($decoded, 'renameChannelsMap', $file) : null,
+            $transition,
         );
 
         if ($case->id !== $id) {
@@ -287,6 +309,20 @@ final class CaseDefinition
             $files[] = ['option' => $option, 'path' => $path];
         }
 
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($this->directory, FilesystemIterator::SKIP_DOTS));
+        foreach ($iterator as $entry) {
+            if (!$entry instanceof SplFileInfo || !$entry->isFile()) {
+                continue;
+            }
+            $path = substr($entry->getPathname(), \strlen($this->directory) + 1);
+            if ($path === 'case.json' || str_starts_with($path, '.qmx-cache/')) {
+                continue;
+            }
+            $this->assertInside($path);
+            if (!\in_array($path, array_column($files, 'path'), true)) {
+                $files[] = ['option' => 'case-file', 'path' => $path];
+            }
+        }
         return $files;
     }
 
@@ -369,6 +405,10 @@ final class CaseDefinition
                 $equals = strpos($argument, '=');
                 $name = $equals === false ? $argument : substr($argument, 0, $equals);
                 $value = $equals === false ? null : substr($argument, $equals + 1);
+
+                if ($name === '--baseline') {
+                    throw new GateError($file . ': --baseline is not a case input. Use baseline-src/ so each side generates its own baseline format.');
+                }
 
                 if (\array_key_exists($name, self::OUTPUT_OPTIONS)) {
                     throw $this->writes($name);
@@ -472,25 +512,7 @@ final class CaseDefinition
      */
     private static function outcome(array $decoded, string $file): array
     {
-        if (!\array_key_exists('outcome', $decoded)) {
-            return [CaseOutcome::ANALYSIS, null];
-        }
-
-        $outcome = $decoded['outcome'];
-        $kinds = [CaseOutcome::REFUSAL, CaseOutcome::INCOMPLETE];
-
-        if (!\is_array($outcome) || array_keys($outcome) !== ['kind', 'exit'] || !\in_array($outcome['kind'], $kinds, true)
-            || !\is_int($outcome['exit']) || $outcome['exit'] < 1 || $outcome['exit'] > 255
-        ) {
-            throw new GateError(\sprintf(
-                '%s: "outcome" must be {"kind": "%s", "exit": N} with N in 1-255; a case that analyses carries no'
-                . ' outcome at all.',
-                $file,
-                implode('"|"', $kinds),
-            ));
-        }
-
-        return [$outcome['kind'], $outcome['exit']];
+        return CaseOutcome::definition($decoded, $file);
     }
 
     /** @param array<array-key, mixed> $decoded */
@@ -514,14 +536,14 @@ final class CaseDefinition
     {
         $value = $decoded[$key] ?? ($optional ? [] : null);
 
-        if (!\is_array($value)) {
+        if (!\is_array($value) || !array_is_list($value)) {
             throw new GateError(\sprintf('%s: "%s" must be an array of strings.', $file, $key));
         }
 
         $values = [];
 
         foreach ($value as $item) {
-            if (!\is_string($item)) {
+            if (!\is_string($item) || $item === '') {
                 throw new GateError(\sprintf('%s: "%s" must be an array of strings.', $file, $key));
             }
 

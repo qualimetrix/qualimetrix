@@ -20,7 +20,7 @@ namespace QmxFindingGate;
  * `fieldMoves`, and any other file under `finding-gate/` named in
  * `declarations`) land in both, and only the candidate's are read.
  *
- * @phpstan-type Answer array{stdout?: string, stderr?: string, stderrOnce?: bool, exit?: int}
+ * @phpstan-type Answer array{stdout?: string, stderr?: string, stderrOnce?: bool, exit?: int, file?: string, cache?: bool, env?: bool, missingFile?: bool}
  * @phpstan-type Finding array<string, mixed>
  * @phpstan-type Specification array{
  *     cases: array<string, list<string>>,
@@ -39,6 +39,7 @@ namespace QmxFindingGate;
  *     declaredDelta: array<string, string>,
  *     fieldMoves: list<array{0: string, 1: string, 2: string, 3: string}>,
  *     declarations: array<string, string>,
+ *     candidateDeclarations?: array<string, string>,
  *     lock: string,
  *     candidateLock: string|null,
  * }
@@ -65,7 +66,7 @@ final class SyntheticTree
      */
     public static function clean(): array
     {
-        $fields = ['subject', 'channel', 'occurrence', 'edge', 'rule', 'message'];
+        $fields = ['file', 'line', 'subject', 'symbol', 'channel', 'occurrence', 'edge', 'namespace', 'rule', 'code', 'severity', 'message', 'recommendation', 'metricValue', 'threshold', 'techDebtMinutes', 'acceptedLevel'];
 
         return [
             'cases' => ['alpha' => ['replay.alpha@callable']],
@@ -76,7 +77,7 @@ final class SyntheticTree
             'candidateAnswers' => [],
             'tuple' => $fields,
             'published' => $fields,
-            'normalization' => [],
+            'normalization' => [['stderr:check:output', '~^(Report written to ).*()$~m', NormalizationRule::KIND_LINE_REGEX]],
             'static' => ['replay.alpha' => ['callable']],
             'fixture' => ['replay.alpha' => ['callable']],
             'levels' => SubjectLevel::levels(),
@@ -90,13 +91,34 @@ final class SyntheticTree
     }
 
     /**
+     * A populated case for every capture descriptor, including distinct debug and worker invocations.
+     *
+     * @return Specification
+     */
+    public static function captureFixture(): array
+    {
+        $tree = self::clean();
+        $definition = ['id' => 'alpha', 'description' => 'Every capture invocation.', 'paths' => ['src'], 'config' => 'qmx.yaml', 'channels' => ['replay.alpha@callable'], 'explainSubjects' => ['file:src/Alpha.php'], 'layerAssignmentSubjects' => ['Replay\Alpha', 'Replay\Beta'], 'renameChannelsMap' => 'channels.tsv'];
+        $tree['declarations']['cases/alpha/case.json'] = self::json($definition);
+        $tree['declarations']['cases/alpha/channels.tsv'] = "old\tnew\treason\nreplay.alpha\treplay.beta\treplayed\n";
+        $tree['declarations']['cases/alpha/baseline-src/src/Alpha.php'] = "<?php\n";
+        for ($index = 0; $index < 101; ++$index) {
+            $tree['declarations']['cases/alpha/src/Shard' . $index . '.php'] = "<?php\n";
+        }
+
+        return $tree;
+    }
+
+    /**
      * @param list<string> $fields
      *
      * @return Finding
      */
     public static function finding(array $fields, string $channel, string $subject): array
     {
-        $values = ['subject' => $subject, 'channel' => $channel, 'occurrence' => null, 'edge' => null, 'rule' => $channel, 'message' => 'replayed'];
+        $file = str_contains($subject, '@') ? substr($subject, (int) strrpos($subject, '@') + 1) : 'src/Alpha.php';
+        $symbol = preg_replace('/^declaration:(?:callable|class):/', '', explode('@', $subject)[0]);
+        $values = ['file' => $file, 'line' => 1, 'subject' => $subject, 'symbol' => $symbol, 'channel' => $channel, 'occurrence' => null, 'edge' => null, 'namespace' => 'Replay', 'rule' => $channel, 'code' => $channel, 'severity' => 'error', 'message' => 'replayed', 'recommendation' => null, 'metricValue' => 1, 'threshold' => 0, 'techDebtMinutes' => 15, 'acceptedLevel' => null];
         $finding = [];
 
         foreach ($fields as $field) {
@@ -134,15 +156,17 @@ final class SyntheticTree
             }
         }
 
+        $candidateSpecification = $specification;
+        $candidateSpecification['declarations'] = [...$specification['declarations'], ...($specification['candidateDeclarations'] ?? [])];
         $candidate = self::files(
-            $specification,
+            $candidateSpecification,
             [...$specification['findings'], ...$specification['candidateFindings']],
             [...$specification['answers'], ...$specification['candidateAnswers']],
             $specification['candidateLock'] ?? $specification['lock'],
         );
 
         foreach ($candidate as $path => $content) {
-            if ($content !== $reference[$path]) {
+            if ($content !== ($reference[$path] ?? null)) {
                 Fs::write($root . '/' . $path, $content);
             }
         }
@@ -164,10 +188,11 @@ final class SyntheticTree
      */
     private static function files(array $specification, array $findings, array $overrides, string $lock): array
     {
-        $answers = ['tree|rules' => ['stdout' => "replayed rules\n"]];
+        $answers = ['tree|rules' => ['stdout' => "replayed rules\n"], 'tree|graph:export' => ['stdout' => "No files found to analyze\n", 'exit' => 1]];
 
         foreach ($specification['cases'] as $id => $claims) {
-            $answers += self::caseAnswers($id, $findings[$id] ?? [], \in_array($id, $specification['truncated'], true));
+            $definition = json_decode($specification['declarations']['cases/' . $id . '/case.json'] ?? '{}', true, 512, \JSON_THROW_ON_ERROR);
+            $answers += self::caseAnswers($id, $findings[$id] ?? [], \in_array($id, $specification['truncated'], true), $definition);
         }
 
         $files = [
@@ -242,10 +267,11 @@ final class SyntheticTree
      * Every surface a case run captures, readable and agreeing with the findings.
      *
      * @param list<Finding> $findings
+     * @param array<string,mixed> $definition
      *
      * @return array<string, Answer>
      */
-    private static function caseAnswers(string $id, array $findings, bool $truncated): array
+    public static function caseAnswers(string $id, array $findings, bool $truncated, array $definition): array
     {
         $scope = 'case:' . $id;
         $expected = Fingerprints::expected($findings);
@@ -258,21 +284,90 @@ final class SyntheticTree
         $answers[Surfaces::key($scope, 'format:json')] = ['stdout' => self::json(
             $truncated ? ['violations' => $findings, 'violationsMeta' => ['truncated' => true]] : ['violations' => $findings],
         )];
-        $answers[Surfaces::key($scope, 'format:sarif')] = ['stdout' => self::json(['runs' => [[
-            'results' => array_map(
-                static fn(string $preimage): array => ['partialFingerprints' => ['primaryLocationLineHash' => $preimage]],
-                $expected,
-            ),
-        ]]])];
-        $answers[Surfaces::key($scope, 'format:gitlab')] = ['stdout' => self::json(array_map(
-            static fn(string $hash): array => ['check_name' => 'replayed', 'fingerprint' => $hash],
-            Fingerprints::md5Of($expected),
-        ))];
-        $answers[Surfaces::key($scope, 'format:html')] = [
-            'stdout' => '<html><script type="application/json" id="report-data">{"replayed": true}</script></html>' . "\n",
-        ];
-        $answers[Surfaces::key($scope, 'show-suppressed')] = ['stdout' => 'replayed show-suppressed of ' . $id . "\n"];
-        $answers[Surfaces::key($scope, 'baseline-file')] = ['stdout' => self::json(['replayed' => $id])];
+        $sarif = [];
+        $gitlab = [];
+        $html = [];
+        $checkstyle = '<?xml version="1.0"?><checkstyle>';
+        $prose = '';
+        $github = '';
+        $codes = array_values(array_unique(array_map(static fn(array $finding): string => (string) ($finding['code'] ?? $finding['channel'] ?? 'replay.alpha'), $findings)));
+        sort($codes);
+        $ruleIndexes = array_flip($codes);
+        $rules = array_map(static fn(string $code): array => ['id' => $code], $codes);
+        foreach ($findings as $index => $finding) {
+            $finding += self::finding(self::clean()['tuple'], (string) ($finding['channel'] ?? 'replay.alpha'), (string) ($finding['subject'] ?? 'file:src/Alpha.php'));
+            $file = $finding['file'];
+            $line = $finding['line'];
+            $message = $finding['message'];
+            $code = $finding['code'];
+            $sarif[] = ['ruleId' => $code, 'ruleIndex' => $ruleIndexes[$code], 'level' => $finding['severity'], 'message' => ['text' => $message], 'partialFingerprints' => ['primaryLocationLineHash' => $expected[$index]], 'locations' => [['physicalLocation' => ['artifactLocation' => ['uri' => $file], 'region' => ['startLine' => $line]]]]];
+            $gitlab[] = ['description' => $message, 'check_name' => $code, 'severity' => $finding['severity'] === 'error' ? 'critical' : 'major', 'fingerprint' => md5($expected[$index]), 'location' => ['path' => $file, 'lines' => ['begin' => $line]]];
+            $html[] = ['subject' => $finding['subject'], 'ruleName' => $finding['rule'], 'violationCode' => $code, 'message' => $message, 'recommendation' => $finding['recommendation'], 'severity' => $finding['severity'], 'metricValue' => $finding['metricValue'], 'symbolPath' => $finding['symbol'], 'occurrence' => $finding['occurrence'], 'file' => $file, 'line' => $line];
+            $checkstyle .= '<file name="' . htmlspecialchars((string) $file, \ENT_XML1) . '"><error line="' . $line . '" severity="' . $finding['severity'] . '" source="qmx.' . $code . '" message="' . htmlspecialchars((string) $message, \ENT_XML1) . '"/></file>';
+            $brief = (string) $finding['symbol'];
+            $separator = strrpos($brief, '\\');
+            if ($separator !== false) {
+                $brief = substr($brief, $separator + 1);
+            }
+            if (\in_array(SubjectLevel::of((string) $finding['subject']), ['file', 'project'], true)) {
+                $brief = '';
+            }
+            $advice = $finding['recommendation'] ?? $message;
+            if ($finding['acceptedLevel'] !== null && $finding['metricValue'] !== null && $finding['metricValue'] > $finding['acceptedLevel']) {
+                $suffix = ' (accepted at ' . $finding['acceptedLevel'] . ', now ' . $finding['metricValue'] . ')';
+                $message .= $suffix;
+                $advice .= $suffix;
+            }
+            $severity = match ($finding['severity']) {
+                'error' => 'ERROR', 'warning' => 'WARN', default => 'INFO',
+            };
+            $prose .= '  ' . $severity . ' ' . $file . ':' . $line . '  ' . $brief . "\n    " . $advice . '  [' . $code . "]\n";
+            $escape = static fn(string $value): string => strtr($value, ['%' => '%25', "\r" => '%0D', "\n" => '%0A', ':' => '%3A', ',' => '%2C']);
+            $github .= '::' . ($finding['severity'] === 'info' ? 'notice' : $finding['severity']) . ' file=' . $escape((string) $file) . ',line=' . $line . ',title=' . $escape((string) $code) . '::' . strtr((string) $message, ['%' => '%25', "\r" => '%0D', "\n" => '%0A']) . "\n";
+        }
+        $answers[Surfaces::key($scope, 'format:sarif')] = ['stdout' => self::json(['runs' => [['tool' => ['driver' => ['rules' => $rules]], 'results' => $sarif]]])];
+        $answers[Surfaces::key($scope, 'format:gitlab')] = ['stdout' => self::json($gitlab)];
+        $answers[Surfaces::key($scope, 'format:html')] = ['stdout' => '<html><script type="application/json" id="report-data">' . self::json(['findings' => $html]) . '</script></html>' . "\n"];
+        $answers[Surfaces::key($scope, 'format:checkstyle')] = ['stdout' => $checkstyle . '</checkstyle>'];
+        $answers[Surfaces::key($scope, 'format:text')] = ['stdout' => $prose === '' ? "No findings\n" : $prose];
+        $answers[Surfaces::key($scope, 'format:github')] = ['stdout' => $github === '' ? "No findings\n" : $github];
+        $answers[Surfaces::key($scope, 'format:text-verbose')] = $answers[Surfaces::key($scope, 'format:text')];
+        $answers[Surfaces::key($scope, 'format:suppressed')] = ['stdout' => self::json(['suppressed' => [], 'byMechanism' => [], 'neverMatched' => []])];
+        $answers[Surfaces::key($scope, 'show-suppressed')] = $answers[Surfaces::key($scope, 'format:text')];
+        $json = $answers[Surfaces::key($scope, 'format:json')]['stdout'];
+        $answers[Surfaces::key($scope, 'format:metrics')] = ['stdout' => self::json(['symbols' => [['type' => 'method', 'name' => 'Replay\\' . ucfirst($id) . '::run', 'file' => 'src/' . ucfirst($id) . '.php', 'line' => 1, 'metrics' => ['ccn' => 1]]]])];
+        $answers[Surfaces::key($scope, 'directives')] = ['stdout' => self::json(['directives' => [['file' => 'src/' . ucfirst($id) . '.php', 'line' => 1, 'form' => 'symbol', 'target' => 'replay.alpha', 'effect' => 'applied', 'reason' => 'replayed', 'masked_by' => null, 'boundary_observable' => true]], 'exit_code' => 0])];
+        $answers[Surfaces::key($scope, 'graph:export')] = ['stdout' => "digraph replay { A -> B; }\n"];
+        $answers[Surfaces::key($scope, 'rules')] = ['stdout' => "replayed rules\n"];
+        $baselineEntries = [];
+        foreach ($findings as $finding) {
+            $entry = ['channel' => $finding['channel'], 'count' => 1];
+            if (($finding['metricValue'] ?? null) !== null) {
+                unset($entry['count']);
+                $entry['magnitudes'] = [round((float) $finding['metricValue'], 6)];
+            }
+            foreach (['occurrence', 'edge'] as $identity) {
+                if (($finding[$identity] ?? null) !== null) {
+                    $entry[$identity] = $finding[$identity];
+                }
+            }
+            $baselineEntries[(string) $finding['subject']][] = $entry;
+        }
+        $baseline = self::json(['version' => 13, 'scope' => ['src'], 'entries' => $baselineEntries]);
+        $answers[Surfaces::key($scope, 'baseline-file')] = ['stdout' => $baseline, 'file' => $baseline];
+        $answers[Surfaces::key($scope, 'check:output')] = ['stdout' => '', 'file' => $json, 'stderr' => "Report written to {{output}}\n"];
+        $answers[Surfaces::key($scope, 'check:baseline')] = ['stdout' => self::json(['violations' => []])];
+        $answers[Surfaces::key($scope, 'check:baseline-source')] = ['stdout' => $json];
+        $answers[Surfaces::key($scope, 'check:parallel')] = ['stdout' => $json];
+        foreach ($definition['explainSubjects'] ?? [] as $subject) {
+            $answers[Surfaces::key($scope, 'explain:' . $subject)] = ['stdout' => "replayed boundary\n"];
+        }
+        foreach ($definition['layerAssignmentSubjects'] ?? [] as $subject) {
+            $answers[Surfaces::key($scope, 'debug:layer-assignment:' . $subject)] = ['stdout' => self::json(['fqn' => $subject, 'assigned' => ['layer' => 'replayed']])];
+        }
+        foreach (['baseline:update', 'baseline:cleanup', 'baseline:rename-channels'] as $command) {
+            $answers[Surfaces::key($scope, $command)] = ['stdout' => $command === 'baseline:cleanup' ? "  abcdef123456  replayed stale entry\n" : "replayed baseline operation\n", 'file' => $baseline];
+        }
 
         return $answers;
     }
@@ -309,21 +404,11 @@ final class SyntheticTree
             $answers = json_decode((string) file_get_contents($tree . '/replay/answers.json'), true);
             $arguments = array_slice($argv, 1);
             $command = $arguments[0] ?? '';
-            $format = array_search('-f', $arguments, true);
-            $surface = match (true) {
-                $command === 'rules' => 'rules',
-                $command === 'baseline:generate' => 'baseline-file',
-                in_array('--show-suppressed', $arguments, true) => 'show-suppressed',
-                $command === 'check' && $format !== false => 'format:' . $arguments[$format + 1],
-                default => null,
-            };
-
-            if ($surface === null) {
-                fwrite(STDERR, "replay: no surface for this invocation\n");
+            $key = getenv('QMX_GATE_INVOCATION');
+            if (!is_string($key) || $key === '' || !str_contains($key, '|')) {
+                fwrite(STDERR, "replay: no exact invocation key\n");
                 exit(70);
             }
-
-            $key = ($command === 'rules' ? 'tree' : 'case:' . basename((string) getcwd())) . '|' . $surface;
             $answer = $answers[$key] ?? null;
 
             if (!is_array($answer)) {
@@ -348,10 +433,35 @@ final class SyntheticTree
                 }
             }
 
+            if (($answer['env'] ?? false) === true) {
+                $stdout = json_encode(['invocation' => $key, 'cache' => getenv('XDG_CACHE_HOME'), 'locale' => getenv('LC_ALL'), 'timezone' => getenv('TZ'), 'argv' => $arguments, 'cwd' => getcwd()]) . "\n";
+            }
             if ($command === 'baseline:generate') {
-                @mkdir('.qmx-cache');
-                file_put_contents($arguments[1], $stdout);
-            } else {
+                @mkdir(getenv('XDG_CACHE_HOME') . '/qmx', 0o700, true);
+            }
+            if (($answer['cache'] ?? true) === true && $command === 'baseline:generate') {
+                $cache = getenv('XDG_CACHE_HOME') . '/qmx/replay/record';
+                @mkdir(dirname($cache), 0o700, true);
+                file_put_contents($cache, 'cached parser record');
+            }
+            $target = null;
+            if (str_starts_with($command, 'baseline:') && $command !== 'baseline:explain') {
+                $target = $arguments[1] ?? null;
+            }
+            foreach ($arguments as $argument) {
+                if (str_starts_with($argument, '--output=')) {
+                    $target = substr($argument, 9);
+                }
+            }
+            if ($command === 'check' && $target !== null) {
+                $stderr = str_replace('{{output}}', $target, (string) ($answer['stderr'] ?? 'Report written to {{output}}' . "\n"));
+            }
+            if ($target !== null && ($answer['missingFile'] ?? false) !== true) {
+                @mkdir(dirname($target), 0o700, true);
+                // Existing stdout overrides remain authoritative for the historical baseline surface.
+                file_put_contents($target, $command === 'baseline:generate' ? $stdout : ($answer['file'] ?? $stdout));
+            }
+            if ($command !== 'baseline:generate') {
                 echo $stdout;
             }
 
@@ -427,18 +537,68 @@ final class SyntheticTree
                 }
             }
 
+            namespace Symfony\\Component\\Console {
+                final class Application {}
+            }
+
+            namespace Symfony\\Component\\Console\\Command {
+                final class Command
+                {
+                    public function __construct(string \$name) {}
+                    public function getDefinition(): object { return new \stdClass(); }
+                    public function setApplication(\Symfony\\Component\\Console\\Application \$application): void {}
+                    public function mergeApplicationDefinition(bool \$mergeArguments): void {}
+                }
+            }
+
+            namespace Symfony\\Component\\Console\\Input {
+                final class ArgvInput
+                {
+                    public function __construct(public readonly array \$tokens, object \$definition) {}
+                }
+            }
+
+            namespace Qualimetrix\\Infrastructure\\Rule {
+                interface RuleRegistryInterface {}
+            }
+
+            namespace Qualimetrix\\Infrastructure\\Console {
+                use Qualimetrix\\Analysis\\Configuration\\Contract\\Pipeline\\ConfigurationPipelineInterface;
+                use Qualimetrix\\Analysis\\Configuration\\Contract\\Pipeline\\ConfigurationResolutionRequest;
+                use Qualimetrix\\Infrastructure\\Rule\\RuleRegistryInterface;
+                use Symfony\\Component\\Console\\Command\\Command;
+                use Symfony\\Component\\Console\\Input\\ArgvInput;
+
+                final class CheckCommandDefinition
+                {
+                    public static function addOptions(Command \$command, RuleRegistryInterface \$rules): array { return []; }
+                }
+
+                final class ConfigurationInputAdapter
+                {
+                    public function __construct(ConfigurationPipelineInterface \$pipeline) {}
+                    public function adapt(ArgvInput \$input, string \$directory): ConfigurationResolutionRequest
+                    {
+                        if (\$input->tokens === []) { throw new \RuntimeException('A replay probe requires its complete argv.'); }
+                        return new ConfigurationResolutionRequest(\$directory, \$input->tokens);
+                    }
+                }
+            }
+
             namespace Qualimetrix\\Infrastructure\\DependencyInjection {
                 use Qualimetrix\\Analysis\\Configuration\\Contract\\Pipeline\\ConfigurationPipelineInterface;
                 use Qualimetrix\\Analysis\\Configuration\\Contract\\Pipeline\\ConfigurationResolutionRequest;
                 use Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Configuration\\ComputedMetricConfiguratorInterface;
                 use Qualimetrix\\Analysis\\Finding\\Contract\\ChannelDeclarationRegistryInterface;
                 use Qualimetrix\\Core\\Symbol\\SymbolLevel;
+                use Qualimetrix\\Infrastructure\\Rule\\RuleRegistryInterface;
 
                 final class ContainerFactory
                 {
                     public function create(): object
                     {
                         \$services = [
+                            RuleRegistryInterface::class => new class implements RuleRegistryInterface {},
                             ChannelDeclarationRegistryInterface::class => new class implements ChannelDeclarationRegistryInterface {
                                 public function staticDeclarations(): array
                                 {

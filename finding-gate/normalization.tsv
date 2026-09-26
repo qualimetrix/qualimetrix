@@ -1,5 +1,7 @@
 surface	locator	kind	reason
 baseline-file	generated	json-path	diverged across repeated runs of one unchanged tree
+check:output:file	meta.timestamp	json-path	diverged across repeated runs of one unchanged tree
+directives	meta.timestamp	json-path	diverged across repeated runs of one unchanged tree
 format:html	project.generatedAt	html-report-data-path	diverged across repeated runs of one unchanged tree
 format:json	meta.timestamp	json-path	diverged across repeated runs of one unchanged tree
 format:json	summary.duration	json-path	diverged across repeated runs of one unchanged tree
@@ -7,3 +9,4 @@ format:metrics	summary.duration	json-path	diverged across repeated runs of one u
 format:metrics	timestamp	json-path	diverged across repeated runs of one unchanged tree
 format:summary	~(— \d+ files? analyzed, ).*(s)$~m	line-regex	diverged across repeated runs of one unchanged tree
 format:suppressed	meta.timestamp	json-path	diverged across repeated runs of one unchanged tree
+stderr:check:output	~^(Report written to ).*()$~m	line-regex	diverged across repeated runs of one unchanged tree

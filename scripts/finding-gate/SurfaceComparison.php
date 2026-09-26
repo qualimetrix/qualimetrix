@@ -73,7 +73,14 @@ final class SurfaceComparison
      */
     public function compareSurfaces(array $candidate, array $reference): void
     {
-        $this->compareFindingCounts($candidate, $reference);
+        $countCandidate = $candidate;
+        $countReference = $reference;
+        foreach ($this->registered['difference'] ?? [] as $stage) {
+            if ($stage instanceof RecordStage) {
+                [$countCandidate, $countReference] = $stage->countInputs($candidate, $reference);
+            }
+        }
+        $this->compareFindingCounts($countCandidate, $countReference);
         $keys = array_keys($candidate + $reference);
         sort($keys);
 
@@ -113,7 +120,7 @@ final class SurfaceComparison
             'translation' => $this->translation($pair),
             'reorder' => $this->reorder($pair),
             'normalization' => $this->normalization($pair),
-            'difference' => $this->difference($pair),
+            'difference' => $this->compareFinalBytes($pair),
             default => throw new GateError(\sprintf('"%s" is no step of SurfaceComparison::STAGES.', $step)),
         };
     }
@@ -121,11 +128,7 @@ final class SurfaceComparison
     private function checkPresence(SurfacePair $pair): void
     {
         if ($pair->candidate === null || $pair->reference === null) {
-            $this->report->fail(
-                FailureClass::SURFACE_MISMATCH,
-                $pair->key,
-                \sprintf('Surface produced by %s only.', $pair->candidate !== null ? 'the candidate' : 'the reference'),
-            );
+            $this->mismatch($pair->key, \sprintf('Surface produced by %s only.', $pair->candidate !== null ? 'the candidate' : 'the reference'));
 
             $pair->settle();
         }
@@ -199,10 +202,26 @@ final class SurfaceComparison
         $pair->reference = $this->normalization->normalize($pair->surface, (string) $pair->reference);
     }
 
-    private function difference(SurfacePair $pair): void
+    /** @param list<string> $diff */
+    private function mismatch(string $key, string $detail, array $diff = []): void
+    {
+        $this->report->fail(FailureClass::SURFACE_MISMATCH, $key, $detail, $diff);
+    }
+
+    private function compareFinalBytes(SurfacePair $pair): void
     {
         if ($pair->candidate !== $pair->reference) {
-            $this->declaredDeltaCheck->checkDifference($pair->key, (string) $pair->candidate, (string) $pair->reference);
+            if ($this->declaredDeltaCheck->hasIntention($pair->key)) {
+                $this->declaredDeltaCheck->checkDifference($pair->key, (string) $pair->candidate, (string) $pair->reference);
+            } else {
+                $this->mismatch(
+                    $pair->key,
+                    'The surface differs outside every declared structural intention.',
+                    Diff::between((string) $pair->candidate, (string) $pair->reference, 'candidate', 'reference (mapped)'),
+                );
+            }
+        } else {
+            $this->declaredDeltaCheck->observeEqual($pair->key);
         }
 
         $pair->settle();
@@ -252,6 +271,10 @@ final class SurfaceComparison
     private function compareFindingCounts(array $candidate, array $reference): void
     {
         foreach ($this->corpus->cases as $case) {
+            if (!CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, CaseOutcome::of($case, 'candidate'))
+                || !CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, CaseOutcome::of($case, 'reference'))) {
+                continue;
+            }
             $key = Surfaces::key('case:' . $case->id, 'format:json');
             $left = self::findingCount($candidate[$key] ?? '');
             $right = self::findingCount($this->maps->forward($reference[$key] ?? '', Surfaces::surfaceClass($key)));
@@ -288,6 +311,9 @@ final class SurfaceComparison
 
         foreach (['candidate' => $candidate, 'reference' => $reference] as $side => $artifacts) {
             foreach ($artifacts as $key => $content) {
+                if (str_ends_with($key, '|stderr:check:output')) {
+                    $content = preg_replace_callback('~^Report written to [^\r\n]+$~m', fn(array $marker): string => $this->normalization->normalize('stderr:check:output', $marker[0]), $content) ?? throw new GateError('Cannot inspect the exact output diagnostic marker.');
+                }
                 foreach ($paths as $path) {
                     if (str_contains($content, $path)) {
                         $this->report->fail(
@@ -300,7 +326,7 @@ final class SurfaceComparison
                             ),
                         );
 
-                        break 2;
+                        break;
                     }
                 }
             }

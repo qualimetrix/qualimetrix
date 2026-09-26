@@ -38,6 +38,7 @@ final class DeclaredOutcomes
     public static function load(string $root): self
     {
         $rows = [];
+        $files = [];
 
         foreach (DeclarationTable::rows($root, self::INDEX, self::COLUMNS) as $index => $row) {
             DeclarationTable::oneOf(
@@ -57,6 +58,15 @@ final class DeclaredOutcomes
             }
 
             $path = $root . '/' . $row['file'];
+            $directory = realpath($root . '/' . self::DIRECTORY);
+            $resolved = realpath($path);
+            if ($resolved !== false && ($directory === false || !str_starts_with($resolved, $directory . '/'))) {
+                throw new GateError('A declared outcome file must remain inside declared-outcomes/.');
+            }
+            if (isset($files[$row['file']])) {
+                throw new GateError('A declared outcome file cannot hold snapshots for two cases.');
+            }
+            $files[$row['file']] = true;
             $output = is_file($path) ? Fs::read($path) : '';
 
             if ($output === '') {
@@ -88,6 +98,9 @@ final class DeclaredOutcomes
     /** Records that the run observed the declared transition of this case. */
     public function credit(string $case): void
     {
+        if (!isset($this->rows[$case])) {
+            throw new GateError('An unknown case outcome cannot be credited: ' . $case);
+        }
         $this->credited[$case] = true;
     }
 

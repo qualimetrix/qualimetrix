@@ -14,7 +14,8 @@ namespace QmxFindingGate;
  * reference produces it, and the candidate has to refuse — the removal becomes
  * something the run observes rather than a line deleted from a list. The row
  * of a withdrawn surface names a file under `declared-surfaces/` holding that
- * refusal's normalized output as a derive run measured it, compared byte for
+ * refusal's normalized JSON envelope (`stdout`, `stderr`, string `exit`) as a
+ * derive run measured it, compared byte for
  * byte in every case, so a refusal for another reason is not the declared one;
  * an introduced surface names none (`-`). A row whose surface was not
  * introduced or withdrawn as declared is stale.

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace QmxFindingGate;
 
+use Symfony\Component\Yaml\Yaml;
+use Throwable;
+
 /**
  * Where a step moved a key of a configuration document, for the reference to be
  * handed its case inputs in the schema it knows.
@@ -95,7 +98,127 @@ final class DeclaredStructuralMaps
     /** Records that this row moved a key of at least one case input. */
     public function credit(string $document, string $from): void
     {
-        $this->credited[$document . "\0" . $from] = true;
+        $key = $document . "\0" . $from;
+        if (!isset($this->rows[$key])) {
+            throw new GateError('An unknown structural map row cannot be credited.');
+        }
+        $this->credited[$key] = true;
+    }
+
+    /** @return array<string,int> */
+    public function firedRows(): array
+    {
+        return array_fill_keys(array_keys($this->credited), 1);
+    }
+
+    /** @param array<string,int> $hits */
+    public function creditRowsFiredElsewhere(array $hits): void
+    {
+        foreach ($hits as $key => $count) {
+            if (!isset($this->rows[$key]) || !\is_int($count) || $count < 1) {
+                throw new GateError('A worker credited an unknown or invalid structural map row: ' . $key);
+            }
+            $this->credited[$key] = true;
+        }
+    }
+
+    public function reverseDocument(string $document, string $text): string
+    {
+        $rows = array_filter($this->rows, static fn(array $row): bool => $row['document'] === $document);
+        if ($rows === []) {
+            return $text;
+        }
+        if (!class_exists(Yaml::class)) {
+            require_once \dirname(__DIR__, 2) . '/vendor/autoload.php';
+        }
+        try {
+            $value = Yaml::parse($text);
+        } catch (Throwable $error) {
+            throw new GateError('A structural YAML input could not be parsed: ' . $error->getMessage());
+        }
+        $translated = [];
+        foreach ($rows as $row) {
+            $source = explode('.', $row['to']);
+            if (!self::contains($value, $source)) {
+                continue;
+            }
+            foreach ($translated as $other) {
+                foreach (['from', 'to'] as $column) {
+                    if (str_starts_with($row[$column] . '.', $other[$column] . '.')
+                        || str_starts_with($other[$column] . '.', $row[$column] . '.')) {
+                        throw new GateError('Structural input translations need disjoint source and destination paths.');
+                    }
+                }
+            }
+            $translated[] = $row;
+        }
+        if ($translated === []) {
+            return $text;
+        }
+        $items = [];
+        foreach ($translated as $row) {
+            $items[] = self::remove($value, explode('.', $row['to']));
+        }
+        foreach ($translated as $index => $row) {
+            $target = explode('.', $row['from']);
+            if (self::contains($value, $target)) {
+                throw new GateError('A structural input translation collides with its destination: ' . $row['from']);
+            }
+            self::insert($value, $target, $items[$index]);
+        }
+        $result = Yaml::dump($value, 20, 2);
+        if (Yaml::parse($result) !== $value) {
+            throw new GateError('A structural input translation changed an undeclared YAML value.');
+        }
+        foreach ($translated as $row) {
+            $this->credit($row['document'], $row['from']);
+        }
+        return $result;
+    }
+
+    /** @param list<string> $path */
+    private static function contains(mixed $value, array $path): bool
+    {
+        foreach ($path as $key) {
+            if (!\is_array($value) || !\array_key_exists($key, $value)) {
+                return false;
+            }
+            $value = $value[$key];
+        }
+        return true;
+    }
+
+    /** @param non-empty-list<string> $path */
+    private static function remove(mixed &$value, array $path): mixed
+    {
+        $key = array_shift($path);
+        if ($path === []) {
+            $removed = $value[$key];
+            unset($value[$key]);
+            return $removed;
+        }
+        $removed = self::remove($value[$key], $path);
+        if ($value[$key] === []) {
+            unset($value[$key]);
+        }
+        return $removed;
+    }
+
+    /** @param non-empty-list<string> $path */
+    private static function insert(mixed &$value, array $path, mixed $item): void
+    {
+        if (!\is_array($value) || ($value !== [] && array_is_list($value))) {
+            throw new GateError('A structural input translation needs mapping parents.');
+        }
+        $key = array_shift($path);
+        if ($path === []) {
+            $value[$key] = $item;
+            return;
+        }
+        if (!\array_key_exists($key, $value)) {
+            $value[$key] = [];
+        }
+        self::insert($value[$key], $path, $item);
     }
 
     /** @return list<array{scope: string, detail: string}> */

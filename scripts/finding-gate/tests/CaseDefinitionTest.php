@@ -10,6 +10,8 @@ use PHPUnit\Framework\TestCase;
 use QmxFindingGate\CaseDefinition;
 use QmxFindingGate\CaseInputTranslation;
 use QmxFindingGate\CaseOutcome;
+use QmxFindingGate\DeclaredOutcomes;
+use QmxFindingGate\DeclaredStructuralMaps;
 use QmxFindingGate\Fs;
 use QmxFindingGate\GateError;
 use QmxFindingGate\RenameMaps;
@@ -62,9 +64,9 @@ final class CaseDefinitionTest extends TestCase
     #[Test]
     public function itRefusesAnInputOptionThatLinksOutsideTheCase(): void
     {
-        symlink($this->root . '/outside/qmx.yaml', $this->case . '/baseline.json');
+        symlink($this->root . '/outside/qmx.yaml', $this->case . '/preset.yaml');
 
-        $this->assertRefused('outside its own directory', args: ['--baseline=baseline.json']);
+        $this->assertRefused('outside its own directory', args: ['--preset=preset.yaml']);
     }
 
     #[Test]
@@ -136,16 +138,22 @@ final class CaseDefinitionTest extends TestCase
     public function itListsEveryInputFileWithTheOptionThatHandsItOver(): void
     {
         Fs::write($this->case . '/preset.yaml', "suppress_paths: []\n");
-        Fs::write($this->case . '/baseline.json', "{}\n");
 
         self::assertSame(
             [
                 ['option' => '--config', 'path' => 'qmx.yaml'],
                 ['option' => '--preset', 'path' => 'preset.yaml'],
-                ['option' => '--baseline', 'path' => 'baseline.json'],
             ],
-            $this->load(args: ['--preset=strict,preset.yaml', '--baseline', 'baseline.json'])->inputFiles(),
+            $this->load(args: ['--preset=strict,preset.yaml'])->inputFiles(),
         );
+    }
+
+    #[Test]
+    public function itRefusesBothSpellingsOfATrackedBaselineInput(): void
+    {
+        Fs::write($this->case . '/baseline.json', "{}\n");
+        $this->assertRefused('Use baseline-src/', args: ['--baseline=baseline.json']);
+        $this->assertRefused('Use baseline-src/', args: ['--baseline', 'baseline.json']);
     }
 
     #[Test]
@@ -163,6 +171,22 @@ final class CaseDefinitionTest extends TestCase
 
         self::assertSame(CaseOutcome::ANALYSIS, $case->outcome);
         self::assertNull($case->outcomeExit);
+    }
+
+    #[Test]
+    public function itKeepsDeclaredSideOutcomesWhenMaterializingTheCase(): void
+    {
+        $this->load();
+        $case = CaseDefinition::load($this->case, DeclaredOutcomes::ANALYSIS_TO_REFUSAL);
+        self::assertSame(CaseOutcome::REFUSAL, CaseOutcome::of($case, 'candidate'));
+        self::assertSame(CaseOutcome::ANALYSIS, CaseOutcome::of($case, 'reference'));
+        $copy = $case->withDirectory($this->root . '/materialized/probe');
+        self::assertSame($case->id, $copy->id);
+        self::assertSame($case->paths, $copy->paths);
+        self::assertSame(CaseOutcome::REFUSAL, CaseOutcome::of($copy, 'candidate'));
+        $reverse = CaseDefinition::load($this->case, DeclaredOutcomes::REFUSAL_TO_ANALYSIS);
+        self::assertSame(CaseOutcome::ANALYSIS, CaseOutcome::of($reverse, 'candidate'));
+        self::assertSame(CaseOutcome::REFUSAL, CaseOutcome::of($reverse, 'reference'));
     }
 
     #[Test]
@@ -207,7 +231,7 @@ final class CaseDefinitionTest extends TestCase
         Fs::write($this->case . '/channels.tsv', "from\tto\n");
         Fs::write($this->case . '/baseline-src/src/A.php', "<?php\n");
         $case = $this->load(extra: ['layerAssignmentSubjects' => ['App\\A'], 'renameChannelsMap' => 'channels.tsv']);
-        $translation = new CaseInputTranslation(RenameMaps::fromPairs([]), false, $this->root, 'candidate');
+        $translation = new CaseInputTranslation(RenameMaps::fromPairs([]), false, $this->root, 'candidate', DeclaredStructuralMaps::load($this->root));
         self::assertSame(['App\\A'], $translation->layerAssignmentSubjects($case));
         self::assertSame('channels.tsv', $translation->renameChannelsMap($case));
         self::assertSame('baseline-src', $translation->baselineSource($case));

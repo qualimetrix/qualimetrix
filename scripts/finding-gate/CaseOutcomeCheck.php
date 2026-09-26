@@ -4,16 +4,208 @@ declare(strict_types=1);
 
 namespace QmxFindingGate;
 
+use WeakMap;
+use WeakReference;
+
 /**
  * Whether each case's run produced what a comparison reads: a findings section that is not truncated, and
  * a baseline file its command wrote.
  */
-final class CaseOutcomeCheck
+final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Derivation
 {
+    private bool $deriving = false;
+
+    /** @var array<string,string> */
+    private array $measured = [];
+
+    /** @var WeakMap<RunContext,WeakReference<self>>|null */
+    private static ?WeakMap $instances = null;
+
+    private ?RunContext $context = null;
+
     public function __construct(
         private readonly GateReport $report,
         private readonly Corpus $corpus,
     ) {}
+
+    public static function create(RunContext $run): static
+    {
+        self::$instances ??= new WeakMap();
+        $instance = (self::$instances[$run] ?? null)?->get();
+        if ($instance === null) {
+            $instance = new self($run->report, $run->corpus);
+            $instance->context = $run;
+            self::$instances[$run] = WeakReference::create($instance);
+        }
+        return $instance;
+    }
+
+    public function name(): string
+    {
+        return CaseOutcome::CHECK_OUTCOME;
+    }
+
+    public function before(): string
+    {
+        return 'presence';
+    }
+
+    public function applyStage(SurfacePair $pair): void
+    {
+        $run = $this->run();
+        $plan = CapturePlan::forCorpus($run->corpus, $run->declarations->surfaces);
+        try {
+            $invocation = $plan->invocationOf($pair->key);
+        } catch (GateError) {
+            return;
+        }
+        $descriptor = $plan->descriptorOf($invocation);
+        if ($descriptor['commandClass'] === 'check' && str_starts_with($descriptor['scope'], 'case:')
+            && $run->declarations->outcomes->of(substr($descriptor['scope'], 5)) !== null) {
+            $pair->settle();
+        }
+    }
+
+    public function checkCase(string $side, CaseDefinition $case, string $outcome, array $artifacts): void
+    {
+        $scope = 'case:' . $case->id;
+        $exit = $artifacts[Surfaces::key($scope, 'exit:format:json')] ?? null;
+        $stdout = $artifacts[Surfaces::key($scope, 'format:json')] ?? null;
+        $stderr = $artifacts[Surfaces::key($scope, 'stderr:format:json')] ?? null;
+        if ($exit === null || $stdout === null || $stderr === null || !ctype_digit($exit)
+            || (int) $exit < 1 || (int) $exit > 255 || $exit === '70'
+            || ($case->outcomeExit !== null && $exit !== (string) $case->outcomeExit)) {
+            $this->mismatch($side . ' / ' . $case->id, 'The case did not end with its exact declared non-analysis exit.');
+            return;
+        }
+        $payload = json_decode($stdout, true);
+        if ($outcome === CaseOutcome::REFUSAL) {
+            if (!\is_array($payload) || array_keys($payload) !== ['error', 'exit_code', 'position']
+                || !\is_string($payload['error']) || $payload['error'] === '' || $payload['exit_code'] !== (int) $exit
+                || ($payload['position'] !== null && !\is_array($payload['position']))) {
+                $this->mismatch($side . ' / ' . $case->id, 'The JSON refusal is not the coherent error/exit_code/position envelope.');
+            }
+            return;
+        }
+        if ($outcome !== CaseOutcome::INCOMPLETE || $exit !== '4' || !\is_array($payload)
+            || !\is_array($payload['violations'] ?? null) || ($payload['coverage']['complete'] ?? null) !== false
+            || ($artifacts[Surfaces::key($scope, 'exit:baseline:generate')] ?? null) !== '4'
+            || ($artifacts[Surfaces::key($scope, 'baseline-file')] ?? null) !== '') {
+            $this->mismatch($side . ' / ' . $case->id, 'An incomplete analysis must report exit 4, incomplete coverage and no baseline file.');
+        }
+    }
+
+    public function checkRun(array $candidate, array $reference): void
+    {
+        $run = $this->run();
+        foreach ($this->corpus->cases as $case) {
+            $row = $run->declarations->outcomes->of($case->id);
+            if ($row === null) {
+                continue;
+            }
+            if ($row['transition'] === DeclaredOutcomes::REFUSAL_TO_ANALYSIS) {
+                $presence = Process::run(['git', 'cat-file', '-e', $run->options->reference . ':finding-gate/cases/' . $case->id . '/case.json'], $run->options->candidateRoot);
+                if ($presence['exit'] === 0) {
+                    $run->report->fail(FailureClass::REFERENCE_INPUT_UNTRANSLATED, 'case:' . $case->id, 'The reference already owns this case; refusal cannot stand in for translating its inputs.');
+                }
+            }
+            $refusalSide = $row['transition'] === DeclaredOutcomes::ANALYSIS_TO_REFUSAL ? 'candidate' : 'reference';
+            if ($refusalSide === 'candidate' && !$case->isAuxiliary()) {
+                $this->mismatch('case:' . $case->id, 'A refused authoritative case must transfer channel ownership before declaring its refusal.');
+            }
+            $refused = $refusalSide === 'candidate' ? $candidate : $reference;
+            $analysed = $refusalSide === 'candidate' ? $reference : $candidate;
+            $analysis = json_decode($analysed['case:' . $case->id . '|format:json'] ?? '', true);
+            $analysisExit = $analysed['case:' . $case->id . '|exit:format:json'] ?? null;
+            if (!\is_array($analysis) || !\is_array($analysis['violations'] ?? null) || !\in_array($analysisExit, ['0', '1', '2'], true)) {
+                $this->mismatch('case:' . $case->id, 'The analysis side of the declared transition did not produce a complete analysis.');
+                continue;
+            }
+            $snapshot = $this->snapshot($case, $refused);
+            if ($snapshot === null) {
+                continue;
+            }
+            if (!$this->deriving && $snapshot !== $row['output']) {
+                $this->mismatch('case:' . $case->id, 'The refusal stdout, stderr, exit or file differs from its exact declared snapshot.');
+                continue;
+            }
+            $this->measured[$case->id] = $snapshot;
+            $run->declarations->outcomes->credit($case->id);
+        }
+    }
+
+    public function startDeriving(): void
+    {
+        $this->deriving = true;
+    }
+
+    public function rewriteDerived(): array
+    {
+        $run = $this->run();
+        $written = [];
+        foreach ($this->measured as $case => $snapshot) {
+            $row = $run->declarations->outcomes->of($case);
+            if ($row === null) {
+                throw new GateError('An unannounced outcome cannot be written.');
+            }
+            Fs::write($run->options->candidateRoot . '/finding-gate/' . $row['file'], $snapshot);
+            $written[] = $row['file'];
+        }
+        return $written;
+    }
+
+    /** @param array<string,string> $artifacts */
+    private function snapshot(CaseDefinition $case, array $artifacts): ?string
+    {
+        $run = $this->run();
+        $plan = CapturePlan::forCorpus($run->corpus, $run->declarations->surfaces);
+        $snapshot = [];
+        $expectedExit = $artifacts[Surfaces::key('case:' . $case->id, 'exit:format:json')] ?? null;
+        foreach ($plan->invocations() as $descriptor) {
+            if ($descriptor['scope'] !== 'case:' . $case->id || $descriptor['commandClass'] !== 'check') {
+                continue;
+            }
+            $key = Surfaces::key($descriptor['scope'], $descriptor['surface']);
+            if (!$plan->requiredOn($key, CaseOutcome::of($case, 'candidate') === CaseOutcome::REFUSAL ? 'candidate' : 'reference')) {
+                continue;
+            }
+            $stdout = $artifacts[$key] ?? null;
+            $stderr = $artifacts[Surfaces::key($descriptor['scope'], 'stderr:' . $descriptor['surface'])] ?? null;
+            $exit = $artifacts[Surfaces::key($descriptor['scope'], 'exit:' . $descriptor['surface'])] ?? null;
+            if ($stdout === null || $stderr === null || $exit === null || !ctype_digit($exit)
+                || (int) $exit < 1 || (int) $exit > 255 || $exit === '70' || $exit !== $expectedExit || $stdout . $stderr === '') {
+                $this->mismatch('case:' . $case->id . ' / ' . $descriptor['surface'], 'A declared refusal snapshot lacks its populated stdout/stderr and non-analysis exit.');
+                return null;
+            }
+            $snapshot[$key] = ['stdout' => $run->normalization->normalize($descriptor['surface'], $stdout),
+                'stderr' => $run->normalization->normalize(Surfaces::surfaceClass(Surfaces::key($descriptor['scope'], 'stderr:' . $descriptor['surface'])), $stderr), 'exit' => $exit];
+            if ($descriptor['outputFileKind'] !== null) {
+                $fileKey = Surfaces::key($descriptor['scope'], $descriptor['outputFileKind']);
+                if (!\array_key_exists($fileKey, $artifacts)) {
+                    $this->mismatch('case:' . $case->id, 'A declared refusal omitted a planned file artifact.');
+                    return null;
+                }
+                if ($artifacts[$fileKey] !== '') {
+                    $snapshot[$key]['file'] = $run->normalization->normalize($descriptor['outputFileKind'], $artifacts[$fileKey]);
+                }
+            }
+        }
+        if ($snapshot === []) {
+            $this->mismatch('case:' . $case->id, 'No check invocation populated the declared refusal.');
+            return null;
+        }
+        return json_encode($snapshot, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n";
+    }
+
+    private function mismatch(string $scope, string $detail): void
+    {
+        $this->report->fail(FailureClass::CASE_OUTCOME_MISMATCH, $scope, $detail);
+    }
+
+    private function run(): RunContext
+    {
+        return $this->context ?? throw new GateError('An outcome extension has no live run context.');
+    }
 
     /**
      * Whether every case of one tree's run produced the artifacts a comparison
@@ -31,7 +223,13 @@ final class CaseOutcomeCheck
     public function checkRunsProduced(string $side, array $artifacts): void
     {
         foreach ($this->corpus->cases as $case) {
-            $this->findingsOf($side, $case, $artifacts);
+            $outcome = CaseOutcome::of($case, $side === 'reference' ? 'reference' : 'candidate');
+            if ($outcome !== CaseOutcome::ANALYSIS) {
+                $this->checkCase($side, $case, $outcome, $artifacts);
+            }
+            if (CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, $outcome)) {
+                $this->findingsOf($side, $case, $artifacts);
+            }
         }
     }
 
@@ -62,7 +260,7 @@ final class CaseOutcomeCheck
             );
         }
 
-        if (CaseOutcome::applies(CaseOutcome::CHECK_BASELINE_FILE, CaseOutcome::of($case, $side))) {
+        if (CaseOutcome::applies(CaseOutcome::CHECK_BASELINE_FILE, CaseOutcome::of($case, $side === 'reference' ? 'reference' : 'candidate'))) {
             $this->checkBaselineSurface($side, $case, $artifacts);
         }
 

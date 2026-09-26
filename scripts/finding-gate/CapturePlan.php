@@ -22,10 +22,12 @@ final class CapturePlan
     /**
      * @param array<string,Descriptor> $descriptors
      * @param array<string,string> $artifactInvocations
+     * @param array<string,string> $surfaceChanges
      */
     private function __construct(
         private readonly array $descriptors,
         private readonly array $artifactInvocations,
+        private readonly array $surfaceChanges,
     ) {}
 
     public static function forCorpus(Corpus $corpus, DeclaredSurfaces $surfaces): self
@@ -76,6 +78,9 @@ final class CapturePlan
             foreach (['show-suppressed' => 'check', 'directives' => 'directives', 'graph:export' => 'graph:export', 'rules' => 'rules'] as $surface => $command) {
                 $append($scope, $surface, $command);
             }
+            if ($case->baselineSource() !== null) {
+                $append($scope, 'check:baseline-source', 'check');
+            }
             $append($scope, 'baseline-file', 'baseline:generate');
             $append($scope, 'check:output', 'check', 'check:output:file');
             foreach ($case->explainSubjects as $subject) {
@@ -97,13 +102,23 @@ final class CapturePlan
                 $append($scope, 'check:parallel', 'check');
             }
         }
-        return new self($descriptors, $artifacts);
+        return new self($descriptors, $artifacts, $surfaces->changes());
     }
 
     /** @return list<Descriptor> */
     public function invocations(): array
     {
         return array_values($this->descriptors);
+    }
+
+    public function requiredOn(string $fullInvocationKey, string $side): bool
+    {
+        $descriptor = $this->descriptorOf($fullInvocationKey);
+        if (!\in_array($side, ['candidate', 'reference'], true)) {
+            throw new GateError('Unknown capture side: ' . $side);
+        }
+        return $side === 'candidate'
+            || ($this->surfaceChanges[$descriptor['surface']] ?? null) !== DeclaredSurfaces::INTRODUCED;
     }
 
     /** @return Descriptor */

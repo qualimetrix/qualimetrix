@@ -88,12 +88,12 @@ final class DeclaredFieldMoves
             // a field that surface does not publish. Both are answerable here,
             // and only here is the row still on screen.
             if (!str_contains($row['surface'], '|')
-                || PublishedVocabulary::spellingOf(Surfaces::surfaceClass($row['surface']), $row['field']) === null
+                || !\in_array($row['field'], PublishedVocabulary::comparedFieldsOf(Surfaces::surfaceClass($row['surface'])), true)
             ) {
                 throw new GateError(\sprintf(
                     '%s licenses a move of "%s" on "%s", where nothing can read that field: either the surface key'
                     . ' is not one the corpus produces, or that surface publishes no such field. See'
-                    . ' PublishedVocabulary for what each surface marks.',
+                    . ' PublishedVocabulary for each complete compared record schema.',
                     self::INDEX,
                     $row['field'],
                     $row['surface'],

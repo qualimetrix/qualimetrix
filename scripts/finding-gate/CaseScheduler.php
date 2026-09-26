@@ -31,6 +31,7 @@ final class CaseScheduler
         // translated. Staleness is judged here, and a case's input is
         // translated there.
         private readonly RenameMaps $maps,
+        private readonly DeclaredStructuralMaps $structuralMaps,
     ) {}
 
     /**
@@ -38,7 +39,7 @@ final class CaseScheduler
      *
      * @return array<string, string>
      */
-    public function run(array $cases): array
+    public function captureCases(array $cases): array
     {
         /** @var array<int, array{case: CaseDefinition, child: ProcessHandle, output: string}> $inFlight */
         $inFlight = [];
@@ -104,8 +105,9 @@ final class CaseScheduler
 
                     $artifacts = \is_array($payload) ? ($payload['artifacts'] ?? null) : null;
                     $hits = \is_array($payload) ? ($payload['mapHits'] ?? null) : null;
+                    $structuralHits = \is_array($payload) ? ($payload['structuralMapHits'] ?? null) : null;
 
-                    if (!\is_array($artifacts) || !\is_array($hits)
+                    if (!\is_array($artifacts) || !\is_array($hits) || !\is_array($structuralHits)
                         || array_filter($artifacts, static fn(mixed $artifact): bool => !\is_string($artifact)) !== []
                         || array_filter($hits, static fn(mixed $count): bool => !\is_int($count)) !== []
                     ) {
@@ -115,6 +117,7 @@ final class CaseScheduler
                     /** @var array<string, string> $artifacts */
                     /** @var array<string, int> $hits */
                     $this->maps->creditRowsFiredElsewhere($hits);
+                    $this->structuralMaps->creditRowsFiredElsewhere($structuralHits);
                     $completed[$index] = $artifacts;
                     ++$finished;
                     $this->announce($finished, $total, \count($inFlight));

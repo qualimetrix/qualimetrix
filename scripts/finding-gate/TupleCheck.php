@@ -56,10 +56,13 @@ final class TupleCheck
     /** @param list<array<string, mixed>> $findings */
     public function checkTupleAgainstFindings(string $side, CaseDefinition $case, EquivalenceTuple $tuple, array $findings): void
     {
+        $fields = $side === 'reference'
+            ? DeclaredFields::load($this->options->candidateRoot . '/finding-gate')->referenceFields('json', Fingerprints::SOURCE_VIEW, $tuple->fields)
+            : $tuple->fields;
         foreach ($findings as $index => $finding) {
             $keys = array_keys($finding);
 
-            if ($keys === $tuple->fields) {
+            if ($keys === $fields) {
                 continue;
             }
 
@@ -68,7 +71,7 @@ final class TupleCheck
                 \sprintf('%s / %s / finding #%d', $side, $case->id, $index),
                 'A published finding object\'s key set is not the tracked tuple. A field that exists but is not'
                 . ' compared must be impossible, so this is a failure rather than a wider comparison.',
-                Diff::betweenSets($tuple->fields, array_map(strval(...), $keys), 'tuple', 'finding'),
+                Diff::betweenSets($fields, array_map(strval(...), $keys), 'tuple', 'finding'),
             );
 
             return;

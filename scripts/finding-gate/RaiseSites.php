@@ -116,6 +116,11 @@ final class RaiseSites
             'Options::MODE_COMPARE => self::compare($options, $report),',
             'a match arm keyed by the mode string; the call beside it is direct',
         ],
+        [
+            'GateModes.php',
+            'return $options->mode === Options::MODE_COMPARE ? GateReport::EXIT_RED : self::MEASUREMENT_FAILED;',
+            'the mode selects the failed run exit code; its string is never invoked',
+        ],
     ];
 
     /**

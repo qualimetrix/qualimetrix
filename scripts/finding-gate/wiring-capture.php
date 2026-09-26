@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-use QmxFindingGate\FailureClass;
-
 return [
-    'pending' => [
-        FailureClass::SURFACE_WITHDRAWAL_MISMATCH => [
-            'pending: capture',
-            'Withdrawn surface capture does not yet verify that the candidate refuses the surface with its declared output.',
-        ],
-    ],
+    'classes' => ['CaptureCheck', 'SelfTestCapture', 'NormalizationCheck'],
+    'controlClasses' => ['CaptureControls'],
+    'controls' => ['CaptureControls::neutralGraphOutcome'],
+    'selfTest' => ['SelfTestCapture::declarations', 'SelfTestCapture::derivation', 'SelfTestCapture::population', 'SelfTestCapture::outputDestination'],
+    'witnesses' => ['SelfTestCapture::witnesses'],
+    'surfaceStages' => ['CaptureCheck'],
+    'runChecks' => ['CaptureCheck', 'NormalizationCheck'],
+    'derivations' => ['CaptureCheck'],
 ];

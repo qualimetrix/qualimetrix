@@ -14,8 +14,8 @@ use JsonException;
  */
 final class DeclaredRecords
 {
-    public const array COLUMNS = ['change', 'case', 'report', 'selector', 'reason'];
-    public const array DERIVED_COLUMNS = ['change', 'case', 'report', 'record'];
+    public const array COLUMNS = ['change', 'case', 'report', 'view', 'selector', 'reason'];
+    public const array DERIVED_COLUMNS = ['change', 'case', 'report', 'view', 'record'];
     public const string INDEX = 'declared-records.tsv';
     public const string DERIVED = 'declared-records.derived.tsv';
     public const string WITHDRAWN = 'withdrawn';
@@ -29,8 +29,8 @@ final class DeclaredRecords
     private array $credited = [];
 
     /**
-     * @param list<array{change:string,case:string,report:string,selector:string,reason:string}> $intents
-     * @param list<array{change:string,case:string,report:string,record:string}> $derived
+     * @param list<array{change:string,case:string,report:string,view:string,selector:string,reason:string}> $intents
+     * @param list<array{change:string,case:string,report:string,view:string,record:string}> $derived
      * @param list<array<string, scalar|null>> $selectors
      */
     private function __construct(
@@ -58,7 +58,7 @@ final class DeclaredRecords
                 throw new GateError(self::INDEX . ' metrics selectors require exact type and name strings.');
             }
             foreach ($intents as $previous => $intent) {
-                if ($intent['change'] === $row['change'] && $intent['report'] === $row['report']
+                if ($intent['change'] === $row['change'] && $intent['report'] === $row['report'] && $intent['view'] === $row['view']
                     && ($intent['case'] === '*' || $row['case'] === '*' || $intent['case'] === $row['case'])
                     && self::overlap($selectors[$previous], $selector)) {
                     throw new GateError(\sprintf('%s row %d overlaps an earlier selector.', self::INDEX, $index + 1));
@@ -66,7 +66,7 @@ final class DeclaredRecords
             }
             /** @var array<string, scalar|null> $selector */
             $selectors[] = $selector;
-            $intents[] = ['change' => $row['change'], 'case' => $row['case'], 'report' => $row['report'], 'selector' => $row['selector'], 'reason' => $row['reason']];
+            $intents[] = ['change' => $row['change'], 'case' => $row['case'], 'report' => $row['report'], 'view' => $row['view'], 'selector' => $row['selector'], 'reason' => $row['reason']];
         }
 
         $derived = [];
@@ -76,10 +76,10 @@ final class DeclaredRecords
                 throw new GateError(self::DERIVED . ' names concrete cases, never a wildcard.');
             }
             $record = self::decoded($row['record'], self::DERIVED, $index + 1);
-            if (self::intentOf($intents, $selectors, $row['change'], $row['case'], $row['report'], $record) === null) {
+            if (self::intentOf($intents, $selectors, $row['change'], $row['case'], $row['report'], $row['view'], $record) === null) {
                 throw new GateError(\sprintf('%s row %d measures a record which no intent declares.', self::DERIVED, $index + 1));
             }
-            $derived[] = ['change' => $row['change'], 'case' => $row['case'], 'report' => $row['report'], 'record' => $row['record']];
+            $derived[] = ['change' => $row['change'], 'case' => $row['case'], 'report' => $row['report'], 'view' => $row['view'], 'record' => $row['record']];
         }
         $path = $root . '/' . self::DERIVED;
 
@@ -97,18 +97,18 @@ final class DeclaredRecords
         return \count($this->intents);
     }
 
-    /** @return list<array{change:string,case:string,report:string,selector:string,reason:string}> */
-    public function intents(string $report): array
+    /** @return list<array{change:string,case:string,report:string,view:string,selector:string,reason:string}> */
+    public function intents(string $report, string $view): array
     {
-        self::assertReport($report);
-        return array_values(array_filter($this->intents, static fn(array $row): bool => $row['report'] === $report));
+        ReportViews::assert($report, $view);
+        return array_values(array_filter($this->intents, static fn(array $row): bool => $row['report'] === $report && $row['view'] === $view));
     }
 
-    /** @return list<array{change:string,case:string,report:string,record:string}> */
-    public function derived(string $report): array
+    /** @return list<array{change:string,case:string,report:string,view:string,record:string}> */
+    public function derived(string $report, string $view): array
     {
-        self::assertReport($report);
-        return array_values(array_filter($this->derived, static fn(array $row): bool => $row['report'] === $report));
+        ReportViews::assert($report, $view);
+        return array_values(array_filter($this->derived, static fn(array $row): bool => $row['report'] === $report && $row['view'] === $view));
     }
 
     public function derivedText(): string
@@ -116,13 +116,13 @@ final class DeclaredRecords
         return $this->derivedText;
     }
 
-    public function claim(string $change, string $case, string $report, string $record): bool
+    public function claim(string $change, string $case, string $report, string $view, string $record): bool
     {
         foreach ($this->derived as $index => $row) {
             if (!isset($this->claimed[$index]) && $row['change'] === $change && $row['case'] === $case
-                && $row['report'] === $report && $row['record'] === $record) {
+                && $row['report'] === $report && $row['view'] === $view && $row['record'] === $record) {
                 $this->claimed[$index] = true;
-                $intent = self::intentOf($this->intents, $this->selectors, $change, $case, $report, self::decoded($record, self::DERIVED, $index + 1));
+                $intent = self::intentOf($this->intents, $this->selectors, $change, $case, $report, $view, self::decoded($record, self::DERIVED, $index + 1));
                 if ($intent === null) {
                     throw new GateError('A derived record lost its declared intent.');
                 }
@@ -133,18 +133,40 @@ final class DeclaredRecords
         return false;
     }
 
+    public function creditMeasurement(string $change, string $case, string $report, string $view, string $record): bool
+    {
+        $intent = self::intentOf($this->intents, $this->selectors, $change, $case, $report, $view, self::decoded($record, self::DERIVED, 1));
+        if ($intent === null) {
+            return false;
+        }
+        $this->credited[$intent] = true;
+        return true;
+    }
+
+    /** @return list<array{scope:string,detail:string}> */
+    public function staleIntents(): array
+    {
+        $stale = [];
+        foreach ($this->intents as $index => $row) {
+            if (!isset($this->credited[$index])) {
+                $stale[] = ['scope' => self::INDEX, 'detail' => \sprintf('The %s %s/%s selector %s for %s', $row['change'], $row['report'], $row['view'], $row['selector'], $row['case'])];
+            }
+        }
+        return $stale;
+    }
+
     /** @return list<array{scope:string,detail:string}> */
     public function stale(): array
     {
         $stale = [];
         foreach ($this->derived as $index => $row) {
             if (!isset($this->claimed[$index])) {
-                $stale[] = ['scope' => 'case:' . $row['case'] . '|format:' . $row['report'], 'detail' => \sprintf('The %s record %s', $row['change'], $row['record'])];
+                $stale[] = ['scope' => 'case:' . $row['case'] . '|' . $row['view'], 'detail' => \sprintf('The %s record %s', $row['change'], $row['record'])];
             }
         }
         foreach ($this->intents as $index => $row) {
             if (!isset($this->credited[$index])) {
-                $stale[] = ['scope' => self::INDEX, 'detail' => \sprintf('The %s %s selector %s for %s', $row['change'], $row['report'], $row['selector'], $row['case'])];
+                $stale[] = ['scope' => self::INDEX, 'detail' => \sprintf('The %s %s/%s selector %s for %s', $row['change'], $row['report'], $row['view'], $row['selector'], $row['case'])];
             }
         }
         return $stale;
@@ -173,13 +195,7 @@ final class DeclaredRecords
     {
         DeclarationTable::oneOf($file, $number, 'change', $row['change'], [self::WITHDRAWN, self::INTRODUCED]);
         DeclarationTable::oneOf($file, $number, 'report', $row['report'], self::REPORTS);
-    }
-
-    private static function assertReport(string $report): void
-    {
-        if (!\in_array($report, self::REPORTS, true)) {
-            throw new GateError('Unknown record report: ' . $report);
-        }
+        ReportViews::assert($row['report'], $row['view']);
     }
 
     /**
@@ -197,14 +213,14 @@ final class DeclaredRecords
     }
 
     /**
-     * @param list<array{change:string,case:string,report:string,selector:string,reason:string}> $intents
+     * @param list<array{change:string,case:string,report:string,view:string,selector:string,reason:string}> $intents
      * @param list<array<string,scalar|null>> $selectors
      * @param array<string,mixed> $record
      */
-    private static function intentOf(array $intents, array $selectors, string $change, string $case, string $report, array $record): ?int
+    private static function intentOf(array $intents, array $selectors, string $change, string $case, string $report, string $view, array $record): ?int
     {
         foreach ($intents as $index => $intent) {
-            if ($intent['change'] !== $change || $intent['report'] !== $report || !\in_array($intent['case'], ['*', $case], true)) {
+            if ($intent['change'] !== $change || $intent['report'] !== $report || $intent['view'] !== $view || !\in_array($intent['case'], ['*', $case], true)) {
                 continue;
             }
             foreach ($selectors[$index] as $key => $value) {

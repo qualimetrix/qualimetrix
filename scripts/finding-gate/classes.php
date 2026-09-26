@@ -83,8 +83,6 @@ foreach (
         'RunCheck',
         'Derivation',
         'TupleCheck',
-        'NormalizationCheck',
-        'CaseOutcomeCheck',
         'FingerprintCheck',
         'RenameMapCheck',
         'DeclaredDeltaCheck',

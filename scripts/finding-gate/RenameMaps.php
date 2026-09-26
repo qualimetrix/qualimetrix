@@ -5,127 +5,23 @@ declare(strict_types=1);
 namespace QmxFindingGate;
 
 /**
- * The five declared maps: channel names, symbols (FQN or path), metric keys,
- * inputs (option keys, flag aliases, names inside selectors) and report values
- * (a string value of an enumerable report field).
+ * Declared correspondence for channels, symbols, metric keys, inputs and report values.
  *
- * Direction is declared per map, not assumed. Forward (old -> new) is applied to
- * the REFERENCE tree's artifacts, because the reference predates the rename and
- * its output still speaks the old vocabulary. Reverse (new -> old) is applied to
- * the configuration and CLI arguments handed to that same reference binary, which
- * cannot be addressed in a vocabulary it does not know yet.
+ * Reference artifacts travel forwards; candidate inputs travel backwards in
+ * their named role. Whole-name substitution is one pass over the original text,
+ * so prefix neighbours and chained replacements receive no inferred license.
+ * Equal pairs in several roles share credit, but each role keeps its direction
+ * and surface restrictions. A row is live if it substituted an observed token
+ * or explained a matched producer movement; an idle declaration is stale.
  *
- * A map may be applied backwards if and only if it is injective in both
- * directions, and that is checked here rather than promised. The one shape that
- * is allowed to break it does so in one direction only, and the asymmetry is
- * what makes it admissible: an `inputs.tsv` row may name SEVERAL new tokens for
- * one old one, because a split producer is addressed in the candidate's
- * vocabulary by several names and in the reference's by one. Backwards — the
- * direction that map exists for — the several candidate names all restate as the
- * one name the reference knows, which is a function. Forwards there is no
- * function to apply, so the row is not applied forwards at all: an occurrence of
- * the old token on the way out stops the run instead of silently taking the
- * first image. `design.type-coverage` now maps to three
- * producers (`design.param-type-coverage`, `design.property-type-coverage`,
- * `design.return-type-coverage`), so a case addressing the old name through a
- * selector had no writable row at all and was `reference-input-untranslated`
- * for good.
+ * Aggregation strategy rows bind both trees' complete suffix vocabularies and
+ * check independent base keys from both trees. YAML keys and report enumeration
+ * positions use finite structured forms owned by their respective translators.
+ * Unsupported forms receive no guessed rewrite. Channel splits retain exact
+ * per-record movement evidence through ChannelSplit rather than translating an
+ * ambiguous producer half as text.
  *
- * `channels.tsv` is
- * forward-only: after a collapse two rows share one target, and after a split one
- * old half has several, so neither can be inverted. It also must not be inverted
- * even where it looks invertible — a collapsed channel name is textually the same
- * string as the unchanged producer name the corpus writes into its own input, so
- * an inverted channel map would rewrite a legitimate argument. An input that does
- * need the translation says so with an `inputs.tsv` row; one that needs it and has
- * no row makes the reference run fail loudly on an unknown name, which is what
- * Gate's `reference-input-untranslated` reports.
- *
- * `metric-keys.tsv` is forward-only too, and the two reasons are the same two,
- * measured 2026-08-26. Nothing on the reference's input is spelled as a metric
- * key: no case argument carries one, and the corpus' only user-defined formula
- * reads no metric at all, so there is nothing for a backwards direction to
- * translate. And an inverted key map would rewrite arguments the step never
- * touched — after the vocabulary rename the new key names are textually the rule
- * names the corpus writes into its own `--rule-opt` tokens (`coupling.class-rank`
- * in all fourteen cases, `size.class-count` and its two siblings in `design`,
- * `complexity.cognitive` and `complexity.npath` in two more), and a reverse pass
- * would hand the reference `classRank` and `classCount` as rules it does not
- * have. A metric key that ever does need translating on the input says so with
- * an `inputs.tsv` row, exactly as a channel does.
- *
- * `report-values.tsv` is forward-only for a narrower reason: it names a value of
- * an enumerable REPORT field, never a name the corpus could address on its own
- * input, so there is no backwards direction to check injectivity of in the first
- * place. It is also the only map read on one surface: measured, `format:suppressed`
- * is the sole surface that publishes such a value today, so the map is declared
- * to reach that surface and no other — a value that later leaks into a second
- * surface is therefore reported as an undeclared diff rather than silently
- * translated there too. A row translates the value only where it appears QUOTED,
- * exactly as a metric key does and for the same reason: the vocabulary is
- * deliberately plain kebab-case, and a bare word would be indistinguishable from
- * prose the same surface may print beside it. So `REPORT_VALUES` is excluded
- * from the bare spelling every other role gets — the same exclusion
- * `METRIC_KEYS` has, and for the same reason: a two-role declaration naming one
- * string in both would otherwise leak a bare substitution into prose through the
- * role that has none of its own. And a row states a VALUE, never its position:
- * if a step reordered the enumeration a surface lists such
- * values in, no row expresses that — measured against `730941c1`, the order
- * agrees today.
- *
- * A metric key is published bare AND once per aggregation strategy declared for
- * it, so a `metric-keys.tsv` row also translates its own `<key>.<strategy>`
- * spellings. The strategies are a closed list read from both trees
- * ({@see AggregationSuffixes}), the suffix is matched only at the end of the
- * name, and the expansion is granted to that one map: measured, 212 of the
- * corpus' 295 published spellings are `base.<strategy>` against 83 base keys, so
- * a row per spelling is a list no step can keep complete, while a row per key
- * with an open suffix would be the substring rewrite the whole-name rule
- * refuses. The suffixed spellings are spellings of the SAME row — like the
- * `qmx.` prefix below — so they count towards that row's staleness and are never
- * a second declaration.
- *
- * One name may hold two roles: `computed.branch_load` is a channel identity and
- * a token the corpus writes into its own configuration, so the step that renames
- * it declares the same pair in `channels.tsv` and in `inputs.tsv`. Two rows
- * naming one name are otherwise refused as undecidable, and rightly — but two
- * rows stating the SAME translation decide nothing differently. Such a pair is
- * therefore ONE declaration carrying both roles: it is applied in the union of
- * their directions, held to the shape rules of each, and credited once. Each
- * role's own spellings still travel only in the directions that role is applied
- * in — a forward-only role does not get a backwards pass because a sibling role
- * has one.
- *
- * Crediting it once is a decision with a stated reach. Roles that apply in the
- * same direction substitute the same string in the same artifacts, so which of
- * them an occurrence belonged to is not a measurable question. What is NOT
- * claimed is per-direction accounting: like every row here, a declaration is
- * live once it fired anywhere, so a two-role declaration whose forward side
- * never appeared in an artifact is not distinguished from one that did. That is
- * the same latitude a symbols row has had all along — it may fire on artifacts
- * and never on input — and narrowing it for merged rows alone would be a rule
- * about bookkeeping rather than about renames.
- *
- * Two properties make a map a proof of what a step renamed rather than a blanket
- * rewrite, and both are enforced here rather than promised in prose.
- *
- * A row translates a whole name, never a prefix of a longer one. The vocabulary
- * is full of prefix siblings — `architecture.coverage-gap` is a proper prefix of
- * `architecture.coverage-gap.source` — so a substring rewrite would let a step
- * rename both under one declared row and stay green. Boundaries are therefore
- * literal: everything a name can be built from (letters, digits, `_`, `-`, `.`,
- * `/`, `\`) continues a name, and only a character outside that set ends one.
- *
- * And substitution happens in one pass over the original text. Applied
- * sequentially, a row whose target contains a name another row renames would
- * cascade: `old#old.class -> mid#mid.class` followed by `mid.class -> new.code`
- * yields `mid#new.code`, an identity no row declares. The load-time checks below
- * reject the whole-name form of that chain; single-pass substitution closes the
- * containment form they cannot see.
- *
- * With every map empty both directions are the identity. The path is still live
- * code and covered by `--self-test`: the steps that populate the maps must not
- * be the ones that first discover whether it works.
+ * @phpstan-type MapPair array{old: string, new: string, sources: list<string>, row: string, reversible: bool, ambiguous: bool, multivalued: bool}
  */
 final class RenameMaps
 {
@@ -233,6 +129,11 @@ final class RenameMaps
      */
     private array $explainedRows = [];
 
+    private ?MetricVocabulary $referenceVocabulary = null;
+
+    /** @var list<array{old: string, new: string, sources: list<string>, row: string, reversible: bool, ambiguous: bool, multivalued: bool}> */
+    private array $dropped = [];
+
     /**
      * @param list<array{old: string, new: string, source: string, row?: string}> $pairs
      */
@@ -244,11 +145,48 @@ final class RenameMaps
             $this->pairs,
             fn(array $pair): bool => isset($this->splits[$pair['old']]) && $pair['ambiguous'],
         ));
+        $this->dropped = $dropped;
         $this->pairs = array_values(array_filter(
             $this->pairs,
             fn(array $pair): bool => !isset($this->splits[$pair['old']]) || !$pair['ambiguous'],
         ));
         $this->validate($dropped);
+        $this->strategyRenames();
+        $enumerationAddresses = [];
+        $inputAddresses = [];
+        foreach ($this->pairs as $pair) {
+            if (\in_array(self::METRIC_KEYS, $pair['sources'], true)
+                && str_starts_with($pair['old'], 'strategy:') !== str_starts_with($pair['new'], 'strategy:')) {
+                throw new GateError('A strategy declaration must name a strategy on both sides.');
+            }
+            if (\in_array(self::INPUTS, $pair['sources'], true) && !str_starts_with($pair['new'], '--')) {
+                $address = json_encode(YamlInputMap::path($pair['new'], $pair['row']), \JSON_THROW_ON_ERROR);
+                if (isset($inputAddresses[$address])) {
+                    throw new GateError('Two input declarations address the same YAML key path.');
+                }
+                $inputAddresses[$address] = true;
+            }
+            if (\in_array(self::INPUTS, $pair['sources'], true) && str_starts_with($pair['old'], '[')) {
+                $oldPath = self::yamlPath($pair['old'], $pair['row']);
+                $newPath = self::yamlPath($pair['new'], $pair['row']);
+                if (\array_slice($oldPath, 0, -1) !== \array_slice($newPath, 0, -1)) {
+                    throw new GateError('A YAML key map must retain its parent path.');
+                }
+            }
+            if (\in_array(self::REPORT_VALUES, $pair['sources'], true) && str_starts_with($pair['old'], '{')) {
+                $oldEnum = self::enumeration($pair['old'], $pair['row']);
+                $newEnum = self::enumeration($pair['new'], $pair['row']);
+                $address = $oldEnum['surface'] . ':' . implode('.', $oldEnum['path']);
+                if (isset($enumerationAddresses[$address])) {
+                    throw new GateError('Two enumeration declarations address the same publication path.');
+                }
+                $enumerationAddresses[$address] = true;
+                if ([$oldEnum['surface'], $oldEnum['path'], $oldEnum['kind']] !== [$newEnum['surface'], $newEnum['path'], $newEnum['kind']]
+                    || \count($oldEnum['members']) !== \count($newEnum['members'])) {
+                    throw new GateError('Enumeration correspondence must retain its address and member count.');
+                }
+            }
+        }
 
         // Both directions are built here rather than on first use. The guard
         // against two declarations reaching one spelling lives in that build, and
@@ -504,12 +442,42 @@ final class RenameMaps
      */
     public function forward(string $text, string $surfaceClass): string
     {
+        $text = $this->forwardStrategies($text, $surfaceClass);
+        $text = $this->forwardEnumerations($text, $surfaceClass);
+
         return $this->replace($text, old: 'old', new: 'new', reversibleOnly: false, surfaceClass: $surfaceClass);
     }
 
     public function acceptReferenceVocabulary(MetricVocabulary $reference): void
     {
-        $this->vocabulary->assertSuffixesAgreeWith($reference);
+        $strategies = $this->strategyRenames();
+        $translated = [];
+        foreach ($reference->suffixes as $suffix) {
+            $translated[] = $strategies[$suffix] ?? $suffix;
+        }
+        sort($translated);
+        $candidate = $this->vocabulary->suffixes;
+        sort($candidate);
+        if ($translated !== $candidate || \count(array_unique($translated)) !== \count($translated)) {
+            throw new GateError('The aggregation suffix vocabularies do not agree after exactly the declared strategy renames.');
+        }
+        foreach ($strategies as $old => $new) {
+            if (!\in_array($old, $reference->suffixes, true) || !\in_array($new, $candidate, true)) {
+                throw new GateError('A declared strategy rename is absent from its tree vocabulary.');
+            }
+        }
+        $this->referenceVocabulary = $reference;
+        $this->assertNoSuffixOverlap($this->dropped);
+        $baseKeys = array_unique([...$reference->baseKeys, ...$this->vocabulary->baseKeys]);
+        foreach ($baseKeys as $key) {
+            foreach ($strategies as $old => $new) {
+                if (\in_array($key . '.' . $old, $baseKeys, true) || \in_array($key . '.' . $new, $baseKeys, true)) {
+                    throw new GateError('A strategy expansion collides with an independent metric base key.');
+                }
+            }
+        }
+        $this->substitutions = [];
+        $this->patterns = [];
     }
 
     /** Candidate-side input, restated in the reference's vocabulary. */
@@ -525,7 +493,267 @@ final class RenameMaps
      */
     public function reverseArguments(array $arguments): array
     {
-        return array_map($this->reverse(...), $arguments);
+        $translated = [];
+        $hits = [];
+        $pathValue = false;
+        foreach ($arguments as $argument) {
+            if ($pathValue) {
+                $this->assertArgumentRoleUntouched($argument, [self::SYMBOLS]);
+                $translated[] = $argument;
+                $pathValue = false;
+                continue;
+            }
+            $parts = explode('=', $argument, 2);
+            $option = $parts[0];
+            $value = $parts[1] ?? null;
+            [$option, $indices] = $this->reverseInputCell($option);
+            foreach ($indices as $index) {
+                $hits[$index] = ($hits[$index] ?? 0) + 1;
+            }
+            if ($value !== null && $option === '--rule-opt') {
+                $parts = explode('=', $value, 2);
+                $cell = $parts[0];
+                $setting = $parts[1] ?? null;
+                if ($setting === null || !str_contains($cell, ':')) {
+                    throw new GateError('A mapped rule option requires an exact rule:option=value cell.');
+                }
+                [$cell, $indices] = $this->reverseInputCell($cell);
+                foreach ($indices as $index) {
+                    $hits[$index] = ($hits[$index] ?? 0) + 1;
+                }
+                if ($indices === []) {
+                    $this->assertArgumentRoleUntouched($cell, [self::CHANNELS, self::SYMBOLS]);
+                }
+                $value = $cell . '=' . $setting;
+            } elseif ($value !== null && \in_array($option, ['--only-rules', '--disable-rule', '--enable-rule'], true)) {
+                $selectors = [];
+                foreach (explode(',', $value) as $selector) {
+                    [$selector, $indices] = $this->reverseInputCell($selector);
+                    foreach ($indices as $index) {
+                        $hits[$index] = ($hits[$index] ?? 0) + 1;
+                    }
+                    if ($indices === []) {
+                        $this->assertArgumentRoleUntouched($selector, [self::CHANNELS, self::SYMBOLS], selectors: true);
+                    }
+                    $selectors[] = $selector;
+                }
+                $value = implode(',', $selectors);
+            } elseif (\array_key_exists($option, CaseDefinition::INPUT_OPTIONS) || $option === '-c') {
+                if ($value === null) {
+                    $pathValue = true;
+                } else {
+                    $this->assertArgumentRoleUntouched($value, [self::SYMBOLS]);
+                }
+            } else {
+                $this->assertArgumentRoleUntouched($argument, [self::CHANNELS, self::SYMBOLS]);
+            }
+            $translated[] = $option . ($value === null ? '' : '=' . $value);
+        }
+        $this->mergeHits($hits);
+        return $translated;
+    }
+
+    /** @param list<string> $paths */
+    public function assertSymbolPathsUntouched(array $paths): void
+    {
+        foreach ($paths as $path) {
+            $this->assertArgumentRoleUntouched($path, [self::SYMBOLS]);
+        }
+    }
+
+    /** An input without a named translator cannot consume or credit a mapped token. */
+    public function assertUnsupportedInputUntouched(string $text): void
+    {
+        foreach ($this->pairs as $pair) {
+            $targets = [$pair['new']];
+            if (str_starts_with($pair['new'], '[')) {
+                $path = YamlInputMap::canonicalPath($pair['new'], $pair['row']);
+                $targets = [$path[\count($path) - 1]];
+            } elseif (str_starts_with($pair['new'], '{')) {
+                $targets = self::enumeration($pair['new'], $pair['row'])['members'];
+            } elseif (str_starts_with($pair['new'], 'strategy:')) {
+                $targets = array_map(static fn(string $base): string => $base . '.' . substr($pair['new'], 9), $this->vocabulary->baseKeys);
+            }
+            foreach ($targets as $target) {
+                if (self::containsName($text, $target) || self::containsName($text, str_replace('\\', '\\\\', $target))) {
+                    throw new GateError('A mapped token occurs in an input without a supported named role.');
+                }
+            }
+        }
+    }
+
+    /** @return array{string, list<int>} */
+    private function reverseInputCell(string $cell): array
+    {
+        $images = [];
+        $indices = [];
+        foreach ($this->pairs as $index => $pair) {
+            if (\in_array(self::INPUTS, $pair['sources'], true) && $pair['new'] === $cell) {
+                $images[$pair['old']] = true;
+                $indices[] = $index;
+            }
+        }
+        if (\count($images) > 1) {
+            throw new GateError('An input cell has several declared inverse targets.');
+        }
+        return [$images === [] ? $cell : (string) array_key_first($images), $indices];
+    }
+
+    /** @param list<string> $sources */
+    private function assertArgumentRoleUntouched(string $text, array $sources, bool $selectors = false): void
+    {
+        foreach ($this->pairs as $pair) {
+            if (array_intersect($sources, $pair['sources']) === []) {
+                continue;
+            }
+            $targets = explode('#', $pair['new']);
+            if (\in_array(self::SYMBOLS, $pair['sources'], true)) {
+                $targets[] = str_replace('\\', '/', $pair['new']);
+                $separator = strrpos($pair['new'], '\\');
+                $leaf = $separator === false ? $pair['new'] : substr($pair['new'], $separator + 1);
+                if (preg_match('~(?<![A-Za-z0-9_])' . preg_quote($leaf, '~') . '(?![A-Za-z0-9_])~', $text) === 1) {
+                    throw new GateError('A mapped CLI symbol path requires physical path correspondence.');
+                }
+            }
+            foreach ($targets as $target) {
+                if (self::containsName($text, $target) || ($selectors && fnmatch($text, $target))) {
+                    throw new GateError('A mapped CLI selector or symbol path requires supported reach or physical path correspondence.');
+                }
+            }
+        }
+    }
+
+    private static function containsName(string $text, string $name): bool
+    {
+        return preg_match('~(?<![' . self::NAME_CHARS . '])' . preg_quote($name, '~') . '(?![' . self::NAME_CHARS . '])~', $text) === 1;
+    }
+
+    public function reverseSymbol(string $symbol): string
+    {
+        $lookup = [];
+        foreach ($this->pairs as $index => $pair) {
+            if (!\in_array(self::SYMBOLS, $pair['sources'], true)) {
+                continue;
+            }
+            $lookup[$pair['new']] = [$pair['old'], $index];
+        }
+        if ($lookup === []) {
+            return $symbol;
+        }
+        return preg_replace_callback('~(?<![' . self::NAME_CHARS . '])(?:' . implode('|', array_map(static fn(string $key): string => preg_quote($key, '~'), array_keys($lookup))) . ')(?![' . self::NAME_CHARS . '])~', function (array $match) use ($lookup): string {
+            [$old, $index] = $lookup[$match[0]];
+            $this->hits[$index] = ($this->hits[$index] ?? 0) + 1;
+            return $old;
+        }, $symbol) ?? throw new GateError('A symbol translation could not be read.');
+    }
+
+    public function reverseChannelMap(string $text): string
+    {
+        if ($this->isIdentity()) {
+            return $text;
+        }
+        $lines = explode("\n", $text);
+        if (rtrim($lines[0], "\r") !== "from\tto") {
+            throw new GateError('A product channel rename map must have the from/to header.');
+        }
+        $hits = [];
+        foreach ($lines as $number => &$line) {
+            if ($number === 0 || trim($line) === '' || str_starts_with($line, '#')) {
+                continue;
+            }
+            $ending = str_ends_with($line, "\r") ? "\r" : '';
+            $fields = explode("\t", rtrim($line, "\r"));
+            if (\count($fields) !== 2) {
+                throw new GateError('A product channel rename map row must have exactly two fields.');
+            }
+            foreach ($fields as &$field) {
+                $images = [];
+                foreach ($this->pairs as $index => $pair) {
+                    if (\in_array(self::CHANNELS, $pair['sources'], true) && $pair['new'] === $field) {
+                        $images[$pair['old']] = $index;
+                    }
+                }
+                if (\count($images) > 1) {
+                    throw new GateError('A collapsed channel cannot be inverted in a product rename map.');
+                }
+                if ($images !== []) {
+                    $field = (string) array_key_first($images);
+                    $index = $images[$field];
+                    $hits[$index] = ($hits[$index] ?? 0) + 1;
+                }
+            }
+            unset($field);
+            $line = implode("\t", $fields) . $ending;
+        }
+        unset($line);
+        $this->mergeHits($hits);
+        return implode("\n", $lines);
+    }
+
+    public function reverseComposer(string $text): string
+    {
+        [$text, $hits] = ComposerInputMap::reverse($text, $this->pairs);
+        $this->mergeHits($hits);
+        return $text;
+    }
+
+    public function reversePhp(string $text): string
+    {
+        [$text, $hits] = PhpInputMap::reverse($text, $this->pairs);
+        $this->mergeHits($hits);
+        return $text;
+    }
+
+    public function reverseYaml(string $text): string
+    {
+        [$text, $hits] = YamlInputMap::reverse($text, $this->pairs);
+        $this->mergeHits($hits);
+        return $text;
+    }
+
+    private static function structured(string $token): bool
+    {
+        return str_starts_with($token, '[') || str_starts_with($token, '{') || str_starts_with($token, 'strategy:');
+    }
+
+    /** @return list<string> */
+    private static function yamlPath(string $text, string $row): array
+    {
+        return YamlInputMap::canonicalPath($text, $row);
+    }
+
+    /** @return array<string, string> */
+    private function strategyRenames(): array
+    {
+        return AggregationRenames::of($this->pairs);
+    }
+
+    private function forwardStrategies(string $text, string $surface): string
+    {
+        [$text, $hits] = AggregationRenames::translate($text, $surface, $this->referenceVocabulary ?? $this->vocabulary, $this->pairs);
+        $this->mergeHits($hits);
+        return $text;
+    }
+
+    /** @return array{surface: string, path: list<string>, kind: string, members: list<string>} */
+    private static function enumeration(string $text, string $row): array
+    {
+        return ReportEnumerationMap::descriptor($text, $row);
+    }
+
+    private function forwardEnumerations(string $text, string $surface): string
+    {
+        [$text, $hits] = ReportEnumerationMap::translate($text, $surface, $this->pairs);
+        $this->mergeHits($hits);
+        return $text;
+    }
+
+    /** @param array<int, int> $hits */
+    private function mergeHits(array $hits): void
+    {
+        foreach ($hits as $index => $count) {
+            $this->hits[$index] = ($this->hits[$index] ?? 0) + $count;
+        }
     }
 
     private function replace(
@@ -659,6 +887,13 @@ final class RenameMaps
         $claimed = [];
 
         foreach ($this->pairs as $index => $pair) {
+            if (self::structured($pair['old']) || self::structured($pair['new'])) {
+                continue;
+            }
+            if (\in_array(self::REPORT_VALUES, $pair['sources'], true)
+                || (\in_array(self::INPUTS, $pair['sources'], true) && str_ends_with($pair['old'], ':'))) {
+                continue;
+            }
             if ($reversibleOnly && !$pair['reversible']) {
                 continue;
             }
@@ -1088,6 +1323,9 @@ final class RenameMaps
      */
     private static function assertPlainMetricKey(string $key, string $row): void
     {
+        if (preg_match('~^strategy:[a-z][a-z0-9_-]*$~D', $key) === 1) {
+            return;
+        }
         if (preg_match('~^[A-Za-z0-9][A-Za-z0-9_.-]*$~', $key) === 1) {
             return;
         }
@@ -1114,6 +1352,10 @@ final class RenameMaps
      */
     private static function assertReportValueSpelling(string $value, string $row): void
     {
+        if (str_starts_with($value, '{')) {
+            self::enumeration($value, $row);
+            return;
+        }
         if (preg_match('~^[a-z0-9]+(?:-[a-z0-9]+)*$~', $value) === 1) {
             return;
         }
@@ -1138,16 +1380,9 @@ final class RenameMaps
      * key without its rule" would also translate the same key on some other
      * rule.
      *
-     * The fourth shape is deliberately blind to level: `key:` matches a root key
-     * and a per-rule key of the same spelling alike, at any indent, because both
-     * are the same token in the document's own grammar and the map has no way to
-     * tell which one a step renamed. What it does NOT express is "this rule's
-     * option, not that rule's" — a per-rule key renamed for one rule while
-     * another rule keeps the old name would be translated on both, and staleness
-     * would not catch it, because the row does fire. That is exactly the gap the
-     * bare-word refusal above exists to close, and it is not closed here: a step
-     * renaming a per-rule option needs `rule:option-key`, the first shape, not
-     * this one.
+     * The trailing-colon form addresses a root YAML key. A nested YAML key
+     * requires a canonical JSON path retaining its parent; the translator edits
+     * only the addressed key span and preserves comments and scalar values.
      *
      * It also never matches inside `--rule-opt=rule:option=value`: that shape
      * carries the option name between a colon and an `=`, never followed by a
@@ -1156,6 +1391,10 @@ final class RenameMaps
      */
     private static function assertWholeInputToken(string $token, string $row): void
     {
+        if (str_starts_with($token, '[')) {
+            self::yamlPath($token, $row);
+            return;
+        }
         $dottedName = '[A-Za-z0-9][A-Za-z0-9_-]*(?:\.[A-Za-z0-9][A-Za-z0-9_-]*)+';
         $shapes = [
             'a rule and its option key' => '~^' . $dottedName . ':[A-Za-z0-9][A-Za-z0-9._-]*$~',
@@ -1328,7 +1567,7 @@ final class RenameMaps
     {
         $declaredBy = [];
 
-        foreach ($this->vocabulary->baseKeys as $key) {
+        foreach ([...$this->vocabulary->baseKeys, ...($this->referenceVocabulary === null ? [] : $this->referenceVocabulary->baseKeys)] as $key) {
             $declaredBy[$key] = 'the product\'s own metric-key declaration';
         }
 
@@ -1345,9 +1584,12 @@ final class RenameMaps
             if (!\in_array(self::METRIC_KEYS, $pair['sources'], true)) {
                 continue;
             }
+            if (str_starts_with($pair['old'], 'strategy:')) {
+                continue;
+            }
 
             foreach ([$pair['old'], $pair['new']] as $key) {
-                foreach ($this->vocabulary->suffixes as $suffix) {
+                foreach (array_unique([...$this->vocabulary->suffixes, ...($this->referenceVocabulary === null ? [] : $this->referenceVocabulary->suffixes)]) as $suffix) {
                     $aggregated = $key . '.' . $suffix;
                     $other = $declaredBy[$aggregated] ?? null;
 
@@ -1433,6 +1675,9 @@ final class RenameMaps
         $rows = [];
 
         foreach (Tsv::rows($path, ['old', 'new', 'reason']) as $row) {
+            if ($row['reason'] === '?') {
+                throw new GateError($path . ': a generated proposal needs an explicit reason before it can authorize a rename.');
+            }
             $rows[] = [$row['old'], $row['new']];
         }
 

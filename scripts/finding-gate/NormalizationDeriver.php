@@ -18,10 +18,10 @@ final class NormalizationDeriver
 {
     /**
      * A clock field or two is nondeterminism. A dozen is a structural
-     * difference wearing its costume, and blanketing it would hollow out the
+     * difference within one publication wearing its costume, and blanketing it would hollow out the
      * gate.
      */
-    private const MAX_ROWS = 10;
+    private const MAX_FIELDS_PER_SURFACE = 10;
 
     /** How much of the line before the varying field is kept as its label. */
     private const LABEL_LENGTH = 30;
@@ -66,15 +66,20 @@ final class NormalizationDeriver
             }
         }
 
-        if (\count($rules) > self::MAX_ROWS) {
+        $bySurface = [];
+        foreach ($rules as $rule) {
+            $bySurface[$rule->surface][] = $rule;
+        }
+        foreach ($bySurface as $surface => $surfaceRules) {
+            if (\count($surfaceRules) <= self::MAX_FIELDS_PER_SURFACE) {
+                continue;
+            }
             throw new GateError(\sprintf(
-                'Repeated runs of one unchanged tree diverged in %d fields: %s. That is not a clock; look for a real'
-                . ' nondeterminism before declaring any of it normalizable.',
-                \count($rules),
-                implode(', ', array_map(
-                    static fn(NormalizationRule $rule): string => $rule->surface . ':' . $rule->locator,
-                    array_values($rules),
-                )),
+                'Repeated runs of one unchanged tree diverged in %d fields of %s: %s. That is not a clock; look'
+                . ' for a real nondeterminism before declaring any of it normalizable.',
+                \count($surfaceRules),
+                $surface,
+                implode(', ', array_map(static fn(NormalizationRule $rule): string => $rule->locator, $surfaceRules)),
             ));
         }
 
@@ -87,6 +92,16 @@ final class NormalizationDeriver
     /** @return list<NormalizationRule> */
     private static function rulesFor(string $surface, string $left, string $right): array
     {
+        if ($surface === 'stderr:check:output') {
+            $pattern = '~^(Report written to )/[^\r\n]*()$~m';
+            $leftNormalized = preg_replace($pattern, '$1<destination>$2', $left, -1, $leftHits);
+            $rightNormalized = preg_replace($pattern, '$1<destination>$2', $right, -1, $rightHits);
+            if ($leftHits !== 1 || $rightHits !== 1 || $leftNormalized !== $rightNormalized) {
+                throw new GateError('The output diagnostic changed outside its single guarded destination field.');
+            }
+
+            return self::rules($surface, NormalizationRule::KIND_LINE_REGEX, ['~^(Report written to ).*()$~m']);
+        }
         $leftJson = json_decode($left, false);
         $rightJson = json_decode($right, false);
 

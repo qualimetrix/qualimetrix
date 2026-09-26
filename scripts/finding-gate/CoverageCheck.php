@@ -10,6 +10,7 @@ namespace QmxFindingGate;
  */
 final class CoverageCheck
 {
+    private bool $probeRefused = false;
     public function __construct(
         private readonly Options $options,
         private readonly GateReport $report,
@@ -29,12 +30,24 @@ final class CoverageCheck
      */
     public function checkCoverage(array $findingsByCase): void
     {
-        $declared = $this->witness->staticPairs();
+        try {
+            $declared = $this->witness->staticPairs();
+        } catch (GateError $error) {
+            $this->inputRefused('corpus', $error->getMessage());
+            return;
+        }
         $observed = [];
         $producers = [];
 
         foreach ($this->corpus->cases as $case) {
-            $caseClaims = self::observedClaims($findingsByCase[$case->id] ?? []);
+            if (!CaseOutcome::applies(CaseOutcome::CHECK_COVERAGE, CaseOutcome::of($case, 'candidate'))) {
+                continue;
+            }
+            if (!\array_key_exists($case->id, $findingsByCase)) {
+                $this->inputRefused('case:' . $case->id, 'The candidate supplied no observed findings for its coverage-bearing case.');
+                continue;
+            }
+            $caseClaims = self::observedClaims($findingsByCase[$case->id]);
             $caseObserved = self::channelsOf($caseClaims);
             $this->checkCaseClaim($case, $caseClaims);
 
@@ -47,7 +60,12 @@ final class CoverageCheck
                 continue;
             }
 
-            $declared = [...$declared, ...$this->witness->computedPairs($case)];
+            try {
+                $declared = [...$declared, ...$this->witness->computedPairs($case)];
+            } catch (GateError $error) {
+                $this->inputRefused('case:' . $case->id, $error->getMessage());
+                continue;
+            }
             $observed = [...$observed, ...$caseClaims];
 
             foreach ($caseObserved as $channel) {
@@ -58,6 +76,12 @@ final class CoverageCheck
         $this->checkSingleProducer($producers);
 
         ChannelCoverage::inspectCoverage($this->report, $declared, $observed, $this->options->incompleteCorpus);
+    }
+
+    private function inputRefused(string $scope, string $detail): void
+    {
+        $this->probeRefused = true;
+        $this->report->fail(FailureClass::CANDIDATE_INPUT_REFUSED, $scope, $detail);
     }
 
     /**
@@ -133,10 +157,17 @@ final class CoverageCheck
         );
     }
 
-    public function checkWitnesses(): void
+    public function checkChannelWitnesses(): void
     {
-        ChannelWitness::checkAgreement($this->report, $this->witness->fixturePairs(), $this->witness->staticPairs());
-        ChannelWitness::checkLevelVocabulary($this->report, $this->witness->productLevels());
+        if ($this->probeRefused) {
+            return;
+        }
+        try {
+            ChannelWitness::checkAgreement($this->report, $this->witness->fixturePairs(), $this->witness->staticPairs());
+            ChannelWitness::checkLevelVocabulary($this->report, $this->witness->productLevels());
+        } catch (GateError $error) {
+            $this->inputRefused('corpus', $error->getMessage());
+        }
     }
 
     /**

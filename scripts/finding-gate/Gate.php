@@ -79,13 +79,24 @@ final class Gate
         $this->declaredFieldMoves = $this->declarations->fieldMoves;
         $this->split = ChannelSplit::of($this->maps);
         $this->corpus = Corpus::load($this->options->candidateRoot, $this->options->cases);
+        $capturePlan = CapturePlan::forCorpus($this->corpus, $this->declarations->surfaces);
+        $outcomeCases = [];
+        foreach ($this->corpus->cases as $outcomeCase) {
+            $outcomeCases['case:' . $outcomeCase->id] = $outcomeCase;
+        }
         foreach (DeclaredFields::REPORTS as $fieldReport) {
-            if ($this->declarations->fields->changes($fieldReport) === []) {
-                continue;
-            }
-            foreach ($this->corpus->cases as $case) {
-                foreach (['candidate', 'reference'] as $side) {
-                    $this->declarations->fields->requireMeasurements($fieldReport, $case->id, $side);
+            foreach ($this->declarations->fields->views($fieldReport) as $view) {
+                foreach ($capturePlan->invocations() as $invocation) {
+                    if ($invocation['surface'] !== $view || !str_starts_with($invocation['scope'], 'case:')) {
+                        continue;
+                    }
+                    $key = Surfaces::key($invocation['scope'], $view);
+                    foreach (['candidate', 'reference'] as $side) {
+                        if ($capturePlan->requiredOn($key, $side)
+                            && CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($outcomeCases[$invocation['scope']], $side))) {
+                            $this->declarations->fields->requireMeasurements($fieldReport, substr($invocation['scope'], 5), $view, $side);
+                        }
+                    }
                 }
             }
         }
@@ -94,7 +105,6 @@ final class Gate
 
         $this->tupleCheck = new TupleCheck($this->options, $this->report);
         $this->normalizationCheck = new NormalizationCheck($this->options, $this->report, $normalization);
-        $this->caseOutcomeCheck = new CaseOutcomeCheck($this->report, $this->corpus);
         $this->fingerprintCheck = new FingerprintCheck($this->report);
         $this->renameMapCheck = new RenameMapCheck($this->report, $this->corpus, $this->maps, $this->split);
         $this->declaredDeltaCheck = new DeclaredDeltaCheck(
@@ -118,6 +128,7 @@ final class Gate
             $this->declarations,
             $this->temporaryDirectory,
         );
+        $this->caseOutcomeCheck = CaseOutcomeCheck::create($run);
         $wiring = Wiring::of(__DIR__);
         $this->caseChecks = self::registered($wiring, 'caseChecks', CaseCheck::class, $run);
         $this->runChecks = self::registered($wiring, 'runChecks', RunCheck::class, $run);
@@ -246,7 +257,7 @@ final class Gate
             ));
             $this->surfaceComparison->checkPathLeaks($first, $referenceArtifacts, $reference->root);
             $this->coverageCheck->checkCoverage($this->findingsByCase);
-            $this->coverageCheck->checkWitnesses();
+            $this->coverageCheck->checkChannelWitnesses();
             $this->normalizationCheck->checkStaleNormalization();
             $this->renameMapCheck->checkStaleMaps();
             $this->declaredDeltaCheck->checkStaleDeclaredDelta();
@@ -346,7 +357,15 @@ final class Gate
     /** @return array<string, string> */
     private function runTree(string $treeRoot, string $label, bool $reverseInput): array
     {
-        $run = new TreeRun($treeRoot, $this->temporaryDirectory, $label, $this->maps, $reverseInput);
+        $run = new TreeRun(
+            $treeRoot,
+            $this->temporaryDirectory,
+            $label,
+            $this->maps,
+            $reverseInput,
+            CapturePlan::forCorpus($this->corpus, $this->declarations->surfaces),
+            $this->declarations->structuralMaps,
+        );
         $artifacts = $run->rules();
 
         $artifacts += (new CaseScheduler(
@@ -357,7 +376,8 @@ final class Gate
             $reverseInput,
             $this->options->jobs,
             $this->maps,
-        ))->run($this->corpus->cases);
+            $this->declarations->structuralMaps,
+        ))->captureCases($this->corpus->cases);
 
         return $artifacts;
     }

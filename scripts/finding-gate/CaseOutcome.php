@@ -49,11 +49,8 @@ final class CaseOutcome
     /** Declared records are withdrawn or introduced on this case's reports. */
     public const string CHECK_RECORDS = 'records';
 
-    /** A refusal ended with its expected exit and its declared output. */
-    public const string CHECK_REFUSAL = 'refusal';
-
-    /** An incomplete analysis ended with its expected exit and wrote no baseline file. */
-    public const string CHECK_INCOMPLETE = 'incomplete';
+    /** The exact refusal or incomplete ending of a case. */
+    public const string CHECK_OUTCOME = 'outcomes';
 
     /** @var array<string, list<string>> check => the outcomes it applies to */
     public const array CHECKS = [
@@ -64,16 +61,34 @@ final class CaseOutcome
         self::CHECK_FINGERPRINTS => [self::ANALYSIS, self::INCOMPLETE],
         self::CHECK_COVERAGE => [self::ANALYSIS, self::INCOMPLETE],
         self::CHECK_RECORDS => [self::ANALYSIS, self::INCOMPLETE],
-        self::CHECK_REFUSAL => [self::REFUSAL],
-        self::CHECK_INCOMPLETE => [self::INCOMPLETE],
+        self::CHECK_OUTCOME => [self::REFUSAL, self::INCOMPLETE],
     ];
 
     /** @var array<string, string> outcome => the check that holds a case to it */
     public const array VERIFIED_BY = [
         self::ANALYSIS => self::CHECK_FINDINGS,
-        self::REFUSAL => self::CHECK_REFUSAL,
-        self::INCOMPLETE => self::CHECK_INCOMPLETE,
+        self::REFUSAL => self::CHECK_OUTCOME,
+        self::INCOMPLETE => self::CHECK_OUTCOME,
     ];
+
+    /**
+     * @param array<array-key,mixed> $definition
+     *
+     * @return array{string, int|null}
+     */
+    public static function definition(array $definition, string $file): array
+    {
+        if (!\array_key_exists('outcome', $definition)) {
+            return [self::ANALYSIS, null];
+        }
+        $outcome = $definition['outcome'];
+        if (!\is_array($outcome) || array_keys($outcome) !== ['kind', 'exit']
+            || !\in_array($outcome['kind'], [self::REFUSAL, self::INCOMPLETE], true)
+            || !\is_int($outcome['exit']) || $outcome['exit'] < 1 || $outcome['exit'] > 255) {
+            throw new GateError($file . ': "outcome" must be {"kind": "refusal"|"incomplete", "exit": N} with N in 1-255; a case that analyses carries no outcome at all.');
+        }
+        return [$outcome['kind'], $outcome['exit']];
+    }
 
     public static function applies(string $check, string $outcome): bool
     {
@@ -89,7 +104,19 @@ final class CaseOutcome
      */
     public static function of(CaseDefinition $case, string $side): string
     {
-        return $case->outcome;
+        $side = match ($side) {
+            'candidate', 'candidate-1', 'candidate-2' => 'candidate',
+            'reference' => 'reference',
+            default => throw new GateError('Unknown case outcome side: ' . $side),
+        };
+        if ($case->transition === null) {
+            return $case->outcome;
+        }
+        return match ($case->transition) {
+            DeclaredOutcomes::ANALYSIS_TO_REFUSAL => $side === 'candidate' ? self::REFUSAL : self::ANALYSIS,
+            DeclaredOutcomes::REFUSAL_TO_ANALYSIS => $side === 'reference' ? self::REFUSAL : self::ANALYSIS,
+            default => throw new GateError('Unknown declared case outcome transition: ' . $case->transition),
+        };
     }
 
     /**
@@ -102,16 +129,19 @@ final class CaseOutcome
         $built = [self::CHECK_FINDINGS];
 
         foreach ($corpus->cases as $case) {
-            $verifier = self::VERIFIED_BY[$case->outcome];
+            foreach (['candidate', 'reference'] as $side) {
+                $outcome = self::of($case, $side);
+                $verifier = self::VERIFIED_BY[$outcome];
 
-            if (!\in_array($verifier, [...$built, ...$registered], true)) {
-                throw new GateError(\sprintf(
-                    'Case "%s" is expected to end in %s, and no registered check ("%s") holds a case to that outcome.'
-                    . ' Without one every other check would step aside and the case would pass unexamined.',
-                    $case->id,
-                    $case->outcome,
-                    $verifier,
-                ));
+                if (!\in_array($verifier, [...$built, ...$registered], true)) {
+                    throw new GateError(\sprintf(
+                        'Case "%s" is expected to end in %s, and no registered check ("%s") holds a case to that outcome.'
+                        . ' Without one every other check would step aside and the case would pass unexamined.',
+                        $case->id,
+                        $outcome,
+                        $verifier,
+                    ));
+                }
             }
         }
     }

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace QmxFindingGate;
 
+use JsonException;
+
 /**
- * Fields added to or removed from one report's records, with measured values.
+ * Fields added to or removed from one named report publication, with measured values.
  *
  * The candidate's tuple is the tracked one; the reference's is that tuple
  * minus the fields added here plus the fields dropped here. For an added field
@@ -17,13 +19,13 @@ namespace QmxFindingGate;
  * refused at load; a row whose field neither tuple changed is stale.
  *
  * @phpstan-type Record array{record:string,fields:array<string,mixed>}
- * @phpstan-type Measurement array{case:string,side:string,records:list<Record>}
+ * @phpstan-type Measurement array{case:string,view:string,side:string,records:list<Record>}
  */
 final class DeclaredFields
 {
-    public const array COLUMNS = ['change', 'report', 'field', 'reason'];
+    public const array COLUMNS = ['change', 'report', 'view', 'field', 'reason'];
 
-    public const array DERIVED_COLUMNS = ['report', 'field', 'case', 'record', 'value'];
+    public const array DERIVED_COLUMNS = ['report', 'view', 'field', 'case', 'record', 'value'];
 
     public const array REPORTS = ['json', 'metrics', 'directives'];
 
@@ -38,15 +40,15 @@ final class DeclaredFields
     /** @var array<string, true> */
     private array $credited = [];
 
-    /** @var array<string, array{report:string,case:string,side:string}> */
+    /** @var array<string, array{report:string,case:string,view:string,side:string}> */
     private array $required = [];
 
     /** @var array<string, Measurement> */
     private array $measurements = [];
 
     /**
-     * @param array<string, string> $changes report and field => added|removed
-     * @param list<array{report:string,field: string, case: string, record: string, value: string}> $derived
+     * @param array<string, string> $changes report, view and field => added|removed
+     * @param list<array{report:string,view:string,field:string,case:string,record:string,value:string}> $derived
      */
     private function __construct(
         private readonly array $changes,
@@ -61,8 +63,8 @@ final class DeclaredFields
         foreach (DeclarationTable::rows($root, self::INDEX, self::COLUMNS) as $index => $row) {
             DeclarationTable::oneOf(self::INDEX, $index + 1, 'change', $row['change'], [self::ADDED, self::REMOVED]);
 
-            DeclarationTable::oneOf(self::INDEX, $index + 1, 'report', $row['report'], self::REPORTS);
-            $key = $row['report'] . "\0" . $row['field'];
+            self::assertView($row['report'], $row['view']);
+            $key = $row['report'] . "\0" . $row['view'] . "\0" . $row['field'];
 
             if (isset($changes[$key])) {
                 throw new GateError(\sprintf('%s row %d declares the field "%s" a second time.', self::INDEX, $index + 1, $row['field']));
@@ -74,8 +76,8 @@ final class DeclaredFields
         $derived = [];
 
         foreach (DeclarationTable::rows($root, self::DERIVED, self::DERIVED_COLUMNS) as $index => $row) {
-            DeclarationTable::oneOf(self::DERIVED, $index + 1, 'report', $row['report'], self::REPORTS);
-            $key = $row['report'] . "\0" . $row['field'];
+            self::assertView($row['report'], $row['view']);
+            $key = $row['report'] . "\0" . $row['view'] . "\0" . $row['field'];
 
             if (($changes[$key] ?? null) !== self::ADDED) {
                 throw new GateError(\sprintf(
@@ -87,7 +89,15 @@ final class DeclaredFields
                 ));
             }
 
-            $derived[] = ['report' => $row['report'], 'field' => $row['field'], 'case' => $row['case'], 'record' => $row['record'], 'value' => $row['value']];
+            try {
+                $value = json_decode($row['value'], false, 512, \JSON_THROW_ON_ERROR);
+            } catch (JsonException $error) {
+                throw new GateError(self::DERIVED . ' has a non-JSON field value: ' . $error->getMessage());
+            }
+            if (json_encode($value, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE | \JSON_PRESERVE_ZERO_FRACTION | \JSON_THROW_ON_ERROR) !== $row['value']) {
+                throw new GateError(self::DERIVED . ' requires canonical JSON field values.');
+            }
+            $derived[] = ['report' => $row['report'], 'view' => $row['view'], 'field' => $row['field'], 'case' => $row['case'], 'record' => $row['record'], 'value' => $row['value']];
         }
 
         $path = $root . '/' . self::DERIVED;
@@ -107,9 +117,9 @@ final class DeclaredFields
      *
      * @return list<string>
      */
-    public function referenceFields(string $report, array $candidateFields): array
+    public function referenceFields(string $report, string $view, array $candidateFields): array
     {
-        $changes = $this->changes($report);
+        $changes = $this->changes($report, $view);
         $fields = [];
 
         foreach ($candidateFields as $field) {
@@ -128,24 +138,24 @@ final class DeclaredFields
     }
 
     /** @return array<string, string> field => added|removed */
-    public function changes(string $report): array
+    public function changes(string $report, string $view): array
     {
-        self::assertReport($report);
+        self::assertView($report, $view);
         $changes = [];
         foreach ($this->changes as $key => $change) {
-            [$owner, $field] = explode("\0", $key, 2);
-            if ($owner === $report) {
+            [$owner, $publication, $field] = explode("\0", $key, 3);
+            if ($owner === $report && $publication === $view) {
                 $changes[$field] = $change;
             }
         }
         return $changes;
     }
 
-    /** @return list<array{report:string,field: string, case: string, record: string, value: string}> */
-    public function derived(string $report): array
+    /** @return list<array{report:string,view:string,field:string,case:string,record:string,value:string}> */
+    public function derived(string $report, string $view): array
     {
-        self::assertReport($report);
-        return array_values(array_filter($this->derived, static fn(array $row): bool => $row['report'] === $report));
+        self::assertView($report, $view);
+        return array_values(array_filter($this->derived, static fn(array $row): bool => $row['report'] === $report && $row['view'] === $view));
     }
 
     public function derivedText(): string
@@ -154,10 +164,10 @@ final class DeclaredFields
     }
 
     /** Records that the two sides' tuples do differ by this field as declared. */
-    public function credit(string $report, string $field): void
+    public function credit(string $report, string $view, string $field): void
     {
-        self::assertReport($report);
-        $key = $report . "\0" . $field;
+        self::assertView($report, $view);
+        $key = $report . "\0" . $view . "\0" . $field;
         if (!isset($this->changes[$key])) {
             throw new GateError('Cannot credit an undeclared field.');
         }
@@ -170,28 +180,28 @@ final class DeclaredFields
         $stale = [];
 
         foreach ($this->changes as $key => $change) {
-            [$report, $field] = explode("\0", $key, 2);
+            [$report, $view, $field] = explode("\0", $key, 3);
             if (!isset($this->credited[$key])) {
-                $stale[] = ['scope' => self::INDEX, 'detail' => \sprintf('The %s %s field "%s"', $change, $report, $field)];
+                $stale[] = ['scope' => self::INDEX, 'detail' => \sprintf('The %s %s/%s field "%s"', $change, $report, $view, $field)];
             }
         }
 
         return $stale;
     }
 
-    public function requireMeasurements(string $report, string $case, string $side): void
+    public function requireMeasurements(string $report, string $case, string $view, string $side): void
     {
-        $key = self::measurementKey($report, $case, $side);
+        $key = self::measurementKey($report, $case, $view, $side);
         if (isset($this->required[$key])) {
             throw new GateError('A record publication was registered twice: ' . $key);
         }
-        $this->required[$key] = ['report' => $report, 'case' => $case, 'side' => $side];
+        $this->required[$key] = ['report' => $report, 'case' => $case, 'view' => $view, 'side' => $side];
     }
 
     /** @param list<Record> $records */
-    public function supply(string $report, string $case, string $side, array $records): void
+    public function supply(string $report, string $case, string $view, string $side, array $records): void
     {
-        $key = self::measurementKey($report, $case, $side);
+        $key = self::measurementKey($report, $case, $view, $side);
         if (!isset($this->required[$key])) {
             throw new GateError('An unregistered record publication was supplied: ' . $key);
         }
@@ -213,7 +223,7 @@ final class DeclaredFields
                 }
             }
         }
-        $this->measurements[$key] = ['case' => $case, 'side' => $side, 'records' => $records];
+        $this->measurements[$key] = ['case' => $case, 'view' => $view, 'side' => $side, 'records' => $records];
     }
 
     /** @return list<Measurement> */
@@ -230,19 +240,41 @@ final class DeclaredFields
             }
             $measurements[] = $this->measurements[$key];
         }
-        if ($measurements === [] && $this->changes($report) !== []) {
-            throw new GateError('No record publications were registered for declared fields of ' . $report);
+        foreach ($this->views($report) as $view) {
+            if (array_filter($measurements, static fn(array $measurement): bool => $measurement['view'] === $view) === []) {
+                throw new GateError('No record publications were registered for declared fields of ' . $report . '/' . $view);
+            }
         }
         return $measurements;
     }
 
-    private static function measurementKey(string $report, string $case, string $side): string
+    /** @return list<string> */
+    public function views(string $report): array
     {
         self::assertReport($report);
+        $views = [];
+        foreach (array_keys($this->changes) as $key) {
+            [$owner, $view] = explode("\0", $key, 3);
+            if ($owner === $report && !\in_array($view, $views, true)) {
+                $views[] = $view;
+            }
+        }
+        return $views;
+    }
+
+    private static function assertView(string $report, string $view): void
+    {
+        self::assertReport($report);
+        ReportViews::assert($report, $view);
+    }
+
+    private static function measurementKey(string $report, string $case, string $view, string $side): string
+    {
+        self::assertView($report, $view);
         if ($case === '' || $case === '*' || !\in_array($side, ['candidate', 'reference'], true)) {
             throw new GateError('A record publication requires a concrete case and candidate or reference side.');
         }
-        return $report . "\0" . $case . "\0" . $side;
+        return $report . "\0" . $case . "\0" . $view . "\0" . $side;
     }
 
     private static function assertReport(string $report): void

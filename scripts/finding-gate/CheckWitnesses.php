@@ -164,31 +164,19 @@ final class CheckWitnesses
             );
         }
 
-        $byScenario = [];
-
         foreach (self::witnesses() as $witness) {
-            $byScenario[$witness['scenario']][] = $witness;
-        }
-
-        foreach ($byScenario as $scenario => $witnesses) {
-            $specification = SyntheticTree::clean();
-
-            foreach ($witnesses as $witness) {
-                $specification = ($witness['plant'])($specification);
-            }
-
+            $scenario = $witness['scenario'];
+            $specification = ($witness['plant'])(SyntheticTree::clean());
             $mode = self::MODES[$scenario];
             $run = self::run($specification, $mode['flags'] ?? null, $sites);
 
             if (\is_string($run)) {
-                foreach ($witnesses as $witness) {
-                    $failures[] = \sprintf('check witness %s: the %s run did not complete: %s', $witness['id'], $scenario, $run);
-                }
+                $failures[] = \sprintf('check witness %s: the %s run did not complete: %s', $witness['id'], $scenario, $run);
 
                 continue;
             }
 
-            $judged = self::judge($scenario, $witnesses, $run['failures']);
+            $judged = self::judge($scenario, [$witness], $run['failures']);
             $failures = [...$failures, ...$judged['failures'], ...self::unenumerated($scenario, $run['failures'], $sites)];
             $observed = [...$observed, ...$judged['observed']];
 
@@ -377,6 +365,49 @@ final class CheckWitnesses
     {
         return [
             self::witness(
+                'existing-reference-outcome-refusal',
+                self::WHOLE_RUN,
+                static function (array $tree): array {
+                    $refusal = SelfTestOutcomes::fixture();
+                    $tree['answers'] = $refusal['candidateAnswers'];
+                    $tree['candidateAnswers'] = SyntheticTree::caseAnswers('alpha', $tree['findings']['alpha'], false, []);
+                    $tree['candidateDeclarations'][DeclaredOutcomes::INDEX] = Tsv::render(DeclaredOutcomes::COLUMNS, [
+                        ['alpha', DeclaredOutcomes::REFUSAL_TO_ANALYSIS, 'declared-outcomes/alpha.json', 'Existing reference inputs must be translated.'],
+                    ]);
+                    $snapshot = [];
+                    foreach ($refusal['candidateAnswers'] as $key => $answer) {
+                        $snapshot[$key] = ['stdout' => $answer['stdout'] ?? '', 'stderr' => $answer['stderr'] ?? '', 'exit' => (string) ($answer['exit'] ?? 0)];
+                    }
+                    $tree['candidateDeclarations']['declared-outcomes/alpha.json'] = self::json($snapshot);
+
+                    return $tree;
+                },
+                [
+                    [FailureClass::REFERENCE_INPUT_UNTRANSLATED, 'case:alpha', 'CaseOutcomeCheck::checkRun <- Gate::compare'],
+                    [FailureClass::REFERENCE_INPUT_UNTRANSLATED, 'reference / case:alpha', 'RenameMapCheck::checkReferenceInput <- Gate::compare'],
+                ],
+            ),
+            self::witness(
+                'derive-normalization-outcome-mismatch',
+                self::NORMALIZATION_REFUSED,
+                static function (array $tree): array {
+                    $tree['declarations']['cases/alpha/case.json'] = self::json([
+                        'id' => 'alpha', 'description' => 'Declared incomplete analysis must actually be incomplete.', 'paths' => ['src'],
+                        'config' => 'qmx.yaml', 'channels' => ['replay.alpha@callable'],
+                        'outcome' => ['kind' => CaseOutcome::INCOMPLETE, 'exit' => 4],
+                    ]);
+
+                    return $tree;
+                },
+                [
+                    [FailureClass::CASE_OUTCOME_MISMATCH, 'derive-1 / alpha', 'CaseOutcomeCheck::mismatch <- Gate::deriveNormalization'],
+                    [FailureClass::CASE_OUTCOME_MISMATCH, 'derive-2 / alpha', 'CaseOutcomeCheck::mismatch <- Gate::deriveNormalization'],
+                    [FailureClass::CASE_OUTCOME_MISMATCH, 'derive-3 / alpha', 'CaseOutcomeCheck::mismatch <- Gate::deriveNormalization'],
+                    [FailureClass::CASE_OUTCOME_MISMATCH, 'derive-4 / alpha', 'CaseOutcomeCheck::mismatch <- Gate::deriveNormalization'],
+                    [FailureClass::CASE_OUTCOME_MISMATCH, 'derive-5 / alpha', 'CaseOutcomeCheck::mismatch <- Gate::deriveNormalization'],
+                ],
+            ),
+            self::witness(
                 'env-mismatch',
                 self::BEFORE_THE_REFERENCE,
                 static function (array $tree): array {
@@ -394,7 +425,25 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::TUPLE_FIELD_DRIFT, EquivalenceTuple::TRACKED_PATH, 'TupleCheck::checkTuple#1 <- Gate::compare']],
+                [
+                    [FailureClass::TUPLE_FIELD_DRIFT, EquivalenceTuple::TRACKED_PATH, 'TupleCheck::checkTuple#1 <- Gate::compare'],
+                    [FailureClass::FINDING_TUPLE_MISMATCH, 'candidate / alpha / finding #0', 'TupleCheck::checkTupleAgainstFindings <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
+                    [FailureClass::FINDING_TUPLE_MISMATCH, 'reference / alpha / finding #0', 'TupleCheck::checkTupleAgainstFindings <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|check:output:file', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:checkstyle', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:github', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:gitlab', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:html', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:sarif', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:summary', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:text', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:text-verbose', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|show-suppressed', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                ],
             ),
             self::witness(
                 'tuple-fingerprint-licence',
@@ -411,17 +460,26 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::TUPLE_FIELD_DRIFT, EquivalenceTuple::TRACKED_PATH, 'TupleCheck::checkTuple#2 <- Gate::compare']],
+                [
+                    [FailureClass::TUPLE_FIELD_DRIFT, EquivalenceTuple::TRACKED_PATH, 'TupleCheck::checkTuple#2 <- Gate::compare'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                ],
             ),
             self::witness(
                 'determinism.differs',
                 self::WHOLE_RUN,
                 static function (array $tree): array {
-                    $tree['candidateAnswers']['case:alpha|format:text'] = ['stdout' => 'replayed text ' . SyntheticTree::RANDOM . "\n"];
+                    $answers = SyntheticTree::caseAnswers('alpha', $tree['candidateFindings']['alpha'] ?? $tree['findings']['alpha'], false, []);
+                    $tree['candidateAnswers']['case:alpha|format:text'] = $answers['case:alpha|format:text'];
+                    $tree['candidateAnswers']['case:alpha|format:text']['stdout'] = ($tree['candidateAnswers']['case:alpha|format:text']['stdout'] ?? throw new GateError('A renderer-backed witness requires stdout.')) . 'replayed text ' . SyntheticTree::RANDOM . "\n";
 
                     return $tree;
                 },
-                [[FailureClass::NONDETERMINISM_UNDECLARED, 'case:alpha|format:text', 'NormalizationCheck::checkDeterminism#2 <- Gate::compare']],
+                [[FailureClass::NONDETERMINISM_UNDECLARED, 'case:alpha|format:text', 'NormalizationCheck::checkDeterminism <- Gate::compare']],
                 [[FailureClass::SURFACE_MISMATCH, 'case:alpha|format:text']],
             ),
             self::witness(
@@ -436,7 +494,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::NONDETERMINISM_UNDECLARED, 'case:alpha|stderr:format:summary', 'NormalizationCheck::checkDeterminism#1 <- Gate::compare']],
+                [[FailureClass::NONDETERMINISM_UNDECLARED, 'case:alpha|stderr:format:summary', 'NormalizationCheck::checkDeterminism <- Gate::compare']],
                 [[FailureClass::SURFACE_MISMATCH, 'case:alpha|stderr:format:summary']],
             ),
             self::witness(
@@ -458,7 +516,22 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::NORMALIZATION_OVERREACH, 'candidate / case:alpha|format:json', 'NormalizationCheck::checkNormalizationLeavesFindings <- Gate::checkFindings']],
+                [
+                    [FailureClass::NORMALIZATION_OVERREACH, 'candidate / case:alpha|format:json', 'NormalizationCheck::checkNormalizationLeavesFindings <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:checkstyle', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:github', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:gitlab', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:html', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:sarif', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:summary', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:text', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:text-verbose', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|show-suppressed', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                ],
                 [[FailureClass::NORMALIZATION_OVERREACH, '* / case:*|format:json']],
             ),
             self::witness(
@@ -475,7 +548,9 @@ final class CheckWitnesses
                 'path-leak',
                 self::WHOLE_RUN,
                 static function (array $tree): array {
-                    $tree['answers']['case:alpha|format:github'] = ['stdout' => 'replayed github from ' . SyntheticTree::TREE . "\n"];
+                    $answers = SyntheticTree::caseAnswers('alpha', $tree['findings']['alpha'], false, []);
+                    $tree['answers']['case:alpha|format:github'] = $answers['case:alpha|format:github'];
+                    $tree['answers']['case:alpha|format:github']['stdout'] = ($tree['answers']['case:alpha|format:github']['stdout'] ?? throw new GateError('A renderer-backed witness requires stdout.')) . 'replayed github from ' . SyntheticTree::TREE . "\n";
 
                     return $tree;
                 },
@@ -497,7 +572,23 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::FINDING_TUPLE_MISMATCH, 'candidate / gamma / finding #0', 'TupleCheck::checkTupleAgainstFindings <- Gate::checkFindings']],
+                [
+                    [FailureClass::FINDING_TUPLE_MISMATCH, 'candidate / gamma / finding #0', 'TupleCheck::checkTupleAgainstFindings <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:gamma|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|baseline-file', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|check:output:file', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:checkstyle', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:github', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:gitlab', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:html', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:json', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:sarif', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:summary', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:text', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:text-verbose', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|show-suppressed', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                ],
                 [[FailureClass::FINDING_TUPLE_MISMATCH, 'reference / gamma / finding #0']],
             ),
             self::witness(
@@ -514,7 +605,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::WITNESS_DISAGREEMENT, 'governance/Channel/Fixtures/declared.txt', 'ChannelWitness::checkAgreement <- CoverageCheck::checkWitnesses']],
+                [[FailureClass::WITNESS_DISAGREEMENT, 'governance/Channel/Fixtures/declared.txt', 'ChannelWitness::checkAgreement <- CoverageCheck::checkChannelWitnesses']],
             ),
             self::witness(
                 'level-vocabulary-drift',
@@ -524,7 +615,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::LEVEL_VOCABULARY_DRIFT, 'scripts/finding-gate/SubjectLevel.php', 'ChannelWitness::checkLevelVocabulary <- CoverageCheck::checkWitnesses']],
+                [[FailureClass::LEVEL_VOCABULARY_DRIFT, 'scripts/finding-gate/SubjectLevel.php', 'ChannelWitness::checkLevelVocabulary <- CoverageCheck::checkChannelWitnesses']],
             ),
             self::witness(
                 'report-payload-unreadable',
@@ -534,7 +625,11 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::REPORT_PAYLOAD_UNREADABLE, 'case:alpha|format:html', 'SurfaceComparison::extractPayload <- Gate::compare']],
+                [
+                    [FailureClass::REPORT_PAYLOAD_UNREADABLE, 'case:alpha|format:html', 'SurfaceComparison::extractPayload <- Gate::compare'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:html', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|format:html', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
+                ],
             ),
             self::witness(
                 'run-failed',
@@ -544,7 +639,12 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::RUN_FAILED, 'candidate / alpha / format:sarif', 'FingerprintCheck::decodeFingerprintSurface <- Gate::checkFindings']],
+                [
+                    [FailureClass::RUN_FAILED, 'candidate / alpha / format:sarif', 'FingerprintCheck::decodeFingerprintSurface <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:sarif', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|format:sarif', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:sarif', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                ],
                 [[FailureClass::RUN_FAILED, 'reference / alpha / format:sarif']],
             ),
             self::witness(
@@ -556,9 +656,22 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::RUN_FAILED, '* / omega', 'CaseOutcomeCheck::findingsOf#1 <- Gate::checkFindings']],
                 [
-                    [FailureClass::CASE_CLAIM_MISMATCH, 'case:omega'],
+                    [FailureClass::RUN_FAILED, '* / omega', 'CaseOutcomeCheck::findingsOf#1 <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|baseline-file', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:checkstyle', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:github', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:gitlab', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:html', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:json', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:sarif', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:summary', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:text', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:text-verbose', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|show-suppressed', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::CANDIDATE_INPUT_REFUSED, 'case:omega', 'CoverageCheck::inputRefused <- Gate::compare'],
+                ],
+                [
                     [FailureClass::COVERAGE_SHORTFALL, 'corpus'],
                 ],
             ),
@@ -580,7 +693,14 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::RUN_FAILED, '* / alpha / baseline:generate', 'CaseOutcomeCheck::checkBaselineSurface#1 <- Gate::checkFindings']],
+                [
+                    [FailureClass::RUN_FAILED, '* / alpha / baseline:generate', 'CaseOutcomeCheck::checkBaselineSurface#1 <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::SURFACE_MISMATCH, 'candidate / case:alpha|baseline-file', 'CaptureCheck::publicationFailure <- Gate::compare'],
+                    [FailureClass::SURFACE_MISMATCH, 'reference / case:alpha|baseline-file', 'CaptureCheck::publicationFailure <- Gate::compare'],
+                ],
             ),
             self::witness(
                 'baseline-empty',
@@ -591,18 +711,30 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::RUN_FAILED, '* / eta / baseline-file', 'CaseOutcomeCheck::checkBaselineSurface#2 <- Gate::checkFindings']],
+                [
+                    [FailureClass::RUN_FAILED, '* / eta / baseline-file', 'CaseOutcomeCheck::checkBaselineSurface#2 <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:eta|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:eta|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:eta|baseline-file', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::SURFACE_MISMATCH, 'candidate / case:eta|baseline-file', 'CaptureCheck::publicationFailure <- Gate::compare'],
+                    [FailureClass::SURFACE_MISMATCH, 'reference / case:eta|baseline-file', 'CaptureCheck::publicationFailure <- Gate::compare'],
+                ],
             ),
             self::witness(
                 'reference-input',
                 self::WHOLE_RUN,
                 static function (array $tree): array {
-                    $tree['answers']['case:alpha|format:text-verbose'] = ['stdout' => "replayed text-verbose of alpha\n", 'exit' => 3];
-                    $tree['candidateAnswers']['case:alpha|format:text-verbose'] = ['stdout' => "replayed text-verbose of alpha\n"];
+                    $answers = SyntheticTree::caseAnswers('alpha', $tree['findings']['alpha'], false, []);
+                    $tree['answers']['case:alpha|format:text-verbose'] = [...$answers['case:alpha|format:text-verbose'], 'exit' => 3];
+                    $tree['candidateAnswers']['case:alpha|format:text-verbose'] = $answers['case:alpha|format:text-verbose'];
 
                     return $tree;
                 },
-                [[FailureClass::REFERENCE_INPUT_UNTRANSLATED, 'reference / case:alpha', 'RenameMapCheck::checkReferenceInput <- Gate::compare']],
+                [
+                    [FailureClass::REFERENCE_INPUT_UNTRANSLATED, 'reference / case:alpha', 'RenameMapCheck::checkReferenceInput <- Gate::compare'],
+                    [FailureClass::VALUE_MISMATCH, 'case:alpha|format:text-verbose', 'ValueCheck::measure <- ValueStage::applyStage'],
+                    [FailureClass::SURFACE_MISMATCH, 'reference / case:alpha|format:text-verbose', 'CaptureCheck::publicationFailure <- Gate::compare'],
+                ],
                 [[FailureClass::SURFACE_MISMATCH, 'case:alpha|exit:format:text-verbose']],
             ),
             self::witness(
@@ -652,9 +784,10 @@ final class CheckWitnesses
                 'fingerprint-mismatch',
                 self::DECLARATIONS,
                 static function (array $tree): array {
-                    $tree['answers']['case:alpha|format:sarif'] = ['stdout' => self::json(['runs' => [[
-                        'results' => [['partialFingerprints' => ['primaryLocationLineHash' => 'not the recomputed identity']]],
-                    ]]])];
+                    $answers = SyntheticTree::caseAnswers('alpha', $tree['findings']['alpha'], false, []);
+                    $document = json_decode(($answers['case:alpha|format:sarif']['stdout'] ?? throw new GateError('A SARIF witness requires stdout.')), true, 512, \JSON_THROW_ON_ERROR);
+                    $document['runs'][0]['results'][0]['partialFingerprints']['primaryLocationLineHash'] = 'not the recomputed identity';
+                    $tree['answers']['case:alpha|format:sarif'] = ['stdout' => self::json($document)];
 
                     return $tree;
                 },
@@ -665,9 +798,7 @@ final class CheckWitnesses
                 self::DECLARATIONS,
                 static function (array $tree): array {
                     $hash = Fingerprints::md5Of(Fingerprints::expected($tree['findings']['alpha']))[0];
-                    $tree['answers']['case:alpha|format:gitlab'] = ['stdout' => self::json([
-                        ['check_name' => 'replayed', 'fingerprint' => $hash, 'description' => $hash],
-                    ])];
+                    $tree['findings']['alpha'][0]['message'] = $hash;
 
                     return $tree;
                 },
@@ -677,9 +808,16 @@ final class CheckWitnesses
                 'published-order',
                 self::DECLARATIONS,
                 static function (array $tree): array {
-                    $tree['answers']['case:alpha|baseline-file'] = ['stdout' => self::json(['entries' => [
-                        'declaration:callable:Replay\Alpha::run@src/Alpha.php' => [['channel' => 'replay.zulu'], ['channel' => 'replay.alpha']],
-                    ]])];
+                    $subject = $tree['findings']['alpha'][0]['subject'];
+                    $tree['cases']['alpha'][] = SubjectLevel::claim('replay.zulu', 'callable');
+                    $tree['findings']['alpha'][] = SyntheticTree::finding($tree['tuple'], 'replay.zulu', $subject);
+                    $tree['static']['replay.zulu'] = ['callable'];
+                    $tree['fixture']['replay.zulu'] = ['callable'];
+                    $answers = SyntheticTree::caseAnswers('alpha', $tree['findings']['alpha'], false, []);
+                    $document = json_decode($answers['case:alpha|baseline-file']['stdout'] ?? throw new GateError('A baseline witness requires stdout.'), true, 512, \JSON_THROW_ON_ERROR);
+                    $document['entries'][$subject] = array_reverse($document['entries'][$subject]);
+                    $payload = self::json($document);
+                    $tree['answers']['case:alpha|baseline-file'] = ['stdout' => $payload, 'file' => $payload];
 
                     return $tree;
                 },
@@ -689,24 +827,24 @@ final class CheckWitnesses
                 'surface-one-side',
                 self::DECLARATIONS,
                 static function (array $tree): array {
-                    $tree['candidateAnswers']['case:alpha|format:github'] = [
-                        'stdout' => "replayed github of alpha\n",
-                        'stderr' => "replayed warning\n",
-                    ];
+                    $answers = SyntheticTree::caseAnswers('alpha', $tree['candidateFindings']['alpha'] ?? $tree['findings']['alpha'], false, []);
+                    $tree['candidateAnswers']['case:alpha|format:github'] = [...$answers['case:alpha|format:github'], 'stderr' => "replayed warning\n"];
 
                     return $tree;
                 },
-                [[FailureClass::SURFACE_MISMATCH, 'case:alpha|stderr:format:github', 'SurfaceComparison::checkPresence <- Gate::compare']],
+                [[FailureClass::SURFACE_MISMATCH, 'case:alpha|stderr:format:github', 'SurfaceComparison::mismatch <- Gate::compare']],
             ),
             self::witness(
                 'surface-differs',
                 self::DECLARATIONS,
                 static function (array $tree): array {
-                    $tree['candidateAnswers']['case:alpha|format:checkstyle'] = ['stdout' => "another checkstyle of alpha\n"];
+                    $answers = SyntheticTree::caseAnswers('alpha', $tree['candidateFindings']['alpha'] ?? $tree['findings']['alpha'], false, []);
+                    $tree['candidateAnswers']['case:alpha|format:checkstyle'] = $answers['case:alpha|format:checkstyle'];
+                    $tree['candidateAnswers']['case:alpha|format:checkstyle']['stdout'] = ($tree['candidateAnswers']['case:alpha|format:checkstyle']['stdout'] ?? throw new GateError('A renderer-backed witness requires stdout.')) . "\n<!-- replayed checkstyle difference -->\n";
 
                     return $tree;
                 },
-                [[FailureClass::SURFACE_MISMATCH, 'case:alpha|format:checkstyle', 'DeclaredDeltaCheck::checkDifference <- SurfaceComparison::difference']],
+                [[FailureClass::SURFACE_MISMATCH, 'case:alpha|format:checkstyle', 'SurfaceComparison::mismatch <- Gate::compare']],
             ),
             self::witness(
                 'finding-count',
@@ -720,7 +858,13 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::FINDING_COUNT_MISMATCH, 'case:zeta', 'SurfaceComparison::compareFindingCounts <- Gate::compare']],
+                [
+                    [FailureClass::FINDING_COUNT_MISMATCH, 'case:zeta', 'SurfaceComparison::compareFindingCounts <- Gate::compare'],
+                    [FailureClass::RECORD_UNDECLARED, 'case:zeta|format:json', 'RecordCheck::observeResidual <- RecordStage::countInputs'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:zeta|baseline-file', 'SurfaceComparison::mismatch <- Gate::compare'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:zeta|check:output:file', 'SurfaceComparison::mismatch <- Gate::compare'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:zeta|show-suppressed', 'SurfaceComparison::mismatch <- Gate::compare'],
+                ],
                 [[FailureClass::SURFACE_MISMATCH, 'case:zeta|format:*']],
             ),
             self::witness(
@@ -732,7 +876,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::DELTA_MISMATCH, 'case:alpha|format:summary', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#3 <- SurfaceComparison::difference']],
+                [[FailureClass::DELTA_MISMATCH, 'case:alpha|format:summary', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#3 <- SurfaceComparison::compareFinalBytes']],
             ),
             self::witness(
                 'delta-too-large',
@@ -744,12 +888,14 @@ final class CheckWitnesses
                         $lines .= 'line ' . $line . "\n";
                     }
 
-                    $tree['candidateAnswers']['case:alpha|format:text-verbose'] = ['stdout' => $lines];
+                    $answers = SyntheticTree::caseAnswers('alpha', $tree['candidateFindings']['alpha'] ?? $tree['findings']['alpha'], false, []);
+                    $tree['candidateAnswers']['case:alpha|format:text-verbose'] = $answers['case:alpha|format:text-verbose'];
+                    $tree['candidateAnswers']['case:alpha|format:text-verbose']['stdout'] = ($tree['candidateAnswers']['case:alpha|format:text-verbose']['stdout'] ?? throw new GateError('A renderer-backed witness requires stdout.')) . $lines;
                     $tree['declaredDelta']['case:alpha|format:text-verbose'] = self::NO_DIFF;
 
                     return $tree;
                 },
-                [[FailureClass::DELTA_TOO_LARGE, 'case:alpha|format:text-verbose', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#1 <- SurfaceComparison::difference']],
+                [[FailureClass::DELTA_TOO_LARGE, 'case:alpha|format:text-verbose', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#1 <- SurfaceComparison::compareFinalBytes']],
                 [[FailureClass::DELTA_MISMATCH, 'case:alpha|format:text-verbose']],
             ),
             self::witness(
@@ -763,7 +909,19 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::DELTA_OVERREACH, 'case:alpha|format:json', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#2 <- SurfaceComparison::difference']],
+                [
+                    [FailureClass::DELTA_OVERREACH, 'case:alpha|format:json', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#2 <- SurfaceComparison::compareFinalBytes'],
+                    [FailureClass::VALUE_MISMATCH, 'case:alpha|format:json|record:{"channel":"replay.alpha","subject":"declaration:callable:Replay\\\\Alpha::run@src/Alpha.php","occurrence":null,"edge":null}', 'ValueCheck::measure <- RecordCheck::prepare'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|check:output:file', 'SurfaceComparison::mismatch <- Gate::compare'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:checkstyle', 'SurfaceComparison::mismatch <- Gate::compare'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:github', 'SurfaceComparison::mismatch <- Gate::compare'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:gitlab', 'SurfaceComparison::mismatch <- Gate::compare'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:html', 'SurfaceComparison::mismatch <- Gate::compare'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:sarif', 'SurfaceComparison::mismatch <- Gate::compare'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:text', 'SurfaceComparison::mismatch <- Gate::compare'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:text-verbose', 'SurfaceComparison::mismatch <- Gate::compare'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|show-suppressed', 'SurfaceComparison::mismatch <- Gate::compare'],
+                ],
                 [[FailureClass::DELTA_MISMATCH, 'case:alpha|format:json']],
             ),
             self::witness(
@@ -777,6 +935,19 @@ final class CheckWitnesses
                 [[FailureClass::DELTA_STALE, 'case:alpha|format:health', 'DeclaredDeltaCheck::checkStaleDeclaredDelta <- Gate::compare']],
             ),
             self::witness(
+                'delta-class-requires-each-case-to-move',
+                self::DECLARATIONS,
+                static function (array $tree): array {
+                    $tree['declaredDelta']['format:health'] = self::NO_DIFF;
+
+                    return $tree;
+                },
+                [
+                    [FailureClass::DELTA_STALE, 'case:alpha|format:health', 'DeclaredDeltaCheck::observeEqual <- SurfaceComparison::compareFinalBytes'],
+                    [FailureClass::DELTA_STALE, 'format:health', 'DeclaredDeltaCheck::checkStaleDeclaredDelta <- Gate::compare'],
+                ],
+            ),
+            self::witness(
                 'field-move-stale',
                 self::DECLARATIONS,
                 static function (array $tree): array {
@@ -787,46 +958,98 @@ final class CheckWitnesses
                 [[FailureClass::FIELD_MOVE_STALE, 'case:alpha|format:json', 'DeclaredDeltaCheck::checkStaleFieldMoves <- Gate::compare']],
             ),
             self::witness(
-                'stale-declarations',
+                'stale-record-declarations',
                 self::DECLARATIONS,
                 static function (array $tree): array {
                     $record = SyntheticTree::finding($tree['tuple'], 'replay.alpha', 'declaration:callable:Replay\Alpha::run@src/Alpha.php');
                     $record['message'] = 'a record no side publishes';
-                    $tree['declarations'] = [
-                        DeclaredRecords::INDEX => Tsv::render(DeclaredRecords::COLUMNS, [
-                            [DeclaredRecords::INTRODUCED, 'alpha', 'json', DeclaredRecords::canonical(['message' => $record['message']]), 'self-test'],
-                        ]),
-                        DeclaredRecords::DERIVED => Tsv::render(DeclaredRecords::DERIVED_COLUMNS, [[DeclaredRecords::INTRODUCED, 'alpha', 'json', DeclaredRecords::canonical($record)]]),
-                        DeclaredValues::INDEX => Tsv::render(DeclaredValues::COLUMNS, [
-                            [DeclaredValues::METRIC, 'ccn', DeclaredValues::EVERY_LEVEL, 'self-test'],
-                        ]),
-                        DeclaredFields::INDEX => Tsv::render(DeclaredFields::COLUMNS, [
-                            [DeclaredFields::REMOVED, 'json', 'retired', 'self-test'],
-                        ]),
-                        DeclaredOutcomes::INDEX => Tsv::render(DeclaredOutcomes::COLUMNS, [
-                            ['alpha', DeclaredOutcomes::ANALYSIS_TO_REFUSAL, DeclaredOutcomes::DIRECTORY . '/alpha.txt', 'self-test'],
-                        ]),
-                        DeclaredOutcomes::DIRECTORY . '/alpha.txt' => "a refusal nobody printed\n",
-                        DeclaredSurfaces::INDEX => Tsv::render(DeclaredSurfaces::COLUMNS, [
-                            [DeclaredSurfaces::WITHDRAWN, 'format:retired', DeclaredSurfaces::DIRECTORY . '/retired.txt', 'self-test'],
-                        ]),
-                        DeclaredSurfaces::DIRECTORY . '/retired.txt' => "a refusal nobody printed\n",
-                        DeclaredStructuralMaps::INDEX => Tsv::render(DeclaredStructuralMaps::COLUMNS, [
-                            ['config', 'old.key', 'new.key', DeclaredStructuralMaps::SHAPE_SAME, 'self-test'],
-                        ]),
-                    ];
+                    $tree['declarations'][DeclaredRecords::INDEX] = Tsv::render(DeclaredRecords::COLUMNS, [
+                        [DeclaredRecords::INTRODUCED, 'alpha', 'json', 'format:json', DeclaredRecords::canonical(['message' => $record['message']]), 'self-test'],
+                    ]);
+                    $tree['declarations'][DeclaredRecords::DERIVED] = Tsv::render(DeclaredRecords::DERIVED_COLUMNS, [
+                        [DeclaredRecords::INTRODUCED, 'alpha', 'json', 'format:json', DeclaredRecords::canonical($record)],
+                    ]);
 
                     return $tree;
                 },
                 [
                     [FailureClass::RECORD_STALE, 'case:alpha|format:json', 'StaleDeclarationCheck::checkStaleDeclarations#1 <- Gate::compare'],
                     [FailureClass::RECORD_STALE, DeclaredRecords::INDEX, 'StaleDeclarationCheck::checkStaleDeclarations#1 <- Gate::compare'],
-                    [FailureClass::VALUE_STALE, DeclaredValues::INDEX, 'StaleDeclarationCheck::checkStaleDeclarations#2 <- Gate::compare'],
-                    [FailureClass::FIELD_DECLARATION_STALE, DeclaredFields::INDEX, 'StaleDeclarationCheck::checkStaleDeclarations#3 <- Gate::compare'],
-                    [FailureClass::OUTCOME_DECLARATION_STALE, 'case:alpha', 'StaleDeclarationCheck::checkStaleDeclarations#4 <- Gate::compare'],
-                    [FailureClass::SURFACE_DECLARATION_STALE, 'format:retired', 'StaleDeclarationCheck::checkStaleDeclarations#5 <- Gate::compare'],
-                    [FailureClass::STRUCTURAL_MAP_STALE, DeclaredStructuralMaps::INDEX, 'StaleDeclarationCheck::checkStaleDeclarations#6 <- Gate::compare'],
                 ],
+            ),
+            self::witness(
+                'stale-value-declaration',
+                self::DECLARATIONS,
+                static function (array $tree): array {
+                    $tree['declarations'][DeclaredValues::INDEX] = Tsv::render(DeclaredValues::COLUMNS, [
+                        [DeclaredValues::METRIC, 'ccn', DeclaredValues::EVERY_LEVEL, 'self-test'],
+                    ]);
+
+                    return $tree;
+                },
+                [[FailureClass::VALUE_STALE, DeclaredValues::INDEX, 'StaleDeclarationCheck::checkStaleDeclarations#2 <- Gate::compare']],
+            ),
+            self::witness(
+                'stale-outcome-declaration',
+                self::DECLARATIONS,
+                static function (array $tree): array {
+                    $tree = SelfTestOutcomes::fixture();
+                    $snapshot = [];
+                    foreach ($tree['candidateAnswers'] as $key => $answer) {
+                        $snapshot[$key] = ['stdout' => $answer['stdout'] ?? '', 'stderr' => $answer['stderr'] ?? '', 'exit' => (string) ($answer['exit'] ?? 0)];
+                    }
+                    $snapshot['case:alpha|format:json']['stderr'] = "a refusal nobody printed\n";
+                    $tree['candidateDeclarations']['declared-outcomes/alpha.json'] = self::json($snapshot);
+
+                    return $tree;
+                },
+                [
+                    [FailureClass::OUTCOME_DECLARATION_STALE, 'case:alpha', 'StaleDeclarationCheck::checkStaleDeclarations#4 <- Gate::compare'],
+                    [FailureClass::CASE_OUTCOME_MISMATCH, 'case:alpha', 'CaseOutcomeCheck::mismatch <- Gate::compare'],
+                ],
+            ),
+            self::witness(
+                'stale-surface-declaration',
+                self::DECLARATIONS,
+                static function (array $tree): array {
+                    $tree = SelfTestCapture::withdrawnFixture();
+                    $tree['candidateDeclarations']['declared-surfaces/retired.json'] = self::json(['stdout' => '', 'stderr' => 'a refusal nobody printed', 'exit' => '3']);
+
+                    return $tree;
+                },
+                [
+                    [FailureClass::SURFACE_DECLARATION_STALE, 'format:retired', 'StaleDeclarationCheck::checkStaleDeclarations#5 <- Gate::compare'],
+                    [FailureClass::SURFACE_WITHDRAWAL_MISMATCH, 'case:alpha|format:retired', 'CaptureCheck::withdrawal <- Gate::compare'],
+                ],
+            ),
+            self::witness(
+                'stale-structural-map',
+                self::DECLARATIONS,
+                static function (array $tree): array {
+                    $tree['declarations'][DeclaredStructuralMaps::INDEX] = Tsv::render(DeclaredStructuralMaps::COLUMNS, [
+                        ['config', 'old.key', 'new.key', DeclaredStructuralMaps::SHAPE_SAME, 'self-test'],
+                    ]);
+
+                    return $tree;
+                },
+                [[FailureClass::STRUCTURAL_MAP_STALE, DeclaredStructuralMaps::INDEX, 'StaleDeclarationCheck::checkStaleDeclarations#6 <- Gate::compare']],
+            ),
+            self::witness(
+                'field-declaration-stale-empty-variant',
+                self::DECLARATIONS,
+                static function (array $tree): array {
+                    $tree['declarations']['cases/alpha/baseline-src/src/Alpha.php'] = "<?php\n";
+                    $emptySource = "{\"violations\": []}\n";
+                    $emptyBaseline = "{\"version\":13,\"scope\":[\"src\"],\"entries\":{}}\n";
+                    $tree['answers']['case:alpha|check:baseline-source'] = ['stdout' => $emptySource];
+                    $tree['answers']['case:alpha|baseline-file'] = ['stdout' => $emptyBaseline, 'file' => $emptyBaseline];
+                    $tree['declarations'][DeclaredFields::INDEX] = Tsv::render(DeclaredFields::COLUMNS, [
+                        [DeclaredFields::REMOVED, 'json', 'check:baseline-source', 'retired', 'an unused field license on the observed empty variant'],
+                    ]);
+
+                    return $tree;
+                },
+                [[FailureClass::FIELD_DECLARATION_STALE, DeclaredFields::INDEX, 'StaleDeclarationCheck::checkStaleDeclarations#3 <- Gate::compare']],
             ),
             self::witness(
                 'derive-normalization-refuses-a-dead-pass',
@@ -882,11 +1105,31 @@ final class CheckWitnesses
                 'derive-declarations-writes-a-measured-diff',
                 self::DECLARED_DELTA_WRITTEN,
                 static function (array $tree): array {
-                    $tree['candidateAnswers']['case:alpha|format:checkstyle'] = ['stdout' => "another checkstyle of alpha\n"];
+                    $answers = SyntheticTree::caseAnswers('alpha', $tree['candidateFindings']['alpha'] ?? $tree['findings']['alpha'], false, []);
+                    $tree['candidateAnswers']['case:alpha|format:checkstyle'] = $answers['case:alpha|format:checkstyle'];
+                    $tree['candidateAnswers']['case:alpha|format:checkstyle']['stdout'] = ($tree['candidateAnswers']['case:alpha|format:checkstyle']['stdout'] ?? throw new GateError('A renderer-backed witness requires stdout.')) . "\n<!-- replayed checkstyle difference -->\n";
+                    $tree['declaredDelta']['case:alpha|format:checkstyle'] = self::NO_DIFF;
 
                     return $tree;
                 },
                 [],
+            ),
+            self::witness(
+                'derive-declarations-refuses-conflicting-class-diffs',
+                self::DECLARED_DELTA_REFUSED,
+                static function (array $tree): array {
+                    $tree = self::withCase($tree, 'beta', 'replay.beta', declared: true);
+                    foreach (['alpha', 'beta'] as $case) {
+                        $key = 'case:' . $case . '|format:checkstyle';
+                        $answers = SyntheticTree::caseAnswers($case, $tree['findings'][$case], false, []);
+                        $tree['candidateAnswers'][$key] = $answers[$key];
+                        $tree['candidateAnswers'][$key]['stdout'] = ($tree['candidateAnswers'][$key]['stdout'] ?? throw new GateError('A renderer-backed witness requires stdout.')) . "\n<!-- explicit " . $case . " difference -->\n";
+                    }
+                    $tree['declaredDelta']['format:checkstyle'] = self::NO_DIFF;
+
+                    return $tree;
+                },
+                [[FailureClass::DELTA_MISMATCH, 'case:beta|format:checkstyle', 'DeclaredDeltaCheck::checkDifference <- SurfaceComparison::compareFinalBytes']],
             ),
             self::witness(
                 'derive-tuple-writes-the-published-fields',
