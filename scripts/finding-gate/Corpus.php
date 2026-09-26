@@ -44,6 +44,18 @@ final class Corpus
             throw new GateError(\sprintf('No case selected under %s.', $root));
         }
 
+        // A name that selects nothing is refused even beside one that selects
+        // something: the run would otherwise report the requested list as the
+        // restriction it ran under, one case short of the truth.
+        $unmatched = array_values(array_diff(
+            $only,
+            array_map(static fn(CaseDefinition $case): string => $case->id, $cases),
+        ));
+
+        if ($unmatched !== []) {
+            throw new GateError(\sprintf('--cases names no case under %s: %s.', $root, implode(', ', $unmatched)));
+        }
+
         return new self($cases);
     }
 }

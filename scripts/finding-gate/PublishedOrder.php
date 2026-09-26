@@ -40,7 +40,7 @@ namespace QmxFindingGate;
  *   therefore still reddens the gate.
  * - The key is not a blind second copy of the product's. Its field set and the
  *   order of its components come from {@see Fingerprints::INPUT_FIELDS}, the
- *   published identity {@see Gate::checkTuple()} already holds against the
+ *   published identity {@see TupleCheck::checkTuple()} already holds against the
  *   tracked equivalence tuple, so there is one owner for "which fields make a
  *   finding's identity"; a field added there that this class cannot decompose is
  *   a refusal rather than a silent omission. And the per-run assertion above is

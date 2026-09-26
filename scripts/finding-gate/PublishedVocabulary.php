@@ -24,7 +24,7 @@ namespace QmxFindingGate;
  * not reach them, and "one licence sufficed" was a fact about the reader.
  *
  * Two things are therefore stated per surface, and both are checked rather than
- * assumed by {@see SelfTest::publicationVocabulary()}: the key each field is
+ * assumed by {@see SelfTestDeclaredDelta::publicationVocabulary()}: the key each field is
  * published under, pinned against the formatter that writes it, and whether the
  * list is the *whole* of what that surface publishes. The second matters as much
  * as the first: SARIF carries five of the seventeen tuple fields, and letting the
