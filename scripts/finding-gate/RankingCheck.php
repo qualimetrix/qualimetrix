@@ -116,9 +116,11 @@ final class RankingCheck implements CaseCheck
             $descriptor = $this->run->capturePlan->descriptorOf($key);
             $exitKey = Surfaces::key($descriptor['scope'], 'exit:' . $descriptor['surface']);
             $stderrKey = Surfaces::key($descriptor['scope'], 'stderr:' . $descriptor['surface']);
+            $stderrSurface = Surfaces::surfaceClass($stderrKey);
             foreach ([$capture['ranked'], $capture['physical']] as $result) {
                 if ($result !== null && ((!isset($artifacts[$exitKey], $artifacts[$stderrKey]))
-                    || (string) $result['exit'] !== $artifacts[$exitKey] || $result['stderr'] !== $artifacts[$stderrKey])) {
+                    || (string) $result['exit'] !== $artifacts[$exitKey]
+                    || $this->run->normalization->normalizeCaptureMetadata($stderrSurface, $result['stderr']) !== $this->run->normalization->normalizeCaptureMetadata($stderrSurface, $artifacts[$stderrKey]))) {
                     throw new GateError('Internal ranking metadata differs from its original invocation exit or stderr.');
                 }
             }

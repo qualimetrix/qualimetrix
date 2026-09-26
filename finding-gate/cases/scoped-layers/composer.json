@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/scoped-layers",
+    "description": "A run narrowed to one file with coverage gaps ignored still reports a proven shadow, but cannot judge a layer whose declaration lies outside the analysed slice.",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\ScopedLayers\\": "src/"
+        }
+    }
+}

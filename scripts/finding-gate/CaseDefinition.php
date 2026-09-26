@@ -171,7 +171,7 @@ final class CaseDefinition
             self::strings($decoded, 'paths', $file),
             self::string($decoded, 'config', $file),
             self::strings($decoded, 'args', $file, optional: true),
-            self::strings($decoded, 'channels', $file),
+            self::strings($decoded, 'channels', $file, allowEmpty: $outcome === CaseOutcome::REFUSAL && $coverage === self::COVERAGE_AUXILIARY),
             self::strings($decoded, 'explainSubjects', $file, optional: true),
             $outcome,
             $outcomeExit,
@@ -532,7 +532,7 @@ final class CaseDefinition
      *
      * @return list<string>
      */
-    private static function strings(array $decoded, string $key, string $file, bool $optional = false): array
+    private static function strings(array $decoded, string $key, string $file, bool $optional = false, bool $allowEmpty = false): array
     {
         $value = $decoded[$key] ?? ($optional ? [] : null);
 
@@ -550,7 +550,7 @@ final class CaseDefinition
             $values[] = $item;
         }
 
-        if (!$optional && $values === []) {
+        if (!$optional && !$allowEmpty && $values === []) {
             throw new GateError(\sprintf('%s: "%s" must not be empty.', $file, $key));
         }
 

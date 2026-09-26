@@ -115,6 +115,7 @@ Available tests:
  - QmxFindingGate\Tests\CaptureTest::itUsesItsSourceBaselineAndCapturesRefusalsWithoutInventingAuthority
  - QmxFindingGate\Tests\CaptureTest::itUsesOnlyTheSupportedArgumentsOfEachProductCommand
  - QmxFindingGate\Tests\CaseDefinitionTest::itAcceptsANameThatOnlyContainsTwoDots
+ - QmxFindingGate\Tests\CaseDefinitionTest::itAllowsAnExplicitlyEmptyChannelClaimOnlyForAnAuxiliaryRefusal
  - QmxFindingGate\Tests\CaseDefinitionTest::itJudgesEveryInputFileByTheContainmentRule
  - QmxFindingGate\Tests\CaseDefinitionTest::itKeepsDeclaredSideOutcomesWhenMaterializingTheCase
  - QmxFindingGate\Tests\CaseDefinitionTest::itListsAndTranslatesTheAdditionalInputsThroughOneObject
@@ -142,6 +143,7 @@ Available tests:
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAnInputOptionThatLinksOutsideTheCase
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAnOutputOptionEvenInsideTheCase
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesBothSpellingsOfATrackedBaselineInput
+ - QmxFindingGate\Tests\CaseDefinitionTest::itStillRequiresTheChannelsListOnAnAuxiliaryRefusal
  - QmxFindingGate\Tests\CaseInputTranslationTest::itCarriesActualWorkerStructuralCreditsIntoTheParentAndPublicVerdict
  - QmxFindingGate\Tests\CaseInputTranslationTest::itCarriesPresetArgumentsThroughTheRealComputedChannelProbe
  - QmxFindingGate\Tests\CaseInputTranslationTest::itMaterializesTheWholeCaseAndReplacesVariantAnalysisPaths
@@ -362,6 +364,22 @@ Available tests:
  - QmxFindingGate\Tests\MetricsRecordsTest::itMatchesDuplicateKeysAsACompleteRecordMultiset
  - QmxFindingGate\Tests\MetricsRecordsTest::itPairsBySubjectOnlyWhenBothSidesPublishIt
  - QmxFindingGate\Tests\MetricsRecordsTest::itUsesCallableLevelsForBothMethodAndFunctionRecords
+ - QmxFindingGate\Tests\NormalizationDeriverTest::itDerivesTheWholeWarningClockAcrossMidnight
+ - QmxFindingGate\Tests\NormalizationDeriverTest::itMeasuresOnlyTheClockWhenTheOutputDestinationStaysEqual
+ - QmxFindingGate\Tests\NormalizationDeriverTest::itMeasuresOnlyTheDestinationWhenTheWarningClockStaysEqual
+ - QmxFindingGate\Tests\NormalizationDeriverTest::itMeasuresTheOutputDestinationAndWarningClockSeparately
+ - QmxFindingGate\Tests\NormalizationDeriverTest::itRefusesAChangedDiagnosticLevelBesideTheClock
+ - QmxFindingGate\Tests\NormalizationDeriverTest::itRefusesAChangedWarningMessageBesideTheClock
+ - QmxFindingGate\Tests\NormalizationDeriverTest::itRefusesAnOutputBodyChangeBesideBothMeasuredFields
+ - QmxFindingGate\Tests\NormalizationDeriverTest::itRefusesAnOutputCaptureWithNoDestination
+ - QmxFindingGate\Tests\NormalizationDeriverTest::itRefusesAnUnclockedStderrChange
+ - QmxFindingGate\Tests\NormalizationDeriverTest::itRefusesMoreThanOneOutputDestination
+ - QmxFindingGate\Tests\NormalizationDeriverTest::itRefusesSomethingOtherThanAWarningClock"fractional seconds"
+ - QmxFindingGate\Tests\NormalizationDeriverTest::itRefusesSomethingOtherThanAWarningClock"hour out of range"
+ - QmxFindingGate\Tests\NormalizationDeriverTest::itRefusesSomethingOtherThanAWarningClock"minute out of range"
+ - QmxFindingGate\Tests\NormalizationDeriverTest::itRefusesSomethingOtherThanAWarningClock"other level"
+ - QmxFindingGate\Tests\NormalizationDeriverTest::itRefusesSomethingOtherThanAWarningClock"second out of range"
+ - QmxFindingGate\Tests\NormalizationDeriverTest::itRefusesSomethingOtherThanAWarningClock"unpadded hour"
  - QmxFindingGate\Tests\ProcessTest::itPassesAdditionsToTheChildWhilePreservingFixedAndParentEnvironment
  - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"COLUMNS"
  - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"HOME"
@@ -405,6 +423,7 @@ Available tests:
  - QmxFindingGate\Tests\RankingCheckTest::itLicensesOnlyTheExactUniqueRankingValueAndItsDerivationKey
  - QmxFindingGate\Tests\RankingCheckTest::itMeasuresRankingSchemaExtensionsAndRemovedMembersWithoutAddingAG1View
  - QmxFindingGate\Tests\RankingCheckTest::itMeasuresTieBreakAndInputOrderWithDeterministicDuplicateLabels
+ - QmxFindingGate\Tests\RankingCheckTest::itNormalizesOnlyTheClockInInternalCaptureWarnings
  - QmxFindingGate\Tests\RankingCheckTest::itObservesTheExactRegisteredRankingRaiseSitesThroughThePublicGate
  - QmxFindingGate\Tests\RankingCheckTest::itPreservesCompleteRepeatedOccurrenceCountsAcrossCandidatePasses
  - QmxFindingGate\Tests\RankingCheckTest::itPreservesRawRankedNumberSpellingsBeforeAnyNormalization

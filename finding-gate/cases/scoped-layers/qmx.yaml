@@ -1,0 +1,23 @@
+suppress_paths: []
+computed_metrics:
+  health.complexity: { enabled: false }
+  health.cohesion: { enabled: false }
+  health.coupling: { enabled: false }
+  health.typing: { enabled: false }
+  health.maintainability: { enabled: false }
+  health.overall: { enabled: false }
+paths: [src/Service.php]
+only_rules: [architecture.layer-violation]
+architecture:
+  coverage-gap: ignore
+  layers:
+    - name: service-broad
+      patterns: ['Corpus\ScopedLayers\Service']
+    - name: service-shadow
+      suffix: [Service]
+    - name: outside-slice
+      patterns: ['Corpus\ScopedLayers\Other']
+  allow:
+    service-broad: []
+    service-shadow: []
+    outside-slice: []

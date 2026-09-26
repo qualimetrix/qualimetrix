@@ -27,6 +27,24 @@ final class RankingCheckTest extends TestCase
     }
 
     #[Test]
+    public function itNormalizesOnlyTheClockInInternalCaptureWarnings(): void
+    {
+        $records = self::records(1);
+        $tree = self::rankedTree($records, self::issues($records, [10]), 1);
+        $answer = self::answer($tree, 'case:alpha|format:json');
+        $answer['stderr'] = "[23:59:59] [WARNING] The parent is outside the analysed path.\n";
+        $answer['ranked']['stderr'] = "[00:00:00] [WARNING] The parent is outside the analysed path.\n";
+        $tree['answers']['case:alpha|format:json'] = $answer;
+        $report = $this->reportFor($tree);
+        self::assertSame(GateReport::EXIT_GREEN, $report->exitCode(), $report->render());
+
+        $answer['ranked']['stderr'] = "[00:00:00] [WARNING] A different parent is outside the analysed path.\n";
+        $tree['answers']['case:alpha|format:json'] = $answer;
+        $report = $this->reportFor($tree);
+        self::assertContains(FailureClass::RANKING_PROJECTION_MISMATCH, $report->failureClasses(), $report->render());
+    }
+
+    #[Test]
     public function itPreservesRawRankedNumberSpellingsBeforeAnyNormalization(): void
     {
         self::assertSame(['{"impactScore":10.50}', '{"impactScore":2}'], ReportRecords::rawRecords('{"topIssues":[{"impactScore":10.50},{"impactScore":2}]}', 'topIssues'));

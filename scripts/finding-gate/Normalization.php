@@ -33,6 +33,8 @@ final class Normalization
 
     public const MEASURED_REASON = 'diverged across repeated runs of one unchanged tree';
 
+    public const WARNING_TIME_PATTERN = '~^(\[)(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\] \[WARNING\][^\r\n]*\r?)$~m';
+
     private const REPORT_DATA_PATTERN = '~(<script type="application/json" id="report-data">)(.*?)(</script>)~s';
 
     /** @var array<int, int> */
@@ -78,6 +80,9 @@ final class Normalization
 
     public function normalizeCaptureMetadata(string $surface, string $content): string
     {
+        if ($surface === 'stderr' || $surface === 'stderr:check:output') {
+            return (string) preg_replace(self::WARNING_TIME_PATTERN, '${1}' . self::REDACTED . '${2}', $content);
+        }
         if ($surface !== 'format:sarif') {
             return $content;
         }

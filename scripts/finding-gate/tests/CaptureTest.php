@@ -600,7 +600,7 @@ final class CaptureTest extends TestCase
             ]);
             self::fail('A neighboring unguarded diagnostic field was derived.');
         } catch (GateError $error) {
-            self::assertStringContainsString('outside its single guarded destination field', $error->getMessage());
+            self::assertSame('The stderr diagnostic changed outside its guarded clock and output destination fields.', $error->getMessage());
         }
     }
 

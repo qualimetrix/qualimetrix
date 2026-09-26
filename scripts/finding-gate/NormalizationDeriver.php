@@ -16,6 +16,8 @@ use stdClass;
  */
 final class NormalizationDeriver
 {
+    private const OUTPUT_DESTINATION_PATTERN = '~^(Report written to )/[^\r\n]+(\r?)$~m';
+
     /**
      * A clock field or two is nondeterminism. A dozen is a structural
      * difference within one publication wearing its costume, and blanketing it would hollow out the
@@ -92,15 +94,31 @@ final class NormalizationDeriver
     /** @return list<NormalizationRule> */
     private static function rulesFor(string $surface, string $left, string $right): array
     {
-        if ($surface === 'stderr:check:output') {
-            $pattern = '~^(Report written to )/[^\r\n]*()$~m';
-            $leftNormalized = preg_replace($pattern, '$1<destination>$2', $left, -1, $leftHits);
-            $rightNormalized = preg_replace($pattern, '$1<destination>$2', $right, -1, $rightHits);
-            if ($leftHits !== 1 || $rightHits !== 1 || $leftNormalized !== $rightNormalized) {
-                throw new GateError('The output diagnostic changed outside its single guarded destination field.');
+        if ($surface === 'stderr' || $surface === 'stderr:check:output') {
+            preg_match_all(Normalization::WARNING_TIME_PATTERN, $left, $leftWarnings);
+            preg_match_all(Normalization::WARNING_TIME_PATTERN, $right, $rightWarnings);
+            $locators = $leftWarnings[0] === $rightWarnings[0] ? [] : [Normalization::WARNING_TIME_PATTERN];
+            $leftNormalized = preg_replace(Normalization::WARNING_TIME_PATTERN, '$1<clock>$2', $left);
+            $rightNormalized = preg_replace(Normalization::WARNING_TIME_PATTERN, '$1<clock>$2', $right);
+
+            if ($surface === 'stderr:check:output') {
+                $leftHits = preg_match_all(self::OUTPUT_DESTINATION_PATTERN, $left, $leftDestinations);
+                $rightHits = preg_match_all(self::OUTPUT_DESTINATION_PATTERN, $right, $rightDestinations);
+                if ($leftHits !== 1 || $rightHits !== 1) {
+                    throw new GateError('The output diagnostic must carry exactly one guarded destination field.');
+                }
+                if ($leftDestinations[0] !== $rightDestinations[0]) {
+                    $locators[] = self::OUTPUT_DESTINATION_PATTERN;
+                }
+                $leftNormalized = preg_replace(self::OUTPUT_DESTINATION_PATTERN, '$1<destination>$2', (string) $leftNormalized);
+                $rightNormalized = preg_replace(self::OUTPUT_DESTINATION_PATTERN, '$1<destination>$2', (string) $rightNormalized);
             }
 
-            return self::rules($surface, NormalizationRule::KIND_LINE_REGEX, ['~^(Report written to ).*()$~m']);
+            if ($leftNormalized !== $rightNormalized) {
+                throw new GateError('The stderr diagnostic changed outside its guarded clock and output destination fields.');
+            }
+
+            return self::rules($surface, NormalizationRule::KIND_LINE_REGEX, $locators);
         }
         $leftJson = json_decode($left, false);
         $rightJson = json_decode($right, false);

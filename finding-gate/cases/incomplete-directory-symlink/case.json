@@ -1,0 +1,17 @@
+{
+    "id": "incomplete-directory-symlink",
+    "description": "A contained directory symlink is refused during discovery; the report is incomplete and artifact commands must refuse it.",
+    "coverage": "auxiliary",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [],
+    "channels": [
+        "code-smell.boolean-argument@callable"
+    ],
+    "outcome": {
+        "kind": "incomplete",
+        "exit": 4
+    }
+}

@@ -198,6 +198,37 @@ final class CaseDefinitionTest extends TestCase
         self::assertSame(4, $case->outcomeExit);
     }
 
+    #[Test]
+    public function itAllowsAnExplicitlyEmptyChannelClaimOnlyForAnAuxiliaryRefusal(): void
+    {
+        $case = $this->load(outcome: ['kind' => 'refusal', 'exit' => 3], extra: ['coverage' => 'auxiliary', 'channels' => []]);
+        self::assertSame([], $case->channels);
+        self::assertSame(CaseOutcome::REFUSAL, $case->outcome);
+
+        foreach ([null, ['kind' => 'incomplete', 'exit' => 4], ['kind' => 'refusal', 'exit' => 3]] as $outcome) {
+            try {
+                $this->load(outcome: $outcome, extra: ['channels' => []]);
+            } catch (GateError $error) {
+                self::assertStringContainsString('"channels" must not be empty', $error->getMessage());
+                continue;
+            }
+            self::fail('An empty channel claim was accepted outside an auxiliary refusal.');
+        }
+    }
+
+    #[Test]
+    public function itStillRequiresTheChannelsListOnAnAuxiliaryRefusal(): void
+    {
+        $this->load(outcome: ['kind' => 'refusal', 'exit' => 3], extra: ['coverage' => 'auxiliary', 'channels' => []]);
+        $file = $this->case . '/case.json';
+        $definition = json_decode(Fs::read($file), true, flags: \JSON_THROW_ON_ERROR);
+        unset($definition['channels']);
+        Fs::write($file, json_encode($definition, \JSON_THROW_ON_ERROR));
+        $this->expectException(GateError::class);
+        $this->expectExceptionMessage('"channels" must be an array of strings');
+        CaseDefinition::load($this->case);
+    }
+
     /** @return iterable<string, array{mixed}> */
     public static function provideMalformedOutcomes(): iterable
     {

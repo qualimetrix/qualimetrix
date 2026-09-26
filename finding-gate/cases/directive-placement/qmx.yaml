@@ -1,0 +1,16 @@
+suppress_paths: []
+computed_metrics:
+  health.complexity: { enabled: false }
+  health.cohesion: { enabled: false }
+  health.coupling: { enabled: false }
+  health.typing: { enabled: false }
+  health.maintainability: { enabled: false }
+  health.overall: { enabled: false }
+only_rules: [complexity.ccn, annotation.directive, annotation.unused-directive]
+rules:
+  complexity.ccn:
+    callable:
+      warning: 5
+      error: 10
+    class:
+      enabled: false
