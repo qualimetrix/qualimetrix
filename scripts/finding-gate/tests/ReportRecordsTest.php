@@ -1016,6 +1016,169 @@ final class ReportRecordsTest extends TestCase
     }
 
     #[Test]
+    public function itConsumesEachLicensedDuplicateRankedRemovalOnlyOnce(): void
+    {
+        $x = self::finding();
+        $y = array_replace($x, ['subject' => 'class:App\\Y', 'symbol' => 'App\\Y', 'channel' => 'rank.Y', 'rule' => 'rank.Y', 'code' => 'rank.Y']);
+        $z = array_replace($x, ['subject' => 'class:App\\Z', 'symbol' => 'App\\Z', 'channel' => 'rank.Z', 'rule' => 'rank.Z', 'code' => 'rank.Z']);
+        $old = [self::rankedIssue($x, 1, 30), self::rankedIssue($x, 2, 30)];
+        foreach ([[$x, $y], [$y, $z], [$x, $x]] as $records) {
+            $new = [self::rankedIssue($records[0], 1, $records[0] === $x ? 30 : 20), self::rankedIssue($records[1], 2, $records[1] === $y ? 20 : 10)];
+            [$run, $pair, $check] = $this->rankedPair([$x, $x, $y, $z], [$x, $y, $z], $old, $new, [$x]);
+            RecordStage::create($run)->applyStage($pair);
+            if ($records === [$x, $y]) {
+                self::assertSame([], $run->report->raised());
+                self::assertSame($pair->reference, $pair->candidate);
+            } else {
+                self::assertSame([FailureClass::TOP_ISSUES_MISMATCH], $run->report->failureClasses());
+                self::assertSame('case:alpha|format:json', $run->report->raised()[0]['scope']);
+                self::assertSame($records[1] === $x ? 'A ranked issue has no complete authoritative finding instance.' : 'The ranked refill has an unexplained size or more entrants than licensed vacancies.', $run->report->raised()[0]['detail']);
+                self::assertSame($new, ReportRecords::decode((string) $pair->candidate)['topIssues']);
+                self::assertSame($old, ReportRecords::decode((string) $pair->reference)['topIssues']);
+            }
+        }
+        Fs::write($this->root . '/finding-gate/' . \QmxFindingGate\DeclaredValues::INDEX, Tsv::render(\QmxFindingGate\DeclaredValues::COLUMNS, [['field', 'impactScore', '*', 'Change only the surviving duplicate score.']]));
+        $subject = 'case:alpha|format:json|record:' . ReportRecords::identity('json', $x);
+        Fs::write($this->root . '/finding-gate/' . \QmxFindingGate\DeclaredValues::DERIVED, Tsv::render(\QmxFindingGate\DeclaredValues::DERIVED_COLUMNS, [['field', 'impactScore', $subject, '30', '25']]));
+        $new = [self::rankedIssue($x, 1, 25), self::rankedIssue($y, 2, 20)];
+        [$run, $pair, $check] = $this->rankedPair([$x, $x, $y, $z], [$x, $y, $z], $old, $new, [$x]);
+        RecordStage::create($run)->applyStage($pair);
+        ValueCheck::create($run)->checkRun([], []);
+        self::assertSame([], $run->report->raised());
+        self::assertSame($pair->reference, $pair->candidate);
+    }
+
+    #[Test]
+    public function itCountsRepeatedRankedEntrantsAndSurvivorsAsSeparateInstances(): void
+    {
+        $x = self::finding();
+        $a = array_replace($x, ['channel' => 'rank.A', 'rule' => 'rank.A', 'code' => 'rank.A']);
+        $b = array_replace($a, ['subject' => 'class:App\\B', 'symbol' => 'App\\B', 'channel' => 'rank.B', 'rule' => 'rank.B', 'code' => 'rank.B']);
+        $c = array_replace($a, ['subject' => 'class:App\\C', 'symbol' => 'App\\C', 'channel' => 'rank.C', 'rule' => 'rank.C', 'code' => 'rank.C']);
+        $old = [self::rankedIssue($x, 1, 30), self::rankedIssue($a, 2, 20), self::rankedIssue($b, 3, 10), self::rankedIssue($c, 4, 5)];
+        foreach ([[$a, $a, $b, $c], [$a, $a, $a, $b]] as $records) {
+            $new = [];
+            foreach ($records as $index => $record) {
+                $new[] = self::rankedIssue($record, $index + 1, $record === $a ? 20 : ($record === $b ? 10 : 5));
+            }
+            [$run, $pair, $check] = $this->rankedPair([$x, $a, $a, $a, $b, $c], [$a, $a, $a, $b, $c], $old, $new, [$x]);
+            RecordStage::create($run)->applyStage($pair);
+            if ($records[3] === $c) {
+                self::assertSame([], $run->report->raised());
+                self::assertSame($pair->reference, $pair->candidate);
+            } else {
+                self::assertSame([FailureClass::TOP_ISSUES_MISMATCH], $run->report->failureClasses());
+                self::assertSame('The ranked refill has an unexplained size or more entrants than licensed vacancies.', $run->report->raised()[0]['detail']);
+                self::assertSame($new, ReportRecords::decode((string) $pair->candidate)['topIssues']);
+            }
+        }
+    }
+
+    #[Test]
+    public function itPairsChangedDuplicateScoresAfterConsumingUnchangedOccurrences(): void
+    {
+        $x = self::finding();
+        Fs::write($this->root . '/finding-gate/' . \QmxFindingGate\DeclaredValues::INDEX, Tsv::render(\QmxFindingGate\DeclaredValues::COLUMNS, [['field', 'impactScore', '*', 'Change one unambiguous duplicate score.']]));
+        $subject = 'case:alpha|format:json|record:' . ReportRecords::identity('json', $x);
+        Fs::write($this->root . '/finding-gate/' . \QmxFindingGate\DeclaredValues::DERIVED, Tsv::render(\QmxFindingGate\DeclaredValues::DERIVED_COLUMNS, [['field', 'impactScore', $subject, '30', '25']]));
+        $old = [self::rankedIssue($x, 1, 30), self::rankedIssue($x, 2, 20)];
+        $new = [self::rankedIssue($x, 1, 25), self::rankedIssue($x, 2, 20)];
+        [$run, $pair, $check] = $this->rankedPair([$x, $x], [$x, $x], $old, $new);
+        RecordStage::create($run)->applyStage($pair);
+        ValueCheck::create($run)->checkRun([], []);
+        self::assertSame([], $run->report->raised());
+        self::assertSame($pair->reference, $pair->candidate);
+        self::assertSame([], ReportRecords::decode((string) $pair->candidate)['topIssues']);
+    }
+
+    #[Test]
+    public function itPairsHomogeneousDuplicateScoreTransitionsWithoutCollapsingInstances(): void
+    {
+        $x = self::finding();
+        foreach (['impactScore', 'coupling.class-rank'] as $field) {
+            Fs::write($this->root . '/finding-gate/' . \QmxFindingGate\DeclaredValues::INDEX, Tsv::render(\QmxFindingGate\DeclaredValues::COLUMNS, [['field', $field, '*', 'Change both identically corresponding duplicate values.']]));
+            $subject = 'case:alpha|format:json|record:' . ReportRecords::identity('json', $x);
+            Fs::write($this->root . '/finding-gate/' . \QmxFindingGate\DeclaredValues::DERIVED, Tsv::render(\QmxFindingGate\DeclaredValues::DERIVED_COLUMNS, [['field', $field, $subject, '30', '15']]));
+            $old = [self::rankedIssue($x, 1, 30), self::rankedIssue($x, 2, 30)];
+            $new = $old;
+            foreach ([0, 1] as $index) {
+                $old[$index][$field] = 30;
+                $new[$index][$field] = 15;
+            }
+            [$run, $pair, $check] = $this->rankedPair([$x, $x], [$x, $x], $old, $new);
+            RecordStage::create($run)->applyStage($pair);
+            ValueCheck::create($run)->checkRun([], []);
+            self::assertSame([], $run->report->raised());
+            self::assertSame($pair->reference, $pair->candidate);
+            self::assertSame([], ReportRecords::decode((string) $pair->candidate)['topIssues']);
+        }
+    }
+
+    #[Test]
+    public function itRefusesAmbiguousChangedDuplicateRankedValueCorrespondence(): void
+    {
+        $x = self::finding();
+        foreach (['impactScore', 'coupling.class-rank'] as $field) {
+            Fs::write($this->root . '/finding-gate/' . \QmxFindingGate\DeclaredValues::INDEX, Tsv::render(\QmxFindingGate\DeclaredValues::COLUMNS, [['field', $field, '*', 'Change only exactly corresponding duplicate values.']]));
+            $old = [self::rankedIssue($x, 1, 30), self::rankedIssue($x, 2, 20)];
+            $new = $old;
+            $old[0][$field] = 30;
+            $old[1][$field] = 20;
+            $new[0][$field] = 25;
+            $new[1][$field] = 15;
+            [$run, $pair, $check] = $this->rankedPair([$x, $x], [$x, $x], $old, $new);
+            $candidate = $pair->candidate;
+            $reference = $pair->reference;
+            RecordStage::create($run)->applyStage($pair);
+            self::assertSame([FailureClass::TOP_ISSUES_MISMATCH], $run->report->failureClasses());
+            self::assertSame('Duplicate ranked values have no unambiguous complete occurrence correspondence.', $run->report->raised()[0]['detail']);
+            self::assertSame($candidate, $pair->candidate);
+            self::assertSame($reference, $pair->reference);
+        }
+    }
+
+    #[Test]
+    public function itRefusesAmbiguousPartialDuplicateRankedRemovals(): void
+    {
+        $x = self::finding();
+        $y = array_replace($x, ['subject' => 'class:App\\Y', 'symbol' => 'App\\Y', 'channel' => 'rank.Y', 'rule' => 'rank.Y', 'code' => 'rank.Y']);
+        $z = array_replace($y, ['subject' => 'class:App\\Z', 'symbol' => 'App\\Z', 'channel' => 'rank.Z', 'rule' => 'rank.Z', 'code' => 'rank.Z']);
+        $old = [self::rankedIssue($x, 1, 30), self::rankedIssue($x, 2, 20)];
+        foreach ([[$x], [$x, $x]] as $removed) {
+            $candidate = \count($removed) === 1 ? [$x, $y, $z] : [$y, $z];
+            $new = \count($removed) === 1
+                ? [self::rankedIssue($x, 1, 20), self::rankedIssue($y, 2, 10)]
+                : [self::rankedIssue($y, 1, 20), self::rankedIssue($z, 2, 10)];
+            [$run, $pair, $check] = $this->rankedPair([$x, $x, $y, $z], $candidate, $old, $new, $removed);
+            RecordStage::create($run)->applyStage($pair);
+            if (\count($removed) === 1) {
+                self::assertSame([FailureClass::TOP_ISSUES_MISMATCH], $run->report->failureClasses());
+                self::assertSame('A partial duplicate ranked removal has ambiguous value correspondence.', $run->report->raised()[0]['detail']);
+                self::assertSame($new, ReportRecords::decode((string) $pair->candidate)['topIssues']);
+            } else {
+                self::assertSame([], $run->report->raised());
+                self::assertSame($pair->reference, $pair->candidate);
+            }
+        }
+    }
+
+    #[Test]
+    public function itRefusesAmbiguousCompleteRankedAuthorityInsteadOfTakingTheFirstMatch(): void
+    {
+        $x = self::finding();
+        $different = array_replace($x, ['metricValue' => 4]);
+        $issues = [self::rankedIssue($x, 1, 30), self::rankedIssue($different, 2, 20)];
+        [$run, $pair, $check] = $this->rankedPair([$x, $different], [$x, $different], $issues, $issues);
+        $candidate = $pair->candidate;
+        $reference = $pair->reference;
+        RecordStage::create($run)->applyStage($pair);
+        self::assertSame([FailureClass::TOP_ISSUES_MISMATCH], $run->report->failureClasses());
+        self::assertSame('A ranked issue has ambiguous complete authoritative finding instances.', $run->report->raised()[0]['detail']);
+        self::assertSame($candidate, $pair->candidate);
+        self::assertSame($reference, $pair->reference);
+    }
+
+    #[Test]
     public function itRefusesMissingAndUnlicensedRankedScoresWithoutErasingThePublication(): void
     {
         $record = self::finding();
@@ -1197,6 +1360,151 @@ final class ReportRecordsTest extends TestCase
                 self::assertSame('candidate / case:alpha|format:text-verbose', $run->report->raised()[0]['scope']);
             }
         }
+    }
+
+    #[Test]
+    public function itPreservesCappedDuplicateRankedSurvivorsAfterOneFullRecordWithdrawal(): void
+    {
+        $x = self::finding();
+        foreach ([1, 3, 10] as $width) {
+            $old = [];
+            foreach (range(1, $width) as $rank) {
+                $old[] = self::rankedIssue($x, $rank, 30);
+            }
+            [$run, $pair, $check] = $this->rankedPair(array_fill(0, $width + 1, $x), array_fill(0, $width, $x), $old, $old, [$x]);
+            RecordStage::create($run)->applyStage($pair);
+            self::assertSame([], $run->report->raised());
+            self::assertSame($old, ReportRecords::decode((string) $pair->candidate)['topIssues']);
+            self::assertSame($old, ReportRecords::decode((string) $pair->reference)['topIssues']);
+            self::assertSame($pair->reference, $pair->candidate);
+        }
+    }
+
+    #[Test]
+    public function itRefusesUndeclaredValuesOnCappedDuplicateRankedSurvivors(): void
+    {
+        $x = self::finding();
+        foreach ([1, 3, 10] as $width) {
+            foreach (['impactScore', 'coupling.class-rank'] as $field) {
+                $old = [];
+                foreach (range(1, $width) as $rank) {
+                    $issue = self::rankedIssue($x, $rank, 30);
+                    $issue[$field] = 30;
+                    $old[] = $issue;
+                }
+                $new = [];
+                foreach ($old as $index => $issue) {
+                    if ($index === $width - 1) {
+                        $issue[$field] = 25;
+                    }
+                    $new[] = $issue;
+                }
+                [$run, $pair, $check] = $this->rankedPair(array_fill(0, $width + 1, $x), array_fill(0, $width, $x), $old, $new, [$x]);
+                RecordStage::create($run)->applyStage($pair);
+                self::assertSame([FailureClass::VALUE_MISMATCH], $run->report->failureClasses());
+                self::assertSame($new, ReportRecords::decode((string) $pair->candidate)['topIssues']);
+                self::assertSame($old, ReportRecords::decode((string) $pair->reference)['topIssues']);
+                self::assertNotSame($pair->reference, $pair->candidate);
+            }
+        }
+    }
+
+    #[Test]
+    public function itLicensesOnlyMeasuredChangesOnReservedCappedRankedSurvivors(): void
+    {
+        $x = self::finding();
+        foreach ([1, 3, 10] as $width) {
+            foreach (['impactScore', 'coupling.class-rank'] as $field) {
+                Fs::write($this->root . '/finding-gate/' . \QmxFindingGate\DeclaredValues::INDEX, Tsv::render(\QmxFindingGate\DeclaredValues::COLUMNS, [['field', $field, '*', 'Change only the measured visible surviving occurrence.']]));
+                $subject = 'case:alpha|format:json|record:' . ReportRecords::identity('json', $x);
+                Fs::write($this->root . '/finding-gate/' . \QmxFindingGate\DeclaredValues::DERIVED, Tsv::render(\QmxFindingGate\DeclaredValues::DERIVED_COLUMNS, [['field', $field, $subject, '30', '25']]));
+                $old = [];
+                foreach (range(1, $width) as $rank) {
+                    $issue = self::rankedIssue($x, $rank, 30);
+                    $issue[$field] = 30;
+                    $old[] = $issue;
+                }
+                $new = [];
+                foreach ($old as $index => $issue) {
+                    if ($index === $width - 1) {
+                        $issue[$field] = 25;
+                    }
+                    $new[] = $issue;
+                }
+                [$run, $pair, $check] = $this->rankedPair(array_fill(0, $width + 1, $x), array_fill(0, $width, $x), $old, $new, [$x]);
+                RecordStage::create($run)->applyStage($pair);
+                ValueCheck::create($run)->checkRun([], []);
+                self::assertSame([], $run->report->raised());
+                self::assertSame(\array_slice($old, 0, $width - 1), ReportRecords::decode((string) $pair->candidate)['topIssues']);
+                self::assertSame(\array_slice($old, 0, $width - 1), ReportRecords::decode((string) $pair->reference)['topIssues']);
+                self::assertSame($pair->reference, $pair->candidate);
+            }
+        }
+    }
+
+    #[Test]
+    public function itGrantsOnlyTheVisibleRemovalQuotaAfterReservingSurvivors(): void
+    {
+        $x = self::finding();
+        $y = array_replace($x, ['subject' => 'class:App\\Y', 'symbol' => 'App\\Y', 'channel' => 'rank.Y', 'rule' => 'rank.Y', 'code' => 'rank.Y']);
+        $z = array_replace($x, ['subject' => 'class:App\\Z', 'symbol' => 'App\\Z', 'channel' => 'rank.Z', 'rule' => 'rank.Z', 'code' => 'rank.Z']);
+        $old = [self::rankedIssue($x, 1, 30), self::rankedIssue($x, 2, 30)];
+        foreach ([[$x, $y], [$y, $z]] as $visible) {
+            $new = [self::rankedIssue($visible[0], 1, $visible[0] === $x ? 30 : 20), self::rankedIssue($visible[1], 2, $visible[1] === $y ? 20 : 10)];
+            [$run, $pair, $check] = $this->rankedPair([$x, $x, $x, $y, $z], [$x, $y, $z], $old, $new, [$x, $x]);
+            RecordStage::create($run)->applyStage($pair);
+            if ($visible[0] === $x) {
+                self::assertSame([], $run->report->raised());
+                self::assertSame($pair->reference, $pair->candidate);
+            } else {
+                self::assertSame([FailureClass::TOP_ISSUES_MISMATCH], $run->report->failureClasses());
+                self::assertSame('The ranked refill has an unexplained size or more entrants than licensed vacancies.', $run->report->raised()[0]['detail']);
+                self::assertSame($new, ReportRecords::decode((string) $pair->candidate)['topIssues']);
+                self::assertSame($old, ReportRecords::decode((string) $pair->reference)['topIssues']);
+            }
+        }
+    }
+
+    #[Test]
+    public function itKeepsPartialDuplicateValueAmbiguityLoudBeforeGrantingAnyVacancy(): void
+    {
+        $x = self::finding();
+        foreach (['impactScore', 'coupling.class-rank'] as $field) {
+            $old = [self::rankedIssue($x, 1, 30), self::rankedIssue($x, 2, 30)];
+            $old[0][$field] = 30;
+            $old[1][$field] = 20;
+            [$run, $pair, $check] = $this->rankedPair([$x, $x, $x], [$x, $x], $old, $old, [$x]);
+            RecordStage::create($run)->applyStage($pair);
+            self::assertSame([FailureClass::TOP_ISSUES_MISMATCH], $run->report->failureClasses());
+            self::assertSame('A partial duplicate ranked removal has ambiguous value correspondence.', $run->report->raised()[0]['detail']);
+            self::assertSame($old, ReportRecords::decode((string) $pair->candidate)['topIssues']);
+            self::assertSame($old, ReportRecords::decode((string) $pair->reference)['topIssues']);
+        }
+    }
+
+    /**
+     * @param list<array<string,mixed>> $reference
+     * @param list<array<string,mixed>> $candidate
+     * @param list<array<string,mixed>> $oldIssues
+     * @param list<array<string,mixed>> $newIssues
+     * @param list<array<string,mixed>> $removed
+     *
+     * @return array{RunContext,SurfacePair,RecordCheck}
+     */
+    private function rankedPair(array $reference, array $candidate, array $oldIssues, array $newIssues, array $removed = []): array
+    {
+        if ($removed !== []) {
+            Fs::write($this->root . '/finding-gate/' . DeclaredRecords::INDEX, Tsv::render(DeclaredRecords::COLUMNS, [['withdrawn', 'alpha', 'json', 'format:json', ValueCheck::value(['channel' => $removed[0]['channel']]), 'Remove exactly the declared complete finding instances.']]));
+            Fs::write($this->root . '/finding-gate/' . DeclaredRecords::DERIVED, Tsv::render(DeclaredRecords::DERIVED_COLUMNS, array_map(static fn(array $record): array => ['withdrawn', 'alpha', 'json', 'format:json', DeclaredRecords::canonical($record)], $removed)));
+        }
+        $run = $this->context();
+        $check = RecordCheck::create($run);
+        foreach (['reference' => $reference, 'candidate' => $candidate] as $side => $records) {
+            $check->checkCase($side, $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts($records));
+        }
+        $check->prepare('alpha');
+        self::assertSame([], $run->report->raised(), 'Complete authoritative supplier preparation must be clean.');
+        return [$run, new SurfacePair('case:alpha|format:json', 'format:json', ValueCheck::value(['violations' => $candidate, 'topIssues' => $newIssues]), ValueCheck::value(['violations' => $reference, 'topIssues' => $oldIssues])), $check];
     }
 
     /**

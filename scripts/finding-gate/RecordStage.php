@@ -404,6 +404,10 @@ final class RecordStage implements SurfaceStage
             }
             $budget = $this->records->published($case, $view, $side);
             $removed = $this->records->licensedResiduals($case, $view, $side);
+            $completeCounts = array_count_values(array_map(DeclaredRecords::canonical(...), $budget));
+            $removedCounts = array_count_values(array_map(DeclaredRecords::canonical(...), $removed));
+            $rankedValues = [];
+            $entries = [];
             $previous = \INF;
             foreach ($issues as $index => $issue) {
                 $keys = \is_array($issue) ? array_keys($issue) : [];
@@ -416,21 +420,55 @@ final class RecordStage implements SurfaceStage
                     throw new GateError('A ranked issue has an invalid rank, score, or descending position.');
                 }
                 $previous = $issue['impactScore'];
-                $found = false;
+                $found = null;
+                $complete = null;
                 foreach ($budget as $at => $record) {
                     if (!self::issueOf($issue, $record)) {
                         continue;
                     }
-                    unset($budget[$at]);
-                    $found = true;
-                    $base = $this->records->base('json', $view, [$record])[0];
-                    $replacement = $this->records->replacement($case, $view, $side, $base);
-                    $key = ReportRecords::identity('json', $base);
-                    $matched[$side][$key] = ['index' => $index, 'record' => $record, 'fields' => $issue];
-                    if (\in_array($record, $removed, true)) {
-                        ++$vacancies[$side];
-                        $affected[$side][] = $index;
-                    } elseif ($replacement !== $base) {
+                    $canonical = DeclaredRecords::canonical($record);
+                    if ($complete !== null && $canonical !== $complete) {
+                        throw new GateError('A ranked issue has ambiguous complete authoritative finding instances.');
+                    }
+                    $complete = $canonical;
+                    $found ??= $at;
+                }
+                if ($found === null) {
+                    throw new GateError('A ranked issue has no complete authoritative finding instance.');
+                }
+                $record = $budget[$found];
+                unset($budget[$found]);
+                $completeKey = DeclaredRecords::canonical($record);
+                $values = ValueCheck::value([$issue['impactScore'], $issue['coupling.class-rank']]);
+                if (($removedCounts[$completeKey] ?? 0) > 0 && $removedCounts[$completeKey] < $completeCounts[$completeKey]
+                    && isset($rankedValues[$completeKey]) && $rankedValues[$completeKey] !== $values) {
+                    throw new GateError('A partial duplicate ranked removal has ambiguous value correspondence.');
+                }
+                $rankedValues[$completeKey] = $values;
+                $base = $this->records->base('json', $view, [$record])[0];
+                $replacement = $this->records->replacement($case, $view, $side, $base);
+                $entries[] = ['index' => $index, 'record' => $record, 'fields' => $issue, 'complete' => $completeKey, 'base' => $base, 'replacement' => $replacement];
+            }
+            $removalBudgets = self::rankedRemovalBudgets($completeCounts, $removedCounts, array_column($entries, 'complete'));
+            foreach ($entries as $entry) {
+                $index = $entry['index'];
+                $record = $entry['record'];
+                $issue = $entry['fields'];
+                $completeKey = $entry['complete'];
+                $base = $entry['base'];
+                $replacement = $entry['replacement'];
+                $removal = array_search($record, $removed, true);
+                if ($removalBudgets[$completeKey] > 0) {
+                    if ($removal === false) {
+                        throw new GateError('A visible ranked removal has no remaining exact licensed occurrence.');
+                    }
+                    --$removalBudgets[$completeKey];
+                    unset($removed[$removal]);
+                    ++$vacancies[$side];
+                    $affected[$side][] = $index;
+                } else {
+                    $matched[$side][DeclaredRecords::canonical($replacement)][] = ['index' => $index, 'record' => $record, 'fields' => $issue];
+                    if ($replacement !== $base) {
                         foreach (['file', 'line', 'symbol', 'rule', 'severity', 'message', 'recommendation'] as $field) {
                             if (\array_key_exists($field, $replacement)) {
                                 $issue[$field] = $replacement[$field];
@@ -441,29 +479,26 @@ final class RecordStage implements SurfaceStage
                         }
                         $affected[$side][] = $index;
                     }
-                    break;
-                }
-                if (!$found) {
-                    throw new GateError('A ranked issue has no complete authoritative finding instance.');
                 }
                 $lists[$side][] = $issue;
             }
             $lists[$side] ??= [];
         }
-        foreach ($matched['candidate'] ?? [] as $key => $entry) {
-            $old = $matched['reference'][$key] ?? null;
-            if ($old === null) {
-                continue;
-            }
-            foreach (['impactScore', 'coupling.class-rank'] as $field) {
-                if ($old['fields'][$field] === $entry['fields'][$field]) {
-                    continue;
-                }
-                $subject = 'case:' . $case . '|' . $view . '|record:' . $key;
-                if (ValueCheck::create($this->run)->measure(DeclaredValues::FIELD, $field, $subject, SubjectLevel::of((string) $entry['record']['subject']), $old['fields'][$field], $entry['fields'][$field])) {
-                    $lists['candidate'][$entry['index']][$field] = $old['fields'][$field];
-                    $affected['candidate'][] = $entry['index'];
-                    $affected['reference'][] = $old['index'];
+        foreach ($matched['candidate'] ?? [] as $complete => $entries) {
+            foreach (self::rankedValuePairs($entries, $matched['reference'][$complete] ?? []) as $pairing) {
+                $entry = $pairing['candidate'];
+                $old = $pairing['reference'];
+                foreach (['impactScore', 'coupling.class-rank'] as $field) {
+                    if ($old['fields'][$field] === $entry['fields'][$field]) {
+                        continue;
+                    }
+                    $base = $this->records->base('json', $view, [$entry['record']])[0];
+                    $subject = 'case:' . $case . '|' . $view . '|record:' . ReportRecords::identity('json', $base);
+                    if (ValueCheck::create($this->run)->measure(DeclaredValues::FIELD, $field, $subject, SubjectLevel::of((string) $entry['record']['subject']), $old['fields'][$field], $entry['fields'][$field])) {
+                        $lists['candidate'][$entry['index']][$field] = $old['fields'][$field];
+                        $affected['candidate'][] = $entry['index'];
+                        $affected['reference'][] = $old['index'];
+                    }
                 }
             }
         }
@@ -484,9 +519,12 @@ final class RecordStage implements SurfaceStage
             }
             $stable[$side] ??= [];
         }
-        $commonCandidate = array_values(array_filter($stable['candidate'], static fn(string $issue): bool => \in_array($issue, $stable['reference'], true)));
-        $commonReference = array_values(array_filter($stable['reference'], static fn(string $issue): bool => \in_array($issue, $stable['candidate'], true)));
-        if ($commonCandidate !== $commonReference) {
+        $partitions = [];
+        foreach (['candidate', 'reference'] as $side) {
+            $other = $side === 'candidate' ? 'reference' : 'candidate';
+            $partitions[$side] = self::rankedPartition($stable[$side], $stable[$other]);
+        }
+        if ($partitions['candidate']['common'] !== $partitions['reference']['common']) {
             throw new GateError('Unaffected ranked survivors changed relative order.');
         }
         foreach (['candidate', 'reference'] as $side) {
@@ -494,14 +532,19 @@ final class RecordStage implements SurfaceStage
             if ($affected[$other] === []) {
                 continue;
             }
-            $admitted = array_values(array_diff($stable[$side], $stable[$other]));
+            $admitted = $partitions[$side]['unmatched'];
             $available = \count($this->records->published($case, $view, $side));
             $expectedSize = min(max(\count($lists['candidate']), \count($lists['reference'])), $available);
-            if (\count($lists[$side]) !== $expectedSize || \count($admitted) > $vacancies[$other]) {
+            if (\count($lists[$side]) !== $expectedSize) {
                 throw new GateError('The ranked refill has an unexplained size or more entrants than licensed vacancies.');
             }
             $ceiling = $prefix === 0 ? \INF : $lists[$other][$prefix - 1]['impactScore'];
+            $remainingVacancies = $vacancies[$other];
             foreach ($admitted as $encoded) {
+                if ($remainingVacancies === 0) {
+                    throw new GateError('The ranked refill has an unexplained size or more entrants than licensed vacancies.');
+                }
+                --$remainingVacancies;
                 $issue = ReportRecords::decode($encoded);
                 if ($issue['impactScore'] > $ceiling) {
                     throw new GateError('A newly admitted issue outranks the unchanged prefix.');
@@ -521,6 +564,95 @@ final class RecordStage implements SurfaceStage
                 }
             }
         }
+    }
+
+    /**
+     * @param array<string,int> $completeCounts
+     * @param array<string,int> $removedCounts
+     * @param list<string> $visibleComplete
+     *
+     * @return array<string,int>
+     */
+    private static function rankedRemovalBudgets(array $completeCounts, array $removedCounts, array $visibleComplete): array
+    {
+        foreach ($removedCounts as $complete => $removed) {
+            if ($removed < 0 || !isset($completeCounts[$complete]) || $removed > $completeCounts[$complete]) {
+                throw new GateError('A ranked removal exceeds its exact complete occurrence population.');
+            }
+        }
+        $budgets = [];
+        foreach (array_count_values($visibleComplete) as $complete => $visible) {
+            $available = $completeCounts[$complete] ?? null;
+            if ($available === null || $available < $visible) {
+                throw new GateError('A ranked publication exceeds its exact complete occurrence population.');
+            }
+            $survivors = $available - ($removedCounts[$complete] ?? 0);
+            $budgets[$complete] = $visible - min($visible, $survivors);
+        }
+        return $budgets;
+    }
+
+    /**
+     * @param list<array{index:int,record:array<string,mixed>,fields:array<string,mixed>}> $candidate
+     * @param list<array{index:int,record:array<string,mixed>,fields:array<string,mixed>}> $reference
+     *
+     * @return list<array{candidate:array{index:int,record:array<string,mixed>,fields:array<string,mixed>},reference:array{index:int,record:array<string,mixed>,fields:array<string,mixed>}}>
+     */
+    private static function rankedValuePairs(array $candidate, array $reference): array
+    {
+        $pairs = [];
+        foreach ($candidate as $index => $entry) {
+            foreach ($reference as $at => $old) {
+                if ($entry['fields']['impactScore'] !== $old['fields']['impactScore']
+                    || $entry['fields']['coupling.class-rank'] !== $old['fields']['coupling.class-rank']) {
+                    continue;
+                }
+                $pairs[] = ['candidate' => $entry, 'reference' => $old];
+                unset($candidate[$index], $reference[$at]);
+                break;
+            }
+        }
+        if ($candidate !== [] && $reference !== []) {
+            $candidate = array_values($candidate);
+            $reference = array_values($reference);
+            if (\count($candidate) !== \count($reference)) {
+                throw new GateError('Duplicate ranked values have no unambiguous complete occurrence correspondence.');
+            }
+            foreach (['candidate' => $candidate, 'reference' => $reference] as $entries) {
+                foreach ($entries as $entry) {
+                    if ($entry['fields']['impactScore'] !== $entries[0]['fields']['impactScore']
+                        || $entry['fields']['coupling.class-rank'] !== $entries[0]['fields']['coupling.class-rank']) {
+                        throw new GateError('Duplicate ranked values have no unambiguous complete occurrence correspondence.');
+                    }
+                }
+            }
+            foreach ($candidate as $index => $entry) {
+                $pairs[] = ['candidate' => $entry, 'reference' => $reference[$index]];
+            }
+        }
+        return $pairs;
+    }
+
+    /**
+     * @param list<string> $issues
+     * @param list<string> $other
+     *
+     * @return array{common:list<string>,unmatched:list<string>}
+     */
+    private static function rankedPartition(array $issues, array $other): array
+    {
+        $common = [];
+        $unmatched = [];
+        foreach ($issues as $issue) {
+            $at = array_search($issue, $other, true);
+            if ($at === false) {
+                $unmatched[] = $issue;
+            } else {
+                $common[] = $issue;
+                unset($other[$at]);
+            }
+        }
+        return ['common' => $common, 'unmatched' => $unmatched];
     }
 
     /**
