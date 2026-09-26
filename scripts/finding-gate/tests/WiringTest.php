@@ -162,7 +162,7 @@ final class WiringTest extends TestCase
     {
         Fs::write(
             Wiring::fileOf($this->directory, 'maps'),
-            "<?php\n\nreturn ['pending' => ['" . FailureClass::MAP_STALE . "' => ['pending: S01b/P2', 'why']]];\n",
+            "<?php\n\nreturn ['pending' => ['" . FailureClass::MAP_STALE . "' => ['pending: records', 'why']]];\n",
         );
 
         $this->assertRefused('excuses only its own package');
@@ -173,11 +173,11 @@ final class WiringTest extends TestCase
     {
         Fs::write(
             Wiring::fileOf($this->directory, 'outcomes'),
-            "<?php\n\nreturn ['pending' => ['" . FailureClass::CORPUS_INVALID . "' => ['pending: S01b/P5', 'why']]];\n",
+            "<?php\n\nreturn ['pending' => ['" . FailureClass::CORPUS_INVALID . "' => ['pending: outcomes', 'why']]];\n",
         );
 
         self::assertSame(
-            [FailureClass::CORPUS_INVALID => ['pending: S01b/P5', 'why']],
+            [FailureClass::CORPUS_INVALID => ['pending: outcomes', 'why']],
             Wiring::of($this->directory)->pending,
         );
     }

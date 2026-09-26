@@ -8,9 +8,11 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\CaseDefinition;
+use QmxFindingGate\CaseInputTranslation;
 use QmxFindingGate\CaseOutcome;
 use QmxFindingGate\Fs;
 use QmxFindingGate\GateError;
+use QmxFindingGate\RenameMaps;
 
 /**
  * What a case may point at, judged where each path leads rather than how it is spelled.
@@ -199,6 +201,55 @@ final class CaseDefinitionTest extends TestCase
         self::fail('The case was accepted.');
     }
 
+    #[Test]
+    public function itListsAndTranslatesTheAdditionalInputsThroughOneObject(): void
+    {
+        Fs::write($this->case . '/channels.tsv', "from\tto\n");
+        Fs::write($this->case . '/baseline-src/src/A.php', "<?php\n");
+        $case = $this->load(extra: ['layerAssignmentSubjects' => ['App\\A'], 'renameChannelsMap' => 'channels.tsv']);
+        $translation = new CaseInputTranslation(RenameMaps::fromPairs([]), false, $this->root, 'candidate');
+        self::assertSame(['App\\A'], $translation->layerAssignmentSubjects($case));
+        self::assertSame('channels.tsv', $translation->renameChannelsMap($case));
+        self::assertSame('baseline-src', $translation->baselineSource($case));
+        self::assertContains(['option' => 'baseline:rename-channels', 'path' => 'channels.tsv'], $case->inputFiles());
+        self::assertContains(['option' => 'baseline-source', 'path' => 'baseline-src/src/A.php'], $case->inputFiles());
+    }
+
+    #[Test]
+    public function itRefusesALayerAssignmentSubjectThatIsNotAClassName(): void
+    {
+        $this->expectException(GateError::class);
+        $this->load(extra: ['layerAssignmentSubjects' => ['App::method']]);
+    }
+
+    #[Test]
+    public function itRefusesARenameMapThatLinksOutsideTheCase(): void
+    {
+        symlink($this->root . '/outside/qmx.yaml', $this->case . '/channels.tsv');
+        $this->expectException(GateError::class);
+        $this->expectExceptionMessage('outside its own directory');
+        $this->load(extra: ['renameChannelsMap' => 'channels.tsv']);
+    }
+
+    #[Test]
+    public function itRefusesABaselineVariantThatDoesNotMirrorTheAnalysisPaths(): void
+    {
+        mkdir($this->case . '/baseline-src');
+        $this->expectException(GateError::class);
+        $this->expectExceptionMessage('does not exist');
+        $this->load();
+    }
+
+    #[Test]
+    public function itRefusesAnEscapingFileInsideABaselineVariant(): void
+    {
+        mkdir($this->case . '/baseline-src/src', 0o777, true);
+        symlink($this->root . '/outside/qmx.yaml', $this->case . '/baseline-src/src/A.php');
+        $this->expectException(GateError::class);
+        $this->expectExceptionMessage('outside its own directory');
+        $this->load();
+    }
+
     /**
      * @param list<string> $paths
      * @param list<string> $args
@@ -219,8 +270,9 @@ final class CaseDefinitionTest extends TestCase
     /**
      * @param list<string> $paths
      * @param list<string> $args
+     * @param array<string,mixed> $extra
      */
-    private function load(array $paths = ['src'], string $config = 'qmx.yaml', array $args = [], mixed $outcome = null): CaseDefinition
+    private function load(array $paths = ['src'], string $config = 'qmx.yaml', array $args = [], mixed $outcome = null, array $extra = []): CaseDefinition
     {
         $definition = [
             'id' => 'probe',
@@ -235,7 +287,7 @@ final class CaseDefinitionTest extends TestCase
             $definition['outcome'] = $outcome;
         }
 
-        Fs::write($this->case . '/case.json', (string) json_encode($definition));
+        Fs::write($this->case . '/case.json', (string) json_encode([...$definition, ...$extra]));
 
         return CaseDefinition::load($this->case);
     }

@@ -108,23 +108,13 @@ final class RaiseSites
         ],
         [
             'Options.php',
-            'if (\in_array($mode, [self::MODE_COMPARE, self::MODE_DERIVE_DECLARED_DELTA], true) && $reference === null) {',
+            'if (\in_array($mode, [self::MODE_COMPARE, self::MODE_DERIVE_DECLARATIONS], true) && $reference === null) {',
             'the modes that need a reference, compared as strings and never called',
         ],
         [
             'GateModes.php',
             'Options::MODE_COMPARE => self::compare($options, $report),',
             'a match arm keyed by the mode string; the call beside it is direct',
-        ],
-        [
-            'TreeRun.php',
-            "['check', ...\$case->paths, ...self::CHECK_ARGUMENTS, '-c', \$config, '-f', \$format, ...\$arguments],",
-            'the product command `bin/qmx check`, an argument of a process, not a method of the gate',
-        ],
-        [
-            'TreeRun.php',
-            "['check', ...\$case->paths, ...self::CHECK_ARGUMENTS, '-c', \$config, '-f', 'text', '--show-suppressed', ...\$arguments],",
-            'the product command `bin/qmx check`, an argument of a process, not a method of the gate',
         ],
     ];
 

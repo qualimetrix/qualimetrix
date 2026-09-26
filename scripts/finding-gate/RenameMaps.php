@@ -507,6 +507,11 @@ final class RenameMaps
         return $this->replace($text, old: 'old', new: 'new', reversibleOnly: false, surfaceClass: $surfaceClass);
     }
 
+    public function acceptReferenceVocabulary(MetricVocabulary $reference): void
+    {
+        $this->vocabulary->assertSuffixesAgreeWith($reference);
+    }
+
     /** Candidate-side input, restated in the reference's vocabulary. */
     public function reverse(string $text): string
     {

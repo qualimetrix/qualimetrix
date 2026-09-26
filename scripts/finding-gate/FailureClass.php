@@ -123,7 +123,7 @@ final class FailureClass
     /** A `declared-records.tsv` row no record of the run matched. */
     public const RECORD_STALE = 'record-stale';
 
-    /** A surface publishes a record's fields otherwise than that side's own json record carries them. */
+    /** A surface publishes a record or document value differently from that side's authoritative record or process. */
     public const RECORD_PROJECTION_MISMATCH = 'record-projection-mismatch';
 
     /**

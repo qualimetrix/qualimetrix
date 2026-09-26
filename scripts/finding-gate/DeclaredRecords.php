@@ -7,99 +7,86 @@ namespace QmxFindingGate;
 use JsonException;
 
 /**
- * Findings a step withdrew from, or introduced into, one report of one case.
+ * Exact scalar selectors license measured complete records as a multiset.
  *
- * The key is the whole record as that report publishes it, in its canonical
- * one-line JSON spelling, never an identity: the gate's identity is shared by
- * twenty findings of the corpus, and a message is what later steps rewrite.
- * A withdrawn record is spelled as the reference publishes it after the maps
- * translated it and normalization ran; an introduced one as the candidate
- * publishes it. Rows are a multiset: k identical rows withdraw exactly k
- * instances of that record, and a row nothing claimed is stale.
- *
- * A row of the `json` report must carry exactly that side's compared fields —
- * the reference's differ from the candidate's by the fields `declared-fields.tsv`
- * adds and drops — so a partial record cannot match "whatever has these keys".
+ * The comparator validates each record against its own report's schema; the
+ * loader validates the declared selector and every derived record's intent.
  */
 final class DeclaredRecords
 {
-    public const array COLUMNS = ['change', 'case', 'report', 'record', 'reason'];
-
+    public const array COLUMNS = ['change', 'case', 'report', 'selector', 'reason'];
+    public const array DERIVED_COLUMNS = ['change', 'case', 'report', 'record'];
     public const string INDEX = 'declared-records.tsv';
-
+    public const string DERIVED = 'declared-records.derived.tsv';
     public const string WITHDRAWN = 'withdrawn';
-
     public const string INTRODUCED = 'introduced';
-
-    public const array REPORTS = ['json', 'suppressed'];
-
-    /** What distinguishes a record of the suppressed report from a finding. */
-    private const array SUPPRESSED_KEYS = ['mechanism', 'suppressor'];
-
+    public const array REPORTS = ['json', 'suppressed', 'metrics', 'directives'];
     private const int CANONICAL = \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE | \JSON_PRESERVE_ZERO_FRACTION | \JSON_THROW_ON_ERROR;
 
     /** @var array<int, true> */
     private array $claimed = [];
-
-    /** @param list<array{change: string, case: string, report: string, record: string, reason: string}> $rows */
-    private function __construct(private readonly array $rows) {}
+    /** @var array<int, true> */
+    private array $credited = [];
 
     /**
-     * @param list<string> $candidateFields the fields an introduced `json` record carries
-     * @param list<string> $referenceFields the fields a withdrawn `json` record carries
+     * @param list<array{change:string,case:string,report:string,selector:string,reason:string}> $intents
+     * @param list<array{change:string,case:string,report:string,record:string}> $derived
+     * @param list<array<string, scalar|null>> $selectors
      */
-    public static function load(string $root, array $candidateFields, array $referenceFields): self
+    private function __construct(
+        private readonly array $intents,
+        private readonly array $derived,
+        private readonly array $selectors,
+        private readonly string $derivedText,
+    ) {}
+
+    public static function load(string $root): self
     {
-        $rows = [];
+        $intents = [];
+        $selectors = [];
 
         foreach (DeclarationTable::rows($root, self::INDEX, self::COLUMNS) as $index => $row) {
-            $number = $index + 1;
-            DeclarationTable::oneOf(self::INDEX, $number, 'change', $row['change'], [self::WITHDRAWN, self::INTRODUCED]);
-            DeclarationTable::oneOf(self::INDEX, $number, 'report', $row['report'], self::REPORTS);
-            $record = self::decoded($row['record'], $number);
-
-            if (self::canonical($record) !== $row['record']) {
-                throw new GateError(\sprintf(
-                    '%s row %d spells its record otherwise than canonically (%s). A record is matched by equality,'
-                    . ' so a spelling nothing publishes could never match.',
-                    self::INDEX,
-                    $number,
-                    self::canonical($record),
-                ));
+            self::assertKind($row, self::INDEX, $index + 1);
+            $selector = self::decoded($row['selector'], self::INDEX, $index + 1);
+            foreach ($selector as $key => $value) {
+                if (!\is_string($key) || $key === '' || (!\is_scalar($value) && $value !== null)) {
+                    throw new GateError(self::INDEX . ' selectors require named scalar equality fields.');
+                }
             }
-
-            $missing = $row['report'] === 'json'
-                ? self::keyDifference(array_keys($record), $row['change'] === self::WITHDRAWN ? $referenceFields : $candidateFields)
-                : array_values(array_diff(self::SUPPRESSED_KEYS, array_keys($record)));
-
-            if ($missing !== []) {
-                throw new GateError(\sprintf(
-                    '%s row %d is not a whole %s record: %s. A partial record would match every record that shares'
-                    . ' the fields it names.',
-                    self::INDEX,
-                    $number,
-                    $row['report'],
-                    implode('; ', $missing),
-                ));
+            if ($row['report'] === 'metrics' && (!isset($selector['type'], $selector['name'])
+                || !\is_string($selector['type']) || !\is_string($selector['name']))) {
+                throw new GateError(self::INDEX . ' metrics selectors require exact type and name strings.');
             }
-
-            $rows[] = [
-                'change' => $row['change'],
-                'case' => $row['case'],
-                'report' => $row['report'],
-                'record' => $row['record'],
-                'reason' => $row['reason'],
-            ];
+            foreach ($intents as $previous => $intent) {
+                if ($intent['change'] === $row['change'] && $intent['report'] === $row['report']
+                    && ($intent['case'] === '*' || $row['case'] === '*' || $intent['case'] === $row['case'])
+                    && self::overlap($selectors[$previous], $selector)) {
+                    throw new GateError(\sprintf('%s row %d overlaps an earlier selector.', self::INDEX, $index + 1));
+                }
+            }
+            /** @var array<string, scalar|null> $selector */
+            $selectors[] = $selector;
+            $intents[] = ['change' => $row['change'], 'case' => $row['case'], 'report' => $row['report'], 'selector' => $row['selector'], 'reason' => $row['reason']];
         }
 
-        return new self($rows);
+        $derived = [];
+        foreach (DeclarationTable::rows($root, self::DERIVED, self::DERIVED_COLUMNS) as $index => $row) {
+            self::assertKind($row, self::DERIVED, $index + 1);
+            if ($row['case'] === '*') {
+                throw new GateError(self::DERIVED . ' names concrete cases, never a wildcard.');
+            }
+            $record = self::decoded($row['record'], self::DERIVED, $index + 1);
+            if (self::intentOf($intents, $selectors, $row['change'], $row['case'], $row['report'], $record) === null) {
+                throw new GateError(\sprintf('%s row %d measures a record which no intent declares.', self::DERIVED, $index + 1));
+            }
+            $derived[] = ['change' => $row['change'], 'case' => $row['case'], 'report' => $row['report'], 'record' => $row['record']];
+        }
+        $path = $root . '/' . self::DERIVED;
+
+        return new self($intents, $derived, $selectors, is_file($path) ? Fs::read($path) : '');
     }
 
-    /**
-     * The one spelling a row may carry for a decoded record.
-     *
-     * @param array<string, mixed> $record
-     */
+    /** @param array<string, mixed> $record */
     public static function canonical(array $record): string
     {
         return json_encode($record, self::CANONICAL);
@@ -107,82 +94,126 @@ final class DeclaredRecords
 
     public function count(): int
     {
-        return \count($this->rows);
+        return \count($this->intents);
     }
 
-    /**
-     * Claims one row not yet claimed that declares exactly this change of this
-     * record, and says whether there was one.
-     */
+    /** @return list<array{change:string,case:string,report:string,selector:string,reason:string}> */
+    public function intents(string $report): array
+    {
+        self::assertReport($report);
+        return array_values(array_filter($this->intents, static fn(array $row): bool => $row['report'] === $report));
+    }
+
+    /** @return list<array{change:string,case:string,report:string,record:string}> */
+    public function derived(string $report): array
+    {
+        self::assertReport($report);
+        return array_values(array_filter($this->derived, static fn(array $row): bool => $row['report'] === $report));
+    }
+
+    public function derivedText(): string
+    {
+        return $this->derivedText;
+    }
+
     public function claim(string $change, string $case, string $report, string $record): bool
     {
-        foreach ($this->rows as $index => $row) {
+        foreach ($this->derived as $index => $row) {
             if (!isset($this->claimed[$index]) && $row['change'] === $change && $row['case'] === $case
-                && $row['report'] === $report && $row['record'] === $record
-            ) {
+                && $row['report'] === $report && $row['record'] === $record) {
                 $this->claimed[$index] = true;
-
+                $intent = self::intentOf($this->intents, $this->selectors, $change, $case, $report, self::decoded($record, self::DERIVED, $index + 1));
+                if ($intent === null) {
+                    throw new GateError('A derived record lost its declared intent.');
+                }
+                $this->credited[$intent] = true;
                 return true;
             }
         }
-
         return false;
     }
 
-    /** @return list<array{scope: string, detail: string}> */
+    /** @return list<array{scope:string,detail:string}> */
     public function stale(): array
     {
         $stale = [];
-
-        foreach ($this->rows as $index => $row) {
+        foreach ($this->derived as $index => $row) {
             if (!isset($this->claimed[$index])) {
-                $stale[] = [
-                    'scope' => 'case:' . $row['case'] . '|format:' . $row['report'],
-                    'detail' => \sprintf('The %s record %s', $row['change'], $row['record']),
-                ];
+                $stale[] = ['scope' => 'case:' . $row['case'] . '|format:' . $row['report'], 'detail' => \sprintf('The %s record %s', $row['change'], $row['record'])];
             }
         }
-
+        foreach ($this->intents as $index => $row) {
+            if (!isset($this->credited[$index])) {
+                $stale[] = ['scope' => self::INDEX, 'detail' => \sprintf('The %s %s selector %s for %s', $row['change'], $row['report'], $row['selector'], $row['case'])];
+            }
+        }
         return $stale;
     }
 
     /** @return array<string, mixed> */
-    private static function decoded(string $record, int $number): array
+    private static function decoded(string $text, string $file, int $number): array
     {
         try {
-            $decoded = json_decode($record, true, 512, \JSON_THROW_ON_ERROR);
+            $decoded = json_decode($text, true, 512, \JSON_THROW_ON_ERROR);
         } catch (JsonException $error) {
-            throw new GateError(\sprintf('%s row %d carries a record that is not JSON (%s).', self::INDEX, $number, $error->getMessage()));
+            throw new GateError(\sprintf('%s row %d is not JSON (%s).', $file, $number, $error->getMessage()));
         }
-
         if (!\is_array($decoded) || array_is_list($decoded)) {
-            throw new GateError(\sprintf('%s row %d carries a record that is not a JSON object.', self::INDEX, $number));
+            throw new GateError(\sprintf('%s row %d is not a nonempty JSON object.', $file, $number));
         }
-
+        if (self::canonical($decoded) !== $text) {
+            throw new GateError(\sprintf('%s row %d is spelled otherwise than canonically.', $file, $number));
+        }
         /** @var array<string, mixed> $decoded */
         return $decoded;
     }
 
-    /**
-     * @param list<string> $keys
-     * @param list<string> $fields
-     *
-     * @return list<string>
-     */
-    private static function keyDifference(array $keys, array $fields): array
+    /** @param array<string,string> $row */
+    private static function assertKind(array $row, string $file, int $number): void
     {
-        $problems = [];
-        $missing = array_diff($fields, $keys);
-        $extra = array_diff($keys, $fields);
+        DeclarationTable::oneOf($file, $number, 'change', $row['change'], [self::WITHDRAWN, self::INTRODUCED]);
+        DeclarationTable::oneOf($file, $number, 'report', $row['report'], self::REPORTS);
+    }
 
-        if ($missing !== []) {
-            $problems[] = 'it lacks ' . implode(', ', $missing);
+    private static function assertReport(string $report): void
+    {
+        if (!\in_array($report, self::REPORTS, true)) {
+            throw new GateError('Unknown record report: ' . $report);
         }
+    }
 
-        if ($extra !== []) {
-            $problems[] = 'it carries ' . implode(', ', $extra) . ', which the side does not compare';
+    /**
+     * @param array<string,mixed> $first
+     * @param array<string,mixed> $second
+     */
+    private static function overlap(array $first, array $second): bool
+    {
+        foreach (array_intersect(array_keys($first), array_keys($second)) as $key) {
+            if ($first[$key] !== $second[$key]) {
+                return false;
+            }
         }
+        return true;
+    }
 
-        return $problems;
+    /**
+     * @param list<array{change:string,case:string,report:string,selector:string,reason:string}> $intents
+     * @param list<array<string,scalar|null>> $selectors
+     * @param array<string,mixed> $record
+     */
+    private static function intentOf(array $intents, array $selectors, string $change, string $case, string $report, array $record): ?int
+    {
+        foreach ($intents as $index => $intent) {
+            if ($intent['change'] !== $change || $intent['report'] !== $report || !\in_array($intent['case'], ['*', $case], true)) {
+                continue;
+            }
+            foreach ($selectors[$index] as $key => $value) {
+                if (!\array_key_exists($key, $record) || $record[$key] !== $value) {
+                    continue 2;
+                }
+            }
+            return $index;
+        }
+        return null;
     }
 }

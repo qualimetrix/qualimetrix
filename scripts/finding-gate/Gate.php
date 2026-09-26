@@ -79,6 +79,16 @@ final class Gate
         $this->declaredFieldMoves = $this->declarations->fieldMoves;
         $this->split = ChannelSplit::of($this->maps);
         $this->corpus = Corpus::load($this->options->candidateRoot, $this->options->cases);
+        foreach (DeclaredFields::REPORTS as $fieldReport) {
+            if ($this->declarations->fields->changes($fieldReport) === []) {
+                continue;
+            }
+            foreach ($this->corpus->cases as $case) {
+                foreach (['candidate', 'reference'] as $side) {
+                    $this->declarations->fields->requireMeasurements($fieldReport, $case->id, $side);
+                }
+            }
+        }
         $witness = new ChannelWitness($this->options->candidateRoot);
         $this->temporaryDirectory = Fs::temporaryDirectory('finding-gate-run-');
 
@@ -202,7 +212,7 @@ final class Gate
         $second = $this->runTree($this->options->candidateRoot, 'candidate-2', reverseInput: false);
         $this->normalizationCheck->checkDeterminism($first, $second);
 
-        $reference = ReferenceTree::create($this->options->candidateRoot, (string) $this->options->reference);
+        $reference = ReferenceTree::create($this->options->candidateRoot, (string) $this->options->reference, $this->maps);
 
         try {
             $mismatch = $reference->dependencySetMismatch();

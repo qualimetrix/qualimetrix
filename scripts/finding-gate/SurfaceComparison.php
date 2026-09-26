@@ -106,9 +106,9 @@ final class SurfaceComparison
     private function step(string $step, SurfacePair $pair): void
     {
         match ($step) {
-            'presence' => $this->presence($pair),
-            'payload' => $this->payload($pair),
-            'published-order' => $this->publishedOrder($pair),
+            'presence' => $this->checkPresence($pair),
+            'payload' => $this->extractPayload($pair),
+            'published-order' => $this->verifyPublishedOrder($pair),
             'fingerprints' => $this->fingerprints($pair),
             'translation' => $this->translation($pair),
             'reorder' => $this->reorder($pair),
@@ -118,7 +118,7 @@ final class SurfaceComparison
         };
     }
 
-    private function presence(SurfacePair $pair): void
+    private function checkPresence(SurfacePair $pair): void
     {
         if ($pair->candidate === null || $pair->reference === null) {
             $this->report->fail(
@@ -139,7 +139,7 @@ final class SurfaceComparison
      * reported stale, having proved nothing on the surface that is actually
      * compared.
      */
-    private function payload(SurfacePair $pair): void
+    private function extractPayload(SurfacePair $pair): void
     {
         if ($pair->surface !== 'format:html') {
             return;
@@ -164,7 +164,7 @@ final class SurfaceComparison
      * producer's key, which is asserted here on the raw artifacts and is a
      * failure of its own when it does not hold — see {@see PublishedOrder}.
      */
-    private function publishedOrder(SurfacePair $pair): void
+    private function verifyPublishedOrder(SurfacePair $pair): void
     {
         $pair->ordered = $this->checkPublishedOrder($pair->key, $pair->surface, (string) $pair->candidate, (string) $pair->reference);
     }

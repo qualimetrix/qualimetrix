@@ -45,6 +45,7 @@ foreach (
         'CaseDefinition',
         'CaseOutcome',
         'Corpus',
+        'CapturePlan',
         'RenameMaps',
         'ChannelSplit',
         'PublishedVocabulary',

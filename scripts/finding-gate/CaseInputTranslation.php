@@ -32,6 +32,22 @@ final class CaseInputTranslation
         return $this->reverseInput ? $this->maps->reverse($subject) : $subject;
     }
 
+    /** @return list<string> */
+    public function layerAssignmentSubjects(CaseDefinition $case): array
+    {
+        return array_map($this->subject(...), $case->layerAssignmentSubjects());
+    }
+
+    public function renameChannelsMap(CaseDefinition $case): ?string
+    {
+        return $case->renameChannelsMap();
+    }
+
+    public function baselineSource(CaseDefinition $case): ?string
+    {
+        return $case->baselineSource();
+    }
+
     /**
      * The reference binary cannot be addressed in a vocabulary it does not know
      * yet, so its configuration is rewritten through the reverse map. When the

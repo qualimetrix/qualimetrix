@@ -534,7 +534,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::REPORT_PAYLOAD_UNREADABLE, 'case:alpha|format:html', 'SurfaceComparison::payload <- Gate::compare']],
+                [[FailureClass::REPORT_PAYLOAD_UNREADABLE, 'case:alpha|format:html', 'SurfaceComparison::extractPayload <- Gate::compare']],
             ),
             self::witness(
                 'run-failed',
@@ -696,7 +696,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::SURFACE_MISMATCH, 'case:alpha|stderr:format:github', 'SurfaceComparison::presence <- Gate::compare']],
+                [[FailureClass::SURFACE_MISMATCH, 'case:alpha|stderr:format:github', 'SurfaceComparison::checkPresence <- Gate::compare']],
             ),
             self::witness(
                 'surface-differs',
@@ -794,13 +794,14 @@ final class CheckWitnesses
                     $record['message'] = 'a record no side publishes';
                     $tree['declarations'] = [
                         DeclaredRecords::INDEX => Tsv::render(DeclaredRecords::COLUMNS, [
-                            [DeclaredRecords::INTRODUCED, 'alpha', 'json', DeclaredRecords::canonical($record), 'self-test'],
+                            [DeclaredRecords::INTRODUCED, 'alpha', 'json', DeclaredRecords::canonical(['message' => $record['message']]), 'self-test'],
                         ]),
+                        DeclaredRecords::DERIVED => Tsv::render(DeclaredRecords::DERIVED_COLUMNS, [[DeclaredRecords::INTRODUCED, 'alpha', 'json', DeclaredRecords::canonical($record)]]),
                         DeclaredValues::INDEX => Tsv::render(DeclaredValues::COLUMNS, [
                             [DeclaredValues::METRIC, 'ccn', DeclaredValues::EVERY_LEVEL, 'self-test'],
                         ]),
                         DeclaredFields::INDEX => Tsv::render(DeclaredFields::COLUMNS, [
-                            [DeclaredFields::REMOVED, 'retired', 'self-test'],
+                            [DeclaredFields::REMOVED, 'json', 'retired', 'self-test'],
                         ]),
                         DeclaredOutcomes::INDEX => Tsv::render(DeclaredOutcomes::COLUMNS, [
                             ['alpha', DeclaredOutcomes::ANALYSIS_TO_REFUSAL, DeclaredOutcomes::DIRECTORY . '/alpha.txt', 'self-test'],
@@ -819,6 +820,7 @@ final class CheckWitnesses
                 },
                 [
                     [FailureClass::RECORD_STALE, 'case:alpha|format:json', 'StaleDeclarationCheck::checkStaleDeclarations#1 <- Gate::compare'],
+                    [FailureClass::RECORD_STALE, DeclaredRecords::INDEX, 'StaleDeclarationCheck::checkStaleDeclarations#1 <- Gate::compare'],
                     [FailureClass::VALUE_STALE, DeclaredValues::INDEX, 'StaleDeclarationCheck::checkStaleDeclarations#2 <- Gate::compare'],
                     [FailureClass::FIELD_DECLARATION_STALE, DeclaredFields::INDEX, 'StaleDeclarationCheck::checkStaleDeclarations#3 <- Gate::compare'],
                     [FailureClass::OUTCOME_DECLARATION_STALE, 'case:alpha', 'StaleDeclarationCheck::checkStaleDeclarations#4 <- Gate::compare'],

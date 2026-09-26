@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace QmxFindingGate;
 
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
+
 /** One corpus case, as `case.json` declares it. */
 final class CaseDefinition
 {
@@ -37,6 +42,8 @@ final class CaseDefinition
         'channels' => 'the channel@level pairs the case fires',
         'explainSubjects' => 'subjects baseline:explain is asked about',
         'outcome' => 'how the case ends when it does not analyse',
+        'layerAssignmentSubjects' => 'fully qualified class names for layer assignment inspection',
+        'renameChannelsMap' => 'the channel rename map file inside the case',
     ];
 
     /**
@@ -78,6 +85,7 @@ final class CaseDefinition
      * @param list<string> $explainSubjects
      * @param string $outcome one of {@see CaseOutcome::ALL}
      * @param int|null $outcomeExit the exit a case that does not analyse must end with
+     * @param list<string> $layerSubjects
      */
     private function __construct(
         public readonly string $id,
@@ -91,6 +99,8 @@ final class CaseDefinition
         public readonly array $explainSubjects,
         public readonly string $outcome,
         public readonly ?int $outcomeExit,
+        private readonly array $layerSubjects,
+        private readonly ?string $channelMap,
     ) {}
 
     public function isAuxiliary(): bool
@@ -127,6 +137,10 @@ final class CaseDefinition
         }
 
         [$outcome, $outcomeExit] = self::outcome($decoded, $file);
+        if (\array_key_exists('layerAssignmentSubjects', $decoded)
+            && (!\is_array($decoded['layerAssignmentSubjects']) || !array_is_list($decoded['layerAssignmentSubjects']))) {
+            throw new GateError($file . ': layerAssignmentSubjects must be a list of class names.');
+        }
 
         $case = new self(
             self::string($decoded, 'id', $file),
@@ -140,6 +154,8 @@ final class CaseDefinition
             self::strings($decoded, 'explainSubjects', $file, optional: true),
             $outcome,
             $outcomeExit,
+            self::strings($decoded, 'layerAssignmentSubjects', $file, optional: true),
+            \array_key_exists('renameChannelsMap', $decoded) ? self::string($decoded, 'renameChannelsMap', $file) : null,
         );
 
         if ($case->id !== $id) {
@@ -165,6 +181,18 @@ final class CaseDefinition
 
         if (!is_file($directory . '/' . $case->config)) {
             throw new GateError(\sprintf('%s names config "%s", which does not exist.', $file, $case->config));
+        }
+
+        foreach ($case->layerAssignmentSubjects() as $subject) {
+            if (preg_match('~^\\\\?[A-Za-z_\\x80-\\xff][A-Za-z0-9_\\x80-\\xff]*(?:\\\\[A-Za-z_\\x80-\\xff][A-Za-z0-9_\\x80-\\xff]*)*$~D', $subject) !== 1) {
+                throw new GateError($file . ': layerAssignmentSubjects must contain fully qualified class names.');
+            }
+        }
+        if (\count(array_unique($case->layerSubjects)) !== \count($case->layerSubjects)) {
+            throw new GateError($file . ': layerAssignmentSubjects contains a duplicate subject.');
+        }
+        if ($case->channelMap !== null && !is_file($directory . '/' . $case->channelMap)) {
+            throw new GateError($file . ': renameChannelsMap must name a contained file.');
         }
 
         return $case;
@@ -233,12 +261,60 @@ final class CaseDefinition
     public function inputFiles(): array
     {
         $files = [['option' => '--config', 'path' => $this->config]];
+        if ($this->channelMap !== null) {
+            $files[] = ['option' => 'baseline:rename-channels', 'path' => $this->channelMap];
+        }
+        $baseline = $this->baselineSource();
+        if ($baseline !== null) {
+            $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($this->directory . '/' . $baseline, FilesystemIterator::SKIP_DOTS));
+            foreach ($iterator as $entry) {
+                if (!$entry instanceof SplFileInfo) {
+                    throw new GateError('A baseline source entry could not be inspected.');
+                }
+                $path = substr($entry->getPathname(), \strlen($this->directory) + 1);
+                $this->assertInside($path);
+                $resolved = $entry->getRealPath();
+                if ($resolved === false || !str_starts_with($resolved, realpath($this->directory . '/' . $baseline) . '/')) {
+                    throw new GateError('A baseline source entry leaves its variant directory: ' . $path);
+                }
+                if ($entry->isFile()) {
+                    $files[] = ['option' => 'baseline-source', 'path' => $path];
+                }
+            }
+        }
 
         foreach ($this->argumentInputs() as [$option, $path]) {
             $files[] = ['option' => $option, 'path' => $path];
         }
 
         return $files;
+    }
+
+    /** @return list<string> */
+    public function layerAssignmentSubjects(): array
+    {
+        return $this->layerSubjects;
+    }
+
+    public function renameChannelsMap(): ?string
+    {
+        return $this->channelMap;
+    }
+
+    public function baselineSource(): ?string
+    {
+        $path = $this->directory . '/baseline-src';
+        if (!file_exists($path) && !is_link($path)) {
+            return null;
+        }
+        $this->assertInside('baseline-src');
+        if (!is_dir($path)) {
+            throw new GateError('baseline-src must be a directory mirroring the analysis paths.');
+        }
+        foreach ($this->paths as $source) {
+            $this->assertInside('baseline-src/' . $source);
+        }
+        return 'baseline-src';
     }
 
     /**

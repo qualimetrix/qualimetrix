@@ -22,14 +22,14 @@ namespace QmxFindingGate;
  * nobody executes on the way to a merge.
  *
  * A class whose producer a later package introduces may stand pending as
- * `pending: S01b/P<n>` with a reason, in that package's own wiring file
+ * `pending: <form>` with a reason, in that package's own wiring file
  * ({@see Wiring}), so the package that gives it a producer removes the row
  * without touching anyone else's. A pending class that is raised anywhere is a
  * stale row and fails like a stale map row does.
  */
 final class WitnessRegistry
 {
-    private const string MARKER = '~^pending: S01b/P[2-8]$~';
+    private const string MARKER = '~^pending: (records|tuple|capture|outcomes|maps|corpus)$~';
 
     /**
      * @param list<string> $classes
@@ -91,8 +91,8 @@ final class WitnessRegistry
 
             if (preg_match(self::MARKER, $row[0]) !== 1 || trim($row[1]) === '') {
                 $problems[] = \sprintf(
-                    'witness registry: %s is pending as "%s" with reason "%s". A pending row names the S01b package'
-                    . ' that introduces the producer ("pending: S01b/P<n>") and says why it waits.',
+                    'witness registry: %s is pending as "%s" with reason "%s". A pending row names the declaration form'
+                    . ' that introduces the producer ("pending: <form>") and says why it waits.',
                     $class,
                     $row[0],
                     $row[1],

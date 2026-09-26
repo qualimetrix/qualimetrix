@@ -64,15 +64,22 @@ Available tests:
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"underscore"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itRefusesToScanATreeItCannotRead
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itScansATreeAndSkipsWhatIsNotPhp
+ - QmxFindingGate\Tests\CapturePlanTest::itDoesNotPlanParallelExecutionForExplicitNonPhpPaths
+ - QmxFindingGate\Tests\CapturePlanTest::itMapsEveryInvocationAndFileToItsExactCommand
+ - QmxFindingGate\Tests\CapturePlanTest::itRefusesAnArtifactOutsideTheDeclaredInvocationTable
+ - QmxFindingGate\Tests\CapturePlanTest::itRefusesAnInvocationThatOnlyResemblesAKnownSurface
  - QmxFindingGate\Tests\CaseDefinitionTest::itAcceptsANameThatOnlyContainsTwoDots
  - QmxFindingGate\Tests\CaseDefinitionTest::itJudgesEveryInputFileByTheContainmentRule
+ - QmxFindingGate\Tests\CaseDefinitionTest::itListsAndTranslatesTheAdditionalInputsThroughOneObject
  - QmxFindingGate\Tests\CaseDefinitionTest::itListsEveryInputFileWithTheOptionThatHandsItOver
  - QmxFindingGate\Tests\CaseDefinitionTest::itReadsACaseWithoutAnOutcomeAsAnAnalysis
  - QmxFindingGate\Tests\CaseDefinitionTest::itReadsAConfigWithACommaAsOnePath
  - QmxFindingGate\Tests\CaseDefinitionTest::itReadsANamedPresetAsNoPathAndAPresetFileAsOne
  - QmxFindingGate\Tests\CaseDefinitionTest::itReadsTheExpectedOutcomeAndExit
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesABaselineVariantThatDoesNotMirrorTheAnalysisPaths
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesACaseDirectoryThatIsALink
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAConfigThatLinksOutsideTheCase
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesALayerAssignmentSubjectThatIsNotAClassName
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAMalformedOutcome"a bare string"
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAMalformedOutcome"an analysis spelled out"
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAMalformedOutcome"an exit as a string"
@@ -81,8 +88,10 @@ Available tests:
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAMalformedOutcome"an unknown kind"
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAMalformedOutcome"no exit"
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAPathThatDoesNotExist
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesARenameMapThatLinksOutsideTheCase
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAWorkingDirectoryEvenInsideTheCase
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAnAnalysisPathThatLinksOutsideTheCase
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAnEscapingFileInsideABaselineVariant
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAnInputOptionThatLinksOutsideTheCase
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAnOutputOptionEvenInsideTheCase
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itDoesNotHoldAnIncompleteAnalysisToABaselineFileItCannotWrite
@@ -104,34 +113,57 @@ Available tests:
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"trailing-space-in-new"
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"two-rows-for-one-old"
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"wrong-header"
- - QmxFindingGate\Tests\DeclarationsTest::itClaimsIdenticalRecordRowsOneInstanceEach
- - QmxFindingGate\Tests\DeclarationsTest::itDerivesTheReferenceFieldsFromTheCandidates
- - QmxFindingGate\Tests\DeclarationsTest::itDerivesTheReferenceSurfacesFromTheCandidates
- - QmxFindingGate\Tests\DeclarationsTest::itJudgesAWithdrawnRecordByTheReferenceFields
  - QmxFindingGate\Tests\DeclarationsTest::itKeepsAReasonOnlyWhileItsRowIsUnchanged
- - QmxFindingGate\Tests\DeclarationsTest::itKeepsTheDerivedValueTableAsBytesAndAnIntentUncreditedIsStale
  - QmxFindingGate\Tests\DeclarationsTest::itReadsAMissingTableAsNoDeclaration
- - QmxFindingGate\Tests\DeclarationsTest::itRefusesADerivedValueNoIntentDeclares
- - QmxFindingGate\Tests\DeclarationsTest::itRefusesARecordRowThatCouldNotMatchExactlyOneRecord"a field the side does not compare"
- - QmxFindingGate\Tests\DeclarationsTest::itRefusesARecordRowThatCouldNotMatchExactlyOneRecord"a suppressed entry that is no entry"
- - QmxFindingGate\Tests\DeclarationsTest::itRefusesARecordRowThatCouldNotMatchExactlyOneRecord"an unexplained row"
- - QmxFindingGate\Tests\DeclarationsTest::itRefusesARecordRowThatCouldNotMatchExactlyOneRecord"an unknown change"
- - QmxFindingGate\Tests\DeclarationsTest::itRefusesARecordRowThatCouldNotMatchExactlyOneRecord"an unknown report"
- - QmxFindingGate\Tests\DeclarationsTest::itRefusesARecordRowThatCouldNotMatchExactlyOneRecord"not JSON"
- - QmxFindingGate\Tests\DeclarationsTest::itRefusesARecordRowThatCouldNotMatchExactlyOneRecord"not an object"
- - QmxFindingGate\Tests\DeclarationsTest::itRefusesARecordRowThatCouldNotMatchExactlyOneRecord"not canonical"
- - QmxFindingGate\Tests\DeclarationsTest::itRefusesARecordRowThatCouldNotMatchExactlyOneRecord"partial"
- - QmxFindingGate\Tests\DeclarationsTest::itRefusesAStructuralMapRowItCouldNotApply"a move onto itself"
- - QmxFindingGate\Tests\DeclarationsTest::itRefusesAStructuralMapRowItCouldNotApply"a path that is no key path"
- - QmxFindingGate\Tests\DeclarationsTest::itRefusesAStructuralMapRowItCouldNotApply"an unknown document"
- - QmxFindingGate\Tests\DeclarationsTest::itRefusesAStructuralMapRowItCouldNotApply"an unknown shape"
- - QmxFindingGate\Tests\DeclarationsTest::itRefusesASurfaceOfOneScope
- - QmxFindingGate\Tests\DeclarationsTest::itRefusesAValueTableForAFieldNoRowAdds
- - QmxFindingGate\Tests\DeclarationsTest::itRefusesAWithdrawnSurfaceWithoutItsMeasuredRefusal
- - QmxFindingGate\Tests\DeclarationsTest::itRefusesAnIntentAtALevelTheProductDoesNotHave
- - QmxFindingGate\Tests\DeclarationsTest::itRefusesAnOutcomeFileOutsideItsDirectory
- - QmxFindingGate\Tests\DeclarationsTest::itRefusesAnOutcomeWithoutItsMeasuredOutput
  - QmxFindingGate\Tests\DeclarationsTest::itWritesADerivedTableOnlyUnderADeclaredIntentAndInOneOrder
+ - QmxFindingGate\Tests\DeclaredFieldsTest::itDerivesTheReferenceFieldsFromTheCandidates
+ - QmxFindingGate\Tests\DeclaredFieldsTest::itKeepsChangesCreditsAndDerivedRowsWithinTheirReport
+ - QmxFindingGate\Tests\DeclaredFieldsTest::itPreservesDuplicateMeasurementsAndAnObservedEmptyPublication
+ - QmxFindingGate\Tests\DeclaredFieldsTest::itRefusesADeclaredReportWithNoRegisteredPopulation
+ - QmxFindingGate\Tests\DeclaredFieldsTest::itRefusesADuplicateSupplier
+ - QmxFindingGate\Tests\DeclaredFieldsTest::itRefusesAFieldDerivedUnderAnotherReportsIntent
+ - QmxFindingGate\Tests\DeclaredFieldsTest::itRefusesAPublicationThatDoesNotPreserveCompleteRecordInstances"empty field name"
+ - QmxFindingGate\Tests\DeclaredFieldsTest::itRefusesAPublicationThatDoesNotPreserveCompleteRecordInstances"empty record key"
+ - QmxFindingGate\Tests\DeclaredFieldsTest::itRefusesAPublicationThatDoesNotPreserveCompleteRecordInstances"fields list"
+ - QmxFindingGate\Tests\DeclaredFieldsTest::itRefusesAPublicationThatDoesNotPreserveCompleteRecordInstances"missing fields"
+ - QmxFindingGate\Tests\DeclaredFieldsTest::itRefusesAPublicationThatDoesNotPreserveCompleteRecordInstances"outer map loses instances"
+ - QmxFindingGate\Tests\DeclaredFieldsTest::itRefusesARequiredPublicationWithNoSupplier
+ - QmxFindingGate\Tests\DeclaredFieldsTest::itRefusesAValueTableForAFieldNoRowAdds
+ - QmxFindingGate\Tests\DeclaredFieldsTest::itRefusesAnAmbiguousPublicationAddress"empty case"
+ - QmxFindingGate\Tests\DeclaredFieldsTest::itRefusesAnAmbiguousPublicationAddress"unknown report"
+ - QmxFindingGate\Tests\DeclaredFieldsTest::itRefusesAnAmbiguousPublicationAddress"unknown side"
+ - QmxFindingGate\Tests\DeclaredFieldsTest::itRefusesAnAmbiguousPublicationAddress"wildcard case"
+ - QmxFindingGate\Tests\DeclaredFieldsTest::itRefusesAnUnregisteredSupplier
+ - QmxFindingGate\Tests\DeclaredOutcomesTest::itRefusesAnOutcomeFileOutsideItsDirectory
+ - QmxFindingGate\Tests\DeclaredOutcomesTest::itRefusesAnOutcomeWithoutItsMeasuredOutput
+ - QmxFindingGate\Tests\DeclaredRecordsTest::itClaimsIdenticalDerivedRecordsOneInstanceEach
+ - QmxFindingGate\Tests\DeclaredRecordsTest::itKeepsAnIntentWithoutAnyConsumedRecordStale
+ - QmxFindingGate\Tests\DeclaredRecordsTest::itLoadsReportSpecificRecordsWithoutTheJsonTuple
+ - QmxFindingGate\Tests\DeclaredRecordsTest::itRefusesADerivedNeighbourOutsideTheDeclaredSelector
+ - QmxFindingGate\Tests\DeclaredRecordsTest::itRefusesAMalformedMeasuredRecord"empty record"
+ - QmxFindingGate\Tests\DeclaredRecordsTest::itRefusesAMalformedMeasuredRecord"list record"
+ - QmxFindingGate\Tests\DeclaredRecordsTest::itRefusesAMalformedMeasuredRecord"noncanonical record"
+ - QmxFindingGate\Tests\DeclaredRecordsTest::itRefusesAMalformedMeasuredRecord"wildcard case"
+ - QmxFindingGate\Tests\DeclaredRecordsTest::itRefusesAMalformedSelector"empty object"
+ - QmxFindingGate\Tests\DeclaredRecordsTest::itRefusesAMalformedSelector"missing metrics group"
+ - QmxFindingGate\Tests\DeclaredRecordsTest::itRefusesAMalformedSelector"nested selector"
+ - QmxFindingGate\Tests\DeclaredRecordsTest::itRefusesAMalformedSelector"not JSON"
+ - QmxFindingGate\Tests\DeclaredRecordsTest::itRefusesAMalformedSelector"not canonical"
+ - QmxFindingGate\Tests\DeclaredRecordsTest::itRefusesAMalformedSelector"not object"
+ - QmxFindingGate\Tests\DeclaredRecordsTest::itRefusesAMalformedSelector"unknown change"
+ - QmxFindingGate\Tests\DeclaredRecordsTest::itRefusesAMalformedSelector"unknown report"
+ - QmxFindingGate\Tests\DeclaredRecordsTest::itRefusesAnIntentWithoutAnExplainedReason
+ - QmxFindingGate\Tests\DeclaredRecordsTest::itRefusesOverlappingSelectorsAcrossWildcardCases
+ - QmxFindingGate\Tests\DeclaredStructuralMapsTest::itRefusesAStructuralMapRowItCouldNotApply"a move onto itself"
+ - QmxFindingGate\Tests\DeclaredStructuralMapsTest::itRefusesAStructuralMapRowItCouldNotApply"a path that is no key path"
+ - QmxFindingGate\Tests\DeclaredStructuralMapsTest::itRefusesAStructuralMapRowItCouldNotApply"an unknown document"
+ - QmxFindingGate\Tests\DeclaredStructuralMapsTest::itRefusesAStructuralMapRowItCouldNotApply"an unknown shape"
+ - QmxFindingGate\Tests\DeclaredSurfacesTest::itDerivesTheReferenceSurfacesFromTheCandidates
+ - QmxFindingGate\Tests\DeclaredSurfacesTest::itRefusesASurfaceOfOneScope
+ - QmxFindingGate\Tests\DeclaredSurfacesTest::itRefusesAWithdrawnSurfaceWithoutItsMeasuredRefusal
+ - QmxFindingGate\Tests\DeclaredValuesTest::itKeepsTheDerivedValueTableAsBytesAndAnIntentUncreditedIsStale
+ - QmxFindingGate\Tests\DeclaredValuesTest::itRefusesADerivedValueNoIntentDeclares
+ - QmxFindingGate\Tests\DeclaredValuesTest::itRefusesAnIntentAtALevelTheProductDoesNotHave
  - QmxFindingGate\Tests\GateModesTest::itExitsOneWhenTheSelfTestFails
  - QmxFindingGate\Tests\GateModesTest::itExitsThreeWhenTheGateCannotRun
  - QmxFindingGate\Tests\GateModesTest::itExitsZeroWhenTheSelfTestIsGreen
@@ -148,11 +180,21 @@ Available tests:
  - QmxFindingGate\Tests\JsonTextTest::itReplacesOnlyTheValueSpanItAddresses"nothing at a shallower path"
  - QmxFindingGate\Tests\JsonTextTest::itReplacesOnlyTheValueSpanItAddresses"numbers of every spelling"
  - QmxFindingGate\Tests\JsonTextTest::itReplacesOnlyTheValueSpanItAddresses"strings that look like structure"
+ - QmxFindingGate\Tests\ProcessTest::itPassesAdditionsToTheChildWhilePreservingFixedAndParentEnvironment
+ - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"COLUMNS"
+ - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"HOME"
+ - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"LC_ALL"
+ - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"NO_COLOR"
+ - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"PATH"
+ - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"TMPDIR"
+ - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"TZ"
  - QmxFindingGate\Tests\RaiseSitesTest::itAcceptsADeclaredLineOnceAndRefusesOneThatMatchesNoneOrMore
  - QmxFindingGate\Tests\RaiseSitesTest::itFollowsEveryDirectCallWhateverItsCaseOrQualification
+ - QmxFindingGate\Tests\RaiseSitesTest::itHoldsTheRealGateAndItsExactModeDataDeclarationToTheScanner
  - QmxFindingGate\Tests\RaiseSitesTest::itKeepsARaiseWithItsMethodPastAnAnonymousClass
  - QmxFindingGate\Tests\RaiseSitesTest::itNamesEverySiteOncePerCallerFromAnotherClass
  - QmxFindingGate\Tests\RaiseSitesTest::itReadsAStringsValueAsPhpDoes
+ - QmxFindingGate\Tests\RaiseSitesTest::itRefusesADynamicRegisteredFactoryAndDoesNotAttributeAnExternalFactory
  - QmxFindingGate\Tests\RaiseSitesTest::itRefusesAFileThatDoesNotParse
  - QmxFindingGate\Tests\RaiseSitesTest::itRefusesEveryFormItCannotRead
  - QmxFindingGate\Tests\RaiseSitesTest::itRefusesEveryOccurrenceOfALeadingNameThatIsNotADeclarationOrADirectCall
@@ -177,8 +219,8 @@ Available tests:
  - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a class raised nowhere"
  - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending class that is raised"
  - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending class"
- - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending row naming no S01b package"
  - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending row naming no class"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending row naming no declaration form"
  - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending row without a reason"
  - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a second site of an observed class"
  - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"every site observed"

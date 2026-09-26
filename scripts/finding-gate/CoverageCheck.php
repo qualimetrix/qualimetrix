@@ -57,7 +57,7 @@ final class CoverageCheck
 
         $this->checkSingleProducer($producers);
 
-        ChannelCoverage::check($this->report, $declared, $observed, $this->options->incompleteCorpus);
+        ChannelCoverage::inspectCoverage($this->report, $declared, $observed, $this->options->incompleteCorpus);
     }
 
     /**

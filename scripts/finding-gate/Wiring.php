@@ -29,12 +29,12 @@ final class Wiring
 {
     /** Form file => the package that owns it. */
     public const array FILES = [
-        'records' => 'S01b/P2',
-        'tuple' => 'S01b/P3',
-        'capture' => 'S01b/P4',
-        'outcomes' => 'S01b/P5',
-        'maps' => 'S01b/P6',
-        'corpus' => 'S01b/P7',
+        'records' => 'records',
+        'tuple' => 'tuple',
+        'capture' => 'capture',
+        'outcomes' => 'outcomes',
+        'maps' => 'maps',
+        'corpus' => 'corpus',
     ];
 
     /**

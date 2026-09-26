@@ -172,7 +172,7 @@ final class SelfTestCoverage extends SelfTestGroup
         $observed = ['a.rule#a.code@class'];
 
         $shortfall = new GateReport();
-        ChannelCoverage::check($shortfall, $declared, $observed, incompleteCorpus: false);
+        ChannelCoverage::inspectCoverage($shortfall, $declared, $observed, incompleteCorpus: false);
         $this->same(
             [FailureClass::COVERAGE_SHORTFALL],
             $shortfall->failureClasses(),
@@ -181,7 +181,7 @@ final class SelfTestCoverage extends SelfTestGroup
 
         $names = static fn(array $pairs): array => array_values(array_unique(array_map(SubjectLevel::channelOf(...), $pairs)));
         $byName = new GateReport();
-        ChannelCoverage::check($byName, $names($declared), $names($observed), incompleteCorpus: false);
+        ChannelCoverage::inspectCoverage($byName, $names($declared), $names($observed), incompleteCorpus: false);
         $this->same(
             GateReport::VERDICT_GREEN,
             $byName->verdict(),
@@ -189,7 +189,7 @@ final class SelfTestCoverage extends SelfTestGroup
         );
 
         $downgraded = new GateReport();
-        ChannelCoverage::check($downgraded, $declared, $observed, incompleteCorpus: true);
+        ChannelCoverage::inspectCoverage($downgraded, $declared, $observed, incompleteCorpus: true);
         $this->same(
             GateReport::VERDICT_PARTIAL,
             $downgraded->verdict(),
@@ -197,7 +197,7 @@ final class SelfTestCoverage extends SelfTestGroup
         );
 
         $surplus = new GateReport();
-        ChannelCoverage::check($surplus, $observed, $declared, incompleteCorpus: false);
+        ChannelCoverage::inspectCoverage($surplus, $observed, $declared, incompleteCorpus: false);
         $this->same(
             [FailureClass::COVERAGE_SURPLUS],
             $surplus->failureClasses(),

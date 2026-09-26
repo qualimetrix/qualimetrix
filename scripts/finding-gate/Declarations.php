@@ -28,14 +28,10 @@ final class Declarations
         $root = $candidateRoot . '/finding-gate';
         $fields = DeclaredFields::load($root);
 
-        // The tuple is read only when a record needs it, so a tree without
-        // declared records loads exactly what it loaded before this form existed.
-        $candidateFields = is_file($root . '/' . DeclaredRecords::INDEX) ? EquivalenceTuple::load($candidateRoot)->fields : [];
-
         return new self(
             DeclaredDelta::load($root),
             DeclaredFieldMoves::load($root),
-            DeclaredRecords::load($root, $candidateFields, $fields->referenceFields($candidateFields)),
+            DeclaredRecords::load($root),
             DeclaredValues::load($root),
             $fields,
             DeclaredOutcomes::load($root),

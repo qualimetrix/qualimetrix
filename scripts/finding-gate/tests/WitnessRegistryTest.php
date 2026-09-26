@@ -37,33 +37,33 @@ final class WitnessRegistryTest extends TestCase
             ['witness registry: a raised at A::x#2 has no witness'],
         ];
         yield 'a class raised nowhere' => [['a', 'b'], ['A::x' => 'a'], ['A::x'], [], ['witness registry: b is raised nowhere']];
-        yield 'a pending class' => [['a', 'b'], ['A::x' => 'a'], ['A::x'], ['b' => ['pending: S01b/P5', 'because']], []];
+        yield 'a pending class' => [['a', 'b'], ['A::x' => 'a'], ['A::x'], ['b' => ['pending: outcomes', 'because']], []];
         yield 'a pending class that is raised' => [
             ['a'],
             ['A::x' => 'a'],
             ['A::x'],
-            ['a' => ['pending: S01b/P5', 'because']],
+            ['a' => ['pending: outcomes', 'because']],
             ['witness registry: a is raised at A::x and still stands'],
         ];
-        yield 'a pending row naming no S01b package' => [
+        yield 'a pending row naming no declaration form' => [
             ['a'],
             [],
             [],
-            ['a' => ['pending: S02', 'because']],
-            ['witness registry: a is pending as "pending: S02"'],
+            ['a' => ['pending: unknown', 'because']],
+            ['witness registry: a is pending as "pending: unknown"'],
         ];
         yield 'a pending row without a reason' => [
             ['a'],
             [],
             [],
-            ['a' => ['pending: S01b/P5', ' ']],
-            ['witness registry: a is pending as "pending: S01b/P5"'],
+            ['a' => ['pending: outcomes', ' ']],
+            ['witness registry: a is pending as "pending: outcomes"'],
         ];
         yield 'a pending row naming no class' => [
             ['a'],
             ['A::x' => 'a'],
             ['A::x'],
-            ['z' => ['pending: S01b/P5', 'because']],
+            ['z' => ['pending: outcomes', 'because']],
             ['witness registry: the pending row names "z"'],
         ];
     }
