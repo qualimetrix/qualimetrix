@@ -365,6 +365,33 @@ final class CheckWitnesses
     {
         return [
             self::witness(
+                'case-capture-refusal',
+                self::WHOLE_RUN,
+                static function (array $tree): array {
+                    $tree['candidateAnswers']['case:alpha|format:json'] = ['stdout' => '{"violationsMeta":{"total":-1,"truncated":false}}'];
+                    return $tree;
+                },
+                [[FailureClass::RUN_FAILED, 'candidate-1', 'Gate::runTree <- GateModes::compare']],
+            ),
+            self::witness(
+                'declaration-capture-refusal',
+                self::DECLARED_DELTA_REFUSED,
+                static function (array $tree): array {
+                    $tree['candidateAnswers']['case:alpha|format:json'] = ['stdout' => '{"violationsMeta":{"total":-1,"truncated":false}}'];
+                    return $tree;
+                },
+                [[FailureClass::RUN_FAILED, 'candidate-1', 'Gate::runTree <- GateModes::deriveDeclarations']],
+            ),
+            self::witness(
+                'normalization-capture-refusal',
+                self::NORMALIZATION_REFUSED,
+                static function (array $tree): array {
+                    $tree['candidateAnswers']['case:alpha|format:json'] = ['stdout' => '{"violationsMeta":{"total":-1,"truncated":false}}'];
+                    return $tree;
+                },
+                [[FailureClass::RUN_FAILED, 'derive-1', 'Gate::runTree <- GateModes::deriveNormalization']],
+            ),
+            self::witness(
                 'existing-reference-outcome-refusal',
                 self::WHOLE_RUN,
                 static function (array $tree): array {

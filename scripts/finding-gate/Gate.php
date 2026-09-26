@@ -239,9 +239,14 @@ final class Gate
         $this->tupleCheck->checkTuple();
         $this->normalizationCheck->checkNormalizationScope();
 
-        $firstCapture = $this->runTree($this->options->candidateRoot, 'candidate-1', reverseInput: false);
-        $first = $firstCapture->artifacts;
-        $second = $this->runTree($this->options->candidateRoot, 'candidate-2', reverseInput: false)->artifacts;
+        try {
+            $firstCapture = $this->runTree($this->options->candidateRoot, 'candidate-1', reverseInput: false);
+            $first = $firstCapture->artifacts;
+            $second = $this->runTree($this->options->candidateRoot, 'candidate-2', reverseInput: false)->artifacts;
+        } catch (GateError) {
+            $this->cleanUp();
+            return;
+        }
         $this->normalizationCheck->checkDeterminism($first, $second);
 
         $reference = ReferenceTree::create($this->options->candidateRoot, (string) $this->options->reference, $this->maps);
@@ -255,7 +260,11 @@ final class Gate
                 return;
             }
 
-            $referenceCapture = $this->runTree($reference->root, 'reference', reverseInput: true);
+            try {
+                $referenceCapture = $this->runTree($reference->root, 'reference', reverseInput: true);
+            } catch (GateError) {
+                return;
+            }
             $referenceArtifacts = $referenceCapture->artifacts;
             $this->rankings->supply('candidate', $firstCapture->rankings);
             $this->rankings->supply('reference', $referenceCapture->rankings);
@@ -303,7 +312,11 @@ final class Gate
             $passes = [];
 
             for ($pass = 1; $pass <= NormalizationDeriver::passes(); ++$pass) {
-                $artifacts = $this->runTree($this->options->candidateRoot, 'derive-' . $pass, reverseInput: false)->artifacts;
+                try {
+                    $artifacts = $this->runTree($this->options->candidateRoot, 'derive-' . $pass, reverseInput: false)->artifacts;
+                } catch (GateError) {
+                    return null;
+                }
                 $this->caseOutcomeCheck->checkRunsProduced('derive-' . $pass, $artifacts);
                 $passes[] = $artifacts;
             }
@@ -380,27 +393,32 @@ final class Gate
 
     private function runTree(string $treeRoot, string $label, bool $reverseInput): CaptureResult
     {
-        $run = new TreeRun(
-            $treeRoot,
-            $this->temporaryDirectory,
-            $label,
-            $this->maps,
-            $reverseInput,
-            CapturePlan::forCorpus($this->corpus, $this->declarations->surfaces),
-            $this->declarations->structuralMaps,
-        );
-        $capture = new CaptureResult($run->rules(), []);
+        try {
+            $run = new TreeRun(
+                $treeRoot,
+                $this->temporaryDirectory,
+                $label,
+                $this->maps,
+                $reverseInput,
+                CapturePlan::forCorpus($this->corpus, $this->declarations->surfaces),
+                $this->declarations->structuralMaps,
+            );
+            $capture = new CaptureResult($run->rules(), []);
 
-        return $capture->merge((new CaseScheduler(
-            $this->options->candidateRoot,
-            $treeRoot,
-            $this->temporaryDirectory,
-            $label,
-            $reverseInput,
-            $this->options->jobs,
-            $this->maps,
-            $this->declarations->structuralMaps,
-        ))->captureCases($this->corpus->cases));
+            return $capture->merge((new CaseScheduler(
+                $this->options->candidateRoot,
+                $treeRoot,
+                $this->temporaryDirectory,
+                $label,
+                $reverseInput,
+                $this->options->jobs,
+                $this->maps,
+                $this->declarations->structuralMaps,
+            ))->captureCases($this->corpus->cases));
+        } catch (GateError $error) {
+            $this->report->fail(FailureClass::RUN_FAILED, $label, $error->getMessage());
+            throw $error;
+        }
     }
 
     /**
