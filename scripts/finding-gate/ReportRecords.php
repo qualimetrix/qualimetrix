@@ -156,9 +156,29 @@ final class ReportRecords
             if (!\array_key_exists($key, $record)) {
                 throw new GateError('A record identity requires published ' . $key);
             }
-            $identity[$key] = $record[$key];
+            $identity[$key] = $key === 'edge' ? self::edge($record[$key]) : $record[$key];
         }
         return DeclaredRecords::canonical($identity);
+    }
+
+    /** @return array{target:string,type?:string}|null */
+    private static function edge(mixed $edge): ?array
+    {
+        if ($edge === null) {
+            return null;
+        }
+        if (!\is_array($edge) || array_is_list($edge) || !\is_string($edge['target'] ?? null) || $edge['target'] === ''
+            || array_diff(array_keys($edge), ['target', 'type']) !== []) {
+            throw new GateError('A record edge requires an exact target and optional dependency type.');
+        }
+        $identity = ['target' => $edge['target']];
+        if (\array_key_exists('type', $edge)) {
+            if (!\is_string($edge['type']) || !\in_array($edge['type'], ['extends', 'implements', 'trait_use', 'new', 'static_call', 'static_property_fetch', 'class_const_fetch', 'type_hint', 'catch', 'instanceof', 'attribute', 'property_type', 'intersection_type', 'union_type'], true)) {
+                throw new GateError('A record edge requires a known dependency type.');
+            }
+            $identity['type'] = $edge['type'];
+        }
+        return $identity;
     }
 
     /**
@@ -175,7 +195,7 @@ final class ReportRecords
             'format:checkstyle' => ['file' => $record['file'] ?? '[project]', 'line' => $record['line'] ?? 1, 'severity' => $severity, 'code' => 'qmx.' . $record['code'], 'message' => $message],
             'format:gitlab' => ['description' => $message, 'check_name' => $record['code'], 'severity' => match ($severity) {
                 'error' => 'critical', 'warning' => 'major', default => 'info',
-            }, 'location' => ['path' => $record['file'] ?? '', 'lines' => ['begin' => $record['line'] ?? 1]]],
+            }, 'location' => ['path' => $record['file'] ?? '_project', 'lines' => ['begin' => $record['line'] ?? 1]]],
             'format:sarif' => ['ruleId' => $record['code'], 'level' => match ($severity) {
                 'warning' => 'warning', 'error' => 'error', default => 'note',
             }, 'message' => ['text' => $message], 'file' => $record['file'], 'line' => $record['file'] === null ? null : ($record['line'] ?? 1)],
@@ -190,10 +210,30 @@ final class ReportRecords
         if (!\is_string($text)) {
             throw new GateError('A finding publishes no message string.');
         }
-        if ($record['acceptedLevel'] !== null && $record['metricValue'] !== null && $record['metricValue'] > $record['acceptedLevel']) {
-            $text .= \sprintf(' (accepted at %s, now %s)', $record['acceptedLevel'], $record['metricValue']);
+        $accepted = $record['acceptedLevel'];
+        if ($accepted === null) {
+            return $text;
         }
-        return $text;
+        if (!\is_array($accepted) || array_is_list($accepted) || array_diff(array_keys($accepted), ['shape', 'describe', 'count']) !== []
+            || \count($accepted) !== 3 || !\in_array($accepted['shape'] ?? null, ['magnitude', 'occurrence'], true)
+            || !\is_string($accepted['describe'] ?? null) || $accepted['describe'] === ''
+            || !\is_int($accepted['count'] ?? null) || $accepted['count'] < 1) {
+            throw new GateError('An accepted level requires the exact shape, description, and positive count object.');
+        }
+        $suffix = 'accepted at ' . $accepted['describe'];
+        if ($accepted['shape'] === 'magnitude') {
+            $current = $record['metricValue'];
+            if ($current !== null && !\is_int($current) && !\is_float($current)) {
+                throw new GateError('An accepted magnitude requires a numeric or absent current value.');
+            }
+            if (\is_int($current)) {
+                $suffix .= ', now ' . $current;
+            } elseif (\is_float($current) && is_finite($current)) {
+                $formatted = rtrim(rtrim(\sprintf('%.6F', $current), '0'), '.');
+                $suffix .= ', now ' . ($formatted === '' || $formatted === '-' ? '0' : $formatted);
+            }
+        }
+        return $text . ' (' . $suffix . ')';
     }
 
     /**
@@ -374,7 +414,7 @@ final class ReportRecords
     private static function html(array $value, array $path, array &$records): void
     {
         foreach ($value as $key => $child) {
-            if ($key === 'findings') {
+            if ($key === 'violations') {
                 if (!\is_array($child) || !array_is_list($child)) {
                     throw new GateError('An HTML node requires its finding list.');
                 }

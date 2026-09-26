@@ -61,4 +61,53 @@ final class SyntheticTreeTest extends TestCase
         }
     }
 
+    #[Test]
+    public function itKeepsBreachAnnotationsAndRawStructuredMessagesInTheirPublishedViews(): void
+    {
+        $tree = SyntheticTree::clean();
+        foreach ([
+            [['shape' => 'magnitude', 'describe' => '1', 'count' => 1], \PHP_INT_MAX, 'accepted at 1, now ' . \PHP_INT_MAX],
+            [['shape' => 'occurrence', 'describe' => '1 occurrence', 'count' => 1], 3, 'accepted at 1 occurrence'],
+        ] as [$accepted, $value, $fragment]) {
+            $finding = SyntheticTree::finding($tree['tuple'], 'replay.alpha', 'declaration:callable:Replay\\Alpha::run@src/Alpha.php');
+            $finding = array_replace($finding, ['message' => 'Message', 'recommendation' => 'Advice', 'acceptedLevel' => $accepted, 'metricValue' => $value, 'severity' => 'info']);
+            $answers = SyntheticTree::caseAnswers('alpha', [$finding], false, []);
+            $sarif = json_decode(self::publication($answers, 'format:sarif'), true, flags: \JSON_THROW_ON_ERROR);
+            $gitlab = json_decode(self::publication($answers, 'format:gitlab'), true, flags: \JSON_THROW_ON_ERROR);
+            self::assertSame('Message (' . $fragment . ')', $sarif['runs'][0]['results'][0]['message']['text']);
+            self::assertSame('note', $sarif['runs'][0]['results'][0]['level']);
+            self::assertSame('Message (' . $fragment . ')', $gitlab[0]['description']);
+            self::assertSame('info', $gitlab[0]['severity']);
+            self::assertStringContainsString('message="Message (' . $fragment . ')"', self::publication($answers, 'format:checkstyle'));
+            self::assertStringContainsString('::Message (' . $fragment . ')', self::publication($answers, 'format:github'));
+            self::assertStringContainsString('    Advice (' . $fragment . ')  [replay.alpha]', self::publication($answers, 'format:text-verbose'));
+            $html = json_decode(\QmxFindingGate\ReportPayload::of(self::publication($answers, 'format:html'), 'case:alpha|format:html', 'candidate'), true, flags: \JSON_THROW_ON_ERROR);
+            self::assertSame('Message', $html['violations'][0]['message']);
+        }
+    }
+
+    #[Test]
+    public function itOmitsDetailedCaptionsForNamespaceAndFileSymbolsWithExactCallableSubjects(): void
+    {
+        $tree = SyntheticTree::clean();
+        foreach (['ns:Replay\\Package', 'declaration:callable:Replay\\Alpha::run@src/Alpha.php'] as $subject) {
+            $finding = SyntheticTree::finding($tree['tuple'], 'replay.alpha', $subject);
+            $finding['symbol'] = str_starts_with($subject, 'ns:') ? 'Replay\\Package' : $finding['file'];
+            $answers = SyntheticTree::caseAnswers('alpha', [$finding], false, []);
+            $text = self::publication($answers, 'format:text-verbose');
+            self::assertStringContainsString('  ERROR ' . $finding['file'] . ':' . $finding['line'] . "\n    ", $text);
+            self::assertStringNotContainsString('  ' . $finding['symbol'] . "\n", $text);
+        }
+    }
+
+    /** @param array<string,array{stdout?:string}> $answers */
+    private static function publication(array $answers, string $surface): string
+    {
+        self::assertArrayHasKey('case:alpha|' . $surface, $answers);
+        $answer = $answers['case:alpha|' . $surface];
+        self::assertArrayHasKey('stdout', $answer);
+
+        return $answer['stdout'];
+    }
+
 }

@@ -79,15 +79,23 @@ final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
                 if ($analyzing && !($change === DeclaredSurfaces::WITHDRAWN && $side === 'candidate') && $key !== 'tree|graph:export' && $descriptor['surface'] !== 'check:output' && ($artifacts[$key] ?? '') === '') {
                     $this->publicationFailure($side . ' / ' . $key, 'The invocation has no populated publication.');
                 }
-                if ($key === 'tree|graph:export' && ($artifacts['tree|exit:graph:export'] ?? '') !== '1') {
+                $exitKey = Surfaces::key($descriptor['scope'], 'exit:' . ($descriptor['surface'] === 'baseline-file' ? 'baseline:generate' : $descriptor['surface']));
+                $rawExit = $artifacts[$exitKey] ?? '';
+                $populationExit = $side === 'candidate'
+                    ? (ValueCheck::create($this->run)->referenceExitFor($descriptor['commandClass'], $key, $rawExit) ?? $rawExit)
+                    : $rawExit;
+                if ($key === 'tree|graph:export' && $populationExit !== '1') {
                     $this->publicationFailure($side . ' / ' . $key, 'The neutral empty-directory graph must end in its explicit exit-1 outcome.');
                 }
-                $exitKey = Surfaces::key($descriptor['scope'], 'exit:' . ($descriptor['surface'] === 'baseline-file' ? 'baseline:generate' : $descriptor['surface']));
-                $allowed = $key === 'tree|graph:export' ? ['1'] : ($descriptor['commandClass'] === 'check' ? ['0', '1', '2'] : ['0']);
-                if ($analyzing && !($change === DeclaredSurfaces::WITHDRAWN && $side === 'candidate') && !\in_array($artifacts[$exitKey] ?? '', $allowed, true)) {
+                $allowed = $key === 'tree|graph:export' ? ['1'] : match ($descriptor['commandClass']) {
+                    'check' => ['0', '1', '2'],
+                    'directives' => ['0', '2'],
+                    default => ['0'],
+                };
+                if ($analyzing && !($change === DeclaredSurfaces::WITHDRAWN && $side === 'candidate') && !\in_array($populationExit, $allowed, true)) {
                     $this->publicationFailure($side . ' / ' . $key, 'The process outcome cannot establish successful population for this command.');
                 }
-                if (($artifacts[Surfaces::key($descriptor['scope'], 'exit:' . ($descriptor['surface'] === 'baseline-file' ? 'baseline:generate' : $descriptor['surface']))] ?? '') === '70') {
+                if ($rawExit === '70') {
                     $this->publicationFailure($side . ' / ' . $key, 'An unknown replay invocation cannot establish successful population.');
                 }
             }

@@ -299,35 +299,41 @@ final class SyntheticTree
             $file = $finding['file'];
             $line = $finding['line'];
             $message = $finding['message'];
+            $suffix = '';
+            if ($finding['acceptedLevel'] !== null) {
+                $suffix = ' (accepted at ' . $finding['acceptedLevel']['describe'];
+                if ($finding['acceptedLevel']['shape'] === 'magnitude' && (\is_int($finding['metricValue']) || (\is_float($finding['metricValue']) && is_finite($finding['metricValue'])))) {
+                    $suffix .= ', now ' . (\is_int($finding['metricValue']) ? (string) $finding['metricValue'] : rtrim(rtrim(\sprintf('%.6F', $finding['metricValue']), '0'), '.'));
+                }
+                $suffix .= ')';
+            }
+            $annotatedMessage = $message . $suffix;
             $code = $finding['code'];
-            $sarif[] = ['ruleId' => $code, 'ruleIndex' => $ruleIndexes[$code], 'level' => $finding['severity'], 'message' => ['text' => $message], 'partialFingerprints' => ['primaryLocationLineHash' => $expected[$index]], 'locations' => [['physicalLocation' => ['artifactLocation' => ['uri' => $file], 'region' => ['startLine' => $line]]]]];
-            $gitlab[] = ['description' => $message, 'check_name' => $code, 'severity' => $finding['severity'] === 'error' ? 'critical' : 'major', 'fingerprint' => md5($expected[$index]), 'location' => ['path' => $file, 'lines' => ['begin' => $line]]];
+            $sarif[] = ['ruleId' => $code, 'ruleIndex' => $ruleIndexes[$code], 'level' => $finding['severity'] === 'info' ? 'note' : $finding['severity'], 'message' => ['text' => $annotatedMessage], 'partialFingerprints' => ['primaryLocationLineHash' => $expected[$index]], 'locations' => [['physicalLocation' => ['artifactLocation' => ['uri' => $file], 'region' => ['startLine' => $line]]]]];
+            $gitlab[] = ['description' => $annotatedMessage, 'check_name' => $code, 'severity' => match ($finding['severity']) {
+                'error' => 'critical', 'warning' => 'major', default => 'info',
+            }, 'fingerprint' => md5($expected[$index]), 'location' => ['path' => $file ?? '_project', 'lines' => ['begin' => $line]]];
             $html[] = ['subject' => $finding['subject'], 'ruleName' => $finding['rule'], 'violationCode' => $code, 'message' => $message, 'recommendation' => $finding['recommendation'], 'severity' => $finding['severity'], 'metricValue' => $finding['metricValue'], 'symbolPath' => $finding['symbol'], 'occurrence' => $finding['occurrence'], 'file' => $file, 'line' => $line];
-            $checkstyle .= '<file name="' . htmlspecialchars((string) $file, \ENT_XML1) . '"><error line="' . $line . '" severity="' . $finding['severity'] . '" source="qmx.' . $code . '" message="' . htmlspecialchars((string) $message, \ENT_XML1) . '"/></file>';
+            $checkstyle .= '<file name="' . htmlspecialchars((string) $file, \ENT_XML1) . '"><error line="' . $line . '" severity="' . $finding['severity'] . '" source="qmx.' . $code . '" message="' . htmlspecialchars($annotatedMessage, \ENT_XML1) . '"/></file>';
             $brief = (string) $finding['symbol'];
             $separator = strrpos($brief, '\\');
             if ($separator !== false) {
                 $brief = substr($brief, $separator + 1);
             }
-            if (\in_array(SubjectLevel::of((string) $finding['subject']), ['file', 'project'], true)) {
+            if (\in_array(SubjectLevel::of((string) $finding['subject']), ['file', 'project', 'namespace'], true) || $finding['symbol'] === $file) {
                 $brief = '';
             }
-            $advice = $finding['recommendation'] ?? $message;
-            if ($finding['acceptedLevel'] !== null && $finding['metricValue'] !== null && $finding['metricValue'] > $finding['acceptedLevel']) {
-                $suffix = ' (accepted at ' . $finding['acceptedLevel'] . ', now ' . $finding['metricValue'] . ')';
-                $message .= $suffix;
-                $advice .= $suffix;
-            }
+            $advice = ($finding['recommendation'] ?? $message) . $suffix;
             $severity = match ($finding['severity']) {
                 'error' => 'ERROR', 'warning' => 'WARN', default => 'INFO',
             };
-            $prose .= '  ' . $severity . ' ' . $file . ':' . $line . '  ' . $brief . "\n    " . $advice . '  [' . $code . "]\n";
+            $prose .= '  ' . $severity . ' ' . $file . ':' . $line . ($brief === '' ? '' : '  ' . $brief) . "\n    " . $advice . '  [' . $code . "]\n";
             $escape = static fn(string $value): string => strtr($value, ['%' => '%25', "\r" => '%0D', "\n" => '%0A', ':' => '%3A', ',' => '%2C']);
-            $github .= '::' . ($finding['severity'] === 'info' ? 'notice' : $finding['severity']) . ' file=' . $escape((string) $file) . ',line=' . $line . ',title=' . $escape((string) $code) . '::' . strtr((string) $message, ['%' => '%25', "\r" => '%0D', "\n" => '%0A']) . "\n";
+            $github .= '::' . ($finding['severity'] === 'info' ? 'notice' : $finding['severity']) . ' file=' . $escape((string) $file) . ',line=' . $line . ',title=' . $escape((string) $code) . '::' . strtr($annotatedMessage, ['%' => '%25', "\r" => '%0D', "\n" => '%0A']) . "\n";
         }
         $answers[Surfaces::key($scope, 'format:sarif')] = ['stdout' => self::json(['runs' => [['tool' => ['driver' => ['rules' => $rules]], 'results' => $sarif]]])];
         $answers[Surfaces::key($scope, 'format:gitlab')] = ['stdout' => self::json($gitlab)];
-        $answers[Surfaces::key($scope, 'format:html')] = ['stdout' => '<html><script type="application/json" id="report-data">' . self::json(['findings' => $html]) . '</script></html>' . "\n"];
+        $answers[Surfaces::key($scope, 'format:html')] = ['stdout' => '<html><script type="application/json" id="report-data">' . self::json(['violations' => $html]) . '</script></html>' . "\n"];
         $answers[Surfaces::key($scope, 'format:checkstyle')] = ['stdout' => $checkstyle . '</checkstyle>'];
         $answers[Surfaces::key($scope, 'format:text')] = ['stdout' => $prose === '' ? "No findings\n" : $prose];
         $answers[Surfaces::key($scope, 'format:github')] = ['stdout' => $github === '' ? "No findings\n" : $github];

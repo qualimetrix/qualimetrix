@@ -109,6 +109,45 @@ final class DeclaredValuesTest extends TestCase
     }
 
     #[Test]
+    public function itSharesOnlyAnExactMeasuredAndDeclaredExitWithPopulationChecks(): void
+    {
+        $this->write(DeclaredValues::INDEX, DeclaredValues::COLUMNS, [['exit', 'graph:export', '*', 'One measured invocation changes.']]);
+        $this->write(DeclaredValues::DERIVED, DeclaredValues::DERIVED_COLUMNS, [['exit', 'graph:export', 'tree|graph:export', '1', '0']]);
+        $values = ValueCheck::create($this->context());
+        self::assertNull($values->referenceExitFor('graph:export', 'tree|graph:export', '0'));
+        self::assertTrue($values->measure('exit', 'graph:export', 'tree|graph:export', '*', 1, 0));
+        self::assertSame('1', $values->referenceExitFor('graph:export', 'tree|graph:export', '0'));
+        self::assertNull($values->referenceExitFor('graph:export', 'case:alpha|graph:export', '0'));
+        self::assertNull($values->referenceExitFor('check', 'tree|graph:export', '0'));
+        self::assertNull($values->referenceExitFor('graph:export', 'tree|graph:export', '5'));
+    }
+
+    #[Test]
+    public function itKeepsPopulationUnlicensedWhenTheDerivedExitMultisetDisagrees(): void
+    {
+        $this->write(DeclaredValues::INDEX, DeclaredValues::COLUMNS, [['exit', 'graph:export', '*', 'One measured invocation changes.']]);
+        $this->write(DeclaredValues::DERIVED, DeclaredValues::DERIVED_COLUMNS, [['exit', 'graph:export', 'tree|graph:export', '1', '5']]);
+        $values = ValueCheck::create($this->context());
+        self::assertTrue($values->measure('exit', 'graph:export', 'tree|graph:export', '*', 1, 0));
+        self::assertNull($values->referenceExitFor('graph:export', 'tree|graph:export', '0'));
+        $values->startDeriving();
+        self::assertSame('1', $values->referenceExitFor('graph:export', 'tree|graph:export', '0'));
+        self::assertNull($values->referenceExitFor('graph:export', 'case:alpha|graph:export', '0'));
+    }
+
+    #[Test]
+    public function itRefusesNonintegerMeasuredReferenceExitsAsPopulationEvidence(): void
+    {
+        $this->write(DeclaredValues::INDEX, DeclaredValues::COLUMNS, [['exit', 'graph:export', '*', 'One measured invocation changes.']]);
+        foreach (['1', 1.0, true, null, []] as $reference) {
+            $values = ValueCheck::create($this->context());
+            $values->startDeriving();
+            self::assertTrue($values->measure('exit', 'graph:export', 'tree|graph:export', '*', $reference, 0));
+            self::assertNull($values->referenceExitFor('graph:export', 'tree|graph:export', '0'));
+        }
+    }
+
+    #[Test]
     public function itDoesNotLicenseAFieldMoveAtAnotherSubjectLevel(): void
     {
         $this->write(DeclaredValues::INDEX, DeclaredValues::COLUMNS, [['field', 'message', 'class', 'Only classes move.']]);

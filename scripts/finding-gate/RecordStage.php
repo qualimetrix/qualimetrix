@@ -225,8 +225,7 @@ final class RecordStage implements SurfaceStage
     {
         $removed = $this->records->licensedResiduals($case, 'format:json', $side);
         $published = $this->records->published($case, 'format:json', $side);
-        $lines = [];
-        foreach (ProseRecords::extract($surface, $text) as $entry) {
+        foreach (array_reverse(ProseRecords::extract($surface, $text)) as $entry) {
             foreach ($published as $index => $record) {
                 if (!ProseRecords::matches($surface, $entry['fields'], $record)) {
                     continue;
@@ -234,7 +233,7 @@ final class RecordStage implements SurfaceStage
                 unset($published[$index]);
                 $at = array_search($record, $removed, true);
                 if ($at !== false) {
-                    array_push($lines, ...$entry['lines']);
+                    $text = ProseRecords::erase($text, $entry['lines']);
                     unset($removed[$at]);
                 } else {
                     $base = $this->records->base('json', 'format:json', [$record])[0];
@@ -246,7 +245,7 @@ final class RecordStage implements SurfaceStage
                 break;
             }
         }
-        return ProseRecords::erase($text, $lines);
+        return $text;
     }
 
     private function checkstyle(string $case, string $side, string $text): string
@@ -330,8 +329,8 @@ final class RecordStage implements SurfaceStage
             $entryCounts[$subject] = ($entryCounts[$subject] ?? 0) + 1;
             $group = [];
             foreach ($published as $record) {
-                if ($subject !== $record['subject'] || $entry['channel'] !== $record['channel']
-                    || ($entry['occurrence'] ?? null) !== $record['occurrence'] || ($entry['edge'] ?? null) !== $record['edge']) {
+                $identity = ['subject' => $subject, 'channel' => $entry['channel'], 'occurrence' => $entry['occurrence'] ?? null, 'edge' => $entry['edge'] ?? null];
+                if (ReportRecords::identity('json', $identity) !== ReportRecords::identity('json', $record)) {
                     continue;
                 }
                 $at = array_search($record, $removed, true);
@@ -396,6 +395,7 @@ final class RecordStage implements SurfaceStage
         }
         $lists = [];
         $affected = ['candidate' => [], 'reference' => []];
+        $vacancies = ['candidate' => 0, 'reference' => 0];
         $matched = [];
         foreach ($documents as $side => $document) {
             $issues = $document['topIssues'];
@@ -428,6 +428,7 @@ final class RecordStage implements SurfaceStage
                     $key = ReportRecords::identity('json', $base);
                     $matched[$side][$key] = ['index' => $index, 'record' => $record, 'fields' => $issue];
                     if (\in_array($record, $removed, true)) {
+                        ++$vacancies[$side];
                         $affected[$side][] = $index;
                     } elseif ($replacement !== $base) {
                         foreach (['file', 'line', 'symbol', 'rule', 'severity', 'message', 'recommendation'] as $field) {
@@ -496,7 +497,7 @@ final class RecordStage implements SurfaceStage
             $admitted = array_values(array_diff($stable[$side], $stable[$other]));
             $available = \count($this->records->published($case, $view, $side));
             $expectedSize = min(max(\count($lists['candidate']), \count($lists['reference'])), $available);
-            if (\count($lists[$side]) !== $expectedSize || \count($admitted) > \count($affected[$other])) {
+            if (\count($lists[$side]) !== $expectedSize || \count($admitted) > $vacancies[$other]) {
                 throw new GateError('The ranked refill has an unexplained size or more entrants than licensed vacancies.');
             }
             $ceiling = $prefix === 0 ? \INF : $lists[$other][$prefix - 1]['impactScore'];

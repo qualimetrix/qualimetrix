@@ -296,11 +296,8 @@ final class SurfaceComparison
     }
 
     /**
-     * Only the paths that differ between the two sides are a leak worth failing
-     * on: the reference checkout and the gate's own scratch directory. The
-     * candidate root is deliberately not one of them — the corpus lives inside
-     * it, and SARIF publishes the run's working directory as an absolute URI, so
-     * both sides carry that same path by design.
+     * The declared SARIF source URI belongs to the capture, whose input is
+     * materialized in isolation. Paths in finding evidence remain leaks.
      *
      * @param array<string, string> $candidate
      * @param array<string, string> $reference
@@ -311,6 +308,7 @@ final class SurfaceComparison
 
         foreach (['candidate' => $candidate, 'reference' => $reference] as $side => $artifacts) {
             foreach ($artifacts as $key => $content) {
+                $content = $this->normalization->normalizeCaptureMetadata(Surfaces::surfaceClass($key), $content);
                 if (str_ends_with($key, '|stderr:check:output')) {
                     $content = preg_replace_callback('~^Report written to [^\r\n]+$~m', fn(array $marker): string => $this->normalization->normalize('stderr:check:output', $marker[0]), $content) ?? throw new GateError('Cannot inspect the exact output diagnostic marker.');
                 }

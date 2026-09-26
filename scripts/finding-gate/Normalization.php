@@ -76,6 +76,34 @@ final class Normalization
         return $this->applyLineRegex($surface, $this->normalizeReportData($surface, $content));
     }
 
+    public function normalizeCaptureMetadata(string $surface, string $content): string
+    {
+        if ($surface !== 'format:sarif') {
+            return $content;
+        }
+        $document = json_decode($content);
+        if (!$document instanceof stdClass || !\is_array($document->runs ?? null) || !array_is_list($document->runs)) {
+            return $content;
+        }
+        foreach ($this->rulesFor($surface, NormalizationRule::KIND_JSON_PATH) as $index => $rule) {
+            if (!\in_array($rule->locator, ['runs.*.originalUriBaseIds.%SRCROOT%.uri', 'runs.0.originalUriBaseIds.%SRCROOT%.uri'], true)) {
+                continue;
+            }
+            foreach ($document->runs as $runIndex => $run) {
+                if (($rule->locator === 'runs.0.originalUriBaseIds.%SRCROOT%.uri' && $runIndex !== 0)
+                    || !$run instanceof stdClass || !($run->originalUriBaseIds ?? null) instanceof stdClass
+                    || !($run->originalUriBaseIds->{'%SRCROOT%'} ?? null) instanceof stdClass
+                    || !\is_string($run->originalUriBaseIds->{'%SRCROOT%'}->uri ?? null)) {
+                    continue;
+                }
+                [$content, $hits] = JsonText::redact($content, ['runs', (string) $runIndex, 'originalUriBaseIds', '%SRCROOT%', 'uri'], '"' . self::REDACTED . '"');
+                $this->hits[$index] = ($this->hits[$index] ?? 0) + $hits;
+            }
+        }
+
+        return $content;
+    }
+
     /**
      * The rules that did fire — a tracked row still doing its job.
      *

@@ -182,6 +182,25 @@ final class SurfaceComparisonTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsSarifPathProtectionOutsideItsDeclaredCaptureSourceUri(): void
+    {
+        $rule = new \QmxFindingGate\NormalizationRule('format:sarif', 'runs.*.originalUriBaseIds.%SRCROOT%.uri', \QmxFindingGate\NormalizationRule::KIND_JSON_PATH, 'The isolated capture directory varies.');
+        $document = ['runs' => [['originalUriBaseIds' => ['%SRCROOT%' => ['uri' => 'file://' . $this->root . '/']], 'results' => [['message' => ['text' => 'A populated finding'], 'locations' => [['physicalLocation' => ['artifactLocation' => ['uri' => 'src/A.php']]]]]]]]];
+        $artifact = json_encode($document, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
+        $report = new GateReport();
+        $comparison = $this->comparison($report, [], Normalization::fromRules([$rule]));
+        $comparison->checkPathLeaks(['case:alpha|format:sarif' => $artifact], [], '/other-reference');
+        self::assertSame([], $report->raised());
+        $document['runs'][0]['results'][0]['message']['text'] = 'An unexpected directory ' . $this->root;
+        $comparison->checkPathLeaks(['case:alpha|format:sarif' => json_encode($document, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR)], [], '/other-reference');
+        self::assertSame([FailureClass::PATH_LEAK], $report->failureClasses());
+        self::assertCount(1, $report->raised());
+        $without = new GateReport();
+        $this->comparison($without, [])->checkPathLeaks(['case:alpha|format:sarif' => $artifact], [], '/other-reference');
+        self::assertSame([FailureClass::PATH_LEAK], $without->failureClasses());
+    }
+
+    #[Test]
     public function itRefusesOverlappingFullSurfaceAndClassStructuralIntentions(): void
     {
         Fs::write($this->root . '/finding-gate/declared-delta/probe.diff', "a measured structural change\n");

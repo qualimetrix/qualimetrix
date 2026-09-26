@@ -26,7 +26,8 @@ final class ProseRecords
         $lines = explode("\n", $text);
         $records = [];
         $file = null;
-        foreach ($lines as $index => $line) {
+        for ($index = 0; $index < \count($lines); ++$index) {
+            $line = $lines[$index];
             if (preg_match('~^(.+) \([0-9]+ violations?\)$~D', $line, $match) === 1) {
                 $file = $match[1];
             }
@@ -45,8 +46,8 @@ final class ProseRecords
                 $records[] = ['lines' => [$index], 'fields' => ['code' => $properties['title'], 'file' => $properties['file'] ?? '[project]', 'line' => isset($properties['line']) ? (int) $properties['line'] : null, 'message' => self::unescape($match[3], false), 'severity' => $match[1] === 'notice' ? 'info' : $match[1]]];
             } elseif (preg_match('~^(.+?)(?::([0-9]+))?: (error|warning|info)\[([^\]]+)\]: (.*)$~D', $line, $match) === 1) {
                 $records[] = ['lines' => [$index], 'fields' => ['code' => $match[4], 'file' => $match[1], 'line' => $match[2] === '' ? null : (int) $match[2], 'message' => $match[5], 'severity' => $match[3]]];
-            } elseif (preg_match('~^  (ERROR|WARN|INFO)(?: (.*?))?(?:  (.+))?$~D', $line, $head) === 1
-                && isset($lines[$index + 1]) && preg_match('~^    (.*)  \[([^\]]+)\]$~D', $lines[$index + 1], $detail) === 1) {
+            } elseif (preg_match('~^  (ERROR|WARN|INFO)(?: ([^ ].*?))?(?:  (.+))?$~D', $line, $head) === 1) {
+                [$detail, $end] = self::detail($lines, $index);
                 $location = $head[2] ?? '';
                 $atLine = null;
                 $locationFile = $file;
@@ -58,20 +59,54 @@ final class ProseRecords
                 if ($locationFile === null) {
                     throw new GateError('A detailed finding line has no observed file or project group.');
                 }
-                $records[] = ['lines' => [$index, $index + 1], 'fields' => ['code' => $detail[2], 'file' => $locationFile, 'line' => $atLine, 'message' => $detail[1], 'severity' => match ($head[1]) {
+                $records[] = ['lines' => range($index, $end), 'fields' => ['code' => $detail[2], 'file' => $locationFile, 'line' => $atLine, 'message' => $detail[1], 'severity' => match ($head[1]) {
                     'ERROR' => 'error', 'WARN' => 'warning', default => 'info',
                 }, 'symbol' => $head[3] ?? '']];
+                $index = $end;
             } elseif ($surface === 'format:summary' && preg_match('~^\s+[0-9]+\. \[(ERR|WRN|INF)\] ([0-9.]+)  (.*?)  \[.*\]$~D', $line, $head) === 1) {
                 if (!isset($lines[$index + 1]) || preg_match('~^\s+([^:]+): (.*)$~D', $lines[$index + 1], $detail) !== 1) {
                     throw new GateError('A ranked issue has no published detail line.');
                 }
+                $end = $index + 1;
+                $message = $detail[2];
+                while (isset($lines[$end + 1]) && self::continuation($lines[$end + 1])) {
+                    $message .= "\n" . $lines[++$end];
+                }
                 [$locationFile, $atLine] = self::location($head[3]);
-                $records[] = ['lines' => [$index, $index + 1], 'fields' => ['code' => $detail[1], 'file' => $locationFile, 'line' => $atLine, 'message' => $detail[2], 'severity' => match ($head[1]) {
+                $records[] = ['lines' => range($index, $end), 'fields' => ['code' => $detail[1], 'file' => $locationFile, 'line' => $atLine, 'message' => $message, 'severity' => match ($head[1]) {
                     'ERR' => 'error', 'WRN' => 'warning', default => 'info',
                 }, 'score' => $head[2]]];
+                $index = $end;
             }
         }
         return $records;
+    }
+
+    /**
+     * @param list<string> $lines
+     *
+     * @return array{array{0:string,1:string,2:string},int}
+     */
+    private static function detail(array $lines, int $index): array
+    {
+        $text = '';
+        for ($end = $index + 1; isset($lines[$end]); ++$end) {
+            $line = $lines[$end];
+            if ($line === '' || ($end === $index + 1 ? !str_starts_with($line, '    ') : !self::continuation($line))) {
+                break;
+            }
+            $text .= ($end === $index + 1 ? '' : "\n") . $line;
+            if (preg_match('~^    (.*)  \[([^\]]+)\]$~Ds', $text, $detail) === 1) {
+                return [$detail, $end];
+            }
+        }
+        throw new GateError('A detailed finding has no complete published advice and channel terminator.');
+    }
+
+    private static function continuation(string $line): bool
+    {
+        return $line !== '' && !ctype_space($line[0])
+            && preg_match('~^(?:[0-9]+ violations?\b|Qualimetrix\b|Technical debt\b|Analysis complete:|Docs:|Hints:|[^:]+: (?:error|warning|info)\[|.+ \([0-9]+ violations?\)$)~D', $line) !== 1;
     }
 
     /** @return array{string,?int} */
@@ -100,12 +135,12 @@ final class ProseRecords
     public static function matches(string $surface, array $prose, array $finding): bool
     {
         if ($prose['code'] !== $finding['code'] || $prose['file'] !== ($finding['file'] ?? '[project]')
-            || $prose['line'] !== $finding['line'] || $prose['severity'] !== $finding['severity']) {
+            || ($prose['line'] !== null && $prose['line'] !== $finding['line']) || $prose['severity'] !== $finding['severity']) {
             return false;
         }
         $detailed = isset($prose['symbol']);
         $message = ReportRecords::message($finding, $detailed || $surface === 'format:summary');
-        $symbol = self::symbol($finding);
+        $symbol = self::symbol($finding, $detailed);
         if ($detailed) {
             return $prose['message'] === $message && $prose['symbol'] === $symbol;
         }
@@ -120,14 +155,18 @@ final class ProseRecords
     }
 
     /** @param array<string,mixed> $finding */
-    private static function symbol(array $finding): string
+    private static function symbol(array $finding, bool $detailed = false): string
     {
         $subject = (string) $finding['subject'];
         $symbol = (string) $finding['symbol'];
-        if (str_starts_with($subject, 'ns:')) {
-            return $symbol === '' ? '' : 'namespace: ' . $symbol;
+        $level = SubjectLevel::of($subject);
+        if ($finding['file'] !== null && $symbol === $finding['file']) {
+            return '';
         }
-        if (SubjectLevel::of($subject) === 'file' || SubjectLevel::of($subject) === 'project') {
+        if (str_starts_with($subject, 'ns:')) {
+            return $detailed || $symbol === '' ? '' : 'namespace: ' . $symbol;
+        }
+        if ($level === 'file' || $level === 'project') {
             return '';
         }
         $at = strrpos($symbol, '\\');
@@ -159,18 +198,22 @@ final class ProseRecords
             }
             $lines[$index] = substr($line, 0, $at + 2) . $escape(ReportRecords::message($after), false);
         } elseif (isset($entry['fields']['symbol'])) {
-            $location = ($after['file'] ?? '[project]') . ($after['line'] === null ? '' : ':' . $after['line']);
-            if ($before['file'] === $after['file'] && str_contains($lines[$index], 'at line ')) {
-                $location = $after['line'] === null ? '[project]' : 'at line ' . $after['line'];
+            $location = ($after['file'] ?? '[project]') . ($entry['fields']['line'] === null || $after['line'] === null ? '' : ':' . $after['line']);
+            if ($before['file'] === $after['file']) {
+                if (str_contains($lines[$index], 'at line ')) {
+                    $location = $after['line'] === null ? '' : 'at line ' . $after['line'];
+                } elseif (preg_match('~^  (?:ERROR|WARN|INFO)(?:  .+)?$~D', $lines[$index]) === 1) {
+                    $location = '';
+                }
             }
             $tag = match ($after['severity']) {
                 'error' => 'ERROR', 'warning' => 'WARN', default => 'INFO',
             };
-            $symbol = self::symbol($after);
-            $lines[$index] = '  ' . $tag . ' ' . $location . ($symbol === '' ? '' : '  ' . $symbol);
-            $lines[$entry['lines'][1]] = '    ' . ReportRecords::message($after, true) . '  [' . $after['code'] . ']';
+            $symbol = self::symbol($after, true);
+            $lines[$index] = '  ' . $tag . ($location === '' ? '' : ' ' . $location) . ($symbol === '' ? '' : '  ' . $symbol);
+            self::replaceAdvice($lines, $entry, '    ' . ReportRecords::message($after, true) . '  [' . $after['code'] . ']');
         } elseif ($surface === 'format:summary') {
-            $location = ($after['file'] ?? '[project]') . ($after['line'] === null ? '' : ':' . $after['line']);
+            $location = ($after['file'] ?? '[project]') . ($entry['fields']['line'] === null || $after['line'] === null ? '' : ':' . $after['line']);
             $tag = match ($after['severity']) {
                 'error' => 'ERR', 'warning' => 'WRN', default => 'INF',
             };
@@ -179,12 +222,21 @@ final class ProseRecords
             if (preg_match('~^\s*~', $lines[$entry['lines'][1]], $indent) !== 1) {
                 throw new GateError('Cannot locate summary detail indentation.');
             }
-            $lines[$entry['lines'][1]] = $indent[0] . $after['code'] . ': ' . ReportRecords::message($after, true) . $suffix;
+            self::replaceAdvice($lines, $entry, $indent[0] . $after['code'] . ': ' . ReportRecords::message($after, true) . $suffix);
         } else {
             $suffix = self::symbol($after) === '' ? '' : ' (' . self::symbol($after) . ')';
-            $lines[$index] = ($after['file'] ?? '[project]') . ($after['line'] === null ? '' : ':' . $after['line']) . ': ' . $after['severity'] . '[' . $after['code'] . ']: ' . ReportRecords::message($after) . $suffix;
+            $lines[$index] = ($after['file'] ?? '[project]') . ($entry['fields']['line'] === null || $after['line'] === null ? '' : ':' . $after['line']) . ': ' . $after['severity'] . '[' . $after['code'] . ']: ' . ReportRecords::message($after) . $suffix;
         }
         return implode("\n", $lines);
+    }
+
+    /**
+     * @param array<int,string> $lines
+     * @param array{lines:list<int>,fields:array<string,mixed>} $entry
+     */
+    private static function replaceAdvice(array &$lines, array $entry, string $advice): void
+    {
+        array_splice($lines, $entry['lines'][1], \count($entry['lines']) - 1, explode("\n", $advice));
     }
 
     /** @param list<int> $removed */

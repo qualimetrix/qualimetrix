@@ -46,11 +46,11 @@ final class NormalizationCheck implements RunCheck
                         continue;
                     }
                 }
-                $before = json_decode($content, true);
+                $before = json_decode($this->normalization->normalizeCaptureMetadata($surface, $content), true);
                 if (!\is_array($before)) {
                     continue;
                 }
-                $after = json_decode($this->normalization->normalize($surface, $content), true);
+                $after = json_decode($this->normalization->normalizeCaptureMetadata($surface, $this->normalization->normalize($surface, $content)), true);
                 $changed = array_is_list($before) && $before !== $after;
                 foreach (['violations', 'suppressed', 'symbols', 'directives', 'findings', 'entries', 'runs'] as $section) {
                     if (!\array_key_exists($section, $before)) {

@@ -14,6 +14,7 @@ use QmxFindingGate\Corpus;
 use QmxFindingGate\Declarations;
 use QmxFindingGate\DeclaredStructuralMaps;
 use QmxFindingGate\DeclaredSurfaces;
+use QmxFindingGate\DeclaredValues;
 use QmxFindingGate\FailureClass;
 use QmxFindingGate\Fs;
 use QmxFindingGate\GateError;
@@ -28,8 +29,13 @@ use QmxFindingGate\RenameMaps;
 use QmxFindingGate\RunContext;
 use QmxFindingGate\SelfTestCapture;
 use QmxFindingGate\SelfTestNormalization;
+use QmxFindingGate\SurfacePair;
 use QmxFindingGate\SyntheticTree;
 use QmxFindingGate\TreeRun;
+use QmxFindingGate\Tsv;
+use QmxFindingGate\ValueCheck;
+use QmxFindingGate\ValueStage;
+use Throwable;
 use WeakReference;
 
 final class CaptureTest extends TestCase
@@ -180,6 +186,274 @@ final class CaptureTest extends TestCase
         self::assertSame('The already reported unreadable publication.', $report->raised()[0]['detail']);
         self::assertSame(FailureClass::NORMALIZATION_OVERREACH, $report->raised()[1]['class']);
         self::assertSame('candidate / case:beta|format:json', $report->raised()[1]['scope']);
+    }
+
+    #[Test]
+    public function itNormalizesOnlyDeclaredSarifCaptureUrisWithoutChangingRecordBytes(): void
+    {
+        $content = self::sarifCapturePublication();
+        foreach (['runs.*.originalUriBaseIds.%SRCROOT%.uri', 'runs.0.originalUriBaseIds.%SRCROOT%.uri'] as $locator) {
+            $rule = new NormalizationRule('format:sarif', $locator, NormalizationRule::KIND_JSON_PATH, 'The measured isolated capture directory.');
+            $normalization = Normalization::fromRules([$rule]);
+            $expected = str_replace('file:///capture/first/', Normalization::REDACTED, $content);
+            if (str_contains($locator, '*')) {
+                $expected = str_replace('file:///capture/second/', Normalization::REDACTED, $expected);
+            }
+            self::assertSame($expected, $normalization->normalizeCaptureMetadata('format:sarif', $content));
+            self::assertSame($content, $normalization->normalizeCaptureMetadata('format:json', $content));
+            self::assertSame([$rule], $normalization->activeRules());
+            $before = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
+            $after = json_decode($expected, true, 512, \JSON_THROW_ON_ERROR);
+            foreach ($before['runs'] as $index => $run) {
+                self::assertCount(3, $run['results']);
+                self::assertSame($run['results'], $after['runs'][$index]['results']);
+                self::assertSame($run['tool'], $after['runs'][$index]['tool']);
+                self::assertSame($run['originalUriBaseIds']['%NEIGHBOR%'], $after['runs'][$index]['originalUriBaseIds']['%NEIGHBOR%']);
+            }
+            $report = new GateReport();
+            $check = new NormalizationCheck(Options::parse(['gate', '--reference=HEAD'], \dirname(__DIR__, 3)), $report, $normalization);
+            $check->checkRun(['case:alpha|format:sarif' => $content], ['case:alpha|format:sarif' => $content]);
+            self::assertSame([], $report->raised());
+        }
+        self::assertSame($content, Normalization::fromRules([])->normalizeCaptureMetadata('format:sarif', $content));
+    }
+
+    #[Test]
+    public function itKeepsSarifResultsAndNeighboringMetadataProtectedFromNormalization(): void
+    {
+        $content = self::sarifCapturePublication();
+        foreach ([
+            ['format:sarif', 'runs', NormalizationRule::KIND_JSON_PATH],
+            ['format:sarif', 'runs.0', NormalizationRule::KIND_JSON_PATH],
+            ['format:sarif', 'runs.0.tool.driver', NormalizationRule::KIND_JSON_PATH],
+            ['format:sarif', 'runs.0.results.0.message.text', NormalizationRule::KIND_JSON_PATH],
+            ['format:sarif', 'runs.0.results.0.locations.0.physicalLocation.artifactLocation.uri', NormalizationRule::KIND_JSON_PATH],
+            ['format:sarif', 'runs.0.originalUriBaseIds.%NEIGHBOR%.uri', NormalizationRule::KIND_JSON_PATH],
+            ['format:sarif', 'runs.*.originalUriBaseIds.*.uri', NormalizationRule::KIND_JSON_PATH],
+            ['format:sarif', 'runs.1.originalUriBaseIds.%SRCROOT%.uri', NormalizationRule::KIND_JSON_PATH],
+            ['format:sarif', 'runs.0.originalUriBaseIds.%SRCROOT%.uri', NormalizationRule::KIND_HTML_REPORT_DATA_PATH],
+            ['format:json', 'runs.0.originalUriBaseIds.%SRCROOT%.uri', NormalizationRule::KIND_JSON_PATH],
+        ] as [$surface, $locator, $kind]) {
+            $normalization = Normalization::fromRules([new NormalizationRule($surface, $locator, $kind, 'A neighboring published field stays protected.')]);
+            self::assertSame($content, $normalization->normalizeCaptureMetadata($surface, $content));
+            $report = new GateReport();
+            $check = new NormalizationCheck(Options::parse(['gate', '--reference=HEAD'], \dirname(__DIR__, 3)), $report, $normalization);
+            $check->checkRun(['case:alpha|' . $surface => $content], []);
+            self::assertCount(1, $report->raised(), $locator);
+            self::assertSame(FailureClass::NORMALIZATION_OVERREACH, $report->raised()[0]['class']);
+            self::assertSame('candidate / case:alpha|' . $surface, $report->raised()[0]['scope']);
+        }
+        $normalization = Normalization::fromRules([
+            new NormalizationRule('format:sarif', 'runs.*.originalUriBaseIds.%SRCROOT%.uri', NormalizationRule::KIND_JSON_PATH, 'The measured capture directory.'),
+            new NormalizationRule('format:sarif', 'runs.0.results.0.message.text', NormalizationRule::KIND_JSON_PATH, 'A neighboring result cannot leave comparison.'),
+        ]);
+        $report = new GateReport();
+        (new NormalizationCheck(Options::parse(['gate', '--reference=HEAD'], \dirname(__DIR__, 3)), $report, $normalization))->checkRun(['case:alpha|format:sarif' => $content], []);
+        self::assertSame([FailureClass::NORMALIZATION_OVERREACH], $report->failureClasses());
+    }
+
+    #[Test]
+    public function itKeepsMalformedSarifUriShapesOutsideCaptureMetadataNormalization(): void
+    {
+        foreach ([null, 42, ['uri' => 'file:///capture/first/'], ['file:///capture/first/']] as $uri) {
+            $document = json_decode(self::sarifCapturePublication(), true, 512, \JSON_THROW_ON_ERROR);
+            $document['runs'][0]['originalUriBaseIds']['%SRCROOT%']['uri'] = $uri;
+            $content = json_encode($document, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
+            $normalization = Normalization::fromRules([new NormalizationRule('format:sarif', 'runs.0.originalUriBaseIds.%SRCROOT%.uri', NormalizationRule::KIND_JSON_PATH, 'Only a string capture URI is excluded.')]);
+            self::assertSame($content, $normalization->normalizeCaptureMetadata('format:sarif', $content));
+            $report = new GateReport();
+            (new NormalizationCheck(Options::parse(['gate', '--reference=HEAD'], \dirname(__DIR__, 3)), $report, $normalization))->checkRun(['case:alpha|format:sarif' => $content], []);
+            self::assertSame([FailureClass::NORMALIZATION_OVERREACH], $report->failureClasses());
+        }
+    }
+
+    #[Test]
+    public function itAcceptsOnlyMeasuredDerivedCandidateCaptureExits(): void
+    {
+        [$root, $temporary, $artifacts] = self::capturePublicationFixture();
+        try {
+            foreach ([false, true] as $deriving) {
+                self::declareCaptureExits($root, $deriving ? [] : [['exit', 'graph:export', 'tree|graph:export', '1', '0']]);
+                $run = self::captureContext($root, $temporary);
+                $values = ValueCheck::create($run);
+                if ($deriving) {
+                    $values->startDeriving();
+                }
+                $pair = new SurfacePair('tree|exit:graph:export', 'exit:graph:export', '0', '1');
+                ValueStage::create($run)->applyStage($pair);
+                self::assertSame('1', $pair->candidate);
+                $candidate = $artifacts;
+                $candidate['tree|exit:graph:export'] = '0';
+                CaptureCheck::create($run)->checkRun($candidate, $artifacts);
+                self::assertSame([], $run->report->raised());
+                self::assertSame('1', $values->referenceExitFor('graph:export', 'tree|graph:export', '0'));
+            }
+        } finally {
+            SyntheticTree::remove($root);
+            Fs::removeRecursively($temporary);
+        }
+    }
+
+    #[Test]
+    public function itRefusesIntentOnlyAndInexactCaptureExitMeasurements(): void
+    {
+        [$root, $temporary, $artifacts] = self::capturePublicationFixture();
+        try {
+            foreach (['intent-only', 'unlicensed', 'wrong-invocation', 'wrong-command', 'wrong-derived', 'incomplete-multiset', 'candidate-mismatch'] as $fault) {
+                $command = $fault === 'wrong-command' ? 'rules' : 'graph:export';
+                $invocation = $fault === 'wrong-invocation' ? 'case:alpha|graph:export' : 'tree|graph:export';
+                $from = $fault === 'wrong-derived' ? '2' : ($fault === 'wrong-invocation' ? '0' : '1');
+                $to = $fault === 'candidate-mismatch' ? '2' : ($fault === 'wrong-invocation' ? '1' : '0');
+                $rows = [['exit', $command, $invocation, $from, $to]];
+                if ($fault === 'incomplete-multiset') {
+                    $rows[] = ['exit', 'graph:export', 'case:alpha|graph:export', '0', '1'];
+                }
+                self::declareCaptureExits($root, $fault === 'intent-only' || $fault === 'unlicensed' ? [] : $rows, $fault === 'unlicensed' ? [] : [$command]);
+                $run = self::captureContext($root, $temporary);
+                $values = ValueCheck::create($run);
+                if ($fault !== 'intent-only' && $fault !== 'unlicensed') {
+                    self::assertTrue($values->measure('exit', $command, $invocation, '*', $fault === 'wrong-invocation' ? 0 : 1, (int) $to));
+                }
+                $candidate = $artifacts;
+                $candidate['tree|exit:graph:export'] = '0';
+                if ($fault === 'wrong-invocation') {
+                    $candidate['case:alpha|exit:graph:export'] = '1';
+                }
+                CaptureCheck::create($run)->checkRun($candidate, $artifacts);
+                self::assertSame([FailureClass::SURFACE_MISMATCH], $run->report->failureClasses(), $fault);
+                self::assertCount(2, $run->report->raised(), $fault);
+                foreach ($run->report->raised() as $failure) {
+                    self::assertSame('candidate / tree|graph:export', $failure['scope'], $fault);
+                }
+            }
+        } finally {
+            SyntheticTree::remove($root);
+            Fs::removeRecursively($temporary);
+        }
+    }
+
+    #[Test]
+    public function itKeepsRawUnknownAndIncompleteCapturePopulationsRefused(): void
+    {
+        [$root, $temporary, $artifacts] = self::capturePublicationFixture();
+        try {
+            foreach (['unknown-replay', 'empty-exit', 'missing-exit', 'empty-publication', 'reference-exit', 'reference-unknown', 'reference-missing', 'reference-empty-publication'] as $fault) {
+                $to = $fault === 'unknown-replay' ? '70' : '0';
+                self::declareCaptureExits($root, [['exit', 'graph:export', 'tree|graph:export', '1', $to]]);
+                $run = self::captureContext($root, $temporary);
+                $values = ValueCheck::create($run);
+                self::assertTrue($values->measure('exit', 'graph:export', 'tree|graph:export', '*', 1, (int) $to));
+                $candidate = $artifacts;
+                $candidate['tree|exit:graph:export'] = $to;
+                $reference = $artifacts;
+                $expectedScope = 'candidate / tree|graph:export';
+                if ($fault === 'empty-exit') {
+                    $candidate['tree|exit:graph:export'] = '';
+                } elseif ($fault === 'missing-exit') {
+                    unset($candidate['tree|exit:graph:export']);
+                } elseif ($fault === 'empty-publication') {
+                    $candidate['case:alpha|graph:export'] = '';
+                    $expectedScope = 'candidate / case:alpha|graph:export';
+                } elseif ($fault === 'reference-empty-publication') {
+                    $reference['case:alpha|graph:export'] = '';
+                    $expectedScope = 'reference / case:alpha|graph:export';
+                } elseif (str_starts_with($fault, 'reference-')) {
+                    $reference['tree|exit:graph:export'] = $fault === 'reference-unknown' ? '70' : '0';
+                    if ($fault === 'reference-missing') {
+                        unset($reference['tree|exit:graph:export']);
+                    }
+                    $expectedScope = 'reference / tree|graph:export';
+                }
+                CaptureCheck::create($run)->checkRun($candidate, $reference);
+                self::assertSame([FailureClass::SURFACE_MISMATCH], $run->report->failureClasses(), $fault);
+                self::assertContains($expectedScope, array_column($run->report->raised(), 'scope'), $fault);
+                $expectedCount = match ($fault) {
+                    'unknown-replay', 'empty-publication', 'reference-empty-publication' => 1,
+                    'missing-exit', 'reference-missing', 'reference-unknown' => 3,
+                    default => 2,
+                };
+                self::assertCount($expectedCount, $run->report->raised(), $fault);
+                if ($fault === 'missing-exit' || $fault === 'reference-missing') {
+                    self::assertContains(($fault === 'missing-exit' ? 'candidate' : 'reference') . ' / tree|exit:graph:export', array_column($run->report->raised(), 'scope'));
+                }
+                if ($fault === 'unknown-replay') {
+                    self::assertCount(1, $run->report->raised());
+                    self::assertSame('An unknown replay invocation cannot establish successful population.', $run->report->raised()[0]['detail']);
+                }
+                self::assertSame([], array_filter($run->report->raised(), static fn(array $failure): bool => $failure['class'] !== FailureClass::SURFACE_MISMATCH));
+            }
+        } finally {
+            SyntheticTree::remove($root);
+            Fs::removeRecursively($temporary);
+        }
+    }
+
+    #[Test]
+    public function itAcceptsObservableDirectivesAndTheirExactMeasuredExitTransition(): void
+    {
+        [$root, $temporary, $artifacts] = self::capturePublicationFixture();
+        try {
+            $directives = json_decode($artifacts['case:alpha|directives'], true, 512, \JSON_THROW_ON_ERROR);
+            self::assertNotEmpty($directives['directives']);
+            $directives['exit_code'] = 2;
+            $reference = $artifacts;
+            $reference['case:alpha|directives'] = json_encode($directives, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
+            $reference['case:alpha|exit:directives'] = '2';
+            $reference['case:alpha|exit:format:json'] = '2';
+            self::declareCaptureExits($root, [], []);
+            $run = self::captureContext($root, $temporary);
+            CaptureCheck::create($run)->checkRun($reference, $reference);
+            self::assertSame([], $run->report->raised());
+
+            self::declareCaptureExits($root, [['exit', 'directives', 'case:alpha|directives', '2', '5']], ['directives']);
+            $run = self::captureContext($root, $temporary);
+            $values = ValueCheck::create($run);
+            $pair = new SurfacePair('case:alpha|exit:directives', 'exit:directives', '5', '2');
+            ValueStage::create($run)->applyStage($pair);
+            self::assertSame('2', $pair->candidate);
+            $candidate = $reference;
+            $candidate['case:alpha|exit:directives'] = '5';
+            $directives['exit_code'] = 5;
+            $candidate['case:alpha|directives'] = json_encode($directives, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
+            CaptureCheck::create($run)->checkRun($candidate, $reference);
+            $values->checkRun($candidate, $reference);
+            self::assertSame('2', $values->referenceExitFor('directives', 'case:alpha|directives', '5'));
+            self::assertSame([], $run->report->raised());
+        } finally {
+            SyntheticTree::remove($root);
+            Fs::removeRecursively($temporary);
+        }
+    }
+
+    #[Test]
+    public function itRefusesIncompleteOrUnrecognizedDirectivesAndNeighboringCommandExits(): void
+    {
+        [$root, $temporary, $artifacts] = self::capturePublicationFixture();
+        try {
+            foreach ([['directives', '1'], ['directives', '4'], ['graph:export', '2'], ['rules', '2']] as [$surface, $exit]) {
+                self::declareCaptureExits($root, [], []);
+                $run = self::captureContext($root, $temporary);
+                $populated = $artifacts;
+                self::assertNotSame('', $populated['case:alpha|' . $surface]);
+                $populated['case:alpha|exit:' . $surface] = $exit;
+                if ($surface === 'directives') {
+                    $payload = json_decode($populated['case:alpha|directives'], true, 512, \JSON_THROW_ON_ERROR);
+                    self::assertNotEmpty($payload['directives']);
+                    $payload['exit_code'] = (int) $exit;
+                    $populated['case:alpha|directives'] = json_encode($payload, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
+                }
+                CaptureCheck::create($run)->checkRun($populated, $populated);
+                self::assertSame([FailureClass::SURFACE_MISMATCH], $run->report->failureClasses());
+                self::assertCount(2, $run->report->raised(), $surface . '/' . $exit);
+                self::assertSame(['candidate / case:alpha|' . $surface, 'reference / case:alpha|' . $surface], array_column($run->report->raised(), 'scope'));
+                foreach ($run->report->raised() as $failure) {
+                    self::assertSame('The process outcome cannot establish successful population for this command.', $failure['detail']);
+                }
+            }
+        } finally {
+            SyntheticTree::remove($root);
+            Fs::removeRecursively($temporary);
+        }
     }
 
     #[Test]
@@ -334,4 +608,56 @@ final class CaptureTest extends TestCase
             Fs::removeRecursively($temporary);
         }
     }
+    private static function sarifCapturePublication(): string
+    {
+        $tree = SyntheticTree::clean();
+        $finding = $tree['findings']['alpha'][0];
+        $answer = SyntheticTree::caseAnswers('alpha', [$finding, $finding, $finding], false, [])['case:alpha|format:sarif']['stdout'] ?? null;
+        self::assertIsString($answer);
+        $document = json_decode($answer, true, 512, \JSON_THROW_ON_ERROR);
+        $document['runs'][0]['originalUriBaseIds'] = ['%SRCROOT%' => ['uri' => 'file:///capture/first/'], '%NEIGHBOR%' => ['uri' => 'file:///kept/']];
+        $document['runs'][1] = $document['runs'][0];
+        $document['runs'][1]['originalUriBaseIds']['%SRCROOT%']['uri'] = 'file:///capture/second/';
+
+        return json_encode($document, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n";
+    }
+
+    private static function captureContext(string $root, string $temporary): RunContext
+    {
+        $maps = RenameMaps::fromPairs([]);
+
+        return new RunContext(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root), new GateReport(), Corpus::load($root), $maps, ChannelSplit::of($maps), MetricVocabulary::none(), Normalization::fromRules([]), Declarations::load($root), $temporary);
+    }
+
+    /** @return array{0:string,1:string,2:array<string,string>} */
+    private static function capturePublicationFixture(): array
+    {
+        $root = SyntheticTree::create(SyntheticTree::captureFixture());
+        $temporary = Fs::temporaryDirectory('capture-population-test-');
+        try {
+            $context = self::captureContext($root, $temporary);
+            $run = new TreeRun($root, $temporary, 'candidate', $context->maps, false, CapturePlan::forCorpus($context->corpus, $context->declarations->surfaces), $context->declarations->structuralMaps);
+
+            return [$root, $temporary, $run->rules() + $run->forCase($context->corpus->cases[0])];
+        } catch (Throwable $error) {
+            SyntheticTree::remove($root);
+            Fs::removeRecursively($temporary);
+            throw $error;
+        }
+    }
+
+    /**
+     * @param list<list<string>> $rows
+     * @param list<string> $commands
+     */
+    private static function declareCaptureExits(string $root, array $rows, array $commands = ['graph:export']): void
+    {
+        Fs::write($root . '/finding-gate/' . DeclaredValues::INDEX, Tsv::render(DeclaredValues::COLUMNS, array_map(static fn(string $command): array => ['exit', $command, '*', 'An exact measured capture outcome.'], $commands)));
+        if ($rows === []) {
+            Fs::removeRecursively($root . '/finding-gate/' . DeclaredValues::DERIVED);
+        } else {
+            Fs::write($root . '/finding-gate/' . DeclaredValues::DERIVED, Tsv::render(DeclaredValues::DERIVED_COLUMNS, $rows));
+        }
+    }
+
 }

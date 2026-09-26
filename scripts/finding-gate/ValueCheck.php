@@ -66,6 +66,17 @@ final class ValueCheck implements RunCheck
         return json_encode($value, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE | \JSON_PRESERVE_ZERO_FRACTION | \JSON_THROW_ON_ERROR);
     }
 
+    public function referenceExitFor(string $command, string $invocation, string $candidate): ?string
+    {
+        $row = $this->rows[implode("\0", [DeclaredValues::EXIT, $command, $invocation])] ?? null;
+        if ($row === null || $row[4] !== $candidate
+            || (!$this->deriving && $this->rendered() !== $this->run->declarations->values->derivedText())) {
+            return null;
+        }
+        $reference = json_decode($row[3], true, flags: \JSON_THROW_ON_ERROR);
+        return \is_int($reference) ? (string) $reference : null;
+    }
+
     /**
      * @param array<string,string> $candidate
      * @param array<string,string> $reference
