@@ -37,6 +37,16 @@ final class DeclaredFieldsTest extends TestCase
     }
 
     #[Test]
+    public function itAcceptsRankingOnlyAsAnExactJsonFieldsSchemaView(): void
+    {
+        $this->write(DeclaredFields::INDEX, DeclaredFields::COLUMNS, [['added', 'json', 'ranking', 'probe', 'Extend the complete ranked publisher.']]);
+        self::assertSame(['ranking'], DeclaredFields::load($this->root)->views('json'));
+        \QmxFindingGate\ReportViews::assertFieldsView('json', 'ranking');
+        $this->expectException(GateError::class);
+        \QmxFindingGate\ReportViews::assert('json', 'ranking');
+    }
+
+    #[Test]
     public function itDerivesTheReferenceFieldsFromTheCandidates(): void
     {
         $this->write(DeclaredFields::INDEX, DeclaredFields::COLUMNS, [

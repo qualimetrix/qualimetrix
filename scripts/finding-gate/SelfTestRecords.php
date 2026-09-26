@@ -19,7 +19,7 @@ final class SelfTestRecords extends SelfTestGroup
         $this->same([], $clean->raised(), 'complete independent finding projections establish a clean public comparison');
         $record = $tree['findings']['alpha'][0];
         unset($record['message']);
-        $tree['candidateAnswers']['case:alpha|format:json'] = ['stdout' => ValueCheck::value(['violations' => [$record]])];
+        $tree['candidateAnswers']['case:alpha|format:json'] = ['stdout' => self::document([$record], [])];
         $broken = $this->reportFor($tree);
         $this->assert(\in_array(FailureClass::RECORD_PROJECTION_MISMATCH, $broken->failureClasses(), true), 'a partial actual JSON publication raises record-projection-mismatch through the public gate');
     }
@@ -29,9 +29,14 @@ final class SelfTestRecords extends SelfTestGroup
     {
         $record = SyntheticTree::clean()['findings']['alpha'][0];
         return [
+            CheckWitnesses::witness('ranking-capture-metadata', CheckWitnesses::DECLARATIONS, static fn(array $tree): array => self::rankingWitnessTree($tree, 'metadata'), [[FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:ranking-metadata|format:json', 'RankingCheck::projectionProblem <- Gate::checkFindings']], [[FailureClass::SURFACE_MISMATCH, 'case:ranking-metadata|format:json'], [FailureClass::SURFACE_MISMATCH, 'case:ranking-metadata|check:output:file']]),
+            CheckWitnesses::witness('ranking-complete-shape', CheckWitnesses::DECLARATIONS, static fn(array $tree): array => self::rankingWitnessTree($tree, 'shape'), [[FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:ranking-shape|format:json', 'RankingCheck::projectionProblem <- RecordCheck::checkCase']], [[FailureClass::SURFACE_MISMATCH, 'case:ranking-shape|format:json'], [FailureClass::SURFACE_MISMATCH, 'case:ranking-shape|check:output:file']]),
+            CheckWitnesses::witness('ranking-duplicate-ambiguity', CheckWitnesses::DECLARATIONS, static fn(array $tree): array => self::rankingWitnessTree($tree, 'ambiguity'), [[FailureClass::RECORD_AMBIGUOUS, 'candidate / case:ranking-ambiguity|format:json', 'RankingCheck::anatomy <- RecordCheck::checkCase']], [[FailureClass::SURFACE_MISMATCH, 'case:ranking-ambiguity|format:json'], [FailureClass::SURFACE_MISMATCH, 'case:ranking-ambiguity|check:output:file']]),
+            CheckWitnesses::witness('ranking-unannounced-limit', CheckWitnesses::DECLARATIONS, static fn(array $tree): array => self::rankingWitnessTree($tree, 'limit'), [[FailureClass::VALUE_MISMATCH, 'case:ranking-limit|format:json', 'ValueCheck::measure <- RankingCheck::prepareRanking'], [FailureClass::VALUE_MISMATCH, 'case:ranking-limit|check:output:file', 'ValueCheck::measure <- RankingCheck::prepareRanking']]),
+            CheckWitnesses::witness('ranking-unchanged-order', CheckWitnesses::DECLARATIONS, static fn(array $tree): array => self::rankingWitnessTree($tree, 'order'), [[FailureClass::RANKING_ORDER_MISMATCH, 'case:ranking-order|format:json|record:*', 'RankingCheck::prepareRanking <- RecordCheck::prepare']]),
             CheckWitnesses::witness('record-publication-shape', CheckWitnesses::DECLARATIONS, static function (array $tree) use ($record): array {
                 $tree = self::fixture($tree, 'record-shape');
-                $tree['candidateAnswers']['case:record-shape|format:json'] = ['stdout' => ValueCheck::value(['violations' => [$record + ['unpublished' => 1]]])];
+                $tree['candidateAnswers']['case:record-shape|format:json'] = ['stdout' => self::document([$record + ['unpublished' => 1]], [])];
                 return $tree;
             }, [
                 [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:record-shape|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
@@ -85,6 +90,91 @@ final class SelfTestRecords extends SelfTestGroup
             CheckWitnesses::witness('record-unused-derive-intent', 'derive-declarations refused', static fn(array $tree): array => self::append($tree, DeclaredRecords::INDEX, DeclaredRecords::COLUMNS, [['withdrawn', '*', 'json', 'format:json', '{"channel":"never.published"}', 'No record is removed.']]), [[FailureClass::RECORD_STALE, DeclaredRecords::INDEX, 'RecordCheck::checkRun <- Gate::compare']]),
             CheckWitnesses::witness('value-unused-derive-intent', 'derive-declarations refused', static fn(array $tree): array => self::append($tree, DeclaredValues::INDEX, DeclaredValues::COLUMNS, [['field', 'nothingPublished', '*', 'No value is changed.']]), [[FailureClass::VALUE_STALE, DeclaredValues::INDEX, 'ValueCheck::checkRun#1 <- Gate::compare']]),
         ];
+    }
+
+    /** @param Specification $tree
+     * @return Specification
+     */
+    public static function rankingWitnessTree(array $tree, string $kind): array
+    {
+        $id = 'ranking-' . $kind;
+        $tree = self::fixture($tree, $id);
+        $x = $tree['findings']['alpha'][0];
+        $y = array_replace($x, ['file' => 'src/Neighbour.php', 'symbol' => 'Replay\\Neighbour::run', 'subject' => 'declaration:callable:Replay\\Neighbour::run@src/Neighbour.php', 'message' => 'Independent neighbour.']);
+        $records = $kind === 'ambiguity' ? [$x, $x] : (\in_array($kind, ['order', 'limit'], true) ? [$x, $y] : [$x]);
+        $tree['findings'][$id] = $records;
+        if ($kind === 'ambiguity') {
+            $baseline = ValueCheck::value(['version' => 13, 'scope' => ['src'], 'entries' => [$x['subject'] => [['channel' => $x['channel'], 'magnitudes' => [$x['metricValue'], $x['metricValue']]]]]]);
+            $tree['answers']['case:' . $id . '|baseline-file'] = ['stdout' => $baseline, 'file' => $baseline];
+        }
+        $old = self::issues($records, array_fill(0, \count($records), 30));
+        $new = $old;
+        if ($kind === 'shape') {
+            $new[0]['rank'] = 7;
+        } elseif ($kind === 'ambiguity') {
+            $new[1]['impactScore'] = 29;
+        } elseif ($kind === 'order') {
+            $new = self::issues([$y, $x], [30, 30]);
+        }
+        foreach (['answers' => $old, 'candidateAnswers' => $new] as $side => $issues) {
+            $slice = $kind === 'order' ? $issues : ($kind === 'limit' && $side === 'answers' ? \array_slice($issues, 0, 1) : []);
+            $document = self::document($records, $slice);
+            $answer = ['stdout' => $document, 'ranked' => ['stdout' => self::document($records, $issues)]];
+            if ($kind === 'metadata' && $side === 'candidateAnswers') {
+                $answer['ranked']['stderr'] = 'A warning unique to the internal capture.';
+            }
+            $tree[$side]['case:' . $id . '|format:json'] = $answer;
+            $tree[$side]['case:' . $id . '|check:output'] = ['file' => $document];
+            $tree[$side]['case:' . $id . '|format:summary'] = ['stdout' => self::summary($slice, $records)];
+        }
+        return $tree;
+    }
+
+    /** @param list<array<string,mixed>> $records
+     * @param list<int|float> $scores
+     *
+     * @return list<array<string,mixed>>
+     */
+    private static function issues(array $records, array $scores): array
+    {
+        $issues = [];
+        foreach ($records as $index => $record) {
+            $issues[] = ['rank' => $index + 1, ...array_intersect_key($record, array_flip(RankingSchema::PROJECTION)), 'impactScore' => $scores[$index], 'coupling.class-rank' => null, 'debtMinutes' => $record['techDebtMinutes']];
+        }
+        return $issues;
+    }
+
+    /** @param list<array<string,mixed>> $records
+     * @param list<array<string,mixed>> $issues
+     */
+    private static function document(array $records, array $issues): string
+    {
+        $counts = [];
+        foreach ($records as $record) {
+            $rule = (string) $record['rule'];
+            $counts[$rule] = ($counts[$rule] ?? 0) + 1;
+        }
+        return ValueCheck::value(['violations' => $records, 'topIssues' => $issues, 'violationsMeta' => ['total' => \count($records), 'shown' => \count($records), 'truncated' => false, 'byRule' => $counts]]);
+    }
+
+    /** @param list<array<string,mixed>> $issues
+     * @param list<array<string,mixed>> $records
+     */
+    private static function summary(array $issues, array $records): string
+    {
+        $text = "Analysis complete\n";
+        foreach ($issues as $issue) {
+            foreach ($records as $record) {
+                if (RankingSchema::joinKey($record, false) !== RankingSchema::joinKey($issue, true)) {
+                    continue;
+                }
+                $symbol = (string) $record['symbol'];
+                $symbol = substr($symbol, (int) strrpos('\\' . $symbol, '\\'));
+                $text .= '  ' . $issue['rank'] . '. [ERR] 30.0  ' . $record['file'] . ':' . $record['line'] . "  [15min]\n         " . $record['code'] . ': ' . ReportRecords::message($record, true) . ' (' . $symbol . ")\n";
+                break;
+            }
+        }
+        return $text;
     }
 
     /**

@@ -49,6 +49,7 @@ final class SurfaceComparison
         private readonly DeclaredDeltaCheck $declaredDeltaCheck,
         private readonly string $temporaryDirectory,
         array $stages = [],
+        private readonly ?RecordCheck $records = null,
     ) {
         $registered = [];
 
@@ -192,7 +193,15 @@ final class SurfaceComparison
     private function reorder(SurfacePair $pair): void
     {
         if ($pair->ordered && PublishedOrder::handles($pair->surface)) {
-            $pair->reference = PublishedOrder::reorder($pair->surface, (string) $pair->reference);
+            $complete = null;
+            if ($pair->surface === 'format:json' && $this->records !== null) {
+                $document = ReportRecords::decode((string) $pair->reference);
+                if (($document['violationsMeta']['truncated'] ?? false) === true) {
+                    $case = substr($pair->key, 5, (int) strpos($pair->key, '|') - 5);
+                    $complete = $this->records->authority($case, 'format:json', 'reference');
+                }
+            }
+            $pair->reference = PublishedOrder::reorder($pair->surface, (string) $pair->reference, $complete);
         }
     }
 
@@ -246,7 +255,15 @@ final class SurfaceComparison
 
         foreach (['candidate' => $candidate, 'reference' => $reference] as $side => $artifact) {
             try {
-                $disorder = PublishedOrder::disorder($surface, $artifact);
+                $complete = null;
+                if ($surface === 'format:json' && $this->records !== null) {
+                    $document = ReportRecords::decode($artifact);
+                    if (($document['violationsMeta']['truncated'] ?? false) === true) {
+                        $case = substr($key, 5, (int) strpos($key, '|') - 5);
+                        $complete = $this->records->rawAuthority($case, 'format:json', $side);
+                    }
+                }
+                $disorder = PublishedOrder::disorder($surface, $artifact, $complete);
             } catch (GateError $error) {
                 $disorder = $error->getMessage();
             }

@@ -37,7 +37,7 @@ final class ValueCheck implements RunCheck
 
     public function measure(string $kind, string $key, string $subject, string $level, mixed $from, mixed $to): bool
     {
-        if ($from === $to) {
+        if ($from === $to && $kind !== DeclaredValues::ORDER) {
             return false;
         }
         $licensed = false;

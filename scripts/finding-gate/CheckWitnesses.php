@@ -392,6 +392,24 @@ final class CheckWitnesses
                 [[FailureClass::RUN_FAILED, 'derive-1', 'Gate::runTree <- GateModes::deriveNormalization']],
             ),
             self::witness(
+                'normalization-complete-shape',
+                self::NORMALIZATION_REFUSED,
+                static fn(array $tree): array => SelfTestRecords::rankingWitnessTree($tree, 'shape'),
+                [
+                    [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:ranking-shape|format:json', 'RankingCheck::projectionProblem <- Gate::normalizationAuthority'],
+                    [FailureClass::RUN_FAILED, 'derive-1 / ranking-shape', 'Gate::normalizationAuthority <- GateModes::deriveNormalization'],
+                ],
+            ),
+            self::witness(
+                'normalization-duplicate-ambiguity',
+                self::NORMALIZATION_REFUSED,
+                static fn(array $tree): array => SelfTestRecords::rankingWitnessTree($tree, 'ambiguity'),
+                [
+                    [FailureClass::RECORD_AMBIGUOUS, 'candidate / case:ranking-ambiguity|format:json', 'RankingCheck::anatomy <- Gate::normalizationAuthority'],
+                    [FailureClass::RUN_FAILED, 'derive-1 / ranking-ambiguity', 'Gate::normalizationAuthority <- GateModes::deriveNormalization'],
+                ],
+            ),
+            self::witness(
                 'existing-reference-outcome-refusal',
                 self::WHOLE_RUN,
                 static function (array $tree): array {
@@ -679,12 +697,14 @@ final class CheckWitnesses
                 self::WHOLE_RUN,
                 static function (array $tree): array {
                     $tree = self::withCase($tree, 'omega', 'replay.omega', declared: true);
-                    $tree['answers']['case:omega|format:json'] = ['stdout' => "not json\n"];
+                    $tree['answers']['case:omega|format:json'] = ['stdout' => '{"violationsMeta":{"total":0,"truncated":false,"byRule":{}}}'];
 
                     return $tree;
                 },
                 [
                     [FailureClass::RUN_FAILED, '* / omega', 'CaseOutcomeCheck::findingsOf#1 <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:omega|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|baseline-file', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:checkstyle', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:github', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
@@ -707,10 +727,27 @@ final class CheckWitnesses
                 self::WHOLE_RUN,
                 static function (array $tree): array {
                     $tree['truncated'][] = 'alpha';
+                    $answer = SyntheticTree::caseAnswers('alpha', $tree['findings']['alpha'], true, [])['case:alpha|format:json'];
+                    $answer['physical']['stdout'] = '{"violations":[]}';
+                    $tree['answers']['case:alpha|format:json'] = $answer;
 
                     return $tree;
                 },
-                [[FailureClass::RUN_FAILED, '* / alpha', 'CaseOutcomeCheck::findingsOf#2 <- Gate::checkFindings']],
+                [
+                    [FailureClass::RUN_FAILED, '* / alpha', 'CaseOutcomeCheck::findingsOf#2 <- Gate::checkFindings'],
+                    [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RankingCheck::projectionProblem <- RecordCheck::checkCase'],
+                    [FailureClass::RANKING_PROJECTION_MISMATCH, 'reference / case:alpha|format:json', 'RankingCheck::projectionProblem <- RecordCheck::checkCase'],
+                ],
+                [
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, '* / case:alpha|format:*'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, '* / case:alpha|show-suppressed'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, '* / case:alpha|baseline-file'],
+                    [FailureClass::FINGERPRINT_MISMATCH, '* / alpha / *'],
+                    [FailureClass::FINGERPRINT_OPAQUE, '* / case:alpha|format:gitlab'],
+                    [FailureClass::PUBLISHED_ORDER_DRIFT, 'case:alpha|format:json'],
+                    [FailureClass::CASE_CLAIM_MISMATCH, 'case:alpha'],
+                    [FailureClass::COVERAGE_SHORTFALL, 'corpus'],
+                ],
             ),
             self::witness(
                 'baseline-exit',
@@ -898,7 +935,9 @@ final class CheckWitnesses
                 'delta-mismatch',
                 self::DECLARATIONS,
                 static function (array $tree): array {
-                    $tree['candidateAnswers']['case:alpha|format:summary'] = ['stdout' => "another summary of alpha\n"];
+                    $answers = SyntheticTree::caseAnswers('alpha', $tree['candidateFindings']['alpha'] ?? $tree['findings']['alpha'], false, []);
+                    $tree['candidateAnswers']['case:alpha|format:summary'] = $answers['case:alpha|format:summary'];
+                    $tree['candidateAnswers']['case:alpha|format:summary']['stdout'] = "An independent summary heading.\nAnalysis complete\n\nTop issues by impact\n" . implode('', \array_slice(($answers['case:alpha|format:summary']['summaryIssues'] ?? throw new GateError('A summary witness requires generated ranked rows.')), 0, 10));
                     $tree['declaredDelta']['case:alpha|format:summary'] = self::NO_DIFF;
 
                     return $tree;
@@ -1066,9 +1105,10 @@ final class CheckWitnesses
                 self::DECLARATIONS,
                 static function (array $tree): array {
                     $tree['declarations']['cases/alpha/baseline-src/src/Alpha.php'] = "<?php\n";
-                    $emptySource = "{\"violations\": []}\n";
+                    $emptyAnswers = SyntheticTree::caseAnswers('alpha', [], false, []);
+                    $emptySource = $emptyAnswers['case:alpha|format:json'];
                     $emptyBaseline = "{\"version\":13,\"scope\":[\"src\"],\"entries\":{}}\n";
-                    $tree['answers']['case:alpha|check:baseline-source'] = ['stdout' => $emptySource];
+                    $tree['answers']['case:alpha|check:baseline-source'] = $emptySource;
                     $tree['answers']['case:alpha|baseline-file'] = ['stdout' => $emptyBaseline, 'file' => $emptyBaseline];
                     $tree['declarations'][DeclaredFields::INDEX] = Tsv::render(DeclaredFields::COLUMNS, [
                         [DeclaredFields::REMOVED, 'json', 'check:baseline-source', 'retired', 'an unused field license on the observed empty variant'],
@@ -1082,10 +1122,7 @@ final class CheckWitnesses
                 'derive-normalization-refuses-a-dead-pass',
                 self::NORMALIZATION_REFUSED,
                 static function (array $tree): array {
-                    $tree = self::withCase($tree, 'omega', 'replay.omega', declared: true);
                     $tree = self::withCase($tree, 'eta', 'replay.eta', declared: true);
-                    $tree['answers']['case:omega|format:json'] = ['stdout' => "not json\n"];
-                    $tree['truncated'][] = 'alpha';
                     $tree['answers']['case:alpha|baseline-file'] = ['stdout' => "{\"replayed\": \"alpha\"}\n", 'exit' => 1];
                     $tree['answers']['case:eta|baseline-file'] = ['stdout' => ''];
                     // A row no pass fires: a list measured anyway would drop it, so a write cannot hide.
@@ -1094,8 +1131,6 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [
-                    [FailureClass::RUN_FAILED, 'derive-* / omega', 'CaseOutcomeCheck::findingsOf#1 <- Gate::deriveNormalization'],
-                    [FailureClass::RUN_FAILED, 'derive-* / alpha', 'CaseOutcomeCheck::findingsOf#2 <- Gate::deriveNormalization'],
                     [
                         FailureClass::RUN_FAILED,
                         'derive-* / alpha / baseline:generate',

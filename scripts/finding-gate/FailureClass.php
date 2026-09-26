@@ -126,11 +126,14 @@ final class FailureClass
     /** A surface publishes a record or document value differently from that side's authoritative record or process. */
     public const RECORD_PROJECTION_MISMATCH = 'record-projection-mismatch';
 
-    /**
-     * The `topIssues` ranking moved beyond what the declared records and the
-     * declared value shifts of the ranked fields license.
-     */
-    public const TOP_ISSUES_MISMATCH = 'top-issues-mismatch';
+    /** One physical finding join key carries conflicting ranking values. */
+    public const RECORD_AMBIGUOUS = 'record-ambiguous';
+
+    /** Unchanged matched findings changed their observable ranking order. */
+    public const RANKING_ORDER_MISMATCH = 'ranking-order-mismatch';
+
+    /** A ranking capture or published projection disagrees with its own source invocation. */
+    public const RANKING_PROJECTION_MISMATCH = 'ranking-projection-mismatch';
 
     /** The value shifts measured under a declared intent are not the derived table, byte for byte. */
     public const VALUE_MISMATCH = 'value-mismatch';
@@ -196,7 +199,9 @@ final class FailureClass
         self::RECORD_UNDECLARED,
         self::RECORD_STALE,
         self::RECORD_PROJECTION_MISMATCH,
-        self::TOP_ISSUES_MISMATCH,
+        self::RECORD_AMBIGUOUS,
+        self::RANKING_ORDER_MISMATCH,
+        self::RANKING_PROJECTION_MISMATCH,
         self::VALUE_MISMATCH,
         self::VALUE_STALE,
         self::FIELD_DECLARATION_STALE,

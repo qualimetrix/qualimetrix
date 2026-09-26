@@ -18,6 +18,7 @@ use QmxFindingGate\DeclaredValues;
 use QmxFindingGate\FailureClass;
 use QmxFindingGate\Fs;
 use QmxFindingGate\GateError;
+use QmxFindingGate\GateModes;
 use QmxFindingGate\GateReport;
 use QmxFindingGate\MetricVocabulary;
 use QmxFindingGate\Normalization;
@@ -29,6 +30,7 @@ use QmxFindingGate\RenameMaps;
 use QmxFindingGate\RunContext;
 use QmxFindingGate\SelfTestCapture;
 use QmxFindingGate\SelfTestNormalization;
+use QmxFindingGate\SelfTestOutcomes;
 use QmxFindingGate\SurfacePair;
 use QmxFindingGate\SyntheticTree;
 use QmxFindingGate\TreeRun;
@@ -102,6 +104,52 @@ final class CaptureTest extends TestCase
         $failures = new ArrayObject();
         (new SelfTestNormalization(\dirname(__DIR__, 3), $failures))->deriver();
         self::assertSame([], $failures->getArrayCopy());
+    }
+
+    #[Test]
+    public function itDerivesNormalizationOnlyAfterValidatingFullPhysicalAndRefusalCaptures(): void
+    {
+        foreach (['healthy', 'physical-count', 'refusal-exit'] as $fault) {
+            if ($fault === 'refusal-exit') {
+                $tree = SelfTestOutcomes::fixture();
+                $tree['candidateAnswers']['case:alpha|format:json']['ranked'] = ['exit' => 2];
+            } else {
+                $tree = SyntheticTree::clean();
+                $tree['findings']['alpha'][] = SyntheticTree::finding($tree['tuple'], 'replay.alpha', 'declaration:callable:Replay\\Beta::run@src/Beta.php');
+                $tree['truncated'] = ['alpha'];
+                if ($fault === 'physical-count') {
+                    $answer = SyntheticTree::caseAnswers('alpha', $tree['findings']['alpha'], true, [])['case:alpha|format:json'];
+                    $physical = json_decode($answer['physical']['stdout'] ?? throw new GateError('The full synthetic physical publication is missing.'), true, 512, \JSON_THROW_ON_ERROR);
+                    $physical['violationsMeta']['byRule']['replay.alpha'] = 1;
+                    $tree['candidateAnswers']['case:alpha|format:json'] = ['physical' => ['stdout' => json_encode($physical, \JSON_THROW_ON_ERROR)]];
+                }
+            }
+            $root = SyntheticTree::create($tree);
+            try {
+                $path = $root . '/finding-gate/normalization.tsv';
+                $before = Fs::read($path);
+                $report = new GateReport();
+                ob_start();
+                try {
+                    $exit = GateModes::run(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD', '--derive-normalization'], $root), $report);
+                } finally {
+                    $output = ob_get_clean();
+                }
+                self::assertIsString($output);
+                if ($fault === 'healthy') {
+                    self::assertSame(GateModes::WROTE, $exit, $output);
+                    self::assertSame(GateReport::VERDICT_GREEN, $report->verdict(), $report->render());
+                    self::assertNotSame($before, Fs::read($path));
+                } else {
+                    self::assertSame(GateModes::MEASUREMENT_FAILED, $exit, $output);
+                    self::assertSame(GateReport::VERDICT_RED, $report->verdict(), $report->render());
+                    self::assertSame($before, Fs::read($path));
+                    self::assertContains(FailureClass::RANKING_PROJECTION_MISMATCH, $report->failureClasses());
+                }
+            } finally {
+                SyntheticTree::remove($root);
+            }
+        }
     }
 
     #[Test]

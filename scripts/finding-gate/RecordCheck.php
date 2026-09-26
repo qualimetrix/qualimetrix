@@ -14,6 +14,12 @@ final class RecordCheck implements CaseCheck, RunCheck
     private static ?WeakMap $runs = null;
     /** @var array<string,array<string,array<string,list<array<string,mixed>>>>> */
     private array $records = [];
+    /** @var array<string,array<string,array<string,list<array<string,mixed>>>>> */
+    private array $publications = [];
+    /** @var array<string,array<string,array<string,list<array<string,mixed>>>>> */
+    private array $physical = [];
+    /** @var array<string,array<string,array<string,list<array<string,mixed>>>>> */
+    private array $raw = [];
     /** @var array<string,array<string,array<string,bool>>> */
     private array $identityReady = [];
     /** @var array<string,true> */
@@ -26,7 +32,7 @@ final class RecordCheck implements CaseCheck, RunCheck
     private array $derived = [];
     private bool $deriving = false;
 
-    private function __construct(private readonly RunContext $run, private readonly ValueCheck $values) {}
+    private function __construct(private readonly RunContext $run, private readonly ValueCheck $values, private readonly RankingCheck $ranking) {}
 
     public static function create(RunContext $run): static
     {
@@ -35,7 +41,7 @@ final class RecordCheck implements CaseCheck, RunCheck
         if ($check instanceof self) {
             return $check;
         }
-        $check = new self($run, ValueCheck::create($run));
+        $check = new self($run, ValueCheck::create($run), RankingCheck::create($run));
         self::$runs[$run] = WeakReference::create($check);
         return $check;
     }
@@ -65,6 +71,8 @@ final class RecordCheck implements CaseCheck, RunCheck
                 }
                 $text = $this->mapped($side, $surface, $artifacts[$key]);
                 $this->records[$case->id][$surface][$side] = ReportRecords::extract($report, $text, $this->fields($report, $surface, $side), $this->optionalSubject($report, $surface));
+                $this->publications[$case->id][$surface][$side] = $this->records[$case->id][$surface][$side];
+                $this->physical[$case->id][$surface][$side] = $this->records[$case->id][$surface][$side];
                 $this->identityReady[$case->id][$surface][$side] = true;
                 if ($report !== 'metrics') {
                     foreach ($this->base($report, $surface, $this->records[$case->id][$surface][$side]) as $record) {
@@ -83,6 +91,19 @@ final class RecordCheck implements CaseCheck, RunCheck
                         throw new GateError('The directives JSON exit_code disagrees with this invocation process exit.');
                     }
                 }
+                if ($report === 'json' && $this->identityReady[$case->id][$surface][$side]) {
+                    $raw = ReportRecords::extract('json', $artifacts[$key], $this->fields('json', $surface, $side));
+                    try {
+                        $observed = $this->ranking->observe($side, $case, $surface, $raw, $artifacts);
+                    } catch (GateError $error) {
+                        $this->identityReady[$case->id][$surface][$side] = false;
+                        continue;
+                    }
+                    $this->publications[$case->id][$surface][$side] = $observed['published'];
+                    $this->physical[$case->id][$surface][$side] = $observed['authority'];
+                    $this->raw[$case->id][$surface][$side] = $observed['rawAuthority'];
+                    $this->records[$case->id][$surface][$side] = $observed['comparative'];
+                }
             } catch (GateError $error) {
                 $this->publicationProblem($side, $key, $error);
             }
@@ -90,7 +111,7 @@ final class RecordCheck implements CaseCheck, RunCheck
         if (!isset($this->records[$case->id]['format:json'][$side])) {
             return;
         }
-        $findings = $this->records[$case->id]['format:json'][$side];
+        $findings = $this->physical[$case->id]['format:json'][$side];
         foreach (['format:html', 'format:gitlab', 'format:sarif'] as $surface) {
             $key = $scope . '|' . $surface;
             try {
@@ -158,6 +179,9 @@ final class RecordCheck implements CaseCheck, RunCheck
                 $entries = ProseRecords::extract($surface, $this->mapped($side, $surface, $artifacts[$key]));
                 $budget = $findings;
                 foreach ($entries as $entry) {
+                    if ($surface === 'format:summary' && isset($entry['fields']['rank'])) {
+                        continue;
+                    }
                     $found = false;
                     foreach ($budget as $index => $record) {
                         if (ProseRecords::matches($surface, $entry['fields'], $record)) {
@@ -181,7 +205,7 @@ final class RecordCheck implements CaseCheck, RunCheck
         $key = $scope . '|baseline-file';
         if (CaseOutcome::applies(CaseOutcome::CHECK_BASELINE_FILE, $outcome) && isset($artifacts[$key])) {
             try {
-                $sourceRecords = $this->records[$case->id][$source][$side] ?? throw new GateError('The baseline source publication is unavailable.');
+                $sourceRecords = $this->physical[$case->id][$source][$side] ?? throw new GateError('The baseline source publication is unavailable.');
                 ReportRecords::baselineEntries($this->mapped($side, 'baseline-file', $artifacts[$key]), $sourceRecords);
             } catch (GateError $error) {
                 $this->publicationProblem($side, $key, $error);
@@ -194,7 +218,7 @@ final class RecordCheck implements CaseCheck, RunCheck
             }
             try {
                 $projected = ReportRecords::extract('json', $this->mapped($side, 'format:json', $artifacts[$key]), $this->fields('json', 'format:json', $side));
-                if ($projected !== $findings) {
+                if ($projected !== $this->publications[$case->id]['format:json'][$side]) {
                     throw new GateError('A same-input check publication differs from its authoritative JSON records.');
                 }
             } catch (GateError $error) {
@@ -210,7 +234,8 @@ final class RecordCheck implements CaseCheck, RunCheck
 
     private function mapped(string $side, string $surface, string $text): string
     {
-        return $this->run->normalization->normalize($surface, $side === 'reference' ? $this->run->maps->forward($text, $surface) : $text);
+        $mapped = $side === 'reference' ? $this->run->maps->forward($text, $surface) : $text;
+        return \in_array($surface, ReportViews::REPORTS['json'], true) ? $mapped : $this->run->normalization->normalize($surface, $mapped);
     }
 
     /** @return list<string> */
@@ -254,6 +279,7 @@ final class RecordCheck implements CaseCheck, RunCheck
         if ($definition === null) {
             throw new GateError('An unknown case has no authoritative publications.');
         }
+        $this->ranking->supplyFields($case);
         foreach (ReportViews::forCase($definition) as $view => $report) {
             $candidate = $this->records[$case][$view]['candidate'] ?? null;
             $reference = $this->records[$case][$view]['reference'] ?? null;
@@ -278,7 +304,7 @@ final class RecordCheck implements CaseCheck, RunCheck
                     $supplied = [];
                     foreach ($records as $index => $record) {
                         $base = $side === 'candidate' ? $left[$index] : $right[$index];
-                        $key = DeclaredRecords::canonical($base);
+                        $key = DeclaredRecords::canonical($report === 'json' ? RankingSchema::physical($base) : $base);
                         if ($metricPairs !== null) {
                             foreach ($metricPairs['pairs'] as $pair) {
                                 if ($pair[$side] === $base) {
@@ -287,7 +313,7 @@ final class RecordCheck implements CaseCheck, RunCheck
                                 }
                             }
                         }
-                        $supplied[] = ['record' => $key, 'fields' => $record];
+                        $supplied[] = ['record' => $key, 'fields' => $report === 'json' ? RankingSchema::physical($record) : $record];
                     }
                     $this->run->declarations->fields->supply($report, $case, $view, $side, $supplied);
                 }
@@ -296,6 +322,9 @@ final class RecordCheck implements CaseCheck, RunCheck
                 continue;
             }
             $paired = $metricPairs ?? self::pair($report, $left, $right);
+            if ($report === 'json') {
+                $this->ranking->prepareRanking($case, $view, $paired['pairs']);
+            }
             foreach ($paired['pairs'] as $pair) {
                 $a = $pair['candidate'];
                 $b = $pair['reference'];
@@ -407,6 +436,13 @@ final class RecordCheck implements CaseCheck, RunCheck
             return $records;
         }
         $fields = array_keys($this->run->declarations->fields->changes($report, $view));
+        if ($report === 'json') {
+            foreach (array_keys($this->run->declarations->fields->changes('json', 'ranking')) as $field) {
+                if (\in_array($field, RankingSchema::VALUES, true)) {
+                    $fields[] = 'ranking.' . $field;
+                }
+            }
+        }
         return array_map(static fn(array $record): array => array_diff_key($record, array_flip($fields)), $records);
     }
 
@@ -419,7 +455,25 @@ final class RecordCheck implements CaseCheck, RunCheck
     /** @return list<array<string,mixed>> */
     public function published(string $case, string $view, string $side): array
     {
-        return $this->records[$case][$view][$side] ?? throw new GateError('A required authoritative record publication is unavailable.');
+        return $this->publications[$case][$view][$side] ?? throw new GateError('A required authoritative record publication is unavailable.');
+    }
+
+    /** @return list<array<string,mixed>> */
+    public function authority(string $case, string $view, string $side): array
+    {
+        return $this->physical[$case][$view][$side] ?? throw new GateError('A required physical record authority is unavailable.');
+    }
+
+    /** @return list<array<string,mixed>> */
+    public function rawAuthority(string $case, string $view, string $side): array
+    {
+        return $this->raw[$case][$view][$side] ?? throw new GateError('A required raw physical record authority is unavailable.');
+    }
+
+    /** @return list<array<string,mixed>> */
+    public function comparative(string $case, string $view, string $side): array
+    {
+        return $this->records[$case][$view][$side] ?? throw new GateError('A required comparative record authority is unavailable.');
     }
 
     /**
@@ -429,7 +483,20 @@ final class RecordCheck implements CaseCheck, RunCheck
      */
     public function replacement(string $case, string $view, string $side, array $record): array
     {
-        return $this->replacements[$case][$view][$side][DeclaredRecords::canonical($record)] ?? $record;
+        $direct = $this->replacements[$case][$view][$side][DeclaredRecords::canonical($record)] ?? null;
+        $json = \in_array($view, ReportViews::REPORTS['json'], true);
+        if ($direct !== null) {
+            return $json ? RankingSchema::physical($direct) : $direct;
+        }
+        if (!$json) {
+            return $record;
+        }
+        foreach ($this->replacements[$case][$view][$side] ?? [] as $key => $replacement) {
+            if (RankingSchema::physical(ReportRecords::object($key)) === $record) {
+                return RankingSchema::physical($replacement);
+            }
+        }
+        return RankingSchema::physical($record);
     }
 
     /**

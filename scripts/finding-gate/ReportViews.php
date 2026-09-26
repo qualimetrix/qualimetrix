@@ -8,7 +8,7 @@ namespace QmxFindingGate;
 final class ReportViews
 {
     public const array REPORTS = [
-        'json' => ['format:json', 'check:baseline-source'],
+        'json' => ['format:json', 'check:baseline-source', 'check:baseline'],
         'suppressed' => ['format:suppressed'],
         'metrics' => ['format:metrics'],
         'directives' => ['directives'],
@@ -19,6 +19,14 @@ final class ReportViews
         if (!\in_array($view, self::REPORTS[$report] ?? [], true)) {
             throw new GateError('Unknown authoritative report/view publication: ' . $report . ' / ' . $view);
         }
+    }
+
+    public static function assertFieldsView(string $report, string $view): void
+    {
+        if ($report === 'json' && $view === 'ranking') {
+            return;
+        }
+        self::assert($report, $view);
     }
 
     /** @return list<string> */
@@ -33,7 +41,7 @@ final class ReportViews
         $views = [];
         foreach (self::REPORTS as $report => $publications) {
             foreach ($publications as $view) {
-                if ($view !== 'check:baseline-source' || $case->baselineSource() !== null) {
+                if (!\in_array($view, ['check:baseline-source', 'check:baseline'], true) || $case->baselineSource() !== null) {
                     $views[$view] = $report;
                 }
             }

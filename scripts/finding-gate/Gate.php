@@ -30,6 +30,10 @@ final class Gate
 
     private readonly RankingCaptures $rankings;
 
+    private readonly RecordCheck $records;
+
+    private readonly RunContext $context;
+
     private readonly DeclaredDelta $declaredDelta;
 
     private readonly DeclaredFieldMoves $declaredFieldMoves;
@@ -148,6 +152,8 @@ final class Gate
             $this->temporaryDirectory,
         );
         $this->rankings = $run->rankings;
+        $this->context = $run;
+        $this->records = RecordCheck::create($run);
         $this->caseOutcomeCheck = CaseOutcomeCheck::create($run);
         $wiring = Wiring::of(__DIR__);
         $this->caseChecks = self::registered($wiring, 'caseChecks', CaseCheck::class, $run);
@@ -172,6 +178,7 @@ final class Gate
             $this->declaredDeltaCheck,
             $this->temporaryDirectory,
             self::registered($wiring, 'surfaceStages', SurfaceStage::class, $run),
+            $this->records,
         );
     }
 
@@ -313,11 +320,16 @@ final class Gate
 
             for ($pass = 1; $pass <= NormalizationDeriver::passes(); ++$pass) {
                 try {
-                    $artifacts = $this->runTree($this->options->candidateRoot, 'derive-' . $pass, reverseInput: false)->artifacts;
+                    $capture = $this->runTree($this->options->candidateRoot, 'derive-' . $pass, reverseInput: false);
                 } catch (GateError) {
                     return null;
                 }
-                $this->caseOutcomeCheck->checkRunsProduced('derive-' . $pass, $artifacts);
+                $artifacts = $capture->artifacts;
+                $authority = $this->normalizationAuthority('derive-' . $pass, $capture);
+                if ($authority === null) {
+                    return null;
+                }
+                $this->caseOutcomeCheck->checkRunsProduced('derive-' . $pass, $artifacts, $authority);
                 $passes[] = $artifacts;
             }
 
@@ -391,6 +403,44 @@ final class Gate
         Fs::removeRecursively($this->temporaryDirectory);
     }
 
+    /** @return array<string,list<array<string,mixed>>>|null */
+    private function normalizationAuthority(string $label, CaptureResult $capture): ?array
+    {
+        $pass = $this->context->withCandidateCapture($capture);
+        $ranking = RankingCheck::create($pass);
+        $records = RecordCheck::create($pass);
+        $authority = [];
+        foreach ($this->corpus->cases as $case) {
+            $outcome = CaseOutcome::of($case, 'candidate');
+            try {
+                foreach ($pass->capturePlan->rankingInvocations() as $descriptor) {
+                    $key = Surfaces::key($descriptor['scope'], $descriptor['surface']);
+                    if ($descriptor['scope'] !== 'case:' . $case->id || !$pass->capturePlan->requiredOn($key, 'candidate')) {
+                        continue;
+                    }
+                    if (!$ranking->checkCaptureMetadata('candidate', $key, $capture->artifacts)) {
+                        return null;
+                    }
+                    if (!CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, $outcome)) {
+                        continue;
+                    }
+                    $published = ReportRecords::extract('json', $capture->artifacts[$key], $records->fields('json', $descriptor['surface'], 'candidate'));
+                    $observed = $ranking->observe('candidate', $case, $descriptor['surface'], $published, $capture->artifacts);
+                    if ($descriptor['surface'] === 'format:json') {
+                        $authority[$case->id] = $observed['rawAuthority'];
+                    }
+                }
+                if (CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, $outcome) && !\array_key_exists($case->id, $authority)) {
+                    throw new GateError('A normalization pass has no validated main physical authority.');
+                }
+            } catch (GateError $error) {
+                $this->report->fail(FailureClass::RUN_FAILED, $label . ' / ' . $case->id, $error->getMessage());
+                return null;
+            }
+        }
+        return $authority;
+    }
+
     private function runTree(string $treeRoot, string $label, bool $reverseInput): CaptureResult
     {
         try {
@@ -436,8 +486,20 @@ final class Gate
             $key = Surfaces::key('case:' . $case->id, 'format:json');
             $outcome = CaseOutcome::of($case, $side);
 
+            foreach ($this->caseChecks as $check) {
+                if (CaseOutcome::applies($check->name(), $outcome)) {
+                    $check->checkCase($side, $case, $outcome, $artifacts);
+                }
+            }
+
             if (CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, $outcome)) {
-                $findings = $this->caseOutcomeCheck->findingsOf($side, $case, $artifacts);
+                try {
+                    $complete = $this->records->rawAuthority($case->id, 'format:json', $side);
+                } catch (GateError) {
+                    // The record producer already reported why its authority is unavailable.
+                    $complete = null;
+                }
+                $findings = $this->caseOutcomeCheck->findingsOf($side, $case, $artifacts, $complete);
 
                 if ($findings === null) {
                     continue;
@@ -448,7 +510,14 @@ final class Gate
                 }
 
                 if (CaseOutcome::applies(CaseOutcome::CHECK_NORMALIZATION_LEAVES_FINDINGS, $outcome)) {
-                    $this->normalizationCheck->checkNormalizationLeavesFindings($side, $case, $artifacts[$key], $findings);
+                    $publication = ReportRecords::decode($artifacts[$key]);
+                    $published = $publication['violations'] ?? throw new GateError('A readable findings publication lost its physical section.');
+                    if (!\is_array($published)) {
+                        throw new GateError('A readable findings publication has no physical records.');
+                    }
+                    /** @var list<array<string,mixed>> $published */
+                    $published = array_values($published);
+                    $this->normalizationCheck->checkNormalizationLeavesFindings($side, $case, $artifacts[$key], $published);
                 }
 
                 if (CaseOutcome::applies(CaseOutcome::CHECK_FINGERPRINTS, $outcome)) {
@@ -460,11 +529,6 @@ final class Gate
                 }
             }
 
-            foreach ($this->caseChecks as $check) {
-                if (CaseOutcome::applies($check->name(), $outcome)) {
-                    $check->checkCase($side, $case, $outcome, $artifacts);
-                }
-            }
         }
     }
 

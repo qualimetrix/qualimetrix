@@ -36,6 +36,8 @@ final class DeclaredValues
 
     public const string EXIT = 'exit';
 
+    public const string ORDER = 'order';
+
     public const array COMMANDS = ['check', 'directives', 'graph:export', 'rules', 'baseline:generate', 'baseline:explain', 'baseline:update', 'baseline:cleanup', 'baseline:rename-channels', 'debug:layer-assignment'];
 
     public const string EVERY_LEVEL = '*';
@@ -58,10 +60,13 @@ final class DeclaredValues
         $intents = [];
 
         foreach (DeclarationTable::rows($root, self::INDEX, self::COLUMNS) as $index => $row) {
-            DeclarationTable::oneOf(self::INDEX, $index + 1, 'kind', $row['kind'], [self::FIELD, self::METRIC, self::EXIT]);
+            DeclarationTable::oneOf(self::INDEX, $index + 1, 'kind', $row['kind'], [self::FIELD, self::METRIC, self::EXIT, self::ORDER]);
             DeclarationTable::oneOf(self::INDEX, $index + 1, 'level', $row['level'], [self::EVERY_LEVEL, ...SubjectLevel::levels()]);
             if ($row['kind'] === self::EXIT && ($row['level'] !== '*' || !\in_array($row['key'], self::COMMANDS, true))) {
                 throw new GateError('An exit intention requires an exact command class and level *.');
+            }
+            if ($row['kind'] === self::ORDER && ($row['key'] !== 'ranking' || $row['level'] !== '*')) {
+                throw new GateError('An order intention requires key ranking and level *.');
             }
             $key = self::intentKey($row['kind'], $row['key']);
 

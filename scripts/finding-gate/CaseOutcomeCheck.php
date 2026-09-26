@@ -219,8 +219,9 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
      * no output at all, under the sentence "Measured ... from repeated runs".
      *
      * @param array<string, string> $artifacts
+     * @param array<string,list<array<string,mixed>>> $authority validated complete findings by case
      */
-    public function checkRunsProduced(string $side, array $artifacts): void
+    public function checkRunsProduced(string $side, array $artifacts, array $authority): void
     {
         foreach ($this->corpus->cases as $case) {
             $outcome = CaseOutcome::of($case, $side === 'reference' ? 'reference' : 'candidate');
@@ -228,7 +229,12 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
                 $this->checkCase($side, $case, $outcome, $artifacts);
             }
             if (CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, $outcome)) {
-                $this->findingsOf($side, $case, $artifacts);
+                if (!\array_key_exists($case->id, $authority)) {
+                    throw new GateError('A produced analysis has no validated physical authority: ' . $case->id);
+                }
+                if (CaseOutcome::applies(CaseOutcome::CHECK_BASELINE_FILE, $outcome)) {
+                    $this->checkBaselineSurface($side, $case, $artifacts);
+                }
             }
         }
     }
@@ -237,10 +243,11 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
      * One case's findings, or null with the failure already reported.
      *
      * @param array<string, string> $artifacts
+     * @param list<array<string, mixed>>|null $complete validated raw physical authority
      *
      * @return list<array<string, mixed>>|null
      */
-    public function findingsOf(string $side, CaseDefinition $case, array $artifacts): ?array
+    public function findingsOf(string $side, CaseDefinition $case, array $artifacts, ?array $complete = null): ?array
     {
         $key = Surfaces::key('case:' . $case->id, 'format:json');
         $report = json_decode($artifacts[$key] ?? '', true);
@@ -251,7 +258,7 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
             return null;
         }
 
-        if (($report['violationsMeta']['truncated'] ?? false) === true) {
+        if (($report['violationsMeta']['truncated'] ?? false) === true && $complete === null) {
             $this->report->fail(
                 FailureClass::RUN_FAILED,
                 $side . ' / ' . $case->id,
@@ -265,7 +272,7 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
         }
 
         /** @var list<array<string, mixed>> $findings */
-        $findings = array_values($report['violations']);
+        $findings = $complete ?? array_values($report['violations']);
 
         return $findings;
     }

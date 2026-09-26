@@ -41,6 +41,17 @@ final class DeclaredValuesTest extends TestCase
     }
 
     #[Test]
+    public function itAllowsOnlyTheExactRankingOrderKeyAndWildcardLevel(): void
+    {
+        $this->write(DeclaredValues::INDEX, DeclaredValues::COLUMNS, [['order', 'ranking', '*', 'Move unchanged ranked occurrences.']]);
+        self::assertSame([['kind' => 'order', 'key' => 'ranking', 'level' => '*', 'reason' => 'Move unchanged ranked occurrences.']], DeclaredValues::load($this->root)->intents());
+        foreach ([['order', 'ranking.neighbour', '*', 'why'], ['order', 'ranking', 'class', 'why']] as $row) {
+            $this->write(DeclaredValues::INDEX, DeclaredValues::COLUMNS, [$row]);
+            $this->assertRefused(static fn(string $root): mixed => DeclaredValues::load($root), 'key ranking and level *');
+        }
+    }
+
+    #[Test]
     public function itRefusesADerivedValueNoIntentDeclares(): void
     {
         $this->write(DeclaredValues::INDEX, DeclaredValues::COLUMNS, [[DeclaredValues::METRIC, 'ccn', 'class', 'recalibrated']]);

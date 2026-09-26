@@ -265,7 +265,7 @@ final class DeclaredFields
     private static function assertView(string $report, string $view): void
     {
         self::assertReport($report);
-        ReportViews::assert($report, $view);
+        ReportViews::assertFieldsView($report, $view);
     }
 
     private static function measurementKey(string $report, string $case, string $view, string $side): string

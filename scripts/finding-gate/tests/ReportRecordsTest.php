@@ -109,7 +109,7 @@ final class ReportRecordsTest extends TestCase
                 }
                 $artifacts = self::artifacts([self::finding()]);
                 $artifacts['case:alpha|format:metrics'] = ValueCheck::value(['symbols' => [$record]]);
-                $check->checkCase($side, $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
+                $this->observeRecords($run, $check, $side, $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
             }
             $check->prepare('alpha');
             self::assertContains(FailureClass::VALUE_MISMATCH, $run->report->failureClasses());
@@ -188,7 +188,7 @@ final class ReportRecordsTest extends TestCase
         }
         $surface = $report === 'directives' ? 'directives' : 'format:' . $report;
         $artifacts['case:alpha|' . $surface] = ValueCheck::value([ReportRecords::ARRAYS[$report] => [$record], 'exit_code' => 0]);
-        RecordCheck::create($run)->checkCase($side, $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
+        $this->observeRecords($run, RecordCheck::create($run), $side, $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
         self::assertContains(FailureClass::RECORD_PROJECTION_MISMATCH, $run->report->failureClasses());
         self::assertSame(1, $run->report->exitCode());
     }
@@ -214,7 +214,7 @@ final class ReportRecordsTest extends TestCase
         $other['message'] = 'Wrong output';
         $artifacts['case:alpha|check:output:file'] = ValueCheck::value(['violations' => [$other]]);
         $artifacts['case:alpha|check:parallel'] = ValueCheck::value(['violations' => [$other]]);
-        RecordCheck::create($run)->checkCase('candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
+        $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
         self::assertCount(2, $run->report->raised());
         self::assertSame([FailureClass::RECORD_PROJECTION_MISMATCH], $run->report->failureClasses());
     }
@@ -225,7 +225,7 @@ final class ReportRecordsTest extends TestCase
         $run = $this->context();
         $artifacts = self::artifacts([self::finding()]);
         $artifacts['case:alpha|exit:directives'] = '5';
-        RecordCheck::create($run)->checkCase('candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
+        $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
         self::assertContains(FailureClass::RECORD_PROJECTION_MISMATCH, $run->report->failureClasses());
     }
 
@@ -239,8 +239,8 @@ final class ReportRecordsTest extends TestCase
         }
         $a = self::finding() + ['fresh' => 7];
         $records = RecordCheck::create($run);
-        $records->checkCase('candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$a]));
-        $records->checkCase('reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([self::finding()]));
+        $this->observeRecords($run, $records, 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$a]));
+        $this->observeRecords($run, $records, 'reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([self::finding()]));
         $records->prepare('alpha');
         $records->prepare('alpha');
         $measurements = $run->declarations->fields->measurements('json');
@@ -259,8 +259,8 @@ final class ReportRecordsTest extends TestCase
         $derivation->startDeriving();
         $neighbour = self::finding();
         $neighbour['channel'] = $neighbour['code'] = $neighbour['rule'] = 'c.d';
-        $records->checkCase('candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([]));
-        $records->checkCase('reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([self::finding(), $neighbour]));
+        $this->observeRecords($run, $records, 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([]));
+        $this->observeRecords($run, $records, 'reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([self::finding(), $neighbour]));
         $records->prepare('alpha');
         self::assertContains(FailureClass::RECORD_UNDECLARED, $run->report->failureClasses());
         self::assertSame([], $derivation->rewriteDerived());
@@ -276,14 +276,14 @@ final class ReportRecordsTest extends TestCase
         $derivation = RecordDerivation::create($run);
         $derivation->startDeriving();
         $a = self::finding();
-        $records->checkCase('candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([]));
-        $records->checkCase('reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$a, $a]));
+        $this->observeRecords($run, $records, 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([]));
+        $this->observeRecords($run, $records, 'reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$a, $a]));
         $records->prepare('alpha');
         self::assertSame([], $run->report->raised());
         self::assertSame([DeclaredRecords::DERIVED], $derivation->rewriteDerived());
         $rows = Tsv::rows($this->root . '/finding-gate/' . DeclaredRecords::DERIVED, DeclaredRecords::DERIVED_COLUMNS);
         self::assertCount(2, $rows);
-        self::assertSame(DeclaredRecords::canonical($a), $rows[0]['record']);
+        self::assertSame(DeclaredRecords::canonical(self::comparativeFinding($a)), $rows[0]['record']);
         self::assertSame($rows[0], $rows[1]);
     }
 
@@ -292,11 +292,11 @@ final class ReportRecordsTest extends TestCase
     {
         $a = self::finding();
         Fs::write($this->root . '/finding-gate/' . DeclaredRecords::INDEX, Tsv::render(DeclaredRecords::COLUMNS, [['withdrawn', 'alpha', 'json', 'format:json', '{"channel":"a.b"}', 'Remove one observation.']]));
-        Fs::write($this->root . '/finding-gate/' . DeclaredRecords::DERIVED, Tsv::render(DeclaredRecords::DERIVED_COLUMNS, [['withdrawn', 'alpha', 'json', 'format:json', DeclaredRecords::canonical($a)]]));
+        Fs::write($this->root . '/finding-gate/' . DeclaredRecords::DERIVED, Tsv::render(DeclaredRecords::DERIVED_COLUMNS, [['withdrawn', 'alpha', 'json', 'format:json', DeclaredRecords::canonical(self::comparativeFinding($a))]]));
         $run = $this->context();
         $check = RecordCheck::create($run);
-        $check->checkCase('candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$a]));
-        $check->checkCase('reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$a, $a]));
+        $this->observeRecords($run, $check, 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$a]));
+        $this->observeRecords($run, $check, 'reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$a, $a]));
         $pair = new SurfacePair('case:alpha|format:gitlab', 'format:gitlab', self::artifacts([$a])['case:alpha|format:gitlab'], self::artifacts([$a, $a])['case:alpha|format:gitlab']);
         $check->prepare('alpha');
         RecordStage::create($run)->applyStage($pair);
@@ -315,11 +315,11 @@ final class ReportRecordsTest extends TestCase
         $artifacts = self::artifacts([$main]);
         $artifacts['case:alpha|check:baseline-source'] = ValueCheck::value(['violations' => [$variant]]);
         $artifacts['case:alpha|baseline-file'] = self::baselineDocument($variant, [3]);
-        RecordCheck::create($run)->checkCase('candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
+        $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
         self::assertSame([], $run->report->raised());
         $bad = $this->context();
         $artifacts['case:alpha|baseline-file'] = self::baselineDocument($variant, [1]);
-        RecordCheck::create($bad)->checkCase('candidate', $bad->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
+        $this->observeRecords($bad, RecordCheck::create($bad), 'candidate', $bad->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
         self::assertContains(FailureClass::RECORD_PROJECTION_MISMATCH, $bad->report->failureClasses());
     }
 
@@ -333,7 +333,7 @@ final class ReportRecordsTest extends TestCase
             if ($source !== null) {
                 $artifacts['case:alpha|check:baseline-source'] = $source;
             }
-            RecordCheck::create($run)->checkCase('candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
+            $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
             self::assertSame($source === '{"violations":[]}' ? [] : [FailureClass::RECORD_PROJECTION_MISMATCH], $run->report->failureClasses());
         }
     }
@@ -348,8 +348,8 @@ final class ReportRecordsTest extends TestCase
         $check->startDeriving();
         $candidate = self::artifacts([]) + ['case:alpha|check:baseline-source' => '{"violations":[]}'];
         $reference = self::artifacts([self::finding()]) + ['case:alpha|check:baseline-source' => ValueCheck::value(['violations' => [self::finding()]])];
-        $check->checkCase('candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $candidate);
-        $check->checkCase('reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $reference);
+        $this->observeRecords($run, $check, 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $candidate);
+        $this->observeRecords($run, $check, 'reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $reference);
         $check->prepare('alpha');
         self::assertContains(FailureClass::RECORD_UNDECLARED, $run->report->failureClasses());
         self::assertCount(1, $check->licensedResiduals('alpha', 'format:json', 'reference'));
@@ -374,8 +374,8 @@ final class ReportRecordsTest extends TestCase
         $candidate = self::artifacts([self::finding() + ['fresh' => 7]]) + ['case:alpha|check:baseline-source' => ValueCheck::value(['violations' => [self::finding() + ['fresh' => 9]]])];
         $reference = self::artifacts([self::finding()]) + ['case:alpha|check:baseline-source' => ValueCheck::value(['violations' => [self::finding()]])];
         $check = RecordCheck::create($run);
-        $check->checkCase('candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $candidate);
-        $check->checkCase('reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $reference);
+        $this->observeRecords($run, $check, 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $candidate);
+        $this->observeRecords($run, $check, 'reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $reference);
         $check->prepare('alpha');
         $measurements = $run->declarations->fields->measurements('json');
         self::assertCount(4, $measurements);
@@ -402,8 +402,8 @@ final class ReportRecordsTest extends TestCase
         $main = self::finding();
         $variant = self::finding();
         $variant['metricValue'] = 5;
-        $check->checkCase('candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$main]) + ['case:alpha|check:baseline-source' => ValueCheck::value(['violations' => [$variant]])]);
-        $check->checkCase('reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$old]) + ['case:alpha|check:baseline-source' => ValueCheck::value(['violations' => [$old]])]);
+        $this->observeRecords($run, $check, 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$main]) + ['case:alpha|check:baseline-source' => ValueCheck::value(['violations' => [$variant]])]);
+        $this->observeRecords($run, $check, 'reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$old]) + ['case:alpha|check:baseline-source' => ValueCheck::value(['violations' => [$old]])]);
         $check->prepare('alpha');
         self::assertSame([], $run->report->raised());
         $values->rewriteDerived();
@@ -465,8 +465,8 @@ final class ReportRecordsTest extends TestCase
             }
         }
         $check = RecordCheck::create($run);
-        $check->checkCase('candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $candidate);
-        $check->checkCase('reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $reference);
+        $this->observeRecords($run, $check, 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $candidate);
+        $this->observeRecords($run, $check, 'reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $reference);
         $check->prepare('alpha');
         foreach (['format:json', 'format:gitlab', 'format:sarif', 'format:html', 'format:text', 'format:github', 'format:checkstyle'] as $surface) {
             $aText = $candidate['case:alpha|' . $surface];
@@ -490,8 +490,8 @@ final class ReportRecordsTest extends TestCase
         $run = $this->context();
         $records = RecordCheck::create($run);
         $case = $run->corpus->cases[0];
-        $records->checkCase('candidate', $case, CaseOutcome::REFUSAL, []);
-        $records->checkCase('reference', $case, CaseOutcome::ANALYSIS, self::artifacts([self::finding()]));
+        $this->observeRecords($run, $records, 'candidate', $case, CaseOutcome::REFUSAL, []);
+        $this->observeRecords($run, $records, 'reference', $case, CaseOutcome::ANALYSIS, self::artifacts([self::finding()]));
         $records->prepare('alpha');
         try {
             $records->published('alpha', 'format:json', 'candidate');
@@ -519,7 +519,7 @@ final class ReportRecordsTest extends TestCase
             Fs::write($file, ValueCheck::value($definition));
             $run = $this->context();
             $records = RecordCheck::create($run);
-            $records->checkCase('candidate', $run->corpus->cases[0], $outcome, self::artifacts([self::finding()]) + ['case:alpha|baseline-file' => 'No baseline was generated']);
+            $this->observeRecords($run, $records, 'candidate', $run->corpus->cases[0], $outcome, self::artifacts([self::finding()]) + ['case:alpha|baseline-file' => 'No baseline was generated']);
             $pair = new SurfacePair('case:alpha|baseline-file', 'baseline-file', 'No baseline was generated', 'No baseline was generated');
             RecordStage::create($run)->applyStage($pair);
             if ($outcome === CaseOutcome::INCOMPLETE) {
@@ -537,11 +537,11 @@ final class ReportRecordsTest extends TestCase
         $kept = self::finding();
         $removed = array_replace($kept, ['subject' => 'class:App\\B', 'file' => 'src/B.php', 'symbol' => 'App\\B', 'code' => 'c.d', 'rule' => 'c.d', 'channel' => 'c.d']);
         Fs::write($this->root . '/finding-gate/' . DeclaredRecords::INDEX, Tsv::render(DeclaredRecords::COLUMNS, [['withdrawn', 'alpha', 'json', 'format:json', '{"channel":"c.d"}', 'Retire this exact finding.']]));
-        Fs::write($this->root . '/finding-gate/' . DeclaredRecords::DERIVED, Tsv::render(DeclaredRecords::DERIVED_COLUMNS, [['withdrawn', 'alpha', 'json', 'format:json', DeclaredRecords::canonical($removed)]]));
+        Fs::write($this->root . '/finding-gate/' . DeclaredRecords::DERIVED, Tsv::render(DeclaredRecords::DERIVED_COLUMNS, [['withdrawn', 'alpha', 'json', 'format:json', DeclaredRecords::canonical(self::comparativeFinding($removed))]]));
         $run = $this->context();
         $records = RecordCheck::create($run);
-        $records->checkCase('candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$kept]));
-        $records->checkCase('reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$kept, $removed]));
+        $this->observeRecords($run, $records, 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$kept]));
+        $this->observeRecords($run, $records, 'reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$kept, $removed]));
         $records->prepare('alpha');
         $baseline = '{"version":14,"entries":{"class:App\\\\A":[{"channel":"a.b","magnitudes":[3.000000]}],"class:App\\\\B":[{"channel":"c.d","magnitudes":[3]}]},"neighbour":{"spelling":1.00}}';
         $xml = '<checkstyle><file name="src/A.php"><error line="1" severity="error" source="qmx.a.b" message="M"/></file><file name="src/B.php"><error line="1" severity="error" source="qmx.c.d" message="M"/></file><file name="unused.php"></file></checkstyle>';
@@ -666,7 +666,7 @@ final class ReportRecordsTest extends TestCase
         foreach (['candidate' => $bad, 'reference' => self::finding()] as $side => $record) {
             $artifacts = self::artifacts([self::finding()]);
             $artifacts['case:alpha|format:json'] = ValueCheck::value(['violations' => [$record]]);
-            $check->checkCase($side, $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
+            $this->observeRecords($run, $check, $side, $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
         }
         self::prepareWithoutAborting($check);
         self::assertContains(FailureClass::RECORD_PROJECTION_MISMATCH, $run->report->failureClasses());
@@ -687,7 +687,7 @@ final class ReportRecordsTest extends TestCase
     {
         $run = $this->context();
         $check = RecordCheck::create($run);
-        $check->checkCase('candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([self::finding()]));
+        $this->observeRecords($run, $check, 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([self::finding()]));
         (new ReflectionProperty(RecordCheck::class, 'identityReady'))->setValue($check, []);
         $this->expectException(GateError::class);
         $this->expectExceptionMessage('An observed publication has no identity readiness verdict.');
@@ -723,9 +723,81 @@ final class ReportRecordsTest extends TestCase
             }
             $artifacts = self::artifacts([$main]);
             $artifacts['case:alpha|check:baseline-source'] = ValueCheck::value(['violations' => [$variant, $variant]]);
-            $check->checkCase($side, $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
+            $this->observeRecords($run, $check, $side, $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
         }
         return [$run, $check];
+    }
+
+    /** @param array<string,mixed> $record
+     * @return array<string,mixed>
+     */
+    private static function comparativeFinding(array $record): array
+    {
+        return $record + ['ranking.impactScore' => 0, 'ranking.coupling.class-rank' => null];
+    }
+
+    /** @param array<string,string> $artifacts */
+    private function observeRecords(RunContext $run, RecordCheck $check, string $side, \QmxFindingGate\CaseDefinition $case, string $outcome, array $artifacts): void
+    {
+        if (!CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, $outcome)) {
+            $check->checkCase($side, $case, $outcome, $artifacts);
+            return;
+        }
+        $scope = 'case:' . $case->id;
+        if ($case->baselineSource() !== null && !isset($artifacts[$scope . '|check:baseline']) && isset($artifacts[$scope . '|format:json'])) {
+            $artifacts[$scope . '|check:baseline'] = ValueCheck::value(['violations' => []]);
+        }
+        $slots = [];
+        foreach (\QmxFindingGate\ReportViews::forCase($case) as $view => $report) {
+            if ($report !== 'json') {
+                continue;
+            }
+            $key = $scope . '|' . $view;
+            if (!isset($artifacts[$key])) {
+                continue;
+            }
+            try {
+                $document = ReportRecords::decode($artifacts[$key]);
+            } catch (GateError) {
+                continue;
+            }
+            if (!\is_array($document['violations'] ?? null) || !array_is_list($document['violations'])) {
+                continue;
+            }
+            $summary = $view === 'format:json' ? array_values(array_filter(\QmxFindingGate\ProseRecords::extract('format:summary', $artifacts[$scope . '|format:summary'] ?? ''), static fn(array $entry): bool => isset($entry['fields']['rank']))) : [];
+            $issues = [];
+            $counts = [];
+            foreach ($document['violations'] as $index => $record) {
+                if (!\is_array($record)) {
+                    continue;
+                }
+                $rule = (string) ($record['rule'] ?? 'unavailable');
+                $counts[$rule] = ($counts[$rule] ?? 0) + 1;
+                $issues[] = ['rank' => $index + 1, ...array_intersect_key($record, array_flip(\QmxFindingGate\RankingSchema::PROJECTION)), 'impactScore' => isset($summary[$index]) ? (float) $summary[$index]['fields']['score'] : 0, 'coupling.class-rank' => null, 'debtMinutes' => $record['techDebtMinutes'] ?? null];
+            }
+            $document['topIssues'] = \array_slice($issues, 0, \count($summary));
+            $document['violationsMeta'] = ['total' => \count($document['violations']), 'shown' => \count($document['violations']), 'truncated' => false, 'byRule' => $counts];
+            $artifacts[$key] = ValueCheck::value($document);
+            $document['topIssues'] = $issues;
+            $artifacts[$scope . '|exit:' . $view] ??= '0';
+            $artifacts[$scope . '|stderr:' . $view] ??= '';
+            $slots[$key] = ['ranked' => ['stdout' => ValueCheck::value($document), 'stderr' => $artifacts[$scope . '|stderr:' . $view], 'exit' => (int) $artifacts[$scope . '|exit:' . $view]], 'physical' => null];
+        }
+        foreach (['check:output:file', 'check:parallel'] as $view) {
+            $key = $scope . '|' . $view;
+            if (isset($artifacts[$key])) {
+                try {
+                    $document = ReportRecords::decode($artifacts[$key]);
+                    $document['topIssues'] = [];
+                    $artifacts[$key] = ValueCheck::value($document);
+                } catch (GateError) {
+                    continue;
+                }
+            }
+        }
+        $artifacts[$scope . '|format:summary'] ??= 'Analysis complete.';
+        $run->rankings->supply($side, $slots);
+        $check->checkCase($side, $case, $outcome, $artifacts);
     }
 
     private function context(): RunContext
@@ -754,7 +826,7 @@ final class ReportRecordsTest extends TestCase
                 $node['extra'] = true;
             }
             $artifacts['case:alpha|format:html'] = '<script type="application/json" id="report-data">' . ValueCheck::value(['tree' => ['violations' => $shape === 'duplicate' ? [$node, $node] : [$node]]]) . '</script>';
-            RecordCheck::create($run)->checkCase('candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
+            $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
             if ($shape === 'valid') {
                 self::assertSame([], $run->report->raised());
             } else {
@@ -776,7 +848,7 @@ final class ReportRecordsTest extends TestCase
         $artifacts = self::artifacts([$record]);
         $artifacts['case:alpha|baseline-file'] = $text;
         foreach (['candidate', 'reference'] as $side) {
-            $check->checkCase($side, $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
+            $this->observeRecords($run, $check, $side, $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
         }
         $check->prepare('alpha');
         $pair = new SurfacePair('case:alpha|baseline-file', 'baseline-file', $text, $text);
@@ -827,7 +899,7 @@ final class ReportRecordsTest extends TestCase
             self::assertSame(str_replace('M', 'New (term)', $text), $changed);
             $run = $this->context();
             $artifacts = self::artifacts([$record]) + ['case:alpha|' . $surface => $text];
-            RecordCheck::create($run)->checkCase('candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
+            $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
             self::assertSame([], $run->report->raised(), $surface);
         }
     }
@@ -873,7 +945,7 @@ final class ReportRecordsTest extends TestCase
             $artifacts = self::artifacts([$record]);
             $artifacts['case:alpha|format:sarif'] = ValueCheck::value(['runs' => [['tool' => ['driver' => ['rules' => [['id' => 'a.b']]]], 'results' => [['ruleId' => 'a.b', 'ruleIndex' => 0, 'level' => 'error', 'message' => ['text' => 'M']]]]]]);
             $artifacts['case:alpha|format:gitlab'] = ValueCheck::value([array_replace($expected, ['location' => ['path' => $path, 'lines' => ['begin' => 1]]])]);
-            RecordCheck::create($run)->checkCase('candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
+            $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
             self::assertSame($path === '_project' ? [] : [FailureClass::RECORD_PROJECTION_MISMATCH], $run->report->failureClasses());
         }
     }
@@ -887,7 +959,7 @@ final class ReportRecordsTest extends TestCase
         $record = array_replace(self::finding(), ['edge' => ['type' => 'type_hint', 'target' => 'class:App\\B']]);
         $before = array_replace($record, ['metricValue' => 1]);
         foreach (['candidate' => $record, 'reference' => $before] as $side => $finding) {
-            $check->checkCase($side, $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$finding]));
+            $this->observeRecords($run, $check, $side, $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$finding]));
         }
         $check->prepare('alpha');
         $text = ValueCheck::value(['version' => 14, 'entries' => [$record['subject'] => [['channel' => 'a.b', 'edge' => ['target' => 'class:App\\B', 'type' => 'type_hint'], 'magnitudes' => [3]]]], 'neighbour' => ['number' => 1.0]]);
@@ -911,10 +983,10 @@ final class ReportRecordsTest extends TestCase
             foreach ([false, true] as $neighbour) {
                 $run = $this->context();
                 $artifacts = self::artifacts([$record]) + ['case:alpha|' . $surface => $neighbour ? str_replace('type_hint', 'new', $text) : $text];
-                RecordCheck::create($run)->checkCase('candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
-                self::assertSame($neighbour ? [FailureClass::RECORD_PROJECTION_MISMATCH] : [], $run->report->failureClasses(), $surface);
+                $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
+                self::assertSame($neighbour ? ($surface === 'format:summary' ? [FailureClass::RANKING_PROJECTION_MISMATCH] : [FailureClass::RECORD_PROJECTION_MISMATCH]) : [], $run->report->failureClasses(), $surface);
                 if ($neighbour) {
-                    self::assertSame('candidate / case:alpha|' . $surface, $run->report->raised()[0]['scope']);
+                    self::assertSame('candidate / case:alpha|' . ($surface === 'format:summary' ? 'format:json' : $surface), $run->report->raised()[0]['scope']);
                 }
             }
         }
@@ -937,15 +1009,23 @@ final class ReportRecordsTest extends TestCase
                     ? "Top issues by impact\n  1. [ERR] 20.0  src/A.php:1  [15min]\n         a.b: " . $record['recommendation'] . "\n  2. [ERR] 10.0  src/A.php:1  [15min]\n         c.d: " . $publishedKeeper['recommendation'] . "\n2 violations (2 errors) | Tech debt: 30min\n"
                     : "src/A.php (2 violations)\n  ERROR at line 1  A\n    " . $record['recommendation'] . "  [a.b]\n\n  ERROR at line 1  A\n    " . $publishedKeeper['recommendation'] . "  [c.d]\n\nTechnical debt by rule:\n";
                 $texts[$side] = $text;
-                $check->checkCase($side, $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$record, $publishedKeeper]) + ['case:alpha|' . $surface => $text]);
+                $this->observeRecords($run, $check, $side, $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$record, $publishedKeeper]) + ['case:alpha|' . $surface => $text]);
             }
             $check->prepare('alpha');
             $pair = new SurfacePair('case:alpha|' . $surface, $surface, $texts['candidate'], $texts['reference']);
             RecordStage::create($run)->applyStage($pair);
             self::assertSame([], $run->report->raised(), $surface);
-            self::assertSame($texts['reference'], $pair->candidate);
-            self::assertSame($texts['reference'], $pair->reference);
-            self::assertStringContainsString('Keep this neighbour.', $pair->candidate);
+            if ($surface === 'format:summary') {
+                self::assertIsString($pair->candidate);
+                self::assertSame($pair->reference, $pair->candidate);
+                self::assertStringNotContainsString('a.b:', $pair->candidate);
+                self::assertStringNotContainsString('c.d:', $pair->candidate);
+                self::assertStringContainsString('2 violations (2 errors)', $pair->candidate);
+            } else {
+                self::assertSame($texts['reference'], $pair->candidate);
+                self::assertSame($texts['reference'], $pair->reference);
+                self::assertStringContainsString('Keep this neighbour.', $pair->candidate);
+            }
         }
     }
 
@@ -1009,7 +1089,7 @@ final class ReportRecordsTest extends TestCase
                     'case:alpha|format:summary' => "  1. [ERR] 20.0  src/A.php:1  [15min]\n         a.b: Advice" . $suffix . "\n",
                     'case:alpha|format:checkstyle' => '<checkstyle><file name="src/A.php"><error line="1" severity="error" source="qmx.a.b" message="' . $expected . '"/></file></checkstyle>',
                 ];
-                RecordCheck::create($run)->checkCase('candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
+                $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
                 self::assertSame($neighbour ? [FailureClass::RECORD_PROJECTION_MISMATCH] : [], $run->report->failureClasses(), $shape);
                 if ($neighbour) {
                     self::assertSame('candidate / case:alpha|format:sarif', $run->report->raised()[0]['scope']);
@@ -1069,7 +1149,7 @@ final class ReportRecordsTest extends TestCase
         foreach ([$valid, str_replace('  ERROR  A', '  ERROR', $valid), str_replace("  ERROR\n", "  ERROR  A\n", $valid)] as $text) {
             $run = $this->context();
             $artifacts = self::artifacts([$class, $namespace]) + ['case:alpha|format:text-verbose' => $text];
-            RecordCheck::create($run)->checkCase('candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
+            $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
             self::assertSame($text === $valid ? [] : [FailureClass::RECORD_PROJECTION_MISMATCH], $run->report->failureClasses());
             if ($text !== $valid) {
                 self::assertSame('candidate / case:alpha|format:text-verbose', $run->report->raised()[0]['scope']);

@@ -25,4 +25,21 @@ final class RunContext
         $this->rankings = new RankingCaptures();
         $this->capturePlan = CapturePlan::forCorpus($corpus, $declarations->surfaces);
     }
+
+    public function withCandidateCapture(CaptureResult $capture): self
+    {
+        $pass = new self(
+            $this->options,
+            $this->report,
+            $this->corpus,
+            $this->maps,
+            $this->split,
+            $this->vocabulary,
+            $this->normalization,
+            $this->declarations,
+            $this->temporaryDirectory,
+        );
+        $pass->rankings->supply('candidate', $capture->rankings);
+        return $pass;
+    }
 }

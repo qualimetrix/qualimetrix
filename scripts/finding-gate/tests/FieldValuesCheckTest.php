@@ -328,9 +328,10 @@ final class FieldValuesCheckTest extends TestCase
         $tree['candidateFindings']['alpha'] = [$base + ['probe' => $mode === 'swap' ? 2 : 1]];
         $tree['declarations']['cases/alpha/baseline-src/src/Alpha.php'] = "<?php\n";
         $encode = static fn(mixed $value): string => json_encode($value, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n";
-        $tree['answers']['case:alpha|check:baseline-source'] = ['stdout' => $encode(['violations' => [$base, $base, $base]])];
+        $tree['answers']['case:alpha|check:baseline-source'] = self::rankedAnswer([$base, $base, $base]);
         $variant = $base + ['probe' => $mode === 'swap' ? 1 : 2];
-        $tree['candidateAnswers']['case:alpha|check:baseline-source'] = ['stdout' => $encode(['violations' => [$variant, $variant, $variant]])];
+        $tree['candidateAnswers']['case:alpha|check:baseline-source'] = self::rankedAnswer([$variant, $variant, $variant]);
+        $tree['answers']['case:alpha|check:baseline'] = self::rankedAnswer([]);
         $baseline = $encode(['version' => 13, 'scope' => ['src'], 'entries' => [$base['subject'] => [['channel' => $base['channel'], 'magnitudes' => [1, 1, 1]]]]]);
         $tree['answers']['case:alpha|baseline-file'] = ['stdout' => $baseline, 'file' => $baseline];
         $intents = [['added', 'json', 'format:json', 'probe', 'the main field publication']];
@@ -451,11 +452,29 @@ final class FieldValuesCheckTest extends TestCase
         try {
             self::assertSame([], (new Gate(Options::parse($arguments, $this->root), $red))->deriveDeclarations());
         } catch (GateError $error) {
-            self::assertStringContainsString('not supplied', $error->getMessage());
+            self::assertStringContainsString('Complete ranking requires nonnegative total and boolean truncation metadata', $error->getMessage());
         }
         self::assertSame(GateReport::EXIT_RED, $red->exitCode(), $red->render());
         self::assertContains(FailureClass::RUN_FAILED, $red->failureClasses(), $red->render());
         self::assertSame($before, $snapshot());
+    }
+
+    /** @param list<array<string,mixed>> $records
+     * @return array{stdout:string,ranked:array{stdout:string}}
+     */
+    private static function rankedAnswer(array $records): array
+    {
+        $counts = [];
+        $issues = [];
+        foreach ($records as $index => $record) {
+            $rule = (string) $record['rule'];
+            $counts[$rule] = ($counts[$rule] ?? 0) + 1;
+            $issues[] = ['rank' => $index + 1, ...array_intersect_key($record, array_flip(\QmxFindingGate\RankingSchema::PROJECTION)), 'impactScore' => 0, 'coupling.class-rank' => null, 'debtMinutes' => $record['techDebtMinutes']];
+        }
+        $document = ['violations' => $records, 'topIssues' => [], 'violationsMeta' => ['total' => \count($records), 'shown' => \count($records), 'truncated' => false, 'byRule' => $counts]];
+        $original = \QmxFindingGate\ValueCheck::value($document);
+        $document['topIssues'] = $issues;
+        return ['stdout' => $original, 'ranked' => ['stdout' => \QmxFindingGate\ValueCheck::value($document)]];
     }
 
     /** @param list<array{string,string}> $addresses */

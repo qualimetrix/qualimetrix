@@ -10,7 +10,7 @@ final class ProseRecords
     public const array SURFACES = ['format:summary', 'format:text', 'format:text-verbose', 'format:github', 'show-suppressed'];
 
     public const array FIELDS = [
-        'format:summary' => ['code', 'file', 'line', 'message', 'severity', 'score'],
+        'format:summary' => ['code', 'file', 'line', 'message', 'severity', 'rank', 'debt', 'score'],
         'format:text' => ['code', 'file', 'line', 'message', 'severity', 'symbol'],
         'format:text-verbose' => ['code', 'file', 'line', 'message', 'severity', 'symbol'],
         'format:github' => ['code', 'file', 'line', 'message', 'severity'],
@@ -63,7 +63,7 @@ final class ProseRecords
                     'ERROR' => 'error', 'WARN' => 'warning', default => 'info',
                 }, 'symbol' => $head[3] ?? '']];
                 $index = $end;
-            } elseif ($surface === 'format:summary' && preg_match('~^\s+[0-9]+\. \[(ERR|WRN|INF)\] ([0-9.]+)  (.*?)  \[.*\]$~D', $line, $head) === 1) {
+            } elseif ($surface === 'format:summary' && preg_match('~^\s+([0-9]+)\. \[(ERR|WRN|INF)\] ([0-9]+(?:\.[0-9]+)?)  (.*?)  \[([^\]]*)\]$~D', $line, $head) === 1) {
                 if (!isset($lines[$index + 1]) || preg_match('~^\s+([^:]+): (.*)$~D', $lines[$index + 1], $detail) !== 1) {
                     throw new GateError('A ranked issue has no published detail line.');
                 }
@@ -72,10 +72,10 @@ final class ProseRecords
                 while (isset($lines[$end + 1]) && self::continuation($lines[$end + 1])) {
                     $message .= "\n" . $lines[++$end];
                 }
-                [$locationFile, $atLine] = self::location($head[3]);
-                $records[] = ['lines' => range($index, $end), 'fields' => ['code' => $detail[1], 'file' => $locationFile, 'line' => $atLine, 'message' => $message, 'severity' => match ($head[1]) {
+                [$locationFile, $atLine] = self::location($head[4]);
+                $records[] = ['lines' => range($index, $end), 'fields' => ['code' => $detail[1], 'file' => $locationFile, 'line' => $atLine, 'message' => $message, 'severity' => match ($head[2]) {
                     'ERR' => 'error', 'WRN' => 'warning', default => 'info',
-                }, 'score' => $head[2]]];
+                }, 'rank' => (int) $head[1], 'debt' => $head[5], 'score' => $head[3]]];
                 $index = $end;
             }
         }

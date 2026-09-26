@@ -118,6 +118,52 @@ final class SyntheticTreeTest extends TestCase
     }
 
     #[Test]
+    public function itPreservesExplicitJsonBytesWhileSlicingOnlyTheRawTopList(): void
+    {
+        $source = <<<'JSON'
+            { "before": {"number":1e+02,"text":"escaped \" quote ] and \\ slash"},
+              "topIssues" : [
+                {"impactScore":10.5,"nested":{"values":[1,{"text":"closing ] bracket"}]}},
+                {"impactScore":2.000}
+              ], "violations":[{},{}], "violationsMeta":{"total":2,"shown":2,"truncated":false}, "after":-0.00 }
+
+            JSON;
+        $ranked = str_replace('10.5,', '10.50,', $source);
+        $slice = static fn(string $text): string => str_replace(
+            ",\n    {\"impactScore\":2.000}",
+            '',
+            $text,
+        );
+        $tree = SyntheticTree::clean();
+        $tree['candidateAnswers']['case:alpha|format:json'] = ['stdout' => $source, 'ranked' => ['stdout' => $ranked], 'physical' => ['stdout' => $ranked]];
+        $tree['candidateAnswers']['case:alpha|check:output'] = ['file' => $ranked];
+        $root = SyntheticTree::create($tree);
+        try {
+            $base = [\PHP_BINARY, $root . '/bin/qmx', 'check', '-f', 'json'];
+            $environment = ['QMX_GATE_INVOCATION' => 'case:alpha|format:json'];
+            self::assertSame($source, Process::run([...$base, '--top=3', '--detail=1'], $root, environmentAdditions: $environment)['stdout']);
+            self::assertSame($slice($source), Process::run([...$base, '--top=1', '--detail=1'], $root, environmentAdditions: $environment)['stdout']);
+            foreach (['ranked', 'physical'] as $slot) {
+                $private = [...$environment, 'QMX_GATE_CAPTURE' => $slot];
+                self::assertSame($ranked, Process::run([...$base, '--top=3'], $root, environmentAdditions: $private)['stdout']);
+                self::assertSame($slice($ranked), Process::run([...$base, '--top=1'], $root, environmentAdditions: $private)['stdout']);
+            }
+            $output = $root . '/raw-output.json';
+            $written = Process::run([...$base, '--top=1', '--detail=1', '--output=' . $output], $root, environmentAdditions: ['QMX_GATE_INVOCATION' => 'case:alpha|check:output']);
+            self::assertSame(0, $written['exit']);
+            self::assertSame($slice($ranked), Fs::read($output));
+            $zero = Process::run([...$base, '--top=0'], $root, environmentAdditions: $environment)['stdout'];
+            $start = strpos($source, "[\n");
+            self::assertIsInt($start);
+            $end = strpos($source, '], "violations"', $start);
+            self::assertIsInt($end);
+            self::assertSame(substr_replace($source, '[]', $start, $end - $start + 1), $zero);
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
+    #[Test]
     public function itKeepsBreachAnnotationsAndRawStructuredMessagesInTheirPublishedViews(): void
     {
         $tree = SyntheticTree::clean();

@@ -45,7 +45,14 @@ final class RecordStage implements SurfaceStage
                 if (!\is_array($decoded['violations'] ?? null)) {
                     continue;
                 }
-                $decoded['violations'] = \array_slice($decoded['violations'], \count($this->records->licensedResiduals($case->id, 'format:json', $side)));
+                $removed = array_map(RankingSchema::physical(...), $this->records->licensedResiduals($case->id, 'format:json', $side));
+                foreach ($decoded['violations'] as $index => $record) {
+                    $at = array_search($record, $removed, true);
+                    if ($at !== false) {
+                        unset($decoded['violations'][$index], $removed[$at]);
+                    }
+                }
+                $decoded['violations'] = array_values($decoded['violations']);
                 if ($side === 'candidate') {
                     $candidate[$key] = ValueCheck::value($decoded);
                 } else {
@@ -71,7 +78,7 @@ final class RecordStage implements SurfaceStage
         };
         $view = match ($pair->surface) {
             'check:baseline-source' => 'check:baseline-source',
-            'check:baseline' => $this->baselineView($case),
+            'check:baseline' => 'check:baseline',
             default => $report === null ? 'format:json' : ReportViews::main($report),
         };
         $definition = $this->definition($case);
@@ -118,7 +125,8 @@ final class RecordStage implements SurfaceStage
     {
         $published = ReportRecords::extract($report, $text, $this->records->fields($report, $view, $side), $this->records->optionalSubject($report, $view));
         $base = $this->records->base($report, $view, $published);
-        $removed = $this->records->licensedResiduals($case, $view, $side);
+        $residuals = $this->records->licensedResiduals($case, $view, $side);
+        $removed = $report === 'json' ? array_map(RankingSchema::physical(...), $residuals) : $residuals;
         $edits = [];
         $array = ReportRecords::ARRAYS[$report];
         foreach ($published as $index => $record) {
@@ -146,13 +154,16 @@ final class RecordStage implements SurfaceStage
                 }
             }
         }
+        if ($report === 'json' && RankingCheck::create($this->run)->observed($case, $view, $side)) {
+            $edits[ValueCheck::value(['topIssues'])] = null;
+        }
         return $edits === [] ? $text : ReportRecords::edit($text, $edits);
     }
 
     private function structured(string $case, string $side, string $surface, string $text): string
     {
         $projected = ReportRecords::projected($surface, $text);
-        $removed = array_map(static fn(array $record): array => ReportRecords::projection($surface, $record), $this->records->licensedResiduals($case, 'format:json', $side));
+        $removed = array_map(static fn(array $record): array => ReportRecords::projection($surface, RankingSchema::physical($record)), $this->records->licensedResiduals($case, 'format:json', $side));
         $edits = [];
         $budgets = [];
         foreach ($projected as $entry) {
@@ -165,7 +176,7 @@ final class RecordStage implements SurfaceStage
                 unset($budgets[$bucket][$at]);
                 continue;
             }
-            foreach ($this->records->published($case, 'format:json', $side) as $record) {
+            foreach ($this->records->authority($case, 'format:json', $side) as $record) {
                 if (ReportRecords::projection($surface, $record) !== $entry['fields']) {
                     continue;
                 }
@@ -183,11 +194,12 @@ final class RecordStage implements SurfaceStage
                         'format:sarif' => match ($field) {
                             'file' => [...$path, 'locations', 0, 'physicalLocation', 'artifactLocation', 'uri'],
                             'line' => [...$path, 'locations', 0, 'physicalLocation', 'region', 'startLine'],
+                            'message' => [...$path, 'message', 'text'],
                             default => [...$path, $field],
                         },
                         default => [...$path, $field],
                     };
-                    $edits[ValueCheck::value($target)] = ValueCheck::value($value);
+                    $edits[ValueCheck::value($target)] = ValueCheck::value($surface === 'format:sarif' && $field === 'message' ? $value['text'] : $value);
                 }
                 break;
             }
@@ -221,9 +233,13 @@ final class RecordStage implements SurfaceStage
 
     private function prose(string $case, string $side, string $surface, string $text): string
     {
-        $removed = $this->records->licensedResiduals($case, 'format:json', $side);
-        $published = $this->records->published($case, 'format:json', $side);
+        $removed = array_map(RankingSchema::physical(...), $this->records->licensedResiduals($case, 'format:json', $side));
+        $published = $this->records->authority($case, 'format:json', $side);
         foreach (array_reverse(ProseRecords::extract($surface, $text)) as $entry) {
+            if ($surface === 'format:summary' && isset($entry['fields']['rank']) && RankingCheck::create($this->run)->observed($case, 'format:json', $side)) {
+                $text = ProseRecords::erase($text, $entry['lines']);
+                continue;
+            }
             foreach ($published as $index => $record) {
                 if (!ProseRecords::matches($surface, $entry['fields'], $record)) {
                     continue;
@@ -248,8 +264,8 @@ final class RecordStage implements SurfaceStage
 
     private function checkstyle(string $case, string $side, string $text): string
     {
-        $removed = array_map(static fn(array $record): array => ReportRecords::projection('format:checkstyle', $record), $this->records->licensedResiduals($case, 'format:json', $side));
-        $published = $this->records->published($case, 'format:json', $side);
+        $removed = array_map(static fn(array $record): array => ReportRecords::projection('format:checkstyle', RankingSchema::physical($record)), $this->records->licensedResiduals($case, 'format:json', $side));
+        $published = $this->records->authority($case, 'format:json', $side);
         $rebuilt = preg_replace_callback('~<file\b[^>]*name="([^"]*)"[^>]*>(.*?)</file>~s', function (array $file) use ($case, $side, &$removed, &$published): string {
             $name = html_entity_decode($file[1], \ENT_QUOTES | \ENT_XML1, 'UTF-8');
             $body = preg_replace_callback('~<error\b[^>]*/>~s', function (array $error) use ($name, $case, $side, &$removed, &$published): string {
@@ -314,9 +330,9 @@ final class RecordStage implements SurfaceStage
     private function baseline(string $case, string $side, string $text): string
     {
         $view = $this->baselineView($case);
-        $published = $this->records->published($case, $view, $side);
+        $published = $this->records->authority($case, $view, $side);
         $entries = ReportRecords::baselineEntries($text, $published);
-        $removed = $this->records->licensedResiduals($case, $view, $side);
+        $removed = array_map(RankingSchema::physical(...), $this->records->licensedResiduals($case, $view, $side));
         $edits = [];
         $entryCounts = [];
         $deletedCounts = [];
@@ -346,7 +362,15 @@ final class RecordStage implements SurfaceStage
                 $values = array_map(static fn(array $record): float => round((float) $record['metricValue'], 6), $group);
                 sort($values);
                 if ($values !== array_map(static fn(mixed $value): float => (float) $value, $entry['magnitudes'])) {
-                    $edits[ValueCheck::value([...$path, 'magnitudes'])] = json_encode($values, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES);
+                    if (\count($values) === \count($entry['magnitudes'])) {
+                        foreach ($values as $index => $value) {
+                            if ($value !== (float) $entry['magnitudes'][$index]) {
+                                $edits[ValueCheck::value([...$path, 'magnitudes', $index])] = json_encode($value, \JSON_THROW_ON_ERROR);
+                            }
+                        }
+                    } else {
+                        $edits[ValueCheck::value([...$path, 'magnitudes'])] = json_encode($values, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES);
+                    }
                 }
             } elseif ($entry['count'] !== \count($group)) {
                 $edits[ValueCheck::value([...$path, 'count'])] = ValueCheck::value(\count($group));

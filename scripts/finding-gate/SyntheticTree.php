@@ -195,7 +195,18 @@ final class SyntheticTree
             $definition = json_decode($specification['declarations']['cases/' . $id . '/case.json'] ?? '{}', true, 512, \JSON_THROW_ON_ERROR);
             $answers += self::caseAnswers($id, $findings[$id] ?? [], \in_array($id, $specification['truncated'], true), $definition);
         }
+        $rawPublications = [];
         foreach ($overrides as $key => $override) {
+            foreach (['stdout', 'file'] as $field) {
+                if (\array_key_exists($field, $override)) {
+                    $rawPublications[$key][] = $field;
+                }
+            }
+            foreach (['ranked', 'physical'] as $slot) {
+                if (isset($override[$slot]) && \array_key_exists('stdout', $override[$slot])) {
+                    $rawPublications[$key][] = $slot;
+                }
+            }
             $original = $answers[$key] ?? [];
             $answers[$key] = array_replace($original, $override);
             if (\array_key_exists('stdout', $override)) {
@@ -210,6 +221,7 @@ final class SyntheticTree
 
         $files = [
             'bin/qmx' => self::replayingBinary(),
+            'replay/raw-publications.json' => self::json($rawPublications),
             self::ANSWERS => json_encode($answers, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n",
             'vendor/autoload.php' => self::probedProduct($specification['static'], $specification['levels']),
             'composer.lock' => $lock,
@@ -414,7 +426,7 @@ final class SyntheticTree
             $rule = (string) $finding['rule'];
             $counts[$rule] = ($counts[$rule] ?? 0) + 1;
             $weight = match ($finding['severity']) {
-                'error' => 3, 'warning' => 1, default => 0
+                'error' => 3, 'warning' => 1, default => 0,
             };
             $issues[] = [
                 'rank' => 0,
@@ -471,7 +483,7 @@ final class SyntheticTree
             }
             $score = (float) $issue['impactScore'];
             $tag = match ($issue['severity']) {
-                'error' => 'ERR', 'warning' => 'WRN', default => 'INF'
+                'error' => 'ERR', 'warning' => 'WRN', default => 'INF',
             };
             $location = $issue['file'] === null ? '[project]' : (string) $issue['file'] . ($issue['line'] === null ? '' : ':' . $issue['line']);
             $minutes = (int) $issue['debtMinutes'];
@@ -537,6 +549,7 @@ final class SyntheticTree
 
             $tree = dirname(__DIR__);
             $answers = json_decode((string) file_get_contents($tree . '/replay/answers.json'), true);
+            $rawPublications = json_decode((string) file_get_contents($tree . '/replay/raw-publications.json'), true);
             $arguments = array_slice($argv, 1);
             $command = $arguments[0] ?? '';
             $key = getenv('QMX_GATE_INVOCATION');
@@ -591,22 +604,86 @@ final class SyntheticTree
                 '{{tree}}' => dirname($argv[0], 2),
                 '{{random}}' => bin2hex(random_bytes(8)),
             ]);
-            $renderPayload = static function (string $written) use ($top, $cap, $detail): string {
+            $valueEnd = static function (string $text, int $start): int {
+                if ($text[$start] === '"') {
+                    for ($at = $start + 1; $at < strlen($text); ++$at) {
+                        if ($text[$at] === '\\') {
+                            ++$at;
+                        } elseif ($text[$at] === '"') {
+                            return $at + 1;
+                        }
+                    }
+                } elseif (in_array($text[$start], ['[', '{'], true)) {
+                    $depth = 0;
+                    $quoted = false;
+                    for ($at = $start; $at < strlen($text); ++$at) {
+                        $character = $text[$at];
+                        if ($quoted) {
+                            if ($character === '\\') { ++$at; }
+                            elseif ($character === '"') { $quoted = false; }
+                        } elseif ($character === '"') {
+                            $quoted = true;
+                        } elseif ($character === '[' || $character === '{') {
+                            ++$depth;
+                        } elseif ($character === ']' || $character === '}') {
+                            if (--$depth === 0) { return $at + 1; }
+                        }
+                    }
+                } else {
+                    return $start + strcspn($text, ",]} \t\r\n", $start);
+                }
+                throw new RuntimeException('A replay JSON value has no closing delimiter.');
+            };
+            $sliceList = static function (string $text, string $field, int $limit) use ($valueEnd): string {
+                $at = strspn($text, " \t\r\n") + 1;
+                while (isset($text[$at])) {
+                    $at += strspn($text, " \t\r\n", $at);
+                    if ($text[$at] === '}') { break; }
+                    $keyEnd = $valueEnd($text, $at);
+                    $key = json_decode(substr($text, $at, $keyEnd - $at), true);
+                    $start = $keyEnd + strspn($text, " \t\r\n", $keyEnd) + 1;
+                    $start += strspn($text, " \t\r\n", $start);
+                    $end = $valueEnd($text, $start);
+                    if ($key === $field && $text[$start] === '[') {
+                        $spans = [];
+                        $element = $start + 1;
+                        while (true) {
+                            $element += strspn($text, " \t\r\n", $element);
+                            if ($text[$element] === ']') { break; }
+                            $elementEnd = $valueEnd($text, $element);
+                            $spans[] = [$element, $elementEnd];
+                            $element = $elementEnd + strspn($text, " \t\r\n", $elementEnd);
+                            if ($text[$element] === ']') { break; }
+                            ++$element;
+                        }
+                        if (count($spans) <= $limit) { return $text; }
+                        $replacement = $limit === 0 ? '[]' : substr($text, $start, $spans[$limit - 1][1] - $start)
+                            . substr($text, $spans[count($spans) - 1][1], $end - $spans[count($spans) - 1][1]);
+                        return substr($text, 0, $start) . $replacement . substr($text, $end);
+                    }
+                    $at = $end + strspn($text, " \t\r\n", $end);
+                    if ($text[$at] === '}') { break; }
+                    ++$at;
+                }
+                return $text;
+            };
+            $renderPayload = static function (string $written, bool $raw) use ($top, $cap, $detail, $sliceList): string {
                 $payload = json_decode($written, true);
                 if (!is_array($payload) || !is_array($payload['topIssues'] ?? null)) {
                     return $written;
                 }
-                $payload['topIssues'] = array_slice($payload['topIssues'], 0, max(0, $top));
                 $limit = $cap ?? $detail;
-                if ($limit !== null && $limit > 0 && is_array($payload['violations'] ?? null) && count($payload['violations']) > $limit) {
+                if (!$raw && $limit !== null && $limit > 0 && is_array($payload['violations'] ?? null) && count($payload['violations']) > $limit) {
                     $payload['violations'] = array_slice($payload['violations'], 0, $limit);
                     $payload['violationsMeta']['shown'] = count($payload['violations']);
                     $payload['violationsMeta']['limit'] = $limit;
                     $payload['violationsMeta']['truncated'] = true;
+                    $written = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n";
                 }
-                return json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n";
+                return $sliceList($written, 'topIssues', max(0, $top));
             };
-            $stdout = $renderPayload($stdout);
+            $rawSlots = $rawPublications[$key] ?? [];
+            $stdout = $renderPayload($stdout, in_array($capture === false || $capture === '' ? 'stdout' : $capture, $rawSlots, true));
             $payload = json_decode($stdout, true);
             if (is_array($answer['summaryIssues'] ?? null)) {
                 $rows = array_slice($answer['summaryIssues'], 0, max(0, $top));
@@ -652,7 +729,7 @@ final class SyntheticTree
             if ($target !== null && ($answer['missingFile'] ?? false) !== true) {
                 @mkdir(dirname($target), 0o700, true);
                 // Existing stdout overrides remain authoritative for the historical baseline surface.
-                file_put_contents($target, $command === 'baseline:generate' ? $stdout : $renderPayload((string) ($answer['file'] ?? $stdout)));
+                file_put_contents($target, $command === 'baseline:generate' ? $stdout : $renderPayload((string) ($answer['file'] ?? $stdout), in_array('file', $rawSlots, true)));
             }
             if ($command !== 'baseline:generate') {
                 echo $stdout;

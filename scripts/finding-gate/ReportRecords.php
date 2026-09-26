@@ -16,7 +16,6 @@ final class ReportRecords
         'metrics' => ['type', 'name', 'file', 'line', 'metrics'],
         'directives' => ['file', 'line', 'form', 'target', 'effect', 'reason', 'masked_by', 'boundary_observable'],
     ];
-    public const array RANKED_FIELDS = ['rank', 'file', 'line', 'symbol', 'rule', 'severity', 'message', 'recommendation', 'impactScore', 'coupling.class-rank', 'debtMinutes'];
     public const array ARRAYS = ['json' => 'violations', 'suppressed' => 'suppressed', 'metrics' => 'symbols', 'directives' => 'directives'];
 
     /**
@@ -99,6 +98,19 @@ final class ReportRecords
             throw new GateError('A published record document must be an object or list.');
         }
         return $value;
+    }
+
+    /** @return array<string,mixed> */
+    public static function object(string $text): array
+    {
+        $object = [];
+        foreach (self::decode($text) as $key => $value) {
+            if (!\is_string($key)) {
+                throw new GateError('A record object requires named string members.');
+            }
+            $object[$key] = $value;
+        }
+        return $object;
     }
 
     /**
@@ -268,6 +280,28 @@ final class ReportRecords
         }
         self::decode($text);
         return $text;
+    }
+
+    /** @return list<string> */
+    public static function rawRecords(string $text, string $field): array
+    {
+        $document = self::decode($text);
+        $records = $document[$field] ?? null;
+        if (!\is_array($records) || !array_is_list($records)) {
+            throw new GateError('A raw record comparison requires its observed list: ' . $field);
+        }
+        $edits = [];
+        foreach (array_keys($records) as $index) {
+            $edits[ValueCheck::value([$field, $index])] = '';
+        }
+        $at = 0;
+        $spans = [];
+        self::scan($text, $at, [], $edits, $spans);
+        usort($spans, static fn(array $a, array $b): int => $a[0] <=> $b[0]);
+        if (\count($spans) !== \count($records)) {
+            throw new GateError('A raw record list has missing or repeated textual members.');
+        }
+        return array_map(static fn(array $span): string => substr($text, $span[0], $span[1] - $span[0]), $spans);
     }
 
     /**
