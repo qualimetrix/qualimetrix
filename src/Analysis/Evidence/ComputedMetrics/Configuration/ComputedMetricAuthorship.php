@@ -9,6 +9,8 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMap;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * Which layers wrote each computed metric, so a refusal about a resolved
@@ -27,11 +29,15 @@ final readonly class ComputedMetricAuthorship
 
     /**
      * The layer whose `formulas.<level>` or `formula` the level runs; the
-     * whole entry when neither was written at that level.
+     * defaults when neither wrote the formula selected by the definition.
      */
-    public function refuseFormula(string $metricName, string $level, string $summary): ConfigurationRefusal
+    public function refuseFormula(ComputedMetricDefinition $definition, string $level, string $summary): ConfigurationRefusal
     {
-        return $this->formulaWriter($metricName, $level)?->refusal($summary) ?? $this->refuseMetric($metricName, $summary);
+        return $this->formulaWriter($definition, $level)?->refusal($summary)
+            ?? self::defaults($definition->name, $summary, [
+                ComputedMetricEntryKeys::FORMULAS,
+                $definition->formulaLevelFor(SymbolLevel::from($level)) ?? $level,
+            ]);
     }
 
     /**
@@ -60,9 +66,9 @@ final readonly class ComputedMetricAuthorship
      *
      * @return list<Provenance>
      */
-    public function writersOfFormula(string $metricName, string $level): array
+    public function writersOfFormula(ComputedMetricDefinition $definition, string $level): array
     {
-        return ($this->formulaWriter($metricName, $level) ?? $this->entry($metricName))?->contributors() ?? [];
+        return $this->formulaWriter($definition, $level)?->contributors() ?? [];
     }
 
     /**
@@ -85,16 +91,21 @@ final readonly class ComputedMetricAuthorship
         return $this->entries[$metricName] ?? null;
     }
 
-    private function formulaWriter(string $metricName, string $level): ?ResolvedValueInterface
+    private function formulaWriter(ComputedMetricDefinition $definition, string $level): ?ResolvedValueInterface
     {
-        $entry = $this->entry($metricName);
+        $entry = $this->entry($definition->name);
         if (!$entry instanceof ResolvedMap) {
+            return null;
+        }
+
+        $selectedLevel = $definition->formulaLevelFor(SymbolLevel::from($level));
+        if ($selectedLevel === null) {
             return null;
         }
 
         $formulas = $entry->get(ComputedMetricEntryKeys::FORMULAS);
 
-        return ($formulas instanceof ResolvedMap ? $formulas->get($level) : null)
+        return ($formulas instanceof ResolvedMap ? $formulas->get($selectedLevel) : null)
             ?? $entry->get(ComputedMetricEntryKeys::FORMULA);
     }
 

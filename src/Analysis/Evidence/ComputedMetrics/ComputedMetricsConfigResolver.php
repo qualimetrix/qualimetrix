@@ -67,7 +67,7 @@ final class ComputedMetricsConfigResolver
                 array_values(array_unique(array_column($exclusions, 'dimension'))),
                 static fn(string $level, string $summary): ConfigurationRefusal => Provenance::refusalOf(
                     [
-                        ...$authorship->writersOfFormula(HealthDimension::Overall->value, $level),
+                        ...$authorship->writersOfFormula($definitions[HealthDimension::Overall->value], $level),
                         ...array_column($exclusions, 'writer'),
                     ],
                     $summary,

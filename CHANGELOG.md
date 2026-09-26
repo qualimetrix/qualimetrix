@@ -578,6 +578,12 @@ What changes for a configuration you already have:
   when a higher layer writes only its thresholds or formula; write
   `enabled: true` beside them to switch it back on (was: the higher layer's
   metric replaced the lower one whole, switching it on).
+- Code constructing resolved-document provenance must pass the layer's
+  precedence index: `Provenance(origin, path, ?line = null)` becomes
+  `Provenance(origin, path, int layerIndex, ?line = null)`. Assign indices
+  from the same ordered document composition; the line remains optional.
+  Joint refusals sort these indices instead of relying on caller collection
+  order, and an explicitly supplied null position stays null.
 - `check --format=json` has a new top-level key, `configurationDiagnostics`:
   the warnings about the configuration the run accepted, `[]` when there are
   none. A consumer comparing the key set exactly must accept it.
@@ -587,7 +593,11 @@ What changes for a configuration you already have:
 - A configuration error names the layer that wrote the value — the preset,
   the file, the command-line option — and quotes the key as you spelled it; an
   error about two keys, or about a value several layers wrote, names each
-  layer; a path to analyse that does not exist names the file, preset or
+  layer in precedence order, lowest first, and positions the last writer. An
+  inherited project formula names the actual namespace-formula writer, even
+  when a later layer changed only its description; a built-in project formula
+  retains its default authorship under a namespace override. A path to analyse
+  that does not exist names the file, preset or
   argument that wrote it. Values whose owners still judge them on the merged
   configuration — listed in ADR 0086 — name the merged configuration instead,
   with the key when the owner knows it, and a few name no source at all.

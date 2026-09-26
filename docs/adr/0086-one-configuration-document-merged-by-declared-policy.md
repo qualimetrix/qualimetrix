@@ -72,6 +72,13 @@ recorded here: it is generated from the declarations (decision 6).
 layer; a refused final value names the layer that won it; a constraint between
 keys names every contributor. The refusal carries the path in the author's
 spelling, and the JSON refusal envelope publishes the sources as `source`.
+Joint refusals sort their writers by the layer index assigned during this
+document's composition, rather than by key collection order or source kind;
+two presets still have distinct precedence. The default position is the last
+writer's, including a positionless command-line source. An explicitly supplied
+null position stays null. Formula authorship uses the same selected stored
+level as evaluation, including project-to-namespace inheritance and direct
+built-in defaults, so an unrelated description never becomes a formula author.
 
 **5. Warnings travel with the document.** A diagnostic about accepted
 configuration carries its sources; every command that reads the configuration

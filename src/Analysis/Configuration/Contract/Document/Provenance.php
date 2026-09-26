@@ -14,6 +14,8 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
  *
  * `path` is null for a source without document positions — a command-line
  * option is named by the origin's locator instead.
+ * `layerIndex` is the layer's precedence within one composed document. Values
+ * from different documents cannot be combined in a refusal.
  */
 final readonly class Provenance
 {
@@ -21,6 +23,7 @@ final readonly class Provenance
     public function __construct(
         public ConfigurationOrigin $origin,
         public ?array $path,
+        public int $layerIndex,
         public ?int $line = null,
     ) {}
 
@@ -55,12 +58,18 @@ final readonly class Provenance
      * A refusal naming every writer; the position is where the last of them
      * wrote, the spot an author edits first.
      *
-     * @param non-empty-list<self> $writers lowest precedence first
+     * An omitted position uses the last writer's position; an explicit null
+     * keeps a positionless refusal. Writers must belong to one document.
+     *
+     * @param non-empty-list<self> $writers in any order; ties retain the supplied order
      */
     public static function refusalOf(array $writers, string $summary, ?RefusedPosition $position = null): ConfigurationRefusal
     {
+        usort($writers, static fn(self $left, self $right): int => $left->layerIndex <=> $right->layerIndex);
         $last = $writers[\count($writers) - 1];
-        $position ??= $last->position();
+        if (\func_num_args() < 3) {
+            $position = $last->position();
+        }
 
         $origins = [];
         foreach ($writers as $writer) {

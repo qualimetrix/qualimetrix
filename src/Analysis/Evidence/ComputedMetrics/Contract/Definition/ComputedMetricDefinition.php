@@ -54,6 +54,14 @@ final readonly class ComputedMetricDefinition
      */
     public function getFormulaForLevel(SymbolLevel $level): ?string
     {
+        $key = $this->formulaLevelFor($level);
+
+        return $key === null ? null : $this->formulas[$key];
+    }
+
+    /** The stored level whose formula runs, also used to select its authorship. */
+    public function formulaLevelFor(SymbolLevel $level): ?string
+    {
         // A formula key is the level word itself; the levels this capability
         // has no formula for are the ones it does not report at.
         $key = match ($level) {
@@ -67,12 +75,12 @@ final readonly class ComputedMetricDefinition
 
         // Direct lookup
         if (isset($this->formulas[$key])) {
-            return $this->formulas[$key];
+            return $key;
         }
 
         // Project inherits from namespace
         if ($level === SymbolLevel::Project && isset($this->formulas[SymbolLevel::Namespace_->value])) {
-            return $this->formulas[SymbolLevel::Namespace_->value];
+            return SymbolLevel::Namespace_->value;
         }
 
         return null;

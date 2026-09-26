@@ -22,11 +22,12 @@ final readonly class ReadingContext
         public array $authoredPath,
         public array $canonicalPath,
         public bool $insideList,
+        public int $layerIndex,
     ) {}
 
-    public static function of(AuthoredLayer $layer): self
+    public static function of(AuthoredLayer $layer, int $layerIndex): self
     {
-        return new self($layer->origin, $layer->positioned, [], [], false);
+        return new self($layer->origin, $layer->positioned, [], [], false, $layerIndex);
     }
 
     public function child(string $authored, string $canonical, AuthoredNode $node): self
@@ -39,7 +40,7 @@ final readonly class ReadingContext
     {
         $at = $this->child((string) $index, (string) $index, $node);
 
-        return new self($at->origin, $at->positioned, $at->authoredPath, $at->canonicalPath, true);
+        return new self($at->origin, $at->positioned, $at->authoredPath, $at->canonicalPath, true, $at->layerIndex);
     }
 
     /** A key of this map as a spot of its own, whatever value is written there. */
@@ -56,12 +57,13 @@ final readonly class ReadingContext
             [...$this->authoredPath, $authored],
             [...$this->canonicalPath, $canonical],
             $this->insideList,
+            $this->layerIndex,
         );
     }
 
     public function provenance(AuthoredNode $node): Provenance
     {
-        return new Provenance($this->origin, $this->positioned ? $this->authoredPath : null, $node->line);
+        return new Provenance($this->origin, $this->positioned ? $this->authoredPath : null, $this->layerIndex, $node->line);
     }
 
     /** The spot for a sentence: `"cache.enabled" in configuration file "qmx.yaml"`. */

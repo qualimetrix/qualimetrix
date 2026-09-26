@@ -405,7 +405,8 @@ final class ArchitectureSectionTest extends TestCase
             ArchitectureDocument::fileLayer(['layers' => []]),
         )));
 
-        self::assertEqualsCanonicalizing([ConfigurationSource::Preset, ConfigurationSource::ConfigFile], self::kinds($refusal));
+        self::assertSame([ConfigurationSource::Preset, ConfigurationSource::ConfigFile], self::kinds($refusal));
+        self::assertSame(['architecture', 'layers'], $refusal->position()?->segments);
         self::assertStringContainsString('requires at least one entry under "architecture.layers"', $refusal->getMessage());
     }
 

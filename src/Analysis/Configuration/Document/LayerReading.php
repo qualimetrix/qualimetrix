@@ -36,9 +36,9 @@ final class LayerReading
     /**
      * @throws ConfigurationRefusal
      */
-    public function readRoot(NodeSchema $root, AuthoredLayer $layer): ?ResolvedValueInterface
+    public function readRoot(NodeSchema $root, AuthoredLayer $layer, int $layerIndex): ?ResolvedValueInterface
     {
-        $at = ReadingContext::of($layer);
+        $at = ReadingContext::of($layer, $layerIndex);
 
         return $this->readMap($root, $layer->root, $at, KeyClaims::of($root->keys()->keys(), $at));
     }

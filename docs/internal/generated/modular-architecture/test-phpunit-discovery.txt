@@ -1812,6 +1812,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itAddsNothingToASetForAWrittenEmptyList
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itAnnouncesAnEmptyListThatLiftsALowerLayersFilter
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itExpandsAShorthandInItsOwnLayerBeforeTheMerge
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itKeepsAnExplicitlyPositionlessRefusal
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itKeepsAnOpaqueSubtreePerLayerForItsOwner
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itLetsTheLastLayerThatWritesAScalarWinIt
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itMergesAMapKeyByKeyAndNamesEveryContributor
@@ -3596,7 +3597,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAccumulatesHealthExclusionsAcrossEveryLayerInOrder
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesABrokenFormulaToTheLayerThatWroteIt
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesALevelWordToTheLayerThatWroteTheList
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesTheSelectedBrokenFormulaToItsExactWriter"class reporting subset"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesTheSelectedBrokenFormulaToItsExactWriter"explicit project beats namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesTheSelectedBrokenFormulaToItsExactWriter"generic above a namespace refinement"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesTheSelectedBrokenFormulaToItsExactWriter"generic below a namespace refinement"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesTheSelectedBrokenFormulaToItsExactWriter"namespace reporting subset"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesTheSelectedBrokenFormulaToItsExactWriter"project inherits namespace outside the reporting subset"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesTheSelectedBrokenFormulaToItsExactWriter"specific above generic"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesTheSelectedBrokenFormulaToItsExactWriter"specific below generic"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itExpandsTheThresholdShorthandInTheLayerThatWroteIt
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itKeepsABuiltInProjectFormulaAndItsDefaultAuthorshipUnderANamespaceOverride
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itKeepsALowerRefinementUnderAFormulaFromAbove
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itKeepsAMetricAPresetSwitchedOffWhenTheFileWritesOnlyAThreshold
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itKeepsAPresetErrorWhenTheFileWritesOnlyWarning
@@ -3607,8 +3617,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itLeavesTheLowerLayerStandingUnderAWritingThatChangesNothing"an empty section"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itLeavesTheLowerLayerStandingUnderAWritingThatChangesNothing"null keys"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itNamesAMapWrittenAsLevelsAMap
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itNamesEveryLayerBehindAnOverallFormulaThatCannotBeRenormalized
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itNamesEveryLayerBehindAnOverallFormulaThatCannotBeRenormalized"exclusion before generic"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itNamesEveryLayerBehindAnOverallFormulaThatCannotBeRenormalized"exclusion before namespace refinement"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itNamesEveryLayerBehindAnOverallFormulaThatCannotBeRenormalized"exclusion before project refinement"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itNamesEveryLayerBehindAnOverallFormulaThatCannotBeRenormalized"generic before exclusion"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itNamesEveryLayerOfACycle
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itOrdersReferenceLevelConflictWritersByDocumentPrecedence
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itRefinesOneLevelOverAFormulaFromBelow
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itRefusesAFilesUnknownHealthExclusionInTheFilesWords
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itRefusesAMisspelledKeyEvenWhenItsValueIsNull"entry key"
@@ -8793,6 +8807,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\WrittenRootRemovedByExcludeRefusalTest::itAcceptsAWrittenFileInsideAnExcludedDirectory
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\WrittenRootRemovedByExcludeRefusalTest::itKeepsAComposerDefaultTheAuthorExcludedSilently
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\WrittenRootRemovedByExcludeRefusalTest::itLeavesABuiltInExclusionToDiscovery
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\WrittenRootRemovedByExcludeRefusalTest::itOrdersConflictingSourcesByDocumentPrecedenceAndUsesTheLastPosition"CLI exclude over file paths"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\WrittenRootRemovedByExcludeRefusalTest::itOrdersConflictingSourcesByDocumentPrecedenceAndUsesTheLastPosition"CLI paths over file exclude"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\WrittenRootRemovedByExcludeRefusalTest::itOrdersConflictingSourcesByDocumentPrecedenceAndUsesTheLastPosition"later preset excludes earlier paths"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\WrittenRootRemovedByExcludeRefusalTest::itOrdersConflictingSourcesByDocumentPrecedenceAndUsesTheLastPosition"later preset paths over earlier exclusion"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\WrittenRootRemovedByExcludeRefusalTest::itRefusesARootWrittenInTheDocumentToo
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\WrittenRootRemovedByExcludeRefusalTest::itRefusesAWrittenRootInsideASubtreeTheAuthorExcluded
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\WrittenRootRemovedByExcludeRefusalTest::itRefusesAWrittenRootTheAuthorsExcludeRemoves

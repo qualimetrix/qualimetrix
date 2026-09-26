@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMap;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
@@ -21,6 +22,7 @@ use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricAnalysis;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricOverrideReader;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
@@ -252,6 +254,102 @@ final class ComputedMetricLayeringTest extends TestCase
         self::assertSame(['computed_metrics', 'computed.x', 'formula'], $refusal->position()?->segments);
     }
 
+    /** @return iterable<string, array{array<string, mixed>, array<string, mixed>, string, list<string>}> */
+    public static function provideSelectedBrokenFormulas(): iterable
+    {
+        yield 'project inherits namespace outside the reporting subset' => [
+            ['levels' => ['project'], 'formulas' => ['namespace' => '1 +']],
+            ['description' => 'label'], 'preset "strict"', ['formulas', 'namespace'],
+        ];
+        yield 'explicit project beats namespace' => [
+            ['levels' => ['project'], 'formulas' => ['namespace' => '4', 'project' => '1 +']],
+            ['description' => 'label'], 'preset "strict"', ['formulas', 'project'],
+        ];
+        yield 'specific below generic' => [
+            ['levels' => ['project'], 'formulas' => ['project' => '1 +']],
+            ['formula' => '4'], 'preset "strict"', ['formulas', 'project'],
+        ];
+        yield 'specific above generic' => [
+            ['levels' => ['project'], 'formula' => '4'],
+            ['formulas' => ['project' => '1 +']], 'configuration file "/p/qmx.yaml"', ['formulas', 'project'],
+        ];
+        yield 'generic below a namespace refinement' => [
+            ['levels' => ['project'], 'formula' => '1 +'],
+            ['formulas' => ['namespace' => '4']], 'preset "strict"', ['formula'],
+        ];
+        yield 'generic above a namespace refinement' => [
+            ['levels' => ['project'], 'formulas' => ['namespace' => '4']],
+            ['formula' => '1 +'], 'configuration file "/p/qmx.yaml"', ['formula'],
+        ];
+        yield 'namespace reporting subset' => [
+            ['levels' => ['namespace'], 'formulas' => ['namespace' => '1 +']],
+            ['description' => 'label'], 'preset "strict"', ['formulas', 'namespace'],
+        ];
+        yield 'class reporting subset' => [
+            ['levels' => ['class'], 'formula' => '4'],
+            ['formulas' => ['class' => '1 +']], 'configuration file "/p/qmx.yaml"', ['formulas', 'class'],
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $preset
+     * @param array<string, mixed> $file
+     * @param list<string> $formulaPath
+     */
+    #[Test]
+    #[DataProvider('provideSelectedBrokenFormulas')]
+    public function itAttributesTheSelectedBrokenFormulaToItsExactWriter(array $preset, array $file, string $writer, array $formulaPath): void
+    {
+        $refusal = $this->refusal(
+            self::preset(['computed_metrics' => ['computed.x' => $preset]]),
+            self::file(['computed_metrics' => ['computed.x' => $file]]),
+        );
+
+        self::assertStringContainsString('Invalid formula syntax', $refusal->summary());
+        self::assertSame([$writer], self::described($refusal));
+        self::assertSame(['computed_metrics', 'computed.x', ...$formulaPath], $refusal->position()?->segments);
+    }
+
+    #[Test]
+    public function itKeepsABuiltInProjectFormulaAndItsDefaultAuthorshipUnderANamespaceOverride(): void
+    {
+        $layers = [self::file(['computed_metrics' => [
+            'health.complexity' => ['levels' => ['project'], 'formulas' => ['namespace' => '4']],
+            'health.overall' => ['description' => 'label'],
+        ]])];
+        $metric = $this->metric('health.complexity', ...$layers);
+        $defaults = ComputedMetricDefaults::getDefaults()['health.complexity'];
+        $document = DocumentComposer::compose(new DocumentSchema([new ComputedMetricsSection()]), $layers);
+        $section = $document->get(ComputedMetricsSection::KEY);
+        self::assertInstanceOf(ResolvedMap::class, $section);
+        $authorship = new ComputedMetricAuthorship($section->entries());
+
+        self::assertSame('4', $metric->getFormulaForLevel(SymbolLevel::Namespace_));
+        self::assertSame($defaults->getFormulaForLevel(SymbolLevel::Project), $metric->getFormulaForLevel(SymbolLevel::Project));
+        self::assertSame([], $authorship->writersOfFormula($metric, 'project'));
+        self::assertSame(['the built-in defaults'], self::described($authorship->refuseFormula($metric, 'project', 'refused')));
+        self::assertSame(['configuration file "/p/qmx.yaml"'], self::described($authorship->refuseFormula($metric, 'namespace', 'refused')));
+
+        $overall = $this->metric('health.overall', ...$layers);
+        $inheritedDefault = $authorship->refuseFormula($overall, 'project', 'refused');
+        self::assertSame([], $authorship->writersOfFormula($overall, 'project'));
+        self::assertSame(['the built-in defaults'], self::described($inheritedDefault));
+        self::assertSame(['computed_metrics', 'health.overall', 'formulas', 'namespace'], $inheritedDefault->position()?->segments);
+    }
+
+    #[Test]
+    public function itOrdersReferenceLevelConflictWritersByDocumentPrecedence(): void
+    {
+        $refusal = $this->refusal(
+            self::preset(['computed_metrics' => ['computed.dependency' => ['levels' => ['class'], 'formula' => '4']]]),
+            self::file(['computed_metrics' => ['health.overall' => ['levels' => ['project'], 'formula' => 'm["computed.dependency"]']]]),
+        );
+
+        self::assertStringContainsString('where it is not published', $refusal->summary());
+        self::assertSame(['preset "strict"', 'configuration file "/p/qmx.yaml"'], self::described($refusal));
+        self::assertSame(['computed_metrics', 'health.overall'], $refusal->position()?->segments);
+    }
+
     #[Test]
     public function itNamesEveryLayerOfACycle(): void
     {
@@ -315,16 +413,48 @@ final class ComputedMetricLayeringTest extends TestCase
         self::assertSame(['exclude_health', '0'], $refusal->position()?->segments);
     }
 
+    /** @return iterable<string, array{array<string, mixed>, array<string, mixed>, list<string>}> */
+    public static function provideUnrenormalizableOverallFormulas(): iterable
+    {
+        $formula = 'min(m["health.complexity"] ?? 75, 100)';
+        yield 'generic before exclusion' => [
+            ['computed_metrics' => ['health.overall' => ['formula' => $formula]]],
+            ['exclude_health' => ['typing']], ['exclude_health', '0'],
+        ];
+        yield 'exclusion before generic' => [
+            ['exclude_health' => ['typing']],
+            ['computed_metrics' => ['health.overall' => ['formula' => $formula]]],
+            ['computed_metrics', 'health.overall', 'formula'],
+        ];
+        yield 'exclusion before namespace refinement' => [
+            ['exclude_health' => ['typing']],
+            ['computed_metrics' => ['health.overall' => ['levels' => ['project'], 'formulas' => ['namespace' => $formula]]]],
+            ['computed_metrics', 'health.overall', 'formulas', 'namespace'],
+        ];
+        yield 'exclusion before project refinement' => [
+            ['exclude_health' => ['typing']],
+            ['computed_metrics' => ['health.overall' => ['levels' => ['project'], 'formulas' => ['project' => $formula]]]],
+            ['computed_metrics', 'health.overall', 'formulas', 'project'],
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $preset
+     * @param array<string, mixed> $file
+     * @param list<string> $position
+     */
     #[Test]
-    public function itNamesEveryLayerBehindAnOverallFormulaThatCannotBeRenormalized(): void
+    #[DataProvider('provideUnrenormalizableOverallFormulas')]
+    public function itNamesEveryLayerBehindAnOverallFormulaThatCannotBeRenormalized(array $preset, array $file, array $position): void
     {
         $refusal = $this->refusal(
-            self::preset(['computed_metrics' => ['health.overall' => ['formula' => 'min(m["health.complexity"] ?? 75, 100)']]]),
-            self::file(['exclude_health' => ['typing']]),
+            self::preset($preset),
+            self::file($file),
         );
 
         self::assertStringContainsString('Cannot auto-renormalize "health.overall"', $refusal->summary());
         self::assertSame(['preset "strict"', 'configuration file "/p/qmx.yaml"'], self::described($refusal));
+        self::assertSame($position, $refusal->position()?->segments);
     }
 
     /** A section the pipeline carries unread would otherwise be read as "nothing written". */

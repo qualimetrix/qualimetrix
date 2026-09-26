@@ -280,6 +280,16 @@ final class DocumentMergePolicyTest extends TestCase
         self::assertSame(['memory_limit'], $refusal->position()?->segments);
     }
 
+    #[Test]
+    public function itKeepsAnExplicitlyPositionlessRefusal(): void
+    {
+        $document = SampleDocument::compose(SampleDocument::file(['memory_limit' => 'lots']));
+        $writers = self::scalar($document->get('memory_limit'))->contributors();
+
+        self::assertSame(['memory_limit'], Provenance::refusalOf($writers, 'not a size')->position()?->segments);
+        self::assertNull(Provenance::refusalOf($writers, 'not a size', null)->position());
+    }
+
     private static function scalar(?ResolvedValueInterface $value): ResolvedScalar
     {
         self::assertInstanceOf(ResolvedScalar::class, $value);

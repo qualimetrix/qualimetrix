@@ -1705,24 +1705,6 @@ rules:
       - subtree: Qualimetrix\Analysis\Finding\Rule
       - subtree: Qualimetrix\Analysis\Evidence\DependencyModel\Contract
       - subtree: Qualimetrix\Core\Path
-      # The refusal carrier's own root: the one kind of exit code 3, the
-      # origin and position it is built from, and the source enum. The
-      # configuration document is where the rank now comes from, by design:
-      # every resolved node refuses itself naming its writers, so
-      # `ResolvedValueInterface`, whose only project dependency is the
-      # carrier its `refusal()` returns, passes it all of its own rank, and
-      # `Provenance` and the resolved map, list and opaque node pass it a share.
-      # From there the carrier passes it to `ConfigurationOrigin` and
-      # `RefusedPosition`, and the origin, which names nothing else, passes
-      # all of its own to `ConfigurationSource`. Measured on the tree that
-      # added the document: 0.0080, 0.0057 and 0.0056 before it, 0.0114,
-      # 0.0066 and 0.0087 after it, for the carrier, the position and the
-      # source. A second refusal type or a node that does not refuse itself
-      # would lower the numbers at the cost of the design, so this suppresses
-      # the channel for the root instead of raising a threshold every time an
-      # owner starts refusing through the document. It replaces the carrier's
-      # own inline threshold, which a root entry would leave doing nothing.
-      - exact: Qualimetrix\Analysis\Configuration\Contract\Refusal
 
   # Distance: leaf namespaces holding pure value objects, enums, and exceptions
   # are maximally concrete with few abstractions — that is the point of a
@@ -1797,17 +1779,6 @@ rules:
       # number and cost the reader.
       - exact: 'Qualimetrix\Analysis\Configuration\Contract'
       - exact: 'Qualimetrix\Analysis\Configuration\Contract\Refusal'
-      # The configuration document's own two contract roots, the same shape
-      # one level down. `Document` is the resolved document every owner reads —
-      # final readonly values an owner matches by type, behind one interface —
-      # and `Schema` the vocabulary an owner declares its section in: a
-      # builder, its enums and one port. Every section owner and reader names
-      # them and they name almost nothing, so I is near 0 and A stays at one
-      # interface per root: 0.71 and 0.72 exact-root distance on this tree. An
-      # interface in front of each value would buy the number and cost the
-      # `instanceof` reading owners do.
-      - exact: 'Qualimetrix\Analysis\Configuration\Contract\Document'
-      - exact: 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema'
     max_distance_warning: 0.5
     max_distance_error: 0.7
 

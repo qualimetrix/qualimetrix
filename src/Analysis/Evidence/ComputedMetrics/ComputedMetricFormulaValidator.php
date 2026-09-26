@@ -74,7 +74,7 @@ final class ComputedMetricFormulaValidator
                     // defect from inside ExpressionLanguage masquerade as a user
                     // refusal.
                     throw $authorship->refuseFormula(
-                        $definition->name,
+                        $definition,
                         $levelKey,
                         ComputedMetricRefusalWording::invalidFormulaSyntax($definition->name, $levelKey, $e->getMessage(), $formula),
                     );
@@ -82,7 +82,7 @@ final class ComputedMetricFormulaValidator
 
                 if (!$this->expression->everyAccessIsALiteralIndex($formula)) {
                     throw $authorship->refuseFormula(
-                        $definition->name,
+                        $definition,
                         $levelKey,
                         ComputedMetricRefusalWording::everyAccessMustBeALiteralIndex($definition->name, $formula),
                     );
@@ -288,7 +288,7 @@ final class ComputedMetricFormulaValidator
     {
         foreach ($definitions as $definition) {
             foreach ($definition->formulas as $level => $formula) {
-                $this->validateFormulaMetricKeys($definition->name, (string) $level, $formula, $authorship);
+                $this->validateFormulaMetricKeys($definition, (string) $level, $formula, $authorship);
             }
         }
     }
@@ -319,15 +319,15 @@ final class ComputedMetricFormulaValidator
         );
     }
 
-    private function validateFormulaMetricKeys(string $definitionName, string $level, string $formula, ComputedMetricAuthorship $authorship): void
+    private function validateFormulaMetricKeys(ComputedMetricDefinition $definition, string $level, string $formula, ComputedMetricAuthorship $authorship): void
     {
         foreach ($this->expression->keysOf($formula) as $key) {
-            $this->assertKeyIsCatalogued($definitionName, $level, $key, $formula, $authorship);
+            $this->assertKeyIsCatalogued($definition, $level, $key, $formula, $authorship);
         }
     }
 
     private function assertKeyIsCatalogued(
-        string $definitionName,
+        ComputedMetricDefinition $definition,
         string $level,
         string $key,
         string $formula,
@@ -342,9 +342,9 @@ final class ComputedMetricFormulaValidator
         }
 
         throw $authorship->refuseFormula(
-            $definitionName,
+            $definition,
             $level,
-            ComputedMetricRefusalWording::referencesUnknownMetricKey($definitionName, $key, $formula),
+            ComputedMetricRefusalWording::referencesUnknownMetricKey($definition->name, $key, $formula),
         );
     }
 

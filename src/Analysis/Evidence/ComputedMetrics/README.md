@@ -221,6 +221,13 @@ decision is [ADR 0086](../../../../docs/adr/0086-one-configuration-document-merg
   `threshold` beside `warning` or `error` in one layer is refused.
 - `formula` is the formula of every reporting level; `formulas.<level>`
   refines one level beside it, whichever layer wrote either.
+  `ComputedMetricDefinition::formulaLevelFor()` selects the stored level
+  for both evaluation and authorship. Project inherits namespace only when
+  there is no stored project formula; an unchanged built-in project formula
+  keeps its default authorship under an authored namespace refinement.
+  A refusal about one formula names its exact writing leaf, even when another
+  layer changed only the metric's description. Health exclusions use the same
+  selection and order their formula and exclusion writers by precedence.
 - `levels` is replaced whole by the last layer that writes it.
 - `~` and `{}` write nothing under the name: a metric written either way
   leaves the metric below it — a built-in dimension or a preset's metric —

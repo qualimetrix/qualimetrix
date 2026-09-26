@@ -108,7 +108,8 @@ another node (`allow` keyed by the layer names `layers` declares) judged
 against that node as merged, in the words of every layer that wrote the name;
 (4) every leaf keeps the layer that won it and
 every merged node its contributors (`Provenance`: source, the key path as the
-author spelled it, the line when the format reports one).
+author spelled it, the line when the format reports one, and the layer's
+precedence index within this composed document).
 
 - An owner declares its root through
   `Contract/Document/Schema/DocumentSectionSchemaInterface` — a key and a
@@ -146,6 +147,10 @@ author spelled it, the line when the format reports one).
   `ResolvedValueInterface::refusal()` names the winning layer of a leaf, or every
   contributor of a merged node through `ConfigurationRefusal::acrossLayers()`.
   The JSON refusal envelope publishes those sources as `source`.
+  Joint refusals order writers by their document precedence, including
+  several presets of the same source kind. Their default position belongs to
+  the last writer; an explicit null preserves a positionless refusal.
+  Provenance from different composed documents is not combined.
 - Diagnostics — warnings about accepted configuration — travel with the
   resolved document (`ConfigurationDocument::diagnostics()`). Every command
   that resolves the document prints them on stderr, and `check`'s JSON report
