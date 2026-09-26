@@ -67,12 +67,13 @@ final class RankingCheckTest extends TestCase
     {
         $records = self::records(3);
         $issues = self::issues($records, [30, 20, 10]);
-        $tree = self::rankedTree($records, $issues, 2, 1);
+        $complete = \in_array($mutation, ['missing', 'duplicate'], true);
+        $tree = self::rankedTree($records, $issues, $complete ? 0 : 2, $complete ? null : 1);
         $key = 'case:alpha|format:json';
         $answer = self::answer($tree, $key);
         $original = ReportRecords::decode($answer['stdout']);
         $full = ReportRecords::decode($answer['ranked']['stdout']);
-        $support = ReportRecords::decode($answer['physical']['stdout'] ?? throw new GateError('The truncated fixture support is missing.'));
+        $support = $complete ? [] : ReportRecords::decode($answer['physical']['stdout'] ?? throw new GateError('The truncated fixture support is missing.'));
         if (\in_array($mutation, ['non-prefix', 'declared-score-non-prefix'], true)) {
             $original['topIssues'] = [$issues[1], $issues[2]];
             foreach ($original['topIssues'] as $index => &$issue) {
@@ -112,7 +113,9 @@ final class RankingCheckTest extends TestCase
         }
         $answer['stdout'] = ValueCheck::value($original);
         $answer['ranked']['stdout'] = ValueCheck::value($full);
-        $answer['physical']['stdout'] = ValueCheck::value($support);
+        if (!$complete) {
+            $answer['physical']['stdout'] = ValueCheck::value($support);
+        }
         if (\in_array($mutation, ['exit', 'stderr', 'support-exit', 'support-stderr'], true)) {
             $slot = str_starts_with($mutation, 'support-') ? 'physical' : 'ranked';
             $field = str_ends_with($mutation, 'exit') ? 'exit' : 'stderr';
