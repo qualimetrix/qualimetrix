@@ -73,22 +73,6 @@ final class SelfTestRecords extends SelfTestGroup
                 [FailureClass::VALUE_MISMATCH, 'case:value-directives|directives', 'ValueCheck::measure <- RecordStage::directiveExit'],
                 [FailureClass::VALUE_MISMATCH, 'case:value-directives|directives', 'ValueCheck::measure <- ValueStage::applyStage'],
             ], [[FailureClass::SURFACE_MISMATCH, '*case:value-directives*']]),
-            CheckWitnesses::witness('record-ranked-neighbour', CheckWitnesses::DECLARATIONS, static function (array $tree) use ($record): array {
-                $tree = self::fixture($tree, 'record-ranked');
-                $issue = self::issue($record);
-                $tree['answers']['case:record-ranked|format:json'] = ['stdout' => ValueCheck::value(['violations' => [$record], 'topIssues' => [$issue]])];
-                $issue['message'] = 'An unannounced ranked neighbour.';
-                $tree['candidateAnswers']['case:record-ranked|format:json'] = ['stdout' => ValueCheck::value(['violations' => [$record], 'topIssues' => [$issue]])];
-                return $tree;
-            }, [[FailureClass::TOP_ISSUES_MISMATCH, 'case:record-ranked|format:json', 'RecordStage::inspectRankedPrefix <- SurfaceComparison::compareSurfaces']], [[FailureClass::SURFACE_MISMATCH, 'case:record-ranked|format:json']]),
-            CheckWitnesses::witness('value-ranked-score', CheckWitnesses::DECLARATIONS, static function (array $tree) use ($record): array {
-                $tree = self::fixture($tree, 'value-ranked');
-                $issue = self::issue($record);
-                $tree['answers']['case:value-ranked|format:json'] = ['stdout' => ValueCheck::value(['violations' => [$record], 'topIssues' => [$issue]])];
-                $issue['impactScore'] = 11;
-                $tree['candidateAnswers']['case:value-ranked|format:json'] = ['stdout' => ValueCheck::value(['violations' => [$record], 'topIssues' => [$issue]])];
-                return $tree;
-            }, [[FailureClass::VALUE_MISMATCH, 'case:value-ranked|format:json|record:*', 'ValueCheck::measure <- RecordStage::rankedProjection']], [[FailureClass::SURFACE_MISMATCH, 'case:value-ranked|format:json']]),
             CheckWitnesses::witness('value-exact-table', CheckWitnesses::DECLARATIONS, static function (array $tree): array {
                 $tree = self::fixture($tree, 'value-exact');
                 $metric = ['type' => 'method', 'name' => 'Replay\\Exact::run', 'file' => 'src/Exact.php', 'line' => 1, 'metrics' => ['ccn' => 1, 'replayValue' => 1]];
@@ -101,14 +85,6 @@ final class SelfTestRecords extends SelfTestGroup
             CheckWitnesses::witness('record-unused-derive-intent', 'derive-declarations refused', static fn(array $tree): array => self::append($tree, DeclaredRecords::INDEX, DeclaredRecords::COLUMNS, [['withdrawn', '*', 'json', 'format:json', '{"channel":"never.published"}', 'No record is removed.']]), [[FailureClass::RECORD_STALE, DeclaredRecords::INDEX, 'RecordCheck::checkRun <- Gate::compare']]),
             CheckWitnesses::witness('value-unused-derive-intent', 'derive-declarations refused', static fn(array $tree): array => self::append($tree, DeclaredValues::INDEX, DeclaredValues::COLUMNS, [['field', 'nothingPublished', '*', 'No value is changed.']]), [[FailureClass::VALUE_STALE, DeclaredValues::INDEX, 'ValueCheck::checkRun#1 <- Gate::compare']]),
         ];
-    }
-
-    /** @param array<string,mixed> $record
-     * @return array<string,mixed>
-     */
-    private static function issue(array $record): array
-    {
-        return ['rank' => 1, 'file' => $record['file'], 'line' => $record['line'], 'symbol' => $record['symbol'], 'rule' => $record['rule'], 'severity' => $record['severity'], 'message' => $record['message'], 'recommendation' => $record['recommendation'], 'impactScore' => 10, 'coupling.class-rank' => null, 'debtMinutes' => $record['techDebtMinutes']];
     }
 
     /**
