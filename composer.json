@@ -179,7 +179,10 @@
         ],
         "selfcheck:analysis": "php bin/qmx check src/ --baseline=qmx-baseline.json --fail-on=warning --memory-limit=512M",
         "check-leaks": "bash scripts/check-private-leaks.sh",
-        "gate:self-test": "php scripts/finding-gate.php --self-test",
+        "gate:self-test": [
+            "php scripts/finding-gate.php --self-test",
+            "php scripts/finding-gate-controls.php --self-test"
+        ],
         "gate": [
             "Composer\\Config::disableProcessTimeout",
             "php scripts/finding-gate.php"

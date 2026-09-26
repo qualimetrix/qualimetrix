@@ -48,10 +48,15 @@ final class Harness
     /** How long a run may print nothing before it says what it is waiting for. */
     private const LIVENESS_INTERVAL_SECONDS = 30.0;
 
+    /**
+     * @param string $reference the commit every control's gate is compared against
+     * @param string $referenceName what the developer called it
+     */
     private function __construct(
         private readonly string $repository,
         private readonly string $reference,
-        private readonly ?string $reportDirectory = null,
+        private readonly ?string $reportDirectory,
+        private readonly string $referenceName,
     ) {}
 
     /** @param list<string> $argv */
@@ -72,6 +77,10 @@ final class Harness
                 echo self::usage();
 
                 return 0;
+            }
+
+            if ($argument === '--self-test') {
+                return self::selfTest();
             }
 
             if (str_starts_with($argument, '--reference=')) {
@@ -138,7 +147,9 @@ final class Harness
         }
 
         try {
-            return (new self($repository, $reference, $reportDirectory))->run(Controls::all($forced), $only, $jobs);
+            $commit = self::resolveReference($repository, $reference);
+
+            return (new self($repository, $commit, $reportDirectory, $reference))->run(Controls::all($forced), $only, $jobs);
         } catch (Throwable $error) {
             fwrite(\STDERR, 'finding-gate-controls: ' . $error->getMessage() . "\n");
 
@@ -146,6 +157,34 @@ final class Harness
         } finally {
             Scratch::removeAll();
         }
+    }
+
+    /**
+     * The commit a reference names, resolved in the developer's repository.
+     *
+     * A control's clone carries refs and objects only, so `@{u}`, the reflog
+     * forms and `ORIG_HEAD` mean something here and nothing there. From a full
+     * checkout the commit itself is in the clone, reachable or not: a local
+     * clone links every object. From a shallow one git clones over its
+     * transport and takes only what refs reach, so a commit reachable only
+     * through the reflog is resolved here and missing there, and every
+     * control's gate refuses it loudly: `Cannot check out reference "<sha>":
+     * fatal: invalid reference: <sha>`, in English under the `LC_ALL=C` every
+     * child runs with.
+     */
+    public static function resolveReference(string $repository, string $reference): string
+    {
+        $result = Shell::run(
+            ['git', 'rev-parse', '--verify', '--quiet', '--end-of-options', $reference . '^{commit}'],
+            $repository,
+        );
+        $commit = trim($result['stdout']);
+
+        if ($result['exit'] !== 0 || preg_match('~^[0-9a-f]{40,64}$~', $commit) !== 1) {
+            throw new RuntimeException(\sprintf('--reference=%s names no commit in %s.', $reference, $repository));
+        }
+
+        return $commit;
     }
 
     /** @return list<string> */
@@ -157,12 +196,27 @@ final class Harness
         ));
     }
 
+    private static function selfTest(): int
+    {
+        $failures = (new HarnessSelfTest())->run();
+
+        foreach ($failures as $failure) {
+            echo '  FAIL  ', $failure, "\n";
+        }
+
+        echo $failures === [] ? "  harness self-test green\n" : \sprintf("  harness self-test RED (%d)\n", \count($failures));
+
+        return $failures === [] ? 0 : 1;
+    }
+
     private static function usage(): string
     {
         return <<<'TEXT'
             Usage: php scripts/finding-gate-controls.php --reference=<git-ref> [options]
+                   php scripts/finding-gate-controls.php --self-test
 
-              --reference=<git-ref>       Passed to the gate as the tree to compare against. Required.
+              --reference=<git-ref>       The tree to compare against, resolved to a commit in this repository
+                                          first, so @{u}, reflog forms and ORIG_HEAD work. Required.
               --only=<a,b>                Run these controls only. Default: all.
               --jobs=<n>                  How many controls run at a time. Default: a quarter of the machine's
                                           processors, at least 2 and at most 8. One control is one gate,
@@ -172,15 +226,16 @@ final class Harness
                                           where the failure detail lives when a control misbehaves.
               --force-expect=<id>:<class> Replace a control's declared failure class, to show that a
                                           wrong expectation fails the harness. Not for regular runs.
+              --self-test                 Check the harness's own mechanics, run no control, and exit.
               --detached                  Do not stop when the launching process disappears. By default it
                                           does: an interrupt that reaches only `composer` once left the gate
                                           running invisibly for seven minutes. Pass this to outlive a
                                           launcher on purpose.
 
-            Each control clones this working tree — git-listed content and `vendor/` hardlinked,
-            `.git` copied, everything git ignores left out — plants one breakage, runs THAT clone's
-            own gate, and asserts the exit code and the failure class. The clone is what makes the
-            harness survive Ш5's rewrite of the comparator.
+            Each control clones this working tree — git-listed content and `vendor/` hardlinked, the
+            repository cloned rather than shared, everything git ignores left out — plants one
+            breakage, runs THAT clone's own gate, and asserts the exit code and the failure class.
+            The clone is what makes the harness survive Ш5's rewrite of the comparator.
             TEXT;
     }
 
@@ -213,7 +268,8 @@ final class Harness
         $beforeTargets = $this->targetDigests($targets);
         $width = min($jobs ?? $this->defaultJobs(), \count($selected));
         printf(
-            "finding-gate controls — reference=%s, %d control(s), %d at a time\n\n",
+            "finding-gate controls — reference=%s (%s), %d control(s), %d at a time\n\n",
+            $this->referenceName,
             $this->reference,
             \count($selected),
             $width,

@@ -15,7 +15,7 @@ namespace QmxFindingGate;
  *
  * The handler only records the signal. The decision is taken synchronously, by
  * {@see raiseIfRequested()} at the points listed there — the idiom the controls
- * harness already argues for in `finding-gate-controls/Shell.php`. Throwing
+ * harness already argues for in its own `Shell`. Throwing
  * from the handler itself was tried on paper and rejected: two of the gate's
  * own `catch (GateError)` sites swallow and continue, and both wrap CPU-bound
  * string work, which is where an asynchronous signal is most likely to land. An

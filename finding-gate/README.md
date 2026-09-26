@@ -8,7 +8,24 @@ The corpus is **external code by construction**. We dogfood ourselves, so a
 corpus containing `src/` would move its own input with every step it is
 supposed to measure: renaming the class `Violation` would shift the subjects of
 the findings the gate compares. Nothing under `cases/` may be product code, and
-no case may point at a path outside its own directory.
+no case may point at a path outside its own directory: not in `paths`, not in
+`config`, and not in the value of any option in `args` that reads a path (`-c`,
+`--config`, `--preset` given as a file, `--baseline`; the one list is
+`CaseDefinition::INPUT_OPTIONS`). The rule is judged where a path leads once
+links are resolved, not how it is spelled: a case directory that is itself a
+link is refused, so is a symlink out of it, a path that does not exist and an
+absolute path, while a name like `a..b` is just a name. Only `--preset` is a
+comma-separated list, as the product reads it; `--config=a,b.yaml` is one file.
+An output option (`-o`, `--output`, `--log-file`, `--profile`, `--cache-dir`;
+`CaseDefinition::OUTPUT_OPTIONS`) is refused in `args` wherever it points: the
+run's working directory is the case directory, so a relative destination writes
+into the tracked corpus, and the gate captures what a run publishes itself.
+`--profile` writes a file only with a value; without one it prints a summary to
+stderr, which the gate captures as a compared `stderr:` surface — a profile is
+not a publication of the product under comparison — so it is refused in both
+forms. So is `-d`/`--working-dir`: the product would
+resolve every other path from it, while the rule judges them from the case
+directory.
 
 ## Layout
 
@@ -80,7 +97,7 @@ moves, and stale declarations.
   "coverage": "authoritative",         // or "auxiliary"; optional, defaults to authoritative
   "paths": ["src"],                    // relative to the case directory
   "config": "qmx.yaml",                // relative to the case directory
-  "args": ["--rule-opt=complexity.wmc:threshold=0"],   // extra CLI arguments; optional, defaults to []
+  "args": ["--rule-opt=complexity.wmc:threshold=0"],   // extra CLI options; optional, defaults to []; a value is written attached (--option=value), except after a path option
   "channels": ["code-smell.eval@callable"],             // channel AND level pairs this case owns
   "explainSubjects": ["declaration:callable:Corpus\\Smells\\Smells::report@src/Smells.php"]  // subjects for baseline:explain
 }
@@ -273,9 +290,9 @@ The gap is structural, not an oversight, and closing it needs the gate itself to
 change in three places:
 
 - **`baseline:generate` refuses an incomplete run** (ADR 0018) and writes no
-  file — measured: exit 4, no file. `Gate::checkBaselineSurface` holds every
-  case to exit 0 *and* to a non-empty baseline, deliberately, so that an absent
-  surface cannot read as one that agrees. A case that is incomplete by design
+  file — measured: exit 4, no file. `CaseOutcomeCheck::checkBaselineSurface`
+  holds every case to exit 0 *and* to a non-empty baseline, deliberately, so that
+  an absent surface cannot read as one that agrees. A case that is incomplete by design
   is `run-failed` on both sides.
 - **`channels` may not be empty**, so such a case has to claim a pair some
   fixture of its own fires, and the pairs are all owned — it would be
@@ -334,6 +351,9 @@ the `bin/qmx rules` snapshot.
 | `RED`     | 1     | At least one failure class fired.                          |
 | —         | 3     | The gate could not run (bad corpus, bad map, no tree).     |
 | —         | 128+n | A signal stopped the run: 130 for SIGINT, 143 for SIGTERM. |
+
+A `--cases=` name that selects no case is refused (exit 3), also beside names
+that do select one, so the restriction a run reports is the one it ran under.
 
 A run is `PARTIAL`, never `GREEN`, when `--cases=` restricted the corpus or when
 `--incomplete-corpus` downgraded a coverage shortfall to a warning. Only a
@@ -942,15 +962,17 @@ to touch this list; it exists because the last change to the claim format
 recorded its blast radius as "one literal, one mutation" and two of these four
 survived by luck.
 
-| Consumer                                                  | What it reads                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scripts/finding-gate/Corpus.php` + `CaseDefinition.php`  | every `cases/*/case.json`, as the schema                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `scripts/finding-gate-controls/Controls.php`              | eleven exact corpus paths it mutates: `cases/smells/src/Dead.php`, `cases/health/qmx.yaml`, `cases/disabled-rule/case.json`, `cases/layers/case.json`, `cases/smells/case.json`, `cases/rule-exclusion-ledger/qmx.yaml`, `maps/channels.tsv`, `maps/inputs.tsv`, `maps/report-values.tsv`, `declared-delta.tsv`, `declared-field-moves.tsv`; it also reads `maps/channels.tsv`, `maps/inputs.tsv` and `maps/report-values.tsv` to write each back with a control's own row, creates `declared-delta/control-*.diff`, and digests `declared-delta.tsv` and `declared-delta/` around a derive run |
-| `governance/Channel/ChannelLevelDeclarationDriftTest.php` | every `cases/*/case.json` — `paths`, `config`, `args` — and runs `bin/qmx` over each; it is inside `composer check`                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `scripts/generate-rename-enumeration.php`                 | `cases/*/qmx.yaml`, and counts occurrences under `finding-gate/**`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Consumer                                                  | What it reads                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/finding-gate/Corpus.php` + `CaseDefinition.php`  | every `cases/*/case.json`, as the schema                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `scripts/finding-gate-controls/`                          | the controls (`*Controls.php`, `ChannelRenamePlants.php`, `Mutation.php`) name these corpus paths exactly: `cases/smells/src/Dead.php`, `cases/smells/case.json`, `cases/security/case.json`, `cases/health/qmx.yaml`, `cases/disabled-rule/case.json`, `cases/layers/case.json`, `maps/channels.tsv`, `maps/inputs.tsv`, `maps/report-values.tsv` (each read and written back with a control's own row), `declared-delta.tsv`, `declared-field-moves.tsv`, and `declared-delta/` (a `control-*.diff` created, the directory digested around a derive run); and they walk the whole corpus: `DeclaredDeltaControls` and `RenameControls` list `cases/` for every directory holding a `case.json`, `Mutation::renameRootKeyInCorpus` rewrites a root key in every `cases/*/qmx.yaml` (which is how `rule-exclusion-ledger/qmx.yaml` is reached), and `Mutation::renameInDerivedDeclarations` rewrites every `*.diff` directly under `declared-delta/` — the only files a derivation writes there |
+| `governance/Channel/ChannelLevelDeclarationDriftTest.php` | every `cases/*/case.json` — `paths`, `config`, `args` — and runs `bin/qmx` over each; it is inside `composer check`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `scripts/generate-rename-enumeration.php`                 | `cases/*/qmx.yaml`, and counts occurrences under `finding-gate/**`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
 Measured, not recalled: `git grep -E "finding-gate/cases|case\.json"` over a
-stopped tree, minus prose. The product test is one field-read away from breaking
+stopped tree, minus prose; the controls' row again by
+`grep -ohE "'finding-gate/[^']*'" scripts/finding-gate-controls/*.php` plus the
+`scandir` and `Mutation` walks, since a walk names no case. The product test is one field-read away from breaking
 on a claim-format change and nothing warns it; the enumeration generator is what
 made `composer check` red the last time a case file moved.
 
@@ -986,8 +1008,8 @@ With the fixture, the reference cannot fire the channel, so the candidate
 publishes a record the reference does not. Where that record lands on a diff
 line the other side fills with nothing, or with a record of another shape, the
 line publishes a different *number* of values of a compared field, and
-`Gate::overreachingLines()` refuses it outright — before a split or a
-`declared-field-moves.tsv` row is consulted. On the identity-ordered surfaces
+`DeclaredDeltaCheck::overreachingLines()` refuses it outright — before a split
+or a `declared-field-moves.tsv` row is consulted. On the identity-ordered surfaces
 (`format:json`, the baseline file) the new record also shifts its neighbours, so
 positional pairing reports moves of `rule`, `file` and `line` between records
 that did not move at all. Only where the withdrawn and the introduced record
@@ -1046,11 +1068,85 @@ own parent.
 
 ## The controls
 
-`composer gate:controls` runs twenty-three controls, each on its own hardlink
-clone: nineteen planted breakages and four green ones. Seventeen of the
-nineteen are each required to produce a named failure class at a named
-surface; the two derive controls are judged by what the run left on disk
-instead. `moved-aggregated-spelling`
+`composer gate:controls` runs the controls `Controls::all()` lists, each on its
+own hardlink clone: planted breakages and green ones. The clone's repository is
+its own — a local mirror of the developer's with the checkout's `HEAD` and
+`index` — so the reference checkout each control's gate takes is registered in
+the clone, never in the repository the harness was started from, also when that
+is a linked worktree whose `.git` is only a pointer file. Making it needs git
+2.31 or later (`rev-parse --path-format`). A mirror carries `refs/` and objects
+and nothing else, so the harness resolves `--reference` to a commit in the
+developer's repository before it clones anything: `@{u}`, `HEAD@{1}` and the
+other reflog forms, and `ORIG_HEAD` work, and a reference that names no commit
+is refused there. That holds for a full checkout, whose local clone links every
+object. From a shallow one git clones over its transport and takes only what
+refs reach, so a commit reachable only through the reflog or `ORIG_HEAD` is
+resolved and then missing from the clone; every control fails loudly on it with
+`Cannot check out reference "<sha>": fatal: invalid reference: <sha>` — in
+English whatever the developer's locale, because the gate and the harness run
+every child with `LC_ALL=C`. The red controls
+are each required to produce a named failure class at a named surface, except
+the derive controls, which are judged by what the run left on disk instead.
+`composer gate:self-test` runs the harness's own self-test after the gate's;
+the gate never loads the harness.
+
+What the controls require is not what makes a failure class witnessed. They run
+neither in `composer check` nor in CI, so the gate's self-test holds every place
+a class is raised to a synthetic run of its own (`CheckWitnesses`, judged by
+`WitnessRegistry`), and a control only adds to that. The unit is a raise site
+per caller (`RaiseSites`): a check reached through a shared wrapper from two
+modes needs a run through each, and a failure raised from a place the scan of
+the source does not enumerate is itself a failure. Each mode of the command
+line is witnessed its own way:
+
+| Mode                                                                  | Witnessed by                                                                                                                                                    |
+| --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| compare                                                               | the synthetic scenarios, by the failures a run raises and where they are raised, and by the clean tree exiting 0 — not by what it writes                        |
+| `--derive-normalization`, `--derive-declared-delta`, `--derive-tuple` | a synthetic scenario each (two for the first two: one refused, one written), held to the exit code, to exactly the declarations it changed, and to its failures |
+| `--self-test`                                                         | `scripts/finding-gate/tests/GateModesTest.php`, by exit code only: a copy of the gate whose `SelfTest` answers a planted failure must exit 1, and a green one 0 |
+| case worker                                                           | by construction: every scenario that runs a tree runs each of its cases in a worker of this mode                                                                |
+
+`GateModesTest` also holds the entry point's refusal: `--cases=nope` exits 3.
+`CheckWitnesses` refuses a mode missing from this accounting and an entry for a
+mode a scenario already drives.
+
+The scan denies by default. For every method that leads to a raise, each
+occurrence of its name in the scanned files must be one of three things: its
+declaration; a direct call with arguments (`(...$spread)` included, `(...)`
+not) — `$this->m(`, `self::`/`static::m(`, `parent::m(` of a scanned `extends`,
+`X::m(` for a scanned `X` however it is qualified or imported, and `$object->m(`
+on any other receiver, which is matched to every scanned class declaring `m`,
+wide on purpose since the receiver's type is not read; or a line declared in
+`RaiseSites::DECLARED_NAMES` with its reason — data that only happens to spell
+the name, or an `$object->m(` whose receiver is declared not to be a scanned
+class, which then leaves the call graph. Names compare without case, as PHP
+resolves them, and an imported class is resolved through its `use`.
+
+An occurrence is an identifier, the last segment of a qualified name, a string
+whose value is the name or ends in `::name` — a whole literal (`b'...'`, heredoc
+and nowdoc included) as PHP computes its value, a part of an interpolated string
+read raw, trimmed and, when it holds a `\`, decoded too — and every use of a
+constant whose literal value is such a name (`X::C`, `self::C`, `static::C`,
+`parent::C`, a global `const` or `define()`, a string naming it). A property
+access `->m` and a named argument `m:` are not. Everything else is refused by
+place and name, without a list of forms to outgrow. A declared line covers that
+line only, never the uses of a constant it defines; one that matches no
+occurrence or more than one, or gives no reason, is refused, and so are a file
+that does not parse and a group `use`. The name `fail` is reserved the same
+way: a `fail` that is not `$report->fail(FailureClass::X, ...)`, a string whose
+value is `fail`, a method called through a variable name, a second `fail()`
+definition and an extendable `GateReport` are refused.
+
+What stays unseen, the same list as `RaiseSites`' docblock:
+
+- a name assembled at run time from parts — concatenation, `sprintf`,
+  interpolation, a value read from data;
+- a call through `$this->m()` that PHP dispatches to a subclass overriding `m`,
+  which is attributed to the declaring class only;
+- two paths into a site that share the same nearest caller;
+- the decisions a signal arriving in the tail of a derive run takes.
+
+`moved-aggregated-spelling`
 is the control on the suffix expansion: the metrics
 surface publishes `<key>.pct95` where the product computed `<key>.p95`, the base
 keys stay exactly where they are, and the gate has to be red rather than absorbing

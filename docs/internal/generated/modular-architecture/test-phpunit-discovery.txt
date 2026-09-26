@@ -64,6 +64,16 @@ Available tests:
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"underscore"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itRefusesToScanATreeItCannotRead
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itScansATreeAndSkipsWhatIsNotPhp
+ - QmxFindingGate\Tests\CaseDefinitionTest::itAcceptsANameThatOnlyContainsTwoDots
+ - QmxFindingGate\Tests\CaseDefinitionTest::itReadsAConfigWithACommaAsOnePath
+ - QmxFindingGate\Tests\CaseDefinitionTest::itReadsANamedPresetAsNoPathAndAPresetFileAsOne
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesACaseDirectoryThatIsALink
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAConfigThatLinksOutsideTheCase
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAPathThatDoesNotExist
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAWorkingDirectoryEvenInsideTheCase
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAnAnalysisPathThatLinksOutsideTheCase
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAnInputOptionThatLinksOutsideTheCase
+ - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAnOutputOptionEvenInsideTheCase
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"chain"
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"collapse-two-olds-onto-one-new"
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"comment-and-blank-lines"
@@ -81,6 +91,31 @@ Available tests:
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"trailing-space-in-new"
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"two-rows-for-one-old"
  - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"wrong-header"
+ - QmxFindingGate\Tests\GateModesTest::itExitsOneWhenTheSelfTestFails
+ - QmxFindingGate\Tests\GateModesTest::itExitsThreeWhenTheGateCannotRun
+ - QmxFindingGate\Tests\GateModesTest::itExitsZeroWhenTheSelfTestIsGreen
+ - QmxFindingGate\Tests\RaiseSitesTest::itAcceptsADeclaredLineOnceAndRefusesOneThatMatchesNoneOrMore
+ - QmxFindingGate\Tests\RaiseSitesTest::itFollowsEveryDirectCallWhateverItsCaseOrQualification
+ - QmxFindingGate\Tests\RaiseSitesTest::itKeepsARaiseWithItsMethodPastAnAnonymousClass
+ - QmxFindingGate\Tests\RaiseSitesTest::itNamesEverySiteOncePerCallerFromAnotherClass
+ - QmxFindingGate\Tests\RaiseSitesTest::itReadsAStringsValueAsPhpDoes
+ - QmxFindingGate\Tests\RaiseSitesTest::itRefusesAFileThatDoesNotParse
+ - QmxFindingGate\Tests\RaiseSitesTest::itRefusesEveryFormItCannotRead
+ - QmxFindingGate\Tests\RaiseSitesTest::itRefusesEveryOccurrenceOfALeadingNameThatIsNotADeclarationOrADirectCall
+ - QmxFindingGate\Tests\RaiseSitesTest::itRefusesEveryUseOfAConstantCarryingALeadingName
+ - QmxFindingGate\Tests\RaiseSitesTest::itRefusesTwoScannedClassesWithOneShortNameInAnyCase
+ - QmxFindingGate\Tests\RaiseSitesTest::itResolvesAnImportedClassAndRefusesAGroupImport
+ - QmxFindingGate\Tests\RaiseSitesTest::itScansSubdirectories
+ - QmxFindingGate\Tests\RaiseSitesTest::itTellsACallFromAPropertyANamedArgumentAndAPhantomReceiver
+ - QmxFindingGate\Tests\WitnessRegistryTest::itAcceptsTheTrackedPendingRowsWhileTheirClassesAreRaisedNowhere
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a class raised nowhere"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending class that is raised"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending class"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending row naming no S01b package"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending row naming no class"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending row without a reason"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a second site of an observed class"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"every site observed"
  - QmxTautologyControls\Tests\TautologyControlDeclarationTest::itDeclaresExactlyOnePositiveControlAndNoRepeatedId
  - QmxTautologyControls\Tests\TautologyControlDeclarationTest::itNamesOnlyCasesThatExist
  - QmxTautologyControls\Tests\TautologyControlDeclarationTest::itPlantsEachBreakageInProductionCodeThatStillLooksLikeThat

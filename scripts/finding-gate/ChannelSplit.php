@@ -80,7 +80,7 @@ final class ChannelSplit
      * so that the pair read off one of them is a key a declared row can name.
      * Handing them over forward-mapped translates the `code` half and leaves the
      * untranslatable `rule` half in place, and the resulting pair is an identity
-     * no row ever declared — see {@see Gate::checkSplitExplanation()}.
+     * no row ever declared — see {@see RenameMapCheck::checkSplitExplanation()}.
      *
      * @param list<array<string, mixed>> $referenceFindings
      * @param list<array<string, mixed>> $candidateFindings
