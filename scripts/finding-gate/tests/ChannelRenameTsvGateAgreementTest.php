@@ -685,22 +685,26 @@ PHP;
             }
             $unsupported = \in_array($mode, ['unsupported declaration', 'unsupported path'], true);
             $reason = $mode === 'unsupported path' ? 'physical path correspondence' : 'mapped PHP declaration';
+            self::assertNull($refusal, $refusal?->getMessage() ?? '');
+            self::assertSame($mode === 'exact' ? GateReport::EXIT_GREEN : GateReport::EXIT_RED, $report->exitCode(), $report->render());
             if ($unsupported) {
-                self::assertNotNull($refusal);
-                self::assertStringContainsString($reason, $refusal->getMessage());
-            } else {
-                self::assertNull($refusal, $refusal?->getMessage() ?? '');
-                self::assertSame($mode === 'exact' ? GateReport::EXIT_GREEN : GateReport::EXIT_RED, $report->exitCode(), $report->render());
+                self::assertSame([FailureClass::RUN_FAILED], $report->failureClasses(), $report->render());
+                self::assertCount(1, $report->raised());
+                self::assertSame('reference', $report->raised()[0]['scope']);
+                self::assertStringContainsString($reason, $report->raised()[0]['detail']);
             }
             if ($mode !== 'exact') {
                 if ($mode === 'stale') {
                     self::assertContains(FailureClass::MAP_STALE, $report->failureClasses(), $report->render());
                 }
-                try {
-                    self::assertSame([], (new Gate($options, new GateReport()))->deriveDeclarations());
-                } catch (GateError $error) {
-                    self::assertTrue($unsupported);
-                    self::assertStringContainsString($reason, $error->getMessage());
+                $deriveReport = new GateReport();
+                self::assertSame([], (new Gate($options, $deriveReport))->deriveDeclarations());
+                if ($unsupported) {
+                    self::assertSame(GateReport::EXIT_RED, $deriveReport->exitCode(), $deriveReport->render());
+                    self::assertSame([FailureClass::RUN_FAILED], $deriveReport->failureClasses());
+                    self::assertCount(1, $deriveReport->raised());
+                    self::assertSame('reference', $deriveReport->raised()[0]['scope']);
+                    self::assertStringContainsString($reason, $deriveReport->raised()[0]['detail']);
                 }
             }
             self::assertSame($before, self::declarationBytes($root));
