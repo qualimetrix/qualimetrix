@@ -304,7 +304,10 @@ final class Gate
             $this->declaredDeltaCheck->checkStaleDeclaredDelta();
             $this->declaredDeltaCheck->checkStaleFieldMoves();
             $this->staleDeclarationCheck->checkStaleDeclarations();
-            $this->captureAuthority('candidate-2', $secondCapture);
+            $secondAuthority = $this->captureAuthority('candidate-2', $secondCapture);
+            if ($secondAuthority !== null && $this->report->exitCode() === GateReport::EXIT_GREEN) {
+                RankingCheck::create($this->context)->checkRepeatedCaptures($firstCapture, $secondCapture);
+            }
         } finally {
             $reference->remove();
             $this->cleanUp();
@@ -319,6 +322,7 @@ final class Gate
     {
         try {
             $passes = [];
+            $firstCapture = null;
 
             for ($pass = 1; $pass <= NormalizationDeriver::passes(); ++$pass) {
                 try {
@@ -332,6 +336,13 @@ final class Gate
                     return null;
                 }
                 $this->caseOutcomeCheck->checkRunsProduced('derive-' . $pass, $artifacts, $authority);
+                $firstCapture ??= $capture;
+                if ($this->report->exitCode() === GateReport::EXIT_GREEN) {
+                    RankingCheck::create($this->context)->checkRepeatedCaptures($firstCapture, $capture);
+                }
+                if ($this->report->exitCode() !== GateReport::EXIT_GREEN) {
+                    return null;
+                }
                 $passes[] = $artifacts;
             }
 

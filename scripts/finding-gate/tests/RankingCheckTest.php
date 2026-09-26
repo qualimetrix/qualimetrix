@@ -40,6 +40,83 @@ final class RankingCheckTest extends TestCase
         self::assertNotSame([], array_filter($report->raised(), static fn(array $failure): bool => str_contains($failure['detail'], 'raw prefix')), $report->render());
     }
 
+    /** @return iterable<string,array{string}> */
+    public static function repeatedCaptureChanges(): iterable
+    {
+        foreach (['impactScore', 'coupling.class-rank', 'threshold'] as $field) {
+            yield $field => [$field];
+        }
+    }
+
+    #[Test]
+    #[DataProvider('repeatedCaptureChanges')]
+    public function itRefusesHiddenValueDriftInTheSecondCandidateCapture(string $field): void
+    {
+        $records = self::records(2);
+        $shown = $field === 'threshold' ? 1 : null;
+        $tree = self::rankedTree($records, self::issues($records, [20, 10]), 0, $shown);
+        $tree['declarations']['cases/alpha/case.json'] = self::definition(['--top=0', ...($shown === null ? [] : ['--format-opt=violations=1'])]);
+        $report = $this->reportFor($tree, static fn(string $root) => self::plantRepeatedCaptureChange($root, $field));
+        self::assertSame([FailureClass::NONDETERMINISM_UNDECLARED], $report->failureClasses(), $report->render());
+        self::assertSame(GateReport::EXIT_RED, $report->exitCode(), $report->render());
+        self::assertSame('case:alpha|format:json', $report->raised()[0]['scope']);
+    }
+
+    #[Test]
+    public function itIgnoresRepeatedRankPositionsAndPrivateLayoutOutsideThePublishedSlice(): void
+    {
+        $records = self::records(2);
+        $tree = self::rankedTree($records, self::issues($records, [10, 10]), 0);
+        $tree['declarations']['cases/alpha/case.json'] = self::definition(['--top=0']);
+        $report = $this->reportFor($tree, static fn(string $root) => self::plantRepeatedCaptureChange($root, 'order'));
+        self::assertSame(GateReport::EXIT_GREEN, $report->exitCode(), $report->render());
+    }
+
+    #[Test]
+    public function itPreservesCompleteRepeatedOccurrenceCountsAcrossCandidatePasses(): void
+    {
+        [$x, $y] = self::records(2);
+        $records = [$x, $x, $y, $y];
+        $tree = self::rankedTree($records, self::issues($records, [10, 10, 10, 10]), 0, 1);
+        $tree['declarations']['cases/alpha/case.json'] = self::definition(['--top=0', '--format-opt=violations=1']);
+        $baseline = ValueCheck::value(['version' => 13, 'scope' => ['src'], 'entries' => [
+            $x['subject'] => [['channel' => $x['channel'], 'magnitudes' => [$x['metricValue'], $x['metricValue']]]],
+            $y['subject'] => [['channel' => $y['channel'], 'magnitudes' => [$y['metricValue'], $y['metricValue']]]],
+        ]]);
+        $tree['answers']['case:alpha|baseline-file'] = ['stdout' => $baseline, 'file' => $baseline];
+        $report = $this->reportFor($tree, static fn(string $root) => self::plantRepeatedCaptureChange($root, 'multiplicity'));
+        self::assertSame([FailureClass::NONDETERMINISM_UNDECLARED], $report->failureClasses(), $report->render());
+        self::assertSame('case:alpha|format:json', $report->raised()[0]['scope']);
+    }
+
+    #[Test]
+    public function itRefusesFifthPassHiddenRankingDriftWithoutWritingNormalization(): void
+    {
+        $records = self::records(2);
+        $tree = self::rankedTree($records, self::issues($records, [20, 10]), 0);
+        $tree['declarations']['cases/alpha/case.json'] = self::definition(['--top=0']);
+        $root = SyntheticTree::create($tree);
+        try {
+            self::plantRepeatedCaptureChange($root, 'impactScore', 5);
+            $path = $root . '/finding-gate/normalization.tsv';
+            $before = Fs::read($path);
+            $report = new GateReport();
+            ob_start();
+            try {
+                $exit = GateModes::run(Options::parse(['gate', '--candidate=' . $root, '--derive-normalization'], $root), $report);
+            } finally {
+                ob_end_clean();
+            }
+            self::assertSame(GateModes::MEASUREMENT_FAILED, $exit, $report->render());
+            self::assertSame([FailureClass::NONDETERMINISM_UNDECLARED], $report->failureClasses(), $report->render());
+            self::assertSame('case:alpha|format:json', $report->raised()[0]['scope']);
+            self::assertSame('5', Fs::read($root . '/replay/ranking-pass-count'));
+            self::assertSame($before, Fs::read($path));
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
     #[Test]
     public function itRefusesUnknownPublisherExpressionsInsteadOfInventingAnEmptySchema(): void
     {
@@ -740,5 +817,51 @@ final class RankingCheckTest extends TestCase
         } finally {
             SyntheticTree::remove($root);
         }
+    }
+
+    private static function plantRepeatedCaptureChange(string $root, string $change, int $pass = 2): void
+    {
+        $plant = <<<'PHP'
+            if ($key === 'case:alpha|format:json' && in_array($capture, ['ranked', 'physical'], true)) {
+                $counter = $tree . '/replay/ranking-pass-count';
+                if ($capture === 'ranked') {
+                    file_put_contents($counter, (string) ((is_file($counter) ? (int) file_get_contents($counter) : 0) + 1));
+                }
+                if ((int) file_get_contents($counter) === REPEATED_PASS) {
+                    $document = json_decode($stdout, true, 512, JSON_THROW_ON_ERROR);
+                    $change = 'REPEATED_CHANGE';
+                    if ($change === 'multiplicity') {
+                        $issues = $document['topIssues'];
+                        $document['topIssues'] = [$issues[0], $issues[2], $issues[2], $issues[2]];
+                        foreach ($document['topIssues'] as $position => &$issue) {
+                            $issue['rank'] = $position + 1;
+                        }
+                        unset($issue);
+                        if ($capture === 'physical') {
+                            $records = $document['violations'];
+                            $document['violations'] = [$records[0], $records[2], $records[2], $records[2]];
+                        }
+                    } elseif ($change === 'threshold' && $capture === 'physical') {
+                        $document['violations'][1]['threshold'] += 1;
+                    } elseif ($change === 'order' && $capture === 'ranked') {
+                        $document['topIssues'] = array_reverse($document['topIssues']);
+                        foreach ($document['topIssues'] as $position => &$issue) {
+                            $issue['rank'] = $position + 1;
+                            $issue = array_reverse($issue, true);
+                        }
+                        unset($issue);
+                    } elseif ($capture === 'ranked' && $change !== 'threshold') {
+                        $document['topIssues'][0][$change] = (float) ($document['topIssues'][0][$change] ?? 0) + 1;
+                    }
+                    $stdout = json_encode($document, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION | JSON_THROW_ON_ERROR) . "\n";
+                }
+            }
+            echo $stdout;
+            PHP;
+        $plant = str_replace(['REPEATED_PASS', 'REPEATED_CHANGE'], [(string) $pass, $change], $plant);
+        $path = $root . '/bin/qmx';
+        $binary = Fs::read($path);
+        self::assertSame(1, substr_count($binary, 'echo $stdout;'));
+        Fs::write($path, str_replace('echo $stdout;', $plant, $binary));
     }
 }

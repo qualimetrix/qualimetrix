@@ -43,6 +43,7 @@ use Throwable;
  *     plant: callable(Specification): Specification,
  *     expect: list<Expected>,
  *     tolerate: list<Tolerated>,
+ *     prepare?: callable(string):void,
  * }
  * @phpstan-type Failure array{class: string, scope: string, detail: string, identity: string}
  * @phpstan-type Run array{failures: list<Failure>, exit: int, changed: list<string>}
@@ -168,7 +169,7 @@ final class CheckWitnesses
             $scenario = $witness['scenario'];
             $specification = ($witness['plant'])(SyntheticTree::clean());
             $mode = self::MODES[$scenario];
-            $run = self::run($specification, $mode['flags'] ?? null, $sites);
+            $run = self::run($specification, $mode['flags'] ?? null, $sites, $witness['prepare'] ?? null);
 
             if (\is_string($run)) {
                 $failures[] = \sprintf('check witness %s: the %s run did not complete: %s', $witness['id'], $scenario, $run);
@@ -364,6 +365,8 @@ final class CheckWitnesses
     private static function ownWitnesses(): array
     {
         return [
+            self::repeatedCaptureWitness(self::WHOLE_RUN),
+            self::repeatedCaptureWitness(self::NORMALIZATION_REFUSED),
             self::witness(
                 'case-capture-refusal',
                 self::WHOLE_RUN,
@@ -1202,16 +1205,60 @@ final class CheckWitnesses
         ];
     }
 
+    /** @return Witness */
+    private static function repeatedCaptureWitness(string $scenario): array
+    {
+        return self::witness(
+            'repeated-full-values-' . $scenario,
+            $scenario,
+            static function (array $tree): array {
+                $tree['declarations']['cases/alpha/case.json'] = self::json([
+                    'id' => 'alpha', 'description' => 'Hidden values must repeat.', 'paths' => ['src'],
+                    'config' => 'qmx.yaml', 'channels' => ['replay.alpha@callable'], 'args' => ['--top=0'],
+                ]);
+                return $tree;
+            },
+            [[FailureClass::NONDETERMINISM_UNDECLARED, 'case:alpha|format:json', 'RankingCheck::checkRepeatedCaptures <- ' . ($scenario === self::WHOLE_RUN ? 'Gate::compare' : 'Gate::deriveNormalization')]],
+            [],
+            static function (string $root): void {
+                $file = $root . '/bin/qmx';
+                $source = Fs::read($file);
+                $anchor = '$stderr = (string) ($answer[\'stderr\'] ?? \'\');';
+                $fault = $anchor . "\n" . <<<'PHP'
+                    if ($capture === 'ranked') {
+                        $marker = $tree . '/replay/repeated-values-' . md5($key);
+                        $seen = is_file($marker) ? (int) file_get_contents($marker) : 0;
+                        file_put_contents($marker, (string) ($seen + 1));
+                        if ($seen === 1) {
+                            $payload = json_decode($stdout, true, 512, JSON_THROW_ON_ERROR);
+                            $payload['topIssues'][0]['impactScore'] += 1;
+                            $stdout = json_encode($payload, JSON_THROW_ON_ERROR);
+                        }
+                    }
+                    PHP;
+                if (substr_count($source, $anchor) !== 1) {
+                    throw new GateError('The repeated-value witness has no unique private capture site.');
+                }
+                Fs::write($file, str_replace($anchor, $fault, $source));
+            },
+        );
+    }
+
     /**
      * @param callable(Specification): Specification $plant
      * @param list<Expected> $expect
      * @param list<Tolerated> $tolerate
+     * @param callable(string):void|null $prepare
      *
      * @return Witness
      */
-    public static function witness(string $id, string $scenario, callable $plant, array $expect, array $tolerate = []): array
+    public static function witness(string $id, string $scenario, callable $plant, array $expect, array $tolerate = [], ?callable $prepare = null): array
     {
-        return ['id' => $id, 'scenario' => $scenario, 'plant' => $plant, 'expect' => $expect, 'tolerate' => $tolerate];
+        $witness = ['id' => $id, 'scenario' => $scenario, 'plant' => $plant, 'expect' => $expect, 'tolerate' => $tolerate];
+        if ($prepare !== null) {
+            $witness['prepare'] = $prepare;
+        }
+        return $witness;
     }
 
     /**
@@ -1247,10 +1294,11 @@ final class CheckWitnesses
      *
      * @param Specification $specification
      * @param list<string>|null $flags the mode's flags, or null for a comparison
+     * @param callable(string):void|null $prepare
      *
      * @return Run|string
      */
-    private static function run(array $specification, ?array $flags, RaiseSites $sites): array|string
+    private static function run(array $specification, ?array $flags, RaiseSites $sites, ?callable $prepare = null): array|string
     {
         $root = SyntheticTree::create($specification);
         $siteAt = [];
@@ -1260,6 +1308,9 @@ final class CheckWitnesses
         }
 
         try {
+            if ($prepare !== null) {
+                $prepare($root);
+            }
             $before = self::declarations($root);
             $report = new GateReport();
             ob_start();

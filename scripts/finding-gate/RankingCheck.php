@@ -54,6 +54,57 @@ final class RankingCheck implements CaseCheck
         }
     }
 
+    public function checkRepeatedCaptures(CaptureResult $first, CaptureResult $second): void
+    {
+        $records = RecordCheck::create($this->run);
+        $fields = null;
+        foreach ($this->run->corpus->cases as $case) {
+            if (!CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, CaseOutcome::of($case, 'candidate'))) {
+                continue;
+            }
+            foreach ($this->run->capturePlan->rankingInvocations() as $descriptor) {
+                $key = Surfaces::key($descriptor['scope'], $descriptor['surface']);
+                if ($descriptor['scope'] !== 'case:' . $case->id || !$this->run->capturePlan->requiredOn($key, 'candidate')) {
+                    continue;
+                }
+                $fields ??= $this->fields('candidate');
+                $bags = [];
+                foreach ([$first, $second] as $capture) {
+                    $slot = $capture->rankings[$key] ?? throw new GateError('A repeated capture has no validated own ranking: ' . $key);
+                    $physical = $slot['physical'] ?? $slot['ranked'];
+                    $physicalRecords = ReportRecords::extract('json', $physical['stdout'], $records->fields('json', $descriptor['surface'], 'candidate'));
+                    $rankedRecords = RankingSchema::records(ReportRecords::decode($slot['ranked']['stdout']), $fields);
+                    $rankedRecords = array_map(static fn(array $record): array => array_diff_key($record, ['rank' => true]), $rankedRecords);
+                    $bags[] = [self::captureBag($physicalRecords), self::captureBag($rankedRecords)];
+                }
+                if ($bags[0] !== $bags[1]) {
+                    $this->run->report->fail(FailureClass::NONDETERMINISM_UNDECLARED, $key, 'Complete physical or ranked values changed between candidate passes.');
+                }
+            }
+        }
+    }
+
+    /** @param list<array<string,mixed>> $records
+     * @return list<string>
+     */
+    private static function captureBag(array $records): array
+    {
+        $labels = array_map(static fn(array $record): string => ValueCheck::value(self::captureValue($record)), $records);
+        sort($labels);
+        return $labels;
+    }
+
+    private static function captureValue(mixed $value): mixed
+    {
+        if (!\is_array($value)) {
+            return $value;
+        }
+        if (!array_is_list($value)) {
+            ksort($value);
+        }
+        return array_map(self::captureValue(...), $value);
+    }
+
     /** @param array<string,string> $artifacts */
     public function checkCaptureMetadata(string $side, string $key, array $artifacts): bool
     {

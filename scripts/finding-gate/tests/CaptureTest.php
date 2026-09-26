@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace QmxFindingGate\Tests;
 
 use ArrayObject;
+use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\CaptureCheck;
@@ -37,6 +38,8 @@ use QmxFindingGate\TreeRun;
 use QmxFindingGate\Tsv;
 use QmxFindingGate\ValueCheck;
 use QmxFindingGate\ValueStage;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use ReflectionMethod;
 use Throwable;
 use WeakReference;
@@ -468,6 +471,42 @@ final class CaptureTest extends TestCase
         } finally {
             SyntheticTree::remove($root);
             Fs::removeRecursively($temporary);
+        }
+    }
+
+    #[Test]
+    public function itRefusesAMissingReplayKeyThroughThePublicGateWithoutWriting(): void
+    {
+        $root = SyntheticTree::create(SyntheticTree::clean());
+        try {
+            $path = $root . '/replay/answers.json';
+            $answers = json_decode(Fs::read($path), true, 512, \JSON_THROW_ON_ERROR);
+            unset($answers['case:alpha|format:text']);
+            Fs::write($path, json_encode($answers, \JSON_THROW_ON_ERROR));
+            $snapshot = static function () use ($root): array {
+                $bytes = [];
+                foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root . '/finding-gate', FilesystemIterator::SKIP_DOTS)) as $file) {
+                    if ($file->isFile()) {
+                        $bytes[$file->getPathname()] = Fs::read($file->getPathname());
+                    }
+                }
+                ksort($bytes);
+                return $bytes;
+            };
+            $before = $snapshot();
+            $report = new GateReport();
+            ob_start();
+            try {
+                $exit = GateModes::run(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root), $report);
+            } finally {
+                ob_end_clean();
+            }
+            self::assertSame(GateReport::EXIT_RED, $exit, $report->render());
+            self::assertContains(FailureClass::SURFACE_MISMATCH, $report->failureClasses(), $report->render());
+            self::assertStringContainsString('unknown replay invocation', strtolower($report->render()));
+            self::assertSame($before, $snapshot());
+        } finally {
+            SyntheticTree::remove($root);
         }
     }
 

@@ -101,6 +101,7 @@ Available tests:
  - QmxFindingGate\Tests\CaptureTest::itKeepsTheNormalizationBudgetLocalToEachPublication
  - QmxFindingGate\Tests\CaptureTest::itNormalizesOnlyDeclaredSarifCaptureUrisWithoutChangingRecordBytes
  - QmxFindingGate\Tests\CaptureTest::itNormalizesOnlyTheGuardedOutputDestinationField
+ - QmxFindingGate\Tests\CaptureTest::itRefusesAMissingReplayKeyThroughThePublicGateWithoutWriting
  - QmxFindingGate\Tests\CaptureTest::itRefusesIncompleteOrUnrecognizedDirectivesAndNeighboringCommandExits
  - QmxFindingGate\Tests\CaptureTest::itRefusesIntentOnlyAndInexactCaptureExitMeasurements
  - QmxFindingGate\Tests\CaptureTest::itRefusesPrivateEvidenceThatChangesOnlyOnTheSecondCandidatePass
@@ -396,6 +397,7 @@ Available tests:
  - QmxFindingGate\Tests\RankingCheckTest::itDerivesOnlyDeclaredScoreKeysAndUsesTheSameLcsForExactOrderRows
  - QmxFindingGate\Tests\RankingCheckTest::itExcludesDeclaredScoreMovesFromTheUnchangedOrderPopulation
  - QmxFindingGate\Tests\RankingCheckTest::itIgnoresOnlyOrderOutsideBothPublishedSlices
+ - QmxFindingGate\Tests\RankingCheckTest::itIgnoresRepeatedRankPositionsAndPrivateLayoutOutsideThePublishedSlice
  - QmxFindingGate\Tests\RankingCheckTest::itJudgesHiddenScoresAndNeverCreditsAnotherDuplicateOccurrence
  - QmxFindingGate\Tests\RankingCheckTest::itJudgesLimitsAsIntervalsOnEachOriginalPublication
  - QmxFindingGate\Tests\RankingCheckTest::itKeepsTheReferencePairLabelWhenADeclaredMessageChanges
@@ -404,6 +406,7 @@ Available tests:
  - QmxFindingGate\Tests\RankingCheckTest::itMeasuresRankingSchemaExtensionsAndRemovedMembersWithoutAddingAG1View
  - QmxFindingGate\Tests\RankingCheckTest::itMeasuresTieBreakAndInputOrderWithDeterministicDuplicateLabels
  - QmxFindingGate\Tests\RankingCheckTest::itObservesTheExactRegisteredRankingRaiseSitesThroughThePublicGate
+ - QmxFindingGate\Tests\RankingCheckTest::itPreservesCompleteRepeatedOccurrenceCountsAcrossCandidatePasses
  - QmxFindingGate\Tests\RankingCheckTest::itPreservesRawRankedNumberSpellingsBeforeAnyNormalization
  - QmxFindingGate\Tests\RankingCheckTest::itRefusesEachBrokenSideLocalRankingThroughThePublicGate"ascending"
  - QmxFindingGate\Tests\RankingCheckTest::itRefusesEachBrokenSideLocalRankingThroughThePublicGate"declared-score-non-prefix"
@@ -422,6 +425,10 @@ Available tests:
  - QmxFindingGate\Tests\RankingCheckTest::itRefusesEachBrokenSideLocalRankingThroughThePublicGate"support-total"
  - QmxFindingGate\Tests\RankingCheckTest::itRefusesEachBrokenSideLocalRankingThroughThePublicGate"support-truncated"
  - QmxFindingGate\Tests\RankingCheckTest::itRefusesEachBrokenSideLocalRankingThroughThePublicGate"unknown-field"
+ - QmxFindingGate\Tests\RankingCheckTest::itRefusesFifthPassHiddenRankingDriftWithoutWritingNormalization
+ - QmxFindingGate\Tests\RankingCheckTest::itRefusesHiddenValueDriftInTheSecondCandidateCapture"coupling.class-rank"
+ - QmxFindingGate\Tests\RankingCheckTest::itRefusesHiddenValueDriftInTheSecondCandidateCapture"impactScore"
+ - QmxFindingGate\Tests\RankingCheckTest::itRefusesHiddenValueDriftInTheSecondCandidateCapture"threshold"
  - QmxFindingGate\Tests\RankingCheckTest::itRefusesUnknownPublisherExpressionsInsteadOfInventingAnEmptySchema
  - QmxFindingGate\Tests\RankingCheckTest::itSuppliesRankingFieldsOnceAsTheFullOwnSourceUnionWithDuplicateOccurrences
  - QmxFindingGate\Tests\RankingCheckTest::itUsesCompletePhysicalAuthorityWhenOriginalCapsHideRankedFindings
