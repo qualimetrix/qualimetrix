@@ -75,8 +75,14 @@ Available tests:
  - QmxFindingGate\Tests\CapturePlanTest::itRefusesBorrowingRankingForProcessMetadata
  - QmxFindingGate\Tests\CapturePlanTest::itRequestsAnIntroducedSurfaceOnlyFromTheCandidate
  - QmxFindingGate\Tests\CaptureResultTest::itCarriesPrivateEvidenceWithoutCreatingPublishedArtifacts
+ - QmxFindingGate\Tests\CaptureResultTest::itRefusesAnUnclassifiedCaptureSideBeforeReadingOrSupplyingEvidence"read"
+ - QmxFindingGate\Tests\CaptureResultTest::itRefusesAnUnclassifiedCaptureSideBeforeReadingOrSupplyingEvidence"supply"
  - QmxFindingGate\Tests\CaptureResultTest::itRefusesInventingEvidenceForAMissingSource
- - QmxFindingGate\Tests\CaptureResultTest::itRefusesMalformedPrivateProcessEvidence
+ - QmxFindingGate\Tests\CaptureResultTest::itRefusesMalformedPrivateProcessEvidence"missing process member"
+ - QmxFindingGate\Tests\CaptureResultTest::itRefusesMalformedPrivateProcessEvidence"non-string stderr"
+ - QmxFindingGate\Tests\CaptureResultTest::itRefusesMalformedPrivateProcessEvidence"non-string stdout"
+ - QmxFindingGate\Tests\CaptureResultTest::itRefusesMalformedPrivateProcessEvidence"string exit"
+ - QmxFindingGate\Tests\CaptureResultTest::itRefusesMalformedPrivateProcessEvidence"unclassified process member"
  - QmxFindingGate\Tests\CaptureResultTest::itRefusesMergingDuplicatePrivateSources
  - QmxFindingGate\Tests\CaptureResultTest::itRefusesMergingDuplicatePublishedArtifacts
  - QmxFindingGate\Tests\CaptureResultTest::itRefusesSupplyingAnObservedSideTwiceEvenWhenEmpty
@@ -97,6 +103,7 @@ Available tests:
  - QmxFindingGate\Tests\CaptureTest::itNormalizesOnlyTheGuardedOutputDestinationField
  - QmxFindingGate\Tests\CaptureTest::itRefusesIncompleteOrUnrecognizedDirectivesAndNeighboringCommandExits
  - QmxFindingGate\Tests\CaptureTest::itRefusesIntentOnlyAndInexactCaptureExitMeasurements
+ - QmxFindingGate\Tests\CaptureTest::itRefusesPrivateEvidenceThatChangesOnlyOnTheSecondCandidatePass
  - QmxFindingGate\Tests\CaptureTest::itRefusesUnreadableHtmlWithoutItsExactReportedPredecessor
  - QmxFindingGate\Tests\CaptureTest::itRefusesUnsizedRankingMetadataRatherThanInventingACompleteCapture
  - QmxFindingGate\Tests\CaptureTest::itRejectsPublicationsMissingFromEitherCandidateRun
@@ -322,6 +329,7 @@ Available tests:
  - QmxFindingGate\Tests\FieldValuesCheckTest::itKeepsMainAndBaselineSourceFieldLicensesSeparateThroughThePublicGate"swap"
  - QmxFindingGate\Tests\FieldValuesCheckTest::itMeasuresApplicableFieldsBesideADeclaredRefusalAndKeepsAnUnexpectedRefusalRed
  - QmxFindingGate\Tests\FieldValuesCheckTest::itObservesTheRegisteredFieldValueWitnessFromItsActualProducer
+ - QmxFindingGate\Tests\FieldValuesCheckTest::itRefusesAnExtraReportThroughThePublicCliWithoutWritingDeclarations
  - QmxFindingGate\Tests\FieldValuesCheckTest::itRefusesEveryNeighbourAndLeavesTheWholeDerivedUnionUntouched"instance"
  - QmxFindingGate\Tests\FieldValuesCheckTest::itRefusesEveryNeighbourAndLeavesTheWholeDerivedUnionUntouched"record"
  - QmxFindingGate\Tests\FieldValuesCheckTest::itRefusesEveryNeighbourAndLeavesTheWholeDerivedUnionUntouched"report"
@@ -502,6 +510,7 @@ Available tests:
  - QmxFindingGate\Tests\SurfaceComparisonTest::itRefusesOverlappingFullSurfaceAndClassStructuralIntentions
  - QmxFindingGate\Tests\SurfaceComparisonTest::itRunsARegisteredStageBeforeTheStepItNames
  - QmxFindingGate\Tests\SyntheticTreeTest::itKeepsBreachAnnotationsAndRawStructuredMessagesInTheirPublishedViews
+ - QmxFindingGate\Tests\SyntheticTreeTest::itKeepsGeneratedSummaryRowsWhenReusingAnAnswerAsAnOverride
  - QmxFindingGate\Tests\SyntheticTreeTest::itKeepsIndependentPrivateAnswerOverridesAndTheirOwnMetadata
  - QmxFindingGate\Tests\SyntheticTreeTest::itOmitsDetailedCaptionsForNamespaceAndFileSymbolsWithExactCallableSubjects
  - QmxFindingGate\Tests\SyntheticTreeTest::itPreservesExplicitJsonBytesWhileSlicingOnlyTheRawTopList

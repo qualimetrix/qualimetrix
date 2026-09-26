@@ -87,8 +87,9 @@ final class SelfTestOutcomes extends SelfTestGroup
             try {
                 $before = Fs::read($root . '/finding-gate/declared-outcomes/alpha.json');
                 $result = Process::run([\PHP_BINARY, $this->candidateRoot . '/scripts/finding-gate.php', '--candidate=' . $root, '--reference=HEAD'], $this->candidateRoot);
-                $this->same(3, $result['exit'], 'a refusal file cannot bypass the selected-destination guard');
-                $this->assert(str_contains($result['stderr'], 'does not name exactly the chosen file'), 'the refusal is the real destination guard');
+                $this->same(GateReport::EXIT_RED, $result['exit'], 'a refusal file cannot bypass the selected-destination guard');
+                $this->assert(str_contains($result['stdout'], 'FAIL [run-failed]'), 'the refusal is preserved in the public failed verdict');
+                $this->assert(str_contains($result['stdout'], 'does not name exactly the chosen file'), 'the refusal is the real destination guard');
                 $this->same($before, Fs::read($root . '/finding-gate/declared-outcomes/alpha.json'), 'an invalid refusal publication writes no snapshot');
             } finally {
                 SyntheticTree::remove($root);

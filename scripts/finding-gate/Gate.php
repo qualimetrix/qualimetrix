@@ -249,7 +249,8 @@ final class Gate
         try {
             $firstCapture = $this->runTree($this->options->candidateRoot, 'candidate-1', reverseInput: false);
             $first = $firstCapture->artifacts;
-            $second = $this->runTree($this->options->candidateRoot, 'candidate-2', reverseInput: false)->artifacts;
+            $secondCapture = $this->runTree($this->options->candidateRoot, 'candidate-2', reverseInput: false);
+            $second = $secondCapture->artifacts;
         } catch (GateError) {
             $this->cleanUp();
             return;
@@ -303,6 +304,7 @@ final class Gate
             $this->declaredDeltaCheck->checkStaleDeclaredDelta();
             $this->declaredDeltaCheck->checkStaleFieldMoves();
             $this->staleDeclarationCheck->checkStaleDeclarations();
+            $this->captureAuthority('candidate-2', $secondCapture);
         } finally {
             $reference->remove();
             $this->cleanUp();
@@ -325,7 +327,7 @@ final class Gate
                     return null;
                 }
                 $artifacts = $capture->artifacts;
-                $authority = $this->normalizationAuthority('derive-' . $pass, $capture);
+                $authority = $this->captureAuthority('derive-' . $pass, $capture);
                 if ($authority === null) {
                     return null;
                 }
@@ -404,7 +406,7 @@ final class Gate
     }
 
     /** @return array<string,list<array<string,mixed>>>|null */
-    private function normalizationAuthority(string $label, CaptureResult $capture): ?array
+    private function captureAuthority(string $label, CaptureResult $capture): ?array
     {
         $pass = $this->context->withCandidateCapture($capture);
         $ranking = RankingCheck::create($pass);
@@ -431,7 +433,7 @@ final class Gate
                     }
                 }
                 if (CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, $outcome) && !\array_key_exists($case->id, $authority)) {
-                    throw new GateError('A normalization pass has no validated main physical authority.');
+                    throw new GateError('The capture has no validated main physical authority.');
                 }
             } catch (GateError $error) {
                 $this->report->fail(FailureClass::RUN_FAILED, $label . ' / ' . $case->id, $error->getMessage());

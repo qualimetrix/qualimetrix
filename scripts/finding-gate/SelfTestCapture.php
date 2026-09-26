@@ -41,8 +41,9 @@ final class SelfTestCapture extends SelfTestGroup
             $root = SyntheticTree::create($tree);
             try {
                 $result = Process::run([\PHP_BINARY, __DIR__ . '/../finding-gate.php', '--candidate=' . $root, '--reference=HEAD'], $this->candidateRoot);
-                $this->same(3, $result['exit'], 'the public CLI refuses an output publication with ' . $defect);
-                $this->assert(str_contains($result['stderr'], 'output publication is missing, empty, or does not name exactly the chosen file'), 'the public CLI names the destination guard for ' . $defect);
+                $this->same(GateReport::EXIT_RED, $result['exit'], 'the public CLI refuses an output publication with ' . $defect);
+                $this->assert(str_contains($result['stdout'], 'FAIL [' . FailureClass::RUN_FAILED . ']'), 'the public CLI retains run-failed for ' . $defect);
+                $this->assert(str_contains($result['stdout'], 'output publication is missing, empty, or does not name exactly the chosen file'), 'the public CLI names the destination guard for ' . $defect);
             } finally {
                 SyntheticTree::remove($root);
             }

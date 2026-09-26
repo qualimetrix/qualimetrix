@@ -7,6 +7,9 @@ namespace QmxFindingGate\Tests;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\Fs;
+use QmxFindingGate\Gate;
+use QmxFindingGate\GateReport;
+use QmxFindingGate\Options;
 use QmxFindingGate\Process;
 use QmxFindingGate\SyntheticTree;
 
@@ -112,6 +115,44 @@ final class SyntheticTreeTest extends TestCase
                 $capture = Process::run([\PHP_BINARY, $root . '/bin/qmx', 'check', '-f', 'json'], $root, environmentAdditions: $environment);
                 self::assertSame(['stdout' => $stdout, 'stderr' => $stderr, 'exit' => $exit], $capture);
             }
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
+    #[Test]
+    public function itKeepsGeneratedSummaryRowsWhenReusingAnAnswerAsAnOverride(): void
+    {
+        $tree = SyntheticTree::clean();
+        $summary = SyntheticTree::caseAnswers('alpha', $tree['findings']['alpha'], false, [])['case:alpha|format:summary'];
+        $tree['candidateAnswers']['case:alpha|format:summary'] = $summary;
+        $root = SyntheticTree::create($tree);
+        try {
+            $capture = Process::run(
+                [\PHP_BINARY, $root . '/bin/qmx', 'check', '-f', 'summary'],
+                $root,
+                environmentAdditions: ['QMX_GATE_INVOCATION' => 'case:alpha|format:summary'],
+            );
+            self::assertSame(0, $capture['exit']);
+            self::assertSame("Analysis complete\n\nTop issues by impact\n" . implode('', $summary['summaryIssues'] ?? []), $capture['stdout']);
+            self::assertSame(1, preg_match_all('/^  [0-9]+\. \[/m', $capture['stdout']));
+            $report = new GateReport();
+            (new Gate(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root), $report))->compare();
+            self::assertSame(GateReport::VERDICT_GREEN, $report->verdict(), $report->render());
+        } finally {
+            SyntheticTree::remove($root);
+        }
+
+        $tree['candidateAnswers']['case:alpha|format:summary'] = ['stdout' => "Explicit summary.\n"];
+        $root = SyntheticTree::create($tree);
+        try {
+            $capture = Process::run(
+                [\PHP_BINARY, $root . '/bin/qmx', 'check', '-f', 'summary'],
+                $root,
+                environmentAdditions: ['QMX_GATE_INVOCATION' => 'case:alpha|format:summary'],
+            );
+            self::assertSame(0, $capture['exit']);
+            self::assertSame("Explicit summary.\n", $capture['stdout']);
         } finally {
             SyntheticTree::remove($root);
         }

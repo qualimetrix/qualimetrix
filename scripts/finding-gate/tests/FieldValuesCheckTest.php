@@ -56,7 +56,7 @@ final class FieldValuesCheckTest extends TestCase
     #[Test]
     public function itUsesOneInstanceAndOneWriterForTheCompleteReportAndViewUnion(): void
     {
-        $addresses = [['json', 'format:json'], ['json', 'check:baseline-source'], ['metrics', 'format:metrics'], ['directives', 'directives']];
+        $addresses = [['json', 'format:json'], ['json', 'check:baseline-source'], ['metrics', 'format:metrics'], ['directives', 'directives'], ['json', 'ranking']];
         $this->intents($addresses);
         $run = $this->context();
         $writer = FieldValuesCheck::create($run);
@@ -76,7 +76,30 @@ final class FieldValuesCheckTest extends TestCase
         self::assertSame([DeclaredFields::DERIVED], $writer->rewriteDerived());
         usort($rows, static fn(array $a, array $b): int => $a <=> $b);
         self::assertSame(Tsv::render(DeclaredFields::DERIVED_COLUMNS, $rows), Fs::read($this->root . '/finding-gate/' . DeclaredFields::DERIVED));
-        self::assertSame(5, \count(DeclaredFields::load($this->root . '/finding-gate')->derived('json', 'format:json')) + \count(DeclaredFields::load($this->root . '/finding-gate')->derived('json', 'check:baseline-source')) + \count(DeclaredFields::load($this->root . '/finding-gate')->derived('metrics', 'format:metrics')) + \count(DeclaredFields::load($this->root . '/finding-gate')->derived('directives', 'directives')));
+        self::assertSame(6, \count(DeclaredFields::load($this->root . '/finding-gate')->derived('json', 'format:json')) + \count(DeclaredFields::load($this->root . '/finding-gate')->derived('json', 'check:baseline-source')) + \count(DeclaredFields::load($this->root . '/finding-gate')->derived('metrics', 'format:metrics')) + \count(DeclaredFields::load($this->root . '/finding-gate')->derived('directives', 'directives')) + \count(DeclaredFields::load($this->root . '/finding-gate')->derived('json', 'ranking')));
+    }
+
+    #[Test]
+    public function itRefusesAnExtraReportThroughThePublicCliWithoutWritingDeclarations(): void
+    {
+        $this->intents([['sarif', 'format:sarif']]);
+        $snapshot = function (): array {
+            $bytes = [];
+            $directory = $this->root . '/finding-gate';
+            foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS)) as $file) {
+                if ($file->isFile()) {
+                    $bytes[substr($file->getPathname(), \strlen($directory) + 1)] = Fs::read($file->getPathname());
+                }
+            }
+            ksort($bytes);
+            return $bytes;
+        };
+        $before = $snapshot();
+        $result = \QmxFindingGate\Process::run([\PHP_BINARY, \dirname(__DIR__, 2) . '/finding-gate.php', '--candidate=' . $this->root, '--reference=HEAD'], $this->root);
+        self::assertSame(3, $result['exit'], $result['stderr']);
+        self::assertSame("finding-gate: Unknown field report: sarif\n", $result['stderr']);
+        self::assertSame('', $result['stdout']);
+        self::assertSame($before, $snapshot());
     }
 
     #[Test]

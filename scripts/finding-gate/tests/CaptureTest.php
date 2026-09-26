@@ -107,6 +107,40 @@ final class CaptureTest extends TestCase
     }
 
     #[Test]
+    public function itRefusesPrivateEvidenceThatChangesOnlyOnTheSecondCandidatePass(): void
+    {
+        $root = SyntheticTree::create(SyntheticTree::clean());
+        try {
+            $binary = $root . '/bin/qmx';
+            $source = Fs::read($binary);
+            $anchor = '$stderr = (string) ($answer[\'stderr\'] ?? \'\');';
+            $fault = $anchor . "\n" . <<<'PHP'
+                if ($capture === 'ranked') {
+                    $marker = $tree . '/replay/second-private-' . md5($key);
+                    $seen = is_file($marker) ? (int) file_get_contents($marker) : 0;
+                    file_put_contents($marker, (string) ($seen + 1));
+                    if ($seen === 1) {
+                        $stderr = 'A warning only in the second candidate ranking capture.';
+                    }
+                }
+                PHP;
+            self::assertSame(1, substr_count($source, $anchor));
+            Fs::write($binary, str_replace($anchor, $fault, $source));
+            $report = new GateReport();
+            ob_start();
+            try {
+                $exit = GateModes::run(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root), $report);
+            } finally {
+                ob_end_clean();
+            }
+            self::assertSame(GateReport::EXIT_RED, $exit, $report->render());
+            self::assertContains(FailureClass::RANKING_PROJECTION_MISMATCH, $report->failureClasses(), $report->render());
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
+    #[Test]
     public function itDerivesNormalizationOnlyAfterValidatingFullPhysicalAndRefusalCaptures(): void
     {
         foreach (['healthy', 'physical-count', 'refusal-exit'] as $fault) {
@@ -678,9 +712,9 @@ final class CaptureTest extends TestCase
     #[Test]
     public function itRefusesUnsizedRankingMetadataRatherThanInventingACompleteCapture(): void
     {
-        foreach ([-1, \PHP_INT_MAX, '1'] as $total) {
+        foreach ([[-1, false], [\PHP_INT_MAX, false], ['1', false], [1, 0]] as [$total, $truncated]) {
             $tree = SyntheticTree::clean();
-            $tree['candidateAnswers']['case:alpha|format:json'] = ['stdout' => json_encode(['violations' => $tree['findings']['alpha'], 'violationsMeta' => ['total' => $total, 'shown' => 1, 'truncated' => false]], \JSON_THROW_ON_ERROR)];
+            $tree['candidateAnswers']['case:alpha|format:json'] = ['stdout' => json_encode(['violations' => $tree['findings']['alpha'], 'violationsMeta' => ['total' => $total, 'shown' => 1, 'truncated' => $truncated]], \JSON_THROW_ON_ERROR)];
             $root = SyntheticTree::create($tree);
             $temporary = Fs::temporaryDirectory('ranking-size-refusal-');
             try {

@@ -209,7 +209,7 @@ final class SyntheticTree
             }
             $original = $answers[$key] ?? [];
             $answers[$key] = array_replace($original, $override);
-            if (\array_key_exists('stdout', $override)) {
+            if (\array_key_exists('stdout', $override) && !\array_key_exists('summaryIssues', $override)) {
                 unset($answers[$key]['summaryIssues']);
             }
             foreach (['ranked', 'physical'] as $slot) {

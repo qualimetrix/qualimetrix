@@ -396,8 +396,8 @@ final class CheckWitnesses
                 self::NORMALIZATION_REFUSED,
                 static fn(array $tree): array => SelfTestRecords::rankingWitnessTree($tree, 'shape'),
                 [
-                    [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:ranking-shape|format:json', 'RankingCheck::projectionProblem <- Gate::normalizationAuthority'],
-                    [FailureClass::RUN_FAILED, 'derive-1 / ranking-shape', 'Gate::normalizationAuthority <- GateModes::deriveNormalization'],
+                    [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:ranking-shape|format:json', 'RankingCheck::projectionProblem <- Gate::captureAuthority'],
+                    [FailureClass::RUN_FAILED, 'derive-1 / ranking-shape', 'Gate::captureAuthority <- GateModes::deriveNormalization'],
                 ],
             ),
             self::witness(
@@ -405,8 +405,8 @@ final class CheckWitnesses
                 self::NORMALIZATION_REFUSED,
                 static fn(array $tree): array => SelfTestRecords::rankingWitnessTree($tree, 'ambiguity'),
                 [
-                    [FailureClass::RECORD_AMBIGUOUS, 'candidate / case:ranking-ambiguity|format:json', 'RankingCheck::anatomy <- Gate::normalizationAuthority'],
-                    [FailureClass::RUN_FAILED, 'derive-1 / ranking-ambiguity', 'Gate::normalizationAuthority <- GateModes::deriveNormalization'],
+                    [FailureClass::RECORD_AMBIGUOUS, 'candidate / case:ranking-ambiguity|format:json', 'RankingCheck::anatomy <- Gate::captureAuthority'],
+                    [FailureClass::RUN_FAILED, 'derive-1 / ranking-ambiguity', 'Gate::captureAuthority <- GateModes::deriveNormalization'],
                 ],
             ),
             self::witness(
@@ -471,6 +471,7 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [
+                    [FailureClass::RUN_FAILED, 'candidate-2 / alpha', 'Gate::captureAuthority <- GateModes::compare'],
                     [FailureClass::TUPLE_FIELD_DRIFT, EquivalenceTuple::TRACKED_PATH, 'TupleCheck::checkTuple#1 <- Gate::compare'],
                     [FailureClass::FINDING_TUPLE_MISMATCH, 'candidate / alpha / finding #0', 'TupleCheck::checkTupleAgainstFindings <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
@@ -531,8 +532,9 @@ final class CheckWitnesses
                 'determinism.one-run-only',
                 self::WHOLE_RUN,
                 static function (array $tree): array {
+                    $answers = SyntheticTree::caseAnswers('alpha', $tree['findings']['alpha'], false, []);
                     $tree['candidateAnswers']['case:alpha|format:summary'] = [
-                        'stdout' => "replayed summary of alpha\n",
+                        ...$answers['case:alpha|format:summary'],
                         'stderr' => "replayed warning\n",
                         'stderrOnce' => true,
                     ];
@@ -563,21 +565,11 @@ final class CheckWitnesses
                 },
                 [
                     [FailureClass::NORMALIZATION_OVERREACH, 'candidate / case:alpha|format:json', 'NormalizationCheck::checkNormalizationLeavesFindings <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:checkstyle', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:github', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:gitlab', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:html', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::NORMALIZATION_OVERREACH, 'reference / case:alpha|format:json', 'NormalizationCheck::checkNormalizationLeavesFindings <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:sarif', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:summary', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:text', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:text-verbose', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|show-suppressed', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::NORMALIZATION_OVERREACH, 'candidate / case:alpha|format:json', 'NormalizationCheck::checkRun <- Gate::compare'],
+                    [FailureClass::NORMALIZATION_OVERREACH, 'reference / case:alpha|format:json', 'NormalizationCheck::checkRun <- Gate::compare'],
                 ],
-                [[FailureClass::NORMALIZATION_OVERREACH, '* / case:*|format:json']],
             ),
             self::witness(
                 'stale-normalization',
@@ -618,6 +610,7 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [
+                    [FailureClass::RUN_FAILED, 'candidate-2 / gamma', 'Gate::captureAuthority <- GateModes::compare'],
                     [FailureClass::FINDING_TUPLE_MISMATCH, 'candidate / gamma / finding #0', 'TupleCheck::checkTupleAgainstFindings <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:gamma|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
@@ -702,6 +695,7 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [
+                    [FailureClass::RUN_FAILED, 'candidate-2 / omega', 'Gate::captureAuthority <- GateModes::compare'],
                     [FailureClass::RUN_FAILED, '* / omega', 'CaseOutcomeCheck::findingsOf#1 <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:omega|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
@@ -734,6 +728,8 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [
+                    [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RankingCheck::projectionProblem <- Gate::captureAuthority'],
+                    [FailureClass::RUN_FAILED, 'candidate-2 / alpha', 'Gate::captureAuthority <- GateModes::compare'],
                     [FailureClass::RUN_FAILED, '* / alpha', 'CaseOutcomeCheck::findingsOf#2 <- Gate::checkFindings'],
                     [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RankingCheck::projectionProblem <- RecordCheck::checkCase'],
                     [FailureClass::RANKING_PROJECTION_MISMATCH, 'reference / case:alpha|format:json', 'RankingCheck::projectionProblem <- RecordCheck::checkCase'],
