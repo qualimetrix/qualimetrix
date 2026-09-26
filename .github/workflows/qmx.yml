@@ -284,7 +284,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: composer phar
 
-      - name: The finding gate compares the archive with its committed tree
+      - name: The finding gate compares the built archive with its committed tree
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: composer gate:phar -- --reference=HEAD
