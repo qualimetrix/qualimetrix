@@ -84,6 +84,36 @@ final class CapturePlanTest extends TestCase
     }
 
     #[Test]
+    public function itAssignsEveryFindingJsonPublicationItsExactRankingSource(): void
+    {
+        $plan = $this->plan();
+        foreach (['format:json', 'check:baseline-source', 'check:baseline'] as $source) {
+            self::assertSame('case:alpha|' . $source, $plan->rankingSourceOf('case:alpha|' . $source));
+        }
+        foreach (['check:output:file', 'check:parallel'] as $alias) {
+            self::assertSame('case:alpha|format:json', $plan->rankingSourceOf('case:alpha|' . $alias));
+        }
+        self::assertSame(
+            ['format:json', 'check:baseline-source', 'check:baseline'],
+            array_column($plan->rankingInvocations(), 'surface'),
+        );
+    }
+
+    #[Test]
+    public function itRefusesBorrowingRankingForProcessMetadata(): void
+    {
+        $this->expectException(GateError::class);
+        $this->plan()->rankingSourceOf('case:alpha|stderr:format:json');
+    }
+
+    #[Test]
+    public function itRefusesBorrowingRankingForAnotherJsonDocument(): void
+    {
+        $this->expectException(GateError::class);
+        $this->plan()->rankingSourceOf('case:alpha|directives');
+    }
+
+    #[Test]
     public function itRequestsAnIntroducedSurfaceOnlyFromTheCandidate(): void
     {
         Fs::write($this->root . '/finding-gate/' . DeclaredSurfaces::INDEX, "change\tsurface\tfile\treason\nintroduced\tformat:json\t-\tnew report\n");

@@ -62,6 +62,62 @@ final class SyntheticTreeTest extends TestCase
     }
 
     #[Test]
+    public function itReplaysFullRankingsAndPhysicalFindingsSeparatelyFromTheOriginalSlice(): void
+    {
+        $tree = SyntheticTree::clean();
+        $tree['findings']['alpha'] = [];
+        for ($index = 0; $index < 12; ++$index) {
+            $tree['findings']['alpha'][] = SyntheticTree::finding($tree['tuple'], 'replay.alpha', 'declaration:callable:Replay\\Alpha::run' . $index . '@src/Alpha.php');
+        }
+        $root = SyntheticTree::create($tree);
+        try {
+            $argv = [\PHP_BINARY, $root . '/bin/qmx', 'check', '-f', 'json', '--top=0', '--top=3', '--detail=1'];
+            $environment = ['QMX_GATE_INVOCATION' => 'case:alpha|format:json'];
+            $original = json_decode(Process::run($argv, $root, environmentAdditions: $environment)['stdout'], true, 512, \JSON_THROW_ON_ERROR);
+            self::assertCount(1, $original['violations']);
+            self::assertCount(3, $original['topIssues']);
+            self::assertSame(['total' => 12, 'shown' => 1, 'limit' => 1, 'truncated' => true, 'byRule' => ['replay.alpha' => 12]], $original['violationsMeta']);
+            $ranked = json_decode(Process::run([...$argv, '--top=13'], $root, environmentAdditions: [...$environment, 'QMX_GATE_CAPTURE' => 'ranked'])['stdout'], true, 512, \JSON_THROW_ON_ERROR);
+            self::assertSame($original['violations'], $ranked['violations']);
+            self::assertCount(12, $ranked['topIssues']);
+            $physical = json_decode(Process::run([\PHP_BINARY, $root . '/bin/qmx', 'check', '-f', 'json', '--detail=all', '--format-opt=violations=all', '--top=13'], $root, environmentAdditions: [...$environment, 'QMX_GATE_CAPTURE' => 'physical'])['stdout'], true, 512, \JSON_THROW_ON_ERROR);
+            self::assertCount(12, $physical['violations']);
+            self::assertFalse($physical['violationsMeta']['truncated']);
+            self::assertSame($ranked['topIssues'], $physical['topIssues']);
+            $summary = Process::run([\PHP_BINARY, $root . '/bin/qmx', 'check', '-f', 'summary', '--top=0', '--top=3'], $root, environmentAdditions: ['QMX_GATE_INVOCATION' => 'case:alpha|format:summary']);
+            self::assertSame(3, preg_match_all('/^  [0-9]+\. \[/m', $summary['stdout']));
+            $emptyTop = Process::run([\PHP_BINARY, $root . '/bin/qmx', 'check', '-f', 'summary', '--top=0'], $root, environmentAdditions: ['QMX_GATE_INVOCATION' => 'case:alpha|format:summary']);
+            self::assertSame("Analysis complete\n", $emptyTop['stdout']);
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
+    #[Test]
+    public function itKeepsIndependentPrivateAnswerOverridesAndTheirOwnMetadata(): void
+    {
+        $tree = SyntheticTree::clean();
+        $tree['candidateAnswers']['case:alpha|format:json'] = [
+            'stdout' => 'original', 'stderr' => 'source diagnostic', 'exit' => 3,
+            'ranked' => ['stdout' => 'ranked', 'stderr' => 'ranked diagnostic', 'exit' => 4],
+            'physical' => ['stdout' => 'physical'],
+        ];
+        $root = SyntheticTree::create($tree);
+        try {
+            foreach (['' => ['original', 'source diagnostic', 3], 'ranked' => ['ranked', 'ranked diagnostic', 4], 'physical' => ['physical', 'source diagnostic', 3]] as $slot => [$stdout, $stderr, $exit]) {
+                $environment = ['QMX_GATE_INVOCATION' => 'case:alpha|format:json'];
+                if ($slot !== '') {
+                    $environment['QMX_GATE_CAPTURE'] = $slot;
+                }
+                $capture = Process::run([\PHP_BINARY, $root . '/bin/qmx', 'check', '-f', 'json'], $root, environmentAdditions: $environment);
+                self::assertSame(['stdout' => $stdout, 'stderr' => $stderr, 'exit' => $exit], $capture);
+            }
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
+    #[Test]
     public function itKeepsBreachAnnotationsAndRawStructuredMessagesInTheirPublishedViews(): void
     {
         $tree = SyntheticTree::clean();

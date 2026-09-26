@@ -26,10 +26,10 @@ final class SelfTestCapture extends SelfTestGroup
     public function outputDestination(): void
     {
         $tree = SyntheticTree::clean();
-        $tree['answers']['case:alpha|check:output'] = ['stdout' => '', 'file' => json_encode(['violations' => $tree['findings']['alpha']], \JSON_THROW_ON_ERROR), 'stderr' => "Report written to {{output}}\n"];
+        $file = SyntheticTree::caseAnswers('alpha', $tree['findings']['alpha'], false, [])['case:alpha|format:json']['stdout'] ?? throw new GateError('The synthetic finding source has no publication.');
+        $tree['answers']['case:alpha|check:output'] = ['stdout' => '', 'file' => $file, 'stderr' => "Report written to {{output}}\n"];
         $report = $this->reportFor($tree);
         $this->same(GateReport::VERDICT_GREEN, $report->verdict(), 'the output diagnostic is validated against the actual chosen file before normalization');
-        $file = json_encode(['violations' => $tree['findings']['alpha']], \JSON_THROW_ON_ERROR);
         foreach ([
             'wrong destination' => ['stdout' => '', 'file' => $file, 'stderr' => "Report written to /wrong.json\n"],
             'missing marker' => ['stdout' => '', 'file' => $file, 'stderr' => ''],

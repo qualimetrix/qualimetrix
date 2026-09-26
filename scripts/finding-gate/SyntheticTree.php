@@ -20,7 +20,8 @@ namespace QmxFindingGate;
  * `fieldMoves`, and any other file under `finding-gate/` named in
  * `declarations`) land in both, and only the candidate's are read.
  *
- * @phpstan-type Answer array{stdout?: string, stderr?: string, stderrOnce?: bool, exit?: int, file?: string, cache?: bool, env?: bool, missingFile?: bool}
+ * @phpstan-type CaptureAnswer array{stdout?:string,stderr?:string,exit?:int}
+ * @phpstan-type Answer array{stdout?: string, stderr?: string, stderrOnce?: bool, exit?: int, file?: string, cache?: bool, env?: bool, missingFile?: bool,ranked?:CaptureAnswer,physical?:CaptureAnswer,summaryIssues?:list<string>}
  * @phpstan-type Finding array<string, mixed>
  * @phpstan-type Specification array{
  *     cases: array<string, list<string>>,
@@ -194,16 +195,29 @@ final class SyntheticTree
             $definition = json_decode($specification['declarations']['cases/' . $id . '/case.json'] ?? '{}', true, 512, \JSON_THROW_ON_ERROR);
             $answers += self::caseAnswers($id, $findings[$id] ?? [], \in_array($id, $specification['truncated'], true), $definition);
         }
+        foreach ($overrides as $key => $override) {
+            $original = $answers[$key] ?? [];
+            $answers[$key] = array_replace($original, $override);
+            if (\array_key_exists('stdout', $override)) {
+                unset($answers[$key]['summaryIssues']);
+            }
+            foreach (['ranked', 'physical'] as $slot) {
+                if (isset($override[$slot], $original[$slot])) {
+                    $answers[$key][$slot] = array_replace($original[$slot], $override[$slot]);
+                }
+            }
+        }
 
         $files = [
             'bin/qmx' => self::replayingBinary(),
-            self::ANSWERS => json_encode([...$answers, ...$overrides], \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n",
+            self::ANSWERS => json_encode($answers, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n",
             'vendor/autoload.php' => self::probedProduct($specification['static'], $specification['levels']),
             'composer.lock' => $lock,
             'qmx.yaml' => "# replayed\n",
             'src/Analysis/Evidence/Measurement/Contract/AggregationStrategy.php' => "<?php\n\nenum AggregationStrategy: string\n{\n    case Sum = 'sum';\n}\n",
             'src/Analysis/Evidence/Measurement/Contract/MetricName.php' => "<?php\n\nfinal class MetricName\n{\n    public const string CCN = 'ccn';\n}\n",
             self::TUPLE_SOURCE => self::publishingSource($specification['published']),
+            'src/Reporting/Formatter/Json/JsonFormatter.php' => self::rankingSource(),
             EquivalenceTuple::TRACKED_PATH => Tsv::render(
                 EquivalenceTuple::COLUMNS,
                 array_map(static fn(string $field): array => [$field, EquivalenceTuple::source()], $specification['tuple']),
@@ -281,9 +295,16 @@ final class SyntheticTree
             $answers[Surfaces::key($scope, 'format:' . $format)] = ['stdout' => \sprintf("replayed %s of %s\n", $format, $id)];
         }
 
-        $answers[Surfaces::key($scope, 'format:json')] = ['stdout' => self::json(
-            $truncated ? ['violations' => $findings, 'violationsMeta' => ['truncated' => true]] : ['violations' => $findings],
-        )];
+        $full = self::findingPublication($findings);
+        $published = $full;
+        if ($truncated && $findings !== []) {
+            $published['violations'] = \array_slice($findings, 0, \count($findings) - 1);
+            $published['violationsMeta']['shown'] = \count($published['violations']);
+            $published['violationsMeta']['truncated'] = true;
+        }
+        $findingAnswer = ['stdout' => self::json($published), 'ranked' => ['stdout' => self::json($published)], 'physical' => ['stdout' => self::json($full)]];
+        $answers[Surfaces::key($scope, 'format:json')] = $findingAnswer;
+        $answers[Surfaces::key($scope, 'format:summary')] = ['stdout' => '', 'summaryIssues' => self::summaryIssues($full['topIssues'], $findings)];
         $sarif = [];
         $gitlab = [];
         $html = [];
@@ -362,8 +383,9 @@ final class SyntheticTree
         $baseline = self::json(['version' => 13, 'scope' => ['src'], 'entries' => $baselineEntries]);
         $answers[Surfaces::key($scope, 'baseline-file')] = ['stdout' => $baseline, 'file' => $baseline];
         $answers[Surfaces::key($scope, 'check:output')] = ['stdout' => '', 'file' => $json, 'stderr' => "Report written to {{output}}\n"];
-        $answers[Surfaces::key($scope, 'check:baseline')] = ['stdout' => self::json(['violations' => []])];
-        $answers[Surfaces::key($scope, 'check:baseline-source')] = ['stdout' => $json];
+        $empty = self::json(self::findingPublication([]));
+        $answers[Surfaces::key($scope, 'check:baseline')] = ['stdout' => $empty, 'ranked' => ['stdout' => $empty], 'physical' => ['stdout' => $empty]];
+        $answers[Surfaces::key($scope, 'check:baseline-source')] = $findingAnswer;
         $answers[Surfaces::key($scope, 'check:parallel')] = ['stdout' => $json];
         foreach ($definition['explainSubjects'] ?? [] as $subject) {
             $answers[Surfaces::key($scope, 'explain:' . $subject)] = ['stdout' => "replayed boundary\n"];
@@ -376,6 +398,113 @@ final class SyntheticTree
         }
 
         return $answers;
+    }
+
+    /**
+     * @param list<Finding> $findings
+     *
+     * @return array{violations:list<Finding>,violationsMeta:array{total:int,shown:int,limit:null,truncated:bool,byRule:array<string,int>},topIssues:list<array<string,mixed>>}
+     */
+    private static function findingPublication(array $findings): array
+    {
+        $issues = [];
+        $counts = [];
+        foreach ($findings as $finding) {
+            $finding += self::finding(self::clean()['tuple'], (string) ($finding['channel'] ?? 'replay.alpha'), (string) ($finding['subject'] ?? 'file:src/Alpha.php'));
+            $rule = (string) $finding['rule'];
+            $counts[$rule] = ($counts[$rule] ?? 0) + 1;
+            $weight = match ($finding['severity']) {
+                'error' => 3, 'warning' => 1, default => 0
+            };
+            $issues[] = [
+                'rank' => 0,
+                'file' => $finding['file'],
+                'line' => $finding['line'],
+                'symbol' => $finding['symbol'],
+                'rule' => $finding['rule'],
+                'severity' => $finding['severity'],
+                'message' => $finding['message'],
+                'recommendation' => $finding['recommendation'],
+                'impactScore' => (float) ($weight * (int) $finding['techDebtMinutes']),
+                'coupling.class-rank' => 1.0,
+                'debtMinutes' => $finding['techDebtMinutes'],
+            ];
+        }
+        usort($issues, static function (array $a, array $b): int {
+            $score = $b['impactScore'] <=> $a['impactScore'];
+            if ($score !== 0) {
+                return $score;
+            }
+            $file = ($a['file'] ?? '') <=> ($b['file'] ?? '');
+            return $file !== 0 ? $file : (($a['line'] ?? 0) <=> ($b['line'] ?? 0));
+        });
+        foreach ($issues as $index => &$issue) {
+            $issue['rank'] = $index + 1;
+        }
+        unset($issue);
+        ksort($counts);
+        return ['violations' => $findings, 'violationsMeta' => ['total' => \count($findings), 'shown' => \count($findings), 'limit' => null, 'truncated' => false, 'byRule' => $counts], 'topIssues' => $issues];
+    }
+
+    /**
+     * @param list<array<string,mixed>> $issues
+     * @param list<Finding> $findings
+     *
+     * @return list<string>
+     */
+    private static function summaryIssues(array $issues, array $findings): array
+    {
+        $lines = [];
+        foreach ($issues as $issue) {
+            $finding = null;
+            foreach ($findings as $index => $candidate) {
+                $candidate += self::finding(self::clean()['tuple'], (string) ($candidate['channel'] ?? 'replay.alpha'), (string) ($candidate['subject'] ?? 'file:src/Alpha.php'));
+                if (array_intersect_key($issue, array_flip(['file', 'line', 'symbol', 'rule', 'severity', 'message', 'recommendation'])) === array_intersect_key($candidate, array_flip(['file', 'line', 'symbol', 'rule', 'severity', 'message', 'recommendation']))
+                    && $issue['debtMinutes'] === ($candidate['techDebtMinutes'] ?? null)) {
+                    $finding = $candidate;
+                    unset($findings[$index]);
+                    break;
+                }
+            }
+            if ($finding === null) {
+                throw new GateError('A synthetic ranking has no physical summary finding.');
+            }
+            $score = (float) $issue['impactScore'];
+            $tag = match ($issue['severity']) {
+                'error' => 'ERR', 'warning' => 'WRN', default => 'INF'
+            };
+            $location = $issue['file'] === null ? '[project]' : (string) $issue['file'] . ($issue['line'] === null ? '' : ':' . $issue['line']);
+            $minutes = (int) $issue['debtMinutes'];
+            $debt = [];
+            if ($minutes >= 480) {
+                $debt[] = intdiv($minutes, 480) . 'd';
+            }
+            if ($minutes % 480 >= 60) {
+                $debt[] = intdiv($minutes % 480, 60) . 'h';
+            }
+            if ($minutes % 60 > 0) {
+                $debt[] = $minutes % 60 . 'min';
+            }
+            $symbol = (string) $finding['symbol'];
+            $level = SubjectLevel::of((string) $finding['subject']);
+            if (\in_array($level, ['class', 'file', 'project'], true) || $symbol === $finding['file']) {
+                $symbol = '';
+            } elseif ($level === 'namespace') {
+                $symbol = $symbol === '' ? '' : 'namespace: ' . $symbol;
+            } else {
+                $symbol = substr($symbol, (int) strrpos('\\' . $symbol, '\\'));
+            }
+            $lines[] = '  ' . $issue['rank'] . '. [' . $tag . '] ' . \sprintf($score >= 100 ? '%.0f' : ($score >= 10 ? '%.1f' : '%.2f'), $score) . '  ' . $location . '  [' . ($debt === [] ? '0min' : implode(' ', $debt)) . "]\n"
+                . str_repeat(' ', \strlen((string) $issue['rank']) + 8) . $finding['code'] . ': ' . ReportRecords::message($finding, true) . ($symbol === '' ? '' : ' (' . $symbol . ')') . "\n";
+        }
+        return $lines;
+    }
+
+    private static function rankingSource(): string
+    {
+        $fields = ['rank', 'file', 'line', 'symbol', 'rule', 'severity', 'message', 'recommendation', 'impactScore', 'coupling.class-rank', 'debtMinutes'];
+        $members = implode('', array_map(static fn(string $field): string => "                '" . $field . "' => null,\n", $fields));
+        return "<?php\nfinal class JsonFormatter\n{\n    private function formatTopIssues(): array\n    {\n        \$result = [];\n        foreach ([] as \$issue) {\n            \$result[] = [\n" . $members . "            ];\n        }\n        return \$result;\n    }\n}\n";
     }
 
     private static function json(mixed $value): string
@@ -422,10 +551,67 @@ final class SyntheticTree
                 exit(70);
             }
 
+            $capture = getenv('QMX_GATE_CAPTURE');
+            if ($capture !== false && $capture !== '') {
+                if (!in_array($capture, ['ranked', 'physical'], true) || !is_array($answer[$capture] ?? null)) {
+                    fwrite(STDERR, "replay: no private capture answer for {$key}\n");
+                    exit(70);
+                }
+                $answer = array_replace($answer, $answer[$capture]);
+            }
+
+            $top = 10;
+            $detail = null;
+            $cap = null;
+            for ($index = 0; $index < count($arguments); ++$index) {
+                $argument = $arguments[$index];
+                if ($argument === '--top') {
+                    $top = (int) ($arguments[++$index] ?? 0);
+                } elseif (str_starts_with($argument, '--top=')) {
+                    $top = (int) substr($argument, 6);
+                } elseif ($argument === '--all') {
+                    $detail = 0;
+                    $cap = 0;
+                } elseif ($argument === '--detail' || str_starts_with($argument, '--detail=')) {
+                    $value = $argument === '--detail' ? null : substr($argument, 9);
+                    if ($argument === '--detail' && isset($arguments[$index + 1]) && !str_starts_with($arguments[$index + 1], '-')) {
+                        $value = $arguments[++$index];
+                    }
+                    $detail = $value === null ? 200 : ($value === 'all' ? 0 : (int) $value);
+                } elseif ($argument === '--format-opt' || str_starts_with($argument, '--format-opt=')) {
+                    $pair = $argument === '--format-opt' ? ($arguments[++$index] ?? '') : substr($argument, 13);
+                    [$name, $value] = explode('=', $pair, 2) + ['', ''];
+                    if (in_array($name, ['violations', 'limit'], true)) {
+                        $cap = $value === 'all' ? 0 : (int) $value;
+                    }
+                }
+            }
+
             $stdout = strtr((string) ($answer['stdout'] ?? ''), [
                 '{{tree}}' => dirname($argv[0], 2),
                 '{{random}}' => bin2hex(random_bytes(8)),
             ]);
+            $renderPayload = static function (string $written) use ($top, $cap, $detail): string {
+                $payload = json_decode($written, true);
+                if (!is_array($payload) || !is_array($payload['topIssues'] ?? null)) {
+                    return $written;
+                }
+                $payload['topIssues'] = array_slice($payload['topIssues'], 0, max(0, $top));
+                $limit = $cap ?? $detail;
+                if ($limit !== null && $limit > 0 && is_array($payload['violations'] ?? null) && count($payload['violations']) > $limit) {
+                    $payload['violations'] = array_slice($payload['violations'], 0, $limit);
+                    $payload['violationsMeta']['shown'] = count($payload['violations']);
+                    $payload['violationsMeta']['limit'] = $limit;
+                    $payload['violationsMeta']['truncated'] = true;
+                }
+                return json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n";
+            };
+            $stdout = $renderPayload($stdout);
+            $payload = json_decode($stdout, true);
+            if (is_array($answer['summaryIssues'] ?? null)) {
+                $rows = array_slice($answer['summaryIssues'], 0, max(0, $top));
+                $stdout = "Analysis complete\n" . ($rows === [] ? '' : "\nTop issues by impact\n" . implode('', $rows));
+            }
             $stderr = (string) ($answer['stderr'] ?? '');
 
             if ($stderr !== '' && ($answer['stderrOnce'] ?? false) === true) {
@@ -440,7 +626,8 @@ final class SyntheticTree
             }
 
             if (($answer['env'] ?? false) === true) {
-                $stdout = json_encode(['invocation' => $key, 'cache' => getenv('XDG_CACHE_HOME'), 'locale' => getenv('LC_ALL'), 'timezone' => getenv('TZ'), 'argv' => $arguments, 'cwd' => getcwd()]) . "\n";
+                $environment = ['invocation' => $key, 'cache' => getenv('XDG_CACHE_HOME'), 'locale' => getenv('LC_ALL'), 'timezone' => getenv('TZ'), 'argv' => $arguments, 'cwd' => getcwd()];
+                $stdout = json_encode(is_array($payload) && array_key_exists('violationsMeta', $payload) ? array_replace($payload, $environment) : $environment) . "\n";
             }
             if ($command === 'baseline:generate') {
                 @mkdir(getenv('XDG_CACHE_HOME') . '/qmx', 0o700, true);
@@ -465,7 +652,7 @@ final class SyntheticTree
             if ($target !== null && ($answer['missingFile'] ?? false) !== true) {
                 @mkdir(dirname($target), 0o700, true);
                 // Existing stdout overrides remain authoritative for the historical baseline surface.
-                file_put_contents($target, $command === 'baseline:generate' ? $stdout : ($answer['file'] ?? $stdout));
+                file_put_contents($target, $command === 'baseline:generate' ? $stdout : $renderPayload((string) ($answer['file'] ?? $stdout)));
             }
             if ($command !== 'baseline:generate') {
                 echo $stdout;

@@ -28,6 +28,8 @@ final class Gate
 
     private readonly Declarations $declarations;
 
+    private readonly RankingCaptures $rankings;
+
     private readonly DeclaredDelta $declaredDelta;
 
     private readonly DeclaredFieldMoves $declaredFieldMoves;
@@ -86,6 +88,23 @@ final class Gate
         }
         foreach (DeclaredFields::REPORTS as $fieldReport) {
             foreach ($this->declarations->fields->views($fieldReport) as $view) {
+                if ($fieldReport === 'json' && $view === 'ranking') {
+                    foreach ($this->corpus->cases as $case) {
+                        foreach (['candidate', 'reference'] as $side) {
+                            if (!CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($case, $side))) {
+                                continue;
+                            }
+                            foreach ($capturePlan->rankingInvocations() as $source) {
+                                $key = Surfaces::key($source['scope'], $source['surface']);
+                                if ($source['scope'] === 'case:' . $case->id && $capturePlan->requiredOn($key, $side)) {
+                                    $this->declarations->fields->requireMeasurements('json', $case->id, 'ranking', $side);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    continue;
+                }
                 foreach ($capturePlan->invocations() as $invocation) {
                     if ($invocation['surface'] !== $view || !str_starts_with($invocation['scope'], 'case:')) {
                         continue;
@@ -128,6 +147,7 @@ final class Gate
             $this->declarations,
             $this->temporaryDirectory,
         );
+        $this->rankings = $run->rankings;
         $this->caseOutcomeCheck = CaseOutcomeCheck::create($run);
         $wiring = Wiring::of(__DIR__);
         $this->caseChecks = self::registered($wiring, 'caseChecks', CaseCheck::class, $run);
@@ -219,8 +239,9 @@ final class Gate
         $this->tupleCheck->checkTuple();
         $this->normalizationCheck->checkNormalizationScope();
 
-        $first = $this->runTree($this->options->candidateRoot, 'candidate-1', reverseInput: false);
-        $second = $this->runTree($this->options->candidateRoot, 'candidate-2', reverseInput: false);
+        $firstCapture = $this->runTree($this->options->candidateRoot, 'candidate-1', reverseInput: false);
+        $first = $firstCapture->artifacts;
+        $second = $this->runTree($this->options->candidateRoot, 'candidate-2', reverseInput: false)->artifacts;
         $this->normalizationCheck->checkDeterminism($first, $second);
 
         $reference = ReferenceTree::create($this->options->candidateRoot, (string) $this->options->reference, $this->maps);
@@ -234,7 +255,10 @@ final class Gate
                 return;
             }
 
-            $referenceArtifacts = $this->runTree($reference->root, 'reference', reverseInput: true);
+            $referenceCapture = $this->runTree($reference->root, 'reference', reverseInput: true);
+            $referenceArtifacts = $referenceCapture->artifacts;
+            $this->rankings->supply('candidate', $firstCapture->rankings);
+            $this->rankings->supply('reference', $referenceCapture->rankings);
 
             $this->renameMapCheck->checkReferenceInput($first, $referenceArtifacts);
             $this->checkFindings('candidate', $first, trackObserved: true);
@@ -279,7 +303,7 @@ final class Gate
             $passes = [];
 
             for ($pass = 1; $pass <= NormalizationDeriver::passes(); ++$pass) {
-                $artifacts = $this->runTree($this->options->candidateRoot, 'derive-' . $pass, reverseInput: false);
+                $artifacts = $this->runTree($this->options->candidateRoot, 'derive-' . $pass, reverseInput: false)->artifacts;
                 $this->caseOutcomeCheck->checkRunsProduced('derive-' . $pass, $artifacts);
                 $passes[] = $artifacts;
             }
@@ -354,8 +378,7 @@ final class Gate
         Fs::removeRecursively($this->temporaryDirectory);
     }
 
-    /** @return array<string, string> */
-    private function runTree(string $treeRoot, string $label, bool $reverseInput): array
+    private function runTree(string $treeRoot, string $label, bool $reverseInput): CaptureResult
     {
         $run = new TreeRun(
             $treeRoot,
@@ -366,9 +389,9 @@ final class Gate
             CapturePlan::forCorpus($this->corpus, $this->declarations->surfaces),
             $this->declarations->structuralMaps,
         );
-        $artifacts = $run->rules();
+        $capture = new CaptureResult($run->rules(), []);
 
-        $artifacts += (new CaseScheduler(
+        return $capture->merge((new CaseScheduler(
             $this->options->candidateRoot,
             $treeRoot,
             $this->temporaryDirectory,
@@ -377,9 +400,7 @@ final class Gate
             $this->options->jobs,
             $this->maps,
             $this->declarations->structuralMaps,
-        ))->captureCases($this->corpus->cases);
-
-        return $artifacts;
+        ))->captureCases($this->corpus->cases));
     }
 
     /**

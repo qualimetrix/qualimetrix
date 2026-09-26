@@ -49,6 +49,9 @@ final class CaseOutcome
     /** Declared records are withdrawn or introduced on this case's reports. */
     public const string CHECK_RECORDS = 'records';
 
+    /** Private captures retain their source invocation's exit and stderr on every outcome. */
+    public const string CHECK_RANKING = 'ranking';
+
     /** The exact refusal or incomplete ending of a case. */
     public const string CHECK_OUTCOME = 'outcomes';
 
@@ -61,6 +64,7 @@ final class CaseOutcome
         self::CHECK_FINGERPRINTS => [self::ANALYSIS, self::INCOMPLETE],
         self::CHECK_COVERAGE => [self::ANALYSIS, self::INCOMPLETE],
         self::CHECK_RECORDS => [self::ANALYSIS, self::INCOMPLETE],
+        self::CHECK_RANKING => [self::ANALYSIS, self::REFUSAL, self::INCOMPLETE],
         self::CHECK_OUTCOME => [self::REFUSAL, self::INCOMPLETE],
     ];
 

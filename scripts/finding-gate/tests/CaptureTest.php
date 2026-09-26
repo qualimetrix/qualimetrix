@@ -35,6 +35,7 @@ use QmxFindingGate\TreeRun;
 use QmxFindingGate\Tsv;
 use QmxFindingGate\ValueCheck;
 use QmxFindingGate\ValueStage;
+use ReflectionMethod;
 use Throwable;
 use WeakReference;
 
@@ -492,7 +493,7 @@ final class CaptureTest extends TestCase
             $plan = CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate'));
             $maps = RenameMaps::load($root . '/finding-gate/maps', MetricVocabulary::ofTree($root));
             $run = new TreeRun($root, $temporary, 'candidate', $maps, false, $plan, DeclaredStructuralMaps::load($root . '/finding-gate'));
-            $artifacts = $run->rules() + $run->forCase($corpus->cases[0]);
+            $artifacts = $run->rules() + $run->forCase($corpus->cases[0])->artifacts;
             foreach ($plan->invocations() as $descriptor) {
                 $key = $descriptor['scope'] . '|' . $descriptor['surface'];
                 foreach ($plan->artifactsOf($key) as $artifact) {
@@ -516,6 +517,140 @@ final class CaptureTest extends TestCase
     }
 
     #[Test]
+    public function itCapturesCompleteAuthorityWithoutChangingSemanticArguments(): void
+    {
+        $tree = SyntheticTree::clean();
+        $tree['findings']['alpha'] = [];
+        for ($index = 0; $index < 12; ++$index) {
+            $tree['findings']['alpha'][] = SyntheticTree::finding($tree['tuple'], 'replay.alpha', 'declaration:callable:Replay\\Alpha::run' . $index . '@src/Alpha.php');
+        }
+        $definition = ['id' => 'alpha', 'description' => 'A capped publication.', 'paths' => ['src'], 'config' => 'qmx.yaml', 'channels' => ['replay.alpha@callable'],
+            'args' => ['--detail=1', '--format-opt=violations=2', '--format-opt=top=7', '--rule-opt=complexity.ccn:threshold=99', '--top=0']];
+        $tree['declarations']['cases/alpha/case.json'] = json_encode($definition, \JSON_THROW_ON_ERROR);
+        $tree['candidateAnswers']['case:alpha|format:json'] = ['env' => true];
+        $root = SyntheticTree::create($tree);
+        $temporary = Fs::temporaryDirectory('complete-capture-test-');
+        try {
+            $corpus = Corpus::load($root);
+            $plan = CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate'));
+            $capture = (new TreeRun($root, $temporary, 'candidate', RenameMaps::fromPairs([]), false, $plan, DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
+            self::assertSame(['case:alpha|format:json'], array_keys($capture->rankings));
+            $source = json_decode($capture->artifacts['case:alpha|format:json'], true, 512, \JSON_THROW_ON_ERROR);
+            $ranked = json_decode($capture->rankings['case:alpha|format:json']['ranked']['stdout'], true, 512, \JSON_THROW_ON_ERROR);
+            $physicalCapture = $capture->rankings['case:alpha|format:json']['physical'];
+            self::assertNotNull($physicalCapture);
+            $physical = json_decode($physicalCapture['stdout'], true, 512, \JSON_THROW_ON_ERROR);
+            self::assertCount(2, $source['violations']);
+            self::assertSame([], $source['topIssues']);
+            self::assertSame($source['violations'], $ranked['violations']);
+            self::assertCount(12, $ranked['topIssues']);
+            self::assertCount(12, $physical['violations']);
+            self::assertFalse($physical['violationsMeta']['truncated']);
+            self::assertSame($ranked['topIssues'], $physical['topIssues']);
+            self::assertSame([...$source['argv'], '--top=13'], $ranked['argv']);
+            self::assertSame($source['cwd'], $ranked['cwd']);
+            self::assertSame($source['cwd'], $physical['cwd']);
+            self::assertNotContains('--detail=1', $physical['argv']);
+            self::assertNotContains('--format-opt=violations=2', $physical['argv']);
+            foreach (['--format-opt=top=7', '--rule-opt=complexity.ccn:threshold=99', '--detail=all', '--format-opt=violations=all'] as $argument) {
+                self::assertContains($argument, $physical['argv']);
+            }
+            self::assertSame('--top=13', $physical['argv'][\count($physical['argv']) - 1]);
+            self::assertSame([], glob($temporary . '/capture-candidate-cache-*'));
+            $expected = [];
+            foreach ($plan->invocations() as $descriptor) {
+                if ($descriptor['scope'] === 'case:alpha') {
+                    $expected = [...$expected, ...$plan->artifactsOf($descriptor['scope'] . '|' . $descriptor['surface'])];
+                }
+            }
+            $actual = array_keys($capture->artifacts);
+            sort($expected);
+            sort($actual);
+            self::assertSame($expected, $actual);
+        } finally {
+            Fs::removeRecursively($temporary);
+            SyntheticTree::remove($root);
+        }
+    }
+
+    #[Test]
+    public function itUsesItsSourceBaselineAndCapturesRefusalsWithoutInventingAuthority(): void
+    {
+        $tree = SyntheticTree::captureFixture();
+        $tree['candidateAnswers']['case:alpha|check:baseline-source'] = ['env' => true];
+        $tree['candidateAnswers']['case:alpha|check:baseline'] = ['env' => true];
+        $root = SyntheticTree::create($tree);
+        $temporary = Fs::temporaryDirectory('baseline-ranking-capture-');
+        try {
+            $corpus = Corpus::load($root);
+            $plan = CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate'));
+            $capture = (new TreeRun($root, $temporary, 'candidate', RenameMaps::fromPairs([]), false, $plan, DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
+            self::assertSame(['case:alpha|format:json', 'case:alpha|check:baseline-source', 'case:alpha|check:baseline'], array_keys($capture->rankings));
+            foreach (['check:baseline-source', 'check:baseline'] as $view) {
+                $key = 'case:alpha|' . $view;
+                $source = json_decode($capture->artifacts[$key], true, 512, \JSON_THROW_ON_ERROR);
+                $ranked = json_decode($capture->rankings[$key]['ranked']['stdout'], true, 512, \JSON_THROW_ON_ERROR);
+                self::assertSame([...$source['argv'], '--top=' . ($source['violationsMeta']['total'] + 1)], $ranked['argv']);
+                self::assertSame($source['cwd'], $ranked['cwd']);
+                self::assertNull($capture->rankings[$key]['physical']);
+            }
+            $baseline = json_decode($capture->rankings['case:alpha|check:baseline']['ranked']['stdout'], true, 512, \JSON_THROW_ON_ERROR);
+            self::assertCount(1, array_filter($baseline['argv'], static fn(string $argument): bool => str_starts_with($argument, '--baseline=')));
+        } finally {
+            Fs::removeRecursively($temporary);
+            SyntheticTree::remove($root);
+        }
+
+        $tree = SyntheticTree::clean();
+        $tree['declarations']['cases/alpha/case.json'] = json_encode(['id' => 'alpha', 'description' => 'A refused input.', 'paths' => ['src'], 'config' => 'qmx.yaml', 'channels' => ['replay.alpha@callable'], 'outcome' => ['kind' => 'refusal', 'exit' => 3]], \JSON_THROW_ON_ERROR);
+        $tree['candidateAnswers']['case:alpha|format:json'] = ['stdout' => 'refused', 'stderr' => 'input refused', 'exit' => 3, 'ranked' => ['stdout' => 'refused']];
+        $root = SyntheticTree::create($tree);
+        $temporary = Fs::temporaryDirectory('refusal-ranking-capture-');
+        try {
+            $corpus = Corpus::load($root);
+            $capture = (new TreeRun($root, $temporary, 'candidate', RenameMaps::fromPairs([]), false, CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
+            self::assertSame(['stdout' => 'refused', 'stderr' => 'input refused', 'exit' => 3], $capture->rankings['case:alpha|format:json']['ranked']);
+            self::assertNull($capture->rankings['case:alpha|format:json']['physical']);
+        } finally {
+            Fs::removeRecursively($temporary);
+            SyntheticTree::remove($root);
+        }
+    }
+
+    #[Test]
+    public function itRemovesOnlyPresentationCapsFromAttachedAndSeparatedArguments(): void
+    {
+        $method = new ReflectionMethod(TreeRun::class, 'withoutPresentationCaps');
+        $retained = ['check', 'src', '--format-opt', 'top=7', '--rule-opt=complexity.ccn:threshold=99', '-f', 'json'];
+        foreach ([['--detail=1', '--format-opt=violations=2'], ['--detail', '1', '--format-opt', 'violations=2'], ['--all', '--format-opt=limit=2'], ['--detail=all', '--format-opt', 'limit=2']] as $caps) {
+            self::assertSame($retained, $method->invoke(null, [...$retained, ...$caps]));
+        }
+    }
+
+    #[Test]
+    public function itRefusesUnsizedRankingMetadataRatherThanInventingACompleteCapture(): void
+    {
+        foreach ([-1, \PHP_INT_MAX, '1'] as $total) {
+            $tree = SyntheticTree::clean();
+            $tree['candidateAnswers']['case:alpha|format:json'] = ['stdout' => json_encode(['violations' => $tree['findings']['alpha'], 'violationsMeta' => ['total' => $total, 'shown' => 1, 'truncated' => false]], \JSON_THROW_ON_ERROR)];
+            $root = SyntheticTree::create($tree);
+            $temporary = Fs::temporaryDirectory('ranking-size-refusal-');
+            try {
+                $corpus = Corpus::load($root);
+                try {
+                    (new TreeRun($root, $temporary, 'candidate', RenameMaps::fromPairs([]), false, CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
+                    self::fail('An unknown or overflowing ranking population was accepted.');
+                } catch (GateError $error) {
+                    self::assertStringContainsString('requires nonnegative total and boolean truncation metadata', $error->getMessage());
+                }
+            } finally {
+                Fs::removeRecursively($temporary);
+                SyntheticTree::remove($root);
+            }
+        }
+    }
+
+    #[Test]
     public function itUsesOnlyTheSupportedArgumentsOfEachProductCommand(): void
     {
         $tree = SyntheticTree::captureFixture();
@@ -529,7 +664,7 @@ final class CaptureTest extends TestCase
             $case = $corpus->cases[0];
             $maps = RenameMaps::load($root . '/finding-gate/maps', MetricVocabulary::ofTree($root));
             $run = new TreeRun($root, $temporary, 'candidate', $maps, false, CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), DeclaredStructuralMaps::load($root . '/finding-gate'));
-            $artifacts = $run->forCase($case);
+            $artifacts = $run->forCase($case)->artifacts;
             $read = static fn(string $surface): array => json_decode($artifacts['case:alpha|' . $surface], true, 512, \JSON_THROW_ON_ERROR);
             self::assertSame(['graph:export', 'src', '--no-ansi'], $read('graph:export')['argv']);
             self::assertSame(['rules', '--no-ansi'], $read('rules')['argv']);
@@ -571,8 +706,8 @@ final class CaptureTest extends TestCase
             $corpus = Corpus::load($root);
             $plan = CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate'));
             $maps = RenameMaps::load($root . '/finding-gate/maps', MetricVocabulary::ofTree($root));
-            $candidate = (new TreeRun($root, $temporary, 'candidate', $maps, false, $plan, DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
-            $reference = (new TreeRun($root, $temporary, 'reference', $maps, true, $plan, DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
+            $candidate = (new TreeRun($root, $temporary, 'candidate', $maps, false, $plan, DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0])->artifacts;
+            $reference = (new TreeRun($root, $temporary, 'reference', $maps, true, $plan, DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0])->artifacts;
             foreach ($plan->artifactsOf('case:alpha|format:health') as $artifact) {
                 self::assertArrayHasKey($artifact, $candidate);
                 self::assertArrayNotHasKey($artifact, $reference);
@@ -596,7 +731,7 @@ final class CaptureTest extends TestCase
             $maps = RenameMaps::load($root . '/finding-gate/maps', MetricVocabulary::ofTree($root));
             $run = new TreeRun($root, $temporary, 'candidate', $maps, false, CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), DeclaredStructuralMaps::load($root . '/finding-gate'));
             try {
-                $run->forCase($corpus->cases[0]);
+                $run->forCase($corpus->cases[0])->artifacts;
                 self::fail('An empty cache directory established no parser cache record.');
             } catch (GateError $error) {
                 self::assertStringContainsString('wrote no cache record', $error->getMessage());
@@ -638,7 +773,7 @@ final class CaptureTest extends TestCase
             $context = self::captureContext($root, $temporary);
             $run = new TreeRun($root, $temporary, 'candidate', $context->maps, false, CapturePlan::forCorpus($context->corpus, $context->declarations->surfaces), $context->declarations->structuralMaps);
 
-            return [$root, $temporary, $run->rules() + $run->forCase($context->corpus->cases[0])];
+            return [$root, $temporary, $run->rules() + $run->forCase($context->corpus->cases[0])->artifacts];
         } catch (Throwable $error) {
             SyntheticTree::remove($root);
             Fs::removeRecursively($temporary);

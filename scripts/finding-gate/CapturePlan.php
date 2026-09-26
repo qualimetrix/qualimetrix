@@ -15,7 +15,7 @@ use SplFileInfo;
  * File artifacts refer to their invocation, so a file cannot invent another
  * process exit code. Keys use the candidate's vocabulary on both sides.
  *
- * @phpstan-type Descriptor array{scope:string,surface:string,commandClass:string,outputFileKind:string|null}
+ * @phpstan-type Descriptor array{scope:string,surface:string,commandClass:string,outputFileKind:string|null,publicationKind:'finding-json'|'other',rankingSource:string|null}
  */
 final class CapturePlan
 {
@@ -34,12 +34,29 @@ final class CapturePlan
     {
         $descriptors = [];
         $artifacts = [];
-        $append = static function (string $scope, string $surface, string $command, ?string $file = null) use (&$descriptors, &$artifacts): void {
+        $append = static function (
+            string $scope,
+            string $surface,
+            string $command,
+            ?string $file = null,
+            string $publicationKind = 'other',
+            ?string $rankingSource = null,
+        ) use (&$descriptors, &$artifacts): void {
             $key = Surfaces::key($scope, $surface);
             if (isset($descriptors[$key])) {
                 throw new GateError('The capture plan declares an invocation twice: ' . $key);
             }
-            $descriptors[$key] = ['scope' => $scope, 'surface' => $surface, 'commandClass' => $command, 'outputFileKind' => $file];
+            if (!\in_array($publicationKind, ['finding-json', 'other'], true)) {
+                throw new GateError('Unknown capture publication kind: ' . $publicationKind);
+            }
+            $descriptors[$key] = [
+                'scope' => $scope,
+                'surface' => $surface,
+                'commandClass' => $command,
+                'outputFileKind' => $file,
+                'publicationKind' => $publicationKind,
+                'rankingSource' => $rankingSource,
+            ];
             $keys = [$key, Surfaces::key($scope, 'stderr:' . $surface),
                 Surfaces::key($scope, 'exit:' . ($surface === 'baseline-file' ? 'baseline:generate' : $surface))];
             if ($file !== null) {
@@ -73,16 +90,23 @@ final class CapturePlan
         foreach ($corpus->cases as $case) {
             $scope = 'case:' . $case->id;
             foreach ($formats as $format) {
-                $append($scope, 'format:' . $format, 'check');
+                $append(
+                    $scope,
+                    'format:' . $format,
+                    'check',
+                    null,
+                    $format === 'json' ? 'finding-json' : 'other',
+                    $format === 'json' ? Surfaces::key($scope, 'format:json') : null,
+                );
             }
             foreach (['show-suppressed' => 'check', 'directives' => 'directives', 'graph:export' => 'graph:export', 'rules' => 'rules'] as $surface => $command) {
                 $append($scope, $surface, $command);
             }
             if ($case->baselineSource() !== null) {
-                $append($scope, 'check:baseline-source', 'check');
+                $append($scope, 'check:baseline-source', 'check', null, 'finding-json', Surfaces::key($scope, 'check:baseline-source'));
             }
             $append($scope, 'baseline-file', 'baseline:generate');
-            $append($scope, 'check:output', 'check', 'check:output:file');
+            $append($scope, 'check:output', 'check', 'check:output:file', 'finding-json', Surfaces::key($scope, 'format:json'));
             foreach ($case->explainSubjects as $subject) {
                 $append($scope, 'explain:' . $subject, 'baseline:explain');
             }
@@ -90,7 +114,7 @@ final class CapturePlan
                 $append($scope, 'debug:layer-assignment:' . $subject, 'debug:layer-assignment');
             }
             if ($case->baselineSource() !== null) {
-                $append($scope, 'check:baseline', 'check');
+                $append($scope, 'check:baseline', 'check', null, 'finding-json', Surfaces::key($scope, 'check:baseline'));
                 foreach (['baseline:update', 'baseline:cleanup'] as $command) {
                     $append($scope, $command, $command, $command . ':file');
                 }
@@ -99,7 +123,22 @@ final class CapturePlan
                 }
             }
             if (self::hasParallelInput($case)) {
-                $append($scope, 'check:parallel', 'check');
+                $append($scope, 'check:parallel', 'check', null, 'finding-json', Surfaces::key($scope, 'format:json'));
+            }
+        }
+        foreach ($descriptors as $key => $descriptor) {
+            $source = $descriptor['rankingSource'];
+            if ($descriptor['publicationKind'] === 'other') {
+                if ($source !== null) {
+                    throw new GateError('A non-finding publication cannot borrow ranking evidence: ' . $key);
+                }
+                continue;
+            }
+            if ($source === null || !isset($descriptors[$source])
+                || $descriptors[$source]['publicationKind'] !== 'finding-json'
+                || $descriptors[$source]['scope'] !== $descriptor['scope']
+                || $descriptors[$source]['rankingSource'] !== $source) {
+                throw new GateError('A finding JSON invocation has no exact own ranking source: ' . $key);
             }
         }
         return new self($descriptors, $artifacts, $surfaces->changes());
@@ -109,6 +148,27 @@ final class CapturePlan
     public function invocations(): array
     {
         return array_values($this->descriptors);
+    }
+
+    /** @return list<Descriptor> */
+    public function rankingInvocations(): array
+    {
+        return array_values(array_filter(
+            $this->descriptors,
+            static fn(array $descriptor): bool => $descriptor['publicationKind'] === 'finding-json'
+                && $descriptor['rankingSource'] === Surfaces::key($descriptor['scope'], $descriptor['surface']),
+        ));
+    }
+
+    public function rankingSourceOf(string $jsonArtifactKey): string
+    {
+        $descriptor = $this->descriptorOf($this->invocationOf($jsonArtifactKey));
+        $publication = Surfaces::key($descriptor['scope'], $descriptor['outputFileKind'] ?? $descriptor['surface']);
+        if ($jsonArtifactKey !== $publication || $descriptor['publicationKind'] !== 'finding-json'
+            || $descriptor['rankingSource'] === null) {
+            throw new GateError('No ranking source for this artifact: ' . $jsonArtifactKey);
+        }
+        return $descriptor['rankingSource'];
     }
 
     public function requiredOn(string $fullInvocationKey, string $side): bool

@@ -100,7 +100,7 @@ final class GateModes
                 CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($options->candidateRoot . '/finding-gate')),
                 $structuralMaps,
             );
-            $artifacts = $run->forCase($case);
+            $capture = $run->forCase($case);
 
             // Beside the artifacts, what this worker's own maps translated. A row
             // whose only work is on a case's input fires here and in no other
@@ -108,7 +108,12 @@ final class GateModes
             Fs::write(
                 $options->workerOutput,
                 json_encode(
-                    ['artifacts' => $artifacts, 'mapHits' => $maps->firedRows(), 'structuralMapHits' => $structuralMaps->firedRows()],
+                    [
+                        'artifacts' => $capture->artifacts,
+                        'rankings' => $capture->rankings,
+                        'mapHits' => $maps->firedRows(),
+                        'structuralMapHits' => $structuralMaps->firedRows(),
+                    ],
                     \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES,
                 ),
             );

@@ -163,7 +163,8 @@ final class CaseInputTranslationTest extends TestCase
         try {
             $maps = DeclaredStructuralMaps::load($root . '/finding-gate');
             $scheduler = new CaseScheduler($root, $root, $temporary, 'reference', true, 2, RenameMaps::fromPairs([]), $maps);
-            $artifacts = $scheduler->captureCases(Corpus::load($root)->cases);
+            $capture = $scheduler->captureCases(Corpus::load($root)->cases);
+            $artifacts = $capture->artifacts;
             self::assertArrayHasKey('case:alpha|format:json', $artifacts);
             self::assertSame(["config\0old" => 1], $maps->firedRows());
             self::assertSame([], $maps->stale());

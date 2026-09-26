@@ -5,10 +5,15 @@ declare(strict_types=1);
 namespace QmxFindingGate;
 
 use FilesystemIterator;
+use JsonException;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
-/** One tree's publications, with no cache state shared across invocations. */
+/**
+ * One tree's publications, with no cache state shared across invocations.
+ *
+ * @phpstan-import-type RankingCapture from CaptureResult
+ */
 final class TreeRun
 {
     private const CHECK_ARGUMENTS = ['--workers=0', '--no-cache', '--no-ansi', '--fail-on=error'];
@@ -29,8 +34,7 @@ final class TreeRun
         $this->inputs = new CaseInputTranslation($maps, $reverseInput, $temporaryDirectory, $label, $structuralMaps);
     }
 
-    /** @return array<string,string> */
-    public function forCase(CaseDefinition $case): array
+    public function forCase(CaseDefinition $case): CaptureResult
     {
         $originalCase = $case;
         $case = $this->inputs->materialize($case);
@@ -42,6 +46,7 @@ final class TreeRun
         $measured = [...$case->paths, '--no-ansi', '-c', $config, ...$arguments];
         $baseline = $this->scratch('baseline-' . $case->id) . '.json';
         $artifacts = [];
+        $rankings = [];
         $baselineWorkingDirectory = $case->directory;
         $baselineMeasured = $measured;
 
@@ -121,6 +126,9 @@ final class TreeRun
             }
             $result = $this->invoke($key, $command, $cwd, $assertCache);
             $side = $this->label === 'reference' ? 'reference' : 'candidate';
+            if ($descriptor['publicationKind'] === 'finding-json' && $descriptor['rankingSource'] === $key) {
+                $rankings[$key] = $this->captureRanking($case, $side, $key, $command, $cwd, $result['stdout']);
+            }
             if ($surface === 'check:output' && ((\in_array($result['exit'], [0, 1, 2], true)
                 && CaseOutcome::of($case, $side) === CaseOutcome::ANALYSIS) || is_file((string) $file))) {
                 preg_match_all('/^Report written to (.+)$/m', $result['stderr'], $destinations);
@@ -143,7 +151,73 @@ final class TreeRun
             }
         }
 
-        return $artifacts;
+        return new CaptureResult($artifacts, $rankings);
+    }
+
+    /**
+     * @param list<string> $command
+     *
+     * @return RankingCapture
+     */
+    private function captureRanking(CaseDefinition $case, string $side, string $key, array $command, string $cwd, string $stdout): array
+    {
+        $limit = 1;
+        $truncated = false;
+        if (CaseOutcome::of($case, $side) !== CaseOutcome::REFUSAL) {
+            try {
+                $payload = json_decode($stdout, true, 512, \JSON_THROW_ON_ERROR);
+            } catch (JsonException $error) {
+                throw new GateError('Cannot size the complete ranking for ' . $key . ': ' . $error->getMessage());
+            }
+            $metadata = \is_array($payload) ? ($payload['violationsMeta'] ?? null) : null;
+            if (!\is_array($metadata) || !\is_int($metadata['total'] ?? null) || $metadata['total'] < 0
+                || $metadata['total'] === \PHP_INT_MAX || !\is_bool($metadata['truncated'] ?? null)) {
+                throw new GateError('Complete ranking requires nonnegative total and boolean truncation metadata for ' . $key . '.');
+            }
+            $limit = $metadata['total'] + 1;
+            $truncated = $metadata['truncated'];
+        }
+
+        return [
+            'ranked' => $this->invoke($key, [...$command, '--top=' . $limit], $cwd, capture: 'ranked'),
+            'physical' => $truncated ? $this->invoke($key, [...self::withoutPresentationCaps($command), '--detail=all', '--format-opt=violations=all', '--top=' . $limit], $cwd, capture: 'physical') : null,
+        ];
+    }
+
+    /**
+     * @param list<string> $command
+     *
+     * @return list<string>
+     */
+    private static function withoutPresentationCaps(array $command): array
+    {
+        $clean = [];
+        for ($index = 0; $index < \count($command); ++$index) {
+            $argument = $command[$index];
+            if ($argument === '--all' || str_starts_with($argument, '--detail=')) {
+                continue;
+            }
+            if ($argument === '--detail') {
+                if (isset($command[$index + 1]) && !str_starts_with($command[$index + 1], '-')) {
+                    ++$index;
+                }
+                continue;
+            }
+            $pair = null;
+            if ($argument === '--format-opt') {
+                $pair = $command[$index + 1] ?? throw new GateError('A formatter option has no value in a complete capture command.');
+            } elseif (str_starts_with($argument, '--format-opt=')) {
+                $pair = substr($argument, 13);
+            }
+            if ($pair !== null && \in_array(explode('=', $pair, 2)[0], ['violations', 'limit'], true)) {
+                if ($argument === '--format-opt') {
+                    ++$index;
+                }
+                continue;
+            }
+            $clean[] = $argument;
+        }
+        return $clean;
     }
 
     /**
@@ -186,7 +260,7 @@ final class TreeRun
      *
      * @return array{stdout:string,stderr:string,exit:int}
      */
-    private function invoke(string $key, array $command, string $cwd, bool $assertCacheWritten = false): array
+    private function invoke(string $key, array $command, string $cwd, bool $assertCacheWritten = false, ?string $capture = null): array
     {
         $legacy = $cwd . '/.qmx-cache';
         $xdg = $this->scratch('cache');
@@ -196,6 +270,7 @@ final class TreeRun
             $result = Process::run([\PHP_BINARY, $this->treeRoot . '/bin/qmx', ...$command], $cwd, environmentAdditions: [
                 'XDG_CACHE_HOME' => $xdg,
                 'QMX_GATE_INVOCATION' => $key,
+                ...($capture === null ? [] : ['QMX_GATE_CAPTURE' => $capture]),
             ]);
             if ($assertCacheWritten && $result['exit'] === 0 && !self::hasCacheRecord($legacy) && !self::hasCacheRecord($xdg . '/qmx')) {
                 throw new GateError('A successful ' . $key . ' wrote no cache record in the isolated legacy or XDG cache.');
