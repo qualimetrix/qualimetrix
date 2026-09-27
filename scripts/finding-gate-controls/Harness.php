@@ -37,7 +37,7 @@ final class Harness
     private const DECLARED_DELTA_INDEX = 'finding-gate/declared-delta.tsv';
 
     /**
-     * Every control in flight is a whole gate run: two passes over the corpus,
+     * Every control in flight is a whole gate run: repeated passes over the corpus,
      * each spawning CLI processes. Starting the whole list at once would not
      * make the run proportionally shorter — it would make every control slower and the
      * machine unusable, and a control whose gate is starved is a red that says
