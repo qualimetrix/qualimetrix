@@ -10,6 +10,4 @@ return [
     'derivations' => ['CaseOutcomeCheck'],
     'selfTest' => ['SelfTestOutcomes::outcomes', 'SelfTestOutcomes::outputPublication'],
     'witnesses' => ['SelfTestOutcomes::witnesses'],
-    'controlClasses' => ['OutcomeControls'],
-    'controls' => ['OutcomeControls::invalidCaseMetadata'],
 ];

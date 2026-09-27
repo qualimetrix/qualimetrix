@@ -6,6 +6,7 @@ namespace QmxFindingGate\Tests;
 
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\ChannelSplit;
@@ -45,7 +46,7 @@ final class FieldValuesCheckTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->root = SyntheticTree::create(SyntheticTree::clean());
+        $this->root = SyntheticTree::fixture(SyntheticTree::clean());
     }
 
     protected function tearDown(): void
@@ -214,7 +215,7 @@ final class FieldValuesCheckTest extends TestCase
     }
 
     #[Test]
-    public function itJudgesAnAddedDirectiveFieldThroughThePublicGateAndDoesNotDeriveANeighbour(): void
+    public function itDerivesAnAddedDirectiveFieldFromRecordedReportsAndKeepsANeighbourRed(): void
     {
         SyntheticTree::remove($this->root);
         $tree = SyntheticTree::clean();
@@ -224,17 +225,14 @@ final class FieldValuesCheckTest extends TestCase
         $tree['declarations'][DeclaredFields::INDEX] = Tsv::render(DeclaredFields::COLUMNS, [['added', 'directives', 'directives', 'probe', 'a new observation']]);
         $derived = Tsv::render(DeclaredFields::DERIVED_COLUMNS, [['directives', 'directives', 'probe', 'alpha', json_encode($base, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR), '1']]);
         $tree['declarations'][DeclaredFields::DERIVED] = $derived;
-        $this->root = SyntheticTree::create($tree);
+        $this->root = SyntheticTree::fixture($tree);
         $options = Options::parse(['gate', '--candidate=' . $this->root, '--reference=HEAD', '--jobs=4'], $this->root);
-        $green = new GateReport();
-        (new Gate($options, $green))->compare();
+        $green = RecordedComparison::reportAt($tree, $this->root);
         self::assertSame(GateReport::EXIT_GREEN, $green->exitCode(), $green->render());
         Fs::write($this->root . '/finding-gate/' . DeclaredFields::DERIVED, str_replace("\t1\n", "\t2\n", $derived));
-        $red = new GateReport();
-        (new Gate($options, $red))->compare();
+        $red = RecordedComparison::reportAt($tree, $this->root);
         self::assertContains(FailureClass::FIELD_VALUES_MISMATCH, $red->failureClasses(), $red->render());
-        $measurement = new GateReport();
-        $written = (new Gate($options, $measurement))->deriveDeclarations();
+        [$measurement, $written] = RecordedComparison::derive($tree, $this->root);
         self::assertSame(GateReport::EXIT_GREEN, $measurement->exitCode(), $measurement->render());
         self::assertSame(1, array_count_values($written)[DeclaredFields::DERIVED] ?? 0);
         self::assertSame($derived, Fs::read($this->root . '/finding-gate/' . DeclaredFields::DERIVED));
@@ -243,13 +241,15 @@ final class FieldValuesCheckTest extends TestCase
         $answers['case:alpha|directives']['stdout'] = json_encode(['directives' => [$record], 'exit_code' => 0], \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n";
         Fs::write($this->root . '/replay/answers.json', json_encode($answers, \JSON_THROW_ON_ERROR));
         $before = Fs::read($this->root . '/finding-gate/' . DeclaredFields::DERIVED);
-        $derive = new GateReport();
-        self::assertSame([], (new Gate($options, $derive))->deriveDeclarations());
+        [$derive, $written] = RecordedComparison::derive($tree, $this->root);
+        self::assertSame([DeclaredFields::DERIVED], $written);
         self::assertSame(GateReport::EXIT_RED, $derive->exitCode());
-        self::assertSame($before, Fs::read($this->root . '/finding-gate/' . DeclaredFields::DERIVED));
+        self::assertSame(str_replace('"boundary_observable":true', '"boundary_observable":false', $before), Fs::read($this->root . '/finding-gate/' . DeclaredFields::DERIVED));
+        self::assertContains(FailureClass::VALUE_MISMATCH, $derive->failureClasses(), $derive->render());
     }
 
     #[Test]
+    #[Group('finding-gate-e2e')]
     public function itObservesTheRegisteredFieldValueWitnessFromItsActualProducer(): void
     {
         $witnesses = \QmxFindingGate\SelfTestFindingShape::fieldValuesWitnesses();
@@ -283,7 +283,12 @@ final class FieldValuesCheckTest extends TestCase
 
     #[Test]
     #[DataProvider('duplicateRuns')]
-    public function itJudgesCompleteDuplicateJsonRecordsThroughThePublicGate(string $mode): void
+    public function itJudgesCompleteDuplicateJsonRecordsFromRecordedReports(string $mode): void
+    {
+        $this->compareDuplicateFields($mode, false);
+    }
+
+    private function compareDuplicateFields(string $mode, bool $public): void
     {
         SyntheticTree::remove($this->root);
         $tree = SyntheticTree::clean();
@@ -299,20 +304,24 @@ final class FieldValuesCheckTest extends TestCase
         $tree['declarations'][DeclaredFields::DERIVED] = $derived;
         $baseline = json_encode(['version' => 13, 'scope' => ['src'], 'entries' => [$base['subject'] => [['channel' => $base['channel'], 'magnitudes' => array_fill(0, $copies, 1)]]]], \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n";
         $tree['answers']['case:alpha|baseline-file'] = ['stdout' => $baseline, 'file' => $baseline];
-        $this->root = SyntheticTree::create($tree);
+        $this->root = $public ? SyntheticTree::create($tree) : SyntheticTree::fixture($tree);
         $publisher = 'src/Reporting/Formatter/Json/JsonFindingSection.php';
         $candidate = Fs::read($this->root . '/' . $publisher);
         $reference = preg_replace("~^ {12}'probe' => .*\\n~m", '', $candidate);
         self::assertIsString($reference);
         self::assertNotSame($candidate, $reference);
         Fs::write($this->root . '/' . $publisher, $reference);
-        foreach ([['git', 'add', '--', $publisher], ['git', '-c', 'user.name=fixture', '-c', 'user.email=fixture@qmx', 'commit', '--quiet', '-m', 'Reference publisher']] as $command) {
-            self::assertSame(0, \QmxFindingGate\Process::run($command, $this->root)['exit']);
+        if ($public) {
+            foreach ([['git', 'add', '--', $publisher], ['git', '-c', 'user.name=fixture', '-c', 'user.email=fixture@qmx', 'commit', '--quiet', '-m', 'Reference publisher']] as $command) {
+                self::assertSame(0, \QmxFindingGate\Process::run($command, $this->root)['exit']);
+            }
         }
         Fs::write($this->root . '/' . $publisher, $candidate);
         $options = Options::parse(['gate', '--candidate=' . $this->root, '--reference=HEAD', '--jobs=4'], $this->root);
-        $report = new GateReport();
-        (new Gate($options, $report))->compare();
+        $report = $public ? new GateReport() : RecordedComparison::reportAt($tree, $this->root);
+        if ($public) {
+            (new Gate($options, $report))->compare();
+        }
         self::assertSame($mode === 'exact' ? GateReport::EXIT_GREEN : GateReport::EXIT_RED, $report->exitCode(), $report->render());
         if ($mode !== 'exact') {
             self::assertContains(FailureClass::FIELD_VALUES_MISMATCH, $report->failureClasses(), $report->render());
@@ -325,7 +334,12 @@ final class FieldValuesCheckTest extends TestCase
             $answers['case:alpha|format:json']['stdout'] = json_encode($document, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n";
             Fs::write($this->root . '/replay/answers.json', json_encode($answers, \JSON_THROW_ON_ERROR));
             $derive = new GateReport();
-            self::assertSame([], (new Gate($options, $derive))->deriveDeclarations());
+            if ($public) {
+                $written = (new Gate($options, $derive))->deriveDeclarations();
+            } else {
+                [$derive, $written] = RecordedComparison::derive($tree, $this->root);
+            }
+            self::assertSame([], $written);
             self::assertSame(GateReport::EXIT_RED, $derive->exitCode());
             self::assertSame($before, Fs::read($this->root . '/finding-gate/' . DeclaredFields::DERIVED));
         }
@@ -341,7 +355,19 @@ final class FieldValuesCheckTest extends TestCase
 
     #[Test]
     #[DataProvider('viewRuns')]
-    public function itKeepsMainAndBaselineSourceFieldLicensesSeparateThroughThePublicGate(string $mode): void
+    public function itKeepsMainAndBaselineSourceFieldLicensesSeparateFromRecordedReports(string $mode): void
+    {
+        $this->compareViews($mode, false);
+    }
+
+    #[Test]
+    #[Group('finding-gate-e2e')]
+    public function itComparesAndDerivesTheFieldPublicationUnionThroughThePublicGate(): void
+    {
+        $this->compareViews('exact', true);
+    }
+
+    private function compareViews(string $mode, bool $public): void
     {
         SyntheticTree::remove($this->root);
         $tree = SyntheticTree::clean();
@@ -382,20 +408,24 @@ final class FieldValuesCheckTest extends TestCase
         }
         usort($rows, static fn(array $a, array $b): int => $a <=> $b);
         $tree['declarations'][DeclaredFields::DERIVED] = Tsv::render(DeclaredFields::DERIVED_COLUMNS, $rows);
-        $this->root = SyntheticTree::create($tree);
+        $this->root = $public ? SyntheticTree::create($tree) : SyntheticTree::fixture($tree);
         $publisher = 'src/Reporting/Formatter/Json/JsonFindingSection.php';
         $candidate = Fs::read($this->root . '/' . $publisher);
         $reference = preg_replace("~^ {12}'probe' => .*\\n~m", '', $candidate);
         self::assertIsString($reference);
         Fs::write($this->root . '/' . $publisher, $reference);
-        foreach ([['git', 'add', '--', $publisher], ['git', '-c', 'user.name=fixture', '-c', 'user.email=fixture@qmx', 'commit', '--quiet', '-m', 'Reference publisher']] as $command) {
-            self::assertSame(0, \QmxFindingGate\Process::run($command, $this->root)['exit']);
+        if ($public) {
+            foreach ([['git', 'add', '--', $publisher], ['git', '-c', 'user.name=fixture', '-c', 'user.email=fixture@qmx', 'commit', '--quiet', '-m', 'Reference publisher']] as $command) {
+                self::assertSame(0, \QmxFindingGate\Process::run($command, $this->root)['exit']);
+            }
         }
         Fs::write($this->root . '/' . $publisher, $candidate);
         $options = Options::parse(['gate', '--candidate=' . $this->root, '--reference=HEAD', '--jobs=4'], $this->root);
-        $report = new GateReport();
+        $report = $public ? new GateReport() : RecordedComparison::reportAt($tree, $this->root);
         $before = Fs::read($this->root . '/finding-gate/' . DeclaredFields::DERIVED);
-        (new Gate($options, $report))->compare();
+        if ($public) {
+            (new Gate($options, $report))->compare();
+        }
         self::assertSame($mode === 'exact' ? GateReport::EXIT_GREEN : GateReport::EXIT_RED, $report->exitCode(), $report->render());
         if (\in_array($mode, ['swap', 'derived-other-view'], true)) {
             self::assertContains(FailureClass::FIELD_VALUES_MISMATCH, $report->failureClasses(), $report->render());
@@ -403,14 +433,24 @@ final class FieldValuesCheckTest extends TestCase
         if ($mode === 'main-only') {
             self::assertContains(FailureClass::RECORD_PROJECTION_MISMATCH, $report->failureClasses(), $report->render());
             $derive = new GateReport();
-            self::assertSame([], (new Gate($options, $derive))->deriveDeclarations());
+            if ($public) {
+                $written = (new Gate($options, $derive))->deriveDeclarations();
+            } else {
+                [$derive, $written] = RecordedComparison::derive($tree, $this->root);
+            }
+            self::assertSame([], $written);
             self::assertSame(GateReport::EXIT_RED, $derive->exitCode(), $derive->render());
         }
         self::assertSame($before, Fs::read($this->root . '/finding-gate/' . DeclaredFields::DERIVED));
         if ($mode === 'exact') {
             Fs::write($this->root . '/finding-gate/' . DeclaredFields::DERIVED, Tsv::render(DeclaredFields::DERIVED_COLUMNS, []));
             $derive = new GateReport();
-            $written = (new Gate($options, $derive))->deriveDeclarations();
+            $written = [];
+            if ($public) {
+                $written = (new Gate($options, $derive))->deriveDeclarations();
+            } else {
+                [$derive, $written] = RecordedComparison::derive($tree, $this->root);
+            }
             self::assertSame(GateReport::EXIT_GREEN, $derive->exitCode(), $derive->render());
             self::assertSame(1, array_count_values($written)[DeclaredFields::DERIVED] ?? 0);
             self::assertSame($before, Fs::read($this->root . '/finding-gate/' . DeclaredFields::DERIVED));
@@ -419,6 +459,7 @@ final class FieldValuesCheckTest extends TestCase
     }
 
     #[Test]
+    #[Group('finding-gate-e2e')]
     public function itMeasuresApplicableFieldsBesideADeclaredRefusalAndKeepsAnUnexpectedRefusalRed(): void
     {
         SyntheticTree::remove($this->root);
@@ -504,6 +545,43 @@ final class FieldValuesCheckTest extends TestCase
     private function intents(array $addresses): void
     {
         Fs::write($this->root . '/finding-gate/' . DeclaredFields::INDEX, Tsv::render(DeclaredFields::COLUMNS, array_map(static fn(array $address): array => ['added', ...$address, 'probe', 'a measured new field'], $addresses)));
+    }
+
+    #[Test]
+    public function itMeasuresAnAddedDocumentMemberWithoutTurningItIntoAFindingField(): void
+    {
+        Fs::write($this->root . '/finding-gate/' . DeclaredFields::INDEX, Tsv::render(DeclaredFields::COLUMNS, [
+            ['added', 'json-document', 'format:json', 'configurationDiagnostics', 'Publish configuration diagnostics.'],
+            ['added', 'json-document', 'check:output:file', 'configurationDiagnostics', 'Publish configuration diagnostics in files.'],
+        ]));
+        $run = $this->context();
+        $candidate = [];
+        $reference = [];
+        foreach (['format:json', 'check:output:file'] as $view) {
+            foreach (['candidate', 'reference'] as $side) {
+                $run->declarations->fields->requireMeasurements('json-document', 'alpha', $view, $side);
+            }
+            $candidate['case:alpha|' . $view] = '{"violations":[],"configurationDiagnostics":[]}';
+            $reference['case:alpha|' . $view] = '{"violations":[]}';
+        }
+        $writer = FieldValuesCheck::create($run);
+        $writer->startDeriving();
+        $writer->checkRun($candidate, $reference);
+        self::assertSame([], $run->report->failureClasses(), $run->report->render());
+        self::assertSame([DeclaredFields::DERIVED], $writer->rewriteDerived());
+        $fields = DeclaredFields::load($this->root . '/finding-gate');
+        self::assertSame('[]', $fields->derived('json-document', 'format:json')[0]['value']);
+        self::assertSame('$', $fields->derived('json-document', 'format:json')[0]['record']);
+        self::assertSame([], $fields->changes('json', 'format:json'));
+        $changed = $this->context();
+        foreach (['format:json', 'check:output:file'] as $view) {
+            foreach (['candidate', 'reference'] as $side) {
+                $changed->declarations->fields->requireMeasurements('json-document', 'alpha', $view, $side);
+            }
+        }
+        $candidate['case:alpha|format:json'] = '{"violations":[],"configurationDiagnostics":["warning"]}';
+        FieldValuesCheck::create($changed)->checkRun($candidate, $reference);
+        self::assertContains(FailureClass::FIELD_VALUES_MISMATCH, $changed->report->failureClasses());
     }
 
     private function context(): RunContext

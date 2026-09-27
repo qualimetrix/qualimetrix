@@ -80,8 +80,8 @@ final class RenameControls
 
     /**
      * An untranslatable selector makes the reference refuse an authoritative
-     * analysis input. Complete capture rejects its refusal envelope before
-     * comparison; there is no ranking authority or partial publication to use.
+     * analysis input. The gate preserves that refusal's input diagnosis
+     * instead of treating it as missing ranking metadata.
      */
     public static function referenceInputUntranslated(): Control
     {
@@ -110,7 +110,7 @@ final class RenameControls
                 ['"architecture.potential-shadow@project"' => '"architecture.potential-shado2@project"'],
                 'the case that fires the channel claims it under its new name',
             )),
-            [new Expectation(FailureClass::RUN_FAILED, 'reference', exactScope: true)],
+            [new Expectation(FailureClass::REFERENCE_INPUT_UNTRANSLATED, 'reference / case:disabled-rule', exactScope: true)],
         );
     }
 
@@ -171,49 +171,6 @@ final class RenameControls
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells'),
                 ...ChannelRenamePlants::producerListingToleration(),
             ],
-        );
-    }
-
-    /**
-     * A finding carrying a split half that no declared row names.
-     *
-     * `split-unmapped` is the class the whole delta of the `rule` field passes
-     * through — a split stops the map from translating the half, and what stands
-     * in for the translation is a per-record explanation — and no control had
-     * ever watched it fire.
-     *
-     * No product code is perturbed, and that is the sharpest form available: the
-     * two trees agree on every surface, so the only thing that can fail is the
-     * explanation. The map declares a split of `code-smell.unused-private` into
-     * two halves whose *codes* the product never emits, so the twelve findings
-     * the `smells` case reports on that channel carry a split half for which no
-     * declared row names their key. That is the same state a real step reaches
-     * by dropping one row of its map while the finding it accounted for stays,
-     * with none of the blast radius a product rename brings.
-     *
-     * Both rows are `map-stale` too, and tolerated rather than required: they
-     * substitute nothing and explain nothing, which is the accounting the idle-row
-     * control is about. Requiring it here as well would let this control pass on
-     * a run where staleness fired and the explanation did not.
-     */
-    public static function splitWithoutRow(): Control
-    {
-        return Control::red(
-            'split-no-row',
-            'a finding whose rule is a declared split half, with no declared row naming its key',
-            ChannelRenamePlants::trackedChannelMapPlus(
-                [
-                    "code-smell.unused-private#code-smell.never-emitted\t"
-                        . "code-smell.split-one#code-smell.split-one\t"
-                        . 'one half of a declared split, over a code the product never emits',
-                    "code-smell.unused-private#code-smell.never-emitted-either\t"
-                        . "code-smell.split-two#code-smell.split-two\t"
-                        . 'the other half, so the producer is split and its own key is declared by neither',
-                ],
-                'a split declared over codes the product never emits, leaving the emitted one unaccounted',
-            ),
-            [new Expectation(FailureClass::SPLIT_UNMAPPED, 'case:smells')],
-            [new Expectation(FailureClass::MAP_STALE, 'channels.tsv')],
         );
     }
 

@@ -27,7 +27,7 @@ final class DeclaredFields
 
     public const array DERIVED_COLUMNS = ['report', 'view', 'field', 'case', 'record', 'value'];
 
-    public const array REPORTS = ['json', 'metrics', 'directives'];
+    public const array REPORTS = ['json', 'metrics', 'directives', 'json-document'];
 
     public const string INDEX = 'declared-fields.tsv';
 

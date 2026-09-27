@@ -103,7 +103,8 @@ final class ValueCheck implements RunCheck
     /** @return list<string> */
     public function rewriteDerived(): array
     {
-        if ($this->run->report->exitCode() !== 0) {
+        if (!$this->run->report->canDerive([FailureClass::VALUE_MISMATCH, FailureClass::VALUE_STALE,
+            FailureClass::RECORD_PROJECTION_MISMATCH, FailureClass::NONDETERMINISM_UNDECLARED, FailureClass::PATH_LEAK])) {
             return [];
         }
         return DerivedTable::write($this->run->options->candidateRoot . '/finding-gate', DeclaredValues::DERIVED, $this->rendered(), \count($this->rows));

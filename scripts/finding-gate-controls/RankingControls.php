@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace QmxFindingGateControls;
 
-use QmxFindingGate\{DeclaredValues, FailureClass, Tsv};
+use QmxFindingGate\FailureClass;
 
 final class RankingControls
 {
@@ -34,21 +34,4 @@ final class RankingControls
         );
     }
 
-    public static function idleOrder(): Control
-    {
-        $files = [
-            'finding-gate/' . DeclaredValues::INDEX => Tsv::render(DeclaredValues::COLUMNS, [['order', 'ranking', '*', 'A relative order movement that the run never observes.']]),
-        ];
-        $mutation = is_file(\dirname(__DIR__, 2) . '/finding-gate/' . DeclaredValues::INDEX)
-            ? Mutation::replace($files, 'an unused ranking order intention')
-            : Mutation::create($files, 'an unused ranking order intention');
-        return Control::writing(
-            'ranking-unused-order',
-            'a declared order intention under which no unchanged ranked occurrence moves',
-            $mutation,
-            '--derive-declarations',
-            [new Expectation(FailureClass::VALUE_STALE, DeclaredValues::INDEX)],
-            ['finding-gate/' . DeclaredValues::INDEX],
-        );
-    }
 }

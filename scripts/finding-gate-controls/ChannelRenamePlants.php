@@ -84,13 +84,6 @@ final class ChannelRenamePlants
      * `bin/qmx rules` captured before and after its one-literal edit,
      * byte-identical.
      *
-     * {@see DeclaredDeltaControls::deltaOverreach()} shares {@see lcomChannelMutation()} but does NOT
-     * use this helper, even though it qualifies by mutation: its own
-     * {@see DeclaredDeltaControls::declare()} call replaces the whole declared-delta index in the
-     * scratch tree, so that control's `tree|rules` toleration can never depend
-     * on the repository's tracked declaration — see the docblock on
-     * {@see DeclaredDeltaControls::deltaOverreach()} for why it hardcodes the expectation instead.
-     *
      * Whether the reach is a `surface-mismatch` is not a property of the
      * mutation: it is a property of the step under test. A step that declares a
      * delta for the listing has that surface compared against its exact diff and
@@ -110,23 +103,9 @@ final class ChannelRenamePlants
      * apply, and because this pin names one whole surface rather than a prefix
      * of several.
      *
-     * One gap is named rather than closed: the answer comes from the
-     * repository's tracked declaration, so it does not know about a control
-     * whose OWN mutation writes to `declared-delta.tsv` — the index it reads
-     * and the index the scratch tree ends up with would then be two different
-     * files. Neither control built on {@see unusedPrivateChannelMutation()}
-     * touches `declared-delta.tsv` at all, so both stay eligible. A control
-     * that does touch it — {@see DeclaredDeltaControls::deltaOverreach()} is the one case today — must
-     * not call this helper at all, for either surface it could name: if it
-     * plants a declaration for `tree|rules` itself, the toleration would match
-     * nothing and fail the control as idle ({@see Outcome::idleTolerations()});
-     * if it plants one for a DIFFERENT surface, {@see DeclaredDeltaControls::declare()} still replaces
-     * the whole index, so `tree|rules` is unconditionally undeclared in the
-     * scratch tree regardless of what the repository tracks, and reading the
-     * repository would silently drift from that truth the day the repository
-     * starts tracking a `tree|rules` delta of its own. Such a control derives
-     * its expectation from what it itself plants, not from what the repository
-     * tracks — a hardcoded {@see Expectation}, not this helper.
+     * A control that replaces the declared-delta index must derive its listing
+     * expectation from the declaration it plants, rather than call this helper
+     * against the repository's different index.
      *
      * @return list<Expectation>
      */

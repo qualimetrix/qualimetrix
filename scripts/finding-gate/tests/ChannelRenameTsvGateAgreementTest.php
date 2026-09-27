@@ -6,6 +6,7 @@ namespace QmxFindingGate\Tests;
 
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\FailureClass;
@@ -453,7 +454,19 @@ PHP;
 
     #[Test]
     #[DataProvider('provideStrategyRuns')]
-    public function itJudgesStrategyRenamesThroughThePublicGateAndNeverDerivesAnUnannouncedChange(string $mode): void
+    public function itJudgesStrategyRenamesFromRecordedReportsAndNeverDerivesAnUnannouncedChange(string $mode): void
+    {
+        $this->compareStrategies($mode, false);
+    }
+
+    #[Test]
+    #[Group('finding-gate-e2e')]
+    public function itComparesAStrategyDeclarationThroughThePublicGate(): void
+    {
+        $this->compareStrategies('exact', true);
+    }
+
+    private function compareStrategies(string $mode, bool $public): void
     {
         $specification = SyntheticTree::clean();
         $publication = static fn(string $key): string => json_encode(['symbols' => [['type' => 'method', 'name' => 'Replay\\Alpha::run', 'file' => 'src/Alpha.php', 'line' => 1, 'metrics' => [$key => 3]]]], \JSON_THROW_ON_ERROR);
@@ -465,7 +478,7 @@ PHP;
         if ($mode === 'multiple') {
             $specification['maps']['metric-keys'][] = "strategy:avg\tstrategy:average\ta second target is undecidable";
         }
-        $root = SyntheticTree::create($specification);
+        $root = $public ? SyntheticTree::create($specification) : SyntheticTree::fixture($specification);
         $strategy = 'src/Analysis/Evidence/Measurement/Contract/AggregationStrategy.php';
         $names = 'src/Analysis/Evidence/Measurement/Contract/MetricName.php';
         try {
@@ -473,8 +486,16 @@ PHP;
             if ($mode === 'collision') {
                 Fs::write($root . '/' . $names, "<?php\nfinal class MetricName {\n    public const string CCN = 'ccn';\n    public const string OTHER = 'ccn.mean';\n}\n");
             }
-            foreach ([['git', 'add', '--', $strategy, $names], ['git', '-c', 'user.name=replay', '-c', 'user.email=replay@qmx', 'commit', '--quiet', '-m', 'Reference vocabulary']] as $command) {
-                self::assertSame(0, Process::run($command, $root)['exit']);
+            $referenceStrategy = Fs::read($root . '/' . $strategy);
+            $referenceNames = Fs::read($root . '/' . $names);
+            $referencePrepare = static function (string $reference) use ($strategy, $names, $referenceStrategy, $referenceNames): void {
+                Fs::write($reference . '/' . $strategy, $referenceStrategy);
+                Fs::write($reference . '/' . $names, $referenceNames);
+            };
+            if ($public) {
+                foreach ([['git', 'add', '--', $strategy, $names], ['git', '-c', 'user.name=replay', '-c', 'user.email=replay@qmx', 'commit', '--quiet', '-m', 'Reference vocabulary']] as $command) {
+                    self::assertSame(0, Process::run($command, $root)['exit']);
+                }
             }
             if ($mode !== 'identity') {
                 Fs::write($root . '/' . $strategy, "<?php\nenum AggregationStrategy: string {\n    case Mean = 'mean';\n" . ($mode === 'neighbour' ? "    case Sum = 'total';\n" : "    case Sum = 'sum';\n") . "}\n");
@@ -488,7 +509,11 @@ PHP;
             $refused = false;
             $refusalReason = '';
             try {
-                (new Gate($options, $report))->compare();
+                if ($public) {
+                    (new Gate($options, $report))->compare();
+                } else {
+                    $report = RecordedComparison::reportAt($specification, $root, $referencePrepare);
+                }
             } catch (GateError $error) {
                 $refused = true;
                 $refusalReason = $error->getMessage();
@@ -503,7 +528,12 @@ PHP;
                 }
                 $derive = new GateReport();
                 try {
-                    self::assertSame([], (new Gate($options, $derive))->deriveDeclarations());
+                    if ($public) {
+                        $paths = (new Gate($options, $derive))->deriveDeclarations();
+                    } else {
+                        [$derive, $paths] = RecordedComparison::derive($specification, $root, $referencePrepare);
+                    }
+                    self::assertSame([], $paths);
                 } catch (GateError) {
                     self::assertTrue($refused);
                 }
@@ -524,7 +554,19 @@ PHP;
 
     #[Test]
     #[DataProvider('provideEnumerationRuns')]
-    public function itJudgesScopedEnumerationIntentsThroughThePublicGate(string $mode): void
+    public function itJudgesScopedEnumerationIntentsFromRecordedReports(string $mode): void
+    {
+        $this->compareEnumeration($mode, false);
+    }
+
+    #[Test]
+    #[Group('finding-gate-e2e')]
+    public function itComparesAnEnumerationDeclarationThroughThePublicGate(): void
+    {
+        $this->compareEnumeration('exact', true);
+    }
+
+    private function compareEnumeration(string $mode, bool $public): void
     {
         $specification = SyntheticTree::clean();
         $old = ['suppressed' => [], 'byMechanism' => [], 'neverMatched' => [], 'mechanisms' => ['a', 'b'], 'neighbour' => ['a', 'b']];
@@ -542,16 +584,18 @@ PHP;
             $descriptor = static fn(array $members): string => json_encode(['surface' => 'format:suppressed', 'path' => [$path], 'kind' => 'values', 'members' => $members], \JSON_THROW_ON_ERROR);
             $specification['maps']['report-values'] = [$descriptor(['a', 'b']) . "\t" . $descriptor(['b', 'a']) . "\tan exact enumeration permutation"];
         }
-        $root = SyntheticTree::create($specification);
+        $root = $public ? SyntheticTree::create($specification) : SyntheticTree::fixture($specification);
         try {
             $before = self::declarationBytes($root);
             $options = Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD', '--jobs=4'], $root);
-            $report = new GateReport();
-            (new Gate($options, $report))->compare();
+            $report = $public ? new GateReport() : RecordedComparison::report($specification);
+            if ($public) {
+                (new Gate($options, $report))->compare();
+            }
             self::assertSame($mode === 'exact' ? GateReport::EXIT_GREEN : GateReport::EXIT_RED, $report->exitCode(), $report->render());
             if ($mode !== 'exact') {
                 self::assertContains($mode === 'stale' ? FailureClass::MAP_STALE : FailureClass::SURFACE_MISMATCH, $report->failureClasses(), $report->render());
-                self::assertSame([], (new Gate($options, new GateReport()))->deriveDeclarations());
+                self::assertSame([], $public ? (new Gate($options, new GateReport()))->deriveDeclarations() : RecordedComparison::derive($specification, $root)[1]);
             }
             self::assertSame($before, self::declarationBytes($root));
         } finally {
@@ -569,7 +613,19 @@ PHP;
 
     #[Test]
     #[DataProvider('provideProducerRuns')]
-    public function itCreditsOnlyMatchedProducerMovementsThroughThePublicGate(string $mode): void
+    public function itCreditsOnlyMatchedProducerMovementsFromRecordedReports(string $mode): void
+    {
+        $this->compareProducer($mode, false);
+    }
+
+    #[Test]
+    #[Group('finding-gate-e2e')]
+    public function itComparesATruncatedProducerMapThroughThePublicGate(): void
+    {
+        $this->compareProducer('exact-truncated', true);
+    }
+
+    private function compareProducer(string $mode, bool $public): void
     {
         $specification = SyntheticTree::clean();
         $channels = ['health.complexity', 'health.cohesion'];
@@ -606,19 +662,21 @@ PHP;
             $output['violationsMeta']['byRule'] = ['health.complexity' => 2];
             $specification['candidateAnswers']['case:alpha|check:output'] = ['file' => json_encode($output, \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES) . "\n"];
         }
-        $root = SyntheticTree::create($specification);
+        $root = $public ? SyntheticTree::create($specification) : SyntheticTree::fixture($specification);
         try {
             $before = self::declarationBytes($root);
             $options = Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD', '--jobs=4'], $root);
-            $report = new GateReport();
-            (new Gate($options, $report))->compare();
+            $report = $public ? new GateReport() : RecordedComparison::report($specification);
+            if ($public) {
+                (new Gate($options, $report))->compare();
+            }
             self::assertSame(\in_array($mode, ['exact', 'exact-truncated'], true) ? GateReport::EXIT_GREEN : GateReport::EXIT_RED, $report->exitCode(), $report->render());
             if (!\in_array($mode, ['exact', 'exact-truncated'], true)) {
                 self::assertContains($mode === 'wrong-counts' ? FailureClass::RECORD_PROJECTION_MISMATCH : FailureClass::MAP_STALE, $report->failureClasses(), $report->render());
                 if (\in_array($mode, ['no-matches-truncated', 'unmatched', 'unmatched-truncated', 'foreign-channel', 'foreign-channel-truncated'], true)) {
                     self::assertContains(FailureClass::SPLIT_UNMAPPED, $report->failureClasses(), $report->render());
                 }
-                self::assertSame([], (new Gate($options, new GateReport()))->deriveDeclarations());
+                self::assertSame([], $public ? (new Gate($options, new GateReport()))->deriveDeclarations() : RecordedComparison::derive($specification, $root)[1]);
             }
             self::assertSame($before, self::declarationBytes($root));
         } finally {
@@ -635,6 +693,7 @@ PHP;
     }
 
     #[Test]
+    #[Group('finding-gate-e2e')]
     #[DataProvider('provideInputRuns')]
     public function itHandsThePublicGateOnlyNamedInputsAndNeverDerivesAnUnannouncedNeighbour(string $mode): void
     {

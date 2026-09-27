@@ -32,7 +32,7 @@ final class CorpusCaseRunTest extends TestCase
                 $definition['outcome'] = $outcome;
             }
             $tree['declarations']['cases/alpha/case.json'] = json_encode($definition, \JSON_THROW_ON_ERROR);
-            $root = SyntheticTree::create($tree);
+            $root = SyntheticTree::fixture($tree);
             try {
                 $cases = CorpusCaseRun::cases($root);
                 $case = $cases[$root . '/finding-gate/cases/alpha'];
@@ -59,7 +59,7 @@ final class CorpusCaseRunTest extends TestCase
             ['alpha', DeclaredOutcomes::ANALYSIS_TO_REFUSAL, 'declared-outcomes/alpha.json', 'A declared input refusal.'],
         ]);
         $tree['candidateDeclarations']['declared-outcomes/alpha.json'] = 'Measured snapshot.';
-        $root = SyntheticTree::create($tree);
+        $root = SyntheticTree::fixture($tree);
         try {
             $case = CorpusCaseRun::cases($root)[$root . '/finding-gate/cases/alpha'];
             self::assertFalse(CorpusCaseRun::isAnalysis($case));
@@ -77,7 +77,7 @@ final class CorpusCaseRunTest extends TestCase
             $tree = SyntheticTree::clean();
             $definition = ['id' => 'alpha', 'description' => 'A typed observation.', 'paths' => ['src'], 'config' => 'qmx.yaml', 'channels' => ['replay.alpha@callable']];
             $tree['declarations']['cases/alpha/case.json'] = json_encode(array_replace($definition, $changes), \JSON_THROW_ON_ERROR);
-            $root = SyntheticTree::create($tree);
+            $root = SyntheticTree::fixture($tree);
             try {
                 try {
                     CorpusCaseRun::cases($root);

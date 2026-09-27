@@ -24,7 +24,7 @@ final class CapturePlanTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->root = SyntheticTree::create(SyntheticTree::clean());
+        $this->root = SyntheticTree::fixture(SyntheticTree::clean());
         $path = $this->root . '/finding-gate/cases/alpha/case.json';
         $case = json_decode(Fs::read($path), true, 512, \JSON_THROW_ON_ERROR);
         $case['layerAssignmentSubjects'] = ['App\\A', 'App\\B'];

@@ -116,23 +116,13 @@ final class ProseRecordsTest extends TestCase
             if ($changed) {
                 $tree['candidateAnswers'][$key] = ['stdout' => $finding . str_replace('narrowed', 'unknown', $notice)];
             }
-            $root = \QmxFindingGate\SyntheticTree::create($tree);
-            try {
-                $report = new \QmxFindingGate\GateReport();
-                ob_start();
-                try {
-                    \QmxFindingGate\GateModes::run(\QmxFindingGate\Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root), $report);
-                } finally {
-                    ob_end_clean();
-                }
-                self::assertSame($changed ? \QmxFindingGate\GateReport::VERDICT_RED : \QmxFindingGate\GateReport::VERDICT_GREEN, $report->verdict());
-                self::assertSame($changed ? [\QmxFindingGate\FailureClass::SURFACE_MISMATCH] : [], $report->failureClasses());
-                if ($changed) {
-                    self::assertSame($key, $report->raised()[0]['scope']);
-                }
-            } finally {
-                \QmxFindingGate\SyntheticTree::remove($root);
+            $report = RecordedComparison::report($tree);
+            self::assertSame($changed ? \QmxFindingGate\GateReport::VERDICT_RED : \QmxFindingGate\GateReport::VERDICT_GREEN, $report->verdict());
+            self::assertSame($changed ? [\QmxFindingGate\FailureClass::SURFACE_MISMATCH] : [], $report->failureClasses());
+            if ($changed) {
+                self::assertSame($key, $report->raised()[0]['scope']);
             }
+
         }
     }
 

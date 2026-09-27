@@ -255,12 +255,28 @@ final class ReportRecords
      *
      * @param array<string,string|null> $edits JSON encoded paths => replacement JSON, or null for deletion
      */
-    public static function edit(string $text, array $edits): string
+    public static function edit(string $text, array $edits, bool $removeWholeLines = false): string
     {
         self::decode($text);
         $at = 0;
         $spans = [];
         self::scan($text, $at, [], $edits, $spans);
+        if ($removeWholeLines) {
+            foreach ($spans as &$span) {
+                if ($span[2] !== '') {
+                    continue;
+                }
+                $before = strrpos(substr($text, 0, $span[0]), "\n");
+                $after = strpos($text, "\n", $span[1]);
+                if ($before !== false && $after !== false
+                    && trim(substr($text, $before + 1, $span[0] - $before - 1)) === ''
+                    && trim(substr($text, $span[1], $after - $span[1])) === '') {
+                    $span[0] = $before + 1;
+                    $span[1] = $after + 1;
+                }
+            }
+            unset($span);
+        }
         usort($spans, static fn(array $a, array $b): int => $a[0] <=> $b[0]);
         /** @var list<array{0:int,1:int,2:string}> $merged */
         $merged = [];

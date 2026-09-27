@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace QmxFindingGate\Tests;
 
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\Fs;
@@ -19,6 +20,7 @@ use QmxFindingGate\Process;
  * planted answer lives only in the temporary copy; the tracked gate carries no
  * switch that could plant one.
  */
+#[Group('finding-gate-e2e')]
 final class GateModesTest extends TestCase
 {
     private ?string $copy = null;
@@ -83,7 +85,8 @@ final class GateModesTest extends TestCase
         }
 
         Fs::write($this->copy . '/scripts/finding-gate/SelfTest.php', \sprintf(
-            "<?php\n\nnamespace QmxFindingGate;\n\nfinal class SelfTest\n{\n    public function __construct(string \$root) {}\n\n"
+            "<?php\n\nnamespace QmxFindingGate;\n\n#[Group('finding-gate-e2e')]
+final class SelfTest\n{\n    public function __construct(string \$root) {}\n\n"
             . "    /** @return list<string> */\n    public function run(): array\n    {\n        return %s;\n    }\n}\n",
             var_export($failures, true),
         ));

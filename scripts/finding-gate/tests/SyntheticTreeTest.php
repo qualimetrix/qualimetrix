@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace QmxFindingGate\Tests;
 
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\Fs;
@@ -121,6 +122,7 @@ final class SyntheticTreeTest extends TestCase
     }
 
     #[Test]
+    #[Group('finding-gate-e2e')]
     public function itKeepsGeneratedSummaryRowsWhenReusingAnAnswerAsAnOverride(): void
     {
         $tree = SyntheticTree::clean();

@@ -17,7 +17,7 @@ final class GateModes
      * declaration the next real run will be judged against. Two distinct non-zero
      * codes so the two outcomes are told apart: {@see self::WROTE} for "wrote a
      * declaration, now read it", {@see self::MEASUREMENT_FAILED} for "the run that was
-     * supposed to measure it failed, and nothing was written".
+     * supposed to measure it left an unexpressible remainder".
      */
     public const int WROTE = 4;
 
@@ -201,24 +201,20 @@ final class GateModes
         $written = $gate->deriveDeclarations();
         echo $report->render();
 
-        // A derive run's verdict is what decides whether anything was written, so
-        // it has to be as readable by machine as a comparison's is: the control that
-        // proves a failed derivation leaves the tree alone reads it from here.
         if ($options->reportPath !== null) {
             $report->writeJson($options->reportPath);
         }
 
-        // A declaration derived from a broken run describes the breakage: if it is
-        // deterministic — and a product bug on the reference side is — the next real
-        // run reproduces it and goes green against it.
+        if ($written !== []) {
+            echo 'Measured the declarations into: ' . implode(', ', $written) . "\n";
+        }
         if ($report->exitCode() !== 0) {
-            echo "The run this declaration would be derived from failed, so nothing was written: a declaration"
-                . " measured from a broken run would describe the breakage and let the next run agree with it.\n";
+            echo "Unexpressed remainder: " . implode(', ', $report->failureClasses()) . ".\n";
+            echo $written === [] ? "No complete expressible measurement was written.\n" : "Review the written declarations; the remainder still refuses this derivation.\n";
 
             return self::MEASUREMENT_FAILED;
         }
 
-        echo 'Measured the declarations into: ' . implode(', ', $written) . "\n";
         echo "Read the measured tables against the explained intentions before checking them.\n";
         echo "This was a write, not a check: re-run without --derive-declarations to be judged against it.\n";
 

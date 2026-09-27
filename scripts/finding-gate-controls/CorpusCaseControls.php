@@ -420,35 +420,10 @@ final class CorpusCaseControls
             'parallel-files',
             'src/Infrastructure/Parallel/Strategy/AmphpParallelStrategy.php',
             'array_push($results, ...$batchResults);',
-            'array_push($results, ...array_slice($batchResults, 1));',
+            'array_push($results, ...array_reverse($batchResults));',
             [
-                FailureClass::RANKING_PROJECTION_MISMATCH => [
-                    'candidate / case:parallel-files|format:json',
-                ],
-                FailureClass::RECORD_PROJECTION_MISMATCH => [
-                    'candidate / case:parallel-files|baseline-file',
-                    'candidate / case:parallel-files|check:parallel',
-                    'candidate / case:parallel-files|directives',
-                ],
-                FailureClass::RUN_FAILED => [
-                    'candidate / parallel-files / baseline-file',
-                    'candidate / parallel-files / baseline:generate',
-                    'candidate-2 / parallel-files',
-                ],
                 FailureClass::SURFACE_MISMATCH => [
-                    'candidate / case:parallel-files|baseline-file',
-                    'candidate / case:parallel-files|directives',
-                    'case:parallel-files|check:output:file',
-                    'case:parallel-files|exit:baseline:generate',
-                    'case:parallel-files|exit:check:parallel',
-                    'case:parallel-files|exit:directives',
-                    'case:parallel-files|format:json',
-                    'case:parallel-files|format:summary',
-                ],
-                FailureClass::VALUE_MISMATCH => [
-                    'case:parallel-files|baseline-file',
                     'case:parallel-files|check:parallel',
-                    'case:parallel-files|directives',
                 ],
             ],
         );

@@ -195,7 +195,7 @@ final class DeclaredValuesTest extends TestCase
 
     private function context(): RunContext
     {
-        $tree = SyntheticTree::create(SyntheticTree::clean());
+        $tree = SyntheticTree::fixture(SyntheticTree::clean());
         $this->trees[] = $tree;
         foreach ([DeclaredValues::INDEX, DeclaredValues::DERIVED] as $file) {
             if (is_file($this->root . '/' . $file)) {

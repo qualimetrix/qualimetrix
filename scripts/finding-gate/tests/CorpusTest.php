@@ -25,7 +25,7 @@ final class CorpusTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->root = SyntheticTree::create(SyntheticTree::clean());
+        $this->root = SyntheticTree::fixture(SyntheticTree::clean());
     }
 
     protected function tearDown(): void

@@ -4,17 +4,46 @@ declare(strict_types=1);
 
 namespace QmxFindingGate\Tests;
 
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use QmxFindingGate\FailureClass;
 use QmxFindingGate\Fs;
+use QmxFindingGate\Gate;
+use QmxFindingGate\GateReport;
+use QmxFindingGate\Options;
 use QmxFindingGate\Process;
 use QmxFindingGate\SyntheticTree;
 
 /**
  * What the gate refuses before it runs anything, on a synthetic tree.
  */
+#[Group('finding-gate-e2e')]
 final class GateTest extends TestCase
 {
+    #[Test]
+    public function itReportsTheReferenceInputRefusalBeforeReadingAnalysisRecords(): void
+    {
+        $fixture = SyntheticTree::fixture(SyntheticTree::clean());
+        try {
+            $answers = json_decode(Fs::read($fixture . '/replay/answers.json'), true, 512, \JSON_THROW_ON_ERROR);
+            $tree = SyntheticTree::clean();
+            $tree['candidateAnswers']['case:alpha|format:json'] = $answers['case:alpha|format:json'];
+            $tree['answers']['case:alpha|format:json'] = ['stdout' => '{"error":"Unknown rule","exit_code":3,"position":null}', 'stderr' => 'Unknown rule', 'exit' => 3];
+            $root = SyntheticTree::create($tree);
+            try {
+                $report = new GateReport();
+                (new Gate(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root), $report))->compare();
+                self::assertSame([FailureClass::REFERENCE_INPUT_UNTRANSLATED], $report->failureClasses(), $report->render());
+                self::assertSame('reference / case:alpha', $report->raised()[0]['scope']);
+            } finally {
+                SyntheticTree::remove($root);
+            }
+        } finally {
+            SyntheticTree::remove($fixture);
+        }
+    }
+
     public static function setUpBeforeClass(): void
     {
         require_once \dirname(__DIR__) . '/classes.php';

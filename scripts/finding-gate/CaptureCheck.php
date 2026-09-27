@@ -172,6 +172,10 @@ final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
     public function rewriteDerived(): array
     {
         $written = [];
+        if (!$this->run->report->canDerive([FailureClass::SURFACE_WITHDRAWAL_MISMATCH, FailureClass::SURFACE_DECLARATION_STALE,
+            FailureClass::NONDETERMINISM_UNDECLARED, FailureClass::PATH_LEAK])) {
+            return [];
+        }
         foreach (DeclarationTable::rows($this->run->options->candidateRoot . '/finding-gate', DeclaredSurfaces::INDEX, DeclaredSurfaces::COLUMNS) as $row) {
             $envelope = $this->measured[$row['surface']] ?? null;
             if ($row['change'] !== DeclaredSurfaces::WITHDRAWN || $envelope === null) {

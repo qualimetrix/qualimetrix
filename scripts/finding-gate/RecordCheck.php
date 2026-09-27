@@ -615,7 +615,8 @@ final class RecordCheck implements CaseCheck, RunCheck
     /** @return list<string> */
     public function rewriteDerived(): array
     {
-        if ($this->run->report->exitCode() !== 0) {
+        if (!$this->run->report->canDerive([FailureClass::RECORD_PROJECTION_MISMATCH, FailureClass::RECORD_AMBIGUOUS,
+            FailureClass::RECORD_UNDECLARED, FailureClass::RECORD_STALE, FailureClass::NONDETERMINISM_UNDECLARED, FailureClass::PATH_LEAK])) {
             return [];
         }
         $rows = $this->derived;

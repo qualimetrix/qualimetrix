@@ -6,6 +6,7 @@ namespace QmxFindingGate\Tests;
 
 use ArrayObject;
 use FilesystemIterator;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\CaptureCheck;
@@ -84,6 +85,7 @@ final class CaptureTest extends TestCase
     }
 
     #[Test]
+    #[Group('finding-gate-e2e')]
     public function itChecksCaptureThroughPublicCompareAndDerive(): void
     {
         $failures = new ArrayObject();
@@ -110,6 +112,7 @@ final class CaptureTest extends TestCase
     }
 
     #[Test]
+    #[Group('finding-gate-e2e')]
     public function itRefusesPrivateEvidenceThatChangesOnlyOnTheSecondCandidatePass(): void
     {
         $root = SyntheticTree::create(SyntheticTree::clean());
@@ -144,6 +147,7 @@ final class CaptureTest extends TestCase
     }
 
     #[Test]
+    #[Group('finding-gate-e2e')]
     public function itDerivesNormalizationOnlyAfterValidatingFullPhysicalAndRefusalCaptures(): void
     {
         foreach (['healthy', 'physical-count', 'refusal-exit'] as $fault) {
@@ -475,6 +479,7 @@ final class CaptureTest extends TestCase
     }
 
     #[Test]
+    #[Group('finding-gate-e2e')]
     public function itRefusesAMissingReplayKeyThroughThePublicGateWithoutWriting(): void
     {
         $root = SyntheticTree::create(SyntheticTree::clean());
@@ -793,8 +798,8 @@ final class CaptureTest extends TestCase
             self::assertStringStartsWith($temporary . '/inputs-candidate-', $mainDirectory);
             self::assertNotSame($case->directory, $mainDirectory);
             self::assertFileExists($mainDirectory . '/qmx.yaml');
-            self::assertSame(['directives', 'src', '--no-ansi', '-c', $mainDirectory . '/qmx.yaml', '--format=json'], $read('directives')['argv']);
-            self::assertSame(['debug:layer-assignment', 'Replay\\Alpha', '-c', $mainDirectory . '/qmx.yaml', '--format=json', '--no-ansi'], $read('debug:layer-assignment:Replay\\Alpha')['argv']);
+            self::assertSame(['directives', 'src', '--no-ansi', '-c', 'qmx.yaml', '--format=json'], $read('directives')['argv']);
+            self::assertSame(['debug:layer-assignment', 'Replay\\Alpha', '-c', 'qmx.yaml', '--format=json', '--no-ansi'], $read('debug:layer-assignment:Replay\\Alpha')['argv']);
             self::assertContains('--workers=2', $read('check:parallel')['argv']);
             self::assertNotContains('--workers=0', $read('check:parallel')['argv']);
             self::assertContains('--no-cache', $read('check:parallel')['argv']);
@@ -804,7 +809,7 @@ final class CaptureTest extends TestCase
             self::assertSame($baseline['cwd'], $source['cwd']);
             self::assertStringStartsWith($temporary . '/inputs-candidate-', $source['cwd']);
             self::assertNotSame($mainDirectory, $source['cwd']);
-            self::assertSame(['check', 'src', '--workers=0', '--no-cache', '--no-ansi', '--fail-on=error', '-c', $source['cwd'] . '/qmx.yaml', '-f', 'json'], $source['argv']);
+            self::assertSame(['check', 'src', '--workers=0', '--no-cache', '--no-ansi', '--fail-on=error', '-c', 'qmx.yaml', '-f', 'json'], $source['argv']);
             self::assertNotSame($case->directory, $baseline['cwd']);
             self::assertFileExists($baseline['cwd'] . '/src/Alpha.php');
             self::assertStringStartsWith($temporary . '/capture-candidate-cache-', $baseline['cache']);
