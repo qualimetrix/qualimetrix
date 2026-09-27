@@ -153,7 +153,6 @@ Available tests:
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itDoesNotHoldAnIncompleteAnalysisToABaselineFileItCannotWrite
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itHoldsAnAnalysisToItsBaselineFile
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itJudgesNormalizationMeasurementsByTheirCanonicalOutcomeSide
- - QmxFindingGate\Tests\CaseOutcomeCheckTest::itLoadsTheOutcomeControlInAFreshControlsProcess
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRefusesInvalidCorpusMetadataBeforeEveryCorpusReadingModeWrites
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresACoherentRefusalEnvelope"a different exit"
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresACoherentRefusalEnvelope"a malformed position"
