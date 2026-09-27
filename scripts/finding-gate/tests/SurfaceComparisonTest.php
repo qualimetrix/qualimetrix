@@ -87,6 +87,36 @@ final class SurfaceComparisonTest extends TestCase
     }
 
     #[Test]
+    public function itComparesTheWholeHtmlRefusalWithoutRequiringAnAnalysisPayload(): void
+    {
+        Fs::write($this->root . '/finding-gate/cases/alpha/case.json', json_encode([
+            'id' => 'alpha', 'description' => 'A configuration refusal before report generation.',
+            'paths' => ['src'], 'config' => 'qmx.yaml', 'coverage' => 'auxiliary', 'channels' => [],
+            'outcome' => ['kind' => \QmxFindingGate\CaseOutcome::REFUSAL, 'exit' => 3],
+        ], \JSON_THROW_ON_ERROR));
+        foreach ([['', '', []], ['Refused input', 'Refused input', []], ['Changed cause', 'Refused input', [FailureClass::SURFACE_MISMATCH]], [null, '', [FailureClass::SURFACE_MISMATCH]]] as [$candidate, $reference, $failures]) {
+            $report = new GateReport();
+            $this->comparison($report, [])->compareSurfaces(
+                $candidate === null ? [] : ['case:alpha|format:html' => $candidate],
+                ['case:alpha|format:html' => $reference],
+            );
+            self::assertSame($failures, $report->failureClasses());
+        }
+        $definition = json_decode(Fs::read($this->root . '/finding-gate/cases/alpha/case.json'), true, 512, \JSON_THROW_ON_ERROR);
+        unset($definition['outcome']);
+        $definition['channels'] = ['replay.alpha@callable'];
+        foreach ([null, ['kind' => \QmxFindingGate\CaseOutcome::INCOMPLETE, 'exit' => 4]] as $outcome) {
+            if ($outcome !== null) {
+                $definition['outcome'] = $outcome;
+            }
+            Fs::write($this->root . '/finding-gate/cases/alpha/case.json', json_encode($definition, \JSON_THROW_ON_ERROR));
+            $report = new GateReport();
+            $this->comparison($report, [])->compareSurfaces(['case:alpha|format:html' => ''], ['case:alpha|format:html' => '']);
+            self::assertContains(FailureClass::REPORT_PAYLOAD_UNREADABLE, $report->failureClasses());
+        }
+    }
+
+    #[Test]
     public function itRefusesAStageBeforeAStepThatDoesNotExist(): void
     {
         $this->expectException(GateError::class);

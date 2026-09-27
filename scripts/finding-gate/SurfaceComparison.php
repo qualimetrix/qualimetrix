@@ -148,6 +148,13 @@ final class SurfaceComparison
         if ($pair->surface !== 'format:html') {
             return;
         }
+        foreach ($this->corpus->cases as $case) {
+            if ($pair->key === 'case:' . $case->id . '|format:html'
+                && CaseOutcome::of($case, 'candidate') === CaseOutcome::REFUSAL
+                && CaseOutcome::of($case, 'reference') === CaseOutcome::REFUSAL) {
+                return;
+            }
+        }
 
         try {
             $pair->candidate = ReportPayload::of((string) $pair->candidate, $pair->key, 'candidate');
