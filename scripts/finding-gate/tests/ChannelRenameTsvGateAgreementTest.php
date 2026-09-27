@@ -231,7 +231,7 @@ final class ChannelRenameTsvGateAgreementTest extends TestCase
         ]);
         self::assertSame('App\\Old', $maps->reverseSymbol('App\\New'));
         self::assertSame('App\\NewNeighbour', $maps->reverseSymbol('App\\NewNeighbour'));
-        self::assertSame("old\tnew\treason\n# a.new stays\na.old\tb.old\ta.new stays\n", $maps->reverseChannelMap("old\tnew\treason\n# a.new stays\na.new\tb.old\ta.new stays\n"));
+        self::assertSame("old\tnew\treason\n# a.new stays\na.old\tb.old\ta.new\n", $maps->reverseChannelMap("old\tnew\treason\n# a.new stays\na.new\tb.old\ta.new\n"));
         self::assertSame([], $maps->staleRows());
         $collapse = RenameMaps::fromPairs([
             ['old' => 'a.old', 'new' => 'same.new', 'source' => RenameMaps::CHANNELS],
