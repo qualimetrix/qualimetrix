@@ -469,6 +469,8 @@ Available tests:
  - QmxFindingGate\Tests\RankingOrderTest::itKeepsComplementOccurrencesWhoseOrdinalsCoincide
  - QmxFindingGate\Tests\RankingOrderTest::itPreservesDuplicateOccurrencesAndSelectsTheEarliestIndexPairs
  - QmxFindingGate\Tests\RankingOrderTest::itRefusesUnequalOccurrencePopulations
+ - QmxFindingGate\Tests\RefusalDeclarationsTest::itCanonicalizesAnEmptyDeltaIndexOnlyForACompleteGreenMeasurement#0
+ - QmxFindingGate\Tests\RefusalDeclarationsTest::itCanonicalizesAnEmptyDeltaIndexOnlyForACompleteGreenMeasurement#1
  - QmxFindingGate\Tests\RefusalDeclarationsTest::itDerivesRefusalDeltasOnEveryStructuredRefusalSurface
  - QmxFindingGate\Tests\RefusalDeclarationsTest::itDoesNotWriteADeltaFromAnIncompleteCapture
  - QmxFindingGate\Tests\RefusalDeclarationsTest::itPassesConfigurationAndAnalysisInputsRelativeToTheMaterializedCase

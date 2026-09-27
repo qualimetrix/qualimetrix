@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace QmxFindingGate\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\CapturePlan;
 use QmxFindingGate\CaseOutcomeCheck;
@@ -52,6 +53,26 @@ final class RefusalDeclarationsTest extends TestCase
         $source = '<?php class Presenter { function writeEnvelope() { return json_encode(["error" => "refused", "exit_code" => 3, "position" => null, "source" => [["kind" => "file"]]]); } }';
         self::assertSame(['error', 'exit_code', 'position', 'source'], CaseOutcomeCheck::deriveRefusalFields($source));
         self::assertSame(['error', 'exit_code', 'source'], CaseOutcomeCheck::deriveRefusalFields(str_replace('"position" => null, ', '', $source)));
+    }
+
+    #[Test]
+    #[TestWith([true])]
+    #[TestWith([false])]
+    public function itCanonicalizesAnEmptyDeltaIndexOnlyForACompleteGreenMeasurement(bool $green): void
+    {
+        $report = new GateReport();
+        $check = $this->check($report, []);
+        $path = $this->root . '/finding-gate/' . DeclaredDelta::INDEX;
+        $header = Fs::read($path);
+        $commented = $header . "# planted: an ignored comment\n";
+        Fs::write($path, $commented);
+        if (!$green) {
+            $report->fail(FailureClass::SURFACE_MISMATCH, 'case:refused|format:json', 'An undeclared publication remains.');
+        }
+        $check->startDeriving();
+
+        self::assertSame($green ? [DeclaredDelta::INDEX] : [], $check->rewriteDerived());
+        self::assertSame($green ? $header : $commented, Fs::read($path));
     }
 
     #[Test]

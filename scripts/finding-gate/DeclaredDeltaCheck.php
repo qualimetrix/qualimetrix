@@ -51,7 +51,10 @@ final class DeclaredDeltaCheck implements Derivation
                 }
             }
         }
-        return $derived === [] ? [] : $this->declaredDelta->rewrite($derived);
+        if ($derived === [] && $this->report->exitCode() !== GateReport::EXIT_GREEN) {
+            return [];
+        }
+        return $this->declaredDelta->rewrite($derived);
     }
 
     /** Looking up an intention does not credit it as performed. */

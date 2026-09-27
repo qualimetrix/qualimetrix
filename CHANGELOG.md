@@ -736,6 +736,10 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
 
 ### Fixed
 
+- Finding-gate derivation canonicalizes an empty delta index after a complete
+  GREEN measurement. An empty remainder of a refused measurement still leaves
+  the index unchanged.
+
 - **`@qmx-ignore` and `@qmx-ignore-next-line` written with no channel no longer
   silence everything.** In a block comment and in a docblock, the comment's own
   closing delimiter was read as the channel argument `*` — the spelling that
