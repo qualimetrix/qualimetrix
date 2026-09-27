@@ -76,8 +76,10 @@ final class DeclaredDeltaControls
             'a --derive-declarations run whose comparison failed, which must write nothing',
             FindingControls::droppedFindingMutation(),
             '--derive-declarations',
-            [new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:design')],
+            [new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:design'),
+                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:design|format:json', exactScope: true)],
             ['finding-gate/' . DeclaredDelta::INDEX, 'finding-gate/' . DeclaredDelta::DIRECTORY],
+            [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:design')],
         );
     }
 
@@ -255,7 +257,6 @@ final class DeclaredDeltaControls
             [new Expectation(FailureClass::DELTA_TOO_LARGE, 'case:health|format:json')],
             [
                 new Expectation(FailureClass::DELTA_MISMATCH, 'case:health|format:json'),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:health|format:html', exactScope: true),
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:health|check:output:file', exactScope: true),
                 ...self::surfaceMismatchOnEveryCaseButHealth(),
             ],

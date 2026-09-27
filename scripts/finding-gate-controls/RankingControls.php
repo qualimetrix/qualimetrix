@@ -16,7 +16,8 @@ final class RankingControls
             Mutation::edit('src/Analysis/Evidence/Prioritization/Impact/ImpactCalculator.php', [
                 '$cmp = $a->finding->location->pathString() <=> $b->finding->location->pathString();' => '$cmp = $b->finding->location->pathString() <=> $a->finding->location->pathString();',
             ], 'reverse the product ranking file tie-break'),
-            [new Expectation(FailureClass::RANKING_ORDER_MISMATCH, '|format:json|record:')],
+            [new Expectation(FailureClass::RANKING_ORDER_MISMATCH, '|format:json|record:'),
+                new Expectation(FailureClass::RANKING_ORDER_MISMATCH, 'case:baseline-cycle|check:baseline-source|record:')],
         );
     }
 
@@ -28,7 +29,8 @@ final class RankingControls
             Mutation::edit('src/Analysis/Evidence/Prioritization/Impact/ImpactCalculator.php', [
                 'foreach ($findings as $finding) {' => 'foreach (array_reverse($findings) as $finding) {',
             ], 'reverse the product finding input order'),
-            [new Expectation(FailureClass::RANKING_ORDER_MISMATCH, '|format:json|record:')],
+            [new Expectation(FailureClass::RANKING_ORDER_MISMATCH, '|format:json|record:'),
+                new Expectation(FailureClass::RANKING_ORDER_MISMATCH, 'case:scoped-layers|check:baseline-source|record:')],
         );
     }
 

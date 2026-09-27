@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace QmxFindingGateControls;
 
+use QmxFindingGate\CaseOutcome;
+use QmxFindingGate\Corpus;
 use QmxFindingGate\FailureClass;
 use QmxFindingGate\Fs;
 use RuntimeException;
@@ -23,9 +25,11 @@ final class MapControls
     public static function enumerationWithoutRow(): Control
     {
         $required = [];
-        $cases = glob(\dirname(__DIR__, 2) . '/finding-gate/cases/*/case.json');
-        foreach ($cases === false ? [] : $cases as $case) {
-            $required[] = new Expectation(FailureClass::SURFACE_MISMATCH, 'case:' . basename(\dirname($case)) . '|format:suppressed');
+        foreach (Corpus::load(\dirname(__DIR__, 2))->cases as $case) {
+            if (CaseOutcome::of($case, 'candidate') === CaseOutcome::REFUSAL) {
+                continue;
+            }
+            $required[] = new Expectation(FailureClass::SURFACE_MISMATCH, 'case:' . $case->id . '|format:suppressed', exactScope: true);
         }
         if ($required === []) {
             throw new RuntimeException('The enumeration control has no corpus population.');

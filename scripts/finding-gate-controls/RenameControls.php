@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace QmxFindingGateControls;
 
+use QmxFindingGate\CaseOutcome;
+use QmxFindingGate\Corpus;
 use QmxFindingGate\FailureClass;
-use RuntimeException;
 
 /**
  * The controls on the declared maps: a rename without its row, a row that explains nothing, and every kind
@@ -159,7 +160,9 @@ final class RenameControls
                     ],
                     'the rename is declared as a split, one of whose two rows can explain nothing',
                 )),
-            [new Expectation(FailureClass::MAP_STALE, 'code-smell.never-emitted')],
+            [new Expectation(FailureClass::MAP_STALE, 'code-smell.never-emitted'),
+                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:smells|format:json', exactScope: true),
+                ...ChannelRenamePlants::caseListingFailures('smells')],
             // `tree|rules` moves here too — the mutation renames a producer and
             // the listing prints producer names — and whether that shows up as
             // a `surface-mismatch` depends on the step under test rather than on
@@ -386,8 +389,8 @@ final class RenameControls
      * The blast radius is every case's `format:suppressed` surface, and only
      * that surface: `mechanisms` and `byMechanism` print every value in every
      * case regardless of whether that case's own findings were ever suppressed
-     * by it, so the mutation reaches all fourteen cases uniformly and nothing
-     * else — no finding, no count, no other format reads this string.
+     * by it. Early refusals publish no mechanism vocabulary. A populated
+     * suppression record also carries the renamed mechanism.
      */
     public static function reportValueWithoutRow(): Control
     {
@@ -395,7 +398,8 @@ final class RenameControls
             'report-value-no-row',
             'a suppressed report value renamed with no report-values.tsv row naming it',
             self::reportValueMutation(),
-            self::surfaceMismatchOnEverySuppressedFormat(),
+            [new Expectation(FailureClass::RECORD_UNDECLARED, 'case:rule-exclusion-ledger|format:suppressed', exactScope: true),
+                ...self::surfaceMismatchOnEverySuppressedFormat()],
         );
     }
 
@@ -403,28 +407,21 @@ final class RenameControls
      * Every case's `format:suppressed` surface, derived from the corpus rather
      * than listed — for the reason {@see DeclaredDeltaControls::surfaceMismatchOnEveryCaseButHealth()}
      * states: a hand-written list goes stale the day the corpus grows. Unlike
-     * that method, no case is excluded: every case's `format:suppressed` output
-     * prints the whole mechanism vocabulary, `health` included.
+     * that method, health is included. Early refusals publish their error
+     * instead of the mechanism vocabulary.
      *
      * @return list<Expectation>
      */
     private static function surfaceMismatchOnEverySuppressedFormat(): array
     {
-        $root = \dirname(__DIR__, 2) . '/finding-gate/cases';
-        $entries = scandir($root);
-
-        if ($entries === false) {
-            throw new RuntimeException(\sprintf('No corpus at %s, so this control cannot state its blast radius.', $root));
-        }
-
         $required = [];
 
-        foreach ($entries as $entry) {
-            if (!is_file($root . '/' . $entry . '/case.json')) {
+        foreach (Corpus::load(\dirname(__DIR__, 2))->cases as $case) {
+            if (CaseOutcome::of($case, 'candidate') === CaseOutcome::REFUSAL) {
                 continue;
             }
 
-            $required[] = new Expectation(FailureClass::SURFACE_MISMATCH, 'case:' . $entry . '|format:suppressed');
+            $required[] = new Expectation(FailureClass::SURFACE_MISMATCH, 'case:' . $case->id . '|format:suppressed', exactScope: true);
         }
 
         return $required;
