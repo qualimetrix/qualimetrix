@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace QmxFindingGateControls;
 
+use QmxFindingGate\Declarations;
 use QmxFindingGate\DeclaredDelta;
 use QmxFindingGate\DeclaredFieldMoves;
 use RuntimeException;
@@ -36,9 +37,9 @@ final class Harness
     private const DECLARED_DELTA_INDEX = 'finding-gate/declared-delta.tsv';
 
     /**
-     * Every control in flight is a whole gate run: two passes over the corpus,
-     * each spawning `bin/qmx --workers=0`. Fourteen at once would not make the
-     * run fourteen times shorter — it would make every control slower and the
+     * Every control in flight is a whole gate run: repeated passes over the corpus,
+     * each spawning CLI processes. Starting the whole list at once would not
+     * make the run proportionally shorter — it would make every control slower and the
      * machine unusable, and a control whose gate is starved is a red that says
      * nothing about the mechanism it tests. The ceiling is here so `--jobs`
      * cannot ask for that either.
@@ -484,6 +485,7 @@ final class Harness
                 self::touched($attempt['scratch'], $attempt['survivors']),
                 self::touched($attempt['scratch'], $attempt['tracked']),
                 $this->declaredFieldMoveCount(),
+                Declarations::load($this->repository)->counts(),
             );
         } catch (Throwable $error) {
             return Outcome::crashed($attempt['control'], $error->getMessage());

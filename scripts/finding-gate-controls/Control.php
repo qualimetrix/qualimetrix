@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace QmxFindingGateControls;
 
 use QmxFindingGate\FailureClass;
+use QmxFindingGate\GateReport;
 use RuntimeException;
 
 /**
@@ -55,6 +56,10 @@ final class Control
      * @param array<string, string> $restoredContent restoredAfterRun path => the exact bytes it must be restored
      *                                               to, where the repository's own file cannot state that byte —
      *                                               see {@see rewriting()}
+     * @param array<string, int> $declarationCounts a report key of {@see GateReport::DECLARATION_COUNTS} => the
+     *                                              count a green run of this control must report, where its
+     *                                              mutation plants a declaration; every other key is held to the
+     *                                              repository's own
      */
     private function __construct(
         public readonly string $id,
@@ -67,7 +72,14 @@ final class Control
         public readonly array $unchangedAfterRun = [],
         public readonly array $restoredAfterRun = [],
         public readonly array $restoredContent = [],
+        public readonly array $declarationCounts = [],
     ) {
+        foreach (array_keys($declarationCounts) as $reportKey) {
+            if (!isset(GateReport::DECLARATION_COUNTS[$reportKey])) {
+                throw new RuntimeException(\sprintf('Control "%s" expects a count of "%s", which no report publishes.', $id, $reportKey));
+            }
+        }
+
         foreach ($tolerated as $expectation) {
             if ($expectation->scopeContains === null) {
                 throw new RuntimeException(\sprintf(
@@ -211,9 +223,10 @@ final class Control
      * "the row absorbed it" would be indistinguishable from "a blob of hashes
      * absorbed it".
      */
-    public static function greenWith(string $id, string $subject, Mutation $mutation): self
+    /** @param array<string, int> $declarationCounts see the constructor */
+    public static function greenWith(string $id, string $subject, Mutation $mutation, array $declarationCounts = []): self
     {
-        return new self($id, $subject, $mutation, [], [], expectsGreen: true);
+        return new self($id, $subject, $mutation, [], [], expectsGreen: true, declarationCounts: $declarationCounts);
     }
 
     /**

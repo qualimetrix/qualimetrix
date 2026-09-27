@@ -66,6 +66,20 @@ final class SelfTest
         $resources->lockedRegistrationIsStillReleased();
         $resources->interruptedRunReleasesEverything();
         $resources->releasedWhenKilledDuringCheckout();
+
+        // Each declaration form's own groups, from its wiring file, ahead of
+        // the registries that judge every form's witnesses together.
+        foreach (Wiring::gate()->methods('selfTest', __NAMESPACE__) as [$class, $method]) {
+            $group = is_subclass_of($class, SelfTestGroup::class) ? new $class($this->candidateRoot, $failures) : null;
+            $case = [$group, $method];
+
+            if ($group === null || !\is_callable($case)) {
+                throw new GateError(\sprintf('%s::%s() is registered as a self-test case of a group and is none.', $class, $method));
+            }
+
+            $case();
+        }
+
         $registries->loaderNamesEveryClass();
         $registries->witnessedFailureClasses();
 

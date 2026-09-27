@@ -1,0 +1,15 @@
+{
+    "id": "selector-after-split",
+    "description": "A bare complexity selector must be refused with the group-wildcard hint rather than silently selecting none of the split complexity producers.",
+    "coverage": "auxiliary",
+    "outcome": {
+        "kind": "refusal",
+        "exit": 3
+    },
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [],
+    "channels": []
+}

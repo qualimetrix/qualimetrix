@@ -31,18 +31,17 @@ final class CaseScheduler
         // translated. Staleness is judged here, and a case's input is
         // translated there.
         private readonly RenameMaps $maps,
+        private readonly DeclaredStructuralMaps $structuralMaps,
     ) {}
 
     /**
      * @param list<CaseDefinition> $cases
-     *
-     * @return array<string, string>
      */
-    public function run(array $cases): array
+    public function captureCases(array $cases): CaptureResult
     {
         /** @var array<int, array{case: CaseDefinition, child: ProcessHandle, output: string}> $inFlight */
         $inFlight = [];
-        /** @var array<int, array<string, string>> $completed */
+        /** @var array<int,CaptureResult> $completed */
         $completed = [];
         $next = 0;
         $finished = 0;
@@ -103,19 +102,21 @@ final class CaseScheduler
                     }
 
                     $artifacts = \is_array($payload) ? ($payload['artifacts'] ?? null) : null;
+                    $rankings = \is_array($payload) ? ($payload['rankings'] ?? null) : null;
                     $hits = \is_array($payload) ? ($payload['mapHits'] ?? null) : null;
+                    $structuralHits = \is_array($payload) ? ($payload['structuralMapHits'] ?? null) : null;
 
-                    if (!\is_array($artifacts) || !\is_array($hits)
-                        || array_filter($artifacts, static fn(mixed $artifact): bool => !\is_string($artifact)) !== []
+                    if (!\is_array($artifacts) || !\is_array($rankings) || !\is_array($hits) || !\is_array($structuralHits)
                         || array_filter($hits, static fn(mixed $count): bool => !\is_int($count)) !== []
                     ) {
                         throw new GateError(\sprintf('Case worker "%s" in %s wrote an invalid artifact map.', $worker['case']->id, $this->label));
                     }
 
-                    /** @var array<string, string> $artifacts */
+                    $capture = new CaptureResult($artifacts, $rankings);
                     /** @var array<string, int> $hits */
                     $this->maps->creditRowsFiredElsewhere($hits);
-                    $completed[$index] = $artifacts;
+                    $this->structuralMaps->creditRowsFiredElsewhere($structuralHits);
+                    $completed[$index] = $capture;
                     ++$finished;
                     $this->announce($finished, $total, \count($inFlight));
                     $lastHeartbeatAt = microtime(true);
@@ -142,13 +143,13 @@ final class CaseScheduler
         }
 
         ksort($completed);
-        $artifacts = [];
+        $capture = new CaptureResult([], []);
 
-        foreach ($completed as $caseArtifacts) {
-            $artifacts += $caseArtifacts;
+        foreach ($completed as $caseCapture) {
+            $capture = $capture->merge($caseCapture);
         }
 
-        return $artifacts;
+        return $capture;
     }
 
     /** @param array<int, array{case: CaseDefinition, child: ProcessHandle, output: string}> $inFlight */

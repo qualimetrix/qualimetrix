@@ -44,7 +44,7 @@ final class Mutation
     /**
      * A rename carried into the step's DERIVED declarations: the exact diffs
      * under `finding-gate/declared-delta/`, whose contents are *measured* by
-     * `--derive-declared-delta` rather than typed by anyone.
+     * `--derive-declarations` rather than typed by anyone.
      *
      * Its own kind because two of {@see edit()}'s guarantees are wrong for this
      * subject, and both were measured on this rig rather than foreseen.

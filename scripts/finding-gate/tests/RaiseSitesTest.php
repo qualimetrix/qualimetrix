@@ -620,6 +620,49 @@ final class RaiseSitesTest extends TestCase
         self::assertStringContainsString('Broken.php does not parse', $problems[0]);
     }
 
+    #[Test]
+    public function itRefusesADynamicRegisteredFactoryAndDoesNotAttributeAnExternalFactory(): void
+    {
+        $this->write('Extension.php', <<<'PHP'
+            <?php
+            final class Extension {
+                public static function create($report) {
+                    $report->fail(FailureClass::RUN_FAILED, 'factory', 'refused');
+                }
+            }
+            PHP);
+        $this->write('Entry.php', <<<'PHP'
+            <?php
+            final class Entry {
+                public static function registered($qualified, $run) {
+                    return $qualified::create($run);
+                }
+                public static function external($run) {
+                    return ContainerFactory::create($run);
+                }
+            }
+            PHP);
+        $read = RaiseSites::of($this->directory, [
+            ['Entry.php', 'return ContainerFactory::create($run);', 'an external factory, not a gate check'],
+        ]);
+        self::assertCount(1, $read->problems);
+        self::assertStringContainsString('Entry.php:4 names Extension::create', $read->problems[0]);
+        self::assertSame(['Extension::create'], array_keys($read->sites));
+    }
+
+    #[Test]
+    public function itHoldsTheRealGateAndItsExactModeDataDeclarationToTheScanner(): void
+    {
+        $read = RaiseSites::of(\dirname(__DIR__), RaiseSites::DECLARED_NAMES);
+        self::assertNotEmpty($read->sites);
+        self::assertSame([], $read->problems);
+        $declarations = RaiseSites::DECLARED_NAMES;
+        $declarations[2][1] .= ' changed';
+        $refused = RaiseSites::of(\dirname(__DIR__), $declarations);
+        self::assertNotEmpty($refused->problems);
+        self::assertStringContainsString('matches 0 occurrence(s)', implode("\n", $refused->problems));
+    }
+
     /**
      * @param list<string> $problems
      *

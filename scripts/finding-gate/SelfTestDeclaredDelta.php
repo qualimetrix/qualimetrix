@@ -133,6 +133,9 @@ final class SelfTestDeclaredDelta extends SelfTestGroup
             PublishedVocabulary::valuesOn('format:json', '            "message": "' . $message . '",', 'message'),
             'the JSON member syntax is read under the tuple spelling',
         );
+        foreach (['check:output:file', 'check:parallel', 'check:baseline', 'check:baseline-source'] as $surface) {
+            $this->same([$message], PublishedVocabulary::valuesOn($surface, '"message": "' . $message . '"', 'message'), $surface . ' reads its captured JSON field');
+        }
         $this->same(
             [$message],
             PublishedVocabulary::valuesOn('format:sarif', '                    "text": "' . $message . '"', 'message'),
@@ -314,17 +317,7 @@ final class SelfTestDeclaredDelta extends SelfTestGroup
         $this->declaredDeltaWrite();
     }
 
-    /**
-     * The write half of the declaration, exercised end to end on a synthetic
-     * root.
-     *
-     * Everything asserted about `DeclaredDelta` until now was about *loading* —
-     * refusals, staleness, an empty index. The path that produces the file was
-     * covered by nothing at all, so gutting it went unnoticed by every check.
-     * The one property a run cannot supply is `reason`, so the carry-over rule
-     * is asserted in both directions here: kept while the diff it explains is
-     * the same diff, dropped to "?" the moment that diff moves.
-     */
+    /** The writer retains explained intentions and refuses an unannounced surface before touching any file. */
     private function declaredDeltaWrite(): void
     {
         $root = Fs::temporaryDirectory('self-test-delta-write-');
@@ -338,45 +331,33 @@ final class SelfTestDeclaredDelta extends SelfTestGroup
             ['case:y|format:json', DeclaredDelta::DIRECTORY . '/case-y-format-json.diff', 'the sentence written for y'],
         ]));
 
-        $written = DeclaredDelta::load($root)->rewrite([
-            'case:y|format:json' => $moved,
+        $model = DeclaredDelta::load($root);
+        $indexBefore = Fs::read($root . '/' . DeclaredDelta::INDEX);
+        $this->assert(self::throws(static fn(): array => $model->rewrite([
             'case:x|format:json' => $kept,
-            'case:z|format:json' => $kept,
-        ]);
-
-        $this->same(
-            [
-                DeclaredDelta::DIRECTORY . '/case-x-format-json.diff',
-                DeclaredDelta::DIRECTORY . '/case-y-format-json.diff',
-                DeclaredDelta::DIRECTORY . '/case-z-format-json.diff',
-                DeclaredDelta::INDEX,
-            ],
-            $written,
-            'a derivation writes one file per differing surface plus the index, and says which',
-        );
-
+            'case:z|format:json' => $moved,
+        ])), 'a derivation refuses an unannounced neighbouring surface before writing');
+        $this->same($indexBefore, Fs::read($root . '/' . DeclaredDelta::INDEX), 'a refused write leaves the intention index unchanged');
+        $this->assert(!is_file($root . '/' . DeclaredDelta::DIRECTORY . '/case-z-format-json.diff'), 'the refused neighbour leaves no derived file');
+        $written = $model->rewrite(['case:y|format:json' => $moved, 'case:x|format:json' => $kept]);
+        $this->same([
+            DeclaredDelta::DIRECTORY . '/case-x-format-json.diff',
+            DeclaredDelta::DIRECTORY . '/case-y-format-json.diff',
+            DeclaredDelta::INDEX,
+        ], $written, 'a derivation writes exactly the announced surfaces and its index');
         foreach ($written as $file) {
-            $this->assert(is_file($root . '/' . $file), $file . ' is on disk after the write, not only in the return value');
+            $this->assert(is_file($root . '/' . $file), $file . ' is actually written');
         }
-
-        $newFile = $root . '/' . DeclaredDelta::DIRECTORY . '/case-z-format-json.diff';
-        $this->same($kept, is_file($newFile) ? Fs::read($newFile) : 'nothing was written', 'and holds the measured diff');
-
+        $this->same($moved, Fs::read($root . '/' . DeclaredDelta::DIRECTORY . '/case-y-format-json.diff'), 'the changed announced surface contains the new measurement');
         $reasons = [];
-
-        foreach (is_file($root . '/' . DeclaredDelta::INDEX) ? Tsv::rows($root . '/' . DeclaredDelta::INDEX, DeclaredDelta::COLUMNS) : [] as $row) {
+        foreach (Tsv::rows($root . '/' . DeclaredDelta::INDEX, DeclaredDelta::COLUMNS) as $row) {
             $reasons[$row['surface']] = $row['reason'];
         }
-
-        $this->same(
-            [
-                'case:x|format:json' => 'the sentence written for x',
-                'case:y|format:json' => '?',
-                'case:z|format:json' => '?',
-            ],
-            $reasons,
-            'a reason survives only the surface whose diff did not move; a moved one and a new one need writing again',
-        );
+        $this->same([
+            'case:x|format:json' => 'the sentence written for x',
+            'case:y|format:json' => 'the sentence written for y',
+        ], $reasons, 'reasons belong to the intentions, including a changed measurement');
+        $this->same(2, DeclaredDelta::load($root)->count(), 'a successful derivation remains loadable without placeholder reasons');
 
         Fs::removeRecursively($root);
     }
@@ -496,8 +477,8 @@ final class SelfTestDeclaredDelta extends SelfTestGroup
         );
         $this->same(
             'where nothing can read that field',
-            self::refusalOfFieldMoves([['case:annotations|format:text', 'message', 'from', 'to', 'why']]),
-            'and so is one on a surface that marks no field at all',
+            self::refusalOfFieldMoves([['case:annotations|format:text', 'unknown-field', 'from', 'to', 'why']]),
+            'and so is an unknown field outside the complete prose schema',
         );
         $this->same(
             'where nothing can read that field',

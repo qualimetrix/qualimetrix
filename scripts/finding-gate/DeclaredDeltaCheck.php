@@ -8,7 +8,7 @@ namespace QmxFindingGate;
  * A surface that differs, held to the delta declared for it and the field moves licensed inside it — or,
  * while deriving, measured into the declaration instead — and every declaration that nothing performed.
  */
-final class DeclaredDeltaCheck
+final class DeclaredDeltaCheck implements Derivation
 {
     /**
      * Surface key => measured diff, while deriving the declared delta instead of
@@ -34,37 +34,34 @@ final class DeclaredDeltaCheck
     /** @return list<string> the files written */
     public function rewriteDerived(): array
     {
-        return $this->declaredDelta->rewrite($this->derived ?? []);
+        return $this->report->exitCode() === 0 ? $this->declaredDelta->rewrite($this->derived ?? []) : [];
+    }
+
+    /** Looking up an intention does not credit it as performed. */
+    public function hasIntention(string $key): bool
+    {
+        return \in_array($this->declaredDelta->intentOf($key), $this->declaredDelta->surfaces(), true);
     }
 
     /**
-     * A surface that still differs after maps and normalization: recorded while
-     * deriving, otherwise held to its declaration, or a mismatch when it has none.
+     * A declared surface that differs after maps and normalization: recorded
+     * while deriving, otherwise held to its explicit intention.
      */
     public function checkDifference(string $key, string $left, string $right): void
     {
         $diff = ExactDiff::between($left, $right, 'candidate', 'reference (mapped)');
 
+        $declared = $this->declaredDelta->claim($key) ?? throw new GateError('A structural delta comparison requires an explicit intention: ' . $key);
         if ($this->derived !== null) {
-            $this->derived[$key] = $diff->render();
-
-            return;
+            $intent = $this->declaredDelta->intentOf($key);
+            $measured = $this->render($key, $diff);
+            if (isset($this->derived[$intent]) && $this->derived[$intent] !== $measured) {
+                $this->report->fail(FailureClass::DELTA_MISMATCH, $key, 'This case measures a different diff for the declared surface class.');
+            }
+            $this->derived[$intent] = $measured;
         }
 
-        $declared = $this->declaredDelta->claim($key);
-
-        if ($declared === null) {
-            $this->report->fail(
-                FailureClass::SURFACE_MISMATCH,
-                $key,
-                'The surface differs beyond what the declared maps and normalization account for.',
-                Diff::between($left, $right, 'candidate', 'reference (mapped)'),
-            );
-
-            return;
-        }
-
-        $this->checkAgainstDeclaredDelta($key, $diff, $declared);
+        $this->checkAgainstDeclaredDelta($key, $diff, $declared, $left, $right);
     }
 
     /**
@@ -74,7 +71,7 @@ final class DeclaredDeltaCheck
      * a declaration that reaches too far must fail for reaching too far, and not
      * be excused by also failing to match.
      */
-    private function checkAgainstDeclaredDelta(string $key, ExactDiff $diff, string $declared): void
+    private function checkAgainstDeclaredDelta(string $key, ExactDiff $diff, string $declared, string $left, string $right): void
     {
         if ($diff->changedLineCount() > DeclaredDelta::MAX_CHANGED_LINES) {
             $this->report->fail(
@@ -89,7 +86,7 @@ final class DeclaredDeltaCheck
             );
         }
 
-        foreach ($this->overreachingLines($key, $diff) as $problem) {
+        foreach ($this->overreachingLines($key, $left, $right) as $problem) {
             $this->report->fail(
                 FailureClass::DELTA_OVERREACH,
                 $key,
@@ -100,7 +97,7 @@ final class DeclaredDeltaCheck
             );
         }
 
-        if ($diff->render() === $declared) {
+        if ($this->derived !== null || $this->render($key, $diff) === $declared) {
             return;
         }
 
@@ -108,106 +105,144 @@ final class DeclaredDeltaCheck
             FailureClass::DELTA_MISMATCH,
             $key,
             \sprintf(
-                'The measured diff is not the declared one (%s). Re-derive it with --derive-declared-delta and review'
+                'The measured diff is not the declared one (%s). Re-derive it with --derive-declarations and review'
                 . ' what moved.',
                 $this->declaredDelta->fileOf($key),
             ),
             [
-                ...Diff::between($declared, $diff->render(), 'declared delta', 'measured diff'),
+                ...Diff::between($declared, $this->render($key, $diff), 'declared delta', 'measured diff'),
                 ...$diff->tokenDetail(),
             ],
         );
     }
 
-    /**
-     * The diff lines that change a field the equivalence tuple compares.
-     *
-     * Changed, not mentioned: a compact JSON record names `channel` on the same
-     * line as the magnitude it records, so "the line contains a compared field"
-     * would flag every such line. Which surfaces a field can be found on, under
-     * which key and in which syntax, is {@see PublishedVocabulary} — and it is
-     * asked per surface rather than once, because the same field is `message` on
-     * one surface, `text` on the next and `description` on the third. For the
-     * surfaces that mark no field at all the record-level split check is the
-     * guard, and that list is enumerated there rather than assumed here.
-     *
-     * Two sources of permission, and they answer different questions. A
-     * declared split says "this record was renamed, so its fields moved with
-     * it"; a {@see DeclaredFieldMoves} row says "this exact value became that
-     * exact value on this exact surface, and here is why". The second exists
-     * because the first can only ever speak about `channel`, `rule` and `code`
-     * — the fields a channel rename rewrites — so every other compared field
-     * was unlicensable by construction rather than by judgement.
-     *
-     * @return list<string>
-     */
-    private function overreachingLines(string $key, ExactDiff $diff): array
+    /** @return list<string> */
+    private function overreachingLines(string $key, string $left, string $right): array
     {
         $fields = EquivalenceTuple::load($this->options->candidateRoot)->fields;
-        $problems = [];
-
         $surface = Surfaces::surfaceClass($key);
-
-        foreach ($diff->pairs() as $index => [$candidateLine, $referenceLine]) {
-            foreach ($fields as $field) {
-                $onCandidate = PublishedVocabulary::valuesOn($surface, $candidateLine, $field);
-                $onReference = PublishedVocabulary::valuesOn($surface, $referenceLine, $field);
-
-                if ($onCandidate === $onReference) {
-                    continue;
-                }
-
-                // A line that publishes a different *number* of values for a
-                // compared field is not a rename of anything: the record set on
-                // that line changed, and no declared split can account for it.
-                if (\count($onCandidate) !== \count($onReference)) {
-                    $problems[] = \sprintf(
-                        'Hunk line %d publishes %d value(s) of the compared field "%s" where the reference publishes'
-                        . ' %d, so the change is not a rename a declared split could explain.',
-                        $index + 1,
-                        \count($onCandidate),
-                        $field,
-                        \count($onReference),
-                    );
-
-                    continue;
-                }
-
-                // Paired by position within the line, the same principle
-                // ExactDiff::pairs() uses across the hunk: a payload publishes
-                // its records in one order on both sides, so the n-th value of a
-                // field on one line answers the n-th on the other. Asking about
-                // the pair rather than about each value separately is what keeps
-                // a delta from moving a compared field between two values no
-                // explained record ever paired.
-                foreach ($onReference as $position => $referenceValue) {
-                    $candidateValue = $onCandidate[$position];
-
-                    if ($referenceValue === $candidateValue) {
-                        continue;
-                    }
-
-                    if ($this->split->allowsMove($field, $referenceValue, $candidateValue)) {
-                        continue;
-                    }
-
-                    if ($this->declaredFieldMoves->allows($key, $field, $referenceValue, $candidateValue)) {
-                        continue;
-                    }
-
-                    $problems[] = \sprintf(
-                        'Hunk line %d changes the compared field "%s" ("%s" -> "%s"), a move neither a declared'
-                        . ' split nor a licensed field move explains.',
-                        $index + 1,
-                        $field,
-                        $referenceValue,
-                        $candidateValue,
-                    );
+        $candidate = $this->comparedPublications($surface, $left);
+        $reference = $this->comparedPublications($surface, $right);
+        $problems = [];
+        foreach ($fields as $field) {
+            $a = [];
+            $b = [];
+            foreach ($candidate as $record) {
+                if (\array_key_exists($field, $record)) {
+                    $a[] = $record[$field];
                 }
             }
+            foreach ($reference as $record) {
+                if (\array_key_exists($field, $record)) {
+                    $b[] = $record[$field];
+                }
+            }
+            if ($a === $b) {
+                continue;
+            }
+            if (\count($a) !== \count($b)) {
+                $problems[] = 'The complete record publication changes the number of compared ' . $field . ' values.';
+                continue;
+            }
+            foreach ($b as $index => $from) {
+                $to = $a[$index];
+                if ($from === $to) {
+                    continue;
+                }
+                $old = \is_string($from) ? $from : ValueCheck::value($from);
+                $new = \is_string($to) ? $to : ValueCheck::value($to);
+                if ($this->split->allowsMove($field, $old, $new) || $this->declaredFieldMoves->allows($key, $field, $old, $new)) {
+                    continue;
+                }
+                $problems[] = 'The complete record publication changes compared ' . $field . ' without an exact licensed value pair.';
+            }
         }
-
         return array_values(array_unique($problems));
+    }
+
+    /** @return list<array<string,mixed>> */
+    private function comparedPublications(string $surface, string $text): array
+    {
+        if (\in_array($surface, ['format:json', 'check:baseline-source', 'check:baseline', 'check:output:file', 'check:parallel', 'format:suppressed'], true)) {
+            $document = ReportRecords::decode($text);
+            $member = $surface === 'format:suppressed' ? 'suppressed' : 'violations';
+            if (!\is_array($document[$member] ?? null) || !array_is_list($document[$member])) {
+                throw new GateError('A structural intention has no observed complete record list.');
+            }
+            $records = [];
+            foreach ($document[$member] as $record) {
+                if (!\is_array($record) || array_is_list($record)) {
+                    throw new GateError('A structural intention encounters a malformed compared record.');
+                }
+                if ($surface === 'format:suppressed' && \array_key_exists('channel', $record)) {
+                    $record['code'] = $record['channel'];
+                    unset($record['channel']);
+                }
+                $records[] = $record;
+            }
+            return $records;
+        }
+        if (\in_array($surface, ['format:html', 'format:sarif', 'format:gitlab'], true)) {
+            $records = [];
+            $aliases = match ($surface) {
+                'format:html' => ['ruleName' => 'rule', 'violationCode' => 'code', 'symbolPath' => 'symbol'],
+                'format:sarif' => ['ruleId' => 'code', 'level' => 'severity'],
+                default => ['description' => 'message', 'check_name' => 'code'],
+            };
+            foreach (ReportRecords::projected($surface, $text) as $entry) {
+                $record = $entry['fields'];
+                foreach ($aliases as $published => $field) {
+                    if (\array_key_exists($published, $record)) {
+                        $record[$field] = $record[$published];
+                        unset($record[$published]);
+                    }
+                }
+                if ($surface === 'format:sarif') {
+                    $record['message'] = $record['message']['text'];
+                } elseif ($surface === 'format:gitlab') {
+                    $record['file'] = $record['location']['path'];
+                    $record['line'] = $record['location']['lines']['begin'];
+                }
+                $records[] = $record;
+            }
+            return $records;
+        }
+        if ($surface === 'format:checkstyle') {
+            return ReportRecords::checkstyle($text);
+        }
+        if (\in_array($surface, ProseRecords::SURFACES, true)) {
+            return array_column(ProseRecords::extract($surface, $text), 'fields');
+        }
+        if ($surface === 'baseline-file') {
+            $document = ReportRecords::decode($text);
+            $records = [];
+            if (!\is_array($document['entries'] ?? null)) {
+                throw new GateError('A structural baseline intention has no observed entry population.');
+            }
+            foreach ($document['entries'] as $subject => $entries) {
+                foreach ($entries as $entry) {
+                    $records[] = ['subject' => $subject, ...$entry];
+                }
+            }
+            return $records;
+        }
+        return [];
+    }
+
+    private function render(string $key, ExactDiff $diff): string
+    {
+        $rendered = $diff->render();
+        return str_contains($this->declaredDelta->intentOf($key), '|')
+            ? $rendered
+            : (preg_replace('~^@@[^\n]*\n~m', '', $rendered) ?? throw new GateError('Cannot canonicalize a structural diff.'));
+    }
+
+    public function observeEqual(string $key): void
+    {
+        $intent = $this->declaredDelta->intentOf($key);
+        if (!str_contains($intent, '|') && \in_array($intent, $this->declaredDelta->surfaces(), true)) {
+            $this->report->fail(FailureClass::DELTA_STALE, $key, 'A surface-class intention must move this case too.');
+        }
     }
 
     /**
@@ -218,10 +253,6 @@ final class DeclaredDeltaCheck
      */
     public function checkStaleDeclaredDelta(): void
     {
-        if ($this->derived !== null) {
-            return;
-        }
-
         foreach ($this->declaredDelta->staleSurfaces() as $surface) {
             $this->report->fail(
                 FailureClass::DELTA_STALE,

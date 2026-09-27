@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace QmxFindingGate;
 
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
+
 /** One corpus case, as `case.json` declares it. */
 final class CaseDefinition
 {
@@ -22,7 +27,24 @@ final class CaseDefinition
      */
     public const COVERAGE_AUXILIARY = 'auxiliary';
 
-    private const KNOWN_KEYS = ['id', 'description', 'coverage', 'paths', 'config', 'args', 'channels', 'explainSubjects'];
+    /**
+     * Every key `case.json` may carry. `outcome` is absent for a case that
+     * analyses, and `{"kind": "refusal"|"incomplete", "exit": N}` for one that
+     * exists to end otherwise; see {@see CaseOutcome}.
+     */
+    public const array SCHEMA = [
+        'id' => 'the directory name',
+        'description' => 'what the case is for',
+        'coverage' => 'authoritative (default) or auxiliary',
+        'paths' => 'analysis paths inside the case',
+        'config' => 'the configuration file inside the case',
+        'args' => 'further product arguments',
+        'channels' => 'the channel@level pairs the case fires',
+        'explainSubjects' => 'subjects baseline:explain is asked about',
+        'outcome' => 'how the case ends when it does not analyse',
+        'layerAssignmentSubjects' => 'fully qualified class names for layer assignment inspection',
+        'renameChannelsMap' => 'the channel rename map file inside the case',
+    ];
 
     /**
      * The product options that read a file-system path, by long name, with the
@@ -61,6 +83,9 @@ final class CaseDefinition
      * @param list<string> $args
      * @param list<string> $channels each entry is a `rule#code@level` pair; see SubjectLevel
      * @param list<string> $explainSubjects
+     * @param string $outcome one of {@see CaseOutcome::ALL}
+     * @param int|null $outcomeExit the exit a case that does not analyse must end with
+     * @param list<string> $layerSubjects
      */
     private function __construct(
         public readonly string $id,
@@ -72,14 +97,39 @@ final class CaseDefinition
         public readonly array $args,
         public readonly array $channels,
         public readonly array $explainSubjects,
+        public readonly string $outcome,
+        public readonly ?int $outcomeExit,
+        private readonly array $layerSubjects,
+        private readonly ?string $channelMap,
+        public readonly ?string $transition = null,
     ) {}
+
+    public function withDirectory(string $directory): self
+    {
+        return new self(
+            $this->id,
+            $directory,
+            $this->description,
+            $this->coverage,
+            $this->paths,
+            $this->config,
+            $this->args,
+            $this->channels,
+            $this->explainSubjects,
+            $this->outcome,
+            $this->outcomeExit,
+            $this->layerSubjects,
+            $this->channelMap,
+            $this->transition,
+        );
+    }
 
     public function isAuxiliary(): bool
     {
         return $this->coverage === self::COVERAGE_AUXILIARY;
     }
 
-    public static function load(string $directory): self
+    public static function load(string $directory, ?string $transition = null): self
     {
         $id = basename($directory);
         $file = $directory . '/case.json';
@@ -90,7 +140,7 @@ final class CaseDefinition
             throw new GateError(\sprintf('%s does not contain a JSON object.', $file));
         }
 
-        $unknown = array_diff(array_keys($decoded), self::KNOWN_KEYS);
+        $unknown = array_diff(array_keys($decoded), array_keys(self::SCHEMA));
 
         if ($unknown !== []) {
             throw new GateError(\sprintf('%s declares unknown key(s): %s.', $file, implode(', ', $unknown)));
@@ -107,6 +157,12 @@ final class CaseDefinition
             ));
         }
 
+        [$outcome, $outcomeExit] = self::outcome($decoded, $file);
+        if (\array_key_exists('layerAssignmentSubjects', $decoded)
+            && (!\is_array($decoded['layerAssignmentSubjects']) || !array_is_list($decoded['layerAssignmentSubjects']))) {
+            throw new GateError($file . ': layerAssignmentSubjects must be a list of class names.');
+        }
+
         $case = new self(
             self::string($decoded, 'id', $file),
             $directory,
@@ -115,8 +171,13 @@ final class CaseDefinition
             self::strings($decoded, 'paths', $file),
             self::string($decoded, 'config', $file),
             self::strings($decoded, 'args', $file, optional: true),
-            self::strings($decoded, 'channels', $file),
+            self::strings($decoded, 'channels', $file, allowEmpty: $outcome === CaseOutcome::REFUSAL && $coverage === self::COVERAGE_AUXILIARY),
             self::strings($decoded, 'explainSubjects', $file, optional: true),
+            $outcome,
+            $outcomeExit,
+            self::strings($decoded, 'layerAssignmentSubjects', $file, optional: true),
+            \array_key_exists('renameChannelsMap', $decoded) ? self::string($decoded, 'renameChannelsMap', $file) : null,
+            $transition,
         );
 
         if ($case->id !== $id) {
@@ -136,12 +197,24 @@ final class CaseDefinition
             ));
         }
 
-        foreach ([...$case->paths, $case->config, ...$case->argumentPaths()] as $path) {
+        foreach ([...$case->paths, ...array_column($case->inputFiles(), 'path')] as $path) {
             $case->assertInside($path);
         }
 
         if (!is_file($directory . '/' . $case->config)) {
             throw new GateError(\sprintf('%s names config "%s", which does not exist.', $file, $case->config));
+        }
+
+        foreach ($case->layerAssignmentSubjects() as $subject) {
+            if (preg_match('~^\\\\?[A-Za-z_\\x80-\\xff][A-Za-z0-9_\\x80-\\xff]*(?:\\\\[A-Za-z_\\x80-\\xff][A-Za-z0-9_\\x80-\\xff]*)*$~D', $subject) !== 1) {
+                throw new GateError($file . ': layerAssignmentSubjects must contain fully qualified class names.');
+            }
+        }
+        if (\count(array_unique($case->layerSubjects)) !== \count($case->layerSubjects)) {
+            throw new GateError($file . ': layerAssignmentSubjects contains a duplicate subject.');
+        }
+        if ($case->channelMap !== null && !is_file($directory . '/' . $case->channelMap)) {
+            throw new GateError($file . ': renameChannelsMap must name a contained file.');
         }
 
         return $case;
@@ -199,6 +272,98 @@ final class CaseDefinition
     }
 
     /**
+     * Every file the case hands the product besides its analysis paths, with
+     * the option that hands it over — the configuration first, then each path
+     * value of {@see self::INPUT_OPTIONS} in `args`. The one list of what a
+     * case reads: the containment rule judges it, and it is what the reference
+     * has to be handed in its own vocabulary.
+     *
+     * @return list<array{option: string, path: string}>
+     */
+    public function inputFiles(): array
+    {
+        $files = [['option' => '--config', 'path' => $this->config]];
+        if ($this->channelMap !== null) {
+            $files[] = ['option' => 'baseline:rename-channels', 'path' => $this->channelMap];
+        }
+        $baseline = $this->baselineSource();
+        if ($baseline !== null) {
+            $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($this->directory . '/' . $baseline, FilesystemIterator::SKIP_DOTS));
+            foreach ($iterator as $entry) {
+                if (!$entry instanceof SplFileInfo) {
+                    throw new GateError('A baseline source entry could not be inspected.');
+                }
+                $path = substr($entry->getPathname(), \strlen($this->directory) + 1);
+                $this->assertInside($path);
+                $resolved = $entry->getRealPath();
+                if ($resolved === false || !str_starts_with($resolved, realpath($this->directory . '/' . $baseline) . '/')) {
+                    throw new GateError('A baseline source entry leaves its variant directory: ' . $path);
+                }
+                if ($entry->isFile()) {
+                    $files[] = ['option' => 'baseline-source', 'path' => $path];
+                }
+            }
+        }
+
+        foreach ($this->argumentInputs() as [$option, $path]) {
+            $files[] = ['option' => $option, 'path' => $path];
+        }
+
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($this->directory, FilesystemIterator::SKIP_DOTS));
+        foreach ($iterator as $entry) {
+            if (!$entry instanceof SplFileInfo || !$entry->isFile()) {
+                continue;
+            }
+            $path = substr($entry->getPathname(), \strlen($this->directory) + 1);
+            if ($path === 'case.json' || str_starts_with($path, '.qmx-cache/')) {
+                continue;
+            }
+            $this->assertInside($path);
+            if (!\in_array($path, array_column($files, 'path'), true)) {
+                $files[] = ['option' => 'case-file', 'path' => $path];
+            }
+        }
+        return $files;
+    }
+
+    /** @return list<string> */
+    public function layerAssignmentSubjects(): array
+    {
+        return $this->layerSubjects;
+    }
+
+    public function renameChannelsMap(): ?string
+    {
+        return $this->channelMap;
+    }
+
+    public function baselineSource(): ?string
+    {
+        $path = $this->directory . '/baseline-src';
+        if (!file_exists($path) && !is_link($path)) {
+            return null;
+        }
+        $this->assertInside('baseline-src');
+        if (!is_dir($path)) {
+            throw new GateError('baseline-src must be a directory mirroring the analysis paths.');
+        }
+        foreach ($this->paths as $source) {
+            $this->assertInside('baseline-src/' . $source);
+        }
+        return 'baseline-src';
+    }
+
+    /**
+     * Every file-system path the case's `args` read.
+     *
+     * @return list<string>
+     */
+    public function argumentPaths(): array
+    {
+        return array_map(static fn(array $input): string => $input[1], $this->argumentInputs());
+    }
+
+    /**
      * Every file-system path the case's `args` read, as values of
      * {@see self::INPUT_OPTIONS}. Only `--preset` is a comma-separated list, as
      * the product reads it; a preset that is not spelled as a file is a
@@ -212,9 +377,9 @@ final class CaseDefinition
      * would be exact, so the case is refused instead. So is any of
      * {@see self::OUTPUT_OPTIONS} and {@see self::WORKING_DIRECTORY_OPTION}.
      *
-     * @return list<string>
+     * @return list<array{0: string, 1: string}> option => path
      */
-    public function argumentPaths(): array
+    private function argumentInputs(): array
     {
         $file = $this->directory . '/case.json';
         $values = [];
@@ -240,6 +405,10 @@ final class CaseDefinition
                 $equals = strpos($argument, '=');
                 $name = $equals === false ? $argument : substr($argument, 0, $equals);
                 $value = $equals === false ? null : substr($argument, $equals + 1);
+
+                if ($name === '--baseline') {
+                    throw new GateError($file . ': --baseline is not a case input. Use baseline-src/ so each side generates its own baseline format.');
+                }
 
                 if (\array_key_exists($name, self::OUTPUT_OPTIONS)) {
                     throw $this->writes($name);
@@ -294,14 +463,14 @@ final class CaseDefinition
 
         foreach ($values as [$option, $value]) {
             if ($option !== '--preset') {
-                $paths[] = $value;
+                $paths[] = [$option, $value];
 
                 continue;
             }
 
             foreach (explode(',', $value) as $preset) {
                 if (self::namesPresetFile($preset)) {
-                    $paths[] = $preset;
+                    $paths[] = [$option, $preset];
                 }
             }
         }
@@ -336,6 +505,16 @@ final class CaseDefinition
         ));
     }
 
+    /**
+     * @param array<array-key, mixed> $decoded
+     *
+     * @return array{0: string, 1: int|null}
+     */
+    private static function outcome(array $decoded, string $file): array
+    {
+        return CaseOutcome::definition($decoded, $file);
+    }
+
     /** @param array<array-key, mixed> $decoded */
     private static function string(array $decoded, string $key, string $file): string
     {
@@ -353,25 +532,25 @@ final class CaseDefinition
      *
      * @return list<string>
      */
-    private static function strings(array $decoded, string $key, string $file, bool $optional = false): array
+    private static function strings(array $decoded, string $key, string $file, bool $optional = false, bool $allowEmpty = false): array
     {
         $value = $decoded[$key] ?? ($optional ? [] : null);
 
-        if (!\is_array($value)) {
+        if (!\is_array($value) || !array_is_list($value)) {
             throw new GateError(\sprintf('%s: "%s" must be an array of strings.', $file, $key));
         }
 
         $values = [];
 
         foreach ($value as $item) {
-            if (!\is_string($item)) {
+            if (!\is_string($item) || $item === '') {
                 throw new GateError(\sprintf('%s: "%s" must be an array of strings.', $file, $key));
             }
 
             $values[] = $item;
         }
 
-        if (!$optional && $values === []) {
+        if (!$optional && !$allowEmpty && $values === []) {
             throw new GateError(\sprintf('%s: "%s" must not be empty.', $file, $key));
         }
 

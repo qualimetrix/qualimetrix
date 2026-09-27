@@ -108,7 +108,7 @@ final class RaiseSites
         ],
         [
             'Options.php',
-            'if (\in_array($mode, [self::MODE_COMPARE, self::MODE_DERIVE_DECLARED_DELTA], true) && $reference === null) {',
+            'if (\in_array($mode, [self::MODE_COMPARE, self::MODE_DERIVE_DECLARATIONS], true) && $reference === null) {',
             'the modes that need a reference, compared as strings and never called',
         ],
         [
@@ -117,14 +117,9 @@ final class RaiseSites
             'a match arm keyed by the mode string; the call beside it is direct',
         ],
         [
-            'TreeRun.php',
-            "['check', ...\$case->paths, ...self::CHECK_ARGUMENTS, '-c', \$config, '-f', \$format, ...\$arguments],",
-            'the product command `bin/qmx check`, an argument of a process, not a method of the gate',
-        ],
-        [
-            'TreeRun.php',
-            "['check', ...\$case->paths, ...self::CHECK_ARGUMENTS, '-c', \$config, '-f', 'text', '--show-suppressed', ...\$arguments],",
-            'the product command `bin/qmx check`, an argument of a process, not a method of the gate',
+            'GateModes.php',
+            'return $options->mode === Options::MODE_COMPARE ? GateReport::EXIT_RED : self::MEASUREMENT_FAILED;',
+            'the mode selects the failed run exit code; its string is never invoked',
         ],
     ];
 

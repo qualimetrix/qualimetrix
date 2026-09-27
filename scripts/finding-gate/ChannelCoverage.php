@@ -30,7 +30,7 @@ final class ChannelCoverage
      * @param list<string> $declaredPairs from the declaration witnesses, never from a claim
      * @param list<string> $observedPairs what the authoritative cases fired
      */
-    public static function check(
+    public static function inspectCoverage(
         GateReport $report,
         array $declaredPairs,
         array $observedPairs,

@@ -131,7 +131,7 @@ final class Interruption
      *
      * What the exit code is read from, and read from here rather than from
      * catching {@see Interrupted}: a stopping run also terminates its workers,
-     * and {@see CaseScheduler::run()} rethrows a termination failure out of its
+     * and {@see CaseScheduler::captureCases()} rethrows a termination failure out of its
      * own `finally`, which would replace the interrupt. And conditioned on the
      * raise because every finished run suppresses raising while it hands its
      * scratch back — without that, a signal recorded afterwards would make the

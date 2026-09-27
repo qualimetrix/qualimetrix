@@ -48,13 +48,22 @@ final class GateModes
      */
     public static function run(Options $options, GateReport $report): int
     {
-        return match ($options->mode) {
-            Options::MODE_DERIVE_TUPLE => self::deriveTuple($options),
-            Options::MODE_DERIVE_NORMALIZATION => self::deriveNormalization($options, $report),
-            Options::MODE_DERIVE_DECLARED_DELTA => self::deriveDeclaredDelta($options, $report),
-            Options::MODE_COMPARE => self::compare($options, $report),
-            default => throw new GateError(\sprintf('The mode "%s" neither compares nor writes.', $options->mode)),
-        };
+        try {
+            return match ($options->mode) {
+                Options::MODE_DERIVE_TUPLE => self::deriveTuple($options),
+                Options::MODE_DERIVE_NORMALIZATION => self::deriveNormalization($options, $report),
+                Options::MODE_DERIVE_DECLARATIONS => self::deriveDeclarations($options, $report),
+                Options::MODE_COMPARE => self::compare($options, $report),
+                default => throw new GateError(\sprintf('The mode "%s" neither compares nor writes.', $options->mode)),
+            };
+        } catch (CorpusInvalid $error) {
+            $report->fail(FailureClass::CORPUS_INVALID, 'corpus', $error->getMessage());
+            echo $report->render();
+            if ($options->reportPath !== null) {
+                $report->writeJson($options->reportPath);
+            }
+            return $options->mode === Options::MODE_COMPARE ? GateReport::EXIT_RED : self::MEASUREMENT_FAILED;
+        }
     }
 
     /** Runs one independent corpus case for the bounded parent scheduler. */
@@ -64,9 +73,11 @@ final class GateModes
             throw new GateError('The internal case worker is missing its required arguments.');
         }
 
-        $case = Corpus::load($options->candidateRoot, [$options->caseWorker])->cases[0];
+        $corpus = Corpus::load($options->candidateRoot, [$options->caseWorker]);
+        $case = $corpus->cases[0];
         $vocabulary = MetricVocabulary::ofTree($options->candidateRoot);
         $maps = RenameMaps::load($options->candidateRoot . '/finding-gate/maps', $vocabulary);
+        $structuralMaps = DeclaredStructuralMaps::load($options->candidateRoot . '/finding-gate');
         // Beside its output, which the parent put inside the run directory it will
         // remove. A worker therefore needs no cleanup window of its own: the parent
         // SIGKILLs its whole process group and then removes the directory the worker
@@ -86,8 +97,10 @@ final class GateModes
                 $options->workerLabel,
                 $maps,
                 $options->workerReverseInput,
+                CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($options->candidateRoot . '/finding-gate')),
+                $structuralMaps,
             );
-            $artifacts = $run->forCase($case);
+            $capture = $run->forCase($case);
 
             // Beside the artifacts, what this worker's own maps translated. A row
             // whose only work is on a case's input fires here and in no other
@@ -95,7 +108,12 @@ final class GateModes
             Fs::write(
                 $options->workerOutput,
                 json_encode(
-                    ['artifacts' => $artifacts, 'mapHits' => $maps->firedRows()],
+                    [
+                        'artifacts' => $capture->artifacts,
+                        'rankings' => $capture->rankings,
+                        'mapHits' => $maps->firedRows(),
+                        'structuralMapHits' => $structuralMaps->firedRows(),
+                    ],
                     \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES,
                 ),
             );
@@ -176,11 +194,11 @@ final class GateModes
         return self::WROTE;
     }
 
-    /** Rewrites the declared delta and its diff files from a full comparison. */
-    private static function deriveDeclaredDelta(Options $options, GateReport $report): int
+    /** Rewrites every measured declaration from a full comparison. */
+    private static function deriveDeclarations(Options $options, GateReport $report): int
     {
         $gate = new Gate($options, $report);
-        $written = $gate->deriveDeclaredDelta();
+        $written = $gate->deriveDeclarations();
         echo $report->render();
 
         // A derive run's verdict is what decides whether anything was written, so
@@ -200,9 +218,9 @@ final class GateModes
             return self::MEASUREMENT_FAILED;
         }
 
-        echo 'Measured the declared delta into: ' . implode(', ', $written) . "\n";
-        echo "Fill in the reason of every row marked \"?\" — the gate refuses to load one that is not explained.\n";
-        echo "This was a write, not a check: re-run without --derive-declared-delta to be judged against it.\n";
+        echo 'Measured the declarations into: ' . implode(', ', $written) . "\n";
+        echo "Read the measured tables against the explained intentions before checking them.\n";
+        echo "This was a write, not a check: re-run without --derive-declarations to be judged against it.\n";
 
         return self::WROTE;
     }

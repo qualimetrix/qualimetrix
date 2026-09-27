@@ -78,9 +78,9 @@ final class SelfTestMaps extends SelfTestGroup
             'the channel map is not applied backwards',
         );
         $this->same(
-            ['--only-rule=design.param-typing'],
-            $channel->reverseArguments(['--only-rule=design.param-typing']),
-            'nor when it is handed a list of arguments',
+            true,
+            self::throws(static fn(): mixed => $channel->reverseArguments(['--only-rule=design.param-typing'])),
+            'a named argument translator refuses an unsupported mapped selector',
         );
 
         // checkstyle prints `source="qmx.<code>"`, and a dot continues a name, so
@@ -219,7 +219,7 @@ final class SelfTestMaps extends SelfTestGroup
         $inWorker = RenameMaps::fromPairs([
             ['old' => 'suppress_namespaces:', 'new' => 'suppress_ns:', 'source' => 'inputs.tsv'],
         ]);
-        $inWorker->reverse("suppress_ns:\n  - Corpus\\X\n");
+        $inWorker->reverseYaml("suppress_ns:\n  - Corpus\\X\n");
         $this->same(
             ['inputs.tsv: "suppress_namespaces:" -> "suppress_ns:"' => 1],
             $inWorker->firedRows(),
@@ -293,14 +293,10 @@ final class SelfTestMaps extends SelfTestGroup
             ['old' => 'suppress_namespaces:', 'new' => 'suppress_ns:', 'source' => RenameMaps::INPUTS],
         ]);
 
-        // The form is deliberately blind to indent: a root key and a per-rule
-        // key of the same spelling are one token in the document's own grammar,
-        // and this is what lets one row address both levels of
-        // finding-gate/cases/rule-exclusion-ledger/qmx.yaml at once.
         $this->same(
-            "suppress_namespaces:\n  - App\nrules:\n  some.rule:\n    suppress_namespaces:\n      - App\\Sub",
-            $documentKey->reverse("suppress_ns:\n  - App\nrules:\n  some.rule:\n    suppress_ns:\n      - App\\Sub"),
-            'the row translates the key at root indent and at per-rule indent alike',
+            "suppress_namespaces:\n  - App\nrules:\n  some.rule:\n    suppress_ns:\n      - App\\Sub",
+            $documentKey->reverseYaml("suppress_ns:\n  - App\nrules:\n  some.rule:\n    suppress_ns:\n      - App\\Sub"),
+            'the root key row translates only the root key and leaves the per-rule neighbour alone',
         );
 
         // The counterexample the plan requires: --rule-opt writes a per-rule
@@ -345,8 +341,8 @@ final class SelfTestMaps extends SelfTestGroup
         ]);
 
         $this->same(
-            '"mechanism": "namespace-block"',
-            $values->forward('"mechanism": "namespace-suppression"', 'format:suppressed'),
+            '{"mechanism": "namespace-block"}',
+            $values->forward('{"mechanism": "namespace-suppression"}', 'format:suppressed'),
             'a report-values row translates the quoted value',
         );
         $this->same(
@@ -355,13 +351,13 @@ final class SelfTestMaps extends SelfTestGroup
             'and there is no bare substitution: the same word unquoted, as prose beside it might carry, is left alone',
         );
         $this->same(
-            '"mechanism": "namespace-suppression"',
-            $values->forward('"mechanism": "namespace-suppression"', 'format:json'),
+            '{"mechanism": "namespace-suppression"}',
+            $values->forward('{"mechanism": "namespace-suppression"}', 'format:json'),
             'the row reaches only the surface it is declared for: format:json publishes no report value',
         );
         $this->same(
-            '"mechanism": "namespace-block"',
-            $values->reverse('"mechanism": "namespace-block"'),
+            '{"mechanism": "namespace-block"}',
+            $values->reverse('{"mechanism": "namespace-block"}'),
             'the map is forward-only: reverse leaves the new spelling exactly as it found it',
         );
 

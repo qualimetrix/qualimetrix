@@ -704,34 +704,40 @@ redirected stdout is never evidence of success.
 
 ### Proving a rename changed nothing else
 
-Run the gate for any change that renames a channel, a rule, a metric key or a
-published finding field, and for any change to how a finding is published.
-`composer gate -- --reference=<the commit the change starts from>` checks out that
-commit, runs both binaries over the current corpus and compares findings, the
-twelve formats, exit codes, `qmx rules`, `baseline:explain`, the generated
-baseline and the suppressed report. Corpus, maps, normalization list and
-equivalence tuple live in `finding-gate/`; its README holds the case schema and
-the surface list.
+Run `composer gate -- --reference=<the commit before the change>` when changing
+a channel, rule, metric key, finding field or publication. The gate compares
+an external corpus, complete physical finding authority and ranking values,
+all captured formats, exits, stderr, file outputs, baseline lifecycle and
+named debug invocations. [The gate README](finding-gate/README.md) owns the
+case schema, declaration forms, invocation provenance and limits.
 
-- Declare every intended rename as a row in `finding-gate/maps/`. An undeclared
-  rename is red, and a declared rename that translated nothing is red too.
-- Add a channel and its corpus fixture together, in the case that owns its
-  family, and name it in that case's `channels`.
-- Never point a corpus case at project code. The corpus is external because the
-  project analyses itself: a case reading `src/` moves the gate's input with the
-  same step it is measuring.
-- A GREEN run whose reference has the same product code proves the normalization
-  list is complete, not that a step is safe. Proof of a step needs the previous
-  step's commit as the reference.
-- `PARTIAL` is not evidence of anything: it means `--cases` or
-  `--incomplete-corpus` narrowed the run. Do not cite it as green.
-- Re-run `composer gate:controls` after changing the comparator itself. A gate
-  that proved itself before the rewrite says nothing about the rewritten one.
-- `--derive-normalization` and `--derive-tuple` regenerate their tracked files.
-  Do not hand-edit either: a row that no measurement produced is a claim about
-  nondeterminism that nothing checks. Every `--derive-*` mode is a write, not a
-  check: it exits 4 when it wrote and 5 when the measurement it would have
-  written from failed, and never 0.
+- Declare exact vocabulary moves in `finding-gate/maps/`. An unexplained
+  rename and a row translating nothing both fail.
+- Declare record introductions/withdrawals, value changes, report schema,
+  case outcomes and surface changes through their authored intentions and
+  exact derived tables. Use `--derive-declarations` once for all measured
+  forms, inspect the data and supply reasons, then run the ordinary comparison.
+  Derivation is not acceptance: exit 4 means written, exit 5 means refused.
+- JSON declarations include virtual ranking values. Baseline-check records
+  have their own view. Ranking permutations use `order/ranking/*`, while
+  changed slice limits use `field/topIssues.limit`.
+- Add a channel and its independent corpus fixture together. Claim exact
+  `channel@level` pairs; keep one authoritative owner per channel. Auxiliary
+  cases exercise extra inputs and are compared fully.
+- Keep every fixture and translated input inside its own case. Product source
+  must never serve as the common corpus input.
+- `PARTIAL` is not GREEN. A comparison against identical product code proves
+  capture and corpus consistency; a product-change claim needs the preceding
+  commit and independent tests of any newly declared values.
+- Re-run `composer gate:controls -- --reference=<commit>` after comparator
+  changes. Every failure class must have observed self-test witnesses;
+  temporary witness exemptions are refused.
+- Measure tuple and normalization changes with `--derive-tuple` and
+  `--derive-normalization`. Never use an exclusion to hide a semantic change.
+  A stale map, normalization row or change declaration fails.
+- Use the independent checks named in the README for cache, Git scope, hooks,
+  file-system races, worker environments, unsupported input grammars and
+  packaging behaviour outside captured surfaces.
 
 ### Self-Analysis: Interpreting Results
 

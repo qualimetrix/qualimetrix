@@ -15,7 +15,7 @@ namespace QmxFindingGate;
  *
  * Never construct it to mean "the user pressed Ctrl-C" anywhere else. The exit
  * code is read from {@see Interruption::signal()}, not from catching this,
- * because {@see CaseScheduler::run()} rethrows a termination failure from its
+ * because {@see CaseScheduler::captureCases()} rethrows a termination failure from its
  * `finally` and would replace it.
  */
 final class Interrupted extends GateError {}

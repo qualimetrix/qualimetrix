@@ -583,8 +583,8 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 $projectRoot . '/scripts/tautology-controls/tests',
             );
             $this->copyDirectory(
-                $sourceRoot . '/scripts/finding-gate/tests',
-                $projectRoot . '/scripts/finding-gate/tests',
+                $sourceRoot . '/scripts/finding-gate',
+                $projectRoot . '/scripts/finding-gate',
             );
             $this->copyDirectory(
                 $sourceRoot . '/scripts/suppression-snapshot/tests',

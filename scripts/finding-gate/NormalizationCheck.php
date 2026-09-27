@@ -8,13 +8,62 @@ namespace QmxFindingGate;
  * What the normalization list may redact and whether it covers everything that varies: it never touches a
  * field the tuple compares, two candidate runs agree after it, and every row still fires.
  */
-final class NormalizationCheck
+final class NormalizationCheck implements RunCheck
 {
     public function __construct(
         private readonly Options $options,
         private readonly GateReport $report,
         private readonly Normalization $normalization,
     ) {}
+
+    public static function create(RunContext $run): static
+    {
+        return new self($run->options, $run->report, $run->normalization);
+    }
+
+    public function checkRun(array $candidate, array $reference): void
+    {
+        foreach (['candidate' => $candidate, 'reference' => $reference] as $side => $artifacts) {
+            foreach ($artifacts as $key => $content) {
+                $surface = Surfaces::surfaceClass($key);
+                if (str_starts_with($surface, 'exit:') || str_starts_with($surface, 'stderr')) {
+                    continue;
+                }
+                if ($surface === 'format:html' && $content !== '') {
+                    try {
+                        $content = ReportPayload::of($content, $key, $side);
+                    } catch (GateError $error) {
+                        $reported = false;
+                        foreach ($this->report->raised() as $failure) {
+                            if ($failure['class'] === FailureClass::REPORT_PAYLOAD_UNREADABLE && $failure['scope'] === $key) {
+                                $reported = true;
+                                break;
+                            }
+                        }
+                        if (!$reported) {
+                            throw $error;
+                        }
+                        continue;
+                    }
+                }
+                $before = json_decode($this->normalization->normalizeCaptureMetadata($surface, $content), true);
+                if (!\is_array($before)) {
+                    continue;
+                }
+                $after = json_decode($this->normalization->normalizeCaptureMetadata($surface, $this->normalization->normalize($surface, $content)), true);
+                $changed = array_is_list($before) && $before !== $after;
+                foreach (['violations', 'suppressed', 'symbols', 'directives', 'findings', 'entries', 'runs'] as $section) {
+                    if (!\array_key_exists($section, $before)) {
+                        continue;
+                    }
+                    $changed = $changed || !\is_array($after) || !\array_key_exists($section, $after) || $before[$section] !== $after[$section];
+                }
+                if ($changed) {
+                    $this->report->fail(FailureClass::NORMALIZATION_OVERREACH, $side . ' / ' . $key, 'Normalization changes the complete published records of this readable report.');
+                }
+            }
+        }
+    }
 
     /**
      * Normalization and the tuple must not overlap.
@@ -91,33 +140,23 @@ final class NormalizationCheck
      */
     public function checkDeterminism(array $first, array $second): void
     {
-        // The union, not run 1's keys: a surface that only one run produces at
-        // all — the conditional `stderr:` key is exactly that shape — would
-        // otherwise be compared by nothing.
         foreach (array_keys($first + $second) as $key) {
             $surface = Surfaces::surfaceClass($key);
-
+            $detail = null;
+            $diff = [];
             if (!isset($first[$key]) || !isset($second[$key])) {
-                $this->report->fail(
-                    FailureClass::NONDETERMINISM_UNDECLARED,
-                    $key,
-                    \sprintf('Only run %d of the candidate tree produced this surface at all.', isset($first[$key]) ? 1 : 2),
-                );
-
-                continue;
+                $detail = \sprintf('Only run %d of the candidate tree produced this surface at all.', isset($first[$key]) ? 1 : 2);
+            } else {
+                $left = $this->normalization->normalize($surface, $first[$key]);
+                $right = $this->normalization->normalize($surface, $second[$key]);
+                if ($left !== $right) {
+                    $detail = 'Two runs of the candidate tree differ after normalization, so the normalization list does not'
+                        . ' cover everything that varies. Measure it again with --derive-normalization.';
+                    $diff = Diff::between($left, $right, 'run 1', 'run 2');
+                }
             }
-
-            $left = $this->normalization->normalize($surface, $first[$key]);
-            $right = $this->normalization->normalize($surface, $second[$key]);
-
-            if ($left !== $right) {
-                $this->report->fail(
-                    FailureClass::NONDETERMINISM_UNDECLARED,
-                    $key,
-                    'Two runs of the candidate tree differ after normalization, so the normalization list does not'
-                    . ' cover everything that varies. Measure it again with --derive-normalization.',
-                    Diff::between($left, $right, 'run 1', 'run 2'),
-                );
+            if ($detail !== null) {
+                $this->report->fail(FailureClass::NONDETERMINISM_UNDECLARED, $key, $detail, $diff);
             }
         }
     }

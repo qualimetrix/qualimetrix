@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace QmxFindingGate;
 
 /**
- * The shape of a published finding: the equivalence tuple and the fingerprints composed from it.
+ * The shape of a published finding and the exact values of declared fields.
+ *
+ * @phpstan-import-type Witness from CheckWitnesses
  */
 final class SelfTestFindingShape extends SelfTestGroup
 {
@@ -201,4 +203,25 @@ final class SelfTestFindingShape extends SelfTestGroup
             'with no row declaring the collapse, the substituted surfaces still differ',
         );
     }
+    /**
+     * @return list<Witness>
+     */
+    public static function fieldValuesWitnesses(): array
+    {
+        return [CheckWitnesses::witness(
+            'field-values-publication',
+            CheckWitnesses::WHOLE_RUN,
+            static function (array $tree): array {
+                $record = ['file' => 'src/Alpha.php', 'line' => 1, 'form' => 'symbol', 'target' => 'replay.alpha', 'effect' => 'applied', 'reason' => 'replayed', 'masked_by' => null, 'boundary_observable' => true];
+                $base = json_encode($record, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
+                $record['probe'] = 1;
+                $tree['candidateAnswers']['case:alpha|directives'] = ['stdout' => json_encode(['directives' => [$record], 'exit_code' => 0], \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n"];
+                $tree['declarations'][DeclaredFields::INDEX] = Tsv::render(DeclaredFields::COLUMNS, [['added', 'directives', 'directives', 'probe', 'a new observed directive field']]);
+                $tree['declarations'][DeclaredFields::DERIVED] = Tsv::render(DeclaredFields::DERIVED_COLUMNS, [['directives', 'directives', 'probe', 'alpha', $base, '2']]);
+                return $tree;
+            },
+            [[FailureClass::FIELD_VALUES_MISMATCH, DeclaredFields::DERIVED, 'FieldValuesCheck::checkRun <- Gate::compare']],
+        )];
+    }
+
 }

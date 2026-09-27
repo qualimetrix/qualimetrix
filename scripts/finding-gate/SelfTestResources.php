@@ -212,7 +212,7 @@ final class SelfTestResources extends SelfTestGroup
             $message = null;
 
             try {
-                ReferenceTree::create($repository, 'HEAD');
+                ReferenceTree::create($repository, 'HEAD', RenameMaps::fromPairs([], MetricVocabulary::ofTree($repository)));
             } catch (GateError $error) {
                 $message = $error->getMessage();
             }
@@ -242,7 +242,7 @@ final class SelfTestResources extends SelfTestGroup
         $repository = $this->throwawayRepository(withVendor: true);
 
         try {
-            $tree = ReferenceTree::create($repository, 'HEAD');
+            $tree = ReferenceTree::create($repository, 'HEAD', RenameMaps::fromPairs([], MetricVocabulary::ofTree($repository)));
 
             // The half that keeps the other half honest. Every assertion here
             // reads "nothing is registered", and a path comparison that can
@@ -372,7 +372,7 @@ final class SelfTestResources extends SelfTestGroup
                     echo $run, "\n", $run, "\n", "ready\n";
                 }
 
-                $tree = ReferenceTree::create($argv[2], 'HEAD');
+                $tree = ReferenceTree::create($argv[2], 'HEAD', RenameMaps::fromPairs([], MetricVocabulary::ofTree($argv[2])));
 
                 if ($argv[4] !== 'early') {
                     echo $run, "\n", \dirname($tree->root), "\n", "ready\n";

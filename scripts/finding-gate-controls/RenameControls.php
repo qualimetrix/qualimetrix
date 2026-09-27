@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace QmxFindingGateControls;
 
+use QmxFindingGate\CaseOutcome;
+use QmxFindingGate\Corpus;
 use QmxFindingGate\FailureClass;
-use RuntimeException;
 
 /**
  * The controls on the declared maps: a rename without its row, a row that explains nothing, and every kind
@@ -63,7 +64,9 @@ final class RenameControls
             'rename-no-map',
             'a channel renamed in product code with no finding-gate/maps/channels.tsv row naming it',
             ChannelRenamePlants::lcomChannelMutation(),
-            [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity')],
+            [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity'),
+                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:complexity|format:json', exactScope: true),
+                ...ChannelRenamePlants::caseListingFailures('complexity')],
             [
                 new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:complexity'),
                 new Expectation(
@@ -76,56 +79,9 @@ final class RenameControls
     }
 
     /**
-     * The reference addressed in a vocabulary it does not have.
-     *
-     * A name the step renamed is written into a case's input with no
-     * `inputs.tsv` row to restate it, so the reference — which predates the
-     * rename — is handed a token it cannot resolve. It answers with the
-     * product's config-error exit code, and the point of the control is that
-     * this is reported as its own class instead of arriving as twelve surface
-     * diffs and an empty findings section, which reads as a product change.
-     *
-     * **Why a CHANNEL of a multi-channel rule, and not a rule.** This control
-     * cannot rename `design.noc` when the declaration already covers a delta on
-     * `tree|rules`: a renamed producer moves that listing,
-     * and an expectation pinned to a surface a declaration covers can never be
-     * met — the harness refuses such a control before it clones anything
-     * ({@see Control::assertNotPinnedToDeclaredDelta()}). Repinning onto a
-     * `delta-*` class was rejected outright: that would assert about the
-     * declaration rather than about the reference's vocabulary, which is what
-     * this control is for. So the mutation stops reaching the listing at all.
-     *
-     * It can, because the listing and the channel vocabulary are different sets
-     * of names. `bin/qmx rules` prints producer names, their descriptions and
-     * their option tokens; it prints no channel codes. `architecture.potential-shadow`
-     * is a diagnostic the `architecture.layer-violation` rule emits under a rule
-     * name of its own and is not a registered rule, so it appears nowhere in the
-     * listing. Measured, not assumed: the listing was captured before and after
-     * the one-literal edit below and the two files are byte-identical.
-     *
-     * **Why the input is a selector, and why in this case.** A selector resolves
-     * a producer, a group **or a channel** — measured from the product's own
-     * refusal, `Rule selector "…" does not match any registered producer, group,
-     * or channel`, which exits 3. `disabled-rule` is the auxiliary case that
-     * exists to carry a selector on the gate's input, and no architecture
-     * channel fires in it (its config declares no layer policy), so the
-     * candidate's own output there is unchanged and the only thing this
-     * mutation does to that case is make the *reference* refuse its input.
-     *
-     * A CLI flag would have been the other shape an `inputs.tsv` row can carry,
-     * and it was measured and rejected: an unknown option exits **1**, not 3, so
-     * a renamed flag proves `run-failed` rather than this class.
-     *
-     * The new name keeps the old one's length, as every rename in this file
-     * does: two surfaces pad a name-bearing column, and a row cannot declare
-     * padding.
-     *
-     * The `layers` case's claim is repointed with the rename because the claim
-     * is not what is under test, and a stale one would add a failure of another
-     * mechanism to every line of the table. The tracked declaration fixture is
-     * deliberately NOT repointed: the disagreement is this mutation's honest
-     * radius and is tolerated as such, exactly as it was when this control
-     * renamed a rule.
+     * An untranslatable selector makes the reference refuse an authoritative
+     * analysis input. Complete capture rejects its refusal envelope before
+     * comparison; there is no ranking authority or partial publication to use.
      */
     public static function referenceInputUntranslated(): Control
     {
@@ -154,21 +110,7 @@ final class RenameControls
                 ['"architecture.potential-shadow@project"' => '"architecture.potential-shado2@project"'],
                 'the case that fires the channel claims it under its new name',
             )),
-            [new Expectation(FailureClass::REFERENCE_INPUT_UNTRANSLATED, 'reference / case:disabled-rule')],
-            [
-                new Expectation(FailureClass::RUN_FAILED, 'reference / disabled-rule'),
-                // The reference's run for that case dies, so its HTML artifact
-                // has no payload to read. The dead run is the finding; this is
-                // its downstream symptom, and it lands on the same case.
-                new Expectation(FailureClass::REPORT_PAYLOAD_UNREADABLE, 'case:disabled-rule'),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:disabled-rule'),
-                new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:disabled-rule'),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:layers'),
-                new Expectation(
-                    FailureClass::WITNESS_DISAGREEMENT,
-                    'governance/Channel/Fixtures/declared.txt',
-                ),
-            ],
+            [new Expectation(FailureClass::RUN_FAILED, 'reference', exactScope: true)],
         );
     }
 
@@ -218,7 +160,9 @@ final class RenameControls
                     ],
                     'the rename is declared as a split, one of whose two rows can explain nothing',
                 )),
-            [new Expectation(FailureClass::MAP_STALE, 'code-smell.never-emitted')],
+            [new Expectation(FailureClass::MAP_STALE, 'code-smell.never-emitted'),
+                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:smells|format:json', exactScope: true),
+                ...ChannelRenamePlants::caseListingFailures('smells')],
             // `tree|rules` moves here too — the mutation renames a producer and
             // the listing prints producer names — and whether that shows up as
             // a `surface-mismatch` depends on the step under test rather than on
@@ -324,9 +268,22 @@ final class RenameControls
                 ],
                 'the metrics surface publishes "<key>.pct95" where the product computed "<key>.p95"',
             ),
-            [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity|format:metrics')],
+            [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity|format:metrics'),
+                ...self::aggregateValueFailures()],
             [new Expectation(FailureClass::SURFACE_MISMATCH, 'format:metrics')],
         );
+    }
+
+    /** @return list<Expectation> */
+    private static function aggregateValueFailures(): array
+    {
+        $required = [];
+        foreach (\QmxFindingGate\Corpus::load(\dirname(__DIR__, 2))->cases as $case) {
+            if ($case->outcome !== \QmxFindingGate\CaseOutcome::REFUSAL) {
+                $required[] = new Expectation(FailureClass::VALUE_MISMATCH, 'case:' . $case->id . '|format:metrics|record:');
+            }
+        }
+        return $required;
     }
 
     /**
@@ -432,8 +389,8 @@ final class RenameControls
      * The blast radius is every case's `format:suppressed` surface, and only
      * that surface: `mechanisms` and `byMechanism` print every value in every
      * case regardless of whether that case's own findings were ever suppressed
-     * by it, so the mutation reaches all fourteen cases uniformly and nothing
-     * else — no finding, no count, no other format reads this string.
+     * by it. Early refusals publish no mechanism vocabulary. A populated
+     * suppression record also carries the renamed mechanism.
      */
     public static function reportValueWithoutRow(): Control
     {
@@ -441,7 +398,8 @@ final class RenameControls
             'report-value-no-row',
             'a suppressed report value renamed with no report-values.tsv row naming it',
             self::reportValueMutation(),
-            self::surfaceMismatchOnEverySuppressedFormat(),
+            [new Expectation(FailureClass::RECORD_UNDECLARED, 'case:rule-exclusion-ledger|format:suppressed', exactScope: true),
+                ...self::surfaceMismatchOnEverySuppressedFormat()],
         );
     }
 
@@ -449,28 +407,21 @@ final class RenameControls
      * Every case's `format:suppressed` surface, derived from the corpus rather
      * than listed — for the reason {@see DeclaredDeltaControls::surfaceMismatchOnEveryCaseButHealth()}
      * states: a hand-written list goes stale the day the corpus grows. Unlike
-     * that method, no case is excluded: every case's `format:suppressed` output
-     * prints the whole mechanism vocabulary, `health` included.
+     * that method, health is included. Early refusals publish their error
+     * instead of the mechanism vocabulary.
      *
      * @return list<Expectation>
      */
     private static function surfaceMismatchOnEverySuppressedFormat(): array
     {
-        $root = \dirname(__DIR__, 2) . '/finding-gate/cases';
-        $entries = scandir($root);
-
-        if ($entries === false) {
-            throw new RuntimeException(\sprintf('No corpus at %s, so this control cannot state its blast radius.', $root));
-        }
-
         $required = [];
 
-        foreach ($entries as $entry) {
-            if (!is_file($root . '/' . $entry . '/case.json')) {
+        foreach (Corpus::load(\dirname(__DIR__, 2))->cases as $case) {
+            if (CaseOutcome::of($case, 'candidate') === CaseOutcome::REFUSAL) {
                 continue;
             }
 
-            $required[] = new Expectation(FailureClass::SURFACE_MISMATCH, 'case:' . $entry . '|format:suppressed');
+            $required[] = new Expectation(FailureClass::SURFACE_MISMATCH, 'case:' . $case->id . '|format:suppressed', exactScope: true);
         }
 
         return $required;

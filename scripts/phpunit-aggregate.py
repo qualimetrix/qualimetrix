@@ -113,7 +113,7 @@ def parse_arguments(arguments: Sequence[str]) -> argparse.Namespace:
     parser.add_argument(
         "--timeout",
         type=parse_positive_seconds,
-        default=900.0,
+        default=2700.0,
         help="Deadline for discovery and all suite shards in seconds",
     )
     parser.add_argument(

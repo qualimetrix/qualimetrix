@@ -10,6 +10,9 @@ namespace QmxFindingGate;
  * These strings are a contract: other packages of the vocabulary pass assert on
  * them, so renaming one is a breaking change to those assertions, not an
  * editorial edit.
+ *
+ * Every declared class requires a producer and an observed self-test witness
+ * for every raise site and caller. Unsupported vocabulary is refused.
  */
 final class FailureClass
 {
@@ -112,6 +115,54 @@ final class FailureClass
      */
     public const PUBLISHED_ORDER_DRIFT = 'published-order-drift';
 
+    /** A record present on one side only that no `declared-records.tsv` row withdraws or introduces. */
+    public const RECORD_UNDECLARED = 'record-undeclared';
+
+    /** A `declared-records.tsv` row no record of the run matched. */
+    public const RECORD_STALE = 'record-stale';
+
+    /** A surface publishes a record or document value differently from that side's authoritative record or process. */
+    public const RECORD_PROJECTION_MISMATCH = 'record-projection-mismatch';
+
+    /** One physical finding join key carries conflicting ranking values. */
+    public const RECORD_AMBIGUOUS = 'record-ambiguous';
+
+    /** Unchanged matched findings changed their observable ranking order. */
+    public const RANKING_ORDER_MISMATCH = 'ranking-order-mismatch';
+
+    /** A ranking capture or published projection disagrees with its own source invocation. */
+    public const RANKING_PROJECTION_MISMATCH = 'ranking-projection-mismatch';
+
+    /** The value shifts measured under a declared intent are not the derived table, byte for byte. */
+    public const VALUE_MISMATCH = 'value-mismatch';
+
+    /** A `declared-values.tsv` intent under which no value moved. */
+    public const VALUE_STALE = 'value-stale';
+
+    /** A `declared-fields.tsv` row naming a field neither side's tuple adds or drops. */
+    public const FIELD_DECLARATION_STALE = 'field-declaration-stale';
+
+    /** The values an added field carries are not its derived table, byte for byte. */
+    public const FIELD_VALUES_MISMATCH = 'field-values-mismatch';
+
+    /** The candidate refuses an input of a case the reference analyses, and no outcome declares it. */
+    public const CANDIDATE_INPUT_REFUSED = 'candidate-input-refused';
+
+    /** A case ended otherwise than its expected or declared outcome, or refused with other output. */
+    public const CASE_OUTCOME_MISMATCH = 'case-outcome-mismatch';
+
+    /** A `declared-outcomes.tsv` row whose transition the run did not observe. */
+    public const OUTCOME_DECLARATION_STALE = 'outcome-declaration-stale';
+
+    /** A `declared-surfaces.tsv` row whose surface is not introduced or withdrawn as declared. */
+    public const SURFACE_DECLARATION_STALE = 'surface-declaration-stale';
+
+    /** The candidate produced a withdrawn surface, or refused it with other output than the declared refusal. */
+    public const SURFACE_WITHDRAWAL_MISMATCH = 'surface-withdrawal-mismatch';
+
+    /** A `declared-structural-maps.tsv` row that moved nothing in any case input. */
+    public const STRUCTURAL_MAP_STALE = 'structural-map-stale';
+
     /** @var list<string> */
     public const ALL = [
         self::ENV_MISMATCH,
@@ -143,5 +194,21 @@ final class FailureClass
         self::NONDETERMINISM_UNDECLARED,
         self::PATH_LEAK,
         self::PUBLISHED_ORDER_DRIFT,
+        self::RECORD_UNDECLARED,
+        self::RECORD_STALE,
+        self::RECORD_PROJECTION_MISMATCH,
+        self::RECORD_AMBIGUOUS,
+        self::RANKING_ORDER_MISMATCH,
+        self::RANKING_PROJECTION_MISMATCH,
+        self::VALUE_MISMATCH,
+        self::VALUE_STALE,
+        self::FIELD_DECLARATION_STALE,
+        self::FIELD_VALUES_MISMATCH,
+        self::CANDIDATE_INPUT_REFUSED,
+        self::CASE_OUTCOME_MISMATCH,
+        self::OUTCOME_DECLARATION_STALE,
+        self::SURFACE_DECLARATION_STALE,
+        self::SURFACE_WITHDRAWAL_MISMATCH,
+        self::STRUCTURAL_MAP_STALE,
     ];
 }

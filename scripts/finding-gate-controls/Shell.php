@@ -339,7 +339,7 @@ final class Shell
  * It exists so several controls can be in flight at once: a supervision loop
  * that owns one child cannot read another's pipes, and an unread pipe stops the
  * child that fills it. Liveness is therefore recorded per child — `outputAge()`
- * on the child that has gone quiet, not on a stream where fourteen gates'
+ * on the child that has gone quiet, not on a stream where multiple gates'
  * output would be indistinguishable.
  */
 final class Child

@@ -213,11 +213,11 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'bounded parallel scheduler. That is supervision layered on the read discipline, a different subject '
             . 'from flat capture, and its behaviour is what `composer gate:controls` measures.',
 
-        'scripts/finding-gate/ProcessHandle.php:61' => 'The finding-gate worker handle: non-blocking reads under a '
+        'scripts/finding-gate/ProcessHandle.php:82' => 'The finding-gate worker handle: non-blocking reads under a '
             . 'bounded scheduler, with process-group isolation and launcher-disappearance detection. Same '
             . 'supervision subject as the line above.',
 
-        'scripts/finding-gate/ProcessHandle.php:202' => '`groupedCommand()`: source text inside a nowdoc handed to '
+        'scripts/finding-gate/ProcessHandle.php:215' => '`groupedCommand()`: source text inside a nowdoc handed to '
             . '`php -r`, so this is a literal here and a real call in the child. The child opens no pipe at all — '
             . 'its descriptors are the STDIN/STDOUT/STDERR constants — so it carries none of this hazard.',
 

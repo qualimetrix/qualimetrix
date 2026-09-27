@@ -5,28 +5,19 @@ declare(strict_types=1);
 namespace QmxFindingGate;
 
 /**
- * What a declared rename splits, and the machine check that keeps a split from
- * retiring a compared field.
+ * Exact producer movements explained by a declared channel correspondence.
  *
- * A channel row translates the whole channel key and each differing half (a key
- * was a `rule#code` pair before the pair collapsed into one name).
- * When several rows disagree about one half — `design.type-coverage` becoming
- * three different rule names — no textual translation of that half is correct,
- * so RenameMaps stops substituting it. That alone would be a hole: `rule` and
- * `code` are fields the equivalence tuple compares, and an untranslatable half
- * would reach the surface comparison as a difference for a declared delta to
- * absorb. Normalization is explicitly forbidden from reaching a compared field
- * (`normalization-overreach`), and a declared delta gets no waiver normalization
- * did not get.
+ * A channel row translates a whole channel key and each differing half. When
+ * several rows disagree about one producer half, no textual rewrite of that
+ * half is valid. The reference record's pair must instead name a declared row,
+ * and the candidate must publish its exact target on the same logical finding.
+ * An occurrence with no matched target is `split-unmapped`.
  *
- * So every occurrence of a split half is explained instead, per record rather
- * than per string: the reference finding's own `(rule, code)` pair must be named
- * by a declared row, and the candidate must publish the pair that row computes,
- * on the same finding. An occurrence no declared row accounts for is
- * `split-unmapped`. What that check proves is then what `delta-overreach` allows
- * a declared delta to cover, and nothing wider — {@see allowsMove()} stores the
- * *pairs* those matched records produced, so a delta may show a compared field
- * making a move the split performed and no other.
+ * A matched row licenses the producer movement itself. Record projections may
+ * restate only that observed field/from/to move while retaining their exact
+ * finding identity and channel. The same pairs bound compared-field movement
+ * in a measured surface diff; an unrelated pair obtains no permission from
+ * another member of the split family.
  *
  * A matched record also credits the row that named its key, through
  * {@see RenameMaps::creditExplanation()}, and only where that row declared a
@@ -139,10 +130,21 @@ final class ChannelSplit
             $halves = explode('#', $declared, 2);
             $expectedRule = \count($halves) === 2 ? $halves[0] : null;
             $expectedCode = $halves[\count($halves) - 1];
+            $referenceChannel = self::string($finding, 'channel');
+            $expectedChannel = match (true) {
+                $referenceChannel === '' => '',
+                $referenceChannel === $pairKey => $declared,
+                $referenceChannel === self::string($finding, 'code') => $expectedCode,
+                isset($this->channelKeys[$referenceChannel]) => $this->channelKeys[$referenceChannel],
+                default => $referenceChannel,
+            };
             $identity = self::identity($finding);
             $match = null;
 
             foreach ($candidateByIdentity[$identity] ?? [] as $candidate) {
+                if (self::string($candidate, 'channel') !== $expectedChannel) {
+                    continue;
+                }
                 if ($expectedRule !== null && self::string($candidate, 'rule') !== $expectedRule) {
                     continue;
                 }
@@ -194,22 +196,15 @@ final class ChannelSplit
     }
 
     /**
-     * Whether a declared delta may show this field moving from this reference
-     * value to this candidate value.
+     * Whether a matched channel correspondence licenses this exact field move.
      *
-     * A **move**, not a value. The first version asked only whether each side's
-     * value belonged to the set of values explained records carry, which let a
-     * line move `rule` between any two members of the split family on any
-     * record — including `design.param-type-coverage` → `design.property-type-coverage`,
-     * a pair no explained record ever produced. What is stored now is the pair
-     * itself, taken from the two findings `unexplained()` matched, so the reach
-     * of a declared delta is the set of moves the split actually performed and
-     * nothing wider.
+     * The permission stores field/from/to pairs from matched findings. It does
+     * not authorize any other pair in the same split family, and a record
+     * projection must still retain its own identity and channel. A measured
+     * surface diff can use the same finite pairs without widening that scope.
      *
-     * Both directions are accepted for one reason: a declared diff is rendered
-     * candidate-first, but the token order inside one line is the formatter's,
-     * and asking the caller to know which side it is holding would move a
-     * decision into the caller that belongs here.
+     * Both directions are accepted because a rendered diff is candidate-first
+     * while token order within one line belongs to its formatter.
      */
     public function allowsMove(string $field, string $from, string $to): bool
     {

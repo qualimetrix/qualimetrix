@@ -12,6 +12,7 @@ final class Process
 
     /**
      * @param list<string> $command
+     * @param array<string,string> $environmentAdditions
      *
      * @return array{stdout: string, stderr: string, exit: int}
      */
@@ -19,9 +20,10 @@ final class Process
         array $command,
         string $workingDirectory,
         float $deadlineSeconds = self::COMMAND_DEADLINE_SECONDS,
+        array $environmentAdditions = [],
     ): array {
         $description = implode(' ', $command);
-        $process = ProcessHandle::start($command, $workingDirectory);
+        $process = ProcessHandle::start($command, $workingDirectory, $environmentAdditions);
         $lastHeartbeatAt = microtime(true);
 
         try {

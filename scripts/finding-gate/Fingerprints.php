@@ -52,10 +52,10 @@ namespace QmxFindingGate;
  */
 final class Fingerprints
 {
-    /**
-     * The one surface whose published fingerprint is opaque, and is therefore
-     * substituted before comparison.
-     */
+    /** Fingerprints are licensed by the authoritative main finding publication. */
+    public const SOURCE_VIEW = 'format:json';
+
+    /** The opaque hash surface substituted before comparison. */
     public const OPAQUE_SURFACE = 'format:gitlab';
 
     /**
