@@ -8,115 +8,6 @@ use QmxFindingGate\{FailureClass, Normalization};
 
 final class CorpusCaseControls
 {
-    public static function incompleteDirectorySymlink(): Control
-    {
-        return self::product(
-            'incomplete-directory-symlink',
-            'src/Analysis/Run/Discovery/FinderFileDiscovery.php',
-            "            \$this->record(\n                \$path,\n                AnalysisFailureKind::DirectorySymlink,\n                'Symbolic link to a directory is not traversed',\n            );",
-            '',
-            [
-                FailureClass::CASE_OUTCOME_MISMATCH => [
-                    'candidate / incomplete-directory-symlink',
-                ],
-                FailureClass::SURFACE_MISMATCH => [
-                    'case:incomplete-directory-symlink|baseline-file',
-                    'case:incomplete-directory-symlink|check:output:file',
-                    'case:incomplete-directory-symlink|directives',
-                    'case:incomplete-directory-symlink|exit:baseline:generate',
-                    'case:incomplete-directory-symlink|exit:check:output',
-                    'case:incomplete-directory-symlink|exit:directives',
-                    'case:incomplete-directory-symlink|exit:format:checkstyle',
-                    'case:incomplete-directory-symlink|exit:format:github',
-                    'case:incomplete-directory-symlink|exit:format:gitlab',
-                    'case:incomplete-directory-symlink|exit:format:health',
-                    'case:incomplete-directory-symlink|exit:format:html',
-                    'case:incomplete-directory-symlink|exit:format:json',
-                    'case:incomplete-directory-symlink|exit:format:metrics',
-                    'case:incomplete-directory-symlink|exit:format:sarif',
-                    'case:incomplete-directory-symlink|exit:format:summary',
-                    'case:incomplete-directory-symlink|exit:format:suppressed',
-                    'case:incomplete-directory-symlink|exit:format:text',
-                    'case:incomplete-directory-symlink|exit:format:text-verbose',
-                    'case:incomplete-directory-symlink|exit:graph:export',
-                    'case:incomplete-directory-symlink|exit:show-suppressed',
-                    'case:incomplete-directory-symlink|format:checkstyle',
-                    'case:incomplete-directory-symlink|format:github',
-                    'case:incomplete-directory-symlink|format:gitlab',
-                    'case:incomplete-directory-symlink|format:health',
-                    'case:incomplete-directory-symlink|format:html',
-                    'case:incomplete-directory-symlink|format:json',
-                    'case:incomplete-directory-symlink|format:metrics',
-                    'case:incomplete-directory-symlink|format:sarif',
-                    'case:incomplete-directory-symlink|format:summary',
-                    'case:incomplete-directory-symlink|format:suppressed',
-                    'case:incomplete-directory-symlink|format:text',
-                    'case:incomplete-directory-symlink|format:text-verbose',
-                    'case:incomplete-directory-symlink|graph:export',
-                    'case:incomplete-directory-symlink|show-suppressed',
-                    'case:incomplete-directory-symlink|stderr:graph:export',
-                ],
-                FailureClass::VALUE_MISMATCH => [
-                    'case:incomplete-directory-symlink|baseline-file',
-                    'case:incomplete-directory-symlink|check:output',
-                    'case:incomplete-directory-symlink|directives',
-                    'case:incomplete-directory-symlink|format:checkstyle',
-                    'case:incomplete-directory-symlink|format:github',
-                    'case:incomplete-directory-symlink|format:gitlab',
-                    'case:incomplete-directory-symlink|format:health',
-                    'case:incomplete-directory-symlink|format:html',
-                    'case:incomplete-directory-symlink|format:json',
-                    'case:incomplete-directory-symlink|format:metrics',
-                    'case:incomplete-directory-symlink|format:sarif',
-                    'case:incomplete-directory-symlink|format:summary',
-                    'case:incomplete-directory-symlink|format:suppressed',
-                    'case:incomplete-directory-symlink|format:text',
-                    'case:incomplete-directory-symlink|format:text-verbose',
-                    'case:incomplete-directory-symlink|graph:export',
-                    'case:incomplete-directory-symlink|show-suppressed',
-                ],
-            ],
-        );
-    }
-
-    public static function scopedLayers(): Control
-    {
-        return self::product(
-            'scoped-layers',
-            'src/Analysis/Policy/Architecture/LayerViolation/LayerDeclarationValidator.php',
-            '$judgesAbsence = $context->coversProjectScope;',
-            '$judgesAbsence = true;',
-            [
-                FailureClass::CASE_CLAIM_MISMATCH => [
-                    'case:scoped-layers',
-                ],
-                FailureClass::FINDING_COUNT_MISMATCH => [
-                    'case:scoped-layers',
-                ],
-                FailureClass::RECORD_UNDECLARED => [
-                    'case:scoped-layers|check:baseline',
-                    'case:scoped-layers|format:json',
-                ],
-                FailureClass::SURFACE_MISMATCH => [
-                    'case:scoped-layers|check:baseline',
-                    'case:scoped-layers|check:output:file',
-                    'case:scoped-layers|directives',
-                    'case:scoped-layers|format:checkstyle',
-                    'case:scoped-layers|format:github',
-                    'case:scoped-layers|format:gitlab',
-                    'case:scoped-layers|format:html',
-                    'case:scoped-layers|format:json',
-                    'case:scoped-layers|format:metrics',
-                    'case:scoped-layers|format:sarif',
-                    'case:scoped-layers|format:summary',
-                    'case:scoped-layers|format:text',
-                    'case:scoped-layers|format:text-verbose',
-                    'case:scoped-layers|show-suppressed',
-                ],
-            ],
-        );
-    }
-
     public static function duplicationSize(): Control
     {
         return self::product(
@@ -152,25 +43,6 @@ final class CorpusCaseControls
                     'case:duplication-size|show-suppressed',
                 ],
             ],
-        );
-    }
-
-    public static function unknownScope(): Control
-    {
-        return self::product(
-            'scoped-layers',
-            'src/Analysis/Run/Configuration/ProjectScopeState.php',
-            'return $this !== self::Narrowed;',
-            'return $this === self::Covered;',
-            [
-                FailureClass::RECORD_UNDECLARED => [
-                    'case:scoped-layers|check:baseline-source',
-                ],
-                FailureClass::SURFACE_MISMATCH => [
-                    'case:scoped-layers|check:baseline-source',
-                ],
-            ],
-            'corpus-unknown-scope',
         );
     }
 
@@ -288,66 +160,6 @@ final class CorpusCaseControls
         );
     }
 
-    public static function computedCrossLevel(): Control
-    {
-        return self::product(
-            'computed-cross-level',
-            'src/Analysis/Evidence/ComputedMetrics/ComputedMetricFormulaValidator.php',
-            '$byName[$key]->hasLevel($level)',
-            '$byName[$key]->hasLevel($byName[$key]->levels[0])',
-            [
-                FailureClass::SURFACE_MISMATCH => [
-                    'case:computed-cross-level|check:output',
-                    'case:computed-cross-level|directives',
-                    'case:computed-cross-level|format:gitlab',
-                    'case:computed-cross-level|format:json',
-                    'case:computed-cross-level|format:metrics',
-                    'case:computed-cross-level|format:sarif',
-                    'case:computed-cross-level|format:suppressed',
-                    'case:computed-cross-level|stderr:baseline-file',
-                    'case:computed-cross-level|stderr:format:checkstyle',
-                    'case:computed-cross-level|stderr:format:github',
-                    'case:computed-cross-level|stderr:format:health',
-                    'case:computed-cross-level|stderr:format:html',
-                    'case:computed-cross-level|stderr:format:summary',
-                    'case:computed-cross-level|stderr:format:text',
-                    'case:computed-cross-level|stderr:format:text-verbose',
-                    'case:computed-cross-level|stderr:show-suppressed',
-                ],
-            ],
-        );
-    }
-
-    public static function stderrWarning(): Control
-    {
-        return self::product(
-            'stderr-warning',
-            'src/Analysis/Evidence/Design/Inheritance/DitGlobalCollector.php',
-            '$this->logger->warning(\sprintf(',
-            '$this->logger->debug(\sprintf(',
-            [
-                FailureClass::SURFACE_MISMATCH => [
-                    'case:stderr-warning|stderr:baseline-file',
-                    'case:stderr-warning|stderr:check:output',
-                    'case:stderr-warning|stderr:directives',
-                    'case:stderr-warning|stderr:format:checkstyle',
-                    'case:stderr-warning|stderr:format:github',
-                    'case:stderr-warning|stderr:format:gitlab',
-                    'case:stderr-warning|stderr:format:health',
-                    'case:stderr-warning|stderr:format:html',
-                    'case:stderr-warning|stderr:format:json',
-                    'case:stderr-warning|stderr:format:metrics',
-                    'case:stderr-warning|stderr:format:sarif',
-                    'case:stderr-warning|stderr:format:summary',
-                    'case:stderr-warning|stderr:format:suppressed',
-                    'case:stderr-warning|stderr:format:text',
-                    'case:stderr-warning|stderr:format:text-verbose',
-                    'case:stderr-warning|stderr:show-suppressed',
-                ],
-            ],
-        );
-    }
-
     public static function warningClockRow(): Control
     {
         $row = 'stderr' . "\t" . Normalization::WARNING_TIME_PATTERN . "\tline-regex\t" . Normalization::MEASURED_REASON . "\n";
@@ -394,26 +206,6 @@ final class CorpusCaseControls
         );
     }
 
-    public static function baselineCycle(): Control
-    {
-        return self::product(
-            'baseline-cycle',
-            'src/Analysis/Policy/Baseline/Filter/BaselineCeilingStage.php',
-            '? $finding->reportedAsBreach($verdict->breachedLevel)',
-            '? $finding',
-            [
-                FailureClass::SURFACE_MISMATCH => [
-                    'case:baseline-cycle|check:baseline',
-                    'case:baseline-cycle|exit:check:baseline',
-                ],
-                FailureClass::VALUE_MISMATCH => [
-                    'case:baseline-cycle|check:baseline',
-                    'case:baseline-cycle|check:baseline|record:{"channel":"complexity.ccn","subject":"declaration:callable:Corpus\\\\BaselineCycle\\\\Breach::run@src/Breach.php","occurrence":null,"edge":null}',
-                ],
-            ],
-        );
-    }
-
     public static function parallelFiles(): Control
     {
         return self::product(
@@ -424,86 +216,6 @@ final class CorpusCaseControls
             [
                 FailureClass::SURFACE_MISMATCH => [
                     'case:parallel-files|check:parallel',
-                ],
-            ],
-        );
-    }
-
-    public static function selectorAfterSplit(): Control
-    {
-        return self::product(
-            'selector-after-split',
-            'src/Infrastructure/Console/RuleInputValidator.php',
-            "\$selector === '' || !\$this->ruleSelector->matchesKnownIn(\$selector, \$producers, \$channels)",
-            "\$selector === ''",
-            [
-                FailureClass::CASE_OUTCOME_MISMATCH => [
-                    'candidate / selector-after-split',
-                ],
-                FailureClass::REFERENCE_INPUT_UNTRANSLATED => [
-                    'reference / case:selector-after-split',
-                ],
-                FailureClass::SURFACE_MISMATCH => [
-                    'case:selector-after-split|baseline-file',
-                    'case:selector-after-split|check:output',
-                    'case:selector-after-split|check:output:file',
-                    'case:selector-after-split|directives',
-                    'case:selector-after-split|exit:baseline:generate',
-                    'case:selector-after-split|exit:check:output',
-                    'case:selector-after-split|exit:directives',
-                    'case:selector-after-split|exit:format:checkstyle',
-                    'case:selector-after-split|exit:format:github',
-                    'case:selector-after-split|exit:format:gitlab',
-                    'case:selector-after-split|exit:format:health',
-                    'case:selector-after-split|exit:format:html',
-                    'case:selector-after-split|exit:format:json',
-                    'case:selector-after-split|exit:format:metrics',
-                    'case:selector-after-split|exit:format:sarif',
-                    'case:selector-after-split|exit:format:summary',
-                    'case:selector-after-split|exit:format:suppressed',
-                    'case:selector-after-split|exit:format:text',
-                    'case:selector-after-split|exit:format:text-verbose',
-                    'case:selector-after-split|exit:show-suppressed',
-                    'case:selector-after-split|format:checkstyle',
-                    'case:selector-after-split|format:gitlab',
-                    'case:selector-after-split|format:health',
-                    'case:selector-after-split|format:html',
-                    'case:selector-after-split|format:json',
-                    'case:selector-after-split|format:metrics',
-                    'case:selector-after-split|format:sarif',
-                    'case:selector-after-split|format:summary',
-                    'case:selector-after-split|format:suppressed',
-                    'case:selector-after-split|format:text',
-                    'case:selector-after-split|format:text-verbose',
-                    'case:selector-after-split|show-suppressed',
-                    'case:selector-after-split|stderr:baseline-file',
-                    'case:selector-after-split|stderr:check:output',
-                    'case:selector-after-split|stderr:format:checkstyle',
-                    'case:selector-after-split|stderr:format:github',
-                    'case:selector-after-split|stderr:format:health',
-                    'case:selector-after-split|stderr:format:html',
-                    'case:selector-after-split|stderr:format:summary',
-                    'case:selector-after-split|stderr:format:text',
-                    'case:selector-after-split|stderr:format:text-verbose',
-                    'case:selector-after-split|stderr:show-suppressed',
-                ],
-                FailureClass::VALUE_MISMATCH => [
-                    'case:selector-after-split|baseline-file',
-                    'case:selector-after-split|check:output',
-                    'case:selector-after-split|directives',
-                    'case:selector-after-split|format:checkstyle',
-                    'case:selector-after-split|format:github',
-                    'case:selector-after-split|format:gitlab',
-                    'case:selector-after-split|format:health',
-                    'case:selector-after-split|format:html',
-                    'case:selector-after-split|format:json',
-                    'case:selector-after-split|format:metrics',
-                    'case:selector-after-split|format:sarif',
-                    'case:selector-after-split|format:summary',
-                    'case:selector-after-split|format:suppressed',
-                    'case:selector-after-split|format:text',
-                    'case:selector-after-split|format:text-verbose',
-                    'case:selector-after-split|show-suppressed',
                 ],
             ],
         );

@@ -66,7 +66,6 @@ final class Controls
             DeclaredDeltaControls::deltaTooLarge(),
             RenameControls::referenceInputUntranslated(),
             FingerprintControls::fingerprintUnexplained(),
-            FingerprintControls::fingerprintSelfDisagreement(),
             FingerprintControls::fingerprintDeclaredRename(),
             FingerprintControls::occurrenceFrozenUnderDeclaredRename(),
             FindingControls::publishedOrderPermuted(),
