@@ -10,6 +10,8 @@ use JsonException;
 /** Published records, their complete schemas, and edits confined to their byte spans. */
 final class ReportRecords
 {
+    public const array ANALYSIS_DIAGNOSTICS = ['analysis.parse', 'analysis.processing', 'analysis.directory-symlink', 'analysis.not-regular-file', 'analysis.unreadable-directory'];
+
     public const array SCHEMAS = [
         'json' => ['file', 'line', 'subject', 'symbol', 'channel', 'occurrence', 'edge', 'namespace', 'rule', 'code', 'severity', 'message', 'recommendation', 'metricValue', 'threshold', 'techDebtMinutes', 'acceptedLevel'],
         'suppressed' => ['mechanism', 'suppressor', 'rule', 'channel', 'subject', 'occurrence', 'edge', 'file', 'line', 'symbol', 'severity', 'message', 'recommendation'],
@@ -377,7 +379,7 @@ final class ReportRecords
                 if (!\is_array($record) || !isset($record['check_name'])) {
                     throw new GateError('A GitLab result requires a check_name.');
                 }
-                if (str_starts_with((string) $record['check_name'], 'qmx.analysis') || str_starts_with((string) $record['check_name'], 'qmx.output')) {
+                if (\in_array($record['check_name'], self::ANALYSIS_DIAGNOSTICS, true) && ($record['severity'] ?? null) === 'blocker') {
                     continue;
                 }
                 unset($record['fingerprint']);
@@ -429,6 +431,12 @@ final class ReportRecords
                         if (!$error->hasAttribute($field)) {
                             throw new GateError('A checkstyle error publishes no ' . $field);
                         }
+                    }
+                    if ($file->getAttribute('name') === '[analysis]' && $error->getAttribute('severity') === 'error'
+                        && $error->getAttribute('line') === '1'
+                        && \in_array(substr($error->getAttribute('source'), 4), self::ANALYSIS_DIAGNOSTICS, true)
+                        && str_starts_with($error->getAttribute('source'), 'qmx.')) {
+                        continue;
                     }
                     $records[] = ['file' => $file->getAttribute('name'), 'line' => (int) $error->getAttribute('line'), 'severity' => $error->getAttribute('severity'), 'code' => $error->getAttribute('source'), 'message' => $error->getAttribute('message')];
                 }

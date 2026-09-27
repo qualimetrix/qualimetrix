@@ -43,6 +43,12 @@ final class ProseRecords
                 if (!isset($properties['title'])) {
                     throw new GateError('A GitHub annotation requires its channel title.');
                 }
+                if (($match[1] === 'notice' && array_keys($properties) === ['title']
+                    && \in_array($properties['title'], ['drill-down.out-of-scope', 'run.project-scope'], true))
+                    || ($match[1] === 'error' && isset($properties['file']) && ($properties['line'] ?? null) === '1'
+                        && \in_array($properties['title'], ReportRecords::ANALYSIS_DIAGNOSTICS, true))) {
+                    continue;
+                }
                 $records[] = ['lines' => [$index], 'fields' => ['code' => $properties['title'], 'file' => $properties['file'] ?? '[project]', 'line' => isset($properties['line']) ? (int) $properties['line'] : null, 'message' => self::unescape($match[3], false), 'severity' => $match[1] === 'notice' ? 'info' : $match[1]]];
             } elseif (preg_match('~^(.+?)(?::([0-9]+))?: (error|warning|info)\[([^\]]+)\]: (.*)$~D', $line, $match) === 1) {
                 $records[] = ['lines' => [$index], 'fields' => ['code' => $match[4], 'file' => $match[1], 'line' => $match[2] === '' ? null : (int) $match[2], 'message' => $match[5], 'severity' => $match[3]]];

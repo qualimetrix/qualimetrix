@@ -84,6 +84,59 @@ final class ProseRecordsTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsKnownRunAnnotationsOutsideFindingLinesWithoutErasingTheirBytes(): void
+    {
+        $diagnostics = "::notice title=run.project-scope::The run is narrowed.\n::notice title=drill-down.out-of-scope::One finding is outside the report.\n::error file=src/linked,line=1,title=analysis.directory-symlink::The subtree was not read.\n";
+        $finding = "::error file=src/A.php,line=3,title=a.b::Diagnostic\n";
+        $entries = ProseRecords::extract('format:github', $diagnostics . $finding);
+        self::assertCount(1, $entries);
+        self::assertTrue(ProseRecords::matches('format:github', $entries[0]['fields'], self::finding('Diagnostic')));
+        self::assertSame($diagnostics, ProseRecords::erase($diagnostics . $finding, $entries[0]['lines']));
+        foreach ([
+            '::notice title=run.project-scope-neighbour::Still a finding',
+            '::warning title=run.project-scope::Wrong level',
+            '::notice file=src/A.php,title=run.project-scope::A finding with a location',
+            '::error file=src/A.php,line=1,title=analysis.unknown::Unknown category',
+            '::warning file=src/A.php,line=1,title=analysis.parse::Wrong level',
+            '::error file=src/A.php,line=3,title=analysis.parse::Wrong line',
+        ] as $neighbour) {
+            self::assertCount(1, ProseRecords::extract('format:github', $neighbour), $neighbour);
+        }
+    }
+
+    #[Test]
+    public function itComparesTheWholeRunNoticeAfterSeparatingItsFindingProjection(): void
+    {
+        foreach ([false, true] as $changed) {
+            $tree = \QmxFindingGate\SyntheticTree::clean();
+            $key = 'case:alpha|format:github';
+            $finding = \QmxFindingGate\SyntheticTree::caseAnswers('alpha', $tree['findings']['alpha'], false, [])[$key]['stdout'] ?? throw new GateError('The synthetic GitHub finding publication is missing.');
+            $notice = "::notice title=run.project-scope::The run is narrowed.\n";
+            $tree['answers'][$key] = ['stdout' => $finding . $notice];
+            if ($changed) {
+                $tree['candidateAnswers'][$key] = ['stdout' => $finding . str_replace('narrowed', 'unknown', $notice)];
+            }
+            $root = \QmxFindingGate\SyntheticTree::create($tree);
+            try {
+                $report = new \QmxFindingGate\GateReport();
+                ob_start();
+                try {
+                    \QmxFindingGate\GateModes::run(\QmxFindingGate\Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root), $report);
+                } finally {
+                    ob_end_clean();
+                }
+                self::assertSame($changed ? \QmxFindingGate\GateReport::VERDICT_RED : \QmxFindingGate\GateReport::VERDICT_GREEN, $report->verdict());
+                self::assertSame($changed ? [\QmxFindingGate\FailureClass::SURFACE_MISMATCH] : [], $report->failureClasses());
+                if ($changed) {
+                    self::assertSame($key, $report->raised()[0]['scope']);
+                }
+            } finally {
+                \QmxFindingGate\SyntheticTree::remove($root);
+            }
+        }
+    }
+
+    #[Test]
     public function itReadsSummaryIssueLocationsAndKeepsThePublishedScore(): void
     {
         $text = "  1. [ERR] 42.0  src/A.php:3  [15m]\n         a.b: Diagnostic (A::run)\n";

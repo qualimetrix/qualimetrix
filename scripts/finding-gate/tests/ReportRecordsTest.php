@@ -1157,6 +1157,29 @@ final class ReportRecordsTest extends TestCase
         }
     }
 
+    #[Test]
+    public function itKeepsKnownIncompleteRunDiagnosticsOutsideTheFindingMultiset(): void
+    {
+        $finding = self::finding();
+        $diagnostic = ['description' => 'Analysis failed for src/linked: The subtree was not read.', 'check_name' => 'analysis.directory-symlink', 'fingerprint' => 'run-diagnostic', 'severity' => 'blocker', 'location' => ['path' => 'src/linked', 'lines' => ['begin' => 1]]];
+        $text = ValueCheck::value([ReportRecords::projection('format:gitlab', $finding) + ['fingerprint' => 'finding'], $diagnostic]);
+        self::assertSame([ReportRecords::projection('format:gitlab', $finding)], array_column(ReportRecords::projected('format:gitlab', $text), 'fields'));
+        foreach ([['check_name' => 'analysis.unknown'], ['severity' => 'major']] as $change) {
+            self::assertCount(1, ReportRecords::projected('format:gitlab', ValueCheck::value([array_replace($diagnostic, $change)])));
+        }
+        $xml = '<checkstyle><file name="src/A.php"><error line="1" severity="error" source="qmx.a.b" message="M"/></file><file name="[analysis]"><error line="1" severity="error" source="qmx.analysis.directory-symlink" message="src/linked: The subtree was not read."/></file></checkstyle>';
+        self::assertSame([ReportRecords::projection('format:checkstyle', $finding)], ReportRecords::checkstyle($xml));
+        foreach (['[analysis]' => 'src/linked', 'qmx.analysis.directory-symlink' => 'qmx.analysis.unknown', 'line="1" severity="error" source="qmx.analysis.' => 'line="2" severity="error" source="qmx.analysis.'] as $from => $to) {
+            self::assertCount(2, ReportRecords::checkstyle(str_replace($from, $to, $xml)));
+        }
+        $run = $this->context();
+        $artifacts = self::artifacts([$finding]);
+        $artifacts['case:alpha|format:gitlab'] = $text;
+        $artifacts['case:alpha|format:checkstyle'] = $xml;
+        $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::INCOMPLETE, $artifacts);
+        self::assertSame([], $run->report->raised());
+    }
+
     /** @return array<string,mixed> */
     private static function finding(): array
     {
