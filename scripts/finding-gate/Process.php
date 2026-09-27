@@ -24,12 +24,12 @@ final class Process
     ): array {
         $description = implode(' ', $command);
         $process = ProcessHandle::start($command, $workingDirectory, $environmentAdditions);
-        $lastHeartbeatAt = microtime(true);
+        $lastHeartbeatAt = (hrtime(true) / 1_000_000_000);
 
         try {
             while (!$process->settled()) {
                 self::poll($process);
-                $now = microtime(true);
+                $now = (hrtime(true) / 1_000_000_000);
 
                 if ($process->age() >= $deadlineSeconds) {
                     throw new GateError(\sprintf(

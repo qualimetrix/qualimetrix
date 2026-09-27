@@ -164,7 +164,7 @@ final class Harness
         $outcomes = [];
         $inFlight = [];
         $next = 0;
-        $spokeAt = microtime(true);
+        $spokeAt = (hrtime(true) / 1_000_000_000);
 
         while ($next < $total || $inFlight !== []) {
             Shell::stopIfRequested();
@@ -178,7 +178,7 @@ final class Harness
                     $outcomes[$next] = Outcome::refused($probe, $error->getMessage());
                 }
 
-                $spokeAt = microtime(true);
+                $spokeAt = (hrtime(true) / 1_000_000_000);
                 ++$next;
             }
 
@@ -198,10 +198,10 @@ final class Harness
                     $attempt['probe']->id,
                     $outcomes[$index]->asDeclared() ? 'as declared' : 'NOT as declared',
                 ));
-                $spokeAt = microtime(true);
+                $spokeAt = (hrtime(true) / 1_000_000_000);
             }
 
-            if ($inFlight !== [] && microtime(true) - $spokeAt >= self::LIVENESS_INTERVAL_SECONDS) {
+            if ($inFlight !== [] && (hrtime(true) / 1_000_000_000) - $spokeAt >= self::LIVENESS_INTERVAL_SECONDS) {
                 self::report(\sprintf(
                     'in flight  %s',
                     implode(', ', array_map(
@@ -209,7 +209,7 @@ final class Harness
                         $inFlight,
                     )),
                 ));
-                $spokeAt = microtime(true);
+                $spokeAt = (hrtime(true) / 1_000_000_000);
             }
         }
 

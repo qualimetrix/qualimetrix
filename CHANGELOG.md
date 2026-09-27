@@ -736,6 +736,11 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
 
 ### Fixed
 
+- Analysis durations, baseline lock deadlines and script elapsed-time checks use
+  monotonic clocks. A backward adjustment of the system date no longer makes
+  an otherwise valid analysis fail with `Configuration error: Duration must be
+  non-negative`; timeout intervals and duration units remain unchanged.
+
 - Finding-gate derivation canonicalizes an empty delta index after a complete
   GREEN measurement. An empty remainder of a refused measurement still leaves
   the index unchanged.

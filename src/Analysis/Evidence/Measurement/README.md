@@ -122,6 +122,9 @@ collectors, and re-aggregation of global metric definitions. It consumes the
 DependencyModel graph through `DependencyGraphInterface`; the graph itself and
 its extraction internals remain DependencyModel-owned.
 
+The aggregation completion log measures elapsed time with monotonic `hrtime`
+readings and publishes seconds, independently of adjustments to the system date.
+
 `NamespaceTree` holds the global namespace (the empty string) as an isolated
 leaf, so `NamespaceToProjectAggregator` reads its bag like any other one's.
 Code written entirely in the global namespace would otherwise publish no

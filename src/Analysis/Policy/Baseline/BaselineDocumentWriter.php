@@ -178,10 +178,10 @@ final readonly class BaselineDocumentWriter
             throw self::unwritable($path, "Cannot open the baseline lock file {$lockPath}: {$reason}");
         }
 
-        $deadline = microtime(true) + $this->lockTimeoutSeconds;
+        $deadline = hrtime(true) / 1e9 + $this->lockTimeoutSeconds;
 
         while (!flock($handle, \LOCK_EX | \LOCK_NB)) {
-            if (microtime(true) >= $deadline) {
+            if (hrtime(true) / 1e9 >= $deadline) {
                 fclose($handle);
 
                 throw new RuntimeException(\sprintf(

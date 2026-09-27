@@ -226,7 +226,7 @@ foreach ($projects as $id => $config) {
     }
 
     fprintf(STDERR, "  %-25s ", $id);
-    $start = microtime(true);
+    $start = (hrtime(true) / 1_000_000_000);
 
     // Build command with optional disable-rules. An argument-vector command
     // needs no shell and therefore no escapeshellarg(): each element reaches
@@ -260,7 +260,7 @@ foreach ($projects as $id => $config) {
         fprintf(
             STDERR,
             "FAILED (analysis did not complete, %.1fs): %s\n",
-            round(microtime(true) - $start, 1),
+            round((hrtime(true) / 1_000_000_000) - $start, 1),
             $exception->getMessage(),
         );
         $message = sprintf('%s: analysis did not complete (%s)', $id, $exception->getMessage());
@@ -271,7 +271,7 @@ foreach ($projects as $id => $config) {
     }
     $json = $result['stdout'];
     $exitCode = $result['exitCode'];
-    $elapsed = round(microtime(true) - $start, 1);
+    $elapsed = round((hrtime(true) / 1_000_000_000) - $start, 1);
 
     if ($exitCode > 2) {
         fprintf(STDERR, "FAILED (analysis exit code %d, %.1fs)\n", $exitCode, $elapsed);
