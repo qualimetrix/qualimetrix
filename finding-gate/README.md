@@ -1,1346 +1,540 @@
-# finding-gate — the finding-equivalence gate and its external corpus
+# finding-gate — measured changes in an external corpus
 
-**Subject:** proving that a vocabulary change (channel names, symbol names,
-metric keys) changed *nothing observable except what a declared map says it
-changed*. The executable is `scripts/finding-gate.php`.
+The finding gate compares a candidate with a Git reference over the same
+external PHP corpus. Every observable change must be explained by an exact
+rename, a declared record change, a measured value change, a schema change,
+an outcome change, a surface change or a bounded structural diff.
+A declaration is evidence of what changed; it does not prove the new behaviour
+is correct. Product tests make that separate claim.
 
-The corpus is **external code by construction**. We dogfood ourselves, so a
-corpus containing `src/` would move its own input with every step it is
-supposed to measure: renaming the class `Violation` would shift the subjects of
-the findings the gate compares. Nothing under `cases/` may be product code, and
-no case may point at a path outside its own directory: not in `paths`, not in
-`config`, and not in the value of any option in `args` that reads a path (`-c`,
-`--config`, `--preset` given as a file, `--baseline`; the one list is
-`CaseDefinition::INPUT_OPTIONS`). The rule is judged where a path leads once
-links are resolved, not how it is spelled: a case directory that is itself a
-link is refused, so is a symlink out of it, a path that does not exist and an
-absolute path, while a name like `a..b` is just a name. Only `--preset` is a
-comma-separated list, as the product reads it; `--config=a,b.yaml` is one file.
-An output option (`-o`, `--output`, `--log-file`, `--profile`, `--cache-dir`;
-`CaseDefinition::OUTPUT_OPTIONS`) is refused in `args` wherever it points: the
-run's working directory is the case directory, so a relative destination writes
-into the tracked corpus, and the gate captures what a run publishes itself.
-`--profile` writes a file only with a value; without one it prints a summary to
-stderr, which the gate captures as a compared `stderr:` surface — a profile is
-not a publication of the product under comparison — so it is refused in both
-forms. So is `-d`/`--working-dir`: the product would
-resolve every other path from it, while the rule judges them from the case
-directory.
+Run `composer gate -- --reference=<commit>`. A complete comparison exits 0
+only when all checks agree under the declarations. Re-run
+`composer gate:controls -- --reference=<commit>` whenever the comparator changes:
+an earlier controls run is evidence about an earlier comparator.
 
 ## Layout
 
-```
+```text
 finding-gate/
-├── cases/<case>/          # one corpus case = fixtures + the config that fires them
-│   ├── case.json          # run definition (schema below)
-│   ├── qmx.yaml           # the configuration that makes the channels fire
-│   ├── composer.json      # the case's own project root: without it a run warns
-│   │                      # `No composer.json found`. Its `name` is the
-│   │                      # reported project name — see the HTML note below
-│   └── src/**.php         # the fixtures
-├── maps/                  # what a step declares it renamed; empty = renames nothing
-│   ├── channels.tsv       # old channel key -> new channel key; forward only
-│   ├── symbols.tsv        # old FQN or path -> new (generated from git diff --find-renames)
-│   ├── metric-keys.tsv    # old metric key -> new metric key; forward only, and a
-│   │                      # row covers each `<key>.<strategy>` spelling too
-│   ├── inputs.tsv         # option keys, flag aliases, names inside selectors,
-│   │                      # and configuration keys as a document writes them
-│   └── report-values.tsv # old -> new value of an enumerable report field;
-│                          # forward only, format:suppressed only, quoted only
-├── declared-delta.tsv     # surfaces that changed structurally, not by rename;
-│                          # tracked like declared-field-moves.tsv below, so it
-│                          # may hold only its header row between declarations
-├── declared-delta/        # one exact unified diff per row above; appears only
-│                          # while declared-delta.tsv has at least one row
-├── declared-field-moves.tsv # one exact (surface, field, from, to) pair each,
-│                          # licensing a compared field to move inside a
-│                          # declared diff. Typed, not derived
-├── declared-records.tsv   # declaration forms landing in S01b, each read by its own
-├── declared-values.tsv    # check; until that check exists every row of one is
-├── declared-fields.tsv    # stale and the run is red. Absent means none. See
-├── declared-outcomes.tsv  # "Declaration forms" below
-├── declared-surfaces.tsv
-├── declared-structural-maps.tsv
-├── normalization.tsv      # fields excluded from comparison, each with its reason
-├── equivalence-tuple.tsv  # the finding fields the gate compares, derived from code
-├── enumeration-renames.tsv        # current measured vocabulary and pending decisions
-├── enumeration-renames-executed.tsv # retired rename decisions retained as control input
-├── enumeration-runtime-channels.tsv # generated dynamic channel families
-└── enumeration-static-channels.tsv  # static channel inventory used by universe checks
+├── cases/<subject>/
+│   ├── case.json              # invocation, claims and expected outcome
+│   ├── composer.json          # the analysed project's own root
+│   ├── qmx.yaml               # configuration exercising the subject
+│   ├── src/                   # independent PHP fixtures
+│   └── baseline-src/          # optional earlier source population
+├── maps/                      # exact vocabulary translations
+├── declared-records.tsv        # selectors for introduced/withdrawn records
+├── declared-records.derived.tsv
+├── declared-values.tsv         # intentions for fields, metrics, exits and order
+├── declared-values.derived.tsv
+├── declared-fields.tsv         # added/removed report fields
+├── declared-fields.derived.tsv
+├── declared-outcomes.tsv        # case transitions and exact refusal snapshots
+├── declared-outcomes/
+├── declared-surfaces.tsv        # introduced/withdrawn publications
+├── declared-surfaces/
+├── declared-structural-maps.tsv # translated configuration paths
+├── declared-delta.tsv           # exact residual diffs, after record/value work
+├── declared-delta/
+├── declared-field-moves.tsv     # exact field moves permitted inside a diff
+├── normalization.tsv           # exclusions measured from repeated runs
+├── equivalence-tuple.tsv       # physical finding fields derived from code
+└── enumeration-*.tsv           # measured vocabulary and rename decisions
 ```
 
-| artifact                                                         | producer                                | consumer                                      |
-| ---------------------------------------------------------------- | --------------------------------------- | --------------------------------------------- |
-| `enumeration-renames.tsv` and `enumeration-renames-executed.tsv` | `composer enumeration:renames`          | `composer enumeration:renames:check`          |
-| `enumeration-runtime-channels.tsv`                               | `composer enumeration:runtime-channels` | `composer enumeration:runtime-channels:check` |
-| `enumeration-static-channels.tsv`                                | repository inventory                    | `composer enumeration:channel-universe`       |
+An absent optional declaration table means no declarations. Existing tables
+must have their model's exact header. Every authored reason must be nonempty
+and must not be `?`. A declaration that nothing consumes is a failure.
 
-Every artifact in this table has a consumer that turns it into a decision, and
-that is the condition for keeping one here. An enumeration nothing reads back
-cannot go stale loudly: it records a measurement that stops being true in
-silence, and a regeneration then refreshes a number rather than checking one.
+The executable and comparator classes live in `scripts/finding-gate/`;
+negative controls live in `scripts/finding-gate-controls/`. The shared loaders
+read a fixed set of subject-owned `wiring-*.php` files. Unknown files, unknown
+keys, duplicate registrations and unloaded checks are refused. The retired
+`pending` key is not accepted, even with an empty value. Every failure class
+requires a producer and every raise site and caller requires an observed
+self-test witness.
 
-## Declared compared-field moves
+## Case definition and coverage
 
-`declared-field-moves.tsv` licenses one exact
-`surface, field, from, to, reason` tuple. It is literal rather than a wildcard:
-a row licenses a value change in that compared field only; it never licenses a
-set change or a structural delta. The affected surface remains byte-compared
-outside the declared move and remains subject to the normal size limit.
+The corpus is external by construction: it must not read this repository's
+product source. Both binaries analyse the candidate's fixtures, so changing
+product source cannot silently change their common input.
 
-The gate rejects an unused declaration as `field-move-stale`. Keep a row through
-the change that uses it; the next reference comparison consumes it, so a row
-that remains after the move is evidence of an obsolete exception. The self-test
-covers exact matching, direction, duplicate rows, missing reasons, missing
-moves, and stale declarations.
-
-## `case.json`
-
-```jsonc
+```json
 {
-  "id": "smells",                      // == directory name
-  "description": "why this case exists, in one line",
-  "coverage": "authoritative",         // or "auxiliary"; optional, defaults to authoritative
-  "paths": ["src"],                    // relative to the case directory
-  "config": "qmx.yaml",                // relative to the case directory
-  "args": ["--rule-opt=complexity.wmc:threshold=0"],   // extra CLI options; optional, defaults to []; a value is written attached (--option=value), except after a path option
-  "channels": ["code-smell.eval@callable"],             // channel AND level pairs this case owns
-  "explainSubjects": ["declaration:callable:Corpus\\Smells\\Smells::report@src/Smells.php"],  // subjects for baseline:explain
-  "outcome": {"kind": "incomplete", "exit": 4}         // optional: a case that exists to be refused ("refusal") or to
-                                                       // analyse incompletely; absent means the case analyses
+  "id": "example",
+  "description": "One subject and the input that exercises it",
+  "coverage": "authoritative",
+  "paths": ["src"],
+  "config": "qmx.yaml",
+  "args": [],
+  "channels": ["complexity.ccn@callable"],
+  "explainSubjects": [],
+  "layerAssignmentSubjects": []
 }
 ```
 
-`CaseDefinition::SCHEMA` is the list of keys; any other key is refused. Every
-file a case hands the product — `config` and each path value of
-`CaseDefinition::INPUT_OPTIONS` in `args` — is one list,
-`CaseDefinition::inputFiles()`: the containment rule judges it, and it is what
-the reference has to be handed in its own vocabulary. Which checks apply to a
-case that does not analyse is one table, `CaseOutcome::CHECKS`; a case whose
-outcome no registered check verifies is refused before anything runs, so an
-`outcome` cannot switch the other checks off unexamined.
+`CaseDefinition::SCHEMA` is the exact schema. `id` must equal the directory
+name. `args` and the two subject lists are optional. `coverage` defaults to
+`authoritative`. An optional `outcome` declares
+`{"kind":"refusal","exit":3}` or `{"kind":"incomplete","exit":4}`;
+absence means an analysis outcome. `renameChannelsMap` names a contained map
+file used by the baseline lifecycle.
 
-`channels` is a claim the gate verifies per case, not documentation: a case that
-stops firing a pair it claims fails, and a declared pair no case fires fails the
-coverage check. Coverage is also checked for multiplicity: **a channel must fire
-in exactly one case.** Two producers make the deduplicated union blind to a lost
-fixture, so the control that deletes one would pass while proving nothing.
+Claims are `channel@level` pairs. Bare names, the retired `rule#code` claim
+shape and unknown levels are refused. The level comes from the exact subject's
+tag through `SubjectLevel`, which is held against the product's
+`SymbolLevel`. Each case must fire exactly its claimed pairs.
 
-### A claim is a `channel@level` pair
+An authoritative case owns its channels: exactly one authoritative case may
+fire a channel, including a channel that fires at several levels. Auxiliary
+cases exercise additional inputs and are compared on every surface, but do
+not contribute to the coverage or ownership arithmetic. Empty `channels`
+are allowed only when `coverage` is explicitly `auxiliary` and the outcome
+is explicitly `refusal`; an analysing or incomplete case must claim evidence.
 
-The unit of a claim is `channel@level` — one name and one level, since Ш5b left a
-channel with a single name; a claim still written as the old `rule#code` pair is
-refused, because no channel carries that name. The level is read out of the
-`subject` field, which carries it in its tag (`declaration:callable:…`,
-`declaration:class:…`, `file:`, `ns:`, `project:`). The spelling is the product's
-own level vocabulary (`SymbolLevel`), not the subject's tag for it, so the claim,
-a case's `levels:` list and the drift test's oracle all say `namespace` for the
-same thing. The values are not repeated here on purpose: the gate keeps one copy
-of them (see below), and a list in prose is a second one. A subject shape the gate
-cannot level stops the run instead of being given a default: its level is one the
-claim would otherwise stop checking in silence.
+Coverage compares the observed pairs with the candidate's declarations.
+Static declarations come from both its container and the tracked channel-level
+fixture; their disagreement is `witness-disagreement`. Dynamic computed
+channels have the container's resolved definitions as their declaration.
+A missing pair is `coverage-shortfall`, an undeclared pair is
+`coverage-surplus`, and two authoritative owners are
+`coverage-multiplicity`. Losing one level inside an auxiliary case is still
+a case-claim failure.
 
-Why the pair and not the name. The observed set is keyed by what it is compared
-against, so with names alone a channel firing at two levels inside one case was
-one entry on either side — and taking away the evidence for one of those levels
-changed nothing anywhere: the channel still fires, the claim still lists it, the
-coverage union is unchanged, and because both trees read the corpus out of the
-candidate's case directory no surface differs either. That is exactly the shape
-the collapse of the level channels produces, so the claim counts pairs and the
-`lost-level-fixture` control holds it to that.
+### Paths and input isolation
 
-Multiplicity still counts **channels**, deliberately: the guarantee it carries is
-one authoritative owner per channel, and pairing it with levels would let two
-cases own one channel as long as they fired it at different levels. The map and
-the claim are different accountings too — the unit of *substitution* stays the
-name.
+Analysis paths, config, preset files, PHP files, the channel map and any
+`baseline-src/` population must stay inside the case after resolving links.
+Missing inputs, absolute paths, escaping links and a linked case directory
+are refused. A directory symlink contained within an analysis tree can be
+a deliberate incompleteness fixture: the product reports it rather than
+traversing it.
 
-### Coverage counts pairs, against a *derived* declaration
+`CaseDefinition::inputFiles()` names the document inputs used by containment
+and reference translation. Path-valued options follow
+`CaseDefinition::INPUT_OPTIONS`; only presets are comma-separated.
+`--baseline` in case arguments is refused: use `baseline-src/`, so each
+side generates the format its own binary understands. Output, profiling,
+cache-directory and working-directory options are refused in case arguments.
+The gate owns their destinations and captures their publications.
 
-The claim direction and the coverage direction are different questions. A claim
-says what *one case* fires; coverage asks whether anything at all fires what the
-product declares — and its declared side must not be hand-written, or a pair the
-product can produce that fires in no case and is claimed in no case is invisible
-from both sides at once. That pair passed every check the gate had: not claimed
-and not observed, so no claim mismatch; the channel observed at its other level,
-so no shortfall. It is also exactly what the collapse of the level channels has
-to be proved against, since after the collapse the level is the only thing
-telling two former channels apart.
+Reference inputs are mechanically translated by the maps. All config and
+preset documents, named PHP input positions, baseline source files, debug
+subjects and rename-channel maps pass through the same translation boundary.
+There is no separately hand-fitted reference fixture. Unsupported touched
+syntax produces a named refusal instead of silently leaving an input unchanged.
 
-So the declared side is **derived, from two witnesses**, and the hand-written
-claim stays beside them as a third, independent voice:
+Each command has a separate cold XDG cache directory. The gate also removes
+the case's legacy `.qmx-cache` before and after invocations and verifies the
+baseline cache behaviour it isolates. This prevents the second binary from
+reading the first binary's AST as its own measurement.
 
-| Witness                                              | Half it answers for | Where the levels come from                                                                  |
-| ---------------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------- |
-| the candidate container (`probe-channels.php`)       | static and run-time | `ChannelDeclaration::$levels`, and the resolved `ComputedMetricDefinition` for `computed.*` |
-| `tests/…/Fixtures/Channels/declared.txt`, `<levels>` | static only         | the tracked fixture's third column                                                          |
-| `case.json`'s `channels`                             | per case            | hand-written, and verified per pair                                                         |
+### Outcomes and diagnostic messages
 
-The two declaration witnesses disagreeing is its own failure class,
-`witness-disagreement` — not a coverage shortfall, and not a tie broken in
-silence. The run-time half has **one** witness for levels, exactly as it has for
-names: `computed.*` is open-ended and no fixture line could enumerate it. One
-consequence is worth stating, because a control rests on it: a run-time channel's
-levels come from the case's own configuration, so that level and the corpus that
-fires it move together and pair coverage cannot see one leave —
-`lost-level-fixture` is caught by the claim. A static channel's levels come from
-product code, so they *can* part company with the corpus, and there a lost level
-is a `coverage-shortfall`. Five static channels declare two levels since Ш5c
-took the level out of the name; the rest declare one.
+A refusal is compared as an outcome: stdout, stderr, process exit and any
+file publication remain observable. An undeclared candidate input refusal is
+`candidate-input-refused`; an untranslated reference input is
+`reference-input-untranslated`. An explicit transition uses the outcome
+declaration and its exact measured snapshot.
 
-`--incomplete-corpus` downgrades a pair shortfall exactly as it downgraded a name
-shortfall. A pair observed that nothing declares — including a level a declared
-channel does not say it reports at — is `coverage-surplus`.
+An incomplete case keeps its findings and its incompleteness diagnostics.
+`baseline:generate` must exit 4 and publish no baseline file. Both facts are
+checked; absence is not treated as an empty successful file.
 
-The gate's own level vocabulary lives in exactly one place, the tag map in
-`scripts/finding-gate/SubjectLevel.php`, and it is held against the product's
-`SymbolLevel` on every comparison run and by `--self-test` (failure class
-`level-vocabulary-drift`). It has to be measured rather than asserted: the level
-the gate derives never reaches a compared artifact — it is checked against a
-claim written in the same gate-internal spelling — so a renamed `SymbolLevel`
-case would leave every claim matching and every run green.
+Known run notices and exact analysis diagnostics are kept outside the finding
+projection in GitHub, GitLab and Checkstyle. Their original bytes remain under
+surface comparison. Unknown codes, diagnostic levels or shapes do not inherit
+that treatment. HTML on two refusing sides is compared as complete refusal
+text; analysis and incomplete outcomes require a readable report payload.
 
-A bare channel name is refused as a claim entry, and so is a level outside the
-vocabulary: a half-migrated `case.json` would otherwise keep passing while
-claiming less than it looks like it claims.
+## Surfaces and invocation provenance
 
-### `coverage`: what a case is for
+`CapturePlan` is the finite invocation table. It owns stdout, stderr, exit
+and output-file keys, their command class and any ranking source. An absent
+required key, an unknown key or an invalid source is refused.
 
-An **authoritative** case owns the channels it claims — it is what the coverage
-and multiplicity arithmetic counts, so a channel has exactly one of these.
+Per case, the table captures the twelve `check` formats:
+`summary`, `text`, `text-verbose`, `json`, `checkstyle`, `sarif`,
+`gitlab`, `github`, `metrics`, `health`, `html` and `suppressed`.
+It also captures `--show-suppressed`, `directives`, `rules`,
+`graph:export`, baseline generation and named baseline explanations,
+`check --output=<file>`, and named layer-assignment inspections.
 
-An **auxiliary** case exists for an *input* nothing else exercises. The corpus
-was blind to three of them until Ш4a — `--disable-rule`, `only_rules` and a
-non-empty `suppress_paths` — and adding them as ordinary cases was impossible: the
-channels they fire are already owned, so a second producer would be
-`coverage-multiplicity`. An auxiliary case is therefore compared on every surface
-and still has to fire **exactly** what its `channels` claims; it is only left out
-of the coverage and multiplicity arithmetic. The original guarantee — one
-authoritative owner per channel — is unchanged word for word.
+A case with `baseline-src/` additionally captures its source JSON before
+generation, `check --baseline`, baseline update, cleanup and, when it names
+a map, channel renaming. A case with at least 100 distinct PHP inputs captures
+a two-worker check in addition to the sequential check. File publications
+retain their creating invocation's exit and stderr; they cannot invent another
+process outcome.
 
-Each auxiliary case addresses one kind of input and was checked to bite: take
-that input away and the case stops firing exactly what it claims. For the
-selector cases that is both fixtures firing once the selector is gone. An auxiliary case is not
-evidence about a selector's *reach* — after a rule is split, "does
-`--disable-rule=<old name>` still find anything" is a question the reference's
-vocabulary cannot even state, and it is closed by a test, not here.
+Once per tree, `rules` and `graph:export` also run from a neutral directory.
+The rules publication is a catalogue, not proof that it consumes case
+configuration. Graph export follows its CLI paths and working directory;
+a declared neutral failure is an outcome, not a successful graph population.
 
-`applied-threshold` is the one whose input is an annotation rather than a
-selector. Before it, both `@qmx-threshold` annotations in the corpus were
-refusals — a rule that declares no override support, and a value that does not
-parse — so a green gate was evidence about how an override is *rejected* and
-about nothing else. It carries four fixtures, because an applied override has
-more than one thing to witness:
+The authoritative record views are:
 
-- **the lowering direction publishes itself.** `Retuned::classify` fires at no
-  configured threshold of the case, and the finding prints the annotated number
-  rather than the configured one.
-- **the raising direction publishes nothing.** `Accepted::assemble` is an error
-  at the configured threshold and the annotation accepts it, so the evidence is
-  a pair the case must fire none of.
-- **an annotation written on a class has to reach a declaration inside it.**
-  `ClassScoped` is the second binding path, and the only one a mutation can cut
-  while every annotation of the case stays in place.
-- **an annotation must not reach anything else.** `Retuned::untouched` and
-  `Neighbour` carry the annotated method's own complexity and no annotation, one
-  inside the annotated file and one outside it. Both are needed: the binding is
-  built per file, so a file-wide leak is invisible to a witness in another file,
-  and a run-wide one is invisible to a witness in the same file.
+| Report       | Views                                                    |
+| ------------ | -------------------------------------------------------- |
+| `json`       | `format:json`, `check:baseline-source`, `check:baseline` |
+| `suppressed` | `format:suppressed`                                      |
+| `metrics`    | `format:metrics`                                         |
+| `directives` | `directives`                                             |
 
-Each of the three annotations was taken away on its own, and each is a
-`case-claim-mismatch`: twice as *only in claimed*, once as *only in fired*. The
-witnesses were measured against the product instead, on isolated copies — cut
-the class-to-declaration propagation, bind a callable annotation to its whole
-file, or drop the subject comparison that selects an override, and the run is
-red on findings and surfaces. The first of those mutations left this corpus
-green before the case existed.
+The two baseline JSON views exist only for baseline-source cases.
+`check:baseline` owns its records and ranking: accepted-level promotion
+changes severity and impact, so it cannot borrow the ordinary check's values.
+The output-file and parallel JSON invocations must agree with the ordinary
+JSON check's physical records and ranking within the same side.
 
-What the case does not witness is worth stating, because the annotations look
-like they cover more than they do. The raising direction pins no *value*: any
-annotation lifting both boundaries clear of the fixture is indistinguishable
-from this one. Both directions bite only against today's defaults — a default
-that moved past a fixture would leave the annotation deciding nothing, and only
-the claim would notice. And one standard `warning`/`error` pair is the only
-option shape exercised: the rules whose options hold several boundaries, or
-whose `withOverride()` writes something other than a threshold, are untested
-here.
+## Physical records and measured record changes
 
-`layered-threshold` is the one whose input is the LAYERING itself. Before it, no
-case passed `--preset`, and the single case combining a config file with
-`--rule-opt` rewrote BOTH halves of every band from the command line — so no
-half of a band was ever left for a lower layer to supply, and a product that
-lost one compared equal. It exists because a green gate over a corpus that
-does not exercise this composition is evidence about nothing in that path.
+`ReportRecords::SCHEMAS` classifies every physical field of each report.
+An unknown, missing or extra field is refused unless an exact schema
+declaration covers it. A producer supplying no data is refused where it is
+needed; it does not become an empty record set.
 
-Its three layers each write a different thing: a preset writes the graduated
-pair, `qmx.yaml` replaces both halves with a `threshold` shorthand, and
-`--rule-opt` rewrites `warning` alone. Two fixtures witness the outcome:
+For JSON, the gate obtains complete physical authority even when the published
+`violations` list is truncated. It first captures the same invocation with
+`--top=<total+1>`. If physical records are capped, it obtains a second
+support publication without presentation caps, with `--detail=all` and
+`--format-opt=violations=all`. The original visible records must be the
+physical prefix; totals, per-rule population, complete ranking, exit and
+semantic stderr must agree. Hidden physical fields remain compared through
+this complete authority.
 
-- **the half the top layer did not rewrite must carry the middle layer's
-  value.** `Tangled::score` is complexity 6, above the shorthand's 5 and below
-  the 20 this rule compiles in, so it reports `error` while that half survives
-  and `warning` once it does not.
-- **a subject that reports the same either way is the control.**
-  `Middling::classify` is complexity 3: above the `warning` the command line
-  wrote, below the shorthand's `error`. A change that moved BOTH fixtures would
-  be something other than the loss this case is about.
+A comparative JSON record is the physical record plus
+`ranking.impactScore` and `ranking.coupling.class-rank`, joined from that
+side's validated complete ranking. Record correspondence and value declarations
+use the comparative form. Tuple supply, fingerprints, cross-format projections
+and edits of published text use the physical form. Virtual fields are never
+searched for as fields in a physical formatter's output.
 
-Measured to bite against the product at `1210b037`, which still had the defect:
-**24 surfaces go red**, the text surface reading `error ... threshold of 5`
-against `warning ... threshold of 2`, and the process exit code moving 2
-against 0.
+`RecordCheck::pair` groups by report identity. A group with exactly one record
+on each side is paired and compared by fields. Other groups pair only
+byte-equal canonical records, preserving multiplicity. Unpaired instances
+are introduced or withdrawn records. A value shift in a repeated identity
+therefore needs a withdrawn/introduced pair, not a field intention.
 
-What it does not witness: only one of the two merge boundaries is exercised with
-a shorthand below and a graduated key above — the reverse direction, and the
-`~`-above-a-written-value rule, are closed by tests
-rather than here.
+The record intention table has columns
+`change, case, report, view, selector, reason`.
+Selectors are JSON objects of named scalar equality fields; metric selectors
+require exact `type` and `name`. Overlapping selectors are refused.
+`--derive-declarations` writes
+`change, case, report, view, record` into
+`declared-records.derived.tsv`. Each row licenses one exact canonical instance;
+equal rows are a multiset. A neighbouring record is never licensed by another
+record's declaration.
 
-### Named gap: no case runs an incomplete analysis
+Each format's records are checked against its physical authority before a
+declared record is removed or substituted. Checkstyle projections retain
+multiplicity. SARIF catalogues and result indices are canonicalized together.
+Baseline entries are joined to their complete source groups; counts and
+magnitude lists must agree. Product groups that cannot be captured in a
+baseline are not invented as entries.
 
-Every case here analyses a tree the product can read in full, so exit 4 and the
-three `kind` values that name an entry the run never read
-(`directory-symlink`, `not-regular-file`, `unreadable-directory`) are outside
-every compared surface. A GREEN run is therefore evidence about complete runs
-only, and says nothing about how an incomplete one is published.
+## Ranking values, order and published slices
 
-The gap is structural, not an oversight, and closing it needs the gate itself to
-change in three places:
+Ranking values use the ordinary field intentions
+`ranking.impactScore` and `ranking.coupling.class-rank`.
+There is one record correspondence for physical and ranking values.
 
-- **`baseline:generate` refuses an incomplete run** (ADR 0018) and writes no
-  file — measured: exit 4, no file. `CaseOutcomeCheck::checkBaselineSurface`
-  holds every case to exit 0 *and* to a non-empty baseline, deliberately, so that
-  an absent surface cannot read as one that agrees. A case that is incomplete by design
-  is `run-failed` on both sides.
-- **`channels` may not be empty**, so such a case has to claim a pair some
-  fixture of its own fires, and the pairs are all owned — it would be
-  `coverage: auxiliary`.
-- **Only one of the three entries is storable in git.** A symbolic link is
-  (this repository already tracks two, mode `120000`); a FIFO and a directory's
-  permissions are not, so those two need the entry created before the run and
-  removed after it.
+Every JSON invocation has an exact ranking source. Ordinary JSON and the two
+baseline JSON views each capture their own complete ranking. The output-file
+and parallel invocations use the ordinary JSON source and must reproduce it.
+A new JSON invocation without a valid source is refused while loading the
+capture plan.
 
-The shape that would close it: a `case.json` key declaring the case incomplete —
-added to `CaseDefinition::KNOWN_KEYS` — that switches `checkBaselineSurface`
-from "exit 0 and a file" to "exit 4 and no file", keeping both facts compared on
-each side rather than skipped, plus a preparation step owned by the gate for the
-two entries git cannot carry.
+Within a side, the ranking schema is fully classified: finding projection,
+the `debtMinutes` join to physical `techDebtMinutes`, ranking values and
+`rank`. Complete physical records and ranked records must join bijectively
+as multisets. A repeated join key carrying different ranking values is
+`record-ambiguous`. Published ranks must be 1 through the population, and
+published impact scores must not increase down the ranking. Added or removed
+ranking fields use the `json/ranking` schema view.
 
-Every run uses the case directory as its working directory, so no path in any
-artifact depends on where the tree is checked out. The `check` runs add
-`--workers=0 --no-cache --no-ansi --fail-on=error`. `baseline:generate` and
-`baseline:explain` have **no** `--no-cache` and no `--cache-dir`, and the AST
-cache lives in `.qmx-cache` under that shared working directory with a key that
-names nothing about the product — so the gate itself removes that directory
-before and after every invocation it makes in a case directory. Without it the
-side that runs second reads the other side's parser output as authoritative, and
-the baseline surfaces would be compared against themselves. The
-`baseline:generate` invocation additionally asserts that a cache *was* written
-where the gate had just cleared one: if the product ever caches somewhere else,
-this isolation must fail loudly rather than quietly guard nothing.
+### Order
 
-HTML's `project.name` is the analysed project's: the `project-name` format
-option, else the case's `composer.json` `name`, else the case directory's name.
-`qmxVersion` comes from `Composer\InstalledVersions`, i.e. from our own
-repository rather than from the case. Neither is normalized, and neither needs
-to be: both sides analyse the same case files against the same cloned
-`vendor/`, so both read the same values and they stay compared like any other
-field.
+A paired record has its reference comparative record as its label on both
+sides. This keeps an explicitly changed message from creating a false
+permutation. Equal labels retain their multiplicity.
 
-## Surfaces
+Order is judged for unchanged ranking-value pairs whose labels occur in a
+published JSON slice on either side. Their sequences in the complete rankings
+must have a longest common subsequence containing all those occurrences.
+An undeclared movement is `ranking-order-mismatch`.
 
-Per case: the twelve formats (`summary`, `text`, `text-verbose`, `json`,
-`checkstyle`, `sarif`, `gitlab`, `github`, `metrics`, `health`, `html`,
-`suppressed`), the exit code, `check --show-suppressed --format=text` (the flag
-and the `suppressed` format are two publications of one composition, and both
-are compared; the flag's report goes to stderr whatever the format, so it is
-captured as an artifact of its own beside a stdout payload that is
-byte-identical with and without the flag), the baseline `baseline:generate`
-writes,
-and `baseline:explain` for each subject in `explainSubjects`. Once per tree:
-the `bin/qmx rules` snapshot.
+To declare a permutation, author a value intention
+`kind=order, key=ranking, level=*`. Derivation writes one row per moved
+occurrence, with its case, view, label, occurrence number and positions among
+the judged records. `RankingOrder` chooses the lexicographically smallest
+sequence of reference/candidate index pairs among maximum-length subsequences;
+judgment and derivation use that same algorithm. An unused intention is stale.
 
-## Verdicts
+### Prefix and limit
 
-| Verdict   | Exit  | Meaning                                                    |
-| --------- | ----- | ---------------------------------------------------------- |
-| `GREEN`   | 0     | Full corpus, and the two trees are finding-equivalent.     |
-| `PARTIAL` | 2     | Nothing failed, but the run claims no equivalence.         |
-| `RED`     | 1     | At least one failure class fired.                          |
-| —         | 3     | The gate could not run (bad corpus, bad map, no tree).     |
-| —         | 128+n | A signal stopped the run: 130 for SIGINT, 143 for SIGTERM. |
+Each published `topIssues` must equal the raw prefix of its own complete
+ranking. A shifted or malformed prefix is `ranking-projection-mismatch`.
 
-A `--cases=` name that selects no case is refused (exit 3), also beside names
-that do select one, so the restriction a run reports is the one it ran under.
+The limit is known exactly when fewer than all records are shown (`=k`);
+when all are shown it is known only to be at least their number (`>=n`).
+Across sides, these intervals must intersect. A changed limit is declared as
+a field intention `topIssues.limit`, with derived `=k`/`>=n` values for
+the exact invocation. `--top=0` is a valid empty slice.
 
-A run is `PARTIAL`, never `GREEN`, when `--cases=` restricted the corpus or when
-`--incomplete-corpus` downgraded a coverage shortfall to a warning. Only a
-`GREEN` full-corpus run is evidence of finding-equivalence; a step's Definition
-of Done may not cite anything else.
+Summary top-issue rows are checked inside each side against the ordered
+physical records joined from its complete ranking: count, position, severity
+tag, location, message, advice, debt and score. Score rounding follows the
+renderer's decimal precision. Through sides, only the surrounding non-record
+summary text remains byte-compared.
 
-## Execution and liveness
+Internal ranking and physical-support publications are evidence inputs, not
+additional cross-side surfaces or structural-diff targets. Their metadata is
+checked inside the side. Both candidate passes validate complete physical and
+ranked multisets, retaining duplicate counts. Support metadata, unrelated
+health values and support formatting are not claimed as cross-side publications.
 
-The gate runs its three tree waves in order: candidate verification 1,
-candidate verification 2, then the reference. Within a wave, each corpus case
-is independent because it owns a different working directory and the gate
-removes that directory's `.qmx-cache` around every command. The default pool is
-four cases; pass `--jobs=1` to reproduce the serial schedule, or choose a value
-from 1 through 16 for a bounded pool. Commands within one case always remain in
-their declared order, and the parent merges completed maps in corpus order, not
-completion order, so parallel execution cannot make the compared artifact map
-nondeterministic.
+## Value, schema, outcome and surface declarations
 
-Progress is written to stderr only. A worker has a 20-minute deadline, while a
-single product command has a five-minute deadline and emits a 30-second
-heartbeat. These limits turn a stuck child into exit 3 instead of an unbounded
-Composer wait; they do not change a product command's captured stdout or stderr
-surface. The gate fails before starting a child unless PHP's POSIX extension and
-the `pgrep` executable are available, because without both it cannot guarantee
-that a timed-out product process leaves no worker descendants behind. Both are
-present in the supported macOS and Ubuntu development environments.
+| Table                          | Authored columns                      | What the run measures                                                          |
+| ------------------------------ | ------------------------------------- | ------------------------------------------------------------------------------ |
+| `declared-values.tsv`          | `kind, key, level, reason`            | Exact values, exits or moved occurrences in `declared-values.derived.tsv`      |
+| `declared-fields.tsv`          | `change, report, view, field, reason` | Added values per case and record in `declared-fields.derived.tsv`              |
+| `declared-outcomes.tsv`        | `case, transition, file, reason`      | Exact normalized refusal snapshot under `declared-outcomes/`                   |
+| `declared-surfaces.tsv`        | `change, surface, file, reason`       | Exact withdrawal refusal under `declared-surfaces/`, or introduced publication |
+| `declared-structural-maps.tsv` | `document, from, to, shape, reason`   | Exact translated document paths, retaining the declared value shape            |
 
-### What a run borrows, and when it hands it back
+Value kinds are `field`, `metric`, `exit` and `order`. Field and metric
+intentions use an exact subject level or `*`. Exit intentions name a command
+class from `DeclaredValues::COMMANDS` and require `*`; process exit
+declarations must agree with report exit carriers such as directives'
+`exit_code`. A shared key never authorizes an unmeasured neighbouring subject.
 
-A run takes two scratch directories — `finding-gate-run-*` for its artifacts and
-`finding-gate-ref-*` for the reference checkout — and it registers that checkout
-as a **git worktree of the repository under test**. The registration is the part
-that matters: a leaked directory costs disk, while a leaked registration stays in
-`git worktree list` for good and has to be cleared by hand.
+Schema changes are `added` or `removed`. Reports and views are exact,
+including `json/ranking`. Derivation must obtain every required supplier;
+a missing supplier cannot produce an empty successful table.
 
-All of it is released on every exit path the process survives long enough to
-take: a normal exit, a failure, an interrupt, and a PHP fatal. Signals are turned
-into a stop the run takes at a decision point of its own rather than wherever the
-signal landed, because PHP's default disposition runs neither `finally` nor a
-shutdown function — which is exactly how the registration used to be left behind.
-A run therefore needs the `pcntl` extension and refuses to start without it.
+An outcome declaration names the transition and its refusal file. Repeated
+refusal outputs are still compared. A withdrawn surface is still invoked on
+the reference and must meet its exact declared candidate refusal. Declaring a
+withdrawal does not suppress a broken reference. Introduced and withdrawn
+surface rows never disable neighbouring publications.
 
-Two consequences worth knowing. A second Ctrl-C is ignored, so that giving the
-checkout back cannot be cut in half; `SIGQUIT` is left at its default as the
-escape hatch. And a `SIGKILL` is still a `SIGKILL` — nothing runs, so a run
-killed with `-9` can leave a registration, including the `locked` kind that
-`git worktree prune` skips. Every run prunes before it takes a checkout, and a
-release uses `git worktree remove --force --force`, which is what clears one.
+Structural maps translate named paths in configuration documents. Their
+closed document and shape vocabularies live in `DeclaredStructuralMaps`;
+the translated input is validated before reference execution.
 
-`--incomplete-corpus` exists for a corpus that does not yet claim the whole
-declared channel set — while cases are being written, and for a one-case
-development loop such as `--cases=annotations --incomplete-corpus`. It turns the
-shortfall into a warning; it cannot turn the run green.
+## Maps and translated inputs
+
+All maps have `old, new, reason` columns. Self-renames, chains, conflicting
+roles, duplicate sources and idle rows are refused. Credit belongs to the
+exact row and, for a split input, every image must actually be used.
+
+| Map                 | Direction                                            | Subject                                                               |
+| ------------------- | ---------------------------------------------------- | --------------------------------------------------------------------- |
+| `channels.tsv`      | Forward                                              | Published channel identities and explained producer splits            |
+| `symbols.tsv`       | Both                                                 | Named PHP symbols or paths in supported output/input positions        |
+| `metric-keys.tsv`   | Forward                                              | Metric keys and their closed aggregation spellings                    |
+| `inputs.tsv`        | Both where invertible; split input rows reverse only | Rule option keys, CLI aliases, selector tokens and YAML key spellings |
+| `report-values.tsv` | Forward                                              | Enumerated quoted values of `format:suppressed`                       |
+
+Forward restates reference output in the candidate vocabulary. Reverse
+restates candidate inputs in the reference vocabulary. A channel collapse can
+be many-to-one forward; reverse translation must be a function.
+A producer split is judged record by record, using identity and the actual
+published move. A matched row that moved nothing stays stale.
+
+Metric aggregation suffixes come from both products. A declared strategy
+rename is handled by `AggregationRenames`; an unexplained suffix difference,
+ambiguous base spelling or doubled suffix is refused. A metric row applies
+to the closed aggregated spellings of that same row, not arbitrary substrings.
+
+Input tokens include `rule:option-key`, `--flag`, a dotted selector name
+and a YAML key spelling ending in `:`. Bare unqualified words are refused.
+One old input token may map to several candidate tokens separated by `|`;
+those are usable in the reverse direction only.
+
+Document translation uses `YamlInputMap`, not a blanket text substitution.
+It edits named plain block-key or supported scalar positions and verifies the
+parsed document changed only where declared. Comments and unrelated strings
+stay intact. A touched flow key, quoted key, alias, unsupported selector reach
+or formula is refused. A metric formula is a grammar, so a name map does not
+silently rewrite its expressions.
+
+`PhpInputMap` translates named qmx directive targets in real comments and
+exact executable FQNs or explicitly aliased imports. Backtick/fenced examples
+remain documentation. Touched namespace declarations, implicit names,
+unsupported method/declaration shapes, dynamic names and string literals
+refuse; they do not receive inferred renames.
+
+Report-value rows apply only to quoted enumerable values in the suppressed
+report. A plain word in its prose is not translated. Renaming a padded display
+name can also move alignment, which requires a residual structural diff.
 
 ## What a fingerprint is compared by
 
-A finding's fingerprint is `channel:subject[:occurrence][:edge]`, and consumers
-track alerts by it: a fingerprint that moves for no stated reason makes every
-consumer treat every finding as new. It is also the one published value a rename
-*must* move, so it can never be compared for equality across a step that renames
-a channel.
-
-The two publications are not the same problem, and the gate treats them
-differently:
-
-| Publication                                         | Form                | How it is compared                                         |
-| --------------------------------------------------- | ------------------- | ---------------------------------------------------------- |
-| SARIF `partialFingerprints.primaryLocationLineHash` | the identity, plain | as text, through the maps, like any other name             |
-| GitLab `fingerprint`                                | `md5` of it         | the hash is **substituted** by the identity, then compared |
-
-Three rules, and each one is a failure class rather than a promise:
-
-- **Each side must agree with itself.** The published value is compared against a
-  recomputation from that side's own published fields, on the **raw** artifact,
-  before any map touches it. A disagreement is `fingerprint-mismatch`.
-- **The opaque publication is substituted, never redacted.** Every GitLab hash is
-  replaced by the identity this side just proved it hashes, and only then is the
-  reference's text translated forward and the two compared. So an identity that
-  moved with a declared row to explain it compares equal, and an identity that
-  moved with nothing to explain it is `surface-mismatch` on that surface — in
-  readable names, not hex. Substituting fewer values than the surface published
-  is `fingerprint-opaque`: a hash left as hex agrees with itself under every
-  rename, which is the one thing this must not do.
-- **Substitute, then translate — never translate, then recompute.** The
-  reference's artifacts are translated forward, so after translation its
-  `channel` field speaks the candidate's vocabulary while the hash beside it is
-  still the old one. Recomputing from translated fields would report a mismatch
-  on every finding of every honest rename; nothing in the gate does it.
-
-The licence for replacing the hash is that every field the composition reads —
-`channel`, `subject`, `occurrence`, `edge` — is a field the equivalence tuple
-already compares, so the hash carries no datum the comparison loses. That is
-checked against the tracked tuple on every run, and a composition reaching
-outside it fails as `tuple-field-drift`.
-
-Measured on 2026-08-24, over the whole corpus, with a channel published as its
-own name alone (the Ш5b collapse): before substituting, twelve GitLab
-surfaces differed by 376 lines of nothing but hashes — a declaration made of hex,
-which is the blob `delta-too-large` exists to refuse; after substituting, every
-surface of every case agreed under the declared channel rows alone.
+GitLab and SARIF hashes are recomputed from each side's own published identity
+before comparison. A channel rename legitimately changes its hash, so the
+gate then substitutes a comparable identity in that publication. A hash that
+cannot be recomputed is `fingerprint-opaque`, and a wrongly recomputed one is
+`fingerprint-mismatch`. Occurrence and edge discriminators stay part of the
+identity; equal records do not lose multiplicity.
 
 ## What publication order is compared by
 
-`format:json` and the baseline file publish their records in identity order —
-an order whose first component is the channel code. A rename therefore moves
-records, not just names: translating the reference's artifact in place leaves
-its fields in the new vocabulary but its records in the old order, which is not
-"the reference in the candidate's dictionary", it is a translation done half
-way. `PublishedOrder` re-establishes the reference's order
-after translation, on exactly those two surfaces — every other surface either
-groups by file, sorts by severity or impact, or publishes the rule engine's own
-execution order, none of which a channel rename touches.
-
-The mechanism is asserted, not assumed: each side is checked to already be in
-the order of its own producer's key on the **raw** artifact before anything is
-translated. A side that is not is `published-order-drift` — the run does not
-sort it into shape, because a producer that stopped publishing in its own
-sort's order has to redden the gate, not disappear into a pre-sort.
-
-## What normalization may exclude
-
-`normalization.tsv` is measured, never written by taste: a row enters only
-because two runs of one unchanged tree disagreed on that field
-(`--derive-normalization`), and a row that matched nothing in a whole run fails
-as `normalization-stale`. Two further limits keep the list from eating the
-comparison it is part of:
-
-- A locator names one field **by path**, never by substring, so SARIF's constant
-  `version` stays compared.
-- A row may not reach a field the equivalence tuple compares. This is checked
-  twice: statically, on the locator (its last segment may not be a tuple field),
-  and by measurement, by normalizing the JSON surface and comparing its findings
-  section against the raw one. Failing either is `normalization-overreach` —
-  excluding a compared field would retire it from the comparison while the tuple
-  still claims it is guarded.
-
-JSON surfaces are compared as the bytes they were published in, not as decoded
-values: a row cuts its field out of the text in place (`JsonText`), and every
-other byte — layout, escaping, the spelling of a number, a repeated key — stays
-under comparison. Decoding both sides equated every one of those changes: a
-formatter that stopped pretty-printing ran PARTIAL with no failure. Measured on
-2026-09-25 with that change planted (`--cases=smells --incomplete-corpus`): the
-decoded comparison exits 2 with no failure, the byte comparison fails
-`surface-mismatch` on `case:smells|format:json`. The HTML report's payload is the
-one exception: it is the gate that re-encodes it (`ReportPayload`), because the
-bundle, not a reader, consumes it.
-
-The derivation is judged before it writes, exactly as `--derive-declarations`
-is, and for the same reason: a list measured from runs that produced nothing
-describes the breakage, and the next ordinary run reproduces it and goes green
-against it. Every pass is judged, not only the one the rules are read from. It
-also refuses `--cases=` and `--incomplete-corpus`, because a rule the narrowed
-run never exercised leaves the tracked list as stale. Measured on 2026-09-04
-with a `bin/qmx` that exits immediately: before, the run rewrote
-`normalization.tsv` down to its header and reported success; after, it exits 5,
-says nothing was written, and the file is untouched.
-
-All three `--derive-*` modes exit 4 when they wrote and 5 when the measurement
-failed. None of them exits 0: a write is not a verdict, and a DoD reading an exit
-code cannot be left to think a rewrite of the declaration was a passing check.
-
-## What a map declares
-
-`maps/*.tsv` is how a step states what it renamed, and the gate holds the
-declaration to these properties:
-
-- **Whole names only.** A row translates a complete name, never a prefix of a
-  longer one: a row for `X` does not rewrite `X.y`. Renaming a family means
-  declaring every member of it. Two rows may share a *target* — that is a
-  collapse, which the map states forwards — but no two may share a source. A
-  name reaches an artifact in more spellings than a row can be written in, and
-  every spelling is substituted by that same row: the
-  JSON-escaped form of a backslash-bearing symbol, checkstyle's
-  `source="qmx.<code>"` — the only prefix any surface adds, measured across all
-  twelve formats, the baseline file, `baseline:explain` and the rules snapshot —
-  and SARIF's `rules[].name`, which is the channel code title-cased. The
-  title-cased spelling belongs to channel rows whose two sides are plain names:
-  title-casing a whole `rule#code` key or a class FQN produces a phrase no
-  artifact contains, and a substitution nothing can match is the rubber stamp
-  these rules refuse everywhere else. It was measured, not foreseen — a control
-  renaming a channel code left exactly one surface differing, and no row could be
-  written for a spelling with spaces in it.
-- **No chains.** A map is refused at load time if one row's target is another
-  row's source, if two rows rename the same whole name, or if a row's two sides
-  are equal. Substitution is a single pass over the original text, so rows cannot
-  cascade into an identity no row states.
-- **No idle rows.** A declared row that neither translated nor explained
-  anything anywhere in the run fails as `map-stale`, exactly as a normalization
-  rule that redacted nothing fails as `normalization-stale`. Not every map has to
-  fire, though: the corpus is external, so a renamed product symbol reaches no
-  compared artifact and `symbols.tsv` can legitimately stay empty.
-
-  *Explaining* counts beside *translating*, and the rule is: a channel row is
-  credited by a record it named whose published identity its target actually
-  **moved**. Not by a match — a row is compared against what the record it names
-  already publishes, in the fields that row constrains: a `rule#code -> rule#code`
-  row against the record's own pair, a `rule#code -> name` row against the
-  record's own code, since such a row says nothing about `rule`. A row whose
-  target is what the record already publishes has claimed nothing, and matching
-  it leaves the row exactly as stale as it was.
-
-  The shape this exists for is the producer move
-  (`computed.health#health.complexity -> health.complexity#health.complexity`),
-  which has nothing to substitute anywhere: its rule half is one side of the
-  split such rows derive and is deliberately left untranslated, its code half is
-  the same string on both sides, and no surface prints the whole `rule#code` key
-  the row is written as. Judged by substitution alone it would be idle, which
-  would make the only shape a producer move can be declared in unwritable. The
-  credit is not restricted to that shape, though — any row that moved a record it
-  named earns it — so what keeps the relaxation honest is the movement test above
-  and the fact that credit is granted per row and per matched record: a row of a
-  live split that moved no record of *its own* key is still `map-stale`, because
-  "a sibling of mine fired" is not a claim about this row.
-
-### Direction is declared, and it follows from injectivity
-
-A map is applied backwards **if and only if it is injective in both
-directions**, and that is checked when it loads rather than promised.
-
-| Map                 | Applied      | To what                                                                                         |
-| ------------------- | ------------ | ----------------------------------------------------------------------------------------------- |
-| `channels.tsv`      | forward only | reference artifacts: the whole `rule#code` key and each unambiguous half                        |
-| `symbols.tsv`       | both ways    | reference artifacts; and input — `baseline:explain` subjects, configuration text                |
-| `metric-keys.tsv`   | forward only | reference artifacts: the key, and each `<key>.<strategy>` spelling of it                        |
-| `inputs.tsv`        | both ways    | option keys, flag aliases, names in selectors: they live on the input and in the rules snapshot |
-| `report-values.tsv` | forward only | `format:suppressed` only: a quoted string value of an enumerable report field                   |
-
-Forward means the *reference's* output restated in the candidate's vocabulary.
-Backward means the *candidate's* input restated in the reference's, because the
-reference binary cannot be addressed in a vocabulary it does not have yet.
-
-`channels.tsv` is forward only, and two measured reasons say so. A collapse
-gives two rows one target and a split gives one old half several, so neither is
-invertible. And after a collapse the target is textually the same string as the
-unchanged **producer** name the corpus writes into its own arguments, so an
-inverted channel map would rewrite a legitimate input the step never touched.
-
-`metric-keys.tsv` is forward only for the same two reasons, measured 2026-08-26.
-Nothing on the reference's input is spelled as a metric key: no case argument
-carries one, and the corpus' only user-defined formula reads no metric at all —
-deliberately, because a formula addresses a key in a *grammar*, and a grammar is
-not a name a row can translate. And an inverted key map would rewrite arguments
-the step never touched: after the vocabulary rename the new key names are
-textually the rule names the corpus writes into its own `--rule-opt` tokens
-(`coupling.class-rank` in all fourteen cases, `size.class-count` and its two
-siblings in `design`, `complexity.cognitive` and `complexity.npath` in two more),
-so a reverse pass would hand the reference `classRank` and `classCount` as rules
-it does not have. What a formula *does* still prove is the six built-in health
-dimensions, whose bodies live in product source and whose values the gate
-compares at three levels on both sides.
-
-### A key row covers its aggregated spellings
-
-A metric is published bare and once per aggregation strategy declared for it,
-spelled `<key>.<strategy>`. A `metric-keys.tsv` row therefore translates those
-spellings as well as the bare one, and the reasons it may are the reasons it is
-not a substring rewrite:
-
-- the strategy list is **closed**, read out of the product's own
-  `AggregationStrategy` rather than written here, and the suffix matches only at
-  the end of the name. `ccn.avg` is translated, `ccn.average` is not, and neither
-  is `ccn.avg.avg` — a doubled suffix is a spelling nothing publishes;
-- the list is read from **both** trees and they have to agree. Forward
-  translation runs over the reference's artifacts, so a strategy the step removed
-  would stop being expanded while the reference still publishes it, and the
-  divergence is refused with both lists named;
-- the expansion is granted to that one map. Measured over the 14-case corpus: 212
-  of 295 published spellings are `base.<strategy>` against 83 base keys, so a row
-  per spelling is a list no step can keep complete;
-- nothing else may already carry the aggregated spelling of a declared key. Three
-  populations can: another declared name, a half the split deliberately leaves
-  untranslated, and a base key the product itself declares (read from
-  `MetricName`'s constants, which are 71 of the 82 published keys — the other
-  eleven are collector-owned literals no single file declares). One spelling with
-  two meanings is decided by nothing, so the load refuses it. Measured over all
-  83 base keys, no such pair exists today. What the check cannot see is one case:
-  a key only the *reference* publishes, shaped like an aggregation of a declared
-  one, and moved by the step without a row — every other arrangement of that
-  shape ends in a surface diff rather than in silence;
-- the aggregated spellings are spellings of the **same** row, exactly as the
-  `qmx.` prefix is, so they count towards that row's staleness and are never a
-  second declaration.
-
-Two limits of this are worth stating, because both look like escape hatches and
-only one is:
-
-- **A key that needs translating on the input** says so with an `inputs.tsv` row
-  — *if it has a whole-token shape*. A dotted key does; a bare `ccn` does not, and
-  is refused, because "the option key without its rule" would translate the same
-  word everywhere. So for the pre-rename undotted keys there is no input row to
-  write, which is sound only as long as no case addresses a metric key on the
-  input: measured, none does.
-- **A step that changes the strategy vocabulary itself** — renaming `avg`, or
-  removing a strategy — moves the published spelling of every aggregated metric
-  at once, and there is no row shape that states that. The gate refuses to run
-  rather than translating what it cannot state; such a step needs a mechanism of
-  its own, and this is where it will have to be added.
-
-### One name, two roles
-
-A name can be a channel identity *and* a token the corpus writes into its own
-configuration: a user-defined computed metric is both. The step that renames one
-declares the same pair in `channels.tsv` and in `inputs.tsv`, and that is **one
-declaration in two roles**, not two rows renaming one name. It is applied in the
-union of its roles' directions, held to the shape rules of each, and credited
-once. Two maps *disagreeing* about a name stays refused — that decides nothing —
-and crediting the declaration once is a decision with its reason: the roles
-substitute the same string in the same artifacts, so which role a given
-occurrence belonged to is not a measurable question.
-
-An input that does need translating says so with an `inputs.tsv` row. One that
-needs it and has no row makes the reference refuse its input with exit 3, which
-the gate reports as `reference-input-untranslated` rather than letting it arrive
-as twelve surface diffs and an empty findings section.
-
-An `inputs.tsv` row names a **whole token**, in one of four shapes:
-`rule:option-key` as `--rule-opt=` writes it, a flag together with its two
-dashes, a dotted producer name as a selector writes it, or a configuration key
-as a YAML document writes it — the bare key with its trailing colon,
-`suppress_namespaces:`. A bare undotted word with no colon is refused — "the
-option key without its rule" would translate the same key on every other rule
-too.
-
-#### A configuration key as the document writes it
-
-The fourth shape exists because the first three all require a dot: a root
-key like `suppress_namespaces` has none, so a step renaming it had no shape to
-declare the row in at all.
-
-```
-old                    new              reason
-suppress_namespaces:   suppress_ns:     the root option is renamed
-```
-
-Two things follow from the shape being the key **as the document writes it**,
-not as the rule that reads it:
-
-- **it fires at any indent.** A root key and a per-rule key of the same
-  spelling are one token in YAML's own grammar, and the map has no way to tell
-  which one a step renamed — so both translate under one row.
-  `finding-gate/cases/rule-exclusion-ledger/qmx.yaml` carries both:
-  `suppress_namespaces:` at the top of the file and again nested under
-  `rules: {code-smell.long-parameter-list: {...}}`. Renaming only the root one
-  in product code and leaving the corpus' per-rule occurrence unrenamed keeps
-  the two apart in practice, but the row itself does not know the difference,
-  and a step that *does* rename both writes one row for both;
-- **it does not say "this rule's option, not that rule's".** A per-rule option
-  renamed for one rule while another rule keeps the old name under the same
-  key is not expressible by this shape — a blanket rename would translate it on
-  both, and staleness would not catch it, because the row does fire. That gap
-  is not new: it is the same one the bare-word refusal above exists against,
-  and a step that renames one rule's option needs the first shape,
-  `rule:option-key`, not this one.
-
-It never fires inside `--rule-opt=rule:option=value`: that shape holds the
-option name between one colon and an `=`, never followed by a second colon, so
-the whole-token text this shape declares — ending in `:` — is not a substring
-of it.
-
-This shape, like the other three `inputs.tsv` shapes, is matched textually
-across the whole artifact — there is no YAML parse, so the substitution cannot
-tell a document's key position from a comment or a quoted string that happens
-to contain the same characters. `# suppress_namespaces:` in a comment, or
-`"suppress_namespaces:"` inside a string value, is substituted exactly like the
-key itself. This is the mechanism every row shares, not a defect specific to
-the fourth shape: the map is a spelling declaration, not a document model, and
-that is the price of not parsing the twelve surfaces it runs against.
-
-One known counterexample is worth naming rather than silently working around:
-`FindingFilterOrchestrator` prints the old per-rule vocabulary in one stderr
-sentence, `suppressed by per-rule suppress_namespaces/suppress_namespace_channels/suppress_paths:`,
-and the writing `suppress_paths:` sits right there in it. The substitution does
-not reach it — a `/` precedes it, and `/` continues a name, so the left
-boundary refuses the match — and that is a legitimate structural difference in
-the message text, not a hole in this shape; a step that needs that surface
-covered declares a delta for it.
-
-#### One old token, several new ones
-
-An `inputs.tsv` row may name several new tokens, separated by `|`:
-
-```
-old                     new                                                                                   reason
-design.type-coverage    design.param-type-coverage|design.property-type-coverage|design.return-type-coverage   Ш4b split the producer
-```
-
-That is the one shape allowed to break injectivity, and the asymmetry is what
-makes it admissible. A split producer is one name in the reference's vocabulary
-and several in the candidate's, so **backwards** — the direction this map exists
-for — the several candidate names all restate as the one name the reference knows,
-which is a function. **Forwards** there is no function to apply, so the row is not
-applied forwards at all: an occurrence of the old token on the way out stops the
-run and names the row, because taking the first image would publish a rename no
-row declared. Either the surface belongs in a declared delta, or the input that
-reaches it needs a row of its own naming one token. Without the shape there was no
-writable row at all: measured after Ш4b, `design.type-coverage` is three
-producers, so a case addressing the old name by a selector was
-`reference-input-untranslated` for good.
-
-The obligations are the ordinary ones, and one is decided rather than inherited:
-
-- every image is checked to be a whole token, exactly as a single new side is;
-- chains, and rows renaming a name another row produces, are refused as always;
-- **every image has to have translated something.** A row with three images is
-  three renames, not one, so "one of three fired" is refused and the idle images
-  are named in the failure. The weaker rule — any image fires — would let a step
-  declare three new names, exercise one, and keep the other two as a standing
-  excuse, which is the rubber stamp `map-stale` exists to prevent. The cost is
-  that the corpus has to address each new name, which is the same pressure
-  coverage already applies to channels.
-- Several tokens on the **old** side are refused: that would make the backwards
-  direction the undecidable one. A collapse on the way out needs no such shape —
-  `channels.tsv` is forward-only and expresses it with two ordinary rows.
-
-### Report values
-
-`report-values.tsv` is the fifth map, and it is about neither a name nor a
-key: it is the **value** of an enumerable report field —
-`SuppressionMechanism`'s seven values today, the only closed report-field
-vocabulary the product publishes as a string.
-
-```
-old                     new                reason
-namespace-suppression   namespace-block    the mechanism value is renamed
-```
-
-Four properties, and every one of them is narrower than the other maps':
-
-- **it is declared against one surface, and enforced there.** `format:suppressed`
-  is the only surface `RenameMaps::SURFACES` lists for it, because it is the
-  only surface measured to publish such a value at all. A value that later
-  leaks into a second surface is an undeclared diff there, not a silent
-  translation;
-- **the substitution is quoted only**, exactly as a metric key's is and for the
-  same reason: the vocabulary is deliberately plain kebab-case, and a bare
-  word would be indistinguishable from prose the same surface prints beside
-  it — `format:suppressed`'s own `note` field is prose;
-- **there is no bare spelling at all**, not even for a declaration that also
-  carries another role. `REPORT_VALUES` is excluded from the role every other
-  map gets, the same exclusion `METRIC_KEYS` has;
-- **it states a value, never its position.** If a step reordered the array a
-  surface lists such values in, no row expresses that. Not a live gap today —
-  measured against `730941c1`, the mechanism order agrees — but a limit worth
-  naming rather than discovering the day it stops holding.
-
-It has no backwards direction (`FILES[REPORT_VALUES] = false`) for a reason
-narrower than `channels.tsv`'s or `metric-keys.tsv`'s: it names a value the
-corpus has no way to address on its own input in the first place, so there is
-no injectivity to check in a direction that never applies.
-
-### Splitting and collapsing
-
-A channels row translates the whole key and each differing half, so a family
-rename can be stated once. Two ways the halves stop being a function:
-
-- **A collapse is allowed.** Two rows with one target is correct forwards: the
-  two reference names really do become one, and the map has no backwards
-  direction to lose. The findings stay distinguishable because `subject` carries
-  the level in its prefix.
-- **A channel key stops being a pair.** A row may read `rule#code -> name`: the
-  pair collapsing into one identity. It expands into the whole key **only** — the
-  rule survives the collapse as its own published field, so translating the rule
-  half would rewrite a field the step does not move, and a rename of the code
-  half is a rename in its own right and needs its own row. `name -> name` is the
-  later rename of an already-collapsed channel and has no halves. `name ->
-  rule#code` is refused: no step goes that way, and the halves of the new key
-  would be a translation no row declares.
-- **A split is derived, not declared separately.** When the rows disagree about
-  one old half, that half is a split source: it is *not* translated textually,
-  because no translation of it is right. Its protection is not lost — every
-  reference finding carrying that half must have its `(rule, code)` pair named by
-  a declared row, and the candidate must publish the pair that row computes on
-  the same subject. An occurrence nothing accounts for is `split-unmapped`. A
-  record a row explained *and moved* credits that row against `map-stale`, by
-  key, so the credit reaches the one row that named it and not the split it
-  belongs to. Only a row written as a pair can name a record at all: a row whose
-  old side is one name declares no channel key, so a split declared in the
-  post-collapse vocabulary has nothing to explain its records with and every
-  occurrence of its half is `split-unmapped` — a debt of the tool, and the step
-  that first needs that shape has to give it one.
-  `rule` and `code` are fields the equivalence tuple compares, so this is the
-  same rule normalization is held to; a declared delta gets no waiver here. What
-  the matched records produce is a set of `(from, to)` moves per field, and that
-  set — not the set of values in it — is what `delta-overreach` will allow.
-
-## What a declared delta declares
-
-Some of what a step changes is neither a rename nor an excluded field: splitting
-one rule turns one aggregate group into three and adds rows to the rule
-inventory. `declared-delta.tsv` (`surface`, `file`, `reason`) plus one exact
-unified diff per surface is how that is stated, and the diff files are produced
-by `--derive-declarations`, never typed. The `reason` is the one thing a run
-cannot measure: a re-derivation carries existing reasons over and writes `?` for
-a new row, and loading refuses `?`.
-
-Four failure classes keep it from becoming a rubber stamp, and three of them are
-judged on the diff the run **measures**, not on the declared text:
-
-- `delta-mismatch` — the measured diff is not the declared one, byte for byte.
-- `delta-stale` — a delta is declared for a surface the two trees agree on.
-- `delta-too-large` — the diff is past the limit, so the pressure stays on
-  declaring another map row rather than dropping in a blob.
-- `delta-overreach` — a diff line *moves* a field the equivalence tuple
-  compares, and neither a declared split nor a row of
-  `declared-field-moves.tsv` (below) accounts for that move. Three properties,
-  each narrower than the obvious version:
-  - **Moved, not mentioned.** A compact JSON record names `channel` on the same
-    line as the magnitude it records, so pairing the removed and added lines is
-    what makes the question answerable at all.
-  - **The move, not the values.** What a declared split licenses is the set of
-    `(from, to)` pairs its explained records actually produced. A line moving
-    `rule` between two *targets* of the same split — both values that explained
-    records carry — is refused, because no record ever paired them.
-  - **Read under the spelling each surface uses, and in the syntax it uses.**
-    `PublishedVocabulary` states, per surface, which tuple fields it publishes
-    and under which key, and every alias is pinned against the formatter that
-    writes it. The JSON family marks a field as `"field": value` and checkstyle
-    as `field="value"`, whose values are XML-escaped; the same tuple field is
-    `message` on `json`, `text` on `sarif` and `description` on `gitlab`, and
-    the HTML payload spells three of them `ruleName`, `violationCode` and
-    `symbolPath`. `summary`, `text`, `text-verbose` and `github` mark no field
-    at all, and `metrics` and `health` publish no finding record, so for those
-    the record-level split check is the guard — and that list is enumerated in
-    the same place, so a format belonging to neither list fails the self-test
-    rather than being silently unread.
-
-    This is not a refinement. Reading the tuple's own spelling in the tuple's
-    own syntax meant reading the JSON report and, by accident, only it. The step
-    that removed the banned channel from the "did you mean" advice moved one
-    record's `message` on nine surfaces and declared a delta for each; exactly
-    one of the nine needed a licence, and the reason was not that the other
-    eight leave `message` alone. Eight declarations were accepted by a reader
-    that could not reach them.
-
-    A licence naming a surface no reader can read, or a field that surface does
-    not publish, is refused at load. It could only ever have fired nowhere, and
-    the failure it would otherwise produce — `field-move-stale` — names the
-    wrong defect for a typo.
-  A line that publishes a *different number* of values for one field is refused
-  outright: the record set on that line changed, which no rename explains.
-
-A run with declared deltas still says GREEN, and says loudly how many there are
-and how big they are. Lines longer than 500 characters also get a token-level
-diff in the failure detail: the HTML report's embedded payload is one line of
-roughly 59 thousand characters, and without that nobody can read what moved.
-
-The exact diff is a series of hunks with no context lines: what the two sides
-share is dropped, and each hunk carries the line it starts at on both sides. It
-used to be a single hunk covering everything between the outermost differing
-lines, and that was wrong for the reason its first real user found — two small
-changes at opposite ends of a report restated the hundreds of identical lines
-between them, and `delta-too-large` then counted padding as change and refused a
-declaration that had nothing left to declare.
-
-The split is the longest common run of lines, recursively, not a full LCS over
-artifacts the size of the HTML report. Two consequences are worth knowing:
-a shared run shorter than four lines stays inside its hunk and *is* counted on
-both sides (in the tracked SARIF declaration that is 18 of 36 counted lines), and
-a differing span whose line pairs exceed the search budget is **refused** rather
-than emitted as one padded hunk — falling back would silently restore the
-behaviour the hunks exist to remove.
-
-**A declared delta is one-shot.** It is true against the one reference the step
-was measured from. Once the step merges, `main` carries the diff too, so every
-row is `delta-stale` against the new `main`, and the next change that runs the
-gate is red until the rows and their diff files are removed. Retire them in the
-first change after the merge, as its own commit.
-
-## What a declared field move declares
-
-`delta-overreach` refuses a diff line that *moves* a field the equivalence tuple
-compares. Until this file existed its only source of permission was a declared
-split, and a split can only ever produce moves of `channel`, `rule` and `code` —
-the fields a channel rename rewrites. So `message`, `techDebtMinutes`, `file`,
-`line` and `subject` could not be licensed by any declaration that existed: not
-because moving them is dangerous, but because there was no list for it. A step
-that changes the *text* of a finding — a diagnostic's "did you mean" list, say —
-had nothing to declare it with.
-
-`declared-field-moves.tsv` (`surface`, `field`, `from`, `to`, `reason`) is that
-list. One row licenses one move:
-
-```
-surface                        field    from                to                 reason
-case:annotations|format:json   message  …unused-directive.  …directive.        why the text moved
-```
-
-- **The key is the whole quadruple, and it is exact.** Not a prefix, not a
-  pattern, not "any value of this field". A line moving the same field between
-  any other pair of values on that surface is refused exactly as before.
-- **A row fires on equality, never on containment.** A `from` that merely occurs
-  inside what the run measured would license a move nobody declared.
-- **A row nothing fired is `field-move-stale`** — the same lie as `map-stale`,
-  `normalization-stale` and `delta-stale`, and it fails the same way. It is
-  reported against the surface the row names.
-- **It is not a waiver of the declared delta.** The surface still needs its
-  `declared-delta` row, that diff is still compared byte for byte
-  (`delta-mismatch`) and still refused past the size limit
-  (`delta-too-large`). This removes one wall inside a diff that was already
-  measured and already declared, and no other.
-
-Unlike the diff files, these rows are **typed**. The pair a row names is printed
-verbatim in the `delta-overreach` failure of the run it explains, so what a hand
-writes here is a transcription of a measurement — and a mistranscription is
-`field-move-stale` rather than a silent widening.
-
-A row is written against one reference. Once the step is merged, the next step's
-reference already contains the change, both sides agree, and the row becomes
-stale: **the following step empties this file**, exactly as it empties the maps
-and the declared delta.
-
-## Declaration forms
-
-Six more tables declare what a step changed besides a rename, a structural
-delta or a licensed field move. Each has a model that loads it, refuses a row
-it could not apply and knows which rows nothing consumed; the check that
-consumes each lands with its form in S01b, and until then every row of a
-non-empty table is reported stale by its own class, so a declaration no check
-reads is never accepted as one.
-
-| table                                                 | declares                                                                                               | stale as                    |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------- |
-| `declared-records.tsv`                                | a record withdrawn from or introduced into one report of one case, keyed by the whole canonical record | `record-stale`              |
-| `declared-values.tsv` + `declared-values.derived.tsv` | an intent that a field or metric key may move, and the exact values that moved under it                | `value-stale`               |
-| `declared-fields.tsv` + `declared-fields.derived.tsv` | a field every finding gained or lost, and where the gained one appears                                 | `field-declaration-stale`   |
-| `declared-outcomes.tsv` + `declared-outcomes/`        | a case the candidate now refuses, with the refusal's measured output                                   | `outcome-declaration-stale` |
-| `declared-surfaces.tsv` + `declared-surfaces/`        | a surface introduced or withdrawn, with the refusal a withdrawn one must now meet                      | `surface-declaration-stale` |
-| `declared-structural-maps.tsv`                        | a configuration key moved within the schema, applied to the reference's inputs                         | `structural-map-stale`      |
-
-`--derive-declarations` is the one mode that writes what a run measures: the
-declared delta and, under each form's declared intents, that form's derived
-table (`DerivedTable`). A change no intent covers is not absorbed, so the run
-stays red and writes nothing.
-
-A form joins the gate through its own wiring file,
-`scripts/finding-gate/wiring-<form>.php` (`Wiring::FILES`, one per S01b package; the
-corpus has one too, for the controls only its cases make red): the classes it adds,
-its controls, self-test groups and check witnesses, the checks it runs per case
-(`CaseCheck`), as a step of a surface's comparison (`SurfaceStage`, placed
-before a step of `SurfaceComparison::STAGES`), over the whole run (`RunCheck`)
-and in the derive run (`Derivation`), and the pending rows of the failure
-classes it will raise. Every failure class a form needs is already declared in
-`FailureClass`; a class nothing raises yet is pending in its form's wiring file.
-
-## Who reads the corpus
-
-`case.json` and the case directories have a schema, and **four** consumers read
-it — two of them outside this directory. Changing the schema is a change that has
-to touch this list; it exists because the last change to the claim format
-recorded its blast radius as "one literal, one mutation" and two of these four
-survived by luck.
-
-| Consumer                                                  | What it reads                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scripts/finding-gate/Corpus.php` + `CaseDefinition.php`  | every `cases/*/case.json`, as the schema                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `scripts/finding-gate-controls/`                          | the controls (`*Controls.php`, `ChannelRenamePlants.php`, `Mutation.php`) name these corpus paths exactly: `cases/smells/src/Dead.php`, `cases/smells/case.json`, `cases/security/case.json`, `cases/health/qmx.yaml`, `cases/disabled-rule/case.json`, `cases/layers/case.json`, `maps/channels.tsv`, `maps/inputs.tsv`, `maps/report-values.tsv` (each read and written back with a control's own row), `declared-delta.tsv`, `declared-field-moves.tsv`, and `declared-delta/` (a `control-*.diff` created, the directory digested around a derive run); and they walk the whole corpus: `DeclaredDeltaControls` and `RenameControls` list `cases/` for every directory holding a `case.json`, `Mutation::renameRootKeyInCorpus` rewrites a root key in every `cases/*/qmx.yaml` (which is how `rule-exclusion-ledger/qmx.yaml` is reached), and `Mutation::renameInDerivedDeclarations` rewrites every `*.diff` directly under `declared-delta/` — the only files a derivation writes there |
-| `governance/Channel/ChannelLevelDeclarationDriftTest.php` | every `cases/*/case.json` — `paths`, `config`, `args` — and runs `bin/qmx` over each; it is inside `composer check`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `scripts/generate-rename-enumeration.php`                 | `cases/*/qmx.yaml`, and counts occurrences under `finding-gate/**`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-
-Measured, not recalled: `git grep -E "finding-gate/cases|case\.json"` over a
-stopped tree, minus prose; the controls' row again by
-`grep -ohE "'finding-gate/[^']*'" scripts/finding-gate-controls/*.php` plus the
-`scandir` and `Mutation` walks, since a walk names no case. The product test is one field-read away from breaking
-on a claim-format change and nothing warns it; the enumeration generator is what
-made `composer check` red the last time a case file moved.
-
-## Adding a channel
-
-A new channel needs a fixture in the case that owns its family and a line in
-that case's `channels`. The gate fails until both exist — that is the point:
-coverage is checked in both directions on every step, so neither a fixture lost
-nor a channel added silently narrows what the gate proves. A channel reporting at
-more than one level needs a fixture *and* a claim line **per declared level**:
-coverage counts pairs, so a level with no fixture anywhere is a shortfall even
-while the channel fires.
-
-### Named gap: a step that withdraws one finding and introduces another
-
-The paragraph above holds for a channel whose findings the reference also
-publishes. It does not hold for a channel **new in the step**, and the gate has
-no form that declares one against the step's own parent.
-
-Such a step must carry the fixture anyway. Two consumers hold it to that, and
-neither is the gate's comparison:
-
-- **coverage**, whose declared side is derived from the candidate: both
-  witnesses carry the new channel, so without a fixture the run is
-  `coverage-shortfall` on its pair, and only `--incomplete-corpus` — a `PARTIAL`
-  run — downgrades it;
-- **`governance/Channel/ChannelLevelDeclarationDriftTest.php`**, inside
-  `composer check`, whose oracle `governance/Channel/Fixtures/observed-levels.tsv`
-  lists the channel: it runs the product over every case here and fails when a
-  listed channel fires nothing.
-
-With the fixture, the reference cannot fire the channel, so the candidate
-publishes a record the reference does not. Where that record lands on a diff
-line the other side fills with nothing, or with a record of another shape, the
-line publishes a different *number* of values of a compared field, and
-`DeclaredDeltaCheck::overreachingLines()` refuses it outright — before a split
-or a `declared-field-moves.tsv` row is consulted. On the identity-ordered surfaces
-(`format:json`, the baseline file) the new record also shifts its neighbours, so
-positional pairing reports moves of `rule`, `file` and `line` between records
-that did not move at all. Only where the withdrawn and the introduced record
-happen to share a line, as on `format:checkstyle` and `format:gitlab`, is the
-refusal a value move a `declared-field-moves.tsv` row could name. When the
-record count differs as well, `finding-count-mismatch` is reported beside them.
-
-So the step that introduces a channel is red against its parent, and only on
-the fixture case: `delta-overreach` on that case's surfaces, which carry
-declared deltas derived as usual. It lasts one step. The next step's reference
-already publishes the channel, the fixture fires on both sides, the fixture
-case's deltas become `delta-stale` and are removed, and that step can be
-`GREEN`. A step in this position cites the red run with each failure attributed
-to the fixture case; it does not cite `GREEN`, and it does not cite a `PARTIAL`
-run in its place.
-
-The shape the stage-B review met is this gap with one more feature, and the
-feature is what makes it look expressible. `architecture.doubted-assignment`
-reports an assignment that stands while a layer could not answer about it, and
-the same step stopped `architecture.unmatched-exclude` from reporting an
-`exclude:` clause that could not answer. The `layers` fixture — a layer whose
-own `exclude:` reads an interface outside the corpus — therefore takes one
-finding away from the older channel and gives one to the new channel, and the
-count stays equal. Measured against the stage-A reference: 60 `delta-overreach`
-failures across the baseline file, `format:json`, `format:sarif`,
-`format:checkstyle` and `format:gitlab` of `case:layers`, and nothing anywhere
-else. 40 of them are refused on value counts (34 on `format:json`, 3 on the
-baseline file, 3 on `format:sarif`) and could not be licensed by anything; the
-other 20 are value moves (8 on `format:json`, 4 on each of the other three), and
-most of those are the neighbour shift above. Without the fixture the same run
-was `coverage-shortfall` on exactly one pair,
-`architecture.doubted-assignment@project`.
-
-It is **not** a split, and no map row states it:
-
-- the two findings are different identities. The reference's carries an
-  `occurrence` (the clause it named); the new channel's finding carries none and
-  names three symbols, two of which no `exclude:` clause produced. A split is
-  explained record by record through `(subject, occurrence, edge)`
-  (`ChannelSplit::identity()`), so even a declarable split would be
-  `split-unmapped` here;
-- the older channel keeps firing in the same case for another clause, so a
-  whole-name row `architecture.unmatched-exclude -> architecture.doubted-assignment`
-  would translate a finding that did not move;
-- the identity branch that would keep it — a second row from the same name to
-  itself — is refused when the map loads by either of two checks: a row that
-  renames nothing, and two rows renaming one name (`RenameMaps::validate()`).
-
-The form the gate lacks is a declaration that **one record is withdrawn and
-another is introduced**: the reference record by its full identity, the
-candidate record by its full identity, and a reason — judged against the
-measured findings, so that an unmatched declaration is stale like every other
-row, and so that the `format:json` finding set rather than a diff line decides
-it. With that form, the step introducing a channel could be `GREEN` against its
-own parent.
-
-## The controls
-
-`composer gate:controls` runs the controls `Controls::all()` lists, each on its
-own hardlink clone: planted breakages and green ones. The clone's repository is
-its own — a local mirror of the developer's with the checkout's `HEAD` and
-`index` — so the reference checkout each control's gate takes is registered in
-the clone, never in the repository the harness was started from, also when that
-is a linked worktree whose `.git` is only a pointer file. Making it needs git
-2.31 or later (`rev-parse --path-format`). A mirror carries `refs/` and objects
-and nothing else, so the harness resolves `--reference` to a commit in the
-developer's repository before it clones anything: `@{u}`, `HEAD@{1}` and the
-other reflog forms, and `ORIG_HEAD` work, and a reference that names no commit
-is refused there. That holds for a full checkout, whose local clone links every
-object. From a shallow one git clones over its transport and takes only what
-refs reach, so a commit reachable only through the reflog or `ORIG_HEAD` is
-resolved and then missing from the clone; every control fails loudly on it with
-`Cannot check out reference "<sha>": fatal: invalid reference: <sha>` — in
-English whatever the developer's locale, because the gate and the harness run
-every child with `LC_ALL=C`. The red controls
-are each required to produce a named failure class at a named surface, except
-the derive controls, which are judged by what the run left on disk instead.
-`composer gate:self-test` runs the harness's own self-test after the gate's;
-the gate never loads the harness.
-
-What the controls require is not what makes a failure class witnessed. They run
-neither in `composer check` nor in CI, so the gate's self-test holds every place
-a class is raised to a synthetic run of its own (`CheckWitnesses`, judged by
-`WitnessRegistry`), and a control only adds to that. The unit is a raise site
-per caller (`RaiseSites`): a check reached through a shared wrapper from two
-modes needs a run through each, and a failure raised from a place the scan of
-the source does not enumerate is itself a failure. Each mode of the command
-line is witnessed its own way:
-
-| Mode                                                                  | Witnessed by                                                                                                                                                    |
-| --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| compare                                                               | the synthetic scenarios, by the failures a run raises and where they are raised, and by the clean tree exiting 0 — not by what it writes                        |
-| `--derive-normalization`, `--derive-declared-delta`, `--derive-tuple` | a synthetic scenario each (two for the first two: one refused, one written), held to the exit code, to exactly the declarations it changed, and to its failures |
-| `--self-test`                                                         | `scripts/finding-gate/tests/GateModesTest.php`, by exit code only: a copy of the gate whose `SelfTest` answers a planted failure must exit 1, and a green one 0 |
-| case worker                                                           | by construction: every scenario that runs a tree runs each of its cases in a worker of this mode                                                                |
-
-`GateModesTest` also holds the entry point's refusal: `--cases=nope` exits 3.
-`CheckWitnesses` refuses a mode missing from this accounting and an entry for a
-mode a scenario already drives.
-
-The scan denies by default. For every method that leads to a raise, each
-occurrence of its name in the scanned files must be one of three things: its
-declaration; a direct call with arguments (`(...$spread)` included, `(...)`
-not) — `$this->m(`, `self::`/`static::m(`, `parent::m(` of a scanned `extends`,
-`X::m(` for a scanned `X` however it is qualified or imported, and `$object->m(`
-on any other receiver, which is matched to every scanned class declaring `m`,
-wide on purpose since the receiver's type is not read; or a line declared in
-`RaiseSites::DECLARED_NAMES` with its reason — data that only happens to spell
-the name, or an `$object->m(` whose receiver is declared not to be a scanned
-class, which then leaves the call graph. Names compare without case, as PHP
-resolves them, and an imported class is resolved through its `use`.
-
-An occurrence is an identifier, the last segment of a qualified name, a string
-whose value is the name or ends in `::name` — a whole literal (`b'...'`, heredoc
-and nowdoc included) as PHP computes its value, a part of an interpolated string
-read raw, trimmed and, when it holds a `\`, decoded too — and every use of a
-constant whose literal value is such a name (`X::C`, `self::C`, `static::C`,
-`parent::C`, a global `const` or `define()`, a string naming it). A property
-access `->m` and a named argument `m:` are not. Everything else is refused by
-place and name, without a list of forms to outgrow. A declared line covers that
-line only, never the uses of a constant it defines; one that matches no
-occurrence or more than one, or gives no reason, is refused, and so are a file
-that does not parse and a group `use`. The name `fail` is reserved the same
-way: a `fail` that is not `$report->fail(FailureClass::X, ...)`, a string whose
-value is `fail`, a method called through a variable name, a second `fail()`
-definition and an extendable `GateReport` are refused.
-
-What stays unseen, the same list as `RaiseSites`' docblock:
-
-- a name assembled at run time from parts — concatenation, `sprintf`,
-  interpolation, a value read from data;
-- a call through `$this->m()` that PHP dispatches to a subclass overriding `m`,
-  which is attributed to the declaring class only;
-- two paths into a site that share the same nearest caller;
-- the decisions a signal arriving in the tail of a derive run takes.
-
-`moved-aggregated-spelling`
-is the control on the suffix expansion: the metrics
-surface publishes `<key>.pct95` where the product computed `<key>.p95`, the base
-keys stay exactly where they are, and the gate has to be red rather than absorbing
-a movement in the suffix that no row states. It mutates the *formatter* on
-purpose — measured, moving the separator inside `MetricName::agg()` takes the
-product down instead, and a control that kills the product proves the corpse
-differs. Three properties of the declaration are worth knowing before adding one:
-
-- A **toleration** — a further failure the mutation cannot avoid producing — pins
-  the surface it lands on, and it also has to *land*. A toleration nothing matched
-  fails the control: it states a blast radius nobody measured, and it widens what
-  the control accepts the day the product starts producing that class there. A
-  toleration whose only overlap is with a required expectation counts as idle too,
-  since the required one is what absorbed those failures.
-- A **green control with a mutation** (`fingerprint-declared-rename`) asserts the
-  other direction: a change the maps declare is absorbed by the declaration and
-  by nothing else. It is held to exit 0 *and* to a run that compared no more
-  surfaces against a declared delta than this repository itself declares —
-  otherwise "the row absorbed it" would be indistinguishable from "a blob of
-  hashes absorbed it". Zero was the earlier bar and it stopped being right the
-  moment a step declared a delta of its own: an unmutated tree legitimately
-  compares those surfaces against their declarations, and the positive control
-  would fail for being correct. Its channel is `code-smell.unused-private`,
-  because the channel has to be claimed by a case that declares no delta, and
-  its code half has to move together with the published `rule` field — after the
-  level left the channel names, no static channel's code differs from its rule
-  field, so the only rename a whole-name row can make green is one that moves
-  both. The new name is also the **same length** as the old one, and that is a
-  constraint on renames in general rather than a quirk of this control: a name
-  printed in a padded column takes its own length into the surface, and a map row
-  translates a name and not the padding beside it. Four surfaces align on a name,
-  in two pairs that do not behave alike — measured by enumerating every padding site in
-  `src/`, not by naming the ones a failing control happened to point at:
-
-  - `tree|rules` (`RulesCommand`) and the per-rule debt breakdown of
-    `--format=text-verbose` (`DebtBreakdownRenderer`) print a **rule** name in a
-    fixed `%-40s`, so a length change moves that one line;
-  - `--format=health` (`HealthTextFormatter`) and `--format=summary`
-    (`HealthBarRenderer`) print a **health dimension's short name** — the part of
-    a `health.*` channel after the dot — in a width computed as the **maximum**
-    over the six of them, floored at 9 and 10. Renaming the longest one to a
-    different length moves every row of the table and its rule, not one line.
-
-  So a step renaming a rule name to a different length declares a delta on the
-  first two; a step renaming a `health.*` channel declares one on the last two.
-  "Only channels moved, so no column moved" is the reasoning to distrust: it is
-  true of the first two surfaces and false of the other two.
-
-  A fifth padding site exists and sits outside this rule for two independent
-  reasons, not one: `src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php:334`
-  pads `%-{$maxLayerNameWidth}s` by a **layer name** the project's own `qmx.yaml`
-  layer policy declares, not by any channel, rule, or health-dimension name the
-  gate's maps ever touch, so a rename this repository declares cannot move that
-  column at all. And even a hypothetical rename of a layer name could not surface
-  here regardless: `debug:layer-assignment` is a diagnostic console command, and
-  it is not among the gate's compared surfaces — the twelve `check` formats, the
-  exit code, the suppression report, the baseline file, `baseline:explain`, and
-  the `bin/qmx rules` snapshot (see "Surfaces" above).
-- **An expectation may not be pinned to the exact surface a declaration covers.**
-  Such a surface is compared against the declared diff and never for equality, so
-  a `surface-mismatch` cannot arise there and a control asking for one is
-  asserting about a comparison that no longer happens. The harness refuses that
-  control before it clones anything; the repair is to move the mutation to a case
-  that declares nothing, not to repin onto a `delta-*` class, which would move
-  the control off its own subject. A broader pin that merely spans a declared
-  surface is fine: the other eleven formats and the baseline file are still compared
-  for equality, and the declared one among them is absorbed as declaration noise.
-- **A step's own declarations reach into the controls twice more, and both are
-  fail-closed rather than obvious.** A control that plants a declared delta
-  writes its diff as `declared-delta/control-<surface>.diff`: `Mutation` refuses
-  to create a file the repository already has, and without the prefix a control's
-  slug collides with the tracked diff of the same surface the moment a step
-  declares one. And a control that writes `maps/channels.tsv` whole writes the
-  step's rows **plus** its own, read from the tracked file rather than copied
-  into the control: the step's rows declare the split that explains its own
-  producer move, and dropping them turns the surfaces it declares a delta for
-  into `delta-overreach` — which the red controls absorb as declaration noise and
-  the green one cannot absorb at all.
-- `split-row-idle` and `split-no-row` are the controls on the split mechanism,
-  and they watch the two failures a split can hide. `split-row-idle` declares the
-  `code-smell.unused-private` rename as a split whose second row names a code the
-  product never emits: the first row explains every record and is therefore not
-  idle, the second explains none and must fail as `map-stale`. That is the
-  boundary of the staleness credit — a relaxation granted per split rather than
-  per row would make this control green. Its measured cost is that a split half
-  is untranslatable, so the `smells` case's surfaces differ; that toleration is
-  drawn as an outline, `case:smells`, rather than enumerated artifact by artifact
-  the way the delta controls enumerate theirs. The `qmx rules` listing moves too,
-  and is tolerated by nothing: the step declares a delta for it, so what the run
-  reports there is a delta class, absorbed as declaration noise — a
-  `surface-mismatch` toleration would match nothing and fail the control.
-  `split-no-row` perturbs no product code at all: it declares a split of the same channel into two codes the
-  product never emits, so the twelve findings that *do* carry the split half have
-  no declared row naming their key, and `split-unmapped` is required on that
-  case. That class carries the whole delta of the `rule` field whenever a
-  producer moves, and no control had watched it fire before.
-
-  What the pair does **not** prove is worth knowing before trusting it: they
-  establish that the credit is per row, and nothing more. Move the credit call
-  above the "candidate published no such record" check, or grant it without the
-  movement test, and both controls still PASS — a corpus run cannot see the
-  difference, because the records in it move. Those two properties are held by
-  self-test cases (`producerMoves()`) and by them alone.
-- `derive-refuses-broken-run` and `derive-writes-green-run` are the only
-  controls in this harness whose subject is not in the report at all.
-  `field-move-stale` replaces `declared-field-moves.tsv` with one row
-  licensing a move on a surface where nothing moves; the step's own licence goes
-  with the replacement, so the move that *does* happen returns to being
-  `delta-overreach` on a surface the step declares and is absorbed as declaration
-  noise. `derive-refuses-broken-run` runs `--derive-declarations` over a tree
-  with one finding dropped: the comparison fails, the run must exit non-zero with
-  `finding-count-mismatch`, and `declared-delta.tsv` and `declared-delta/` must
-  come out of it byte-identical. That last half is checked by digesting the two
-  paths before and after, because the report is exactly what could not be
-  trusted — measured on 2026-09-04, the gate printed "nothing was written" and
-  had already replaced a planted declaration with thirteen derived rows.
-  `derive-writes-green-run` is that control's mirror, and it exists because
-  nothing held the other half: a derivation gutted to measure nothing and write
-  nothing satisfies "a failed derivation writes nothing" perfectly. It cannot be
-  asserted as "the file changed" — over an unmutated tree a correct derivation
-  reproduces the declaration byte for byte — so it plants a comment line in
-  `declared-delta.tsv`, which the loader skips and a rewrite cannot reproduce,
-  and requires the run to leave the index and the diff directory equal to the
-  repository's. A derivation that wrote nothing leaves the comment; one that
-  wrote an empty declaration drops the rows.
-- `lost-level-fixture` is the control on a lost level. Its mutation takes the
-  `class` level away from the `health` case's user-defined computed metric, which
-  is the only way this corpus can lose one level of a multi-level channel:
-  measured, the seven channels of that case's computed family — the six
-  `health.*` dimensions and `computed.density`, each with a producer of its
-  own since Ш5d — are the only ones firing at more than one level in a case, they
-  are computed for every class, and deleting any single fixture of that case
-  leaves the level set untouched. Nothing is
-  tolerated, and the absence of `coverage-shortfall` from its expectations is the
-  assertion: the channel is still declared and still observed, so the claim is the
-  only place the loss can be seen.
+The ordinary JSON finding array and baseline entries must already obey their
+producer's identity order on the raw publication. A violation is
+`published-order-drift`. Reference translation then re-establishes that
+identity order; the gate never repairs a raw producer-order defect.
+Ranking order is judged separately by the occurrence-preserving rule above.
+
+## Normalization and residual diffs
+
+`normalization.tsv` keeps the header
+`surface, locator, kind, reason`. It is measured by
+`--derive-normalization` over five passes of one unchanged tree.
+Every pass is judged. Failed, empty or semantically different captures refuse
+the write; a narrowed corpus cannot derive the list.
+
+An exclusion must be exercised in a whole run or it is
+`normalization-stale`. A locator may not reach compared record fields:
+both its spelling and its effect on physical records are checked.
+A violation is `normalization-overreach`.
+
+The timestamped warning case keeps the stderr clock row live. It excludes
+only a valid `[HH:MM:SS]` clock on a `[WARNING]` line. The level, message,
+line ending and other stderr bytes remain compared. Output-path exclusions
+are measured separately; they cannot replace a whole diagnostic. Internal
+support metadata uses its own exact clock handling and does not credit a
+public normalization row.
+
+JSON is compared as published bytes. `JsonText` edits named spans without
+re-encoding unrelated layout, escaping or number spelling. HTML payload
+extraction likewise retains its JSON bytes while excluding the viewer bundle;
+two refusal sides retain complete refusal text instead.
+
+`declared-delta.tsv` has `surface, file, reason` columns and exact unified
+diffs under `declared-delta/`. A row can name one case surface or a surface
+class with the same measured diff across its cases. The measured diff must
+equal the declaration. Unused rows, excessive changes and unexplained record
+field moves are respectively `delta-stale`, `delta-too-large` and
+`delta-overreach`. Size counts actual changed lines, not context padding.
+A diff whose decomposition cannot be computed within its limit is refused.
+
+`declared-field-moves.tsv` has `surface, field, from, to, reason` columns.
+It permits one exact typed field move inside a separately declared diff;
+it does not authorize a record population change. The field must actually be
+published and readable on that surface. An unused row is `field-move-stale`.
+
+Declarations belong to a particular reference comparison. Retire consumed maps
+and declarations when the next reference already contains their change;
+carrying them forward creates stale exceptions.
+
+## Derivation and verdicts
+
+Author intentions and reasons, then run
+`composer gate -- --reference=<commit> --derive-declarations`.
+It is the single writer for measured record, value, field, outcome, surface
+and residual-diff tables. Unexplained record, value and schema changes still
+fail. A failed run writes nothing. Inspect the generated data, supply any new `?` reasons, and
+run the ordinary comparison to obtain a verdict.
+
+`--derive-tuple` derives physical finding fields from publishing code.
+`--derive-normalization` measures repeatability. They are separate operations
+because neither is derived from cross-side change intentions.
+
+| Exit  | Meaning                                                           |
+| ----- | ----------------------------------------------------------------- |
+| 0     | GREEN: the complete comparison agrees under its declarations      |
+| 1     | RED: a comparison check failed                                    |
+| 2     | PARTIAL: no failure, but no complete equivalence claim            |
+| 3     | The gate could not run its declared comparison                    |
+| 4     | A derivation wrote data; this is not a verdict                    |
+| 5     | A derivation's measurement failed and nothing was written         |
+| 128+n | A signal stopped the run, including refusal of a derivation write |
+
+`--cases=<names>` makes a successful narrowed comparison PARTIAL.
+Unknown names are refused even beside valid names.
+`--incomplete-corpus` downgrades coverage shortfall and also prevents GREEN.
+Neither option is accepted for declaration or normalization derivation.
+Use `--report=<file>` for the machine-readable outcome.
+
+## Execution, controls and independent checks
+
+The three waves remain ordered: candidate 1, candidate 2, reference.
+Cases have independent working directories and a bounded pool
+(`--jobs=1..16`, default 4); commands inside one case retain their order.
+Completed artifacts are merged in corpus order.
+
+Progress is emitted on the gate's stderr, separately from captured product
+stderr. Product commands have bounded deadlines, descendant cleanup and
+heartbeats. The runner requires its process-supervision extensions and tools.
+Temporary reference worktrees and scratch data are released on normal exits,
+failures and handled interruptions. SIGKILL cannot run cleanup.
+
+`composer gate:controls` runs each declared mutation on an independent clone
+with its own repository. It resolves the reference before cloning and leaves
+the developer's tree unchanged. A red control requires its declared failures
+at declared scopes and rejects everything else. Tolerations must be exercised;
+idle tolerations fail. Corpus controls require exact full scopes, preventing
+a `text` expectation from absorbing `text-verbose` or another case.
+Green controls are held to all declaration counts, not just exit 0.
+
+`composer gate:self-test` runs the gate's observed witnesses and the
+controls harness's mechanics. Every raise site is enumerated with its nearest
+caller and observed through a whole synthetic run. An unexplained source
+occurrence or stale source exception fails. Controls add corpus evidence;
+they do not replace those observed self-test witnesses.
+
+`composer gate:phar` compares an existing nonempty `build/qmx.phar` with
+its committed tree. It copies the same archive bytes into a private candidate
+with real dependencies and a launcher requiring that archive; it does not
+build a substitute. Archive digest checks bind the supplied and compared
+artifact. Packing defects outside captured publications remain outside this
+comparison.
+
+The corpus is also read by the channel-level drift governance control and
+the rename/runtime-channel generators. `composer enumeration:renames`
+measures current vocabulary and preserves authored rename decisions and
+executed history. Its three output inventories are excluded from occurrence
+counts: otherwise a new metric counts its own newly written row on the next
+run. All three inventories still have freshness consumers.
+
+## What GREEN does not prove
+
+Each limit needs its own product or delivery check:
+
+- Correctness of newly declared values or added field values: product tests and
+  direct fixture runs must establish it.
+- Git scope and `--report=git:*`: the external corpus is not a Git repository;
+  use Git integration tests.
+- Cache correctness: comparisons deliberately use cold caches; use cache tests.
+- FIFO, permissions and file-system races: a contained directory symlink is
+  covered, other file-system cases need dedicated discovery tests.
+- Hooks, worker cgroup or disabled-function environments, and packaging outside
+  captured surfaces: use their integration or delivery checks.
+- Positions of records with changed ranking values, or introduced/withdrawn
+  unpaired records: ranking order judges unchanged paired values only.
+- Ranking order outside both published slices: use product ranking tests.
+- Algorithmic correctness inside an explicitly changed ranking value: use impact
+  and coupling tests.
+- Changing which findings participate in complete ranking is not declarable
+  here: the physical/ranking join refuses it. A feature needing this change must
+  introduce and prove its own form.
+- Internal support metadata, health values, aggregates and presentation are not
+  independent cross-side surfaces; only their named source-consistency and
+  repeatability invariants are checked.
+- Capturability of a new baseline channel: the gate checks published source
+  groups, not whether the product chose every eligible group; use baseline tests.
+- Configuration consumption by `rules` or `graph:export`: their catalogue
+  and path/cwd semantics do not prove configured rule execution.
+- Selector reach or metric-expression grammar after a split: unsupported touched
+  forms refuse; use selector and computed-metric tests.
+- Dynamically assembled source method names, overridden dispatch and distinct
+  execution paths with the same nearest caller: source enumeration does not
+  resolve those runtime behaviours.
+
+A GREEN run against identical product code proves the corpus, capture and
+normalization are consistent. To claim a product change, compare with the
+commit before that change and also supply the independent checks above.

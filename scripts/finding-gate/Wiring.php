@@ -12,7 +12,7 @@ use Closure;
  *
  * The forms are written in parallel, and every one of them has to reach the
  * same few places: the class loader, the controls table, the self-test, the
- * check witnesses, the pending rows of the witness registry, the case checks,
+ * check witnesses, the case checks,
  * the stages of a surface's comparison, the checks of a whole run and the
  * derivations. A shared list at each of those places is a file every form
  * edits; a file per form is one only that form edits. So each place reads the
@@ -20,10 +20,6 @@ use Closure;
  *
  * The list of files is fixed, not discovered: a `wiring-*.php` that is not
  * named here is refused rather than read, and one that is named must exist.
- * A pending row may only name its own file's package, so a form cannot excuse
- * another form's class.
- *
- * @phpstan-type Pending array<string, array{0: string, 1: string}>
  */
 final class Wiring
 {
@@ -39,8 +35,7 @@ final class Wiring
 
     /**
      * What a form file may register. Each is a list of class names, or of
-     * `Class::method` entries, except `pending`, which maps a failure class to
-     * its `[marker, reason]` row.
+     * `Class::method` entries.
      *
      * - `classes`: gate classes, `scripts/finding-gate/<Class>.php`
      * - `controlClasses`: controls-harness classes, `scripts/finding-gate-controls/<Class>.php`
@@ -56,7 +51,6 @@ final class Wiring
         'controls',
         'selfTest',
         'witnesses',
-        'pending',
         'caseChecks',
         'surfaceStages',
         'runChecks',
@@ -70,12 +64,10 @@ final class Wiring
 
     /**
      * @param array<string, list<string>> $lists key => entries, every form's in {@see FILES} order
-     * @param Pending $pending
      */
     private function __construct(
         public readonly string $directory,
         private readonly array $lists,
-        public readonly array $pending,
     ) {}
 
     /** The gate's own wiring. */
@@ -111,7 +103,7 @@ final class Wiring
     /** @return list<string> */
     public function list(string $key): array
     {
-        if (!\in_array($key, self::KEYS, true) || $key === 'pending') {
+        if (!\in_array($key, self::KEYS, true)) {
             throw new GateError(\sprintf('Wiring has no list "%s".', $key));
         }
 
@@ -179,7 +171,6 @@ final class Wiring
         }
 
         $lists = [];
-        $pending = [];
 
         foreach (self::FILES as $form => $package) {
             $path = self::fileOf($directory, $form);
@@ -201,12 +192,6 @@ final class Wiring
             }
 
             foreach ($wiring as $key => $entries) {
-                if ($key === 'pending') {
-                    $pending = [...$pending, ...self::pendingOf($path, $package, $entries, $pending)];
-
-                    continue;
-                }
-
                 $lists[$key] = [...$lists[$key] ?? [], ...self::entriesOf($path, $key, $entries)];
             }
 
@@ -230,7 +215,7 @@ final class Wiring
             }
         }
 
-        return new self($directory, $lists, $pending);
+        return new self($directory, $lists);
     }
 
     /** @return list<string> */
@@ -262,44 +247,4 @@ final class Wiring
         return $valid;
     }
 
-    /**
-     * @param Pending $already
-     *
-     * @return Pending
-     */
-    private static function pendingOf(string $path, string $package, mixed $entries, array $already): array
-    {
-        if (!\is_array($entries)) {
-            throw new GateError(\sprintf('%s: "pending" must map a failure class to [marker, reason].', $path));
-        }
-
-        $pending = [];
-
-        foreach ($entries as $class => $row) {
-            if (!\is_string($class) || !\is_array($row) || !\is_string($row[0] ?? null) || !\is_string($row[1] ?? null)
-                || \count($row) !== 2
-            ) {
-                throw new GateError(\sprintf('%s: "pending" must map a failure class to [marker, reason].', $path));
-            }
-
-            if ($row[0] !== 'pending: ' . $package) {
-                throw new GateError(\sprintf(
-                    '%s: the pending row of %s is marked "%s". A form file excuses only its own package\'s classes,'
-                    . ' as "pending: %s".',
-                    $path,
-                    $class,
-                    $row[0],
-                    $package,
-                ));
-            }
-
-            if (isset($already[$class])) {
-                throw new GateError(\sprintf('%s: %s is already pending in another form file.', $path, $class));
-            }
-
-            $pending[$class] = [$row[0], $row[1]];
-        }
-
-        return $pending;
-    }
 }

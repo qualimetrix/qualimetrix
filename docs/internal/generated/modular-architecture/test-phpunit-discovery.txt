@@ -547,25 +547,19 @@ Available tests:
  - QmxFindingGate\Tests\SyntheticTreeTest::itPublishesOneSortedSarifCatalogEntryPerCode
  - QmxFindingGate\Tests\SyntheticTreeTest::itReplaysFullRankingsAndPhysicalFindingsSeparatelyFromTheOriginalSlice
  - QmxFindingGate\Tests\SyntheticTreeTest::itRequiresAnExactKnownInvocationAndExposesTheChildEnvironment
- - QmxFindingGate\Tests\WiringTest::itHoldsThePendingRowsOfEveryForm
  - QmxFindingGate\Tests\WiringTest::itLoadsAClassAFormListsInItsOwnFile
  - QmxFindingGate\Tests\WiringTest::itLoadsAFormsClassesThroughTheLoadersEveryEntryPointRequires
  - QmxFindingGate\Tests\WiringTest::itReadsEveryFormsEntriesInTheOrderOfTheFixedList
  - QmxFindingGate\Tests\WiringTest::itRefusesAFormWhoseFileIsMissing
- - QmxFindingGate\Tests\WiringTest::itRefusesAPendingRowOfAnotherPackage
  - QmxFindingGate\Tests\WiringTest::itRefusesARegisteredCheckItDoesNotLoad
  - QmxFindingGate\Tests\WiringTest::itRefusesAWiringFileNoFormOwns
  - QmxFindingGate\Tests\WiringTest::itRefusesAWitnessOfAnUnknownScenario
  - QmxFindingGate\Tests\WiringTest::itRefusesAnUnknownKey
- - QmxFindingGate\Tests\WitnessRegistryTest::itAcceptsTheTrackedPendingRowsWhileTheirClassesAreRaisedNowhere
- - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a class raised nowhere"
- - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending class that is raised"
- - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending class"
- - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending row naming no class"
- - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending row naming no declaration form"
- - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a pending row without a reason"
- - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"a second site of an observed class"
- - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow"every site observed"
+ - QmxFindingGate\Tests\WiringTest::itRefusesTheRetiredPendingKeyEvenWhenItIsEmpty
+ - QmxFindingGate\Tests\WitnessRegistryTest::itAcceptsTheTrackedFailureClassesWhenEveryOneHasAProducer
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryClassWithoutAProducer"a class raised nowhere"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryClassWithoutAProducer"a second site of an observed class"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryClassWithoutAProducer"every site observed"
  - QmxTautologyControls\Tests\TautologyControlDeclarationTest::itDeclaresExactlyOnePositiveControlAndNoRepeatedId
  - QmxTautologyControls\Tests\TautologyControlDeclarationTest::itNamesOnlyCasesThatExist
  - QmxTautologyControls\Tests\TautologyControlDeclarationTest::itPlantsEachBreakageInProductionCodeThatStillLooksLikeThat

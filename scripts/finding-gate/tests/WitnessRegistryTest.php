@@ -9,7 +9,6 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\FailureClass;
 use QmxFindingGate\RaiseSites;
-use QmxFindingGate\Wiring;
 use QmxFindingGate\WitnessRegistry;
 
 /**
@@ -24,67 +23,35 @@ final class WitnessRegistryTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{list<string>, array<string, string>, list<string>, array<string, array{0: string, 1: string}>, list<non-empty-string>}>
+     * @return iterable<string, array{list<string>, array<string, string>, list<string>, list<non-empty-string>}>
      */
     public static function provideRegistries(): iterable
     {
-        yield 'every site observed' => [['a', 'b'], ['A::x' => 'a', 'B::y' => 'b'], ['A::x', 'B::y'], [], []];
+        yield 'every site observed' => [['a', 'b'], ['A::x' => 'a', 'B::y' => 'b'], ['A::x', 'B::y'], []];
         yield 'a second site of an observed class' => [
             ['a'],
             ['A::x#1' => 'a', 'A::x#2' => 'a'],
             ['A::x#1'],
-            [],
             ['witness registry: a raised at A::x#2 has no witness'],
         ];
-        yield 'a class raised nowhere' => [['a', 'b'], ['A::x' => 'a'], ['A::x'], [], ['witness registry: b is raised nowhere']];
-        yield 'a pending class' => [['a', 'b'], ['A::x' => 'a'], ['A::x'], ['b' => ['pending: outcomes', 'because']], []];
-        yield 'a pending class that is raised' => [
-            ['a'],
-            ['A::x' => 'a'],
-            ['A::x'],
-            ['a' => ['pending: outcomes', 'because']],
-            ['witness registry: a is raised at A::x and still stands'],
-        ];
-        yield 'a pending row naming no declaration form' => [
-            ['a'],
-            [],
-            [],
-            ['a' => ['pending: unknown', 'because']],
-            ['witness registry: a is pending as "pending: unknown"'],
-        ];
-        yield 'a pending row without a reason' => [
-            ['a'],
-            [],
-            [],
-            ['a' => ['pending: outcomes', ' ']],
-            ['witness registry: a is pending as "pending: outcomes"'],
-        ];
-        yield 'a pending row naming no class' => [
-            ['a'],
-            ['A::x' => 'a'],
-            ['A::x'],
-            ['z' => ['pending: outcomes', 'because']],
-            ['witness registry: the pending row names "z"'],
-        ];
+        yield 'a class raised nowhere' => [['a', 'b'], ['A::x' => 'a'], ['A::x'], ['witness registry: b is raised nowhere']];
     }
 
     /**
      * @param list<string> $classes
      * @param array<string, string> $sites
      * @param list<string> $observed
-     * @param array<string, array{0: string, 1: string}> $pending
      * @param list<non-empty-string> $expectedPrefixes
      */
     #[Test]
     #[DataProvider('provideRegistries')]
-    public function itNamesEverySiteWithoutAWitnessAndEveryStalePendingRow(
+    public function itNamesEverySiteWithoutAWitnessAndEveryClassWithoutAProducer(
         array $classes,
         array $sites,
         array $observed,
-        array $pending,
         array $expectedPrefixes,
     ): void {
-        $problems = WitnessRegistry::problems($classes, $sites, $observed, $pending);
+        $problems = WitnessRegistry::problems($classes, $sites, $observed);
 
         self::assertCount(\count($expectedPrefixes), $problems, implode("\n", $problems));
 
@@ -94,13 +61,13 @@ final class WitnessRegistryTest extends TestCase
     }
 
     #[Test]
-    public function itAcceptsTheTrackedPendingRowsWhileTheirClassesAreRaisedNowhere(): void
+    public function itAcceptsTheTrackedFailureClassesWhenEveryOneHasAProducer(): void
     {
         $sites = array_map(
             static fn(array $site): string => $site['class'],
             RaiseSites::of(\dirname(__DIR__), RaiseSites::DECLARED_NAMES)->sites,
         );
 
-        self::assertSame([], WitnessRegistry::problems(FailureClass::ALL, $sites, array_keys($sites), Wiring::gate()->pending));
+        self::assertSame([], WitnessRegistry::problems(FailureClass::ALL, $sites, array_keys($sites)));
     }
 }

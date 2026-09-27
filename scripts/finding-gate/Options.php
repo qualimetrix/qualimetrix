@@ -138,7 +138,7 @@ final class Options
                                       Only for a corpus that does not claim the whole declared set yet.
                                       Such a run reports PARTIAL and exits 2, never GREEN.
               --derive-tuple          Regenerate finding-gate/equivalence-tuple.tsv from the publishing code.
-              --derive-normalization  Regenerate finding-gate/normalization.tsv by measuring two runs.
+              --derive-normalization  Regenerate finding-gate/normalization.tsv by measuring five validated runs.
               --derive-declarations   Regenerate every declaration a run measures against --reference, in one
                                       pass: finding-gate/declared-delta.tsv and its diff files for every surface
                                       that differs, and each declaration form's derived table under the intents

@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+**The finding gate declares measured changes instead of treating finding changes
+as opaque report diffs or ranked-position allowances.** The old rename/diff-only
+contract becomes exact record, value, schema, outcome, surface and structural
+input declarations with intention and derived tables. JSON record declarations
+now use complete physical records, including records hidden by presentation
+limits, plus `ranking.impactScore` and `ranking.coupling.class-rank`. Baseline
+checks own their JSON and ranking views. Ranking order uses
+`kind=order, key=ranking, level=*`; slice-limit changes use
+`kind=field, key=topIssues.limit`, with exact derived `=k`/`>=n` values.
+Schema changes on ranked records name the `json/ranking` view. Re-derive existing
+declarations against the original reference, review their exact records and
+values, and run the ordinary comparison: a derivation exits 4, not GREEN.
+Consumers of failure reports must handle `record-ambiguous`,
+`ranking-projection-mismatch` and `ranking-order-mismatch`. Wiring no longer
+accepts `pending`, including an empty key, and every failure class requires an
+observed producer witness. See [ADR 0087](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0087-the-finding-gate-declares-measured-changes.md)
+and [the gate declaration reference](finding-gate/README.md).
+
 **The project distance aggregate is renamed and now covers every namespace that
 declares a type.** `coupling.distance.avg` and `coupling.distance.count` at
 project level become `coupling.distance-own.avg` and

@@ -116,6 +116,8 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0084 — A Project Scope Has Three States, and the Report Names It](0084-a-project-scope-has-three-states-and-the-report-names-it.md) — covered, narrowed or unknown; only a narrowed run withholds the whole-project channels, an unknown one leaves namespace values of suppressions unjudged, every format with a place for it publishes the state, and the suppression values a run skipped are named with the channels derived from them.
 - [0085 — A Copy of a Duplicate Block Is a Finding of Its Own](0085-a-copy-of-a-duplicate-block-is-a-finding-of-its-own.md) — `duplication.clone` reports one finding on each copy under an identity of its own and valued by the lines that copy spans, every copy of a block its longest copy admits by `min_lines` — so a pasted copy, however densely written, is a new finding in its own file and to GitLab/SARIF.
 
+- [0087 — The Finding Gate Declares Measured Changes](0087-the-finding-gate-declares-measured-changes.md) — complete physical records, one correspondence for ranking values, occurrence-preserving order and exact measured declaration forms.
+
 ## Superseded history
 
 - [0008 — ArchitectureProcessor Service](0008-architecture-processor-service.md) — replaced by the capability-oriented topology in ADR 0022.

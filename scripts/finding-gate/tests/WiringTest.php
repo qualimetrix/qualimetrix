@@ -158,28 +158,16 @@ final class WiringTest extends TestCase
     }
 
     #[Test]
-    public function itRefusesAPendingRowOfAnotherPackage(): void
+    public function itRefusesTheRetiredPendingKeyEvenWhenItIsEmpty(): void
     {
-        Fs::write(
-            Wiring::fileOf($this->directory, 'maps'),
-            "<?php\n\nreturn ['pending' => ['" . FailureClass::MAP_STALE . "' => ['pending: records', 'why']]];\n",
-        );
+        foreach ([[], [FailureClass::CORPUS_INVALID => ['pending: outcomes', 'why']]] as $entries) {
+            Fs::write(
+                Wiring::fileOf($this->directory, 'outcomes'),
+                "<?php\n\nreturn ['pending' => " . var_export($entries, true) . "];\n",
+            );
 
-        $this->assertRefused('excuses only its own package');
-    }
-
-    #[Test]
-    public function itHoldsThePendingRowsOfEveryForm(): void
-    {
-        Fs::write(
-            Wiring::fileOf($this->directory, 'outcomes'),
-            "<?php\n\nreturn ['pending' => ['" . FailureClass::CORPUS_INVALID . "' => ['pending: outcomes', 'why']]];\n",
-        );
-
-        self::assertSame(
-            [FailureClass::CORPUS_INVALID => ['pending: outcomes', 'why']],
-            Wiring::of($this->directory)->pending,
-        );
+            $this->assertRefused('unknown key(s): pending');
+        }
     }
 
     private function assertRefused(string $reason): void

@@ -404,6 +404,17 @@ final class CheckWitnesses
                 ],
             ),
             self::witness(
+                'declaration-complete-shape',
+                self::DECLARED_DELTA_REFUSED,
+                static fn(array $tree): array => SelfTestRecords::rankingWitnessTree($tree, 'shape'),
+                [
+                    [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:ranking-shape|format:json', 'RankingCheck::projectionProblem <- RecordCheck::checkCase'],
+                    [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:ranking-shape|format:json', 'RankingCheck::projectionProblem <- Gate::captureAuthority'],
+                    [FailureClass::RUN_FAILED, 'candidate-2 / ranking-shape', 'Gate::captureAuthority <- GateModes::deriveDeclarations'],
+                ],
+                [[FailureClass::SURFACE_MISMATCH, 'case:ranking-shape|format:json'], [FailureClass::SURFACE_MISMATCH, 'case:ranking-shape|check:output:file']],
+            ),
+            self::witness(
                 'normalization-duplicate-ambiguity',
                 self::NORMALIZATION_REFUSED,
                 static fn(array $tree): array => SelfTestRecords::rankingWitnessTree($tree, 'ambiguity'),
@@ -449,10 +460,6 @@ final class CheckWitnesses
                 },
                 [
                     [FailureClass::CASE_OUTCOME_MISMATCH, 'derive-1 / alpha', 'CaseOutcomeCheck::mismatch <- Gate::deriveNormalization'],
-                    [FailureClass::CASE_OUTCOME_MISMATCH, 'derive-2 / alpha', 'CaseOutcomeCheck::mismatch <- Gate::deriveNormalization'],
-                    [FailureClass::CASE_OUTCOME_MISMATCH, 'derive-3 / alpha', 'CaseOutcomeCheck::mismatch <- Gate::deriveNormalization'],
-                    [FailureClass::CASE_OUTCOME_MISMATCH, 'derive-4 / alpha', 'CaseOutcomeCheck::mismatch <- Gate::deriveNormalization'],
-                    [FailureClass::CASE_OUTCOME_MISMATCH, 'derive-5 / alpha', 'CaseOutcomeCheck::mismatch <- Gate::deriveNormalization'],
                 ],
             ),
             self::witness(
@@ -937,6 +944,7 @@ final class CheckWitnesses
                     $answers = SyntheticTree::caseAnswers('alpha', $tree['candidateFindings']['alpha'] ?? $tree['findings']['alpha'], false, []);
                     $tree['candidateAnswers']['case:alpha|format:summary'] = $answers['case:alpha|format:summary'];
                     $tree['candidateAnswers']['case:alpha|format:summary']['stdout'] = "An independent summary heading.\nAnalysis complete\n\nTop issues by impact\n" . implode('', \array_slice(($answers['case:alpha|format:summary']['summaryIssues'] ?? throw new GateError('A summary witness requires generated ranked rows.')), 0, 10));
+                    unset($tree['candidateAnswers']['case:alpha|format:summary']['summaryIssues']);
                     $tree['declaredDelta']['case:alpha|format:summary'] = self::NO_DIFF;
 
                     return $tree;

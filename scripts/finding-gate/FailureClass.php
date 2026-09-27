@@ -11,10 +11,8 @@ namespace QmxFindingGate;
  * them, so renaming one is a breaking change to those assertions, not an
  * editorial edit.
  *
- * Every class a declaration form needs is declared here before its producer
- * exists, so the packages that write the forms in parallel never edit this
- * file; a class nothing raises yet stands pending in its package's wiring file
- * ({@see Wiring}).
+ * Every declared class requires a producer and an observed self-test witness
+ * for every raise site and caller. Unsupported vocabulary is refused.
  */
 final class FailureClass
 {

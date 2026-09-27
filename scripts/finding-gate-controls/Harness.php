@@ -38,8 +38,8 @@ final class Harness
 
     /**
      * Every control in flight is a whole gate run: two passes over the corpus,
-     * each spawning `bin/qmx --workers=0`. Fourteen at once would not make the
-     * run fourteen times shorter — it would make every control slower and the
+     * each spawning CLI processes. Starting the whole list at once would not
+     * make the run proportionally shorter — it would make every control slower and the
      * machine unusable, and a control whose gate is starved is a red that says
      * nothing about the mechanism it tests. The ceiling is here so `--jobs`
      * cannot ask for that either.
