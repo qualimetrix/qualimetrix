@@ -77,10 +77,10 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
 
     public function analyze(RunConfiguration $configuration, ?FileDiscoveryInterface $discovery = null): AnalysisResult
     {
-        $startTime = microtime(true);
+        $startTime = hrtime(true);
         $prepared = $this->preparedRun($configuration, $discovery);
         $findings = $this->reportedFindings($prepared);
-        $duration = microtime(true) - $startTime;
+        $duration = (hrtime(true) - $startTime) / 1e9;
 
         $this->logger->info('Analysis complete', [
             'total_duration' => \sprintf('%.2fs', $duration),
@@ -191,14 +191,14 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         }
 
         // Phase 2: Collection (metrics + dependencies in single AST traversal)
-        $phaseStartTime = microtime(true);
+        $phaseStartTime = hrtime(true);
         $this->logger->debug('Starting collection phase', ['files' => \count($files)]);
 
         $profiler->start('collection', 'pipeline');
         $collectionResult = $this->collectionOrchestrator->collect($files, $repository, $configuration->projectRoot);
         $profiler->stop('collection');
 
-        $collectionTime = microtime(true) - $phaseStartTime;
+        $collectionTime = (hrtime(true) - $phaseStartTime) / 1e9;
         $this->logger->info('Collection completed', [
             'processed' => $collectionResult->filesAnalyzed,
             'errors' => $collectionResult->filesSkipped,
@@ -255,7 +255,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         );
 
         // Phase 7: Rule execution.
-        $phaseStartTime = microtime(true);
+        $phaseStartTime = hrtime(true);
         $this->logger->debug('Starting analysis phase');
 
         $profiler->start('rules', 'pipeline');
@@ -269,7 +269,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         $ruleExecution = $this->ruleExecutor->execute($context);
         $profiler->stop('rules');
 
-        $analysisTime = microtime(true) - $phaseStartTime;
+        $analysisTime = (hrtime(true) - $phaseStartTime) / 1e9;
         $this->logger->info('Analysis completed', [
             'violations' => \count($ruleExecution->published),
             'duration' => \sprintf('%.2fs', $analysisTime),

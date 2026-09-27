@@ -49,13 +49,13 @@ final class MeasurementAggregationService implements MeasurementAggregationInter
     public function aggregate(MetricRepositoryInterface $repository, DependencyGraphInterface $dependencies): NamespaceTree
     {
         $profiler = $this->profiler;
-        $phaseStartTime = microtime(true);
+        $phaseStartTime = hrtime(true);
         $this->logger->debug('Starting aggregation phase');
         self::start($profiler, 'aggregation');
         $namespaceTree = (new MetricAggregator($this->allDefinitions, $profiler))->aggregate($repository);
         self::stop($profiler, 'aggregation');
         $this->logger->info('Aggregation completed', [
-            'duration' => \sprintf('%.2fs', microtime(true) - $phaseStartTime),
+            'duration' => \sprintf('%.2fs', (hrtime(true) - $phaseStartTime) / 1e9),
         ]);
 
         if ($this->sortedCollectors !== []) {

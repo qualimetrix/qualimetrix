@@ -177,6 +177,10 @@ Measurement owns repository creation and aggregation. ComputedMetrics owns
 formula definitions and evaluation; Run invokes only its evaluation contract
 and stores no computed-metric state or result payload.
 
+Analysis and phase durations use monotonic `hrtime` readings, converted from
+nanoseconds to seconds. Adjusting the system date cannot make a measured run's
+duration negative.
+
 ## Contracts and consumers
 
 - `AnalysisPipelineInterface` is the public run entry point for adapters.

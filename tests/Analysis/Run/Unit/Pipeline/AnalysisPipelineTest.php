@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Run\Unit\Pipeline;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
@@ -126,6 +128,52 @@ final class AnalysisPipelineTest extends TestCase
         $pipeline->analyze(new RunConfiguration([$secondRoot], [], $secondRoot, GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []));
 
         self::assertSame([$firstRoot->value(), $secondRoot->value()], $seenRoots);
+    }
+
+    #[Test]
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function itMeasuresElapsedSecondsWhenTheWallClockMovesBackwards(): void
+    {
+        $prefix = tempnam(sys_get_temp_dir(), 'qmx-pipeline-clock-');
+        self::assertNotFalse($prefix);
+
+        try {
+            file_put_contents($prefix, <<<'PHP'
+                <?php
+                namespace Qualimetrix\Analysis\Run\Pipeline;
+
+                function microtime(bool $asFloat = false): float
+                {
+                    static $seconds = 100.0;
+
+                    return --$seconds;
+                }
+
+                function hrtime(bool $asNumber = false): int
+                {
+                    static $nanoseconds = 0;
+                    $nanoseconds += 1_000_000_000;
+
+                    return $nanoseconds;
+                }
+                PHP);
+            require $prefix;
+
+            $root = AbsolutePath::fromString(\dirname(__DIR__, 5));
+            $discovery = self::createStub(FileDiscoveryInterface::class);
+            $discovery->method('discover')->willReturn([]);
+            $collection = self::createStub(CollectionOrchestratorInterface::class);
+            $collection->method('collect')->willReturn(new CollectionPhaseOutput([], []));
+
+            $result = $this->pipeline($discovery, $collection)->analyze(
+                new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []),
+            );
+
+            self::assertSame(5.0, $result->duration);
+        } finally {
+            unlink($prefix);
+        }
     }
 
     private function pipeline(

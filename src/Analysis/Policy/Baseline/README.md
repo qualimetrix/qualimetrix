@@ -568,6 +568,8 @@ the guard could compare, and is refused there as input rather than after the run
 The wait for the lock is bounded (10 seconds by default): a crashed writer releases
 through the OS, but a hung one would otherwise stop the next `qmx` invocation with no
 output at all, which in CI reads as a job timeout rather than a baseline problem.
+Its deadline uses monotonic `hrtime` readings in seconds, so adjusting the system
+date cannot extend or shorten the wait.
 
 A path that cannot be written — a directory that cannot be created, a lock file that
 cannot be opened, a temporary file that cannot be written, a target the rename cannot
