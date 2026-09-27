@@ -85,8 +85,7 @@ final class GateModesTest extends TestCase
         }
 
         Fs::write($this->copy . '/scripts/finding-gate/SelfTest.php', \sprintf(
-            "<?php\n\nnamespace QmxFindingGate;\n\n#[Group('finding-gate-e2e')]
-final class SelfTest\n{\n    public function __construct(string \$root) {}\n\n"
+            "<?php\n\nnamespace QmxFindingGate;\n\nfinal class SelfTest\n{\n    public function __construct(string \$root) {}\n\n"
             . "    /** @return list<string> */\n    public function run(): array\n    {\n        return %s;\n    }\n}\n",
             var_export($failures, true),
         ));
