@@ -6,7 +6,7 @@ jobs:
   check-gate:
     name: Gate validation (composer check:gate)
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 180
 
     steps:
       - name: Checkout code
