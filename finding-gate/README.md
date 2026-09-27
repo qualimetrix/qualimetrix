@@ -467,7 +467,8 @@ because neither is derived from cross-side change intentions.
 
 `--cases=<names>` makes a successful narrowed comparison PARTIAL.
 Unknown names are refused even beside valid names.
-`--incomplete-corpus` downgrades coverage shortfall and also prevents GREEN.
+`--incomplete-corpus` downgrades a coverage shortfall to a warning and makes
+that run PARTIAL. With complete coverage, the flag does not change the verdict.
 Neither option is accepted for declaration or normalization derivation.
 Use `--report=<file>` for the machine-readable outcome.
 

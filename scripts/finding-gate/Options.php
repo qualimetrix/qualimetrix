@@ -136,7 +136,7 @@ final class Options
                                       reproduce the serial schedule.
               --incomplete-corpus     Report a coverage shortfall as a warning instead of a failure.
                                       Only for a corpus that does not claim the whole declared set yet.
-                                      Such a run reports PARTIAL and exits 2, never GREEN.
+                                      A downgraded shortfall reports PARTIAL and exits 2; complete coverage is unaffected.
               --derive-tuple          Regenerate finding-gate/equivalence-tuple.tsv from the publishing code.
               --derive-normalization  Regenerate finding-gate/normalization.tsv by measuring five validated runs.
               --derive-declarations   Regenerate every declaration a run measures against --reference, in one
