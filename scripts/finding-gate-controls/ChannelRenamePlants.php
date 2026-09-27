@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace QmxFindingGateControls;
 
+use QmxFindingGate\Corpus;
 use QmxFindingGate\DeclaredDelta;
 use QmxFindingGate\FailureClass;
 use RuntimeException;
@@ -140,6 +141,21 @@ final class ChannelRenamePlants
         return \in_array(self::PRODUCER_LISTING_SURFACE, $declared, true)
             ? []
             : [new Expectation(FailureClass::SURFACE_MISMATCH, self::PRODUCER_LISTING_SURFACE)];
+    }
+
+    /** @return list<Expectation> */
+    public static function caseListingFailures(?string $alreadyCoveredCase = null, bool $declarationReplaced = false): array
+    {
+        $root = \dirname(__DIR__, 2);
+        $declared = $declarationReplaced ? [] : DeclaredDelta::load($root . '/finding-gate')->surfaces();
+        $required = [];
+        foreach (Corpus::load($root)->cases as $case) {
+            $surface = 'case:' . $case->id . '|rules';
+            if ($case->id !== $alreadyCoveredCase && !\in_array($surface, $declared, true)) {
+                $required[] = new Expectation(FailureClass::SURFACE_MISMATCH, $surface, exactScope: true);
+            }
+        }
+        return $required;
     }
 
     /**

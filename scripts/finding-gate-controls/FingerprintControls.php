@@ -63,6 +63,8 @@ final class FingerprintControls
             [
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells|format:gitlab'),
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells|format:sarif'),
+                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:smells|format:json', exactScope: true),
+                ...ChannelRenamePlants::caseListingFailures(),
             ],
             [
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells'),

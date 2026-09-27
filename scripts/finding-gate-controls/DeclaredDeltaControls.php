@@ -147,7 +147,8 @@ final class DeclaredDeltaControls
                 'case:smells|baseline-file',
                 'the ceiling control\'s perturbation, declared with a diff nothing measured',
             )),
-            [new Expectation(FailureClass::DELTA_MISMATCH, 'case:smells|baseline-file')],
+            [new Expectation(FailureClass::DELTA_MISMATCH, 'case:smells|baseline-file'),
+                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:smells|format:json', exactScope: true)],
             [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells')],
         );
     }
@@ -213,7 +214,9 @@ final class DeclaredDeltaControls
                 'case:complexity|format:json',
                 'a renamed code half declared as a delta instead of a map row',
             )),
-            [new Expectation(FailureClass::DELTA_OVERREACH, 'case:complexity|format:json')],
+            [new Expectation(FailureClass::DELTA_OVERREACH, 'case:complexity|format:json'),
+                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:complexity|format:json', exactScope: true),
+                ...ChannelRenamePlants::caseListingFailures('complexity', declarationReplaced: true)],
             [
                 new Expectation(FailureClass::DELTA_MISMATCH, 'case:complexity|format:json'),
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity'),
@@ -228,31 +231,10 @@ final class DeclaredDeltaControls
     }
 
     /**
-     * A declared delta bigger than a declaration may be.
-     *
-     * The perturbation is a formatter, not a rule: `JsonFindingSection` gains
-     * a field on every finding, so every line of the `json` surface of a case
-     * moves and the measured diff runs to hundreds of changed lines. The
-     * declaration planted beside it names that surface, so the run reaches the
-     * size check rather than stopping at "undeclared surface" — and the size
-     * check is the whole point, because it is the class this harness had never
-     * seen red.
-     *
-     * The `health` case is the target because it is the largest: two moved
-     * lines per finding over its 69 message-bearing findings measure 256 changed
-     * lines against a limit of 200, so the control is not sitting on the edge of
-     * the threshold it is testing. It is also the one case NOT tolerated for a
-     * surface diff: its `json` surface is the declared one, so the failures
-     * there are delta classes, and the twelve tolerations name the twelve other
-     * cases whose `json` surface moves with the formatter. That toleration was
-     * declared and never fired; measured on a full PASS run, 2026-08-24.
-     *
-     * `delta-mismatch` and `delta-overreach` are tolerated on the same surface
-     * for the reason the overreach control gives in reverse: reach and size are
-     * judged on the diff the run measures, so a declaration that is too large
-     * must fail for being too large and not be excused by also failing to match
-     * — and a diff this wide inevitably pairs a moved field against a line that
-     * does not carry it, which is overreach by the record-level rule.
+     * An unrelated JSON envelope array exceeds the declaration's line limit
+     * while physical findings and their complete ranking remain coherent.
+     * The health case is declared; every other analysis publication still
+     * differs and must be reported rather than swallowed by that declaration.
      */
     public static function deltaTooLarge(): Control
     {
@@ -260,12 +242,12 @@ final class DeclaredDeltaControls
             'delta-too-large',
             'a declared delta whose measured diff is past the limit a declaration may be',
             Mutation::edit(
-                'src/Reporting/Formatter/Json/JsonFindingSection.php',
+                'src/Reporting/Formatter/Json/JsonFormatter.php',
                 [
-                    "'message' => \$finding->message," => "'message' => '(padded) ' . \$finding->message,",
-                    "'recommendation' => \$finding->recommendation," => "'recommendation' => '(padded) ' . \$finding->recommendation,",
+                    "'coverage' => \$report->coverage?->toArray(),"
+                        => "'coverage' => (\$report->coverage?->toArray()), 'controlPadding' => array_fill(0, 250, 'envelope padding'),",
                 ],
-                'two lines of every JSON finding move, which on the largest case is past the declaration limit',
+                'a report envelope array contributes 250 changed lines without modifying findings',
             )->and(self::declare(
                 'case:health|format:json',
                 'a delta declared for a surface whose measured diff is hundreds of lines',
@@ -273,27 +255,14 @@ final class DeclaredDeltaControls
             [new Expectation(FailureClass::DELTA_TOO_LARGE, 'case:health|format:json')],
             [
                 new Expectation(FailureClass::DELTA_MISMATCH, 'case:health|format:json'),
-                new Expectation(FailureClass::DELTA_OVERREACH, 'case:health|format:json'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:health|format:html', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:health|check:output:file', exactScope: true),
                 ...self::surfaceMismatchOnEveryCaseButHealth(),
             ],
         );
     }
 
-    /**
-     * The mutation moves two lines of every JSON finding, so every case's JSON
-     * surface differs; only `health` is big enough to pass the declaration
-     * limit, and only it is required. The rest are tolerated.
-     *
-     * Derived from the corpus rather than listed, and that is the whole point:
-     * a hand-written list omitted `rule-exclusion-ledger`, causing the control
-     * to fail on a surface the mutation explains perfectly well —
-     * "failure(s) the mutation does not explain" pointing at a case the
-     * declaration had simply never heard of. A case is a directory holding a
-     * `case.json`, the same definition {@see \QmxFindingGate\Corpus::load()}
-     * uses, so a corpus that grows again does not invalidate this control.
-     *
-     * @return list<Expectation>
-     */
+    /** @return list<Expectation> */
     private static function surfaceMismatchOnEveryCaseButHealth(): array
     {
         $root = \dirname(__DIR__, 2) . '/finding-gate/cases';
@@ -310,7 +279,8 @@ final class DeclaredDeltaControls
         $tolerated = [];
 
         foreach ($entries as $entry) {
-            if ($entry === 'health' || !is_file($root . '/' . $entry . '/case.json')) {
+            if ($entry === 'health' || !is_file($root . '/' . $entry . '/case.json')
+                || \QmxFindingGate\CaseDefinition::load($root . '/' . $entry)->outcome === \QmxFindingGate\CaseOutcome::REFUSAL) {
                 continue;
             }
 

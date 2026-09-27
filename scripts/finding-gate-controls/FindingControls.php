@@ -79,7 +79,8 @@ final class FindingControls
                 . " in each other's places",
             ),
             [new Expectation(FailureClass::PUBLISHED_ORDER_DRIFT, $surface)],
-            [new Expectation(FailureClass::SURFACE_MISMATCH, $surface)],
+            [new Expectation(FailureClass::SURFACE_MISMATCH, $surface),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity|check:output:file', exactScope: true)],
         );
     }
 
@@ -120,7 +121,8 @@ final class FindingControls
             'substituted-ceiling',
             'the recorded ceiling moves while the set of findings stays the same',
             self::ceilingMutation(),
-            [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells|baseline-file')],
+            [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells|baseline-file'),
+                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:smells|format:json', exactScope: true)],
             [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells')],
         );
     }
@@ -138,7 +140,8 @@ final class FindingControls
             'changed-finding-count',
             'one finding fewer, with the channel set unchanged',
             self::droppedFindingMutation(),
-            [new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:design')],
+            [new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:design'),
+                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:design|format:json', exactScope: true)],
             [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:design')],
         );
     }
