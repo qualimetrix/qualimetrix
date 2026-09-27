@@ -25,8 +25,31 @@ final class HarnessSelfTest
         $this->controlCloneOwnsItsRepository();
         $this->referenceResolvesBeforeTheClone();
         $this->greenIsHeldToEveryDeclarationCount();
+        $this->exactScopesDoNotAcceptNeighbouringPublications();
 
         return $this->failures;
+    }
+
+    private function exactScopesDoNotAcceptNeighbouringPublications(): void
+    {
+        $class = \QmxFindingGate\FailureClass::SURFACE_MISMATCH;
+        $scope = 'case:alpha|format:text';
+        $expectation = new Expectation($class, $scope, exactScope: true);
+        $this->same(true, $expectation->matches($class, $scope), 'an exact expectation matches its complete scope');
+        foreach (['case:alpha|format:text-verbose', 'candidate / ' . $scope, $scope . '|record:{}', 'case:alpha-neighbour|format:text'] as $neighbour) {
+            $this->same(false, $expectation->matches($class, $neighbour), 'an exact expectation rejects ' . $neighbour);
+        }
+        $this->same(false, $expectation->matches(\QmxFindingGate\FailureClass::VALUE_MISMATCH, $scope), 'the exact scope does not license another failure class');
+        $this->same(true, (new Expectation($class, 'case:alpha'))->matches($class, $scope), 'an explicitly broad expectation retains its declared substring matching');
+        foreach ([null, ''] as $absent) {
+            $refused = false;
+            try {
+                new Expectation($class, $absent, exactScope: true);
+            } catch (RuntimeException) {
+                $refused = true;
+            }
+            $this->same(true, $refused, 'an exact expectation without a scope is refused');
+        }
     }
 
     /**
