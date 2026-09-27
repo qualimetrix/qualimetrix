@@ -133,10 +133,12 @@ reading the first binary's AST as its own measurement.
 ### Outcomes and diagnostic messages
 
 A refusal is compared as an outcome: stdout, stderr, process exit and any
-file publication remain observable. An undeclared candidate input refusal is
-`candidate-input-refused`; an untranslated reference input is
-`reference-input-untranslated`. An explicit transition uses the outcome
-declaration and its exact measured snapshot.
+file publication remain observable. If an authoritative analysis invocation
+refuses before it can supply complete ranking metadata, capture stops with
+`run-failed`. For publications that reach comparison, undeclared candidate
+input refusals and untranslated reference inputs are named
+`candidate-input-refused` and `reference-input-untranslated`. An explicit
+transition uses the outcome declaration and its exact measured snapshot.
 
 An incomplete case keeps its findings and its incompleteness diagnostics.
 `baseline:generate` must exit 4 and publish no baseline file. Both facts are
