@@ -41,7 +41,7 @@ final class TupleControls
     {
         return Mutation::edit(
             'src/Reporting/Formatter/Json/JsonFindingSection.php',
-            ["            'acceptedLevel' => \$this->formatAcceptedLevel(\$finding),\n" => "            'acceptedLevel' => \$this->formatAcceptedLevel(\$finding),\n            'probe' => 1,\n"],
+            ["            'acceptedLevel' => \$this->formatAcceptedLevel(\$finding),\n        ];" => "            'acceptedLevel' => \$this->formatAcceptedLevel(\$finding),\n            'probe' => 1,\n        ];"],
             'the published finding receives an extra observed member',
         );
     }
