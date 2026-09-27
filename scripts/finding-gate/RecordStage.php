@@ -156,6 +156,10 @@ final class RecordStage implements SurfaceStage
         }
         if ($report === 'json' && RankingCheck::create($this->run)->observed($case, $view, $side)) {
             $edits[ValueCheck::value(['topIssues'])] = null;
+            $counts = $this->records->producerCounts($case, $view, $side, ReportRecords::decode($text));
+            if ($counts !== null) {
+                $edits[ValueCheck::value(['violationsMeta', 'byRule'])] = ValueCheck::value($counts);
+            }
         }
         return $edits === [] ? $text : ReportRecords::edit($text, $edits);
     }

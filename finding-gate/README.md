@@ -339,11 +339,20 @@ exact row and, for a split input, every image must actually be used.
 | `inputs.tsv`        | Both where invertible; split input rows reverse only | Rule option keys, CLI aliases, selector tokens and YAML key spellings |
 | `report-values.tsv` | Forward                                              | Enumerated quoted values of `format:suppressed`                       |
 
+Product baseline rename-table inputs use `old/new/reason`. Only the two
+channel cells are reversed; reasons, comments and line endings retain their
+original bytes.
+
 Forward restates reference output in the candidate vocabulary. Reverse
 restates candidate inputs in the reference vocabulary. A channel collapse can
 be many-to-one forward; reverse translation must be a function.
 A producer split is judged record by record, using identity and the actual
 published move. A matched row that moved nothing stays stale.
+Its full physical population supplies the matched producer movements, including
+records hidden by a publication cap. The comparative `violationsMeta.byRule`
+counts follow only those matched rule-field movements. Original counts must
+first agree with that side's complete authority, including output-file aliases;
+a declaration cannot repair an incorrect bucket or infer an unmatched move.
 
 Metric aggregation suffixes come from both products. A declared strategy
 rename is handled by `AggregationRenames`; an unexplained suffix difference,

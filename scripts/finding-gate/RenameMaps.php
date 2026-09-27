@@ -653,8 +653,8 @@ final class RenameMaps
             return $text;
         }
         $lines = explode("\n", $text);
-        if (rtrim($lines[0], "\r") !== "from\tto") {
-            throw new GateError('A product channel rename map must have the from/to header.');
+        if (trim($lines[0]) !== "old\tnew\treason") {
+            throw new GateError('A product channel rename map must have the old/new/reason header.');
         }
         $hits = [];
         foreach ($lines as $number => &$line) {
@@ -663,10 +663,11 @@ final class RenameMaps
             }
             $ending = str_ends_with($line, "\r") ? "\r" : '';
             $fields = explode("\t", rtrim($line, "\r"));
-            if (\count($fields) !== 2) {
-                throw new GateError('A product channel rename map row must have exactly two fields.');
+            if (\count($fields) !== 3) {
+                throw new GateError('A product channel rename map row must have exactly three fields.');
             }
-            foreach ($fields as &$field) {
+            foreach ([0, 1] as $position) {
+                $field = $fields[$position];
                 $images = [];
                 foreach ($this->pairs as $index => $pair) {
                     if (\in_array(self::CHANNELS, $pair['sources'], true) && $pair['new'] === $field) {
@@ -680,9 +681,9 @@ final class RenameMaps
                     $field = (string) array_key_first($images);
                     $index = $images[$field];
                     $hits[$index] = ($hits[$index] ?? 0) + 1;
+                    $fields[$position] = $field;
                 }
             }
-            unset($field);
             $line = implode("\t", $fields) . $ending;
         }
         unset($line);

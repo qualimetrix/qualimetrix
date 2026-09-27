@@ -214,10 +214,10 @@ final class ChannelRenameTsvGateAgreementTest extends TestCase
         }
         $maps = RenameMaps::fromPairs([['old' => 'a.old', 'new' => 'a.new', 'source' => RenameMaps::CHANNELS]]);
         try {
-            $maps->reverseChannelMap("from\tto\na.new\tb.old\ninvalid\n");
+            $maps->reverseChannelMap("old\tnew\treason\na.new\tb.old\ta.new stays\ninvalid\n");
             self::fail('A malformed row after a valid translation was accepted.');
         } catch (GateError $error) {
-            self::assertStringContainsString('exactly two fields', $error->getMessage());
+            self::assertStringContainsString('exactly three fields', $error->getMessage());
             self::assertSame([], $maps->firedRows());
         }
     }
@@ -231,14 +231,14 @@ final class ChannelRenameTsvGateAgreementTest extends TestCase
         ]);
         self::assertSame('App\\Old', $maps->reverseSymbol('App\\New'));
         self::assertSame('App\\NewNeighbour', $maps->reverseSymbol('App\\NewNeighbour'));
-        self::assertSame("from\tto\n# a.new stays\na.old\tb.old\n", $maps->reverseChannelMap("from\tto\n# a.new stays\na.new\tb.old\n"));
+        self::assertSame("old\tnew\treason\n# a.new stays\na.old\tb.old\ta.new stays\n", $maps->reverseChannelMap("old\tnew\treason\n# a.new stays\na.new\tb.old\ta.new stays\n"));
         self::assertSame([], $maps->staleRows());
         $collapse = RenameMaps::fromPairs([
             ['old' => 'a.old', 'new' => 'same.new', 'source' => RenameMaps::CHANNELS],
             ['old' => 'b.old', 'new' => 'same.new', 'source' => RenameMaps::CHANNELS],
         ]);
         $this->expectException(GateError::class);
-        $collapse->reverseChannelMap("from\tto\nsame.new\tx\n");
+        $collapse->reverseChannelMap("old\tnew\treason\nsame.new\tx\ta reason\n");
     }
 
     #[Test]
@@ -562,7 +562,7 @@ PHP;
     /** @return iterable<string, array{string}> */
     public static function provideProducerRuns(): iterable
     {
-        foreach (['exact', 'standstill', 'unmatched', 'foreign-channel'] as $mode) {
+        foreach (['exact', 'exact-truncated', 'wrong-counts', 'no-matches-truncated', 'standstill', 'unmatched', 'unmatched-truncated', 'foreign-channel', 'foreign-channel-truncated'] as $mode) {
             yield $mode => [$mode];
         }
     }
@@ -586,9 +586,9 @@ PHP;
             $reference['rule'] = 'computed.health';
             $candidate = $reference;
             if ($channel !== 'health.typing') {
-                $candidate['rule'] = $mode === 'unmatched' && $index === 1 ? 'health.unlisted' : $channel;
+                $candidate['rule'] = ($mode === 'no-matches-truncated' || (str_starts_with($mode, 'unmatched') && $index === 1)) ? 'health.unlisted' : $channel;
             }
-            if ($mode === 'foreign-channel' && $index === 1) {
+            if (str_starts_with($mode, 'foreign-channel') && $index === 1) {
                 $candidate['channel'] = 'health.foreign';
             }
             $specification['findings']['alpha'][] = $reference;
@@ -596,16 +596,26 @@ PHP;
             $target = $channel === 'health.typing' ? $channel : $channel . '#' . $channel;
             $specification['maps']['channels'][] = 'computed.health#' . $channel . "\t" . $target . "\ta declared producer movement";
         }
+        if (\in_array($mode, ['exact-truncated', 'wrong-counts', 'no-matches-truncated', 'unmatched-truncated', 'foreign-channel-truncated'], true)) {
+            $specification['truncated'] = ['alpha'];
+        }
+        if ($mode === 'wrong-counts') {
+            $answers = SyntheticTree::caseAnswers('alpha', $specification['candidateFindings']['alpha'], true, []);
+            self::assertArrayHasKey('file', $answers['case:alpha|check:output']);
+            $output = json_decode($answers['case:alpha|check:output']['file'], true, 512, \JSON_THROW_ON_ERROR);
+            $output['violationsMeta']['byRule'] = ['health.complexity' => 2];
+            $specification['candidateAnswers']['case:alpha|check:output'] = ['file' => json_encode($output, \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES) . "\n"];
+        }
         $root = SyntheticTree::create($specification);
         try {
             $before = self::declarationBytes($root);
             $options = Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD', '--jobs=4'], $root);
             $report = new GateReport();
             (new Gate($options, $report))->compare();
-            self::assertSame($mode === 'exact' ? GateReport::EXIT_GREEN : GateReport::EXIT_RED, $report->exitCode(), $report->render());
-            if ($mode !== 'exact') {
-                self::assertContains(FailureClass::MAP_STALE, $report->failureClasses(), $report->render());
-                if (\in_array($mode, ['unmatched', 'foreign-channel'], true)) {
+            self::assertSame(\in_array($mode, ['exact', 'exact-truncated'], true) ? GateReport::EXIT_GREEN : GateReport::EXIT_RED, $report->exitCode(), $report->render());
+            if (!\in_array($mode, ['exact', 'exact-truncated'], true)) {
+                self::assertContains($mode === 'wrong-counts' ? FailureClass::RECORD_PROJECTION_MISMATCH : FailureClass::MAP_STALE, $report->failureClasses(), $report->render());
+                if (\in_array($mode, ['no-matches-truncated', 'unmatched', 'unmatched-truncated', 'foreign-channel', 'foreign-channel-truncated'], true)) {
                     self::assertContains(FailureClass::SPLIT_UNMAPPED, $report->failureClasses(), $report->render());
                 }
                 self::assertSame([], (new Gate($options, new GateReport()))->deriveDeclarations());

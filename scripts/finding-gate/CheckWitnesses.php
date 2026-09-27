@@ -826,7 +826,10 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::SPLIT_UNMAPPED, 'case:alpha', 'RenameMapCheck::checkSplitExplanation <- Gate::compare']],
+                [
+                    [FailureClass::SPLIT_UNMAPPED, 'case:alpha', 'RenameMapCheck::checkSplitExplanation <- Gate::compare'],
+                    [FailureClass::SPLIT_UNMAPPED, 'case:alpha|format:json', 'RecordCheck::prepare <- RecordStage::countInputs'],
+                ],
                 [[FailureClass::MAP_STALE, '*replay.never-*']],
             ),
             self::witness(

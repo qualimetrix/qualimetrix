@@ -30,6 +30,8 @@ final class RecordCheck implements CaseCheck, RunCheck
     private array $replacements = [];
     /** @var list<list<string>> */
     private array $derived = [];
+    /** @var array<string,array<string,array<string,int>>> */
+    private array $producerCountChanges = [];
     private bool $deriving = false;
 
     private function __construct(private readonly RunContext $run, private readonly ValueCheck $values, private readonly RankingCheck $ranking) {}
@@ -321,6 +323,11 @@ final class RecordCheck implements CaseCheck, RunCheck
             if (!$identityReady || $candidate === null || $reference === null) {
                 continue;
             }
+            if ($report === 'json' && !$this->run->split->isEmpty()) {
+                foreach ($this->run->split->unexplained($this->rawAuthority($case, $view, 'reference'), $this->rawAuthority($case, $view, 'candidate')) as $problem) {
+                    $this->run->report->fail(FailureClass::SPLIT_UNMAPPED, 'case:' . $case . '|' . $view, $problem);
+                }
+            }
             $paired = $metricPairs ?? self::pair($report, $left, $right);
             if ($report === 'json') {
                 $this->ranking->prepareRanking($case, $view, $paired['pairs']);
@@ -351,6 +358,11 @@ final class RecordCheck implements CaseCheck, RunCheck
                         }
                     } elseif (\array_key_exists($field, $a) && \array_key_exists($field, $b) && $a[$field] !== $b[$field]) {
                         if (\is_string($b[$field]) && \is_string($a[$field]) && $this->run->split->allowsMove($field, $b[$field], $a[$field])) {
+                            if ($report === 'json' && $field === 'rule') {
+                                foreach ([$a[$field] => -1, $b[$field] => 1] as $rule => $change) {
+                                    $this->producerCountChanges[$case][$view][$rule] = ($this->producerCountChanges[$case][$view][$rule] ?? 0) + $change;
+                                }
+                            }
                             $a[$field] = $b[$field];
                         } elseif (!$this->licensedByOtherForm($case, $view, $field, $b[$field], $a[$field])
                             && $this->values->measure(DeclaredValues::FIELD, $field, $subject, $level, $b[$field], $a[$field])) {
@@ -444,6 +456,41 @@ final class RecordCheck implements CaseCheck, RunCheck
             }
         }
         return array_map(static fn(array $record): array => array_diff_key($record, array_flip($fields)), $records);
+    }
+
+    /**
+     * @param array<string,mixed>|list<mixed> $document
+     *
+     * @return array<string,int>|null
+     */
+    public function producerCounts(string $case, string $view, string $side, array $document): ?array
+    {
+        $changes = $this->producerCountChanges[$case][$view] ?? [];
+        if ($changes === []) {
+            return null;
+        }
+        $expected = [];
+        foreach ($this->authority($case, $view, $side) as $record) {
+            $rule = (string) $record['rule'];
+            $expected[$rule] = ($expected[$rule] ?? 0) + 1;
+        }
+        $counts = $document['violationsMeta']['byRule'] ?? null;
+        if (!\is_array($counts)) {
+            throw new GateError('Producer grouping requires original physical rule counts.');
+        }
+        ksort($expected);
+        ksort($counts);
+        if ($counts !== $expected) {
+            throw new GateError('Producer grouping cannot repair original physical rule counts.');
+        }
+        foreach ($side === 'candidate' ? $changes : [] as $rule => $change) {
+            $counts[$rule] = ($counts[$rule] ?? 0) + $change;
+            if ($counts[$rule] === 0) {
+                unset($counts[$rule]);
+            }
+        }
+        ksort($counts);
+        return $counts;
     }
 
     /** @return list<array<string,mixed>> */

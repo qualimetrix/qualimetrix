@@ -186,7 +186,7 @@ design.type-coverage.return	producer	?		8	34	2	1	0	29	0	8	0	0	0	0
 discovery.unmatched-exclude	producer	?		7	9	0	0	0	29	0	3	0	0	0	0
 duplication.clone	producer	?		20	89	0	2	28	53	0	7	0	0	0	0
 health.cohesion	producer	?		40	140	0	3	14	43	0	30	0	0	0	0
-health.complexity	producer	?		55	213	0	1	0	25	0	30	0	0	0	0
+health.complexity	producer	?		55	214	0	1	0	25	0	30	0	0	0	0
 health.coupling	producer	?		50	60	0	0	0	21	0	30	0	0	0	0
 health.maintainability	producer	?		17	44	0	0	5	21	0	30	0	0	0	0
 health.overall	producer	?		116	187	0	0	0	33	0	30	0	0	0	0
