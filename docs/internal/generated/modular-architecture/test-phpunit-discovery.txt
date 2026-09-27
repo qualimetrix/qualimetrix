@@ -390,6 +390,7 @@ Available tests:
  - QmxFindingGate\Tests\NormalizationDeriverTest::itRefusesSomethingOtherThanAWarningClock"other level"
  - QmxFindingGate\Tests\NormalizationDeriverTest::itRefusesSomethingOtherThanAWarningClock"second out of range"
  - QmxFindingGate\Tests\NormalizationDeriverTest::itRefusesSomethingOtherThanAWarningClock"unpadded hour"
+ - QmxFindingGate\Tests\ProcessTest::itMeasuresChildAgeInSecondsWhenWallTimeMovesBackwards
  - QmxFindingGate\Tests\ProcessTest::itPassesAdditionsToTheChildWhilePreservingFixedAndParentEnvironment
  - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"COLUMNS"
  - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"HOME"
@@ -8705,6 +8706,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisCoverageTest::itRefusesASkipForAPathThatAlreadyHasATerminalState
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisCoverageTest::itRejectsMoreThanOneTerminalStateForTheSamePath
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisCoverageTest::itTreatsGeneratedExclusionsAsCompleteCoverage
+ - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisPipelineTest::itMeasuresElapsedSecondsWhenTheWallClockMovesBackwards
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisPipelineTest::itRunsWithAnExplicitOwnerConfigurationAndReturnsMeasuredCoverage
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisPipelineTest::itUsesTheInvocationDiscoveryOverrideWithoutMutatingTheDefault
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisPipelineTest::itUsesTheProjectRootFromEachRunInTheSameProcess
