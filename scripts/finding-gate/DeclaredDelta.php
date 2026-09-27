@@ -130,8 +130,8 @@ final class DeclaredDelta
     }
 
     /**
-     * Writes the index and one file per surface, preserving the reasons already
-     * recorded against a surface that still differs.
+     * Writes measured intentions, preserving reasons and prior contents of
+     * intentions this partial derivation could not measure.
      *
      * @param array<string, string> $diffs surface key => unified diff
      *
@@ -149,6 +149,11 @@ final class DeclaredDelta
                 throw new GateError('Cases of one surface class measured different structural differences.');
             }
             $measured[$intent] = $diff;
+        }
+        foreach ($this->entries as $surface => $entry) {
+            if (!isset($measured[$surface])) {
+                $measured[$surface] = $entry['diff'];
+            }
         }
         $diffs = $measured;
         $directory = $this->root . '/' . self::DIRECTORY;

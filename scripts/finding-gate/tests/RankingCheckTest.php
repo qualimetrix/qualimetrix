@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace QmxFindingGate\Tests;
 
-use PHPUnit\Framework\Attributes\{DataProvider, Test};
+use PHPUnit\Framework\Attributes\{DataProvider, Group, Test};
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\{DeclaredFields, DeclaredRecords, DeclaredValues, FailureClass, Fs, GateError, GateModes, GateReport, Options, RankingSchema, ReportRecords, SyntheticTree, Tsv, ValueCheck};
 
@@ -17,12 +17,14 @@ final class RankingCheckTest extends TestCase
     }
 
     #[Test]
+    #[Group('finding-gate-e2e')]
     public function itChecksHealthyFullRankingAndZeroSlicesThroughThePublicGate(): void
     {
         foreach ([[], ['--top=0']] as $args) {
             $tree = SyntheticTree::clean();
             $tree['declarations']['cases/alpha/case.json'] = self::definition($args);
-            $this->green($tree);
+            $report = $this->reportFor($tree, public: true);
+            self::assertSame(GateReport::EXIT_GREEN, $report->exitCode(), $report->render());
         }
     }
 
@@ -67,6 +69,7 @@ final class RankingCheckTest extends TestCase
     }
 
     #[Test]
+    #[Group('finding-gate-e2e')]
     #[DataProvider('repeatedCaptureChanges')]
     public function itRefusesHiddenValueDriftInTheSecondCandidateCapture(string $field): void
     {
@@ -74,23 +77,53 @@ final class RankingCheckTest extends TestCase
         $shown = $field === 'threshold' ? 1 : null;
         $tree = self::rankedTree($records, self::issues($records, [20, 10]), 0, $shown);
         $tree['declarations']['cases/alpha/case.json'] = self::definition(['--top=0', ...($shown === null ? [] : ['--format-opt=violations=1'])]);
-        $report = $this->reportFor($tree, static fn(string $root) => self::plantRepeatedCaptureChange($root, $field));
+        $report = $this->reportFor($tree, static fn(string $root) => self::plantRepeatedCaptureChange($root, $field), public: true);
         self::assertSame([FailureClass::NONDETERMINISM_UNDECLARED], $report->failureClasses(), $report->render());
         self::assertSame(GateReport::EXIT_RED, $report->exitCode(), $report->render());
         self::assertSame('case:alpha|format:json', $report->raised()[0]['scope']);
     }
 
     #[Test]
+    #[Group('finding-gate-e2e')]
+    public function itDoesNotDeriveHiddenRankingDriftBesideAnUnrelatedSurfaceFailure(): void
+    {
+        $records = self::records(2);
+        $tree = self::rankedTree($records, self::issues($records, [20, 10]), 0);
+        $tree['declarations']['cases/alpha/case.json'] = self::definition(['--top=0']);
+        $answer = self::answer($tree, 'case:alpha|format:json');
+        $ranked = ReportRecords::decode($answer['ranked']['stdout']);
+        $ranked['topIssues'][0]['impactScore'] = 21;
+        $answer['ranked']['stdout'] = ValueCheck::value($ranked);
+        $tree['candidateAnswers']['case:alpha|format:json'] = $answer;
+        $tree['candidateAnswers']['case:alpha|format:health'] = ['stdout' => "Changed health publication.\n"];
+        $tree['declarations'][DeclaredValues::INDEX] = Tsv::render(DeclaredValues::COLUMNS, [['field', 'ranking.impactScore', '*', 'Change the declared hidden score.']]);
+        $root = SyntheticTree::create($tree);
+        try {
+            self::plantRepeatedCaptureChange($root, 'impactScore');
+            $report = new GateReport();
+            $written = (new \QmxFindingGate\Gate(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root), $report))->deriveDeclarations();
+            self::assertSame([], $written);
+            self::assertContains(FailureClass::SURFACE_MISMATCH, $report->failureClasses(), $report->render());
+            self::assertContains(FailureClass::NONDETERMINISM_UNDECLARED, $report->failureClasses(), $report->render());
+            self::assertFileDoesNotExist($root . '/finding-gate/' . DeclaredValues::DERIVED);
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
+    #[Test]
+    #[Group('finding-gate-e2e')]
     public function itIgnoresRepeatedRankPositionsAndPrivateLayoutOutsideThePublishedSlice(): void
     {
         $records = self::records(2);
         $tree = self::rankedTree($records, self::issues($records, [10, 10]), 0);
         $tree['declarations']['cases/alpha/case.json'] = self::definition(['--top=0']);
-        $report = $this->reportFor($tree, static fn(string $root) => self::plantRepeatedCaptureChange($root, 'order'));
+        $report = $this->reportFor($tree, static fn(string $root) => self::plantRepeatedCaptureChange($root, 'order'), public: true);
         self::assertSame(GateReport::EXIT_GREEN, $report->exitCode(), $report->render());
     }
 
     #[Test]
+    #[Group('finding-gate-e2e')]
     public function itPreservesCompleteRepeatedOccurrenceCountsAcrossCandidatePasses(): void
     {
         [$x, $y] = self::records(2);
@@ -102,12 +135,13 @@ final class RankingCheckTest extends TestCase
             $y['subject'] => [['channel' => $y['channel'], 'magnitudes' => [$y['metricValue'], $y['metricValue']]]],
         ]]);
         $tree['answers']['case:alpha|baseline-file'] = ['stdout' => $baseline, 'file' => $baseline];
-        $report = $this->reportFor($tree, static fn(string $root) => self::plantRepeatedCaptureChange($root, 'multiplicity'));
+        $report = $this->reportFor($tree, static fn(string $root) => self::plantRepeatedCaptureChange($root, 'multiplicity'), public: true);
         self::assertSame([FailureClass::NONDETERMINISM_UNDECLARED], $report->failureClasses(), $report->render());
         self::assertSame('case:alpha|format:json', $report->raised()[0]['scope']);
     }
 
     #[Test]
+    #[Group('finding-gate-e2e')]
     public function itRefusesFifthPassHiddenRankingDriftWithoutWritingNormalization(): void
     {
         $records = self::records(2);
@@ -158,7 +192,7 @@ final class RankingCheckTest extends TestCase
 
     #[Test]
     #[DataProvider('malformedRankings')]
-    public function itRefusesEachBrokenSideLocalRankingThroughThePublicGate(string $mutation): void
+    public function itRefusesEachBrokenSideLocalRankingFromRecordedReports(string $mutation): void
     {
         $records = self::records(3);
         $issues = self::issues($records, [30, 20, 10]);
@@ -252,6 +286,7 @@ final class RankingCheckTest extends TestCase
     }
 
     #[Test]
+    #[Group('finding-gate-e2e')]
     public function itLicensesAnExactHiddenPhysicalValueAndRefusesAnUnlistedHiddenKeyWithoutWriting(): void
     {
         $records = self::records(3);
@@ -385,6 +420,7 @@ final class RankingCheckTest extends TestCase
     }
 
     #[Test]
+    #[Group('finding-gate-e2e')]
     public function itDerivesAnExactWithdrawalThatPullsTheNextRankedFindingIntoTheSlice(): void
     {
         $reference = self::records(3);
@@ -576,6 +612,7 @@ final class RankingCheckTest extends TestCase
     }
 
     #[Test]
+    #[Group('finding-gate-e2e')]
     public function itDerivesOnlyDeclaredScoreKeysAndUsesTheSameLcsForExactOrderRows(): void
     {
         $records = self::records(3);
@@ -622,6 +659,7 @@ final class RankingCheckTest extends TestCase
     }
 
     #[Test]
+    #[Group('finding-gate-e2e')]
     public function itObservesTheExactRegisteredRankingRaiseSitesThroughThePublicGate(): void
     {
         $sites = \QmxFindingGate\RaiseSites::of(\dirname(__DIR__), \QmxFindingGate\RaiseSites::DECLARED_NAMES);
@@ -629,7 +667,7 @@ final class RankingCheckTest extends TestCase
             if (!str_starts_with($witness['id'], 'ranking-')) {
                 continue;
             }
-            $report = $this->reportFor($witness['plant'](SyntheticTree::clean()));
+            $report = $this->reportFor($witness['plant'](SyntheticTree::clean()), public: true);
             $observed = [];
             foreach ($report->raised() as $raised) {
                 foreach ($sites->sites as $site) {
@@ -817,8 +855,11 @@ final class RankingCheckTest extends TestCase
     /** @param Specification $tree
      * @param (callable(string):void)|null $prepare
      */
-    private function reportFor(array $tree, ?callable $prepare = null): GateReport
+    private function reportFor(array $tree, ?callable $prepare = null, bool $public = false): GateReport
     {
+        if (!$public) {
+            return RecordedComparison::report($tree, $prepare);
+        }
         $root = SyntheticTree::create($tree);
         try {
             if ($prepare !== null) {

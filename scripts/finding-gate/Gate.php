@@ -110,10 +110,10 @@ final class Gate
                     continue;
                 }
                 foreach ($capturePlan->invocations() as $invocation) {
-                    if ($invocation['surface'] !== $view || !str_starts_with($invocation['scope'], 'case:')) {
+                    if (($invocation['surface'] !== $view && ($fieldReport !== 'json-document' || $invocation['outputFileKind'] !== $view)) || !str_starts_with($invocation['scope'], 'case:')) {
                         continue;
                     }
-                    $key = Surfaces::key($invocation['scope'], $view);
+                    $key = Surfaces::key($invocation['scope'], $invocation['surface']);
                     foreach (['candidate', 'reference'] as $side) {
                         if ($capturePlan->requiredOn($key, $side)
                             && CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($outcomeCases[$invocation['scope']], $side))) {
@@ -278,6 +278,9 @@ final class Gate
             $this->rankings->supply('reference', $referenceCapture->rankings);
 
             $this->renameMapCheck->checkReferenceInput($first, $referenceArtifacts);
+            if (\in_array(FailureClass::REFERENCE_INPUT_UNTRANSLATED, $this->report->failureClasses(), true)) {
+                return;
+            }
             $this->checkFindings('candidate', $first, trackObserved: true);
             $this->checkFindings('reference', $referenceArtifacts, trackObserved: false);
             $this->renameMapCheck->checkSplitExplanation($first, $referenceArtifacts);
@@ -305,7 +308,7 @@ final class Gate
             $this->declaredDeltaCheck->checkStaleFieldMoves();
             $this->staleDeclarationCheck->checkStaleDeclarations();
             $secondAuthority = $this->captureAuthority('candidate-2', $secondCapture);
-            if ($secondAuthority !== null && $this->report->exitCode() === GateReport::EXIT_GREEN) {
+            if ($secondAuthority !== null) {
                 RankingCheck::create($this->context)->checkRepeatedCaptures($firstCapture, $secondCapture);
             }
         } finally {
@@ -369,14 +372,8 @@ final class Gate
      * {@see Derivation} derives under its intents — and writes them out, so no
      * declaration is a diff somebody typed. One pass for every form: each
      * absorbs only what it derives and the run judges everything else, so a
-     * change no intent covers keeps the run red and nothing is written.
-     *
-     * A run that failed writes nothing, and this is where that has to be
-     * decided. The entry point already refuses to call such a run a write and
-     * prints "nothing was written" — but it printed it *after* this method had
-     * replaced the index and every diff file on disk, so the sentence was false
-     * and the tree was left holding a declaration measured from a breakage for
-     * the next ordinary run to be judged against.
+     * change no intent covers keeps the run red. Complete measurements of
+     * other forms are still written; a form refuses its own invalid measurement.
      *
      * @return list<string> the files written
      */
@@ -391,7 +388,7 @@ final class Gate
         $this->staleDeclarationCheck->startDeriving();
         $this->compare();
 
-        if ($this->report->exitCode() !== GateReport::EXIT_GREEN) {
+        if (!$this->report->canDerive()) {
             return [];
         }
 

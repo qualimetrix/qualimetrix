@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace QmxFindingGate\Tests;
 
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\Fs;
@@ -19,6 +20,7 @@ use QmxFindingGate\Process;
  * planted answer lives only in the temporary copy; the tracked gate carries no
  * switch that could plant one.
  */
+#[Group('finding-gate-e2e')]
 final class GateModesTest extends TestCase
 {
     private ?string $copy = null;

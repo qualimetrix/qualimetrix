@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace QmxFindingGate;
 
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+
 /**
  * A candidate repository the whole gate can be run against, with no product in it.
  *
@@ -48,6 +52,8 @@ namespace QmxFindingGate;
 final class SyntheticTree
 {
     private const string TUPLE_SOURCE = 'src/Reporting/Formatter/Json/JsonFindingSection.php';
+
+    private static ?string $gitTemplate = null;
 
     private const string ANSWERS = 'replay/answers.json';
 
@@ -134,7 +140,7 @@ final class SyntheticTree
      *
      * @param Specification $specification
      */
-    public static function create(array $specification): string
+    public static function create(array $specification, bool $versioned = true, bool $candidate = true): string
     {
         $root = Fs::temporaryDirectory('self-test-synthetic-tree-');
         $reference = self::files($specification, $specification['findings'], $specification['answers'], $specification['lock']);
@@ -143,18 +149,24 @@ final class SyntheticTree
             Fs::write($root . '/' . $path, $content);
         }
 
-        foreach ([
-            ['git', 'init', '--quiet'],
-            ['git', 'add', '--all'],
-            ['git', '-c', 'user.email=self-test@qmx', '-c', 'user.name=self-test', 'commit', '--quiet', '--message', 'reference'],
-        ] as $command) {
-            $result = Process::run($command, $root);
-
-            if ($result['exit'] !== 0) {
-                Fs::removeRecursively($root);
-
-                throw new GateError(\sprintf("Cannot build the synthetic tree:\n%s", $result['stderr']));
+        if ($versioned) {
+            if (self::$gitTemplate === null) {
+                self::$gitTemplate = Fs::temporaryDirectory('synthetic-git-template-');
+                self::git(['git', 'init', '--quiet'], self::$gitTemplate);
             }
+            $git = self::$gitTemplate . '/.git';
+            mkdir($root . '/.git/objects', 0o700, true);
+            mkdir($root . '/.git/refs', 0o700, true);
+            foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($git, FilesystemIterator::SKIP_DOTS)) as $file) {
+                if ($file->isFile()) {
+                    Fs::write($root . '/.git/' . substr($file->getPathname(), \strlen($git) + 1), Fs::read($file->getPathname()));
+                }
+            }
+            self::git(['git', 'add', '--all'], $root);
+            self::git(['git', '-c', 'user.email=self-test@qmx', '-c', 'user.name=self-test', 'commit', '--quiet', '--message', 'reference'], $root);
+        }
+        if (!$candidate) {
+            return $root;
         }
 
         $candidateSpecification = $specification;
@@ -173,6 +185,22 @@ final class SyntheticTree
         }
 
         return $root;
+    }
+
+    /** @param Specification $specification */
+    public static function fixture(array $specification, bool $candidate = true): string
+    {
+        return self::create($specification, versioned: false, candidate: $candidate);
+    }
+
+    /** @param list<string> $command */
+    private static function git(array $command, string $root): void
+    {
+        $result = Process::run($command, $root);
+        if ($result['exit'] !== 0) {
+            Fs::removeRecursively($root);
+            throw new GateError(\sprintf("Cannot build the synthetic tree:\n%s", $result['stderr']));
+        }
     }
 
     public static function remove(string $root): void
@@ -221,6 +249,7 @@ final class SyntheticTree
 
         $files = [
             'bin/qmx' => self::replayingBinary(),
+            'src/Infrastructure/Console/Refusal/RefusalPresenter.php' => '<?php final class RefusalPresenter { private function writeEnvelope() { return json_encode(["error" => "replayed", "exit_code" => 3, "position" => null]); } }',
             'replay/raw-publications.json' => self::json($rawPublications),
             self::ANSWERS => json_encode($answers, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n",
             'vendor/autoload.php' => self::probedProduct($specification['static'], $specification['levels']),

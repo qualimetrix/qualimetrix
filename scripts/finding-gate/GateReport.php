@@ -176,6 +176,16 @@ final class GateReport
         return array_values(array_unique(array_column($this->failures, 'class')));
     }
 
+    /** @param list<string> $formFailures failures invalidating this form's measurement */
+    public function canDerive(array $formFailures = []): bool
+    {
+        return $this->limits === [] && array_intersect($this->failureClasses(), [
+            FailureClass::ENV_MISMATCH, FailureClass::CORPUS_INVALID, FailureClass::RUN_FAILED,
+            FailureClass::CANDIDATE_INPUT_REFUSED, FailureClass::REFERENCE_INPUT_UNTRANSLATED,
+            ...$formFailures,
+        ]) === [];
+    }
+
     public function render(): string
     {
         $lines = [];

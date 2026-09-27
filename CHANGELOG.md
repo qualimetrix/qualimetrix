@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+**Finding-gate declaration derivation now writes complete measurable forms even
+when another change remains unexplained.** Previously a failed comparison wrote
+nothing; `--derive-declarations` now lists written files and still exits 5 with
+the unexpressed remainder. Inspect both before retrying, and use the ordinary
+comparison for acceptance. See ADR 0087.
+
 **The finding gate declares measured changes instead of treating finding changes
 as opaque report diffs or ranked-position allowances.** The old rename/diff-only
 contract becomes exact record, value, schema, outcome, surface and structural
@@ -729,6 +735,10 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   copy of a duplicate block can be told apart.
 
 ### Fixed
+
+- Finding-gate derivation canonicalizes an empty delta index after a complete
+  GREEN measurement. An empty remainder of a refused measurement still leaves
+  the index unchanged.
 
 - **`@qmx-ignore` and `@qmx-ignore-next-line` written with no channel no longer
   silence everything.** In a block comment and in a docblock, the comment's own

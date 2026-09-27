@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace QmxFindingGate\Tests;
 
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\CaseDefinition;
@@ -151,6 +152,7 @@ final class CaseInputTranslationTest extends TestCase
     }
 
     #[Test]
+    #[Group('finding-gate-e2e')]
     public function itCarriesActualWorkerStructuralCreditsIntoTheParentAndPublicVerdict(): void
     {
         $tree = SyntheticTree::clean();

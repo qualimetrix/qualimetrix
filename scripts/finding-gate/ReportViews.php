@@ -23,6 +23,9 @@ final class ReportViews
 
     public static function assertFieldsView(string $report, string $view): void
     {
+        if ($report === 'json-document' && \in_array($view, ['format:json', 'check:output:file', 'check:parallel', 'check:baseline', 'check:baseline-source'], true)) {
+            return;
+        }
         if ($report === 'json' && $view === 'ranking') {
             return;
         }

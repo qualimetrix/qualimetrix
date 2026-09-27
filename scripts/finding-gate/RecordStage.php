@@ -101,6 +101,13 @@ final class RecordStage implements SurfaceStage
                 } elseif ($pair->surface === 'baseline-file') {
                     $text = $this->baseline($case, $side, $text);
                 }
+                if (\in_array($pair->surface, $this->run->declarations->fields->views('json-document'), true)) {
+                    $edits = [];
+                    foreach (array_keys($this->run->declarations->fields->changes('json-document', $pair->surface)) as $field) {
+                        $edits[ValueCheck::value([$field])] = null;
+                    }
+                    $text = ReportRecords::edit($text, $edits, removeWholeLines: true);
+                }
                 if ($side === 'candidate') {
                     $pair->candidate = $text;
                 } else {

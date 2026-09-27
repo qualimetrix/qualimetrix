@@ -184,6 +184,34 @@ final class TopIssuesRendererTest extends TestCase
     }
 
     #[Test]
+    public function itRendersScorePrecisionAtTenAndOneHundred(): void
+    {
+        foreach ([
+            [9.876, '9.88'],
+            [10.0, '10.0'],
+            [10.126, '10.1'],
+            [99.96, '100.0'],
+            [100.0, '100'],
+            [100.6, '101'],
+        ] as [$score, $formatted]) {
+            $report = new Report(
+                findings: [],
+                filesAnalyzed: 1,
+                filesSkipped: 0,
+                duration: 1.0,
+                errorCount: 1,
+                warningCount: 0,
+                topIssues: [$this->createRankedIssue($score, Severity::Error, 'Service', '/project/src/Service.php', 42, 30)],
+            );
+            $lines = [];
+
+            $this->renderer->render($report, new FormatterContext(), $this->color, $lines);
+
+            self::assertStringContainsString('1. [ERR] ' . $formatted . '  ', implode("\n", $lines));
+        }
+    }
+
+    #[Test]
     public function itRendersNamespaceLevelFindings(): void
     {
         $finding = self::finding(

@@ -51,8 +51,8 @@ negative controls live in `scripts/finding-gate-controls/`. The shared loaders
 read a fixed set of subject-owned `wiring-*.php` files. Unknown files, unknown
 keys, duplicate registrations and unloaded checks are refused. The retired
 `pending` key is not accepted, even with an empty value. Every failure class
-requires a producer and every raise site and caller requires an observed
-self-test witness.
+requires a producer and every raise site and caller recognized by the source
+scanner requires an observed self-test witness.
 
 ## Case definition and coverage
 
@@ -119,6 +119,9 @@ side generates the format its own binary understands. Output, profiling,
 cache-directory and working-directory options are refused in case arguments.
 The gate owns their destinations and captures their publications.
 
+Commands receive configuration and analysis inputs relative to the
+materialized case directory, which is their working directory.
+
 Reference inputs are mechanically translated by the maps. All config and
 preset documents, named PHP input positions, baseline source files, debug
 subjects and rename-channel maps pass through the same translation boundary.
@@ -133,11 +136,12 @@ reading the first binary's AST as its own measurement.
 ### Outcomes and diagnostic messages
 
 A refusal is compared as an outcome: stdout, stderr, process exit and any
-file publication remain observable. If an authoritative analysis invocation
+file publication remain observable. If a candidate analysis invocation
 refuses before it can supply complete ranking metadata, capture stops with
-`run-failed`. For publications that reach comparison, undeclared candidate
-input refusals and untranslated reference inputs are named
-`candidate-input-refused` and `reference-input-untranslated`. An explicit
+`run-failed`. A reference input refusal is retained and named
+`reference-input-untranslated` before any analysis records are read. Other
+undeclared candidate input refusals that reach comparison are named
+`candidate-input-refused`. An explicit
 transition uses the outcome declaration and its exact measured snapshot.
 
 An incomplete case keeps its findings and its incompleteness diagnostics.
@@ -287,10 +291,11 @@ a field intention `topIssues.limit`, with derived `=k`/`>=n` values for
 the exact invocation. `--top=0` is a valid empty slice.
 
 Summary top-issue rows are checked inside each side against the ordered
-physical records joined from its complete ranking: count, position, severity
-tag, location, message, advice, debt and score. Score rounding follows the
-renderer's decimal precision. Through sides, only the surrounding non-record
-summary text remains byte-compared.
+physical records joined from its complete ranking: row count, order, record
+correspondence and score within the printed precision's tolerance. Their
+presentation, including whether a location carries `:line` and which decimal
+precision a score uses, is owned by product `TopIssuesRenderer` tests. Through
+sides, only the surrounding non-record summary text remains byte-compared.
 
 Internal ranking and physical-support publications are evidence inputs, not
 additional cross-side surfaces or structural-diff targets. Their metadata is
@@ -315,8 +320,18 @@ declarations must agree with report exit carriers such as directives'
 `exit_code`. A shared key never authorizes an unmeasured neighbouring subject.
 
 Schema changes are `added` or `removed`. Reports and views are exact,
-including `json/ranking`. Derivation must obtain every required supplier;
+including `json/ranking`. The `json-document` report declares a top-level
+JSON member, with exact views `format:json`, `check:output:file`,
+`check:parallel`, `check:baseline` and `check:baseline-source`. Its measured
+record is `$`; the value is the member's complete canonical JSON. Only the
+declared member and its own line are removed from comparison.
+Derivation must obtain every required supplier;
 a missing supplier cannot produce an empty successful table.
+
+Refusal envelope keys come from each tree's direct `json_encode` array
+literal in `RefusalPresenter::writeEnvelope`; indirect envelope construction
+is outside this scanner's promise. Changing a refusal while it remains a
+refusal uses an exact surface delta.
 
 An outcome declaration names the transition and its refusal file. Repeated
 refusal outputs are still compared. A withdrawn surface is still invoked on
@@ -448,23 +463,26 @@ carrying them forward creates stale exceptions.
 Author intentions and reasons, then run
 `composer gate -- --reference=<commit> --derive-declarations`.
 It is the single writer for measured record, value, field, outcome, surface
-and residual-diff tables. Unexplained record, value and schema changes still
-fail. A failed run writes nothing. Inspect the generated data, supply any new `?` reasons, and
-run the ordinary comparison to obtain a verdict.
+and residual-diff tables. It writes complete expressible measurements even if
+another change remains unexpressed. It lists the written files and refuses
+with exit 5 and the remaining failure classes. A form whose own measurement
+failed is not written; incomplete capture cannot produce successful data.
+Inspect the generated data, supply any new `?` reasons, and run the ordinary
+comparison to obtain a verdict.
 
 `--derive-tuple` derives physical finding fields from publishing code.
 `--derive-normalization` measures repeatability. They are separate operations
 because neither is derived from cross-side change intentions.
 
-| Exit  | Meaning                                                           |
-| ----- | ----------------------------------------------------------------- |
-| 0     | GREEN: the complete comparison agrees under its declarations      |
-| 1     | RED: a comparison check failed                                    |
-| 2     | PARTIAL: no failure, but no complete equivalence claim            |
-| 3     | The gate could not run its declared comparison                    |
-| 4     | A derivation wrote data; this is not a verdict                    |
-| 5     | A derivation's measurement failed and nothing was written         |
-| 128+n | A signal stopped the run, including refusal of a derivation write |
+| Exit  | Meaning                                                                  |
+| ----- | ------------------------------------------------------------------------ |
+| 0     | GREEN: the complete comparison agrees under its declarations             |
+| 1     | RED: a comparison check failed                                           |
+| 2     | PARTIAL: no failure, but no complete equivalence claim                   |
+| 3     | The gate could not run its declared comparison                           |
+| 4     | A derivation wrote data; this is not a verdict                           |
+| 5     | An unexpressed remainder refuses derivation; listed files may be written |
+| 128+n | A signal stopped the run, including refusal of a derivation write        |
 
 `--cases=<names>` makes a successful narrowed comparison PARTIAL.
 Unknown names are refused even beside valid names.
@@ -472,6 +490,9 @@ Unknown names are refused even beside valid names.
 that run PARTIAL. With complete coverage, the flag does not change the verdict.
 Neither option is accepted for declaration or normalization derivation.
 Use `--report=<file>` for the machine-readable outcome.
+
+The channel probe constructs internal product classes directly: a stage
+changing those constructors also updates the channel probe.
 
 ## Execution, controls and independent checks
 
@@ -495,10 +516,25 @@ a `text` expectation from absorbing `text-verbose` or another case.
 Green controls are held to all declaration counts, not just exit 0.
 
 `composer gate:self-test` runs the gate's observed witnesses and the
-controls harness's mechanics. Every raise site is enumerated with its nearest
-caller and observed through a whole synthetic run. An unexplained source
+controls harness's mechanics. Recognized raise sites are enumerated with their
+nearest callers and observed through a whole synthetic run. An unexplained source
 occurrence or stale source exception fails. Controls add corpus evidence;
 they do not replace those observed self-test witnesses.
+
+### Source scanner limits
+
+The refusal-site scanner is a syntactic inventory, not a complete PHP call
+graph. It does not recognize calls on a `new self` or `new static` instance;
+implicit or magic entries (constructors, `__invoke`, `__toString`,
+`getIterator`, `__get`, `__destruct` and property hooks); trait dispatch,
+`Closure::call` or binding; outer methods overwritten by same-named
+anonymous-class methods; computed carrier constants (parentheses,
+concatenation, heredoc or ternary expressions); interface or trait constants;
+namespaced `define`; `use const` or `use function` aliases; and
+`__FUNCTION__` or `__METHOD__` callbacks. Named `fail` arguments and string
+literals equal to carrier names can be falsely refused. These forms are not
+repaired until real gate code needs them; a second bypass narrows this promise
+instead of adding another recognition form.
 
 `composer gate:phar` compares an existing nonempty `build/qmx.phar` with
 its committed tree. It copies the same archive bytes into a private candidate
@@ -530,13 +566,22 @@ Each limit needs its own product or delivery check:
 - Positions of records with changed ranking values, or introduced/withdrawn
   unpaired records: ranking order judges unchanged paired values only.
 - Ranking order outside both published slices: use product ranking tests.
+- The presentation of summary ranking rows, including `:line` and score
+  decimal precision: use product `TopIssuesRenderer` tests. Changes to the
+  row layout, severity tags or debt notation may require updating the
+  comparator and are not licensed by residual-diff declarations.
+- No corpus control proves the combined tie-break mutation and an order
+  intention; the comparison algorithm has synthetic coverage.
+- Ranking schema derivation requires the current literal layout and
+  indentation of `JsonFormatter::formatTopIssues`; a behaviour-neutral
+  formatter refactor can refuse schema derivation.
 - Physical record order or the position of visible records within the complete
   physical population: use formatter tests.
 - Algorithmic correctness inside an explicitly changed ranking value: use impact
   and coupling tests.
 - Changing which findings participate in complete ranking is not declarable
-  here: the physical/ranking join refuses it. A feature needing this change must
-  introduce and prove its own form.
+  here: the physical/ranking join refuses it. Such a change needs an explicitly
+  narrower equivalence claim and independent product tests.
 - Internal support metadata, health values, aggregates and presentation are not
   independent cross-side surfaces; only their named source-consistency and
   repeatability invariants are checked.

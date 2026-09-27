@@ -429,12 +429,22 @@ final class CheckWitnesses
                 static function (array $tree): array {
                     $refusal = SelfTestOutcomes::fixture();
                     $tree['answers'] = $refusal['candidateAnswers'];
+                    // A non-input refusal reaches the outcome check past the earlier exit-3 diagnosis.
+                    foreach ($tree['answers'] as &$answer) {
+                        $answer['exit'] = 5;
+                        if (($answer['stdout'] ?? '') !== '') {
+                            $envelope = json_decode($answer['stdout'], true, 512, \JSON_THROW_ON_ERROR);
+                            $envelope['exit_code'] = 5;
+                            $answer['stdout'] = self::json($envelope);
+                        }
+                    }
+                    unset($answer);
                     $tree['candidateAnswers'] = SyntheticTree::caseAnswers('alpha', $tree['findings']['alpha'], false, []);
                     $tree['candidateDeclarations'][DeclaredOutcomes::INDEX] = Tsv::render(DeclaredOutcomes::COLUMNS, [
                         ['alpha', DeclaredOutcomes::REFUSAL_TO_ANALYSIS, 'declared-outcomes/alpha.json', 'Existing reference inputs must be translated.'],
                     ]);
                     $snapshot = [];
-                    foreach ($refusal['candidateAnswers'] as $key => $answer) {
+                    foreach ($tree['answers'] as $key => $answer) {
                         $snapshot[$key] = ['stdout' => $answer['stdout'] ?? '', 'stderr' => $answer['stderr'] ?? '', 'exit' => (string) ($answer['exit'] ?? 0)];
                     }
                     $tree['candidateDeclarations']['declared-outcomes/alpha.json'] = self::json($snapshot);
@@ -443,7 +453,6 @@ final class CheckWitnesses
                 },
                 [
                     [FailureClass::REFERENCE_INPUT_UNTRANSLATED, 'case:alpha', 'CaseOutcomeCheck::checkRun <- Gate::compare'],
-                    [FailureClass::REFERENCE_INPUT_UNTRANSLATED, 'reference / case:alpha', 'RenameMapCheck::checkReferenceInput <- Gate::compare'],
                 ],
             ),
             self::witness(
@@ -802,10 +811,7 @@ final class CheckWitnesses
                 },
                 [
                     [FailureClass::REFERENCE_INPUT_UNTRANSLATED, 'reference / case:alpha', 'RenameMapCheck::checkReferenceInput <- Gate::compare'],
-                    [FailureClass::VALUE_MISMATCH, 'case:alpha|format:text-verbose', 'ValueCheck::measure <- ValueStage::applyStage'],
-                    [FailureClass::SURFACE_MISMATCH, 'reference / case:alpha|format:text-verbose', 'CaptureCheck::publicationFailure <- Gate::compare'],
                 ],
-                [[FailureClass::SURFACE_MISMATCH, 'case:alpha|exit:format:text-verbose']],
             ),
             self::witness(
                 'map-stale',

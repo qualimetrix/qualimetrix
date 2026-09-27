@@ -21,9 +21,12 @@ physical findings leaves hidden fields outside the comparison.
 
 The gate uses authored intentions with reasons and exact measured data.
 Introduced and withdrawn records, values, schemas, case outcomes, surfaces
-and structural input paths have separate forms. One derivation writes all
-measured forms and residual diffs after validating the run; unexplained
-changes refuse the write. An unused declaration is stale.
+and structural input paths have separate forms. One derivation writes each
+complete measurable form and residual diff after validating its input. An
+unexpressed change no longer blocks unrelated measurable forms: the command
+lists what it wrote and still refuses with exit 5 and the remaining failures.
+Incomplete or invalid capture cannot supply a successful measurement. An
+unused declaration is stale.
 
 Physical finding authority is complete even when the public report truncates
 its records. Additional captures must preserve every original visible record
@@ -57,8 +60,10 @@ five validated repeated passes and cannot remove semantic record fields.
 Input translation names finite YAML and PHP positions; a touched unsupported
 grammar refuses instead of receiving a best-effort text replacement.
 
-Every failure class has a producer and every raise site and caller has an
-observed self-test witness. Temporary permissions for unimplemented classes
+Every failure class has a producer and every raise site and caller recognized
+by the syntactic source scanner has an observed self-test witness. The scanner
+does not claim a complete PHP call graph; its unsupported forms are named in
+the gate README. Temporary permissions for unimplemented classes
 are removed. Corpus controls additionally require observed failures at exact
 scopes and reject changes elsewhere.
 
@@ -79,11 +84,19 @@ scopes and reject changes elsewhere.
   reducing coverage.
 - Correctness inside declared new values, changed-value positions, unpaired
   record positions and order outside both published slices needs independent
-  product tests. Changing the population participating in ranking needs a new
-  explicit form; the existing bijective join refuses it.
+  product tests. The existing bijective join refuses a change in the population
+  participating in ranking; such a change requires a narrower equivalence claim.
 - Internal support formatting, unrelated aggregates and delivery behaviour
   outside captured surfaces are not independent cross-side publications.
   The README names these limits and their separate validation responsibilities.
+- Summary ranking rows retain count, order, record correspondence and score
+  tolerance checks. Whether locations carry `:line` and scores use the
+  renderer's decimal precision is proven by product formatter tests.
+- Gate end-to-end tests, observed witnesses and negative controls run in
+  `composer check:gate` and a separate CI job. The normal aggregate keeps
+  cheap regression tests and stays within the eight-minute local budget.
+  This isolates the cost of process and repository wiring; future changes
+  to the gate still require that separate group.
 
 ## Rejected alternatives
 

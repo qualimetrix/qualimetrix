@@ -203,7 +203,7 @@ final class ChannelWitness
                 $case = $inputs->materialize($case);
                 $directory = $case->directory;
                 $arguments = ['check', ...$case->paths, '--workers=0', '--no-cache', '--no-ansi', '--fail-on=error',
-                    '-c', $directory . '/' . $inputs->configuration($case), ...$inputs->arguments($case), '-f', 'json'];
+                    '-c', $inputs->configuration($case), ...$inputs->arguments($case), '-f', 'json'];
             }
             $result = Process::run(
                 [\PHP_BINARY, __DIR__ . '/probe-channels.php', $this->treeRoot, $mode, $directory, json_encode($arguments, \JSON_THROW_ON_ERROR)],

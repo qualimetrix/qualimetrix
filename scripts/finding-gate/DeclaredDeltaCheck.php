@@ -18,6 +18,9 @@ final class DeclaredDeltaCheck implements Derivation
      */
     private ?array $derived = null;
 
+    /** @var array<string,true> */
+    private array $unexpressible = [];
+
     public function __construct(
         private readonly Options $options,
         private readonly GateReport $report,
@@ -34,7 +37,24 @@ final class DeclaredDeltaCheck implements Derivation
     /** @return list<string> the files written */
     public function rewriteDerived(): array
     {
-        return $this->report->exitCode() === 0 ? $this->declaredDelta->rewrite($this->derived ?? []) : [];
+        if (!$this->report->canDerive() || $this->derived === null) {
+            return [];
+        }
+        $derived = array_diff_key($this->derived, $this->unexpressible);
+        foreach ($this->report->raised() as $failure) {
+            if (!\in_array($failure['class'], [FailureClass::PATH_LEAK, FailureClass::NONDETERMINISM_UNDECLARED, FailureClass::CASE_OUTCOME_MISMATCH], true)) {
+                continue;
+            }
+            foreach (array_keys($derived) as $intent) {
+                if (str_contains($failure['scope'], $intent) || (str_contains($intent, '|') && str_contains($failure['scope'], explode('|', $intent)[0]))) {
+                    unset($derived[$intent]);
+                }
+            }
+        }
+        if ($derived === [] && $this->report->exitCode() !== GateReport::EXIT_GREEN) {
+            return [];
+        }
+        return $this->declaredDelta->rewrite($derived);
     }
 
     /** Looking up an intention does not credit it as performed. */
@@ -62,6 +82,11 @@ final class DeclaredDeltaCheck implements Derivation
         }
 
         $this->checkAgainstDeclaredDelta($key, $diff, $declared, $left, $right);
+        foreach ($this->report->raised() as $failure) {
+            if ($failure['scope'] === $key && \in_array($failure['class'], [FailureClass::DELTA_TOO_LARGE, FailureClass::DELTA_OVERREACH, FailureClass::DELTA_MISMATCH], true)) {
+                $this->unexpressible[$this->declaredDelta->intentOf($key)] = true;
+            }
+        }
     }
 
     /**
@@ -86,7 +111,12 @@ final class DeclaredDeltaCheck implements Derivation
             );
         }
 
-        foreach ($this->overreachingLines($key, $left, $right) as $problem) {
+        try {
+            $overreaching = $this->overreachingLines($key, $left, $right);
+        } catch (GateError $error) {
+            $overreaching = [$error->getMessage()];
+        }
+        foreach ($overreaching as $problem) {
             $this->report->fail(
                 FailureClass::DELTA_OVERREACH,
                 $key,
@@ -163,6 +193,12 @@ final class DeclaredDeltaCheck implements Derivation
     /** @return list<array<string,mixed>> */
     private function comparedPublications(string $surface, string $text): array
     {
+        if (\in_array($surface, ['format:json', 'format:suppressed', 'format:sarif', 'format:gitlab'], true)) {
+            $document = ReportRecords::decode($text);
+            if (\is_string($document['error'] ?? null) && \is_int($document['exit_code'] ?? null)) {
+                return [];
+            }
+        }
         if (\in_array($surface, ['format:json', 'check:baseline-source', 'check:baseline', 'check:output:file', 'check:parallel', 'format:suppressed'], true)) {
             $document = ReportRecords::decode($text);
             $member = $surface === 'format:suppressed' ? 'suppressed' : 'violations';

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace QmxFindingGate\Tests;
 
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\CaseOutcome;
@@ -52,7 +53,7 @@ final class CaseOutcomeCheckTest extends TestCase
     #[Test]
     public function itSharesOutcomeRolesWhileLiveAndReleasesTheirRun(): void
     {
-        $root = SyntheticTree::create(SyntheticTree::clean());
+        $root = SyntheticTree::fixture(SyntheticTree::clean());
         try {
             $maps = RenameMaps::fromPairs([]);
             $run = new RunContext(
@@ -105,7 +106,7 @@ final class CaseOutcomeCheckTest extends TestCase
             'config' => 'qmx.yaml', 'channels' => ['replay.alpha@callable'],
             'outcome' => ['kind' => CaseOutcome::INCOMPLETE, 'exit' => 4],
         ], \JSON_THROW_ON_ERROR);
-        $root = SyntheticTree::create($tree);
+        $root = SyntheticTree::fixture($tree);
         try {
             $corpus = Corpus::load($root);
             $report = new GateReport();
@@ -142,7 +143,7 @@ final class CaseOutcomeCheckTest extends TestCase
             'config' => 'qmx.yaml', 'channels' => ['replay.alpha@callable'],
             'outcome' => ['kind' => CaseOutcome::REFUSAL, 'exit' => 3],
         ], \JSON_THROW_ON_ERROR);
-        $root = SyntheticTree::create($tree);
+        $root = SyntheticTree::fixture($tree);
         try {
             $corpus = Corpus::load($root);
             $report = new GateReport();
@@ -157,20 +158,7 @@ final class CaseOutcomeCheckTest extends TestCase
     }
 
     #[Test]
-    public function itLoadsTheOutcomeControlInAFreshControlsProcess(): void
-    {
-        $root = \dirname(__DIR__, 3);
-        $script = 'require $argv[1]."/scripts/finding-gate/classes.php"; '
-            . 'require $argv[1]."/scripts/finding-gate-controls/classes.php"; '
-            . 'echo json_encode(array_map(static fn($control) => $control->id, QmxFindingGateControls\\Controls::all()), JSON_THROW_ON_ERROR);';
-        $result = Process::run([\PHP_BINARY, '-r', $script, $root], $root);
-        self::assertSame(0, $result['exit'], $result['stderr']);
-        $ids = json_decode($result['stdout'], true, 512, \JSON_THROW_ON_ERROR);
-        self::assertContains('invalid-case-metadata', $ids);
-        self::assertSame(1, \count(array_keys($ids, 'invalid-case-metadata', true)));
-    }
-
-    #[Test]
+    #[Group('finding-gate-e2e')]
     public function itJudgesNormalizationMeasurementsByTheirCanonicalOutcomeSide(): void
     {
         foreach ([false, true] as $malformed) {
@@ -201,11 +189,12 @@ final class CaseOutcomeCheckTest extends TestCase
     }
 
     #[Test]
+    #[Group('finding-gate-e2e')]
     public function itRefusesInvalidCorpusMetadataBeforeEveryCorpusReadingModeWrites(): void
     {
         $tree = SyntheticTree::clean();
         $tree['declarations']['cases/alpha/case.json'] = '{"id":"alpha"}';
-        $root = SyntheticTree::create($tree);
+        $root = SyntheticTree::fixture($tree);
         try {
             foreach ([[], ['--derive-declarations'], ['--derive-normalization']] as $flags) {
                 $before = Fs::read($root . '/finding-gate/normalization.tsv');
@@ -247,7 +236,7 @@ final class CaseOutcomeCheckTest extends TestCase
             ], \JSON_THROW_ON_ERROR);
         }
 
-        $root = SyntheticTree::create($tree);
+        $root = SyntheticTree::fixture($tree);
 
         try {
             $corpus = Corpus::load($root);

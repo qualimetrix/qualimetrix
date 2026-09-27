@@ -23,6 +23,9 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
 
     private ?RunContext $context = null;
 
+    /** @var array<string,list<string>> */
+    private array $envelopeFields = [];
+
     public function __construct(
         private readonly GateReport $report,
         private readonly Corpus $corpus,
@@ -80,10 +83,10 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
         }
         $payload = json_decode($stdout, true);
         if ($outcome === CaseOutcome::REFUSAL) {
-            if (!\is_array($payload) || array_keys($payload) !== ['error', 'exit_code', 'position']
-                || !\is_string($payload['error']) || $payload['error'] === '' || $payload['exit_code'] !== (int) $exit
-                || ($payload['position'] !== null && !\is_array($payload['position']))) {
-                $this->mismatch($side . ' / ' . $case->id, 'The JSON refusal is not the coherent error/exit_code/position envelope.');
+            if (!\is_array($payload) || array_keys($payload) !== $this->refusalFields($side)
+                || !\is_string($payload['error'] ?? null) || $payload['error'] === '' || ($payload['exit_code'] ?? null) !== (int) $exit
+                || (isset($payload['position']) && !\is_array($payload['position']))) {
+                $this->mismatch($side . ' / ' . $case->id, 'The JSON refusal differs from its publisher or has incoherent error/exit_code/position values.');
             }
             return;
         }
@@ -143,7 +146,15 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
     {
         $run = $this->run();
         $written = [];
+        if (!$run->report->canDerive([FailureClass::NONDETERMINISM_UNDECLARED, FailureClass::PATH_LEAK])) {
+            return [];
+        }
         foreach ($this->measured as $case => $snapshot) {
+            foreach ($run->report->raised() as $failure) {
+                if ($failure['class'] === FailureClass::CASE_OUTCOME_MISMATCH && str_contains($failure['scope'], $case)) {
+                    continue 2;
+                }
+            }
             $row = $run->declarations->outcomes->of($case);
             if ($row === null) {
                 throw new GateError('An unannounced outcome cannot be written.');
@@ -207,13 +218,77 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
         return $this->context ?? throw new GateError('An outcome extension has no live run context.');
     }
 
+    /** @return list<string> */
+    private function refusalFields(string $side): array
+    {
+        $side = $side === 'reference' ? 'reference' : 'candidate';
+        if (isset($this->envelopeFields[$side])) {
+            return $this->envelopeFields[$side];
+        }
+        $file = 'src/Infrastructure/Console/Refusal/RefusalPresenter.php';
+        $root = $this->context?->options->candidateRoot ?? \dirname(__DIR__, 2);
+        if ($side === 'reference' && $this->context !== null) {
+            $result = Process::run(['git', 'show', $this->context->options->reference . ':' . $file], $root);
+            if ($result['exit'] !== 0) {
+                throw new GateError('Cannot read the reference refusal publisher: ' . $result['stderr']);
+            }
+            $source = $result['stdout'];
+        } else {
+            $source = Fs::read($root . '/' . $file);
+        }
+        return $this->envelopeFields[$side] = self::deriveRefusalFields($source);
+    }
+
+    /** @return list<string> */
+    public static function deriveRefusalFields(string $source): array
+    {
+        $tokens = token_get_all($source);
+        $method = false;
+        $encoding = false;
+        $depth = 0;
+        $fields = [];
+        foreach ($tokens as $index => $token) {
+            if (\is_array($token) && $token[0] === \T_STRING && $token[1] === 'writeEnvelope') {
+                $method = true;
+            }
+            if ($method && \is_array($token) && $token[0] === \T_STRING && $token[1] === 'json_encode') {
+                $encoding = true;
+            }
+            if (!$encoding) {
+                continue;
+            }
+            if ($token === '[' || $token === '(') {
+                ++$depth;
+            } elseif ($token === ']' || $token === ')') {
+                --$depth;
+                if ($depth === 0) {
+                    break;
+                }
+            }
+            if ($depth !== 2 || !\is_array($token) || $token[0] !== \T_CONSTANT_ENCAPSED_STRING) {
+                continue;
+            }
+            $next = $index + 1;
+            while (isset($tokens[$next]) && \is_array($tokens[$next]) && $tokens[$next][0] === \T_WHITESPACE) {
+                ++$next;
+            }
+            if (isset($tokens[$next]) && \is_array($tokens[$next]) && $tokens[$next][0] === \T_DOUBLE_ARROW) {
+                $fields[] = substr($token[1], 1, -1);
+            }
+        }
+        if ($fields === [] || \count($fields) !== \count(array_unique($fields))) {
+            throw new GateError('The refusal envelope must publish a nonempty unique key set.');
+        }
+        return $fields;
+    }
+
     /**
      * Whether every case of one tree's run produced the artifacts a comparison
      * reads, reporting what did not.
      *
      * Split out because a *derivation* needs exactly this much judgement and no
-     * more. A derive run rewrites the tracked declaration the next ordinary run
-     * is judged against, so a run that failed must write nothing — but the
+     * more. A normalization derive run rewrites the tracked declaration the next ordinary run
+     * is judged against, so a failed normalization measurement must write nothing — but the
      * normalization derivation compares nothing, and every verdict lived in
      * compare(). It therefore wrote a measured list from runs that had produced
      * no output at all, under the sentence "Measured ... from repeated runs".

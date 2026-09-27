@@ -79,39 +79,6 @@ final class FingerprintControls
     }
 
     /**
-     * A side that does not agree with itself: the published hash is not the hash
-     * of the identity published beside it.
-     *
-     * This is the class the substitution rests on. The gate replaces a hash with
-     * an identity only because it has just proved that this side hashes that
-     * identity; salt the hash and the proof fails, which has to be its own
-     * failure rather than a surface diff somebody reads as a rename.
-     *
-     * `fingerprint-opaque` is required next to it, and the pair is the whole
-     * argument: the mismatch says the hash is not what it claims, and the opaque
-     * class says the comparison therefore could not stop being a comparison of
-     * hex. A run producing only the first would mean the substitution went ahead
-     * on an unproven pair.
-     */
-    public static function fingerprintSelfDisagreement(): Control
-    {
-        return Control::red(
-            'fingerprint-self-disagreement',
-            'the GitLab fingerprint hashes something other than the identity published beside it',
-            Mutation::edit(
-                'src/Reporting/Formatter/GitLabCodeQualityFormatter.php',
-                ['return md5($finding->getFingerprint());' => "return md5(\$finding->getFingerprint() . '-salted');"],
-                'the published hash is the hash of a salted identity',
-            ),
-            [
-                new Expectation(FailureClass::FINGERPRINT_MISMATCH, 'candidate /'),
-                new Expectation(FailureClass::FINGERPRINT_OPAQUE, 'candidate /'),
-            ],
-            [new Expectation(FailureClass::SURFACE_MISMATCH, 'format:gitlab')],
-        );
-    }
-
-    /**
      * A channel rename moves every fingerprint of every finding on it, and one
      * declared row is what makes that green. Registered under "no undeclared
      * deltas" so that a delta creeping back in fails it.

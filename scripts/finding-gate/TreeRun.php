@@ -40,7 +40,6 @@ final class TreeRun
         $case = $this->inputs->materialize($case);
         $plan = $this->plan;
         $config = $this->inputs->configuration($case);
-        $config = str_starts_with($config, '/') ? $config : $case->directory . '/' . $config;
         $arguments = $this->inputs->arguments($case);
         $check = ['check', ...$case->paths, ...self::CHECK_ARGUMENTS, '-c', $config, ...$arguments];
         $measured = [...$case->paths, '--no-ansi', '-c', $config, ...$arguments];
@@ -82,7 +81,7 @@ final class TreeRun
             } elseif ($surface === 'check:baseline-source') {
                 $sourceCase = $this->inputs->materialize($originalCase, true);
                 $baselineWorkingDirectory = $sourceCase->directory;
-                $sourceConfig = $sourceCase->directory . '/' . $this->inputs->configuration($sourceCase);
+                $sourceConfig = $this->inputs->configuration($sourceCase);
                 $sourceArguments = $this->inputs->arguments($sourceCase);
                 $baselineMeasured = [...$sourceCase->paths, '--no-ansi', '-c', $sourceConfig, ...$sourceArguments];
                 $cwd = $baselineWorkingDirectory;
@@ -109,7 +108,7 @@ final class TreeRun
                     if ($map === null) {
                         throw new GateError('The capture plan requires a channel rename input: ' . $key);
                     }
-                    $command = [$surface, $file, str_starts_with($map, '/') ? $map : $case->directory . '/' . $map, '--format=json', '--no-ansi'];
+                    $command = [$surface, $file, $map, '--format=json', '--no-ansi'];
                 } else {
                     $command = [$surface, $file, ...$measured];
                     if ($surface === 'baseline:cleanup') {
@@ -127,7 +126,9 @@ final class TreeRun
             $result = $this->invoke($key, $command, $cwd, $assertCache);
             $side = $this->label === 'reference' ? 'reference' : 'candidate';
             if ($descriptor['publicationKind'] === 'finding-json' && $descriptor['rankingSource'] === $key) {
-                $rankings[$key] = $this->captureRanking($case, $side, $key, $command, $cwd, $result['stdout']);
+                $rankings[$key] = $side === 'reference' && $result['exit'] === 3
+                    ? ['ranked' => $result, 'physical' => null]
+                    : $this->captureRanking($case, $side, $key, $command, $cwd, $result['stdout']);
             }
             if ($surface === 'check:output' && ((\in_array($result['exit'], [0, 1, 2], true)
                 && CaseOutcome::of($case, $side) === CaseOutcome::ANALYSIS) || is_file((string) $file))) {

@@ -170,7 +170,7 @@ complexity.ccn	producer	?		74	1239	2	3	31	234	0	41	0	0	0	0
 complexity.cognitive	producer	?		22	94	2	2	14	56	0	20	0	0	0	0
 complexity.npath	producer	?		19	108	2	2	4	52	0	14	0	0	0	0
 complexity.wmc	producer	?		21	87	2	2	4	38	0	12	0	0	0	0
-computed	producer	?		135	123	0	1	0	47	0	8	0	0	0	0
+computed	producer	?		135	123	0	1	0	47	0	9	0	0	0	0
 coupling.cbo	producer	?		74	365	2	5	5	140	0	10	0	0	0	0
 coupling.class-rank	producer	?		23	123	0	2	2	42	0	39	0	0	0	0
 coupling.distance	producer	?		33	94	2	2	1	49	0	41	0	0	0	0

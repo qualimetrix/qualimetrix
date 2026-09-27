@@ -44,6 +44,32 @@ final class FieldValuesCheck implements RunCheck, Derivation
         $fields = $this->run->declarations->fields;
         $this->rows = [];
         $problems = [];
+        foreach ($fields->views('json-document') as $view) {
+            foreach ($this->run->corpus->cases as $case) {
+                $invocation = null;
+                foreach ($this->run->capturePlan->invocations() as $descriptor) {
+                    if ($descriptor['scope'] === 'case:' . $case->id && ($descriptor['surface'] === $view || $descriptor['outputFileKind'] === $view)) {
+                        $invocation = Surfaces::key($descriptor['scope'], $descriptor['surface']);
+                        break;
+                    }
+                }
+                if ($invocation === null) {
+                    continue;
+                }
+                foreach (['candidate' => $candidate, 'reference' => $reference] as $side => $artifacts) {
+                    if (!CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($case, $side))
+                        || !$this->run->capturePlan->requiredOn($invocation, $side)) {
+                        continue;
+                    }
+                    $text = $artifacts['case:' . $case->id . '|' . $view] ?? null;
+                    if ($text === null) {
+                        throw new GateError('A declared document member has no captured report.');
+                    }
+                    $document = ReportRecords::object($this->run->normalization->normalize($view, $text));
+                    $fields->supply('json-document', $case->id, $view, $side, [['record' => '$', 'fields' => $document]]);
+                }
+            }
+        }
         foreach (DeclaredFields::REPORTS as $report) {
             foreach ($fields->measurements($report) as $publication) {
                 $view = $publication['view'];
@@ -105,7 +131,8 @@ final class FieldValuesCheck implements RunCheck, Derivation
         if (!$this->measured) {
             throw new GateError('Field values cannot be written before every required publication was measured.');
         }
-        if ($this->run->report->exitCode() !== GateReport::EXIT_GREEN || $this->run->declarations->fields->stale() !== []) {
+        if (!$this->run->report->canDerive([FailureClass::FIELD_VALUES_MISMATCH, FailureClass::RECORD_PROJECTION_MISMATCH,
+            FailureClass::NONDETERMINISM_UNDECLARED, FailureClass::PATH_LEAK]) || $this->run->declarations->fields->stale() !== []) {
             return [];
         }
         return DerivedTable::write($this->run->options->candidateRoot . '/finding-gate', DeclaredFields::DERIVED, $this->rendered(), \count($this->rows));

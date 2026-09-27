@@ -1,0 +1,179 @@
+<?php
+
+declare(strict_types=1);
+
+namespace QmxFindingGate\Tests;
+
+use QmxFindingGate\{DeclaredFields, Fs, GateReport, Options, ReportRecords, SyntheticTree, ValueCheck};
+
+/**
+ * Recorded publications exercise the comparison stages without capture processes or Git.
+ *
+ * @phpstan-import-type Specification from SyntheticTree
+ */
+final class RecordedComparison
+{
+    /** @param Specification $tree
+     * @param (callable(string):void)|null $prepare
+     */
+    public static function report(array $tree, ?callable $prepare = null): GateReport
+    {
+        return self::compare($tree, $prepare, false, null)[0];
+    }
+
+    /** @param Specification $tree */
+    public static function reportAt(array $tree, string $root, ?callable $referencePrepare = null): GateReport
+    {
+        return self::compare($tree, null, false, $root, $referencePrepare)[0];
+    }
+
+    /** @param Specification $tree
+     * @return array{GateReport,list<string>}
+     */
+    public static function derive(array $tree, string $root, ?callable $referencePrepare = null): array
+    {
+        return self::compare($tree, null, true, $root, $referencePrepare);
+    }
+
+    /** @param Specification $tree
+     * @param (callable(string):void)|null $prepare
+     *
+     * @return array{GateReport,list<string>}
+     */
+    private static function compare(array $tree, ?callable $prepare, bool $derive, ?string $root, ?callable $referencePrepare = null): array
+    {
+        $owned = $root === null;
+        $root ??= SyntheticTree::fixture($tree);
+        $reference = SyntheticTree::fixture($tree, candidate: false);
+        try {
+            if ($prepare !== null) {
+                $prepare($root);
+            }
+            if ($referencePrepare !== null) {
+                $referencePrepare($reference);
+            }
+            $report = new GateReport();
+            $maps = \QmxFindingGate\RenameMaps::load($root . '/finding-gate/maps', \QmxFindingGate\MetricVocabulary::ofTree($root));
+            $maps->acceptReferenceVocabulary(\QmxFindingGate\MetricVocabulary::ofTree($reference));
+            $declarations = \QmxFindingGate\Declarations::load($root);
+            $run = new \QmxFindingGate\RunContext(
+                Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root),
+                $report,
+                \QmxFindingGate\Corpus::load($root),
+                $maps,
+                \QmxFindingGate\ChannelSplit::of($maps),
+                \QmxFindingGate\MetricVocabulary::ofTree($root),
+                \QmxFindingGate\Normalization::fromRules([]),
+                $declarations,
+                $root,
+            );
+            $captures = [
+                'candidate' => self::capture($root, $run),
+                'reference' => self::capture($reference, $run),
+            ];
+            foreach ($captures as $side => $capture) {
+                $run->rankings->supply($side, $capture->rankings);
+            }
+            $derivations = [];
+            if ($derive) {
+                foreach (\QmxFindingGate\Wiring::gate()->list('derivations') as $name) {
+                    $class = 'QmxFindingGate\\' . $name;
+                    $derivation = $class::create($run);
+                    if (!$derivation instanceof \QmxFindingGate\Derivation) {
+                        throw new \QmxFindingGate\GateError('The recorded comparison requires a declaration writer.');
+                    }
+                    $derivation->startDeriving();
+                    $derivations[] = $derivation;
+                }
+            }
+            $records = \QmxFindingGate\RecordCheck::create($run);
+            $ranking = \QmxFindingGate\RankingCheck::create($run);
+            foreach ($captures as $side => $capture) {
+                foreach ($run->corpus->cases as $case) {
+                    $ranking->checkCase($side, $case, \QmxFindingGate\CaseOutcome::ANALYSIS, $capture->artifacts);
+                    $records->checkCase($side, $case, \QmxFindingGate\CaseOutcome::ANALYSIS, $capture->artifacts);
+                }
+            }
+            foreach (DeclaredFields::REPORTS as $fieldReport) {
+                foreach ($declarations->fields->views($fieldReport) as $view) {
+                    foreach ($run->corpus->cases as $case) {
+                        foreach (['candidate', 'reference'] as $side) {
+                            $declarations->fields->requireMeasurements($fieldReport, $case->id, $view, $side);
+                        }
+                    }
+                }
+            }
+            $stages = [];
+            foreach (\QmxFindingGate\Wiring::gate()->list('surfaceStages') as $name) {
+                $class = 'QmxFindingGate\\' . $name;
+                $stages[] = $class::create($run);
+            }
+            $delta = new \QmxFindingGate\DeclaredDeltaCheck($run->options, $report, $declarations->delta, $declarations->fieldMoves, $run->split);
+            if ($derive) {
+                $delta->startDeriving();
+            }
+            $fingerprints = new \QmxFindingGate\FingerprintCheck($report);
+            foreach ($captures as $side => $capture) {
+                foreach ($run->corpus->cases as $case) {
+                    $fingerprints->checkFingerprints($side, $case, ReportRecords::decode($capture->rankings['case:' . $case->id . '|format:json']['physical']['stdout'] ?? $capture->rankings['case:' . $case->id . '|format:json']['ranked']['stdout'])['violations'], $capture->artifacts);
+                }
+            }
+            $comparison = new \QmxFindingGate\SurfaceComparison($report, $run->corpus, $maps, $run->normalization, $fingerprints, $delta, $root, $stages, $records);
+            $a = $captures['candidate']->artifacts;
+            $b = $captures['reference']->artifacts;
+            $renameCheck = new \QmxFindingGate\RenameMapCheck($report, $run->corpus, $maps, $run->split);
+            $renameCheck->checkSplitExplanation($a, $b);
+            $comparison->compareSurfaces($a, $b);
+            $records->checkRun($a, $b);
+            ValueCheck::create($run)->checkRun($a, $b);
+            \QmxFindingGate\FieldValuesCheck::create($run)->checkRun($a, $b);
+            (new \QmxFindingGate\RenameMapCheck($report, $run->corpus, $maps, $run->split))->checkStaleMaps();
+            if (!$derive) {
+                (new \QmxFindingGate\StaleDeclarationCheck($report, $declarations))->checkStaleDeclarations();
+            }
+            $paths = [];
+            foreach ($derivations as $derivation) {
+                $paths = [...$paths, ...$derivation->rewriteDerived()];
+            }
+            return [$report, array_values($paths)];
+        } finally {
+            if ($owned) {
+                SyntheticTree::remove($root);
+            }
+            SyntheticTree::remove($reference);
+        }
+    }
+
+    private static function capture(string $root, \QmxFindingGate\RunContext $run): \QmxFindingGate\CaptureResult
+    {
+        $answers = json_decode(Fs::read($root . '/replay/answers.json'), true, 512, \JSON_THROW_ON_ERROR);
+        $artifacts = [];
+        $rankings = [];
+        foreach ($run->capturePlan->invocations() as $descriptor) {
+            $surface = $descriptor['surface'];
+            $key = $descriptor['scope'] . '|' . $surface;
+            $answer = $answers[$key];
+            $stdout = $answer['stdout'] ?? '';
+            if (isset($answer['summaryIssues'])) {
+                $stdout = "Analysis complete\nTop issues\n" . implode('', $answer['summaryIssues']);
+            }
+            $artifacts[$key] = $surface === 'baseline-file' ? ($answer['file'] ?? $stdout) : $stdout;
+            $artifacts[$descriptor['scope'] . '|exit:' . ($surface === 'baseline-file' ? 'baseline:generate' : $surface)] = (string) ($answer['exit'] ?? 0);
+            $artifacts[$descriptor['scope'] . '|stderr:' . $surface] = $answer['stderr'] ?? '';
+            if ($descriptor['outputFileKind'] !== null) {
+                $artifacts[$descriptor['scope'] . '|' . $descriptor['outputFileKind']] = $answer['file'] ?? '';
+            }
+            if ($descriptor['rankingSource'] === $key) {
+                $slot = $answer['ranked'];
+                $physical = $answer['physical'] ?? null;
+                $document = ReportRecords::decode($stdout);
+                $rankings[$key] = [
+                    'ranked' => ['stdout' => $slot['stdout'] ?? '', 'stderr' => $slot['stderr'] ?? ($answer['stderr'] ?? ''), 'exit' => $slot['exit'] ?? ($answer['exit'] ?? 0)],
+                    'physical' => ($document['violationsMeta']['truncated'] ?? false) === true && $physical !== null ? ['stdout' => $physical['stdout'] ?? '', 'stderr' => $physical['stderr'] ?? ($answer['stderr'] ?? ''), 'exit' => $physical['exit'] ?? ($answer['exit'] ?? 0)] : null,
+                ];
+            }
+        }
+        return new \QmxFindingGate\CaptureResult($artifacts, $rankings);
+    }
+
+}
