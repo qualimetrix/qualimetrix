@@ -49,6 +49,7 @@ COMMON_ARGUMENTS = (
     "--no-coverage",
     "--exclude-group=benchmark",
     "--exclude-group=live-freshness",
+    "--exclude-group=finding-gate-e2e",
 )
 REFUSAL_EXIT = 2
 TIMEOUT_EXIT = 124
@@ -113,7 +114,7 @@ def parse_arguments(arguments: Sequence[str]) -> argparse.Namespace:
     parser.add_argument(
         "--timeout",
         type=parse_positive_seconds,
-        default=2700.0,
+        default=900.0,
         help="Deadline for discovery and all suite shards in seconds",
     )
     parser.add_argument(

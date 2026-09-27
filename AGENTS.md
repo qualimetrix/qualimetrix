@@ -583,7 +583,8 @@ composer check          # everything below, in the order a failure is cheapest t
 composer check:code     # what a code change invalidates: cs-check, phpstan, PHPUnit, JS tests, cross-tool
 composer check:docs     # what a website change invalidates: a strict mkdocs build
 composer check:artifacts # what a manifest, config or corpus change invalidates: every generated artifact
-composer check:self     # what the product says about this repo: gate self-test + qmx ratchet + directive audit
+composer check:self     # what the product says about this repo: qmx ratchet + directive audit
+composer check:gate     # gate end-to-end tests, observed witnesses and negative controls
 composer architecture:check # exact manifest policy + generated-artifact freshness
 composer docs:check     # mkdocs --strict build of website/ (broken links, nav gaps)
 composer test           # PHPUnit
@@ -661,6 +662,7 @@ bin/qmx check --help
 
 **Project-specific steps** (in addition to the global workflow):
 - **Validation**: `composer check` (cs-check + strict docs build + tests + phpstan + exact manifest/freshness check + coarse qmx selfcheck). A direct `bin/qmx check` is product analysis only and does not run the repository's exact manifest policy. When modifying `html-report/`, also run `composer build:js` (`test:js` is part of `check:code` since X9)
+- **Gate validation**: `composer check:gate` is required when changing `scripts/finding-gate*` or `finding-gate/`. It runs separately from `composer check` and has its own CI job on every push and pull request.
 - **Documentation**: Update `README.md` in the affected `src/` directory (add new files, fix outdated info). Update website documentation (see [Website Documentation](#website-documentation) section below)
 
 ### Efficient validation order
@@ -684,8 +686,9 @@ For multi-package changes, fail fast before paying for the full test suite:
 what invalidates it, so a change that touched one thing pays for one group:
 `check:code` (style, static analysis, PHP and JS tests), `check:docs` (strict mkdocs),
 `check:artifacts` (manifest and every generated artifact against a fresh
-measurement) and `check:self` (the gate's self-test, the qmx ratchet, and the
-inline-directive audit). Sizes
+measurement) and `check:self` (the qmx ratchet and the inline-directive audit).
+Gate end-to-end tests, observed witnesses and negative controls have their own
+`check:gate` group and CI job. Sizes
 measured on this tree: the tests dominate at ~150s, the suppression snapshot
 costs ~20s, and everything else together is under 15s. `architecture:check`
 deliberately runs in both `check:artifacts` and — as its first half —
