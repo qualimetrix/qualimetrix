@@ -688,9 +688,12 @@ what invalidates it, so a change that touched one thing pays for one group:
 `check:artifacts` (manifest and every generated artifact against a fresh
 measurement) and `check:self` (the qmx ratchet and the inline-directive audit).
 Gate end-to-end tests, observed witnesses and negative controls have their own
-`check:gate` group and CI job. Sizes
-measured on this tree: the tests dominate at ~150s, the suppression snapshot
-costs ~20s, and everything else together is under 15s. `architecture:check`
+`check:gate` group and CI job. Measured on this tree after separating that
+group: the complete routine check took 224s, its longest parallel PHP test
+shard took 122s, all artifact checks together took 26s, and the strict docs
+build took 2s. The gate's 37 end-to-end cases took 466s in the separate group;
+its self-tests and controls add their own measured runtime to that group.
+`architecture:check`
 deliberately runs in both `check:artifacts` and — as its first half —
 `selfcheck`: the ratchet may not judge a tree whose generated artifacts are
 stale. Only the aggregate is evidence for review; a green group is evidence
