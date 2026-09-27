@@ -25,7 +25,7 @@ Consumers of failure reports must handle `record-ambiguous`,
 `ranking-projection-mismatch` and `ranking-order-mismatch`. Wiring no longer
 accepts `pending`, including an empty key, and every failure class requires an
 observed producer witness. See [ADR 0087](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0087-the-finding-gate-declares-measured-changes.md)
-and [the gate declaration reference](finding-gate/README.md).
+and [the gate declaration reference](https://github.com/qualimetrix/qualimetrix/blob/main/finding-gate/README.md).
 
 **The project distance aggregate is renamed and now covers every namespace that
 declares a type.** `coupling.distance.avg` and `coupling.distance.count` at
