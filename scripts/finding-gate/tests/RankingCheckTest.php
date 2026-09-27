@@ -85,6 +85,34 @@ final class RankingCheckTest extends TestCase
 
     #[Test]
     #[Group('finding-gate-e2e')]
+    public function itDoesNotDeriveHiddenRankingDriftBesideAnUnrelatedSurfaceFailure(): void
+    {
+        $records = self::records(2);
+        $tree = self::rankedTree($records, self::issues($records, [20, 10]), 0);
+        $tree['declarations']['cases/alpha/case.json'] = self::definition(['--top=0']);
+        $answer = self::answer($tree, 'case:alpha|format:json');
+        $ranked = ReportRecords::decode($answer['ranked']['stdout']);
+        $ranked['topIssues'][0]['impactScore'] = 21;
+        $answer['ranked']['stdout'] = ValueCheck::value($ranked);
+        $tree['candidateAnswers']['case:alpha|format:json'] = $answer;
+        $tree['candidateAnswers']['case:alpha|format:health'] = ['stdout' => "Changed health publication.\n"];
+        $tree['declarations'][DeclaredValues::INDEX] = Tsv::render(DeclaredValues::COLUMNS, [['field', 'ranking.impactScore', '*', 'Change the declared hidden score.']]);
+        $root = SyntheticTree::create($tree);
+        try {
+            self::plantRepeatedCaptureChange($root, 'impactScore');
+            $report = new GateReport();
+            $written = (new \QmxFindingGate\Gate(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root), $report))->deriveDeclarations();
+            self::assertSame([], $written);
+            self::assertContains(FailureClass::SURFACE_MISMATCH, $report->failureClasses(), $report->render());
+            self::assertContains(FailureClass::NONDETERMINISM_UNDECLARED, $report->failureClasses(), $report->render());
+            self::assertFileDoesNotExist($root . '/finding-gate/' . DeclaredValues::DERIVED);
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
+    #[Test]
+    #[Group('finding-gate-e2e')]
     public function itIgnoresRepeatedRankPositionsAndPrivateLayoutOutsideThePublishedSlice(): void
     {
         $records = self::records(2);

@@ -141,6 +141,7 @@ final class TestFilesAreExecutedTest extends TestCase
         'QmxFindingGate\\Tests\\RankingCheckTest::itChecksHealthyFullRankingAndZeroSlicesThroughThePublicGate',
         'QmxFindingGate\\Tests\\RankingCheckTest::itDerivesAnExactWithdrawalThatPullsTheNextRankedFindingIntoTheSlice',
         'QmxFindingGate\\Tests\\RankingCheckTest::itDerivesOnlyDeclaredScoreKeysAndUsesTheSameLcsForExactOrderRows',
+        'QmxFindingGate\\Tests\\RankingCheckTest::itDoesNotDeriveHiddenRankingDriftBesideAnUnrelatedSurfaceFailure',
         'QmxFindingGate\\Tests\\RankingCheckTest::itIgnoresRepeatedRankPositionsAndPrivateLayoutOutsideThePublishedSlice',
         'QmxFindingGate\\Tests\\RankingCheckTest::itLicensesAnExactHiddenPhysicalValueAndRefusesAnUnlistedHiddenKeyWithoutWriting',
         'QmxFindingGate\\Tests\\RankingCheckTest::itObservesTheExactRegisteredRankingRaiseSitesThroughThePublicGate',

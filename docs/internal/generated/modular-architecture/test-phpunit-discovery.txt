@@ -425,6 +425,7 @@ Available tests:
  - QmxFindingGate\Tests\RankingCheckTest::itChecksSummaryRoundingAdviceProjectLocationTagAndDebt
  - QmxFindingGate\Tests\RankingCheckTest::itDerivesAnExactWithdrawalThatPullsTheNextRankedFindingIntoTheSlice
  - QmxFindingGate\Tests\RankingCheckTest::itDerivesOnlyDeclaredScoreKeysAndUsesTheSameLcsForExactOrderRows
+ - QmxFindingGate\Tests\RankingCheckTest::itDoesNotDeriveHiddenRankingDriftBesideAnUnrelatedSurfaceFailure
  - QmxFindingGate\Tests\RankingCheckTest::itExcludesDeclaredScoreMovesFromTheUnchangedOrderPopulation
  - QmxFindingGate\Tests\RankingCheckTest::itIgnoresOnlyOrderOutsideBothPublishedSlices
  - QmxFindingGate\Tests\RankingCheckTest::itIgnoresRepeatedRankPositionsAndPrivateLayoutOutsideThePublishedSlice

@@ -308,7 +308,7 @@ final class Gate
             $this->declaredDeltaCheck->checkStaleFieldMoves();
             $this->staleDeclarationCheck->checkStaleDeclarations();
             $secondAuthority = $this->captureAuthority('candidate-2', $secondCapture);
-            if ($secondAuthority !== null && $this->report->exitCode() === GateReport::EXIT_GREEN) {
+            if ($secondAuthority !== null) {
                 RankingCheck::create($this->context)->checkRepeatedCaptures($firstCapture, $secondCapture);
             }
         } finally {
