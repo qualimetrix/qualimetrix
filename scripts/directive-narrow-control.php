@@ -336,9 +336,9 @@ final class Harness
             '--sweep=' . $sweep,
         ];
 
-        $startedAt = microtime(true);
+        $startedAt = (hrtime(true) / 1_000_000_000);
         $result = Process::run($command, self::rootPath());
-        $seconds = microtime(true) - $startedAt;
+        $seconds = (hrtime(true) / 1_000_000_000) - $startedAt;
 
         if (!\is_array(json_decode($result['stdout'], true))) {
             throw new AuditReportError(\sprintf(

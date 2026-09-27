@@ -318,7 +318,7 @@ final class Harness
         $outcomes = [];
         $inFlight = [];
         $next = 0;
-        $spokeAt = microtime(true);
+        $spokeAt = (hrtime(true) / 1_000_000_000);
 
         while ($next < $total || $inFlight !== []) {
             Shell::stopIfRequested();
@@ -334,7 +334,7 @@ final class Harness
                     self::announce($next, $total, $outcomes[$next], 0.0);
                 }
 
-                $spokeAt = microtime(true);
+                $spokeAt = (hrtime(true) / 1_000_000_000);
                 ++$next;
             }
 
@@ -349,12 +349,12 @@ final class Harness
                 unset($inFlight[$index]);
                 $outcomes[$index] = $this->settle($attempt);
                 self::announce($index, $total, $outcomes[$index], $elapsed);
-                $spokeAt = microtime(true);
+                $spokeAt = (hrtime(true) / 1_000_000_000);
             }
 
-            if ($inFlight !== [] && microtime(true) - $spokeAt >= self::LIVENESS_INTERVAL_SECONDS) {
+            if ($inFlight !== [] && (hrtime(true) / 1_000_000_000) - $spokeAt >= self::LIVENESS_INTERVAL_SECONDS) {
                 printf("      in flight  %s\n", self::liveness($inFlight, $total));
-                $spokeAt = microtime(true);
+                $spokeAt = (hrtime(true) / 1_000_000_000);
             }
         }
 

@@ -476,7 +476,7 @@ final class ChildProcessDrainTest extends TestCase
         $process = proc_open($command, [1 => ['file', $stdoutFile, 'w'], 2 => ['file', $stderrFile, 'w']], $pipes);
         self::assertIsResource($process);
 
-        $deadline = microtime(true) + $seconds;
+        $deadline = (hrtime(true) / 1_000_000_000) + $seconds;
         $timedOut = false;
         while (true) {
             $status = proc_get_status($process);
@@ -484,7 +484,7 @@ final class ChildProcessDrainTest extends TestCase
             if (!$status['running']) {
                 break;
             }
-            if (microtime(true) >= $deadline) {
+            if ((hrtime(true) / 1_000_000_000) >= $deadline) {
                 $timedOut = true;
                 proc_terminate($process, \defined('SIGKILL') ? \SIGKILL : 9);
                 break;

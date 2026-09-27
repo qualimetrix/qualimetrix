@@ -45,7 +45,7 @@ final class CaseScheduler
         $completed = [];
         $next = 0;
         $finished = 0;
-        $lastHeartbeatAt = microtime(true);
+        $lastHeartbeatAt = (hrtime(true) / 1_000_000_000);
         $total = \count($cases);
 
         try {
@@ -119,12 +119,12 @@ final class CaseScheduler
                     $completed[$index] = $capture;
                     ++$finished;
                     $this->announce($finished, $total, \count($inFlight));
-                    $lastHeartbeatAt = microtime(true);
+                    $lastHeartbeatAt = (hrtime(true) / 1_000_000_000);
                 }
 
-                if ($inFlight !== [] && microtime(true) - $lastHeartbeatAt >= self::HEARTBEAT_SECONDS) {
+                if ($inFlight !== [] && (hrtime(true) / 1_000_000_000) - $lastHeartbeatAt >= self::HEARTBEAT_SECONDS) {
                     $this->announce($finished, $total, \count($inFlight));
-                    $lastHeartbeatAt = microtime(true);
+                    $lastHeartbeatAt = (hrtime(true) / 1_000_000_000);
                 }
             }
         } finally {

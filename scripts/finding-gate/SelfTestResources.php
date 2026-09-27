@@ -52,7 +52,7 @@ final class SelfTestResources extends SelfTestGroup
     /** A child that closes its pipes before hanging is still covered by the deadline. */
     public function processDeadline(): void
     {
-        $startedAt = microtime(true);
+        $startedAt = (hrtime(true) / 1_000_000_000);
         $message = null;
 
         try {
@@ -70,7 +70,7 @@ final class SelfTestResources extends SelfTestGroup
             'a process that closes both pipes before hanging is refused by the deadline',
         );
         $this->assert(
-            microtime(true) - $startedAt < 1.5,
+            (hrtime(true) / 1_000_000_000) - $startedAt < 1.5,
             'the process deadline does not fall through to an unbounded proc_close',
         );
     }
@@ -92,16 +92,16 @@ final class SelfTestResources extends SelfTestGroup
                 // The deadline is the trigger under test.
             }
 
-            $deadline = microtime(true) + 0.5;
-            while (!is_file($pidPath) && microtime(true) < $deadline) {
+            $deadline = (hrtime(true) / 1_000_000_000) + 0.5;
+            while (!is_file($pidPath) && (hrtime(true) / 1_000_000_000) < $deadline) {
                 usleep(10_000);
             }
 
             $pid = (int) (is_file($pidPath) ? Fs::read($pidPath) : '0');
             $this->assert($pid > 1, 'the TERM handler spawned the late child used by the process-group control');
 
-            $deadline = microtime(true) + 0.5;
-            while ($pid > 1 && @posix_kill($pid, 0) && microtime(true) < $deadline) {
+            $deadline = (hrtime(true) / 1_000_000_000) + 0.5;
+            while ($pid > 1 && @posix_kill($pid, 0) && (hrtime(true) / 1_000_000_000) < $deadline) {
                 usleep(10_000);
             }
             $this->assert($pid < 2 || !@posix_kill($pid, 0), 'the process deadline leaves no late child behind');
@@ -150,9 +150,9 @@ final class SelfTestResources extends SelfTestGroup
 
             // Wait for the registration to exist, which is what makes this the
             // mid-add window rather than the before-add one.
-            $deadline = microtime(true) + 30;
+            $deadline = (hrtime(true) / 1_000_000_000) + 30;
 
-            while (self::registeredWorktrees($repository) === [] && microtime(true) < $deadline) {
+            while (self::registeredWorktrees($repository) === [] && (hrtime(true) / 1_000_000_000) < $deadline) {
                 usleep(50_000);
             }
 
@@ -421,9 +421,9 @@ final class SelfTestResources extends SelfTestGroup
 
         stream_set_blocking($pipes[1], false);
         $paths = [];
-        $deadline = microtime(true) + 30;
+        $deadline = (hrtime(true) / 1_000_000_000) + 30;
 
-        while (\count($paths) < 2 && microtime(true) < $deadline) {
+        while (\count($paths) < 2 && (hrtime(true) / 1_000_000_000) < $deadline) {
             $line = fgets($pipes[1]);
 
             if ($line === false) {
@@ -470,9 +470,9 @@ final class SelfTestResources extends SelfTestGroup
     /** @param array{pid: int, handle: resource, stdout: resource, paths: list<string>} $child */
     private static function waitForExit(array $child): int
     {
-        $deadline = microtime(true) + 30;
+        $deadline = (hrtime(true) / 1_000_000_000) + 30;
 
-        while (microtime(true) < $deadline) {
+        while ((hrtime(true) / 1_000_000_000) < $deadline) {
             $status = proc_get_status($child['handle']);
 
             if ($status['running'] === false) {

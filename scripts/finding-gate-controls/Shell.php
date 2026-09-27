@@ -368,7 +368,7 @@ final class Child
         array $pipes,
     ) {
         $this->open = [1 => $pipes[1], 2 => $pipes[2]];
-        $this->startedAt = microtime(true);
+        $this->startedAt = (hrtime(true) / 1_000_000_000);
         $this->lastOutputAt = $this->startedAt;
 
         foreach ($this->open as $stream) {
@@ -391,7 +391,7 @@ final class Child
             if (\is_string($chunk) && $chunk !== '') {
                 $this->buffers[$key] .= $chunk;
                 $this->bytes += \strlen($chunk);
-                $this->lastOutputAt = microtime(true);
+                $this->lastOutputAt = (hrtime(true) / 1_000_000_000);
             }
 
             if (feof($stream)) {
@@ -439,12 +439,12 @@ final class Child
 
     public function age(): float
     {
-        return microtime(true) - $this->startedAt;
+        return (hrtime(true) / 1_000_000_000) - $this->startedAt;
     }
 
     public function outputAge(): float
     {
-        return microtime(true) - $this->lastOutputAt;
+        return (hrtime(true) / 1_000_000_000) - $this->lastOutputAt;
     }
 
     public function bytes(): int
