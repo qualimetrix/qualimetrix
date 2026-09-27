@@ -26,8 +26,10 @@ measured forms and residual diffs after validating the run; unexplained
 changes refuse the write. An unused declaration is stale.
 
 Physical finding authority is complete even when the public report truncates
-its records. Additional captures must preserve the original population,
-visible prefix, ranking, exit and semantic diagnostics. A missing provider
+its records. Additional captures must preserve every original visible record
+unchanged, including its multiplicity, within the complete physical population.
+They must also preserve population counts, ranking, exit and semantic diagnostics.
+A missing provider
 refuses where its data is needed rather than supplying an empty population.
 
 JSON correspondence uses physical fields plus the virtual

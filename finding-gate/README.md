@@ -201,8 +201,9 @@ For JSON, the gate obtains complete physical authority even when the published
 `violations` list is truncated. It first captures the same invocation with
 `--top=<total+1>`. If physical records are capped, it obtains a second
 support publication without presentation caps, with `--detail=all` and
-`--format-opt=violations=all`. The original visible records must be the
-physical prefix; totals, per-rule population, complete ranking, exit and
+`--format-opt=violations=all`. Each original visible record must occur unchanged
+in the complete physical population, preserving its multiplicity. Totals,
+per-rule population, complete ranking, exit and
 semantic stderr must agree. Hidden physical fields remain compared through
 this complete authority.
 
@@ -529,6 +530,8 @@ Each limit needs its own product or delivery check:
 - Positions of records with changed ranking values, or introduced/withdrawn
   unpaired records: ranking order judges unchanged paired values only.
 - Ranking order outside both published slices: use product ranking tests.
+- Physical record order or the position of visible records within the complete
+  physical population: use formatter tests.
 - Algorithmic correctness inside an explicitly changed ranking value: use impact
   and coupling tests.
 - Changing which findings participate in complete ranking is not declarable
