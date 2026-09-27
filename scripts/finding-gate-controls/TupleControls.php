@@ -19,7 +19,9 @@ final class TupleControls
             'tuple-publisher-drift',
             'the JSON publisher adds a member absent from the tracked equivalence tuple',
             self::addedMember(),
-            [new Expectation(FailureClass::TUPLE_FIELD_DRIFT, EquivalenceTuple::TRACKED_PATH), ...self::recordExpectations('candidate')],
+            [new Expectation(FailureClass::TUPLE_FIELD_DRIFT, EquivalenceTuple::TRACKED_PATH),
+                new Expectation(FailureClass::RUN_FAILED, 'candidate-2 / annotations', exactScope: true),
+                ...self::recordExpectations('candidate')],
         );
     }
 
