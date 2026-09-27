@@ -698,6 +698,30 @@ gates. For every long-running or redirected command, persist its output under
 `/tmp`, wait for completion, and inspect the explicit exit code. Empty or
 redirected stdout is never evidence of success.
 
+### Adding checks
+
+Every confirmed defect gets a regression test, at the cheapest level that
+reproduces it: a unit or stage-level test, and a test that spawns processes or
+builds a repository only when the defect lives in that wiring.
+
+Anything beyond a regression test — a governance test, a gate form or control,
+a stand, a generated artifact with a freshness check, a CI job — is added only
+when it catches a harm no regression test can. Name that harm, its runtime
+cost and its false-red modes in the change's ADR or review material; if you
+cannot name the harm, do not add the check.
+
+Do not add a permanent check whose subject is another check. Prove that a new
+check bites once, with a planted defect in the change itself.
+
+`composer check` must stay under 8 minutes on the development machine. A change
+that pushes it over reclaims the time in the same change: move the cost to a
+narrower group, lower the level of the expensive tests, or delete a redundant
+check. Raising a timeout to absorb growth is not a fix.
+
+When review finds a second input form that slips past a check, narrow the
+check's promise to what it reliably covers and name the rest as a limitation
+in its README. Do not add another form.
+
 **Architecture Decision Records:** After implementing a feature with non-obvious design decisions, create an ADR in `docs/adr/` (see [docs/adr/README.md](docs/adr/README.md) for format). If a spec existed during design (`docs/internal/SPEC_*.md`), it can be archived or deleted after the ADR captures key decisions. ADRs preserve the "why" — implementation details live in code and component READMEs.
 
 **Commit granularity:** Split large changes into logical commits when it improves changelog readability. Each commit should represent one coherent change (e.g., separate "rename command" from "update documentation"). Avoid monolithic commits that bundle unrelated changes — they make changelogs harder to generate and git history harder to navigate.
