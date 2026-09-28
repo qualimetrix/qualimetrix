@@ -757,14 +757,16 @@ misspelt key or a wrong value in a preset is refused even when your file
 overrides it. Then the layers are merged, each key by the policy it declares.
 What the merged value means — a layer name `architecture.allow` refers to, a
 formula that has to compile — is judged once, on the merged value. A refusal
-about a key in the table below, and every warning, names the layer that wrote
+about a resolved value, and every warning, names the layer that wrote
 the value it is about; in `--format=json` that is the `source` field (see
-[Output Formats](../usage/output-formats.md)). Every declared non-rule value
-uses that provenance directly. The `rules` root is the one temporary boundary:
-its owner still applies the existing rule-specific semantics while that work is
-completed separately.
+[Output Formats](../usage/output-formats.md)). Three Finding inputs remain on a
+temporary boundary: `rules`, `only_rules` and `disabled_rules`. The document
+engine checks their declared form in each layer, but their owner still reads
+raw contributions for rule-specific semantics. Those semantic refusals do not
+yet retain the authored value's provenance.
 
-Five rules hold at every declared key outside `rules`:
+Five rules describe the document engine; rule-specific meaning for these
+three Finding inputs remains with their owner:
 
 - **`~` means "not written".** A key written `~`, or left empty (`key:`), leaves
   the value to the layer below. The key itself is still recognised: a misspelt

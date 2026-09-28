@@ -141,7 +141,7 @@ final class RuntimeConfigurator
     /**
      * Resolves the effective `--format`/`format:` value without a second
      * service dependency: {@see \Qualimetrix\Reporting\Configuration\OutputFormatResolver}
-     * reads the identical contribution list, and duplicating the two-line
+     * reads the same resolved value, and duplicating the two-line
      * read here is cheaper than wiring a Reporting contract into this class
      * for one string.
      *
