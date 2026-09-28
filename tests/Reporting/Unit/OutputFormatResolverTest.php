@@ -7,12 +7,14 @@ namespace Qualimetrix\Tests\Reporting\Unit;
 use LogicException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Reporting\Configuration\OutputFormatResolver;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 final class OutputFormatResolverTest extends TestCase
 {
@@ -42,29 +44,46 @@ final class OutputFormatResolverTest extends TestCase
         };
 
         $resolver = new OutputFormatResolver($formatters);
-        self::assertSame('summary', $resolver->resolve(new ConfigurationDocument([], AbsolutePath::fromString('/project')))->value);
-        self::assertSame('json', $resolver->resolve(new ConfigurationDocument([
+        self::assertSame('summary', $resolver->resolve(LayeredDocument::of([], AbsolutePath::fromString('/project')))->value);
+        self::assertSame('json', $resolver->resolve(LayeredDocument::of([
             ['source' => 'config', 'values' => ['format' => 'text']],
             ['source' => 'cli', 'values' => ['format' => 'json']],
         ], AbsolutePath::fromString('/project')))->value);
     }
 
     /**
-     * Every contribution is judged, not only the winning one: a value nobody
-     * will use is still a value somebody wrote, and answering it only when it
-     * happens to win makes the same typo silent or fatal depending on what
-     * else was passed.
+     * A lower value that the winning layer replaces is structurally valid but
+     * not executable input. The output resolver therefore judges only the
+     * authored winner the run will use.
      */
     #[Test]
-    public function itRefusesAnUnknownFormatInTheFileEvenWhenTheCommandLineOverridesIt(): void
+    public function itIgnoresAnOverwrittenUnknownFormat(): void
     {
         $resolver = new OutputFormatResolver($this->formatters());
 
-        self::expectException(ConfigurationRefusal::class);
-        $resolver->resolve(new ConfigurationDocument([
+        self::assertSame('json', $resolver->resolve(LayeredDocument::of([
             ['source' => 'config', 'values' => ['format' => 'nope']],
             ['source' => 'cli', 'values' => ['format' => 'json']],
-        ], AbsolutePath::fromString('/project')));
+        ], AbsolutePath::fromString('/project')))->value);
+    }
+
+    #[Test]
+    public function itRefusesAnUnknownWinningFormatAtItsAuthoredPath(): void
+    {
+        try {
+            (new OutputFormatResolver($this->formatters()))->resolve(LayeredDocument::of([
+                ['source' => 'preset', 'values' => ['format' => 'json']],
+                ['source' => 'qmx.yaml', 'values' => ['format' => 'nope']],
+            ], AbsolutePath::fromString('/project')));
+            self::fail('An unknown winning output format was accepted.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame(
+                [ConfigurationSource::ConfigFile],
+                array_map(static fn(ConfigurationOrigin $origin): ConfigurationSource => $origin->source(), $refusal->sources()),
+            );
+            self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
+            self::assertSame(['format'], $refusal->position()?->segments);
+        }
     }
 
     private function formatters(): FormatterRegistryInterface
