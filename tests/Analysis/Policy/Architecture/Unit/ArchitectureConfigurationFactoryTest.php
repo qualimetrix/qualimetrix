@@ -310,8 +310,9 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             $this->factory->fromResolved(ArchitectureDocument::file(['foo', 'bar']));
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::ConfigFile, $e->origin()->source());
-            self::assertSame(ArchitectureDocument::FILE, $e->origin()->locator());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
             self::assertStringContainsString('must be a map, got a list', $e->getMessage());
         }
     }
@@ -325,8 +326,9 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             ]));
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::ConfigFile, $e->origin()->source());
-            self::assertSame(ArchitectureDocument::FILE, $e->origin()->locator());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
             self::assertStringContainsString('layres', $e->getMessage());
             self::assertStringContainsString('did you mean "layers"', $e->getMessage());
             self::assertSame(['architecture', 'layres'], $e->position()?->segments);
@@ -343,8 +345,9 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             ]));
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::ConfigFile, $e->origin()->source());
-            self::assertSame(ArchitectureDocument::FILE, $e->origin()->locator());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
             self::assertStringContainsString('imports', $e->getMessage());
         }
     }
@@ -361,7 +364,8 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             ]));
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ArchitectureDocument::FILE, $e->origin()->locator());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
             self::assertSame('coverage_gapp', $e->position()?->written);
             self::assertStringContainsString('Unknown key "architecture.coverage_gapp"', $e->getMessage());
         }
@@ -380,8 +384,9 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             ]));
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::ConfigFile, $e->origin()->source());
-            self::assertSame(ArchitectureDocument::FILE, $e->origin()->locator());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
         }
     }
 
@@ -395,8 +400,9 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             ]));
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::ConfigFile, $e->origin()->source());
-            self::assertSame(ArchitectureDocument::FILE, $e->origin()->locator());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
         }
     }
 
@@ -410,8 +416,9 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             ]));
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::ConfigFile, $e->origin()->source());
-            self::assertSame(ArchitectureDocument::FILE, $e->origin()->locator());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
         }
     }
 
@@ -501,8 +508,9 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             ]));
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::ConfigFile, $e->origin()->source());
-            self::assertSame(ArchitectureDocument::FILE, $e->origin()->locator());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
             self::assertStringContainsString('architecture.allow.controller[0]', $e->getMessage());
             self::assertStringContainsString("unbalanced '{'", $e->getMessage());
         }

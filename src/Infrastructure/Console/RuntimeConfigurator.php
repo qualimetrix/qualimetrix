@@ -135,20 +135,13 @@ final class RuntimeConfigurator
      */
     private function resolveRuntimeLimits(ConfigurationDocument $document): RuntimeLimits
     {
-        $value = null;
-        foreach ($document->contributions(ConfigSchema::MEMORY_LIMIT) as $candidate) {
-            if (\is_string($candidate) || \is_int($candidate)) {
-                $value = (string) $candidate;
-            }
-        }
-
-        return new RuntimeLimits($value);
+        return RuntimeLimits::fromResolvedValue($document->resolved()->get(ConfigSchema::MEMORY_LIMIT));
     }
 
     /**
      * Resolves the effective `--format`/`format:` value without a second
      * service dependency: {@see \Qualimetrix\Reporting\Configuration\OutputFormatResolver}
-     * reads the identical contribution list, and duplicating the two-line
+     * reads the same resolved value, and duplicating the two-line
      * read here is cheaper than wiring a Reporting contract into this class
      * for one string.
      *
@@ -164,14 +157,9 @@ final class RuntimeConfigurator
      */
     private function resolveFormat(ConfigurationDocument $document): ?string
     {
-        $value = null;
-        foreach ($document->contributions(ConfigSchema::FORMAT) as $contribution) {
-            if (\is_string($contribution)) {
-                $value = $contribution;
-            }
-        }
+        $format = $document->resolved()->get(ConfigSchema::FORMAT)?->plain();
 
-        return $value;
+        return \is_string($format) ? $format : null;
     }
 
     /**

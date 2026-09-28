@@ -890,8 +890,9 @@ final class RuleOptionsFactoryTest extends TestCase
                 'Option "warningThreshold" of rule "test-rule" must be a non-negative whole number or null, got a string.',
                 $e->getMessage(),
             );
-            self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
-            self::assertNull($e->origin()->locator());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::Resolved, $e->sources()[0]->source());
+            self::assertNull($e->sources()[0]->locator());
             self::assertNotNull($e->position());
             self::assertSame('warningThreshold', $e->position()->written);
             self::assertFalse($e->position()->closed);
@@ -1292,7 +1293,8 @@ final class RuleOptionsFactoryTest extends TestCase
             self::assertStringContainsString('The "exclude_namespaces" option was retired', $e->getMessage());
             self::assertStringContainsString('use "suppress_namespaces"', $e->getMessage());
             self::assertStringContainsString('"exclude" option instead', $e->getMessage());
-            self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::Resolved, $e->sources()[0]->source());
         }
     }
 

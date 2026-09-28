@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolution
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -116,7 +117,7 @@ final class EmptyCliValueReachesItsOwnerTest extends TestCase
         $pipeline = new class implements ConfigurationPipelineInterface {
             public function resolve(ConfigurationResolutionRequest $request): ConfigurationDocument
             {
-                return new ConfigurationDocument([], AbsolutePath::fromString('/project'));
+                return LayeredDocument::of([], AbsolutePath::fromString('/project'));
             }
         };
 

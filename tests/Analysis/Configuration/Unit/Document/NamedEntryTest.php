@@ -58,7 +58,7 @@ final class NamedEntryTest extends TestCase
         self::assertInstanceOf(ResolvedBareNameInterface::class, $entry);
         self::assertSame(['computed.mine' => null], $document->get('metrics')?->plain());
         self::assertSame(['metrics', 'computed.mine'], $entry->contributors()[0]->path);
-        self::assertSame('/p/qmx.yaml', Provenance::refusalOf($entry->contributors(), 'No formula.')->origin()->locator());
+        self::assertSame('/p/qmx.yaml', Provenance::refusalOf($entry->contributors(), 'No formula.')->sources()[0]->locator());
     }
 
     #[Test]
@@ -135,7 +135,8 @@ final class NamedEntryTest extends TestCase
         $refusal = self::refusal(static fn() => self::compose($layer));
 
         self::assertNull($refusal->position());
-        self::assertSame('--metric', $refusal->origin()->locator());
+        self::assertCount(1, $refusal->sources());
+        self::assertSame('--metric', $refusal->sources()[0]->locator());
     }
 
     #[Test]

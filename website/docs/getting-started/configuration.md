@@ -757,16 +757,16 @@ misspelt key or a wrong value in a preset is refused even when your file
 overrides it. Then the layers are merged, each key by the policy it declares.
 What the merged value means — a layer name `architecture.allow` refers to, a
 formula that has to compile — is judged once, on the merged value. A refusal
-about a key in the table below, and every warning, names the layer that wrote
+about a resolved value, and every warning, names the layer that wrote
 the value it is about; in `--format=json` that is the `source` field (see
-[Output Formats](../usage/output-formats.md)). Some owners still judge what a
-value means on the merged configuration without the layer that wrote it (the
-owners are listed in [ADR 0086](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0086-one-configuration-document-merged-by-declared-policy.md#transitional-state)); such a refusal
-names the merged configuration instead — with the key when the owner knows it —
-and a few name no source at all.
+[Output Formats](../usage/output-formats.md)). Three Finding inputs remain on a
+temporary boundary: `rules`, `only_rules` and `disabled_rules`. The document
+engine checks their declared form in each layer, but their owner still reads
+raw contributions for rule-specific semantics. Those semantic refusals do not
+yet retain the authored value's provenance.
 
-Five rules hold at every key outside the two roots their owners merge
-([`rules` and `coupling`](#owner-merged-keys)):
+Five rules describe the document engine; rule-specific meaning for these
+three Finding inputs remains with their owner:
 
 - **`~` means "not written".** A key written `~`, or left empty (`key:`), leaves
   the value to the layer below. The key itself is still recognised: a misspelt
@@ -827,13 +827,13 @@ Three things have no spelling, deliberately:
 An empty map reset its section in earlier releases; see the
 [changelog](../changelog.md) for what changed.
 
-### Keys whose owner merges them {#owner-merged-keys}
+### The remaining owner-resolved root {#owner-merged-keys}
 
-The table marks two roots "read by its owner": the document engine checks their
-spelling and carries each layer's value to the owner, which merges them.
+The table marks `rules` "read by its owner". The document engine checks its
+spelling and carries its written layers to Finding, which still resolves the
+rule-specific language. All non-Finding owners, including `coupling`, read
+their declared resolved values.
 
-- **`coupling`** — `framework_namespaces` written by a later layer replaces the
-  earlier list; `[]` turns framework classification off.
 - **`rules`** — a rule's options and level blocks merge key by key, a
   `threshold` shorthand is expanded in the layer that wrote it, `~` keeps the
   layer below, and `false` switches the rule off. Two spellings behave
@@ -918,7 +918,11 @@ declare.
 | `computed_metrics.<name>.levels`             | list (item: string)                                                                 | The last layer that writes the list replaces it whole; an empty list replaces too.                                                                                                       | Not written: the layer below stands. An item written `~` is refused. | Replaces the list below with an empty one.                                                      |
 | `computed_metrics.<name>.warning`            | number                                                                              | The last layer that writes the value wins.                                                                                                                                               | Not written: the layer below stands.                                 | Refused: a scalar is expected.                                                                  |
 | `computed_metrics.<name>.threshold`          | number                                                                              | Shorthand for `warning` and `error`: expanded in the layer that wrote it, before any merge; each key then merges on its own. Writing it beside one of them in the same layer is refused. | Not written: the layer below stands.                                 | Refused: a scalar is expected.                                                                  |
-| `coupling`                                   | read by its owner                                                                   | Kept per layer, unmerged, for its owner to fold.                                                                                                                                         | Not written: the layer below stands.                                 | Its owner decides.                                                                              |
+| `coupling`                                   | map                                                                                 | Merged key by key; a written empty map changes nothing.                                                                                                                                  | Not written: the layer below stands.                                 | Changes nothing.                                                                                |
+| `coupling.framework_namespaces`              | list (item: map)                                                                    | The last layer that writes the list replaces it whole; an empty list replaces too.                                                                                                       | Not written: the layer below stands. An item written `~` is refused. | Replaces the list below with an empty one.                                                      |
+| `coupling.framework_namespaces[].exact`      | string                                                                              | Read from the layer that wrote the list; never merged across layers.                                                                                                                     | Not written: as if the key were absent.                              | Refused: a scalar is expected.                                                                  |
+| `coupling.framework_namespaces[].subtree`    | string                                                                              | Read from the layer that wrote the list; never merged across layers.                                                                                                                     | Not written: as if the key were absent.                              | Refused: a scalar is expected.                                                                  |
+| `coupling.framework_namespaces[].regex`      | string                                                                              | Read from the layer that wrote the list; never merged across layers.                                                                                                                     | Not written: as if the key were absent.                              | Refused: a scalar is expected.                                                                  |
 | `disabled_rules`                             | list (item: string)                                                                 | Every layer adds its elements; duplicates collapse.                                                                                                                                      | Not written: the layer below stands. An item written `~` is refused. | Adds nothing.                                                                                   |
 | `exclude`                                    | list (item: map)                                                                    | Every layer adds its elements; duplicates collapse.                                                                                                                                      | Not written: the layer below stands. An item written `~` is refused. | Adds nothing.                                                                                   |
 | `exclude[].exact`                            | string                                                                              | Read from the layer that wrote the list; never merged across layers.                                                                                                                     | Not written: as if the key were absent.                              | Refused: a scalar is expected.                                                                  |

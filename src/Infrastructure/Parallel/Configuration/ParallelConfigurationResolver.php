@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Parallel\Configuration;
 
-use InvalidArgumentException;
-use Qualimetrix\Analysis\Configuration\ConfigSchema;
+use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
@@ -14,14 +13,21 @@ final class ParallelConfigurationResolver implements ParallelConfigurationResolv
 {
     public function resolve(ConfigurationDocument $document): ParallelConfiguration
     {
-        $workers = null;
-        foreach ($document->contributions(ConfigSchema::PARALLEL_WORKERS) as $candidate) {
-            $workers = $candidate;
-        }
-        if ($workers !== null && (!\is_int($workers) || $workers < 0)) {
-            throw new InvalidArgumentException('parallel.workers must be a non-negative integer.');
+        return new ParallelConfiguration($this->workerCount($document));
+    }
+
+    private function workerCount(ConfigurationDocument $document): ?int
+    {
+        $value = $document->resolved()->get(ConfigurationRoot::Parallel->value, 'workers');
+        if ($value === null) {
+            return null;
         }
 
-        return new ParallelConfiguration($workers);
+        $workers = $value->plain();
+        if ($workers !== null && (!\is_int($workers) || $workers < 0)) {
+            $value->refuse('parallel.workers must be a non-negative integer.');
+        }
+
+        return $workers;
     }
 }

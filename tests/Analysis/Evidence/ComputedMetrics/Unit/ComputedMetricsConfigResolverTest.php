@@ -234,7 +234,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
                 ['health.cohesion', 'health.complexity', 'health.coupling', 'health.maintainability', 'health.overall', 'health.typing'],
                 $position->accepted,
             );
-            self::assertSame(ConfigurationSource::ConfigFile, $refusal->origin()->source());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
         }
     }
 
@@ -280,7 +281,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
             (new ComputedMetricFormulaValidator())->validate([$definition]);
             self::fail('Expected a ConfigurationRefusal.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertSame(ConfigurationSource::Defaults, $refusal->origin()->source());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame(ConfigurationSource::Defaults, $refusal->sources()[0]->source());
             self::assertSame(['computed_metrics', 'computed.x', 'formulas', 'class'], $refusal->position()?->segments);
             self::assertSame('class', $refusal->position()->written);
         }
@@ -292,7 +294,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         try {
             ComputedMetricFormulaValidator::refuseMetricsAbsentAtLevel('computed.x', ['size.loc'], 'class', 'm["size.loc"]');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertSame(ConfigurationSource::Resolved, $refusal->origin()->source());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame(ConfigurationSource::Resolved, $refusal->sources()[0]->source());
             self::assertSame(['computed_metrics', 'computed.x'], $refusal->position()?->segments);
             self::assertSame('computed.x', $refusal->position()->written);
         }

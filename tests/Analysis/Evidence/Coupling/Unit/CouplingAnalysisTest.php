@@ -10,9 +10,11 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Evidence\Coupling\Configuration\CouplingSection;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 #[CoversClass(CouplingAnalysis::class)]
 final class CouplingAnalysisTest extends TestCase
@@ -230,10 +232,10 @@ final class CouplingAnalysisTest extends TestCase
     /** @param list<array<string, mixed>> $contributions */
     private function document(array $contributions): ConfigurationDocument
     {
-        return new ConfigurationDocument(array_map(
+        return LayeredDocument::of(array_map(
             static fn(array $values): array => ['source' => 'test', 'values' => $values],
             $contributions,
-        ), AbsolutePath::fromString('/project'));
+        ), AbsolutePath::fromString('/project'), new CouplingSection());
     }
 
     /**

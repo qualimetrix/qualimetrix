@@ -52,9 +52,12 @@ a slice of it: its denominator is every production autoload target of
 alike — so `check src/` on a project autoloading `src/` covers the project
 while `check src/Foo/` does not. `autoload-dev` joins the denominator only
 under `AutoloadDevPolicy::Include` (`include_autoload_dev`). The denominator
-and a run's default paths are one answer: Composer discovery contributes the
-same whole-manifest target lists the denominator reads (a `classmap` `*`
-expanded to its directories), and both `RunConfigurationResolver` and
+and a run's default paths are one answer: Composer discovery supplies the same
+whole-manifest production and development target facts the denominator reads (a
+`classmap` `*` expanded to its directories). `RunConfigurationResolver` reads
+those non-authored facts through
+`discoveredProductionAutoloadTargets()` and
+`discoveredDevelopmentAutoloadTargets()`, and both it and
 `ProjectScopeCoverage` take them through `AutoloadDevPolicy::projectTargets()`,
 so a run with no `paths` covers what it is judged against in every autoload
 form. Both then keep only the targets a walk of the project reaches, through

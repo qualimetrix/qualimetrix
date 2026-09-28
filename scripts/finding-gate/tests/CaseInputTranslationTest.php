@@ -21,6 +21,9 @@ use QmxFindingGate\Options;
 use QmxFindingGate\RenameMaps;
 use QmxFindingGate\SyntheticTree;
 use QmxFindingGate\Tsv;
+use QmxFindingGateControls\RenameControls;
+use QmxFindingGateControls\Scratch;
+use QmxFindingGateControls\Shell;
 
 final class CaseInputTranslationTest extends TestCase
 {
@@ -177,6 +180,55 @@ final class CaseInputTranslationTest extends TestCase
         } finally {
             Fs::removeRecursively($temporary);
             SyntheticTree::remove($root);
+        }
+    }
+
+    #[Test]
+    public function itKeepsNamespaceSuppressionWhenTheControlRenamesItsDeclaredRoot(): void
+    {
+        require_once \dirname(__DIR__, 2) . '/finding-gate-controls/classes.php';
+
+        $repository = \dirname(__DIR__, 3);
+        $scratch = Scratch::contentOf($repository);
+        $program = <<<'PHP'
+            require getcwd() . '/vendor/autoload.php';
+            use Qualimetrix\Analysis\Configuration\ConfigSchema;
+            use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
+            use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
+            use Qualimetrix\Core\Path\AbsolutePath;
+            use Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver;
+            $document = LayeredDocument::of([
+                ['source' => 'qmx.yaml', 'values' => [
+                    ConfigSchema::SUPPRESS_NAMESPACES => [['subtree' => 'Corpus\\Root']],
+                ]],
+            ], AbsolutePath::fromString(getcwd()));
+            $patterns = (new ConfiguredFindingExclusionsResolver())->resolve($document)->suppressNamespaces;
+            $loadedFromClone = true;
+            foreach ([ConfigSchema::class, ConfigurationRoot::class] as $class) {
+                $file = (new ReflectionClass($class))->getFileName();
+                $loadedFromClone = $loadedFromClone
+                    && realpath($file) === realpath(getcwd() . '/src/Analysis/Configuration/' . basename($file));
+            }
+            echo json_encode([
+                'root' => ConfigurationRoot::SuppressNamespaces->key(),
+                'patterns' => count($patterns),
+                'matches' => $patterns !== [] && $patterns[0]->matches('Corpus\\Root\\Child'),
+                'loadedFromClone' => $loadedFromClone,
+            ], JSON_THROW_ON_ERROR);
+            PHP;
+
+        try {
+            RenameControls::rootKeyRenamed()->mutation->apply($scratch, $repository);
+            $result = Shell::run([\PHP_BINARY, '-r', $program], $scratch->tree);
+            self::assertSame(0, $result['exit'], $result['stderr']);
+            self::assertSame([
+                'root' => 'suppress_ns',
+                'patterns' => 1,
+                'matches' => true,
+                'loadedFromClone' => true,
+            ], json_decode($result['stdout'], true, 512, \JSON_THROW_ON_ERROR));
+        } finally {
+            $scratch->remove();
         }
     }
 

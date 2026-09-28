@@ -36,7 +36,7 @@ final class ConfigurationPipelineIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function itRetainsComposerConfigAndCliSourcesInPrecedenceOrder(): void
+    public function itRetainsSourcesAndExposesTheirResolvedAndDiscoveryOutputs(): void
     {
         file_put_contents($this->directory . '/composer.json', json_encode([
             'autoload' => ['psr-4' => ['App\\' => 'src/']],
@@ -51,14 +51,10 @@ final class ConfigurationPipelineIntegrationTest extends TestCase
         ));
 
         self::assertSame(['defaults', 'composer.json', 'qmx.yaml', 'cli'], $document->appliedSources());
-        self::assertSame([['lib'], ['app']], $document->contributions('paths'));
-        self::assertSame([['src']], $document->contributions('discovered_autoload_paths'));
-        self::assertSame(['text', 'json'], $document->contributions('format'));
-        self::assertSame([[['subtree' => 'build']]], $document->contributions('excludes'));
-
         self::assertSame(['app'], $document->resolved()->get('paths')?->plain());
         self::assertSame('json', $document->resolved()->get('format')?->plain());
         self::assertSame([['subtree' => 'build']], $document->resolved()->get('exclude')?->plain());
+        self::assertSame(['src'], $document->discoveredProductionAutoloadTargets());
         self::assertNull($document->resolved()->get('discovered_autoload_paths'), 'Composer discovery is no written layer.');
     }
 
@@ -68,7 +64,9 @@ final class ConfigurationPipelineIntegrationTest extends TestCase
         $document = $this->pipeline()->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory)));
 
         self::assertSame(['defaults'], $document->appliedSources());
-        self::assertSame([], $document->contributions('paths'));
+        self::assertNull($document->resolved()->get('paths'));
+        self::assertSame([], $document->discoveredProductionAutoloadTargets());
+        self::assertSame([], $document->discoveredDevelopmentAutoloadTargets());
     }
 
     private function pipeline(): ConfigurationPipeline

@@ -126,10 +126,14 @@ ground and write its own name over the old format.
 
 ### CacheFactory
 
-Lazy cache creation based on runtime configuration.
+Lazy cache creation based on runtime configuration. `CacheConfigurationResolver`
+first reads the resolved `cache.dir` and `cache.enabled` leaves; their declared
+forms and provenance decide a configuration refusal before the factory stores
+the resulting cache configuration.
 
 **Method:**
-- `create(): CacheInterface` — creates FileCache with path from ConfigurationProvider
+- `create(): CacheInterface` — creates FileCache with the path from the current
+  instance-owned cache configuration store
 
 **Features:**
 - Cache is created on first access

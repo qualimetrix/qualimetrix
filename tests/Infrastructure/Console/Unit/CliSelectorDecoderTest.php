@@ -42,8 +42,9 @@ final class CliSelectorDecoderTest extends TestCase
             (new CliSelectorDecoder())->decodePath($value, '--suppress-path');
             self::fail('Expected the malformed selector to be refused.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertSame(ConfigurationSource::CommandLine, $refusal->origin()->source());
-            self::assertSame('--suppress-path', $refusal->origin()->locator());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame(ConfigurationSource::CommandLine, $refusal->sources()[0]->source());
+            self::assertSame('--suppress-path', $refusal->sources()[0]->locator());
             self::assertNull($refusal->position());
             self::assertStringContainsString($message, $refusal->summary());
         }

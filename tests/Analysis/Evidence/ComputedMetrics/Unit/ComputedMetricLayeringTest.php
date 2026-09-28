@@ -193,7 +193,8 @@ final class ComputedMetricLayeringTest extends TestCase
 
         self::assertSame($path, $refusal->position()?->segments);
         self::assertStringStartsWith('Unknown key', $refusal->summary());
-        self::assertSame(ConfigurationSource::ConfigFile, $refusal->origin()->source());
+        self::assertCount(1, $refusal->sources());
+        self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
     }
 
     /** A preset's misspelling used to hide under any file that wrote the section. */
@@ -205,7 +206,8 @@ final class ComputedMetricLayeringTest extends TestCase
             self::file(['computed_metrics' => ['health.typing' => ['warning' => 60]]]),
         );
 
-        self::assertSame('preset "strict"', $refusal->origin()->describe());
+        self::assertCount(1, $refusal->sources());
+        self::assertSame('preset "strict"', $refusal->sources()[0]->describe());
         self::assertSame(['computed_metrics', 'health.complexity', 'warnin'], $refusal->position()?->segments);
     }
 

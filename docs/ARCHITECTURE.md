@@ -72,14 +72,14 @@ checks cycles in actual class dependencies.
 
 `ConfigurationDocument` is the concrete public source seam. It carries the
 invocation working directory, a resolved document with provenance and
-diagnostics, and ordered contributions during migration; it is not a generic
-configuration interface or invocation context. Architecture and ComputedMetrics
-read their owner-declared sections from the resolved document, and Run reads its
-ordinary roots there. Remaining contribution readers are Coupling, Run's
-internal Composer-discovery lists, Cache, Console, Parallel, Reporting,
-FindingProjection, and Finding's narrow `rules`, `only_rules`, and
-`disabled_rules` boundary. Mutable state remains only inside the owner that
-needs a per-container store.
+diagnostics, and Composer's two non-authored discovery target lists; it is not
+a generic configuration interface or invocation context. Architecture,
+ComputedMetrics, Coupling, Cache, Console, Parallel, Run, Reporting and
+FindingProjection read their owner-declared values from the resolved document.
+Only Finding's three named temporary reads for `rules`, `only_rules` and
+`disabled_rules` retain ordered raw contributions until Finding declares that
+subtree. Mutable state remains only inside the owner that needs a
+per-container store.
 
 ### 2. Five-Phase Pipeline
 

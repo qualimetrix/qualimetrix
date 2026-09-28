@@ -23,6 +23,18 @@ consumer construction API. Build a `ConfigurationRefusal` directly with
 `Provenance::refusalOf()` only where the caller must inspect or carry the
 exception object rather than immediately throw it. See ADR 0086.
 
+**Configuration owners now read declared resolved values instead of folding
+generic contributions.** The generic `ConfigurationDocument::contributions()`
+operation and `ConfigurationRefusal::origin()` are gone. Finding temporarily
+uses the named `ruleContributions()`, `onlyRuleContributions()` and
+`disabledRuleContributions()` operations until Finding declares its rule subtree; Composer's production and
+development autoload targets are separate non-authored facts. `coupling` now
+deep-merges as a map, `framework_namespaces` replaces as a list, and `coupling:
+{}` preserves lower fields. A malformed written value is refused in the layer
+that wrote it, while a final or joint refusal carries the winning or
+contributing sources and position, with the original cause where one exists. See ADR 0086 for the declared-policy
+rationale; rule-option semantics are unchanged.
+
 **Finding-gate declaration derivation now writes complete measurable forms even
 when another change remains unexplained.** Previously a failed comparison wrote
 nothing; `--derive-declarations` now lists written files and still exits 5 with

@@ -6,7 +6,7 @@ namespace Qualimetrix\Reporting\Configuration;
 
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Reporting\Contract\OutputFormat;
 use Qualimetrix\Reporting\Contract\OutputFormatResolverInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
@@ -25,40 +25,30 @@ final readonly class OutputFormatResolver implements OutputFormatResolverInterfa
      */
     public function resolve(ConfigurationDocument $document): OutputFormat
     {
-        $value = OutputFormat::DEFAULT;
+        $format = $document->resolved()->get(ConfigSchema::FORMAT);
 
-        foreach ($document->contributions(ConfigSchema::FORMAT) as $contribution) {
-            $value = $this->accepted($contribution);
-        }
-
-        return new OutputFormat($value);
+        return new OutputFormat($format === null ? OutputFormat::DEFAULT : $this->accepted($format));
     }
 
-    private function accepted(mixed $contribution): string
+    private function accepted(ResolvedValueInterface $format): string
     {
-        if (!\is_string($contribution)) {
-            throw $this->refusal(\sprintf(
+        $value = $format->plain();
+        if (!\is_string($value)) {
+            $format->refuse(\sprintf(
                 'Invalid value for "%s": expected the name of an output format, got %s.',
                 ConfigSchema::FORMAT,
-                get_debug_type($contribution),
+                get_debug_type($value),
             ));
         }
 
-        if (!$this->formatters->has($contribution)) {
-            throw $this->refusal(\sprintf(
+        if (!$this->formatters->has($value)) {
+            $format->refuse(\sprintf(
                 'Output format "%s" is not one of: %s.',
-                $contribution,
+                $value,
                 implode(', ', $this->formatters->getAvailableNames()),
             ));
         }
 
-        return $contribution;
-    }
-
-    private function refusal(string $summary): ConfigurationRefusal
-    {
-        // Resolved rather than CommandLine: `--format` and `format:` merge into
-        // one value here, and which of them wrote it is no longer recoverable.
-        return ConfigurationRefusal::aboutResolvedInput($summary, ConfigSchema::FORMAT);
+        return $value;
     }
 }

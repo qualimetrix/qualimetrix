@@ -96,6 +96,7 @@ final class DocumentRootsIntegrationTest extends TestCase
         );
         self::assertSame([$key], $refusal->position()?->segments);
         self::assertSame($key, $refusal->position()->written);
+        self::assertCount(1, $refusal->sources());
         self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
     }
 
@@ -134,7 +135,6 @@ fail_on: error
         $document = $this->resolve("memory_limit: -1\n");
 
         self::assertSame(-1, $document->resolved()->get(ConfigurationRoot::MemoryLimit->value)?->plain());
-        self::assertSame([-1], $document->contributions('memory_limit'));
     }
 
     /** @return iterable<string, array{string, string}> */
@@ -203,6 +203,7 @@ fail_on: error
     {
         $refusal = $this->refusal("include_generated: \"yes\"\n", ['include_generated' => true], ['include_generated' => '--include-generated']);
 
+        self::assertCount(1, $refusal->sources());
         self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
         self::assertSame($this->directory . '/qmx.yaml', $refusal->sources()[0]->locator());
     }
@@ -215,6 +216,7 @@ fail_on: error
 
         self::assertSame('Option --format must be string, got int.', $refusal->summary());
         self::assertNull($refusal->position());
+        self::assertCount(1, $refusal->sources());
         self::assertSame('--format', $refusal->sources()[0]->locator());
     }
 
@@ -232,6 +234,7 @@ fail_on: error
             ));
             self::fail('A malformed preset value must be refused.');
         } catch (ConfigurationRefusal $refusal) {
+            self::assertCount(1, $refusal->sources());
             self::assertSame(ConfigurationSource::Preset, $refusal->sources()[0]->source());
             self::assertSame('./broken.yaml', $refusal->sources()[0]->locator());
         }

@@ -864,8 +864,9 @@ final class AllowValidatorTest extends TestCase
             $this->validator->validate(ArchitectureDocument::allow('wrong'), ['a'], $warnings);
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::ConfigFile, $e->origin()->source());
-            self::assertSame(ArchitectureDocument::FILE, $e->origin()->locator());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
         }
     }
 

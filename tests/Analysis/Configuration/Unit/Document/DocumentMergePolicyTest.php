@@ -282,7 +282,8 @@ final class DocumentMergePolicyTest extends TestCase
         }
 
         self::assertSame(['/p/qmx.yaml'], array_map(static fn($origin): ?string => $origin->locator(), $refusal->sources()));
-        self::assertSame(ConfigurationSource::ConfigFile, $refusal->origin()->source());
+        self::assertCount(1, $refusal->sources());
+        self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
         self::assertSame(['memory_limit'], $refusal->position()?->segments);
     }
 

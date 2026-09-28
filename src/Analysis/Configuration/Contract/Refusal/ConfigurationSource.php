@@ -30,10 +30,9 @@ enum ConfigurationSource: string
     case BaselineFile = 'baseline';
 
     /**
-     * The merged document, read by an owner that has not attributed the value
-     * to the layer that wrote it. Kept for owners still folding
-     * `ConfigurationDocument::contributions()`; a value read from the resolved
-     * document names its layers instead.
+     * The merged document, used by Finding while its temporary raw readers fold
+     * `rules`, `only_rules`, and `disabled_rules`; resolved readers name their
+     * authored layers instead.
      */
     case Resolved = 'resolved';
 }

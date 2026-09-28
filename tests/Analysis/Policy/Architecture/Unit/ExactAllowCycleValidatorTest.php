@@ -57,8 +57,9 @@ final class ExactAllowCycleValidatorTest extends TestCase
             $this->validator->validate(AllowListBuilder::entriesFromExactMap($cyclic), ArchitectureDocument::allow($cyclic));
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $exception) {
-            self::assertSame(ConfigurationSource::ConfigFile, $exception->origin()->source());
-            self::assertSame(ArchitectureDocument::FILE, $exception->origin()->locator());
+            self::assertCount(1, $exception->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $exception->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $exception->sources()[0]->locator());
             self::assertStringContainsString(
                 'application -> domain -> persistence -> application',
                 $exception->getMessage(),

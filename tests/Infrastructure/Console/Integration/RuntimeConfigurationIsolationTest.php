@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Integration;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
@@ -12,6 +11,7 @@ use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
@@ -119,7 +119,15 @@ final class RuntimeConfigurationIsolationTest extends TestCase
                 new BufferedOutput(),
             );
             self::fail('Invalid parallel configuration must fail before mutating owner stores.');
-        } catch (InvalidArgumentException) {
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('parallel.workers must be a non-negative integer.', $refusal->summary());
+            $position = $refusal->position();
+            self::assertNotNull($position);
+            self::assertSame(['parallel', 'workers'], $position->segments);
+            self::assertSame('workers', $position->written);
+            self::assertCount(1, $refusal->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
+            self::assertSame('test', $refusal->sources()[0]->locator());
         }
 
         self::assertTrue($this->cacheStore($runtimeConfigurator)->current()->enabled);

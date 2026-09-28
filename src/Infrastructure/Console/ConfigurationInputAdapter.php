@@ -84,7 +84,7 @@ final class ConfigurationInputAdapter
 
     public function exitPolicy(ConfigurationDocument $document): ExitPolicy
     {
-        return ExitPolicy::fromContributions($document->contributions(ConfigSchema::FAIL_ON));
+        return ExitPolicy::fromResolvedValue($document->resolved()->get(ConfigSchema::FAIL_ON));
     }
 
     public function adapt(InputInterface $input, string $workingDirectory): ConfigurationResolutionRequest

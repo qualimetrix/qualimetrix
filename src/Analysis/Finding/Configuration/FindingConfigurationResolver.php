@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Configuration;
 
-use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
@@ -19,14 +18,14 @@ final class FindingConfigurationResolver implements FindingConfigurationResolver
     public function resolve(ConfigurationDocument $document, FindingCliOverrides $cliOverrides): FindingConfiguration
     {
         $rules = [];
-        foreach ($document->contributions(ConfigSchema::RULES) as $contribution) {
+        foreach ($document->ruleContributions() as $contribution) {
             if (\is_array($contribution)) {
                 $rules = self::mergeRules($rules, $contribution);
             }
         }
 
-        $only = self::lastStringList($document->contributions(ConfigSchema::ONLY_RULES));
-        $disabled = self::accumulatedStrings($document->contributions(ConfigSchema::DISABLED_RULES));
+        $only = self::lastStringList($document->onlyRuleContributions());
+        $disabled = self::accumulatedStrings($document->disabledRuleContributions());
 
         return new FindingConfiguration(
             new RuleOptionsDocument($rules),

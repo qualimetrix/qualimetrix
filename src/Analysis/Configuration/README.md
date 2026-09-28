@@ -9,17 +9,20 @@ Each feature resolves its own immutable projection from that concrete document;
 owner-local runtime state exists only where a long-lived service needs it.
 
 The document is a narrow public source seam: it carries the invocation working
-directory, a resolved document with provenance and diagnostics, and ordered
-contributions while named owners complete their migrations. Symfony input
-remains inside the Console adapter. It does not expose a generic configuration
-interface, a universal invocation context, or a carrier for feature fields.
+directory, a resolved document with provenance and diagnostics, and Composer's
+two non-authored autoload-target facts. Its only raw-layer access is the three
+named temporary reads Finding needs for `rules`, `only_rules` and
+`disabled_rules` until Finding declares its rule subtree. Symfony input remains inside the Console adapter.
+It does not expose a generic configuration interface, a universal invocation
+context, or a carrier for feature fields.
 
 ## Structure
 
 ```text
 Configuration/
 ├── Contract/
-│   ├── ConfigurationDocument.php # ordered source contributions + the resolved document
+│   ├── ConfigurationDocument.php # resolved document, named temporary Finding reads,
+│   │                              # and Composer's non-authored target facts
 │   ├── Discovery/                # Composer autoload-path reader
 │   ├── Document/                 # the resolved document: provenance, diagnostics and read-only
 │   │                             # Resolved{Map,List,Opaque,BareName}Interface forms
@@ -33,9 +36,8 @@ Configuration/
 ├── Document/           # the engine composing written layers into the resolved document
 │   └── Resolved/       # internal concrete resolved forms, including ResolvedScalar
 ├── Loader/             # each source as a written layer for the engine (YAML file or preset →
-│                       # LoadedDocument; command line → CommandLineLayer), and the legacy
-│                       # folded values: key normalization and the checks of roots the engine
-│                       # does not judge yet
+│                       # LoadedDocument; command line → CommandLineLayer), plus the narrow
+│                       # configuration-file ingress and raw rules boundaries
 ├── Pipeline/           # ordered stage runner, source-layer value, rule-name validator, the
 │   │                   # `~`-as-unwritten normalizer (ConfigDataNormalizer)
 │   └── Stage/          # defaults, Composer, preset, file, CLI stages
@@ -96,9 +98,9 @@ exists, then returns typed warnings through its own contract. ComputedMetrics
 likewise reads its registered `computed_metrics` and `exclude_health` sections
 and publishes an instance-owned catalog only after full validation. The central
 pipeline neither contains an Architecture or ComputedMetrics object nor
-transports feature-specific deferred warnings. The transition still retains
-ordered contributions for the legacy readers named below; it does not turn the
-document into a cross-owner runtime DTO.
+transports feature-specific deferred warnings. Cache, Coupling, Console,
+Parallel, Run and Reporting likewise resolve only their declared values; this
+does not turn the document into a cross-owner runtime DTO.
 
 ## Document engine
 
@@ -172,22 +174,21 @@ twin by `scripts/generate-configuration-merge-table.php`
 decision and what it leaves unexpressible are recorded in
 [ADR 0086](../../../docs/adr/0086-one-configuration-document-merged-by-declared-policy.md).
 
-The engine runs in every resolution, beside `contributions()` while owners
-move to it. The remaining legacy readers are Coupling (`coupling`), Run's two
-internal discovered-autoload lists, Cache (`cache.dir`, `cache.enabled`),
-Console (`fail_on`, `memory_limit`, `format`), Parallel (`parallel.workers`),
-Reporting (`format`), FindingProjection (`suppress_paths`,
-`suppress_namespaces`), and Finding's narrow rule boundary (`rules`,
-`only_rules`, `disabled_rules`). `rules` remains an undeclared root; the other
-Finding keys are declared but still read through their ordered contributions.
-Every stage hands its sources over as written through
+The engine runs in every resolution. Cache, Coupling, Console, Parallel, Run,
+Reporting and FindingProjection read their declared resolved values. Finding's
+narrow rule boundary alone retains the three named raw reads
+`ruleContributions()`, `onlyRuleContributions()` and
+`disabledRuleContributions()` until Finding declares its rule subtree. `rules` remains an undeclared root.
+Composer discovery is not an authored layer: its production and development
+targets are available only through `discoveredProductionAutoloadTargets()` and
+`discoveredDevelopmentAutoloadTargets()`, while Run owns the decision whether
+to use the development targets. Every authored stage hands its sources over as
+written through
 `ConfigurationLayer::$authored`, read before any key is folded or any `~`
 erased: the defaults (empty), each preset as a layer of its own, the file, and
 the command line — a layer without positions whose every value carries the
 option that wrote it (`ConfigurationResolutionRequest::$cliOptionNames`), so a
-refusal names `option --format`. Composer discovery is not a written layer: its
-two target lists are internal keys no author may write, and Run reads them from
-`contributions()` until that goes.
+refusal names `option --format`.
 
 The root dictionary is closed: `ConfigurationRoot` declares every root outside
 the capability-owned `DOCUMENT_ROOTS` and `rules`; an owner declares its own
@@ -197,12 +198,13 @@ carried unread (`UndeclaredRoot`), and any other root is refused as unknown,
 `~` or not. A suggestion offers the canonical key, whatever the style of the
 key it answers.
 
-The loader still folds each file into the values `contributions()` returns,
-and still judges what the engine does not yet: the `rules` block, and the
-container and sub-keys of an undeclared root. A refusal from that fold is
-held in the layer (`LoadedDocument::$deferredRefusal`) and raised only after
-the engine accepted every layer, so a root the engine declares is refused in
-the engine's words, naming the layer that wrote it.
+The loader still judges the raw `rules` block that Finding has not declared.
+The `ConfigFileStage` ingress boundary also remains outside this document's ownership;
+this README does not claim that the engine has already declared every nested
+rule form. A refusal from that fold is held in the layer
+(`LoadedDocument::$deferredRefusal`) and raised only after the engine accepted
+every layer, so a root the engine declares is refused in the engine's words,
+naming the layer that wrote it.
 
 `SelectorYamlDecoder` is the configuration ingress for the shared selector
 language. A selector list entry is exactly one mapping — `{exact: value}`,
@@ -229,6 +231,11 @@ Finding produces `FindingConfiguration`, Cache and Parallel produce their local
 configurations, and Reporting resolves output and finding-projection values.
 No consumer may construct a feature configuration factory through Configuration
 or add a feature field to a shared carrier.
+
+`ConfigurationDocument` has no generic raw-value operation. Its three named
+Finding reads and two Composer discovery facts are temporary or source-specific
+exceptions, respectively; neither is a route for another owner to bypass its
+declared resolved section.
 
 ## CLI option aliases
 
