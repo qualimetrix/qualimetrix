@@ -1,15 +1,1 @@
 surface	file	reason
-case:computed-cross-level|check:output	declared-delta/case-computed-cross-level-check-output.diff	Publish the authored sources of a configuration refusal.
-case:computed-cross-level|directives	declared-delta/case-computed-cross-level-directives.diff	Publish the authored sources of a configuration refusal.
-case:computed-cross-level|format:gitlab	declared-delta/case-computed-cross-level-format-gitlab.diff	Publish the authored sources of a configuration refusal.
-case:computed-cross-level|format:json	declared-delta/case-computed-cross-level-format-json.diff	Publish the authored sources of a configuration refusal.
-case:computed-cross-level|format:metrics	declared-delta/case-computed-cross-level-format-metrics.diff	Publish the authored sources of a configuration refusal.
-case:computed-cross-level|format:sarif	declared-delta/case-computed-cross-level-format-sarif.diff	Publish the authored sources of a configuration refusal.
-case:computed-cross-level|format:suppressed	declared-delta/case-computed-cross-level-format-suppressed.diff	Publish the authored sources of a configuration refusal.
-case:selector-after-split|check:output	declared-delta/case-selector-after-split-check-output.diff	Publish the authored sources of a configuration refusal.
-case:selector-after-split|directives	declared-delta/case-selector-after-split-directives.diff	Publish the authored sources of a configuration refusal.
-case:selector-after-split|format:gitlab	declared-delta/case-selector-after-split-format-gitlab.diff	Publish the authored sources of a configuration refusal.
-case:selector-after-split|format:json	declared-delta/case-selector-after-split-format-json.diff	Publish the authored sources of a configuration refusal.
-case:selector-after-split|format:metrics	declared-delta/case-selector-after-split-format-metrics.diff	Publish the authored sources of a configuration refusal.
-case:selector-after-split|format:sarif	declared-delta/case-selector-after-split-format-sarif.diff	Publish the authored sources of a configuration refusal.
-case:selector-after-split|format:suppressed	declared-delta/case-selector-after-split-format-suppressed.diff	Publish the authored sources of a configuration refusal.
