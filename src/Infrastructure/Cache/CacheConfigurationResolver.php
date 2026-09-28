@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Cache;
 
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
+use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
@@ -19,14 +23,17 @@ final class CacheConfigurationResolver implements CacheConfigurationResolverInte
     public function resolve(ConfigurationDocument $document, AbsolutePath $projectRoot): CacheConfiguration
     {
         $directory = self::DEFAULT_DIRECTORY;
-        foreach ($document->contributions(ConfigSchema::CACHE_DIR) as $candidate) {
-            $directory = self::acceptedDirectory($candidate);
+        $configuredDirectory = $document->resolved()->get(ConfigurationRoot::Cache->value, 'dir');
+        if ($configuredDirectory !== null) {
+            $directory = self::acceptedDirectory($configuredDirectory);
         }
 
         $enabled = true;
-        foreach ($document->contributions(ConfigSchema::CACHE_ENABLED) as $candidate) {
-            if (\is_bool($candidate)) {
-                $enabled = $candidate;
+        $configuredEnabled = $document->resolved()->get(ConfigurationRoot::Cache->value, 'enabled');
+        if ($configuredEnabled !== null) {
+            $enabled = $configuredEnabled->plain();
+            if (!\is_bool($enabled)) {
+                $configuredEnabled->refuse('Cache enabled must be a boolean.');
             }
         }
 
@@ -42,7 +49,7 @@ final class CacheConfigurationResolver implements CacheConfigurationResolverInte
         // empty-value refusal above, which runs before `enabled` is consulted
         // at all. Only the refusal the flag can actually answer may name it.
         if ($configuration->enabled) {
-            $this->assertUsable($configuration);
+            $this->assertUsable($configuration, $configuredDirectory);
         }
 
         return $configuration;
@@ -53,27 +60,27 @@ final class CacheConfigurationResolver implements CacheConfigurationResolverInte
      * silently dropped here before, and the run then wrote into `.qmx-cache`
      * while reporting as though it had honoured the configured path.
      */
-    private static function acceptedDirectory(mixed $candidate): string
+    private static function acceptedDirectory(ResolvedValueInterface $configuredDirectory): string
     {
+        $candidate = $configuredDirectory->plain();
+
         if (!\is_string($candidate)) {
-            throw ConfigurationRefusal::aboutResolvedInput(
+            $configuredDirectory->refuse(
                 \sprintf(
                     'Invalid value for "%s": expected a directory path, got %s.',
                     ConfigSchema::CACHE_DIR,
                     get_debug_type($candidate),
                 ),
-                ConfigSchema::CACHE_DIR,
             );
         }
 
         if ($candidate === '') {
-            throw ConfigurationRefusal::aboutResolvedInput(
+            $configuredDirectory->refuse(
                 \sprintf(
                     'Invalid value for "%s": a directory path cannot be empty. Omit the key to use the default (%s).',
                     ConfigSchema::CACHE_DIR,
                     self::DEFAULT_DIRECTORY,
                 ),
-                ConfigSchema::CACHE_DIR,
             );
         }
 
@@ -85,7 +92,7 @@ final class CacheConfigurationResolver implements CacheConfigurationResolverInte
      * store would create it on first write. A path that cannot become a
      * writable directory is.
      */
-    private function assertUsable(CacheConfiguration $configuration): void
+    private function assertUsable(CacheConfiguration $configuration, ?ResolvedValueInterface $configuredDirectory): void
     {
         $path = $configuration->directory->value();
 
@@ -93,15 +100,16 @@ final class CacheConfigurationResolver implements CacheConfigurationResolverInte
             return;
         }
 
-        // Resolved rather than CommandLine: the directory is merged from
-        // `--cache-dir` and `cache.dir`, and which of them last named it is
-        // no longer recoverable here.
-        throw ConfigurationRefusal::aboutResolvedInput(
-            \sprintf(
-                'Cache directory "%s" is not writable. Point cache.dir (or --cache-dir) at a writable path,'
-                . ' or disable the cache with --no-cache.',
-                $path,
-            ),
+        $summary = \sprintf(
+            'Cache directory "%s" is not writable. Point cache.dir (or --cache-dir) at a writable path,'
+            . ' or disable the cache with --no-cache.',
+            $path,
         );
+
+        if ($configuredDirectory !== null) {
+            $configuredDirectory->refuse($summary);
+        }
+
+        throw ConfigurationRefusal::aboutInput(ConfigurationOrigin::of(ConfigurationSource::Defaults), $summary);
     }
 }

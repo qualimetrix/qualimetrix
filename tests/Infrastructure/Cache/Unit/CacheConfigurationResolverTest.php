@@ -6,11 +6,12 @@ namespace Qualimetrix\Tests\Infrastructure\Cache\Unit;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\CacheConfigurationResolver;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 final class CacheConfigurationResolverTest extends TestCase
 {
@@ -19,7 +20,7 @@ final class CacheConfigurationResolverTest extends TestCase
     #[Test]
     public function itAppliesOwnerDefaultsAndLastOverrides(): void
     {
-        $configuration = (new CacheConfigurationResolver())->resolve(new ConfigurationDocument([
+        $configuration = (new CacheConfigurationResolver())->resolve(LayeredDocument::of([
             ['source' => 'config', 'values' => ['cache.dir' => 'var/cache', 'cache.enabled' => false]],
         ], AbsolutePath::fromString('/project')), AbsolutePath::fromString('/project'));
 
@@ -38,9 +39,14 @@ final class CacheConfigurationResolverTest extends TestCase
     {
         touch($this->root . '/blocked');
 
-        $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('is not writable');
-        $this->resolve('blocked/cache', enabled: true);
+        try {
+            $this->resolve('blocked/cache', enabled: true);
+            self::fail('An enabled cache directory beneath a file must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString('is not writable', $refusal->getMessage());
+            self::assertSame(ConfigurationSource::ConfigFile, $refusal->origin()->source());
+            self::assertSame(['cache', 'dir'], $refusal->position()?->segments);
+        }
     }
 
     #[Test]
@@ -109,6 +115,22 @@ final class CacheConfigurationResolverTest extends TestCase
         self::assertFalse($configuration->enabled);
     }
 
+    #[Test]
+    public function itAttributesAnUnwritableDefaultDirectoryToDefaults(): void
+    {
+        $projectFile = $this->root . '/not-a-directory';
+        touch($projectFile);
+        $projectRoot = AbsolutePath::fromString($projectFile);
+
+        try {
+            (new CacheConfigurationResolver())->resolve(LayeredDocument::of([], $projectRoot), $projectRoot);
+            self::fail('The default cache directory beneath a file cannot be created.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame(ConfigurationSource::Defaults, $refusal->origin()->source());
+            self::assertNull($refusal->position());
+        }
+    }
+
     protected function setUp(): void
     {
         $this->root = sys_get_temp_dir() . '/qmx-cache-resolver-' . bin2hex(random_bytes(6));
@@ -124,7 +146,7 @@ final class CacheConfigurationResolverTest extends TestCase
     {
         $root = AbsolutePath::fromString($this->root);
 
-        return (new CacheConfigurationResolver())->resolve(new ConfigurationDocument([
+        return (new CacheConfigurationResolver())->resolve(LayeredDocument::of([
             ['source' => 'config', 'values' => ['cache.dir' => $directory, 'cache.enabled' => $enabled]],
         ], $root), $root);
     }
