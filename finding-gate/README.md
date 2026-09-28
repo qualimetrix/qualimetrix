@@ -558,6 +558,11 @@ build a substitute. Archive digest checks bind the supplied and compared
 artifact. Packing defects outside captured publications remain outside this
 comparison.
 
+The private candidate carries identity maps and empty transition declaration
+tables. Permissions for a product change between commits do not apply to an
+archive that must match its own commit. The committed declarations remain
+unchanged; the full corpus, equivalence tuple and normalization are preserved.
+
 The corpus is also read by the channel-level drift governance control and
 the rename/runtime-channel generators. `composer enumeration:renames`
 measures current vocabulary and preserves authored rename decisions and
