@@ -24,12 +24,6 @@ use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
  * 1. Add a constant below
  * 2. Add an entry to ENTRIES (if YAML-configurable)
  * 3. Add handling in the appropriate consumer
- *
- * @qmx-threshold coupling.cbo warning=23 -- Afferent by rule: every consumer names a
- * key through these constants instead of a literal, so CBO counts adoption, not
- * entanglement (Ce=1). Raw CBO 22 gets one-edge headroom. An owner that declares
- * its own section names its own key and leaves this count, as `architecture`
- * and `computed_metrics` do.
  */
 final class ConfigSchema
 {
