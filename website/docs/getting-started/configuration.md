@@ -480,6 +480,9 @@ fail_on: error    # Only fail on errors (default)
 
 The default is `error`: warnings and Info-level diagnostics are shown in the output but do not cause a non-zero exit code. Use `fail_on: warning` if you want warnings to also fail the build.
 
+Use `fail_on: none` to keep findings from failing the run. The former YAML
+`fail_on: false` is refused; replace it with `none`.
+
 !!! info "`info` is report-only and is not a `fail_on` value"
     `warning` and `error` are the only severities `fail_on` accepts — `fail_on: info` is
     rejected with an error naming the accepted values. Severity `info` means "observe, do not
@@ -755,8 +758,9 @@ Each layer is read as it was written. Its keys are recognised and the form of
 every value it writes is judged in that layer, before anything is merged, so a
 misspelt key or a wrong value in a preset is refused even when your file
 overrides it. Then the layers are merged, each key by the policy it declares.
-What the merged value means — a layer name `architecture.allow` refers to, a
-formula that has to compile — is judged once, on the merged value. A refusal
+A constraint needing the merged document — a layer name `architecture.allow`
+refers to or a computed metric referenced by a formula — is judged once, on
+the merged value. Formula syntax itself is checked in every writing layer. A refusal
 about a resolved value, and every warning, names the layer that wrote
 the value it is about; in `--format=json` that is the `source` field (see
 [Output Formats](../usage/output-formats.md)). Three Finding inputs remain on a
@@ -767,6 +771,13 @@ yet retain the authored value's provenance.
 
 Five rules describe the document engine; rule-specific meaning for these
 three Finding inputs remains with their owner:
+
+A value that is invalid without merged context is refused in every layer that
+writes it: the wrong shape, a forbidden empty value or a value outside a closed
+dictionary. A file's `format: bogus` or `cache: {dir: ""}` is still refused
+under a valid `--format` or `--cache-dir`. A constraint depending on other
+resolved values is judged on the winner. Text refusals name the writing layer;
+JSON publishes it in `source`.
 
 - **`~` means "not written".** A key written `~`, or left empty (`key:`), leaves
   the value to the layer below. The key itself is still recognised: a misspelt
@@ -779,7 +790,8 @@ three Finding inputs remains with their owner:
 - **A list replaces or accumulates, by key.** `paths`, `only_rules`,
   `architecture.layers`, one layer's target list under `architecture.allow` and
   a computed metric's `levels` are replaced whole by the last layer that writes
-  them — `[]` included. `exclude`, `suppress_paths`, `suppress_namespaces`,
+  them. An empty list is still a written replacement, subject to its owner's
+  constraints: `paths: []` is refused. `exclude`, `suppress_paths`, `suppress_namespaces`,
   `disabled_rules` and `exclude_health` accumulate: every layer adds to them. An
   item of a list is a value, not an unwritten key, so an item written `~` is
   refused.
@@ -873,8 +885,8 @@ The table is generated from the declarations the configuration engine merges
 by. `<name>` stands for a name you choose, and `[]` for any item of a list: an
 item's keys are read from the layer that wrote the list and never merge. The
 owner of a key may still refuse a merged value the policy let through — a
-formula that does not compile, a layer that allows a layer `layers` does not
-declare.
+formula referencing an unknown computed metric, or a layer that allows a layer
+`layers` does not declare.
 
 <!-- generated:configuration-merge-table:begin (php scripts/generate-configuration-merge-table.php) -->
 

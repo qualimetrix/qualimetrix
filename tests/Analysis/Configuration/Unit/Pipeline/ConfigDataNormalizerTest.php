@@ -100,9 +100,9 @@ final class ConfigDataNormalizerTest extends TestCase
     #[Test]
     public function itKeepsExcludeHealthKeyAsCamelCase(): void
     {
-        $result = ConfigDataNormalizer::normalize(['excludeHealth' => ['typing']]);
+        $result = ConfigDataNormalizer::normalize(['exclude_health' => ['typing']]);
 
-        self::assertSame(['typing'], $result['excludeHealth']);
+        self::assertSame(['typing'], $result['exclude_health']);
     }
 
     #[Test]
@@ -166,8 +166,8 @@ final class ConfigDataNormalizerTest extends TestCase
 
     #[Test]
     #[TestWith(['coupling'])]
-    #[TestWith(['computedMetrics'])]
-    #[TestWith(['excludeHealth'])]
+    #[TestWith(['computed_metrics'])]
+    #[TestWith(['exclude_health'])]
     #[TestWith(['architecture'])]
     public function itReadsANullDocumentRootAsAnUnwrittenKey(string $root): void
     {
@@ -190,13 +190,13 @@ final class ConfigDataNormalizerTest extends TestCase
         $result = ConfigDataNormalizer::normalize([
             'architecture' => ['coverage-gap' => 'ignore', 'layers' => null],
             'coupling' => ['frameworkNamespaces' => null],
-            'computedMetrics' => ['health.typing' => ['enabled' => null, 'warning' => 80]],
+            'computed_metrics' => ['health.typing' => ['enabled' => null, 'warning' => 80]],
         ]);
 
         self::assertSame(['coverage-gap' => 'ignore'], $result['architecture']);
         self::assertSame([], $result['coupling']);
         self::assertArrayNotHasKey('coupling.framework_namespaces', $result);
-        self::assertSame(['health.typing' => ['warning' => 80]], $result['computedMetrics']);
+        self::assertSame(['health.typing' => ['warning' => 80]], $result['computed_metrics']);
     }
 
     #[Test]
@@ -222,23 +222,23 @@ final class ConfigDataNormalizerTest extends TestCase
         $result = ConfigDataNormalizer::normalize([
             'includeGenerated' => false,
             'cache' => ['enabled' => false, 'dir' => ''],
-            'excludeHealth' => [],
-            'computedMetrics' => ['health.typing' => ['enabled' => false, 'warning' => 0]],
+            'exclude_health' => [],
+            'computed_metrics' => ['health.typing' => ['enabled' => false, 'warning' => 0]],
         ]);
 
         self::assertFalse($result['include_generated']);
         self::assertFalse($result['cache.enabled']);
         self::assertSame('', $result['cache.dir']);
-        self::assertSame([], $result['excludeHealth']);
-        self::assertSame(['health.typing' => ['enabled' => false, 'warning' => 0]], $result['computedMetrics']);
+        self::assertSame([], $result['exclude_health']);
+        self::assertSame(['health.typing' => ['enabled' => false, 'warning' => 0]], $result['computed_metrics']);
     }
 
     #[Test]
     public function itKeepsANullListElement(): void
     {
-        $result = ConfigDataNormalizer::normalize(['excludeHealth' => [null, 'health.typing']]);
+        $result = ConfigDataNormalizer::normalize(['exclude_health' => [null, 'health.typing']]);
 
-        self::assertSame([null, 'health.typing'], $result['excludeHealth']);
+        self::assertSame([null, 'health.typing'], $result['exclude_health']);
     }
 
     /**
@@ -251,10 +251,10 @@ final class ConfigDataNormalizerTest extends TestCase
     public function itKeepsANullIdentifierEntryForTheRootOwnerToJudge(): void
     {
         $result = ConfigDataNormalizer::normalize([
-            'computedMetrics' => ['my-metric' => null, 'health.typing' => ['enabled' => null, 'warning' => 80]],
+            'computed_metrics' => ['my-metric' => null, 'health.typing' => ['enabled' => null, 'warning' => 80]],
         ]);
 
-        self::assertSame(['my-metric' => null, 'health.typing' => ['warning' => 80]], $result['computedMetrics']);
+        self::assertSame(['my-metric' => null, 'health.typing' => ['warning' => 80]], $result['computed_metrics']);
     }
 
     #[Test]

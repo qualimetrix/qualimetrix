@@ -19,6 +19,8 @@ Console/
 ├── CliOptionsParser.php
 ├── MeasuredFindingSet.php         # The set a baseline measures (ADR 0017): the pipeline's findings before the baseline stage. Defined by configuration alone — qmx.yaml, source annotations, and the config CLI flags baseline commands share with check (--preset, --disable-rule, --only-rule, --include-generated, --include-autoload-dev), which can narrow or widen it; check's own --suppress-path/--suppress-namespace flags never reach it, since baseline commands deliberately omit them
 ├── FindingFilterOrchestrator.php  # Builds Reporting projection options and renders stage diagnostics; policy and ordering remain in Reporting
+├── ExitPolicySection.php            # every writing layer's fail_on value, using the resolved ExitPolicy validator
+├── MemoryLimitSection.php           # every writing layer's memory_limit syntax, using RuntimeLimits
 ├── RuntimeConfigurator.php
 ├── RuntimeLoggerConfigurator.php    # Creates, publishes, and returns the logger for one run
 ├── AnalysisRuntimeConfigurator.php  # Per-run rule, collector, cache, and feature state
@@ -56,6 +58,13 @@ Console/
     └── Debug/
         └── LayerAssignmentCommand.php # Validate input, configure runtime, and render layer matches
 ```
+
+`ExitPolicySection` and `MemoryLimitSection` declare the Console-owned
+`fail_on` and `memory_limit` roots. Their context-free forms are judged in every
+writing layer through the same validators the resolved runtime values use.
+Whether PHP can apply a valid memory limit depends on the running process and
+is judged only when configuring that runtime. `fail_on: false` is refused;
+`fail_on: none` selects the policy that does not fail for findings.
 
 ## Commands
 

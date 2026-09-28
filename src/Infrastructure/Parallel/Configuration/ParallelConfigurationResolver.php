@@ -4,21 +4,38 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Parallel\Configuration;
 
-use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
+use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
 
-final class ParallelConfigurationResolver implements ParallelConfigurationResolverInterface
+final class ParallelConfigurationResolver implements ParallelConfigurationResolverInterface, DocumentSectionSchemaInterface
 {
-    public function resolve(ConfigurationDocument $document): ParallelConfiguration
+    public function key(): string
     {
-        return new ParallelConfiguration($this->workerCount($document));
+        return ConfigSchema::PARALLEL;
     }
 
-    private function workerCount(ConfigurationDocument $document): ?int
+    public function schema(): NodeSchema
     {
-        $value = $document->resolved()->get(ConfigurationRoot::Parallel->value, 'workers');
+        return NodeSchema::map(['workers' => NodeSchema::scalar(ScalarForm::Integer)->judgedInEachLayer(
+            static function (ResolvedValueInterface $value): void {
+                self::acceptedWorkers($value);
+            },
+        )]);
+    }
+
+    public function resolve(ConfigurationDocument $document): ParallelConfiguration
+    {
+        return new ParallelConfiguration(self::acceptedWorkers($document->resolved()->get($this->key(), 'workers')));
+    }
+
+    private static function acceptedWorkers(?ResolvedValueInterface $value): ?int
+    {
         if ($value === null) {
             return null;
         }

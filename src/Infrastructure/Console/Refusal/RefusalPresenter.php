@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console\Refusal;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
@@ -132,6 +133,17 @@ final class RefusalPresenter
         // the exit ladder above reports that instead of this refusal. Only
         // the frame below is ours to have the formatter read.
         $this->writeStderr($output, \sprintf('<error>%s</error>', OutputFormatter::escape($message)));
+
+        $unmentioned = array_filter(
+            array_map(
+                static fn(ConfigurationOrigin $source): string => $source->describe(),
+                array_filter($sources ?? [], static fn(ConfigurationOrigin $source): bool => $source->source() !== ConfigurationSource::Resolved),
+            ),
+            static fn(string $source): bool => stripos($message, $source) === false,
+        );
+        if ($unmentioned !== []) {
+            $this->writeStderr($output, OutputFormatter::escape('Source: ' . implode('; ', $unmentioned) . '.'));
+        }
 
         // The `--quiet` rule that hides the pointer on a report does not apply
         // here: this presenter writes at VERBOSITY_QUIET on purpose, because a

@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowListEntry;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowTarget;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\InvalidSelectorException;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelector;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelectorParser;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationWarning;
 
 /**
@@ -55,7 +52,7 @@ final class AllowValidator
 
         foreach ($allow->keys() as $sourceRaw) {
             $targets = $allow->child($sourceRaw);
-            $sourceSelector = $this->parseSelector(
+            $sourceSelector = CarriedValueForm::parseSelector(
                 $sourceRaw,
                 \sprintf('architecture.allow.%s', $sourceRaw),
                 $targets,
@@ -363,10 +360,10 @@ final class AllowValidator
         if (self::isLongForm($entry)) {
             [$targetRaw, $allowCrossInstance, $relations] = LongFormAllowEntryNormalizer::normalize($source, $index, $entry);
 
-            return [$this->parseSelector($targetRaw, $context, $entry->child('target')), $allowCrossInstance, $relations];
+            return [CarriedValueForm::parseSelector($targetRaw, $context, $entry->child('target')), $allowCrossInstance, $relations];
         }
 
-        return [$this->parseSelector(CarriedValueForm::selector($source, $index, $entry), $context, $entry), false, null];
+        return [CarriedValueForm::parseSelector(CarriedValueForm::selector($source, $index, $entry), $context, $entry), false, null];
     }
 
     private static function isLongForm(SectionSpot $entry): bool
@@ -374,19 +371,5 @@ final class AllowValidator
         $value = $entry->value();
 
         return \is_array($value) && !array_is_list($value);
-    }
-
-    /**
-     * Catches the Core-domain {@see InvalidSelectorException} from
-     * {@see LayerSelectorParser::parse()} and rewraps it as a
-     * {@see ConfigurationRefusal} with the user-facing config path prefix.
-     */
-    private function parseSelector(string $raw, string $context, SectionSpot $spot): LayerSelector
-    {
-        try {
-            return LayerSelectorParser::parse($raw);
-        } catch (InvalidSelectorException $e) {
-            throw $spot->refusal(\sprintf('%s: %s', $context, $e->getMessage()), written: $raw);
-        }
     }
 }

@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
@@ -67,7 +68,6 @@ final class ExitPolicyTest extends TestCase
     /** @return iterable<string, array{mixed, Severity|false}> */
     public static function provideProgrammaticValues(): iterable
     {
-        yield 'never fail' => [false, false];
         yield 'warning severity' => [Severity::Warning, Severity::Warning];
     }
 
@@ -87,6 +87,7 @@ final class ExitPolicyTest extends TestCase
     /** @return iterable<string, array{mixed, string}> */
     public static function provideInvalidValues(): iterable
     {
+        yield 'scalar false' => [false, 'Invalid value'];
         yield 'scalar true' => [true, '"1"'];
         yield 'non-scalar array' => [[], 'array'];
     }
@@ -98,6 +99,19 @@ final class ExitPolicyTest extends TestCase
         $this->expectExceptionMessage('Allowed values: none, warning, error');
 
         ExitPolicy::fromResolvedValue(self::document('warnin')->resolved()->get(ConfigSchema::FAIL_ON));
+    }
+
+    #[Test]
+    public function itRefusesAuthoredFalseAndNamesItsFile(): void
+    {
+        try {
+            self::document(false);
+            self::fail('The retired boolean spelling of fail_on was accepted.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
+            self::assertSame(['fail_on'], $refusal->position()?->segments);
+            self::assertStringContainsString('must be string, got bool', $refusal->summary());
+        }
     }
 
     #[Test]
@@ -115,6 +129,24 @@ final class ExitPolicyTest extends TestCase
         ], AbsolutePath::fromString('/project'));
 
         self::assertSame(Severity::Error, ExitPolicy::fromResolvedValue($document->resolved()->get(ConfigSchema::FAIL_ON))->failOn);
+    }
+
+    #[Test]
+    #[TestWith(['warnin'])]
+    #[TestWith(['info'])]
+    public function itRefusesAnInvalidThresholdEvenWhenTheCommandLineOverridesIt(string $threshold): void
+    {
+        try {
+            LayeredDocument::of([
+                ['source' => 'qmx.yaml', 'values' => [ConfigSchema::FAIL_ON => $threshold]],
+                ['source' => 'cli', 'values' => [ConfigSchema::FAIL_ON => 'error']],
+            ], AbsolutePath::fromString('/project'));
+            self::fail('The command line hid an invalid fail_on threshold.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
+            self::assertSame(['fail_on'], $refusal->position()?->segments);
+            self::assertStringContainsString('Allowed values: none, warning, error', $refusal->summary());
+        }
     }
 
     private static function document(mixed $value): ConfigurationDocument

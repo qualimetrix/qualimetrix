@@ -1010,7 +1010,7 @@ final class DirectivesCommandTest extends TestCase
 
         $tester = new CommandTester($this->commandWithAudit($audit));
         $tester->execute(
-            ['paths' => [$this->tempDir . '/src'], '--config' => $this->writeConfig("paths: []\n")],
+            ['paths' => [$this->tempDir . '/src'], '--config' => $this->writeConfig("{}\n")],
             ['capture_stderr_separately' => true],
         );
 
@@ -1289,7 +1289,7 @@ final class DirectivesCommandTest extends TestCase
      */
     private function audit(array $input): CommandTester
     {
-        $input['--config'] ??= $this->writeConfig("paths: []\n");
+        $input['--config'] ??= $this->writeConfig("{}\n");
 
         $container = (new ContainerFactory())->create();
         $command = $container->get(DirectivesCommand::class);
@@ -1325,7 +1325,7 @@ final class DirectivesCommandTest extends TestCase
     /** @param array<string, mixed> $input */
     private function runCheck(array $input): CommandTester
     {
-        $input['--config'] ??= $this->writeConfig("paths: []\n");
+        $input['--config'] ??= $this->writeConfig("{}\n");
 
         $container = (new ContainerFactory())->create();
         $command = $container->get(CheckCommand::class);
@@ -1371,7 +1371,7 @@ final class DirectivesCommandTest extends TestCase
 
         $tester = $this->audit([
             'paths' => [$this->tempDir . '/src'],
-            '--config' => $this->writeConfig("paths: []\nrules:\n" . $rules),
+            '--config' => $this->writeConfig("rules:\n" . $rules),
         ]);
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode());

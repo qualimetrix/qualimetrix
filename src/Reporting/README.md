@@ -128,14 +128,17 @@ queried through `GitScopeQueryInterface`; its Infrastructure adapter never
 leaks into Reporting. Git changes only the reported list and cannot alter the
 measured, accepted, or stale Baseline facts.
 
-Configuration-owned `OutputFormat` carries the resolved formatter name to the
+Reporting-owned `OutputFormat` carries the resolved formatter name to the
 Console presenter without adding output policy to the transitional runtime
 configuration. `OutputFormatResolver` closes that set before a single file is
 read: it asks `FormatterRegistryInterface` which names exist, rather than
 holding a list that could fall out of step with the registry, and refuses an
 unknown one with `ConfigurationRefusal`. Every contribution is judged, not only
 the winning one — a `format:` typo in a file is answered even when the command
-line overrode it.
+line overrode it. The resolver declares the `format` document root through
+`DocumentSectionSchemaInterface`; its registry-backed judgement runs in each
+writing layer before merge. Infrastructure registers this exact service with
+autoconfiguration, alongside the other declared document sections.
 
 ### Suppression composition
 

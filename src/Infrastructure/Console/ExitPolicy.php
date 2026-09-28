@@ -38,7 +38,7 @@ final readonly class ExitPolicy
     private static function resolvedPolicy(ResolvedValueInterface $value): Severity|false
     {
         $configured = $value->plain();
-        if ($configured === false || $configured === 'none') {
+        if ($configured === 'none') {
             return false;
         }
 

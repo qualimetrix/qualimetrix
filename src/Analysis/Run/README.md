@@ -27,8 +27,8 @@ Run/
 ├── Collection/                 # orchestration and per-file processing;
 │                               # CollectionPhaseFold assembles per-file
 │                               # results into the phase output
-├── Configuration/              # run configuration resolution and project
-│                               # scope coverage
+├── Configuration/              # run configuration resolution, PathsSection
+│                               # and project scope coverage
 ├── Discovery/                  # discovery coordination and implementations
 ├── ExcludeBinding/             # what the run's exclude patterns bound to, and
 │                               # the `discovery.unmatched-exclude` producer
@@ -37,6 +37,12 @@ Run/
 │                               # run both of its entry points share
 └── RuleProducerPreparation.php # capability-specific producer gating and reset
 ```
+
+`PathsSection` declares `paths` to the document engine and shares its value
+reader with `RunConfigurationResolver`. Each
+writing layer must supply a non-empty list of non-empty strings, including a
+layer overridden by CLI paths. Existence and conflicts with the resolved
+exclusions depend on the final run and are judged after merging.
 
 ## Phase order
 

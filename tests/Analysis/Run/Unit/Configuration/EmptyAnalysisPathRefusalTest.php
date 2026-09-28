@@ -112,25 +112,24 @@ final class EmptyAnalysisPathRefusalTest extends TestCase
         self::assertSame(['/project'], array_map(static fn($path): string => $path->value(), self::resolve(null)->paths));
     }
 
-    /**
-     * Emptiness is judged of the effective list, not of every contribution: a
-     * document writing `paths: []` and an invocation naming a directory is a
-     * lawful override, and the run analyses the directory.
-     */
+    /** @param list<string> $paths */
     #[Test]
-    public function itAcceptsAnEmptyContributionThatALaterSourceOverrides(): void
+    #[TestWith([[]])]
+    #[TestWith([['']])]
+    #[TestWith([['src', '']])]
+    public function itRefusesAnEmptyContributionThatALaterSourceOverrides(array $paths): void
     {
-        $document = LayeredDocument::of(
-            [
-                ['source' => 'config', 'values' => ['paths' => []]],
+        try {
+            LayeredDocument::of([
+                ['source' => 'qmx.yaml', 'values' => ['paths' => $paths]],
                 ['source' => 'cli', 'values' => ['paths' => ['src']]],
-            ],
-            AbsolutePath::fromString('/project'),
-        );
-
-        $resolved = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))->resolve($document);
-
-        self::assertSame(['/project/src'], array_map(static fn($path): string => $path->value(), $resolved->paths));
+            ], AbsolutePath::fromString('/project'));
+            self::fail('The command line hid an empty paths contribution.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
+            self::assertSame($paths === [] ? ['paths'] : ['paths', (string) array_search('', $paths, true)], $refusal->position()?->segments);
+            self::assertStringContainsString('empty', $refusal->summary());
+        }
     }
 
     /**

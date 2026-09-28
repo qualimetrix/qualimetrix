@@ -82,12 +82,12 @@ final class ComputedMetricRefusalWording
         );
     }
 
-    public static function invalidFormulaSyntax(string $metricName, string $level, string $reason, string $formula): string
+    public static function invalidFormulaSyntax(string $metricName, ?string $level, string $reason, string $formula): string
     {
         return \sprintf(
-            'Invalid formula syntax for computed metric "%s" at level "%s": %s (formula: %s)',
+            'Invalid formula syntax for computed metric "%s"%s: %s (formula: %s)',
             $metricName,
-            $level,
+            $level === null ? '' : \sprintf(' at level "%s"', $level),
             $reason,
             $formula,
         );

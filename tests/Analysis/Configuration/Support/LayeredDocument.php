@@ -16,7 +16,11 @@ use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Configuration\DocumentRoots;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Analysis\Run\Configuration\PathsSection;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Console\ExitPolicySection;
+use Qualimetrix\Infrastructure\Console\MemoryLimitSection;
+use Qualimetrix\Infrastructure\Parallel\Configuration\ParallelConfigurationResolver;
 use ReflectionProperty;
 
 /**
@@ -24,9 +28,9 @@ use ReflectionProperty;
  * both as a contribution and as a written layer the engine composes, so a
  * resolver reading either sees the same input.
  *
- * A section no owner declares here is carried unread, as the pipeline carries
- * a root nobody declared; a test of an owner that reads its section passes
- * that owner's declaration, or every declaration a compiled pipeline holds.
+ * Runtime roots formerly declared by Configuration use their real owners.
+ * Other sections are carried unread until a fixture passes that owner's
+ * declaration, or every declaration a compiled pipeline holds.
  */
 final class LayeredDocument
 {
@@ -43,11 +47,32 @@ final class LayeredDocument
             $layers[] = new AuthoredLayer(self::origin($source['source']), self::node($written), $source['source'] !== 'cli');
         }
 
+        $declarations = [];
+        foreach ([...self::standaloneSections(), ...$sections] as $section) {
+            $declarations[$section->key()] = $section;
+        }
+
         return new ConfigurationDocument(
             $sources,
             $root,
-            DocumentComposer::compose(new DocumentSchema(DocumentRoots::completing(array_values($sections))), $layers),
+            DocumentComposer::compose(new DocumentSchema(DocumentRoots::completing(array_values($declarations))), $layers),
         );
+    }
+
+    /**
+     * Owner declarations for roots formerly declared by Configuration, used
+     * by standalone fixtures without a compiled container.
+     *
+     * @return list<DocumentSectionSchemaInterface>
+     */
+    public static function standaloneSections(): array
+    {
+        return [
+            new ExitPolicySection(),
+            new MemoryLimitSection(),
+            new ParallelConfigurationResolver(),
+            new PathsSection(),
+        ];
     }
 
     /**

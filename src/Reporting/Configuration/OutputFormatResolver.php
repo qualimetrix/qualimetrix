@@ -7,22 +7,31 @@ namespace Qualimetrix\Reporting\Configuration;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Reporting\Contract\OutputFormat;
 use Qualimetrix\Reporting\Contract\OutputFormatResolverInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 
-final readonly class OutputFormatResolver implements OutputFormatResolverInterface
+final readonly class OutputFormatResolver implements OutputFormatResolverInterface, DocumentSectionSchemaInterface
 {
     public function __construct(
         private FormatterRegistryInterface $formatters,
     ) {}
 
-    /**
-     * The set of formats is closed before any file is read, so a value this
-     * resolver cannot execute is refused here rather than carried on to the
-     * registry, which would raise it after the analysis had already run and
-     * without the product's refusal framing.
-     */
+    public function key(): string
+    {
+        return ConfigSchema::FORMAT;
+    }
+
+    public function schema(): NodeSchema
+    {
+        return NodeSchema::scalar(ScalarForm::String)->judgedInEachLayer(function (ResolvedValueInterface $format): void {
+            $this->accepted($format);
+        });
+    }
+
     public function resolve(ConfigurationDocument $document): OutputFormat
     {
         $format = $document->resolved()->get(ConfigSchema::FORMAT);

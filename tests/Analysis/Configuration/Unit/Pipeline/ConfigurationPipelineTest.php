@@ -21,6 +21,7 @@ use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 #[CoversClass(ConfigurationPipeline::class)]
 final class ConfigurationPipelineTest extends TestCase
@@ -29,7 +30,7 @@ final class ConfigurationPipelineTest extends TestCase
     public function itReturnsAnEmptyDocumentWithTheInvocationDirectoryWhenThereAreNoStages(): void
     {
         $root = AbsolutePath::fromString('/project');
-        $document = (new ConfigurationPipeline())->resolve(new ConfigurationResolutionRequest($root));
+        $document = (new ConfigurationPipeline(LayeredDocument::standaloneSections()))->resolve(new ConfigurationResolutionRequest($root));
 
         self::assertSame($root, $document->workingDirectory());
         self::assertSame([], $document->appliedSources());
@@ -38,7 +39,7 @@ final class ConfigurationPipelineTest extends TestCase
     #[Test]
     public function itSortsStagesByPriority(): void
     {
-        $pipeline = new ConfigurationPipeline();
+        $pipeline = new ConfigurationPipeline(LayeredDocument::standaloneSections());
         $late = $this->stage(30, 'late', ['format' => 'json']);
         $early = $this->stage(10, 'early', ['format' => 'text']);
         $pipeline->addStage($late);
@@ -50,7 +51,7 @@ final class ConfigurationPipelineTest extends TestCase
     #[Test]
     public function itRetainsFindingsOrderedRawInputsInsteadOfApplyingFeatureMergeSemantics(): void
     {
-        $pipeline = new ConfigurationPipeline();
+        $pipeline = new ConfigurationPipeline(LayeredDocument::standaloneSections());
         $pipeline->addStage($this->stage(20, 'config', [
             'rules' => ['size.loc' => ['warning' => 1000]],
             'disabled_rules' => ['security'],
@@ -73,7 +74,7 @@ final class ConfigurationPipelineTest extends TestCase
     #[Test]
     public function itSkipsStagesThatDoNotContribute(): void
     {
-        $pipeline = new ConfigurationPipeline();
+        $pipeline = new ConfigurationPipeline(LayeredDocument::standaloneSections());
         $pipeline->addStage($this->stage(10, 'empty', null));
 
         self::assertSame([], $pipeline->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project')))->appliedSources());
@@ -82,21 +83,21 @@ final class ConfigurationPipelineTest extends TestCase
     #[Test]
     public function itExpandsMultiDocumentLayersWithoutCollapsingThem(): void
     {
-        $pipeline = new ConfigurationPipeline();
+        $pipeline = new ConfigurationPipeline(LayeredDocument::standaloneSections());
         $pipeline->addStage($this->stage(15, 'preset:strict,ci', [], [
-            ['format' => 'text'],
-            ['format' => 'json'],
+            ['fail_on' => 'warning'],
+            ['fail_on' => 'error'],
         ], [
-            self::preset(['format' => 'text']),
+            self::preset(['fail_on' => 'warning']),
             new AuthoredLayer(
                 ConfigurationOrigin::of(ConfigurationSource::Preset, 'ci'),
-                AuthoredNode::fromPlain(['format' => 'json']),
+                AuthoredNode::fromPlain(['fail_on' => 'error']),
             ),
         ]));
 
         $document = $pipeline->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project')));
 
-        self::assertSame('json', $document->resolved()->get('format')?->plain());
+        self::assertSame('error', $document->resolved()->get('fail_on')?->plain());
         self::assertSame(['preset:strict,ci'], $document->appliedSources());
     }
 
@@ -107,7 +108,7 @@ final class ConfigurationPipelineTest extends TestCase
     #[Test]
     public function itComposesTheAuthoredLayers(): void
     {
-        $pipeline = new ConfigurationPipeline();
+        $pipeline = new ConfigurationPipeline(LayeredDocument::standaloneSections());
         $pipeline->addSection(self::couplingSection());
         $pipeline->addStage($this->stage(20, 'qmx.yaml', ['fail_on' => 'warning'], [], [
             self::file(['failOn' => 'warning', 'coupling' => ['frameworkNamespaces' => ['App']]]),
@@ -139,7 +140,7 @@ final class ConfigurationPipelineTest extends TestCase
     #[Test]
     public function itRefusesARootNoOneKnowsEvenWhenWrittenNull(): void
     {
-        $pipeline = new ConfigurationPipeline();
+        $pipeline = new ConfigurationPipeline(LayeredDocument::standaloneSections());
         $pipeline->addStage($this->stage(20, 'qmx.yaml', [], [], [self::file(['fail_onn' => null])]));
 
         try {
@@ -161,7 +162,7 @@ final class ConfigurationPipelineTest extends TestCase
     {
         $deferred = ConfigurationRefusal::aboutConfigFileDocument('/project/qmx.yaml', 'the folded values are refused');
 
-        $accepted = new ConfigurationPipeline();
+        $accepted = new ConfigurationPipeline(LayeredDocument::standaloneSections());
         $accepted->addStage($this->stage(20, 'qmx.yaml', [], [], [self::file(['fail_on' => 'error'])], [$deferred]));
 
         try {
@@ -171,7 +172,7 @@ final class ConfigurationPipelineTest extends TestCase
             self::assertSame($deferred, $refusal);
         }
 
-        $refused = new ConfigurationPipeline();
+        $refused = new ConfigurationPipeline(LayeredDocument::standaloneSections());
         $refused->addStage($this->stage(20, 'qmx.yaml', [], [], [self::file(['Fail_On' => 'error'])], [$deferred]));
 
         try {
@@ -186,7 +187,7 @@ final class ConfigurationPipelineTest extends TestCase
     #[Test]
     public function itResolvesAnEmptyDocumentWhenNoStageHandsOverAWrittenLayer(): void
     {
-        $pipeline = new ConfigurationPipeline();
+        $pipeline = new ConfigurationPipeline(LayeredDocument::standaloneSections());
         $pipeline->addStage($this->stage(20, 'qmx.yaml', ['fail_on' => 'warning']));
 
         $document = $pipeline->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project')));

@@ -763,7 +763,7 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage('architecture.allow.app-{m');
 
         $this->validator->validate(
-            ArchitectureDocument::allow(['app-{m' => []]),
+            ArchitectureDocument::spot(['allow' => ['app-{m' => []]], 'allow'),
             ['app-Order'],
             $warnings,
         );

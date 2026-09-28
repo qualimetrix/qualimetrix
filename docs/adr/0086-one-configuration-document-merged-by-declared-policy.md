@@ -53,10 +53,21 @@ refused whatever its value, `~` included. (2) The layers merge by each node's
 policy. (3) Names whose dictionary is another node are judged once that node is
 merged, so a file may allow a layer its preset declares. (4) The resolved
 document keeps, for every leaf, the layer that won it and, for every merged
-node, the layers that contributed. Form is judged in every layer; meaning, on
-the merged value.
+node, the layers that contributed. A value whose invalidity is visible without
+the merged context — its form, a forbidden empty value or membership of a
+closed dictionary — is judged in every layer that writes it. Constraints that
+depend on other resolved values are judged only on the winner. Reporting owns
+the format dictionary and declares its per-layer judgement; an unknown format
+cannot be hidden by a later `--format`. A cache directory cannot be empty even
+when a later layer supplies a valid directory. Run, Console and Parallel
+likewise declare the value forms they already own: path-list emptiness, exit
+policy, memory-limit syntax and worker-count range. Architecture reuses its
+pattern, selector and relation parsers; ComputedMetrics shares formula syntax
+and level parsing between its schema and resolved readers. This keeps one
+algorithm for each subject rather than a second Configuration-owned dictionary.
+The undeclared rule-specific subtree remains a named temporary boundary.
 
-**3. Five policies, and what they mean to an author.** A scalar goes to the last
+**3. Six policies, and what they mean to an author.** A scalar goes to the last
 layer that writes it. A map merges key by key, and a written empty map changes
 nothing. A list is either replaced whole (`paths`, `only_rules`, `layers`,
 `coupling.framework_namespaces`, one layer's `allow` targets, `levels`) or
@@ -65,13 +76,18 @@ accumulated (`exclude`, `suppress_*`,
 value. A map keyed by names merges entry by entry. A shorthand is expanded in
 the layer that wrote it, so a file's `warning` over a preset's `threshold` keeps
 the preset's `error`; writing the shorthand beside one of its keys in the same
-layer is refused. `~` at any depth means "not written". `only_rules: []` over a
+layer is refused. `~` under a map key means "not written"; as a list item it
+is refused, because an item is a value rather than an unwritten key. A named
+map retains the name of an entry whose body is `~`. The sixth policy,
+`PerLayer`, carries contributions without merging: it is restricted to the
+temporary undeclared `rules` root and Architecture's opaque criteria whose
+owner judges and folds their multiple authored shapes. `only_rules: []` over a
 lower filter is legal and says so as a warning. The per-key list is not
 recorded here: it is generated from the declarations (decision 6).
 
 **4. A refusal names its source.** A form or key refused in one layer names that
 layer; a refused final value names the layer that won it; a constraint between
-keys names every contributor. The refusal carries the path in the author's
+keys names every contributor, in text as well as JSON. The refusal carries the path in the author's
 spelling, and the JSON refusal envelope publishes the sources as `source`.
 Joint refusals sort their writers by the layer index assigned during this
 document's composition, rather than by key collection order or source kind;
@@ -98,6 +114,18 @@ refused with the accepted spelling, at the root and in every declared section
 alike.
 
 ## Document layout and measured policy exceptions
+
+`ResolvedDocument` retains the declared schema alongside its resolved values.
+Its constructor requires that schema; `get()` validates the whole canonical
+path before looking for a value, including a child below an unwritten map.
+An undeclared path throws `LogicException`: returning `null` would hide a
+programmer's typo as an author choosing defaults. A declared but unwritten
+value still returns `null`. `ConfigSchema` uses the same `computed_metrics`
+and `exclude_health` roots as the document instead of separate camelCase
+projection names.
+An open named map declares its name slot structurally; lookup does not repeat
+the author's predicate or sibling-vocabulary judgement. A fixed dictionary
+still rejects an undeclared name.
 
 The document contract publishes only the reading forms that named consumers
 need: `ResolvedMapInterface`, `ResolvedListInterface`,
@@ -144,8 +172,8 @@ unrelated concrete types or new exception-factory edges.
 
 ### Calibration after the declared consumers moved
 
-The remaining owners now read resolved values. With no new concrete type in
-`Contract\Document`, that root measures `A=0.40`, `Ca=38`, `Ce=4`,
+When the remaining owners first moved to resolved values, with no new concrete
+type in `Contract\Document`, that root measured `A=0.40`, `Ca=38`, `Ce=4`,
 `I=0.095238` and Distance `0.504762`. The additional stable readers are the
 purpose of the contract, so its exact namespace has a Distance exclusion.
 Its child namespaces remain separately measured. The same policy is applied
@@ -153,6 +181,9 @@ to the exact `ResolvedValueInterface` declaration for CBO `22` and ClassRank
 `0.00618924` against the scaled `0.00608863` boundary, and to the exact
 `NodeSchema` declaration for CBO `20`. A second interface or a split of the
 declaration language would preserve the readers and obscure the public subject.
+After intrinsic validators moved into the owning sections, the ClassRank
+exception stopped matching and was removed. The two exact CBO exceptions still
+name the shared value port and declaration language; no sibling is enrolled.
 
 `CouplingAnalysis` reads its own declared section and builds the executable
 framework matcher. Its `Ca=2`, `Ce=11` shape gives Instability `0.846154`.
@@ -252,10 +283,13 @@ or contributing provenance rather than rebuilding an origin from folded input.
 
 - Breaking for authors, each in the changelog: a computed metric merges per
   key; `{}` and `name: ~` no longer reset; a misspelt key written with `~`, a
-  key in an unaccepted spelling and a non-string list item are refused; the
+  key in an unaccepted spelling and a non-string list item are refused;
+  `fail_on: false` is replaced by the equivalent `fail_on: none`, keeping the
+  authored exit-policy vocabulary textual; the
   JSON refusal envelope gains `source`, and the JSON report gains
   `configurationDiagnostics`.
 - A new root or key is documented by declaring it: the page cannot drift from
   the declaration without failing `check:artifacts`.
-- An owner that needs a merge the five policies cannot express has to add a
-  policy to the engine, visibly, rather than fold its layers privately.
+- An owner that needs a merge the five merging policies cannot express has to
+  add a policy to the engine, visibly, rather than fold its layers privately.
+  `PerLayer` is the named transitional exception above, not a new owner escape.

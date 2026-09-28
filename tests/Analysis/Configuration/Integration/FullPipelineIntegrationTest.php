@@ -27,6 +27,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Reporting\Configuration\OutputFormatResolver;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use Symfony\Component\Yaml\Yaml;
 
 #[CoversClass(ConfigurationPipeline::class)]
@@ -85,7 +86,7 @@ final class FullPipelineIntegrationTest extends TestCase
     private function resolve(array $cliValues, array $presets): ConfigurationDocument
     {
         $loader = new YamlConfigLoader();
-        $pipeline = new ConfigurationPipeline();
+        $pipeline = new ConfigurationPipeline([...LayeredDocument::standaloneSections(), new OutputFormatResolver(self::formatterRegistry())]);
         $pipeline->addStage(new DefaultsStage());
         $pipeline->addStage(new ComposerDiscoveryStage(new ComposerReader()));
         $pipeline->addStage(new PresetStage($loader, new PresetResolver()));

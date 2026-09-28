@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
@@ -1017,6 +1018,114 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::expectExceptionMessage($expected);
 
         $this->resolve($computedMetrics);
+    }
+
+    /** @return iterable<string, array{array<string, mixed>, array<string, mixed>, list<string>, string}> */
+    public static function provideInvalidFormsReplacedByAHigherLayer(): iterable
+    {
+        foreach (['bogus', 'callable', 'file', 'Class'] as $word) {
+            yield 'level word ' . $word => [
+                ['levels' => [$word]],
+                ['levels' => ['namespace']],
+                ['levels', '0'],
+                $word,
+            ];
+        }
+        yield 'duplicate levels' => [
+            ['levels' => ['namespace', 'namespace']],
+            ['levels' => ['namespace']],
+            ['levels'],
+            'declares the same level more than once',
+        ];
+        yield 'singular formula syntax' => [
+            ['formula' => '('],
+            ['formula' => '1'],
+            ['formula'],
+            'Invalid formula syntax',
+        ];
+        foreach (['class', 'namespace', 'project'] as $level) {
+            yield $level . ' formula syntax' => [
+                ['formulas' => [$level => '(']],
+                ['formulas' => [$level => '1']],
+                ['formulas', $level],
+                'Invalid formula syntax',
+            ];
+        }
+        foreach (['m.offsetGet("size.loc")', 'm[1 + 1]'] as $formula) {
+            yield 'singular nonliteral access ' . $formula => [
+                ['formula' => $formula],
+                ['formula' => '1'],
+                ['formula'],
+                'something other than a quoted metric key',
+            ];
+            yield 'per-level nonliteral access ' . $formula => [
+                ['formulas' => ['namespace' => $formula]],
+                ['formulas' => ['namespace' => '1']],
+                ['formulas', 'namespace'],
+                'something other than a quoted metric key',
+            ];
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $lower
+     * @param array<string, mixed> $higher
+     * @param list<string> $path
+     */
+    #[Test]
+    #[DataProvider('provideInvalidFormsReplacedByAHigherLayer')]
+    public function itRefusesAReplacedInvalidFormInTheLayerThatWroteIt(array $lower, array $higher, array $path, string $message): void
+    {
+        try {
+            self::composeMetricLayers($lower, $higher);
+            self::fail('The higher layer must not hide a lower-layer form error');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertCount(1, $refusal->sources());
+            self::assertSame(ConfigurationSource::Preset, $refusal->sources()[0]->source());
+            self::assertSame('team', $refusal->sources()[0]->locator());
+            self::assertSame(['computed_metrics', 'computed.custom', ...$path], $refusal->position()?->segments);
+            self::assertStringContainsString($message, $refusal->summary());
+        }
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function provideContextualReferencesReplacedByAHigherLayer(): iterable
+    {
+        yield 'unknown computed metric' => ['m["computed.absent"]'];
+        yield 'unknown base metric' => ['m["absent.metric"]'];
+        yield 'metric absent at a reporting level' => ['m["size.loc"]'];
+    }
+
+    #[Test]
+    #[DataProvider('provideContextualReferencesReplacedByAHigherLayer')]
+    public function itJudgesContextualFormulaReferencesOnlyInTheWinningFormula(string $formula): void
+    {
+        $result = $this->resolver->resolve(self::composeMetricLayers(['formula' => $formula], ['formula' => '1']));
+        $definition = $this->findByName($result, 'computed.custom');
+
+        self::assertNotNull($definition);
+        self::assertSame('1', $definition->getFormulaForLevel(SymbolLevel::Namespace_));
+    }
+
+    /**
+     * @param array<string, mixed> $lower
+     * @param array<string, mixed> $higher
+     */
+    private static function composeMetricLayers(array $lower, array $higher): ResolvedDocument
+    {
+        return DocumentComposer::compose(
+            new DocumentSchema([new ComputedMetricsSection(), new ExcludeHealthSection()]),
+            [
+                new AuthoredLayer(
+                    ConfigurationOrigin::of(ConfigurationSource::Preset, 'team'),
+                    AuthoredNode::fromPlain(['computed_metrics' => ['computed.custom' => $lower]]),
+                ),
+                new AuthoredLayer(
+                    ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml'),
+                    AuthoredNode::fromPlain(['computed_metrics' => ['computed.custom' => $higher]]),
+                ),
+            ],
+        );
     }
 
     /**

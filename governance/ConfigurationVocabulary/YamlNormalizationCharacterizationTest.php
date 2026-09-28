@@ -159,10 +159,10 @@ final class YamlNormalizationCharacterizationTest extends TestCase
             ['suppressNamespaces' => ['App\\Generated']],
         ];
 
-        yield 'exclude_health → excludeHealth' => [
+        yield 'exclude_health → exclude_health' => [
             'snake_case root list key normalized to camelCase',
             "exclude_health:\n  - tests/**\n",
-            ['excludeHealth' => ['tests/**']],
+            ['exclude_health' => ['tests/**']],
         ];
 
         // --- TOP-LEVEL SCALAR ROOTS ------------------------------------------
@@ -254,11 +254,11 @@ final class YamlNormalizationCharacterizationTest extends TestCase
             ],
         ];
 
-        yield 'computed_metrics → computedMetrics root; identifier preserved, options normalized' => [
+        yield 'computed_metrics → computed_metrics root; identifier preserved, options normalized' => [
             'computed_metrics — level 1 keys are user-defined metric names (preserve); level 2+ are typed options',
             "computed_metrics:\n  computed.my-score:\n    formula: 'loc * 2'\n    warning_threshold: 80\n",
             [
-                'computedMetrics' => [
+                'computed_metrics' => [
                     'computed.my-score' => [
                         'formula' => 'loc * 2',
                         'warningThreshold' => 80,

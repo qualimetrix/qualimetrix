@@ -106,9 +106,8 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         [$runtimeConfigurator, $command, $ruleInputValidator] = $this->runtimeServices();
         $runtimeConfigurator->resetRunState();
         $projectRoot = \Qualimetrix\Core\Path\AbsolutePath::fromString($this->temporaryDirectory);
-        $invalidDocument = $this->document(['parallel.workers' => -1]);
-
         try {
+            $invalidDocument = $this->document(['parallel.workers' => -1]);
             $runtimeConfigurator->configure(
                 $invalidDocument,
                 $this->runConfigurationFor($invalidDocument),
@@ -266,7 +265,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         self::assertNotContains('computed.first', $this->computedChannels($runtimeConfigurator));
 
         $invalid = $this->document([
-            ConfigSchema::COMPUTED_METRICS => ['computed.invalid' => ['formula' => '(', 'levels' => ['class']]],
+            ConfigSchema::COMPUTED_METRICS => ['computed.invalid' => ['formula' => 'm["computed.nonexistent"] + 1', 'levels' => ['class']]],
         ]);
         $invalidInput = new ArrayInput([], $command->getDefinition());
         $runtimeConfigurator->resetRunState();

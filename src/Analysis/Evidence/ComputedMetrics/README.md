@@ -115,6 +115,7 @@ ComputedMetrics/
 │   ├── ComputedMetricsSection.php            # the `computed_metrics:` section declared to the document, and where an entry sits in it
 │   ├── ExcludeHealthSection.php              # the `exclude_health:` section declared to the document
 │   ├── ComputedMetricEntryKeys.php           # one entry's schema, reporting levels, six health names
+│   ├── ComputedMetricValueForm.php          # shared context-free formula and level validation in each writing layer
 │   ├── ComputedMetricAuthorship.php          # which layers wrote each metric, for a refusal to name
 │   └── ComputedMetricRefusalWording.php      # the words of every refusal about what a value means
 ├── Finding/
@@ -210,6 +211,11 @@ The two sections are declared to the configuration document
 (`ComputedMetricsSection`, `ExcludeHealthSection`); the document engine reads
 every layer — defaults, presets, the configuration file, the command line —
 recognises its keys, judges the form of its values and merges the layers.
+`ComputedMetricValueForm` judges formula syntax, literal metric-index access
+and the closed, non-duplicated level list in each layer that writes them. It
+shares those algorithms with the resolved readers. Formula availability,
+metric references, cycles and reference-level compatibility depend on the
+merged definitions and are judged there.
 The owner reads the merged result. The policy of every key is published in the
 generated table of `website/docs/getting-started/configuration.md`; the
 decision is [ADR 0086](../../../../docs/adr/0086-one-configuration-document-merged-by-declared-policy.md).

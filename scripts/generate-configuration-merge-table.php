@@ -39,6 +39,9 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\Shorthand;
 use Qualimetrix\Analysis\Configuration\DocumentRoots;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ConfigurationConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
+use Symfony\Component\DependencyInjection\Compiler\PassConfig;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -80,14 +83,20 @@ function fail(string $message): never
  */
 function sections(): array
 {
-    $container = (new ContainerFactory())->create();
+    $container = (new ContainerFactory())->configure();
+    $container->addCompilerPass(new class implements CompilerPassInterface {
+        public function process(ContainerBuilder $container): void
+        {
+            foreach (array_keys($container->findTaggedServiceIds(ConfigurationConfigurator::SECTION_TAG)) as $id) {
+                $container->getDefinition($id)->setPublic(true);
+            }
+        }
+    }, PassConfig::TYPE_BEFORE_REMOVING, 150);
+    $container->compile();
     $owners = [];
 
     foreach (array_keys($container->findTaggedServiceIds(ConfigurationConfigurator::SECTION_TAG)) as $id) {
-        // The pipeline inlines its sections, so none is left to fetch; a
-        // section declares a schema and takes no collaborators.
-        $class = $container->getDefinition($id)->getClass() ?? $id;
-        $section = class_exists($class) ? new $class() : null;
+        $section = $container->get($id);
 
         if (!$section instanceof DocumentSectionSchemaInterface) {
             fail(\sprintf('service "%s" carries the section tag but declares no section', $id));

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle;
@@ -31,6 +32,36 @@ use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
  */
 final class LayerCriterionNormalizer
 {
+    /**
+     * @param list<string> $path canonical path of the entry, its index last
+     *
+     * @throws ConfigurationRefusal naming the layer that wrote the entry
+     */
+    public static function ofLayerEntry(ResolvedValueInterface $entry, array $path): void
+    {
+        $index = (int) $path[\count($path) - 1];
+        $spot = SectionSpot::node($path, $entry);
+        $name = CarriedValueForm::layerName($index, $spot);
+
+        self::judgeCriteria($index, $name, $spot);
+
+        $exclude = $spot->child('exclude');
+        if ($exclude->isWritten()) {
+            self::judgeCriteria($index, $name . '.exclude', $exclude);
+        }
+    }
+
+    private static function judgeCriteria(int $index, string $name, SectionSpot $entry): void
+    {
+        $normalizer = new LayerCriterionNormalizer();
+        $normalizer->normalizePatternList($index, $name, $entry->child('patterns'));
+        $normalizer->normalizeSuffixList($index, $name, $entry->child('suffix'));
+        foreach (['attributes', 'implements', 'extends'] as $kind) {
+            $normalizer->normalizeFqnList($index, $name, $kind, $entry->child($kind));
+        }
+        $normalizer->normalizeMatchMode($index, $name, $entry->child('match'));
+    }
+
     /**
      * @return list<string>
      */

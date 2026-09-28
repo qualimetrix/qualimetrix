@@ -31,6 +31,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
 use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
+use Qualimetrix\Analysis\Run\Configuration\PathsSection;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
@@ -65,9 +66,11 @@ use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\ExitCodeResolver;
+use Qualimetrix\Infrastructure\Console\ExitPolicySection;
 use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
 use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
 use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
+use Qualimetrix\Infrastructure\Console\MemoryLimitSection;
 use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\ProfileSummaryRenderer;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
@@ -226,10 +229,14 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(ConfigurationInputAdapter::class)
             ->setArgument('$configurationPipeline', new Reference(ConfigurationPipelineInterface::class))
             ->setArgument('$errorStream', new Reference(ErrorStream::class));
+        $container->register(ExitPolicySection::class)->setAutoconfigured(true);
+        $container->register(MemoryLimitSection::class)->setAutoconfigured(true);
+        $container->register(PathsSection::class)->setAutoconfigured(true);
         $container->register(RunConfigurationResolver::class)
             ->setArgument('$projectScopeCoverage', new Reference(ProjectScopeCoverage::class));
         $container->setAlias(RunConfigurationResolverInterface::class, RunConfigurationResolver::class);
         $container->register(OutputFormatResolver::class)
+            ->setAutoconfigured(true)
             ->setArguments([new Reference(FormatterRegistryInterface::class)]);
         $container->setAlias(OutputFormatResolverInterface::class, OutputFormatResolver::class);
         $container->register(ConfiguredFindingExclusionsResolver::class);

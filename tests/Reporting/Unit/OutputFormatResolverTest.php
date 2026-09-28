@@ -44,37 +44,41 @@ final class OutputFormatResolverTest extends TestCase
         };
 
         $resolver = new OutputFormatResolver($formatters);
-        self::assertSame('summary', $resolver->resolve(LayeredDocument::of([], AbsolutePath::fromString('/project')))->value);
+        self::assertSame('summary', $resolver->resolve(LayeredDocument::of([], AbsolutePath::fromString('/project'), $resolver))->value);
         self::assertSame('json', $resolver->resolve(LayeredDocument::of([
             ['source' => 'config', 'values' => ['format' => 'text']],
             ['source' => 'cli', 'values' => ['format' => 'json']],
-        ], AbsolutePath::fromString('/project')))->value);
+        ], AbsolutePath::fromString('/project'), $resolver))->value);
     }
 
-    /**
-     * A lower value that the winning layer replaces is structurally valid but
-     * not executable input. The output resolver therefore judges only the
-     * authored winner the run will use.
-     */
     #[Test]
-    public function itIgnoresAnOverwrittenUnknownFormat(): void
+    public function itRefusesAnUnknownFormatInTheFileEvenWhenTheCommandLineOverridesIt(): void
     {
         $resolver = new OutputFormatResolver($this->formatters());
 
-        self::assertSame('json', $resolver->resolve(LayeredDocument::of([
-            ['source' => 'config', 'values' => ['format' => 'nope']],
-            ['source' => 'cli', 'values' => ['format' => 'json']],
-        ], AbsolutePath::fromString('/project')))->value);
+        try {
+            $resolver->resolve(LayeredDocument::of([
+                ['source' => 'qmx.yaml', 'values' => ['format' => 'nope']],
+                ['source' => 'cli', 'values' => ['format' => 'json']],
+            ], AbsolutePath::fromString('/project'), $resolver));
+            self::fail('An unknown lower-layer output format was accepted.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
+            self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
+            self::assertSame(['format'], $refusal->position()?->segments);
+            self::assertStringContainsString('Output format "nope" is not one of', $refusal->summary());
+        }
     }
 
     #[Test]
     public function itRefusesAnUnknownWinningFormatAtItsAuthoredPath(): void
     {
         try {
-            (new OutputFormatResolver($this->formatters()))->resolve(LayeredDocument::of([
+            $resolver = new OutputFormatResolver($this->formatters());
+            $resolver->resolve(LayeredDocument::of([
                 ['source' => 'preset', 'values' => ['format' => 'json']],
                 ['source' => 'qmx.yaml', 'values' => ['format' => 'nope']],
-            ], AbsolutePath::fromString('/project')));
+            ], AbsolutePath::fromString('/project'), $resolver));
             self::fail('An unknown winning output format was accepted.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertSame(

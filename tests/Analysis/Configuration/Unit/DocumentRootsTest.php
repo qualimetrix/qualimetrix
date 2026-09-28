@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionS
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\DocumentRoots;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 #[CoversClass(DocumentRoots::class)]
 final class DocumentRootsTest extends TestCase
@@ -35,7 +36,7 @@ final class DocumentRootsTest extends TestCase
         $declared = self::keys(ConfigurationRoot::cases());
         $ownerRoots = array_map(
             static fn(string $root): string => strtolower((string) preg_replace('/[A-Z]/', '_$0', $root)),
-            [...ConfigSchema::DOCUMENT_ROOTS, ConfigSchema::RULES],
+            [...ConfigSchema::DOCUMENT_ROOTS, ConfigSchema::RULES, ...self::keys(LayeredDocument::standaloneSections())],
         );
 
         self::assertSame([], array_values(array_intersect($declared, $ownerRoots)));

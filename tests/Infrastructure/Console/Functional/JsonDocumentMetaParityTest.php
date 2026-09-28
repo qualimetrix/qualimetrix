@@ -149,7 +149,7 @@ final class JsonDocumentMetaParityTest extends TestCase
         $tester = match ($command) {
             'directives' => $this->execute(DirectivesCommand::class, [
                 'paths' => [$this->tempDir . '/src'],
-                '--config' => $this->writeFile('qmx.yaml', "paths: []\n"),
+                '--config' => $this->writeFile('qmx.yaml', "{}\n"),
                 '--format' => 'json',
             ]),
             'layer-assignment' => $this->execute(LayerAssignmentCommand::class, [

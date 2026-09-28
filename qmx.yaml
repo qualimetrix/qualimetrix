@@ -230,6 +230,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricAuthorship'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeys'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricValueForm'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricsSection'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ExcludeHealthSection'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface'
@@ -799,6 +800,7 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator'
         - 'Qualimetrix\Analysis\Run\Collection\CollectionPhaseFold'
         - 'Qualimetrix\Analysis\Run\Collection\FileProcessor'
+        - 'Qualimetrix\Analysis\Run\Configuration\PathsSection'
         - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage'
         - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeMeasurement'
         - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeState'
@@ -968,6 +970,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\ErrorStream'
         - 'Qualimetrix\Infrastructure\Console\ExitCodeResolver'
         - 'Qualimetrix\Infrastructure\Console\ExitPolicy'
+        - 'Qualimetrix\Infrastructure\Console\ExitPolicySection'
         - 'Qualimetrix\Infrastructure\Console\FilteredInputDefinition'
         - 'Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator'
         - 'Qualimetrix\Infrastructure\Console\FormatOptionPairs'
@@ -976,6 +979,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\LayerAssignmentResolver'
         - 'Qualimetrix\Infrastructure\Console\MeasuredAnalysisRun'
         - 'Qualimetrix\Infrastructure\Console\MeasuredFindingSet'
+        - 'Qualimetrix\Infrastructure\Console\MemoryLimitSection'
         - 'Qualimetrix\Infrastructure\Console\OutputHelper'
         - 'Qualimetrix\Infrastructure\Console\PreparedAnalysisInput'
         - 'Qualimetrix\Infrastructure\Console\ProfilePresenter'
@@ -1659,9 +1663,9 @@ rules:
       # exact declaration measured by other rules without excluding its siblings.
       - exact: src/Analysis/Evidence/DependencyModel/Contract/DependencyGraphInterface.php
       # Resolved values are the shared read port of declared section owners;
-      # CBO 22 is their intended inbound reach, not a missing decomposition.
+      # Their inbound reach follows those readers, not a missing decomposition.
       - exact: src/Analysis/Configuration/Contract/Document/ResolvedValueInterface.php
-      # The section declaration language is built by each owner; CBO 20
+      # The section declaration language is built by each owner; its reach
       # reflects those consumers and its declaration vocabulary.
       - exact: src/Analysis/Configuration/Contract/Document/Schema/NodeSchema.php
       # AST visitors depend on many php-parser node types (not actionable coupling).
@@ -1708,17 +1712,12 @@ rules:
 
   # Core contracts and value objects are coupling hubs by design.
   coupling.class-rank:
-    suppress_paths:
-      # Every declared section reader names this value port: rank 0.00618924
-      # against scaled 0.00608863 measures that intended contract-hub reach.
-      - exact: src/Analysis/Configuration/Contract/Document/ResolvedValueInterface.php
     suppress_namespaces:
       - subtree: Qualimetrix\Analysis\Finding\Contract
       # Same reconfirmation as for the CBO channel above: the level vocabulary now
       # lives here, so its ClassRank is unpublished too (rule-vocabulary Ш5e2b).
       - subtree: Qualimetrix\Core\Symbol
       - subtree: Qualimetrix\Analysis\Finding\Rule
-      - subtree: Qualimetrix\Analysis\Evidence\DependencyModel\Contract
       - subtree: Qualimetrix\Core\Path
 
   # Distance: leaf namespaces holding pure value objects, enums, and exceptions

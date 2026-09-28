@@ -130,7 +130,7 @@ size.getter-count	metric-key	?		7	13	0	0	0	0	0	0	0	0	0	0
 size.implementing-enum-count	metric-key	?		13	11	0	0	0	0	0	0	0	0	0	0
 size.interface-count	metric-key	?		13	19	0	0	0	0	0	0	0	0	0	0
 size.lloc	metric-key	?		8	21	0	0	0	10	0	0	0	0	0	0
-size.loc	metric-key	?		12	220	0	0	0	18	0	0	0	0	0	0
+size.loc	metric-key	?		12	222	0	0	0	18	0	0	0	0	0	0
 size.method-count	metric-key	?		24	209	2	2	0	58	0	11	0	0	0	0
 size.method-count.private	metric-key	?		4	6	0	0	0	0	0	0	0	0	0	0
 size.method-count.protected	metric-key	?		4	6	0	0	0	0	0	0	0	0	0	0
@@ -170,7 +170,7 @@ complexity.ccn	producer	?		74	1246	2	3	31	228	0	41	0	0	0	0
 complexity.cognitive	producer	?		22	94	2	2	14	56	0	20	0	0	0	0
 complexity.npath	producer	?		19	108	2	2	4	52	0	14	0	0	0	0
 complexity.wmc	producer	?		21	87	2	2	3	38	0	12	0	0	0	0
-computed	producer	?		127	113	0	1	0	54	0	9	0	0	0	0
+computed	producer	?		127	114	0	1	0	57	0	9	0	0	0	0
 coupling.cbo	producer	?		73	365	2	5	5	140	0	10	0	0	0	0
 coupling.class-rank	producer	?		24	123	0	2	2	42	0	39	0	0	0	0
 coupling.distance	producer	?		33	94	2	2	1	49	0	41	0	0	0	0

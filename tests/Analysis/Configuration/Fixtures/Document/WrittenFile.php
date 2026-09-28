@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Configuration\DocumentRoots;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 /**
  * One configuration file taken the way the pipeline takes it: read as
@@ -26,7 +27,7 @@ final class WrittenFile
     {
         $loaded = (new YamlConfigLoader())->read($path);
         $document = DocumentComposer::compose(
-            new DocumentSchema(DocumentRoots::completing([])),
+            new DocumentSchema(DocumentRoots::completing(LayeredDocument::standaloneSections())),
             [new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path), $loaded->authored)],
         );
 
