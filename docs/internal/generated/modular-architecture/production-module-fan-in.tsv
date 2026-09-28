@@ -10,7 +10,7 @@ Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument	Analysis.C
 Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface	Analysis.Configuration	6	5
 Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface	Analysis.Configuration	4	2
 Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaqueInterface	Analysis.Configuration	2	1
-Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface	Analysis.Configuration	11	7
+Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface	Analysis.Configuration	12	7
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface	Analysis.Configuration	4	3
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema	Analysis.Configuration	5	3

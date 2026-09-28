@@ -284,7 +284,8 @@ leaf namespaces only, and why the classes declared directly in a namespace that
 also has sub-namespaces reached no project number at all.
 
 The optional `rules.coupling.distance.include-namespaces` override uses the
-same explicit namespace selectors. YAML takes a list of one-entry mappings;
+same explicit namespace selectors. YAML takes a list of one-entry mappings; each written selector must name exactly
+one kind before a later layer can replace its list;
 the CLI takes one typed scalar, for example
 `--rule-opt=coupling.distance:include-namespaces=subtree:App\\Domain`.
 Auto-detected Composer namespaces remain a separate exact inferred set when

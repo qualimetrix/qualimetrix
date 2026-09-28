@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
@@ -45,5 +46,31 @@ final class CouplingSectionTest extends TestCase
             self::assertSame('preset:broken', $refusal->sources()[0]->locator());
             self::assertSame(['coupling', 'frameworkNamespaces', '0'], $refusal->position()?->segments);
         }
+    }
+
+    /** @param array<string, string> $selector */
+    #[Test]
+    #[DataProvider('invalidSelectorForms')]
+    public function itRefusesShadowedSelectorCardinalityInItsWrittenLayer(array $selector): void
+    {
+        try {
+            LayeredDocument::of([
+                ['source' => 'preset:broken', 'values' => ['coupling' => ['frameworkNamespaces' => [$selector]]]],
+                ['source' => 'qmx.yaml', 'values' => ['coupling' => ['frameworkNamespaces' => [['subtree' => 'Symfony']]]]],
+            ], AbsolutePath::fromString('/project'), new CouplingSection());
+            self::fail('A selector must name exactly one kind even when a later layer replaces its list.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertCount(1, $refusal->sources());
+            self::assertSame(ConfigurationSource::Preset, $refusal->sources()[0]->source());
+            self::assertSame('preset:broken', $refusal->sources()[0]->locator());
+            self::assertSame(['coupling', 'frameworkNamespaces', '0'], $refusal->position()?->segments);
+        }
+    }
+
+    /** @return iterable<string, array{array<string, string>}> */
+    public static function invalidSelectorForms(): iterable
+    {
+        yield 'no kind' => [[]];
+        yield 'two kinds' => [['exact' => 'App', 'subtree' => 'Symfony']];
     }
 }

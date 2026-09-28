@@ -3975,6 +3975,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingConfigurationRefusalTest::itStillAcceptsAnEmptyList
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingSectionTest::itKeepsALowerFrameworkListWhenAnUpperCouplingMapIsEmpty
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingSectionTest::itRefusesAShadowedSelectorInTheLayerThatWroteIt
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingSectionTest::itRefusesShadowedSelectorCardinalityInItsWrittenLayer"no kind"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingSectionTest::itRefusesShadowedSelectorCardinalityInItsWrittenLayer"two kinds"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itAveragesTheOwnScopeIntoTheProjectAndLeavesTheSubtreeRollupUnaggregated
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itComputesTheOwnDistanceFromTheOwnScopeInputs
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itNamesItselfDistance

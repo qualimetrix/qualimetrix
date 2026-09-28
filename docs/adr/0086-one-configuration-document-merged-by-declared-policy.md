@@ -149,8 +149,8 @@ The remaining owners now read resolved values. With no new concrete type in
 `I=0.095238` and Distance `0.504762`. The additional stable readers are the
 purpose of the contract, so its exact namespace has a Distance exclusion.
 Its child namespaces remain separately measured. The same policy is applied
-to the exact `ResolvedValueInterface` declaration for CBO `21` and ClassRank
-`0.00609151` against the scaled `0.00608863` boundary, and to the exact
+to the exact `ResolvedValueInterface` declaration for CBO `22` and ClassRank
+`0.00618924` against the scaled `0.00608863` boundary, and to the exact
 `NodeSchema` declaration for CBO `20`. A second interface or a split of the
 declaration language would preserve the readers and obscure the public subject.
 
