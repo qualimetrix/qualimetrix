@@ -161,6 +161,7 @@ Available tests:
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresACoherentRefusalEnvelope"malformed JSON"
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresACoherentRefusalEnvelope"no exact error keys"
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresACoherentRefusalEnvelope"the coherent envelope"
+ - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresACoherentRefusalEnvelope"the envelope before source publication"
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresTheCompleteIncompleteEnding"baseline exists"
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresTheCompleteIncompleteEnding"baseline succeeds"
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresTheCompleteIncompleteEnding"coverage claims completeness"
