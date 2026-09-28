@@ -5878,33 +5878,33 @@ D	form|cli-root|suppress_paths|null	null	report	REFUSES	no	DECIDED	refused
 D	form|cli-root|suppress_paths|string-nonnumber	string-nonnumber	report	REFUSES	no	DECIDED	refused
 D	form|cli-root|suppress_paths|string-number	string-number	report	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters
 D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|bool	bool	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|float	float	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|int	int	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|list	list	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|map	map	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|float	float	report	REFUSES	no	PROMISED	refused
+D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|int	int	report	REFUSES	no	PROMISED	refused
+D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|list	list	report	REFUSES	no	PROMISED	refused
+D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|map	map	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|null	null	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|string-nonnumber	string-nonnumber	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|string-number	string-number	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>[*].relations|bool	bool	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>[*].relations|float	float	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>[*].relations|int	int	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>[*].relations|list	list	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>[*].relations|map	map	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
+D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|string-number	string-number	report	REFUSES	no	PROMISED	refused
+D	form|yaml|architecture.allow.<layer>[*].relations|bool	bool	report	REFUSES	no	PROMISED	refused
+D	form|yaml|architecture.allow.<layer>[*].relations|float	float	report	REFUSES	no	PROMISED	refused
+D	form|yaml|architecture.allow.<layer>[*].relations|int	int	report	REFUSES	no	PROMISED	refused
+D	form|yaml|architecture.allow.<layer>[*].relations|list	list	report	REFUSES	yes	PROMISED	refused a form it promised
+D	form|yaml|architecture.allow.<layer>[*].relations|map	map	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.allow.<layer>[*].relations|null	null	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>[*].relations|string-nonnumber	string-nonnumber	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>[*].relations|string-number	string-number	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>[*].target|bool	bool	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>[*].target|float	float	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>[*].target|int	int	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>[*].target|list	list	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>[*].target|map	map	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
-D	form|yaml|architecture.allow.<layer>[*].target|null	null	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].relations|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
+D	form|yaml|architecture.allow.<layer>[*].relations|string-number	string-number	report	REFUSES	no	PROMISED	refused
+D	form|yaml|architecture.allow.<layer>[*].target|bool	bool	report	REFUSES	no	DECIDED	refused
+D	form|yaml|architecture.allow.<layer>[*].target|float	float	report	REFUSES	no	DECIDED	refused
+D	form|yaml|architecture.allow.<layer>[*].target|int	int	report	REFUSES	no	DECIDED	refused
+D	form|yaml|architecture.allow.<layer>[*].target|list	list	report	REFUSES	no	DECIDED	refused
+D	form|yaml|architecture.allow.<layer>[*].target|map	map	report	REFUSES	no	DECIDED	refused
+D	form|yaml|architecture.allow.<layer>[*].target|null	null	report	REFUSES	yes	DECIDED	refused a form it promised
 D	form|yaml|architecture.allow.<layer>[*].target|string-nonnumber	string-nonnumber	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
 D	form|yaml|architecture.allow.<layer>[*].target|string-number	string-number	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
 D	form|yaml|architecture.allow.<layer>|bool	bool	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.allow.<layer>|float	float	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.allow.<layer>|int	int	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.allow.<layer>|list	list	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>|list	list	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.allow.<layer>|map	map	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.allow.<layer>|null	null	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
 D	form|yaml|architecture.allow.<layer>|string-nonnumber	string-nonnumber	report	REFUSES	no	DECIDED	refused

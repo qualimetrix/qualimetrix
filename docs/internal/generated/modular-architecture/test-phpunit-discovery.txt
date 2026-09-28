@@ -1634,6 +1634,7 @@ Available tests:
  - Qualimetrix\PromiseEffect\Tests\RefusalFramingWitnessTest::itDoesNotCountTheWitnessAsAProductRun
  - Qualimetrix\PromiseEffect\Tests\RefusalFramingWitnessTest::itReadsTheSameEnvelopeWithTheFrameAsAFramedRefusal
  - Qualimetrix\PromiseEffect\Tests\RefusalFramingWitnessTest::itReadsTheWitnessAsAnUnframedRefusalAndTheControlHoldsOnIt
+ - Qualimetrix\PromiseEffect\Tests\ResolvedDocumentObservationTest::itObservesResolvedValuesAndTheRemainingRawRuleLayers
  - Qualimetrix\PromiseEffect\Tests\ValuelessFlagCollapseTest::itDecidesNoValuelessFlagCellByTheCollapseComparison
  - Qualimetrix\RenameEnumeration\Tests\RenameEnumerationRetirementTest::itLeavesAWildcardTargetInHistoryAlone
  - Qualimetrix\RenameEnumeration\Tests\RenameEnumerationRetirementTest::itReachesTheOccurrenceFixedPointAfterOneWriteOfANewMetric
@@ -1675,7 +1676,7 @@ Available tests:
  - Qualimetrix\SuppressionSnapshot\Tests\SuppressionSnapshotKeyTest::itRendersCompositionRowsInTheGivenOrderWithCounts
  - Qualimetrix\SuppressionSnapshot\Tests\SuppressionSnapshotKeyTest::itStripsTheLineFromASuppressionDirectiveLocator
  - Qualimetrix\Tests\Analysis\Configuration\Integration\ConfigurationPipelineIntegrationTest::itProvidesOnlyProvenanceForZeroConfiguration
- - Qualimetrix\Tests\Analysis\Configuration\Integration\ConfigurationPipelineIntegrationTest::itRetainsComposerConfigAndCliSourcesInPrecedenceOrder
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\ConfigurationPipelineIntegrationTest::itRetainsSourcesAndExposesTheirResolvedAndDiscoveryOutputs
  - Qualimetrix\Tests\Analysis\Configuration\Integration\DocumentRootsIntegrationTest::itAcceptsAnIntegerMemoryLimit
  - Qualimetrix\Tests\Analysis\Configuration\Integration\DocumentRootsIntegrationTest::itAnswersInTheEnginesWordsBeforeTheFoldedValuesAreJudged
  - Qualimetrix\Tests\Analysis\Configuration\Integration\DocumentRootsIntegrationTest::itKeepsTheIntentHintToTheFormItExplains
@@ -1714,8 +1715,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Integration\PresetIntegrationTest::itDeduplicatesPresetNamesBeforeLoading
  - Qualimetrix\Tests\Analysis\Configuration\Integration\PresetIntegrationTest::itRetainsBuiltInPresetDocumentsInRequestedOrder
  - Qualimetrix\Tests\Analysis\Configuration\Unit\AnalysisConfigurationTest::itDoesNotExposeAMergedGenericConfigurationBag
- - Qualimetrix\Tests\Analysis\Configuration\Unit\AnalysisConfigurationTest::itPreservesOrderedContributionsWithoutApplyingOwnerSemantics
- - Qualimetrix\Tests\Analysis\Configuration\Unit\AnalysisConfigurationTest::itReturnsNoContributionForAnAbsentOwnerKey
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\AnalysisConfigurationTest::itExposesOnlyFindingsTemporaryOrderedRawInputs
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\AnalysisConfigurationTest::itKeepsComposerDiscoveryFactsSeparateFromAuthoredValues
  - Qualimetrix\Tests\Analysis\Configuration\Unit\AnalysisConfigurationTest::itReturnsTheInvocationWorkingDirectory
  - Qualimetrix\Tests\Analysis\Configuration\Unit\ConfigSchemaCoverageTest::itFailsFastForAnUnregisteredKey
  - Qualimetrix\Tests\Analysis\Configuration\Unit\ConfigSchemaTest::itIncludesDottedRootsAmongSectionKeys
@@ -2004,12 +2005,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itRenamesIncludeGeneratedToSnakeCase
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itRenamesMemoryLimitToSnakeCase
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReturnsAnEmptyArrayForEmptyInput
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itComposesTheAuthoredLayersBesideTheContributions
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itComposesTheAuthoredLayers
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itExpandsMultiDocumentLayersWithoutCollapsingThem
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itRaisesADeferredRefusalOnlyAfterTheEngineJudgedEveryLayer
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itRefusesARootNoOneKnowsEvenWhenWrittenNull
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itResolvesAnEmptyDocumentWhenNoStageHandsOverAWrittenLayer
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itRetainsOrderedContributionsInsteadOfApplyingFeatureMergeSemantics
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itRetainsFindingsOrderedRawInputsInsteadOfApplyingFeatureMergeSemantics
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itReturnsAnEmptyDocumentWithTheInvocationDirectoryWhenThereAreNoStages
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itSkipsStagesThatDoNotContribute
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itSortsStagesByPriority
@@ -3972,6 +3973,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingConfigurationRefusalTest::itRefusesWithTheProductFraming"the root as a list"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingConfigurationRefusalTest::itStillAcceptsAListOfNamespacePrefixes
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingConfigurationRefusalTest::itStillAcceptsAnEmptyList
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingSectionTest::itKeepsALowerFrameworkListWhenAnUpperCouplingMapIsEmpty
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingSectionTest::itRefusesAShadowedSelectorInTheLayerThatWroteIt
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itAveragesTheOwnScopeIntoTheProjectAndLeavesTheSubtreeRollupUnaggregated
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itComputesTheOwnDistanceFromTheOwnScopeInputs
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itNamesItselfDistance
@@ -9093,6 +9096,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Ast\Unit\PhpFileParserTest::itThrowsExceptionWhenParserReturnsNull
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationResolverTest::itAcceptsAnUnusableDirectoryWhenTheCacheIsDisabled
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationResolverTest::itAppliesOwnerDefaultsAndLastOverrides
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationResolverTest::itAttributesAnUnwritableDefaultDirectoryToDefaults
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationResolverTest::itCreatesAMissingCacheDirectory
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationResolverTest::itLetsADisabledCachePastAnUnwritableDirectory
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationResolverTest::itOffersTheFlagOnlyWhereTheFlagWouldChangeTheOutcome
@@ -9759,6 +9763,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itLeavesEveryMutableOwnerAtDefaultsWhenLateResolutionFails"ComputedMetrics"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itLeavesEveryMutableOwnerAtDefaultsWhenLateResolutionFails"Coupling"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itLeavesStaticChannelsAndAllStoresAtDefaultsWhenSelectorValidationFails
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itPreservesTheMemoryLimitAuthorAndRuntimeCauseWhenIniSetThrows
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itReportsAnUnapplicableMemoryLimitAfterCommittingStoresAndBeforeLaterEffects
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itResetsACustomRunBeforeApplyingDefaultValuesInTheSameProcess
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itResolvesDefinitionsOnceAndCommitsTheExactDefinitionsAndChannelSnapshot
@@ -9913,14 +9918,14 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverReportOnlyTest::itIgnoresInfoWhenAGatingFindingIsPresent
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverReportOnlyTest::itStillFailsOnAWarningUnderTheWarningThreshold
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsTheRemainingThresholds"error"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsTheRemainingThresholds"false"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsTheRemainingThresholds"none"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsTheRemainingThresholds"unset"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsTheRemainingThresholds"warning"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itKeepsTheProgrammaticNeverFailValue
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itNamesTheAllowedValuesWhenRejectingAnUnknownWord
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itRefusesToBeConstructedWithInfoAtAll
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itRejectsInfoAsAFailOnThreshold"enum case"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itRejectsInfoAsAFailOnThreshold"string"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itRejectsInfoAsAFailOnThreshold
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itUsesTheWinningThreshold
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FilteredInputDefinitionTest::itExcludesHiddenOptionsFromGetOptions
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FilteredInputDefinitionTest::itExcludesHiddenOptionsFromTheSynopsis
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FilteredInputDefinitionTest::itIncludesHiddenOptionsInGetOptionDefaults
@@ -10467,7 +10472,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\FileProcessingTaskFactoryTest::itRejectsAnInvalidTraversalParticipantClass
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\FileProcessingTaskTest::itRunsUnderTheMemoryLimitItCarries
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\ParallelConfigurationResolverTest::itRejectsNegativeWorkerCounts
- - Qualimetrix\Tests\Infrastructure\Parallel\Unit\ParallelConfigurationResolverTest::itUsesTheLastWorkerContribution
+ - Qualimetrix\Tests\Infrastructure\Parallel\Unit\ParallelConfigurationResolverTest::itUsesTheWinningWorkerValue
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\ParallelConfigurationStoreTest::itResetsToAutomaticWorkerSelection
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\Strategy\AmphpParallelStrategyTest::itAcceptsLargeWorkerCount
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\Strategy\AmphpParallelStrategyTest::itDefaultsToFourWorkers
@@ -11504,18 +11509,19 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Health\SummaryEnricherTest::itWorstClasses
  - Qualimetrix\Tests\Reporting\Unit\Health\SummaryEnricherTest::itWorstNamespaces
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itNamesTheOfferedFormattersWhenItRefusesAnUnknownOne
- - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAFormatTheRunCannotExecute"boolean"
- - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAFormatTheRunCannotExecute"empty string"
- - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAFormatTheRunCannotExecute"float"
- - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAFormatTheRunCannotExecute"integer"
- - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAFormatTheRunCannotExecute"list"
- - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAFormatTheRunCannotExecute"map"
- - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAFormatTheRunCannotExecute"unknown name"
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAMalformedLowerFormatEvenWhenTheCommandLineWins"boolean"
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAMalformedLowerFormatEvenWhenTheCommandLineWins"float"
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAMalformedLowerFormatEvenWhenTheCommandLineWins"integer"
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAMalformedLowerFormatEvenWhenTheCommandLineWins"list"
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAMalformedLowerFormatEvenWhenTheCommandLineWins"map"
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAnUnexecutableWinningFormat"empty string"
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAnUnexecutableWinningFormat"unknown name"
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itStillAcceptsEveryRegisteredFormatter"a hidden formatter the listing omits"
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itStillAcceptsEveryRegisteredFormatter"json"
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itStillAcceptsEveryRegisteredFormatter"text"
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itStillDefaultsWhenNobodyNamedAFormat
- - Qualimetrix\Tests\Reporting\Unit\OutputFormatResolverTest::itRefusesAnUnknownFormatInTheFileEvenWhenTheCommandLineOverridesIt
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatResolverTest::itIgnoresAnOverwrittenUnknownFormat
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatResolverTest::itRefusesAnUnknownWinningFormatAtItsAuthoredPath
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatResolverTest::itUsesSummaryByDefaultAndTheLastExplicitFormat
  - Qualimetrix\Tests\Reporting\Unit\ReportBuilderTest::itAddsFinding
  - Qualimetrix\Tests\Reporting\Unit\ReportBuilderTest::itAddsFindings

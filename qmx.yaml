@@ -283,6 +283,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Coupling\ClassRankOptions'
         - 'Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule'
         - 'Qualimetrix\Analysis\Evidence\Coupling\ClassRfcData'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\Configuration\CouplingSection'
         - 'Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface'
         - 'Qualimetrix\Analysis\Evidence\Coupling\CoupledNamespaces'
         - 'Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis'
