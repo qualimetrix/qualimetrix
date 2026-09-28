@@ -11,7 +11,9 @@ contracts; it publishes one configuration contract for the runtime adapter.
 `CouplingAnalysis` owns the framework-prefix state for one analysis run. Its
 owner-declared `coupling` map merges key by key, so an empty map keeps lower
 values. The `framework_namespaces` list replaces as one ordered value, including
-an empty list, and Coupling reads that resolved selector list before replacing
+an empty list. Each written framework selector must name exactly one kind
+before a later layer can replace its list. Coupling reads the resolved selector
+list before replacing
 its run-local matcher. Sequential runs therefore cannot leak classification
 state.
 
@@ -284,8 +286,7 @@ leaf namespaces only, and why the classes declared directly in a namespace that
 also has sub-namespaces reached no project number at all.
 
 The optional `rules.coupling.distance.include-namespaces` override uses the
-same explicit namespace selectors. YAML takes a list of one-entry mappings; each written selector must name exactly
-one kind before a later layer can replace its list;
+same explicit namespace selectors. YAML takes a list of one-entry mappings;
 the CLI takes one typed scalar, for example
 `--rule-opt=coupling.distance:include-namespaces=subtree:App\\Domain`.
 Auto-detected Composer namespaces remain a separate exact inferred set when
