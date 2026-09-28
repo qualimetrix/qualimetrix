@@ -27,6 +27,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Application;
@@ -69,7 +70,7 @@ if ($mode === 'case') {
     CheckCommandDefinition::addOptions($command, $rules);
     $command->mergeApplicationDefinition(false);
     $input = new ArgvInput(['probe', ...array_slice($arguments, 1)], $command->getDefinition());
-    $document = $pipeline->resolve((new ConfigurationInputAdapter($pipeline))->adapt($input, $caseDirectory));
+    $document = $pipeline->resolve((new ConfigurationInputAdapter($pipeline, new ErrorStream()))->adapt($input, $caseDirectory));
 }
 
 $values = static fn(array $levels): array => array_values(array_map(
