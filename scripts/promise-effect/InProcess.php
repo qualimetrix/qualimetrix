@@ -395,7 +395,6 @@ final class InProcess
 
         $merged = null;
         $object = null;
-        $documentContributions = null;
 
         try {
             $resolved = $this->pipeline->resolve($request);
@@ -420,20 +419,24 @@ final class InProcess
                 ]));
             }
 
-            $documentContributions = [];
+            $documentValues = [];
 
-            foreach (['rules', 'architecture', 'computedMetrics', 'coupling', 'cache', 'parallel',
-                'paths', 'exclude', 'format', 'failOn', 'disabledRules', 'onlyRules',
-                'suppressPaths', 'suppressNamespaces', 'excludeHealth', 'includeGenerated',
-                'memoryLimit'] as $root) {
-                $contributions = $resolved->contributions($root);
+            foreach ($resolved->resolved()->roots() as $root => $value) {
+                $documentValues[$root] = $value->plain();
+            }
+
+            foreach ([
+                'rules' => $resolved->ruleContributions(),
+                'only_rules' => $resolved->onlyRuleContributions(),
+                'disabled_rules' => $resolved->disabledRuleContributions(),
+            ] as $root => $contributions) {
 
                 if ($contributions !== []) {
-                    $documentContributions[$root] = $contributions;
+                    $documentValues[$root] = $contributions;
                 }
             }
 
-            $merged = new Observation(Observation::ACCEPTED, self::dump($documentContributions));
+            $merged = new Observation(Observation::ACCEPTED, self::dump($documentValues));
         } catch (Throwable $error) {
             $merged = self::fromThrowable($error);
             $door ??= $merged;
