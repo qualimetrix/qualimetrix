@@ -614,6 +614,18 @@ Each limit needs its own product or delivery check:
 - Dynamically assembled source method names, overridden dispatch and distinct
   execution paths with the same nearest caller: source enumeration does not
   resolve those runtime behaviours.
+- A reference refusal with exit 3 is reported as an untranslated input before
+  an otherwise declarable refusal-to-analysis outcome reaches comparison.
+- Refusal positions can change with configuration-layer placement even where a
+  declared delta explains only the published source.
+- Backward-moving clocks are exercised only for `AnalysisPipeline` and
+  `ProcessHandle::age`; other elapsed-time uses have no clock-rollback check.
+- Refusal-envelope field derivation depends on the current token order between
+  `writeEnvelope` and its array literal.
+- Recorded comparisons do not reproduce `Gate::compare` ordering, reference
+  input checks, outcome checks, path leaks, stale declarations or repeat capture.
+- Gate controls remain above the 20-minute target; their nightly timeout and
+  prose counts need a separate operational review.
 
 A GREEN run against identical product code proves the corpus, capture and
 normalization are consistent. To claim a product change, compare with the

@@ -114,6 +114,9 @@ final class DeclaredDeltaCheck implements Derivation
         try {
             $overreaching = $this->overreachingLines($key, $left, $right);
         } catch (GateError $error) {
+            if ($error->getMessage() !== 'A structural intention has no observed complete record list.') {
+                throw $error;
+            }
             $overreaching = [$error->getMessage()];
         }
         foreach ($overreaching as $problem) {
