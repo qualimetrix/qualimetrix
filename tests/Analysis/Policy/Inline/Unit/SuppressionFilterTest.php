@@ -6,6 +6,8 @@ namespace Qualimetrix\Tests\Analysis\Policy\Inline\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
@@ -506,61 +508,62 @@ final class SuppressionFilterTest extends TestCase
         self::assertTrue($filter->shouldInclude($this->createFinding('src/Foo.php', 10, 'complexity')));
     }
 
-    /**
-     * Loading N files used to rebuild the whole subject index N times. The
-     * assertion is a ratio and not a duration: quadratic growth multiplies the
-     * time by sixteen when the input quadruples, linear growth by four, and no
-     * machine's load turns one into the other. Each side is the fastest of
-     * three passes, because a scheduler's hiccup can only make a measurement
-     * slower, and the smaller side is the one a hiccup would distort most.
-     */
     #[Test]
-    public function itLoadsAnnotatedFilesInTimeThatGrowsWithTheirNumber(): void
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function itIndexesEachAnnotatedFileOnceWhenLoadingSuppressions(): void
     {
-        $small = self::fastestLoadOf(1000);
-        $large = self::fastestLoadOf(4000);
+        self::assertFalse(class_exists(MetricSubject::class, false));
 
-        self::assertLessThan(
-            8.0,
-            $large / max($small, 0.000001),
-            'Loading four times the files took more than four times the time it should have',
-        );
+        $GLOBALS['suppressionFilterCanonicalReads'] = 0;
+        eval(<<<'PHP'
+namespace Qualimetrix\Core\Symbol;
+
+final class MetricSubject
+{
+    private function __construct(private DeclarationPath $declarationPath) {}
+
+    public static function declaration(DeclarationPath $path): self
+    {
+        return new self($path);
     }
 
-    /** The fastest of three `apply()` passes, in seconds. */
-    private static function fastestLoadOf(int $files): float
+    public function toCanonical(): string
     {
-        return min(
-            self::timeLoadOf($files),
-            self::timeLoadOf($files),
-            self::timeLoadOf($files),
-        );
-    }
+        $GLOBALS['suppressionFilterCanonicalReads']++;
 
-    /** Seconds spent in `apply()` for one symbol directive in each of `$files` files. */
-    private static function timeLoadOf(int $files): float
-    {
-        $suppressions = [];
-        for ($index = 0; $index < $files; $index++) {
-            $file = "src/File{$index}.php";
-            $suppressions[$file] = [new Suppression(
-                'complexity.ccn',
-                null,
-                5,
-                SuppressionType::Symbol,
-                binding: new DeclarationBinding(MetricSubject::declaration(DeclarationPath::of(
+        return $this->declarationPath->toCanonical();
+    }
+}
+PHP);
+
+        try {
+            $suppressions = [];
+            for ($index = 0; $index < 12; $index++) {
+                $file = "src/File{$index}.php";
+                $declaration = DeclarationPath::of(
                     SymbolPath::forClass('Demo', "File{$index}"),
                     RelativePath::fromString($file),
-                    DeclarationOrdinal::fromRank(1),
-                )), ControlScope::Class_),
-            )];
+                    DeclarationOrdinal::fromRank(0),
+                );
+                $suppressions[$file] = [new Suppression(
+                    'complexity.ccn',
+                    null,
+                    5,
+                    SuppressionType::Symbol,
+                    binding: new DeclarationBinding(
+                        MetricSubject::declaration($declaration),
+                        ControlScope::Class_,
+                    ),
+                )];
+            }
+
+            (new SuppressionFilter())->apply([], $suppressions);
+
+            self::assertSame(12, $GLOBALS['suppressionFilterCanonicalReads']);
+        } finally {
+            unset($GLOBALS['suppressionFilterCanonicalReads']);
         }
-
-        $filter = new SuppressionFilter();
-        $start = hrtime(true);
-        $filter->apply([], $suppressions);
-
-        return (hrtime(true) - $start) / 1e9;
     }
 
     private function createFinding(string $file, int $line, string $code): Finding
