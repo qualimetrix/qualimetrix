@@ -496,6 +496,21 @@ changing those constructors also updates the channel probe.
 
 ## Execution, controls and independent checks
 
+`composer check:gate` runs the end-to-end captures and both self-tests.
+Its **Gate captures and witnesses (composer check:gate)** CI context runs on
+every pull request and on pushes to `main`. Locally it is required when
+changing `scripts/finding-gate*`, `scripts/finding-gate-controls/` or
+`finding-gate/`. It is separate from the routine `composer check` budget.
+
+The **Finding gate controls** workflow runs `composer gate:controls --
+--reference=HEAD --jobs=8` daily on `main` and supports manual dispatch.
+The same command is locally required only for changes to the paths above.
+Scheduled controls measure their own revision and do not replace the
+pull-request witnesses. The preceding Linux measurement took about 18
+minutes for captures and witnesses and 139 minutes for 31 controls; their
+job deadlines are 30 and 160 minutes. Branch pushes do not duplicate the
+pull-request capture job.
+
 The three waves remain ordered: candidate 1, candidate 2, reference.
 Cases have independent working directories and a bounded pool
 (`--jobs=1..16`, default 4); commands inside one case retain their order.

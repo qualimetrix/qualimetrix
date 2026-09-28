@@ -1,15 +1,15 @@
-name: Finding gate controls
+name: Finding gate captures
 
 on:
-  schedule:
-    - cron: '0 0 * * *'
-  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
 
 jobs:
-  gate-controls:
-    name: Gate controls (composer gate:controls)
+  check-gate:
+    name: Gate captures and witnesses (composer check:gate)
     runs-on: ubuntu-latest
-    timeout-minutes: 160
+    timeout-minutes: 30
 
     steps:
       - name: Checkout code
@@ -28,5 +28,5 @@ jobs:
       - name: Install dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
-      - name: Run gate controls
-        run: composer gate:controls -- --reference=HEAD --jobs=8
+      - name: Run gate captures and witnesses
+        run: composer check:gate

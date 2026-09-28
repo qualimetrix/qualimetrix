@@ -584,7 +584,7 @@ composer check:code     # what a code change invalidates: cs-check, phpstan, PHP
 composer check:docs     # what a website change invalidates: a strict mkdocs build
 composer check:artifacts # what a manifest, config or corpus change invalidates: every generated artifact
 composer check:self     # what the product says about this repo: qmx ratchet + directive audit
-composer check:gate     # gate end-to-end tests, observed witnesses and negative controls
+composer check:gate     # gate end-to-end captures and both self-test witnesses
 composer architecture:check # exact manifest policy + generated-artifact freshness
 composer docs:check     # mkdocs --strict build of website/ (broken links, nav gaps)
 composer test           # PHPUnit
@@ -662,7 +662,8 @@ bin/qmx check --help
 
 **Project-specific steps** (in addition to the global workflow):
 - **Validation**: `composer check` (cs-check + strict docs build + tests + phpstan + exact manifest/freshness check + coarse qmx selfcheck). A direct `bin/qmx check` is product analysis only and does not run the repository's exact manifest policy. When modifying `html-report/`, also run `composer build:js` (`test:js` is part of `check:code` since X9)
-- **Gate validation**: `composer check:gate` is required when changing `scripts/finding-gate*` or `finding-gate/`. It runs separately from `composer check` and has its own CI job on every push and pull request.
+- **Gate captures and witnesses**: `composer check:gate` is required when changing `scripts/finding-gate*`, `scripts/finding-gate-controls/` or `finding-gate/`. It runs separately from `composer check`, on every pull request and on pushes to `main`.
+- **Gate mutation controls**: `composer gate:controls -- --reference=HEAD --jobs=8` is locally required only when changing those same paths. Its separate CI workflow runs daily on `main` and supports manual dispatch. Scheduled controls are evidence about their measured revision, not a required pull-request context.
 - **Documentation**: Update `README.md` in the affected `src/` directory (add new files, fix outdated info). Update website documentation (see [Website Documentation](#website-documentation) section below)
 
 ### Efficient validation order
@@ -687,13 +688,13 @@ what invalidates it, so a change that touched one thing pays for one group:
 `check:code` (style, static analysis, PHP and JS tests), `check:docs` (strict mkdocs),
 `check:artifacts` (manifest and every generated artifact against a fresh
 measurement) and `check:self` (the qmx ratchet and the inline-directive audit).
-Gate end-to-end tests, observed witnesses and negative controls have their own
-`check:gate` group and CI job. Measured on this tree after separating that
-group: the complete routine check took 230s, its longest parallel PHP test
-shard took 125s, all artifact checks together took 29s, and the strict docs
-build took 2s. The gate's 37 end-to-end cases took 478s in the separate group.
-The complete gate group took 3958s, including approximately 2684s for its 31
-controls; its runtime is reported separately from the routine check budget.
+Gate end-to-end captures and both self-tests have their own `check:gate`
+group and pull-request CI job. Mutation controls have the separate
+`gate:controls` group and scheduled/manual workflow. The routine check
+previously took 220s locally and 419s on Linux CI. On Linux the gate captures
+and witnesses took about 1088s, while its 31 controls took about 8320s.
+Those costs are reported separately from the routine check budget; the CI
+job deadlines are 30 minutes for captures and 160 minutes for controls.
 `architecture:check`
 deliberately runs in both `check:artifacts` and — as its first half —
 `selfcheck`: the ratchet may not judge a tree whose generated artifacts are

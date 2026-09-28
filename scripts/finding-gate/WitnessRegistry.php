@@ -16,9 +16,8 @@ namespace QmxFindingGate;
  * {@see CheckWitnesses} run raised is taken from the report itself, and one no
  * expectation matched is a guard whose removal leaves the self-test green.
  *
- * Only what the self-test observes counts. `gate:controls` runs neither in
- * `composer check` nor in CI, so a class a control requires is a declaration
- * nobody executes on the way to a merge.
+ * Only what the self-test observes counts. Scheduled controls are not per-PR
+ * merge evidence, while both gate self-tests remain part of `check:gate`.
  */
 final class WitnessRegistry
 {
