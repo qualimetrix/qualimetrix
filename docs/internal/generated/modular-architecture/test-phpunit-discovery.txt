@@ -3598,6 +3598,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAccumulatesHealthExclusionsAcrossEveryLayerInOrder
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesABrokenFormulaToTheLayerThatWroteIt
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesALevelWordToTheLayerThatWroteTheList
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesAnUnknownComputedReferenceToItsFormulaWriter"default formula"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesAnUnknownComputedReferenceToItsFormulaWriter"namespace formula inherited by project"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesTheSelectedBrokenFormulaToItsExactWriter"class reporting subset"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesTheSelectedBrokenFormulaToItsExactWriter"explicit project beats namespace"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesTheSelectedBrokenFormulaToItsExactWriter"generic above a namespace refinement"
