@@ -81,7 +81,7 @@ final readonly class ResolvedDocument
     /** @param non-empty-list<string> $path */
     private static function undeclared(array $path): never
     {
-        throw new LogicException(\sprintf('The configuration schema does not declare the resolved path "%s".', Provenance::display($path)));
+        throw new LogicException(\sprintf('The configuration schema does not declare the resolved path "%s".', implode('.', $path)));
     }
 
     /** @return array<string, ResolvedValueInterface> */

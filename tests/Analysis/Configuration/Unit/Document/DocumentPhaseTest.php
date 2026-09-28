@@ -12,9 +12,11 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaqueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\IntegerJudgement;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\RefusedName;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
@@ -212,6 +214,31 @@ final class DocumentPhaseTest extends TestCase
     {
         self::assertSame(-1, SampleDocument::compose(SampleDocument::file(['memory_limit' => -1]))->get('memory_limit')?->plain());
         self::assertSame('1G', SampleDocument::compose(SampleDocument::file(['memory_limit' => '1G']))->get('memory_limit')?->plain());
+    }
+
+    #[Test]
+    public function itRefusesAnIntegerJudgementAtTheSourceBeforeALaterLayerWins(): void
+    {
+        $section = new readonly class implements DocumentSectionSchemaInterface {
+            public function key(): string
+            {
+                return 'workers';
+            }
+
+            public function schema(): NodeSchema
+            {
+                return NodeSchema::scalar(ScalarForm::Integer)->judgedInEachLayer(new IntegerJudgement(static fn(int $value): ?string => $value < 0 ? 'Workers must be non-negative.' : null));
+            }
+        };
+
+        $refusal = self::refusal(static fn() => DocumentComposer::compose(
+            new DocumentSchema([$section]),
+            [SampleDocument::preset(['workers' => -1]), SampleDocument::file(['workers' => 0])],
+        ));
+
+        self::assertSame('strict', $refusal->sources()[0]->locator());
+        self::assertSame(['workers'], $refusal->position()?->segments);
+        self::assertStringContainsString('Workers must be non-negative.', $refusal->summary());
     }
 
     #[Test]

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -19,6 +18,8 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  */
 final readonly class ExitPolicy
 {
+    public const string CONFIGURATION_KEY = 'fail_on';
+
     public function __construct(public Severity|false|null $failOn = null)
     {
         if ($failOn instanceof Severity && !$failOn->gatesRun()) {
@@ -56,7 +57,7 @@ final readonly class ExitPolicy
     {
         return ConfigurationRefusal::aboutResolvedInput(
             self::rejection($value),
-            ConfigSchema::FAIL_ON,
+            self::CONFIGURATION_KEY,
         );
     }
 
@@ -72,9 +73,9 @@ final readonly class ExitPolicy
             . ' Severity "info" is report-only and can no longer be a "%s" threshold:'
             . ' raise the severity of the rule you want to gate on instead.',
             $value,
-            ConfigSchema::FAIL_ON,
+            self::CONFIGURATION_KEY,
             implode(', ', $accepted),
-            ConfigSchema::FAIL_ON,
+            self::CONFIGURATION_KEY,
         );
     }
 }

@@ -27,6 +27,7 @@ Configuration/
 │   ├── Document/                 # the resolved document: provenance, diagnostics and read-only
 │   │                             # Resolved{Map,List,Opaque,BareName}Interface forms
 │   │   └── Schema/               # the port an owner declares its section through
+│   │       └── IntegerJudgement.php # pure integer grammar
 │   ├── Pipeline/                 # resolution request and pipeline contracts
 │   └── Refusal/                  # ConfigurationRefusal — the one carrier for a configuration
 │                                  # refusal by user input, and its origin/position vocabulary;
@@ -241,6 +242,12 @@ Finding produces `FindingConfiguration`, Cache and Parallel produce their local
 configurations, and Reporting resolves output and finding-projection values.
 No consumer may construct a feature configuration factory through Configuration
 or add a feature field to a shared carrier.
+
+`IntegerJudgement` lets an owner supply a pure integer grammar returning a
+refusal message or `null` to `NodeSchema::judgedInEachLayer()`. The declaration
+accepts it only on an integer scalar. Layer reading establishes that form and
+retains authored provenance when it raises the message; the grammar does not
+need a resolved-node parameter to judge a numeric range.
 
 `ResolvedDocument::get()` takes canonical schema paths. An undeclared path is
 a programmer error (`LogicException`), including a misspelt child beneath an

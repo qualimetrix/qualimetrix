@@ -1732,6 +1732,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itKeepsEveryDeclarationWhenAHintAndAnEmptyOverrideNoticeAreAdded
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesAShorthandSpreadingToAnUndeclaredKey
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesAShorthandThatIsAlsoAKey
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesAnIntegerJudgementOnANonIntegerScalar
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesToDeclareANonCanonicalKey
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesTwoShorthandsSpreadingToOneKey
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itCarriesTheSourceAndLocatorItWasBuiltWith
@@ -1874,6 +1875,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAValueOfTheWrongShape"null string list item"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAValueOfTheWrongShape"scalar for a list"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAValueOfTheWrongShape"scalar for a map"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAnIntegerJudgementAtTheSourceBeforeALaterLayerWins
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAnUnknownKeyWhateverItsValueIncludingTilde"entry of a named map"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAnUnknownKeyWhateverItsValueIncludingTilde"root"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentPhaseTest::itRefusesAnUnknownKeyWhateverItsValueIncludingTilde"section"
@@ -10551,6 +10553,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\ParallelConfigurationResolverTest::itResolvesAllowedWorkerCounts"positive integer"
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\ParallelConfigurationResolverTest::itUsesTheWinningWorkerValue
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\ParallelConfigurationStoreTest::itResetsToAutomaticWorkerSelection
+ - Qualimetrix\Tests\Infrastructure\Parallel\Unit\ParallelConfigurationTest::itRefusesANegativeWorkerCountAtTheValueBoundary
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\Strategy\AmphpParallelStrategyTest::itAcceptsLargeWorkerCount
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\Strategy\AmphpParallelStrategyTest::itDefaultsToFourWorkers
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\Strategy\AmphpParallelStrategyTest::itDelegatesIsParallelAvailableToIsAvailable

@@ -34,10 +34,10 @@ final class DocumentRootsTest extends TestCase
     public function itDeclaresNoRootAnOwnerDeclares(): void
     {
         $declared = self::keys(ConfigurationRoot::cases());
-        $ownerRoots = array_map(
+        $ownerRoots = array_values(array_unique(array_map(
             static fn(string $root): string => strtolower((string) preg_replace('/[A-Z]/', '_$0', $root)),
             [...ConfigSchema::DOCUMENT_ROOTS, ConfigSchema::RULES, ...self::keys(LayeredDocument::standaloneSections())],
-        );
+        )));
 
         self::assertSame([], array_values(array_intersect($declared, $ownerRoots)));
         self::assertSame([], array_values(array_diff($declared, DocumentRoots::known())));

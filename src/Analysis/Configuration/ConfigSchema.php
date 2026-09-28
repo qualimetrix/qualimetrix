@@ -79,7 +79,7 @@ final class ConfigSchema
     public const array INTERNAL_KEYS = [self::DISCOVERED_AUTOLOAD_PATHS, self::DISCOVERED_AUTOLOAD_DEV_PATHS];
 
     /** Capability-owned roots transported in ordered configuration documents. */
-    public const array DOCUMENT_ROOTS = [self::COUPLING, self::COMPUTED_METRICS, self::EXCLUDE_HEALTH, self::ARCHITECTURE, self::FORMAT];
+    public const array DOCUMENT_ROOTS = [self::COUPLING, self::COMPUTED_METRICS, self::EXCLUDE_HEALTH, self::ARCHITECTURE, self::FORMAT, self::PARALLEL];
 
     // -------------------------------------------------------------------------
     // Root key types

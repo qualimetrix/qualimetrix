@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
@@ -14,7 +13,7 @@ final class ExitPolicySection implements DocumentSectionSchemaInterface
 {
     public function key(): string
     {
-        return ConfigSchema::FAIL_ON;
+        return ExitPolicy::CONFIGURATION_KEY;
     }
 
     public function schema(): NodeSchema

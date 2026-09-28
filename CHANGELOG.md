@@ -27,6 +27,12 @@ composition registers them automatically. See ADR 0086.
 with the equivalent `fail_on: none`; `false` is refused with exit code 3.
 `none` still means that findings do not fail the run. See ADR 0086.
 
+**Programmatic worker configuration requires a non-negative count.**
+`new ParallelConfiguration(-1)` now throws `InvalidArgumentException` rather
+than carrying an invalid worker count. Use `null` for automatic detection,
+`0` for sequential execution, or a positive count. The same integer grammar
+is applied to each authored `parallel.workers` value. See ADR 0086.
+
 **Resolved-document reads require declared canonical paths.**
 `get()` now throws `LogicException` for a path the schema does not declare;
 only a declared but unwritten path returns `null`. When constructing a document,

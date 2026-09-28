@@ -8,6 +8,7 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\IntegerJudgement;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\KeyDictionary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
@@ -37,6 +38,15 @@ final class NodeSchemaTest extends TestCase
         $this->expectException(LogicException::class);
 
         NodeSchema::map(['failOn' => NodeSchema::scalar()]);
+    }
+
+    #[Test]
+    public function itRefusesAnIntegerJudgementOnANonIntegerScalar(): void
+    {
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('An integer judgement requires a last-writer-wins integer scalar.');
+
+        NodeSchema::scalar(ScalarForm::String)->judgedInEachLayer(new IntegerJudgement(static fn(int $value): ?string => null));
     }
 
     #[Test]
