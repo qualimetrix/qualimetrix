@@ -254,6 +254,37 @@ final class ComputedMetricLayeringTest extends TestCase
         self::assertSame(['computed_metrics', 'computed.x', 'formula'], $refusal->position()?->segments);
     }
 
+    /** @return iterable<string, array{array<string, mixed>, list<string>}> */
+    public static function provideUnknownComputedReferencesWithAnUnrelatedLaterWriting(): iterable
+    {
+        yield 'default formula' => [
+            ['formula' => 'm["computed.missing"]', 'levels' => ['project']],
+            ['formula'],
+        ];
+        yield 'namespace formula inherited by project' => [
+            ['formulas' => ['namespace' => 'm["computed.missing"]'], 'levels' => ['project']],
+            ['formulas', 'namespace'],
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $preset
+     * @param list<string> $formulaPath
+     */
+    #[Test]
+    #[DataProvider('provideUnknownComputedReferencesWithAnUnrelatedLaterWriting')]
+    public function itAttributesAnUnknownComputedReferenceToItsFormulaWriter(array $preset, array $formulaPath): void
+    {
+        $refusal = $this->refusal(
+            self::preset(['computed_metrics' => ['computed.x' => $preset]]),
+            self::file(['computed_metrics' => ['computed.x' => ['description' => 'label']]]),
+        );
+
+        self::assertStringContainsString('references unknown metric "computed.missing"', $refusal->summary());
+        self::assertSame(['preset "strict"'], self::described($refusal));
+        self::assertSame(['computed_metrics', 'computed.x', ...$formulaPath], $refusal->position()?->segments);
+    }
+
     /** @return iterable<string, array{array<string, mixed>, array<string, mixed>, string, list<string>}> */
     public static function provideSelectedBrokenFormulas(): iterable
     {

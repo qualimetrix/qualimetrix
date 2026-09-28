@@ -188,11 +188,12 @@ final class ComputedMetricFormulaValidator
         }
 
         foreach ($definitions as $definition) {
-            foreach ($definition->formulas as $formula) {
+            foreach ($definition->formulas as $level => $formula) {
                 foreach ($this->extractComputedMetricReferences($formula) as $ref) {
                     if (!isset($nameSet[$ref])) {
-                        throw $authorship->refuseMetric(
-                            $definition->name,
+                        throw $authorship->refuseFormula(
+                            $definition,
+                            (string) $level,
                             ComputedMetricRefusalWording::referencesUnknownMetric($definition->name, $ref, $formula),
                         );
                     }
