@@ -14,7 +14,7 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
@@ -26,6 +26,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
@@ -408,7 +409,9 @@ final class NamespaceFoldCountsEachDeclarationOnceTest extends TestCase
         }
 
         $container = (new ContainerFactory())->create();
-        $document = new ConfigurationDocument([], AbsolutePath::fromString($root));
+        $configurationPipeline = $container->get(ConfigurationPipelineInterface::class);
+        \assert($configurationPipeline instanceof ConfigurationPipelineInterface);
+        $document = LayeredDocument::of([], AbsolutePath::fromString($root), ...LayeredDocument::sectionsOf($configurationPipeline));
 
         /** @var ArchitecturePolicyConfiguratorInterface $architecturePolicy */
         $architecturePolicy = $container->get(ArchitecturePolicyConfiguratorInterface::class);

@@ -91,9 +91,10 @@ final class OutputFormatRefusesUnexecutableValuesTest extends TestCase
     #[Test]
     public function itStillDefaultsWhenNobodyNamedAFormat(): void
     {
-        $document = LayeredDocument::of([], AbsolutePath::fromString('/project'));
+        $resolver = new OutputFormatResolver(self::registry());
+        $document = LayeredDocument::of([], AbsolutePath::fromString('/project'), $resolver);
 
-        self::assertSame('summary', (new OutputFormatResolver(self::registry()))->resolve($document)->value);
+        self::assertSame('summary', $resolver->resolve($document)->value);
     }
 
     #[Test]
@@ -118,12 +119,14 @@ final class OutputFormatRefusesUnexecutableValuesTest extends TestCase
             $sources[] = ['source' => 'cli', 'values' => ['format' => 'json']];
         }
 
+        $resolver = new OutputFormatResolver(self::registry());
         $document = LayeredDocument::of(
             $sources,
             AbsolutePath::fromString('/project'),
+            $resolver,
         );
 
-        return (new OutputFormatResolver(self::registry()))->resolve($document);
+        return $resolver->resolve($document);
     }
 
     private static function registry(): FormatterRegistryInterface

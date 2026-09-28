@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregatio
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
@@ -17,6 +17,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 /**
  * Integration test that runs the full analysis pipeline on fixture files
@@ -35,7 +36,9 @@ final class GoldenFileAggregationTest extends TestCase
         $container = $containerFactory->create();
         $fixturesPath = \dirname(__DIR__, 2) . '/Fixtures/GoldenMetrics';
         $fixtureRoot = AbsolutePath::fromString($fixturesPath);
-        $document = new ConfigurationDocument([], $fixtureRoot);
+        $configurationPipeline = $container->get(ConfigurationPipelineInterface::class);
+        \assert($configurationPipeline instanceof ConfigurationPipelineInterface);
+        $document = LayeredDocument::of([], $fixtureRoot, ...LayeredDocument::sectionsOf($configurationPipeline));
 
         /** @var ComputedMetricConfiguratorInterface $computedMetrics */
         $computedMetrics = $container->get(ComputedMetricConfiguratorInterface::class);
