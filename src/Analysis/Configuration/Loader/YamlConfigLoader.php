@@ -86,10 +86,9 @@ final class YamlConfigLoader implements ConfigLoaderInterface
     }
 
     /**
-     * The values the owners still folding `contributions()` read: keys folded
-     * to one spelling, and the checks of the roots the engine does not judge
-     * yet — the `rules` block, and the container and sub-keys of a root whose
-     * owner declares no section. A root the engine judges passes these checks
+     * Normalized layer values: keys are folded to one spelling, and the roots
+     * the engine does not judge yet are checked here. Finding temporarily reads
+     * its raw `rules` inputs; a root the engine judges passes these checks
      * whenever the engine accepted it.
      *
      * @param array<string|int, mixed> $parsed

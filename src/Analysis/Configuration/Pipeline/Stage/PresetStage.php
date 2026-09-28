@@ -110,8 +110,9 @@ final class PresetStage implements ConfigurationStageInterface
     }
 
     /**
-     * Loads each preset as its own layer, in precedence order: normalized for
-     * `contributions()`, and as written for the document engine.
+     * Loads each preset as its own layer, in precedence order: normalized
+     * layer values for Finding's temporary raw reads, and authored input for
+     * the document engine.
      *
      * @param list<string> $presetNames
      *
