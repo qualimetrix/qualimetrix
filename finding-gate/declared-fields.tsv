@@ -1,0 +1,6 @@
+change	report	view	field	reason
+added	json-document	format:json	configurationDiagnostics	Publish diagnostics of the resolved configuration document.
+added	json-document	check:output:file	configurationDiagnostics	Publish diagnostics of the resolved configuration document.
+added	json-document	check:parallel	configurationDiagnostics	Publish diagnostics of the resolved configuration document.
+added	json-document	check:baseline	configurationDiagnostics	Publish diagnostics of the resolved configuration document.
+added	json-document	check:baseline-source	configurationDiagnostics	Publish diagnostics of the resolved configuration document.

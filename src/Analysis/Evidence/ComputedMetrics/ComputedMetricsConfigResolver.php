@@ -6,10 +6,10 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
 use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareName;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareNameInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedList;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMap;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricAuthorship;
@@ -81,7 +81,7 @@ final class ComputedMetricsConfigResolver
     }
 
     /**
-     * @return array<string, ResolvedMap|ResolvedBareName>
+     * @return array<string, ResolvedMapInterface|ResolvedBareNameInterface>
      */
     private static function entries(?ResolvedValueInterface $section): array
     {
@@ -89,13 +89,13 @@ final class ComputedMetricsConfigResolver
             return [];
         }
 
-        if (!$section instanceof ResolvedMap) {
+        if (!$section instanceof ResolvedMapInterface) {
             throw self::undeclared(ComputedMetricsSection::class);
         }
 
         $entries = [];
         foreach ($section->entries() as $name => $entry) {
-            $entries[$name] = $entry instanceof ResolvedMap || $entry instanceof ResolvedBareName
+            $entries[$name] = $entry instanceof ResolvedMapInterface || $entry instanceof ResolvedBareNameInterface
                 ? $entry
                 : throw new LogicException('A computed_metrics entry resolves to a map or a bare name.');
         }
@@ -112,9 +112,9 @@ final class ComputedMetricsConfigResolver
      *
      * @throws ConfigurationRefusal
      */
-    private function applyEntry(string $name, ResolvedMap|ResolvedBareName $entry, array &$definitions, array &$exclusions): void
+    private function applyEntry(string $name, ResolvedMapInterface|ResolvedBareNameInterface $entry, array &$definitions, array &$exclusions): void
     {
-        if ($entry instanceof ResolvedBareName) {
+        if ($entry instanceof ResolvedBareNameInterface) {
             if (!isset($definitions[$name])) {
                 $definitions[$name] = ComputedMetricOverrideReader::create($name, $entry);
             }
@@ -158,7 +158,7 @@ final class ComputedMetricsConfigResolver
             return [];
         }
 
-        if (!$section instanceof ResolvedList) {
+        if (!$section instanceof ResolvedListInterface) {
             throw self::undeclared(ExcludeHealthSection::class);
         }
 
@@ -169,7 +169,7 @@ final class ComputedMetricsConfigResolver
             $dimension = str_starts_with($written, 'health.') ? $written : 'health.' . $written;
 
             if ($dimension !== HealthDimension::Overall->value && !\in_array($dimension, $known, true)) {
-                throw $item->refusal(ComputedMetricRefusalWording::unknownExcludedHealthDimension(
+                $item->refuse(ComputedMetricRefusalWording::unknownExcludedHealthDimension(
                     $written,
                     self::where($item->contributors()[0]),
                     $known,

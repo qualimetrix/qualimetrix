@@ -5,11 +5,11 @@ Qualimetrix\Analysis\Configuration\ConfigurationRoot	Analysis.Configuration	1	1
 Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	25	9
 Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface	Analysis.Configuration	5	3
 Qualimetrix\Analysis\Configuration\Contract\Document\Provenance	Analysis.Configuration	5	4
-Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareName	Analysis.Configuration	2	1
+Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareNameInterface	Analysis.Configuration	2	1
 Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument	Analysis.Configuration	2	2
-Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedList	Analysis.Configuration	4	3
-Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMap	Analysis.Configuration	4	2
-Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaque	Analysis.Configuration	2	1
+Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface	Analysis.Configuration	4	3
+Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface	Analysis.Configuration	4	2
+Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaqueInterface	Analysis.Configuration	2	1
 Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface	Analysis.Configuration	6	3
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface	Analysis.Configuration	3	2
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary	Analysis.Configuration	2	2

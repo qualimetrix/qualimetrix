@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Configuration\Contract\Document;
+namespace Qualimetrix\Analysis\Configuration\Document\Resolved;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareNameInterface;
 
 /**
  * An entry of a named map whose name was written with nothing under it — `~`,
@@ -13,7 +14,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
  *
  * It merges as "not written": a body any layer wrote stands over it.
  */
-final readonly class ResolvedBareName implements ResolvedValueInterface
+final readonly class ResolvedBareName implements ResolvedBareNameInterface
 {
     /** @param non-empty-list<Provenance> $writers every layer that wrote the name alone, lowest precedence first */
     public function __construct(private array $writers) {}
@@ -29,9 +30,9 @@ final readonly class ResolvedBareName implements ResolvedValueInterface
         return $this->writers;
     }
 
-    public function refusal(string $summary): ConfigurationRefusal
+    public function refuse(string $summary): never
     {
-        return Provenance::refusalOf($this->writers, $summary);
+        throw Provenance::refusalOf($this->writers, $summary);
     }
 
     public function writtenAgainBy(self $upper): self

@@ -53,12 +53,11 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Provenance'
-        - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareName'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareNameInterface'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument'
-        - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedList'
-        - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMap'
-        - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaque'
-        - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedScalar'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaqueInterface'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\KeyDictionary'
@@ -90,6 +89,11 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Document\NameRecognition'
         - 'Qualimetrix\Analysis\Configuration\Document\PendingName'
         - 'Qualimetrix\Analysis\Configuration\Document\ReadingContext'
+        - 'Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedBareName'
+        - 'Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedList'
+        - 'Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedMap'
+        - 'Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedOpaque'
+        - 'Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedScalar'
         - 'Qualimetrix\Analysis\Configuration\Document\WrittenForm'
         - 'Qualimetrix\Analysis\Configuration\Document\WrittenNames'
         - 'Qualimetrix\Analysis\Configuration\Loader\CommandLineLayer'
@@ -1779,6 +1783,12 @@ rules:
       # number and cost the reader.
       - exact: 'Qualimetrix\Analysis\Configuration\Contract'
       - exact: 'Qualimetrix\Analysis\Configuration\Contract\Refusal'
+      # The section declaration language has one port, a concrete builder,
+      # value types and enums. Moving its two internal helpers computes to
+      # 0.689 from the dependency graph, still above the warning ceiling,
+      # and makes the contract depend on the engine. Its parent with the
+      # resolved shape interfaces measures 0.486.
+      - exact: 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema'
     max_distance_warning: 0.5
     max_distance_error: 0.7
 

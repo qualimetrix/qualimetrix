@@ -8,14 +8,14 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedList;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaque;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedScalar;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaqueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\LayerMerge;
+use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedScalar;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\SampleDocument;
 
 /**
@@ -118,7 +118,7 @@ final class DocumentMergePolicyTest extends TestCase
         );
 
         $set = $document->get('exclude');
-        self::assertInstanceOf(ResolvedList::class, $set);
+        self::assertInstanceOf(ResolvedListInterface::class, $set);
         self::assertSame(['vendor', 'build', 'var'], $set->plain());
         self::assertSame(
             ['strict', 'strict', '/p/qmx.yaml'],
@@ -244,7 +244,7 @@ final class DocumentMergePolicyTest extends TestCase
         );
 
         $rules = $document->get('rules');
-        self::assertInstanceOf(ResolvedOpaque::class, $rules);
+        self::assertInstanceOf(ResolvedOpaqueInterface::class, $rules);
         self::assertSame([['size.loc' => ['warning' => 1]], ['size.loc' => ['error' => 2]]], $rules->plain());
         self::assertSame(['strict', '/p/qmx.yaml'], self::locators($rules));
     }
@@ -257,9 +257,12 @@ final class DocumentMergePolicyTest extends TestCase
             SampleDocument::file(['cache' => ['enabled' => false]]),
         );
 
-        $refusal = $document->get('cache')?->refusal('cache is inconsistent');
+        try {
+            $document->get('cache')?->refuse('cache is inconsistent');
+            self::fail('refuse() must throw');
+        } catch (ConfigurationRefusal $refusal) {
+        }
 
-        self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
         self::assertSame(['strict', '/p/qmx.yaml'], array_map(static fn($origin): ?string => $origin->locator(), $refusal->sources()));
         self::assertSame(['cache'], $refusal->position()?->segments);
     }
@@ -272,9 +275,12 @@ final class DocumentMergePolicyTest extends TestCase
             SampleDocument::file(['memory_limit' => 'lots']),
         );
 
-        $refusal = $document->get('memory_limit')?->refusal('not a size');
+        try {
+            $document->get('memory_limit')?->refuse('not a size');
+            self::fail('refuse() must throw');
+        } catch (ConfigurationRefusal $refusal) {
+        }
 
-        self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
         self::assertSame(['/p/qmx.yaml'], array_map(static fn($origin): ?string => $origin->locator(), $refusal->sources()));
         self::assertSame(ConfigurationSource::ConfigFile, $refusal->origin()->source());
         self::assertSame(['memory_limit'], $refusal->position()?->segments);

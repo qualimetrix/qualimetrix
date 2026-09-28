@@ -80,9 +80,12 @@ src/Core/ProductIdentity.php	17	coupling.cbo	24 -- Every output channel reads it
 src/Reporting/FormatterContext.php	15	coupling.cbo	warning=33 error=33 -- Formatter context is the immutable Reporting input boundary every formatter's                                    signature depends on.                                          also names it directly to refuse a               or           value that selects nothing, and the bound namespace selector is now part of that stable boundary. Raw CBO 32 gets one-edge headroom from the inclusive threshold of 33.
 src/Reporting/Report.php	19	coupling.cbo	warning=32 error=32 -- Report is the transport VO every formatter's
 src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php	34	coupling.class-rank	warning=0.03 -- The paragraph above is the
+src/Analysis/Configuration/Contract/Refusal/ConfigurationSource.php	16	coupling.class-rank	warning=0.025 -- ClassRank hands a zero-Ce enum
 src/Analysis/Evidence/Measurement/Contract/MetricBag.php	15	coupling.class-rank	warning=0.035 error=0.035 -- Intentional Measurement
 src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php	21	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/Complexity/ClassComplexityOptions.php	21	coupling.instability	warning=0.81 -- The eighth efferent edge is
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricFormulaValidator.php	22	coupling.instability	warning=0.81 -- Ca=2, Ce=8: the eighth efferent
+src/Analysis/Evidence/ComputedMetrics/Configuration/ComputedMetricAuthorship.php	20	coupling.instability	warning=0.82 -- Ca=2, Ce=9: it reads the resolved
 src/Analysis/Evidence/ComputedMetrics/Health/Contract/DrillDown/WorstClassDrillDown.php	23	coupling.instability	0.81 -- Namespace drill-down intentionally composes eight stable contracts while two reporting services depend on it. Raw instability 0.80 is accepted; further outward growth is reported.
 src/Analysis/Evidence/Coupling/ClassCboOptions.php	30	coupling.instability	warning=0.84 -- The docblock this annotation replaced
 src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php	23	coupling.instability	warning=0.81 -- The eighth efferent edge is

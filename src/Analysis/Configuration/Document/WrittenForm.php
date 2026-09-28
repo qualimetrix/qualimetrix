@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Document;
 
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedScalar;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedScalar;
 
 /**
  * The form of one written value against the node declared for it: a value of

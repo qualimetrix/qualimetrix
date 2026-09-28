@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Configuration\Document;
 
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMap;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedMap;
 
 /**
  * Composes the ordered layers into one resolved document, in a fixed order of

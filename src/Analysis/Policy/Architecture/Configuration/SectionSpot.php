@@ -6,9 +6,9 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedList;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMap;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaque;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaqueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
@@ -83,7 +83,7 @@ final readonly class SectionSpot
         $key = (string) $key;
         $path = [...$this->path, $key];
 
-        if ($this->below === [] && ($this->anchor instanceof ResolvedMap || $this->anchor instanceof ResolvedList)) {
+        if ($this->below === [] && ($this->anchor instanceof ResolvedMapInterface || $this->anchor instanceof ResolvedListInterface)) {
             $node = self::resolvedChild($this->anchor, $key);
 
             return $node === null
@@ -96,9 +96,9 @@ final readonly class SectionSpot
         return new self($this->anchor, [...$this->below, $key], $value, $path);
     }
 
-    private static function resolvedChild(ResolvedMap|ResolvedList $parent, string $key): ?ResolvedValueInterface
+    private static function resolvedChild(ResolvedMapInterface|ResolvedListInterface $parent, string $key): ?ResolvedValueInterface
     {
-        if ($parent instanceof ResolvedMap) {
+        if ($parent instanceof ResolvedMapInterface) {
             return $parent->get($key);
         }
 
@@ -124,7 +124,7 @@ final readonly class SectionSpot
             ?? throw new LogicException(\sprintf('Nothing is written at "%s" to refuse.', $this->display()));
 
         if ($this->below === [] && $accepted === null && $written === null) {
-            return $anchor->refusal($summary);
+            return Provenance::refusalOf($anchor->contributors(), $summary);
         }
 
         $writers = $anchor->contributors();
@@ -172,9 +172,9 @@ final readonly class SectionSpot
     private static function unwrap(ResolvedValueInterface $node): mixed
     {
         return match (true) {
-            $node instanceof ResolvedMap => array_map(self::unwrap(...), $node->entries()),
-            $node instanceof ResolvedList => array_map(self::unwrap(...), $node->items()),
-            $node instanceof ResolvedOpaque => $node->contributions()[\count($node->contributions()) - 1]['value'],
+            $node instanceof ResolvedMapInterface => array_map(self::unwrap(...), $node->entries()),
+            $node instanceof ResolvedListInterface => array_map(self::unwrap(...), $node->items()),
+            $node instanceof ResolvedOpaqueInterface => $node->contributions()[\count($node->contributions()) - 1]['value'],
             default => $node->plain(),
         };
     }

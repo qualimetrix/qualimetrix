@@ -18,6 +18,11 @@ use Symfony\Component\ExpressionLanguage\SyntaxError;
  * Validates computed metric definitions: formula syntax, level coverage,
  * circular dependencies, cross-metric references and the levels they are
  * read at, and that every other addressed metric key exists in the catalog.
+ *
+ * @qmx-threshold coupling.instability warning=0.81 -- Ca=2, Ce=8: the eighth efferent
+ * edge is the refusal authorship the six checks name. Moving the one refusal it builds
+ * itself into ComputedMetricAuthorship drops Ca to 1 and pushes ComputedMetricsSection
+ * to 0.83 instead.
  */
 final class ComputedMetricFormulaValidator
 {

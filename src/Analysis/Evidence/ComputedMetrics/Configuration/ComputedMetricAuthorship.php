@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration;
 
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMap;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
@@ -16,6 +16,10 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * Which layers wrote each computed metric, so a refusal about a resolved
  * definition names them. A definition no layer touched is the built-in
  * defaults'.
+ *
+ * @qmx-threshold coupling.instability warning=0.82 -- Ca=2, Ce=9: it reads the resolved
+ * document (three types) and builds the refusal (two types) for its two callers, so it
+ * depends outward by construction.
  */
 final readonly class ComputedMetricAuthorship
 {
@@ -24,7 +28,9 @@ final readonly class ComputedMetricAuthorship
 
     public function refuseMetric(string $metricName, string $summary): ConfigurationRefusal
     {
-        return $this->entry($metricName)?->refusal($summary) ?? self::defaults($metricName, $summary);
+        $entry = $this->entry($metricName);
+
+        return $entry === null ? self::defaults($metricName, $summary) : Provenance::refusalOf($entry->contributors(), $summary);
     }
 
     /**
@@ -33,11 +39,12 @@ final readonly class ComputedMetricAuthorship
      */
     public function refuseFormula(ComputedMetricDefinition $definition, string $level, string $summary): ConfigurationRefusal
     {
-        return $this->formulaWriter($definition, $level)?->refusal($summary)
-            ?? self::defaults($definition->name, $summary, [
-                ComputedMetricEntryKeys::FORMULAS,
-                $definition->formulaLevelFor(SymbolLevel::from($level)) ?? $level,
-            ]);
+        $writer = $this->formulaWriter($definition, $level);
+
+        return $writer !== null ? Provenance::refusalOf($writer->contributors(), $summary) : self::defaults($definition->name, $summary, [
+            ComputedMetricEntryKeys::FORMULAS,
+            $definition->formulaLevelFor(SymbolLevel::from($level)) ?? $level,
+        ]);
     }
 
     /**
@@ -94,7 +101,7 @@ final readonly class ComputedMetricAuthorship
     private function formulaWriter(ComputedMetricDefinition $definition, string $level): ?ResolvedValueInterface
     {
         $entry = $this->entry($definition->name);
-        if (!$entry instanceof ResolvedMap) {
+        if (!$entry instanceof ResolvedMapInterface) {
             return null;
         }
 
@@ -105,7 +112,7 @@ final readonly class ComputedMetricAuthorship
 
         $formulas = $entry->get(ComputedMetricEntryKeys::FORMULAS);
 
-        return ($formulas instanceof ResolvedMap ? $formulas->get($selectedLevel) : null)
+        return ($formulas instanceof ResolvedMapInterface ? $formulas->get($selectedLevel) : null)
             ?? $entry->get(ComputedMetricEntryKeys::FORMULA);
     }
 

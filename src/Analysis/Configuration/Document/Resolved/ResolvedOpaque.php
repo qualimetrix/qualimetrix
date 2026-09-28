@@ -2,15 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Configuration\Contract\Document;
+namespace Qualimetrix\Analysis\Configuration\Document\Resolved;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaqueInterface;
 
 /**
  * A subtree the engine does not read, kept per layer with its source, for an
  * owner that folds it itself.
  */
-final readonly class ResolvedOpaque implements ResolvedValueInterface
+final readonly class ResolvedOpaque implements ResolvedOpaqueInterface
 {
     /** @param non-empty-list<array{provenance: Provenance, value: mixed}> $contributions lowest precedence first */
     public function __construct(private array $contributions) {}
@@ -32,8 +33,8 @@ final readonly class ResolvedOpaque implements ResolvedValueInterface
         return array_column($this->contributions, 'provenance');
     }
 
-    public function refusal(string $summary): ConfigurationRefusal
+    public function refuse(string $summary): never
     {
-        return Provenance::refusalOf($this->contributors(), $summary);
+        throw Provenance::refusalOf($this->contributors(), $summary);
     }
 }

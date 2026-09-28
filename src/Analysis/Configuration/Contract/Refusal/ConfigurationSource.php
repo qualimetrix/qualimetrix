@@ -12,6 +12,13 @@ namespace Qualimetrix\Analysis\Configuration\Contract\Refusal;
  * {@see ConfigurationOrigin::importer()} names the importing source, not a kind
  * of its own: the chain lives on the origin, so a new kind is needed only for a
  * source that is not a file at all.
+ *
+ * @qmx-threshold coupling.class-rank warning=0.025 -- ClassRank hands a zero-Ce enum
+ * the whole rank of the value that wraps it: ConfigurationOrigin depends on nothing
+ * else, and the refusal carrier names this enum directly. Measured at 1078 classes:
+ * raw 0.0066 (0.0218 unscaled), of which 94% arrives through those two edges.
+ * Removing the carrier's direct edge moves the same rank to RefusedPosition instead
+ * (0.0070 > 0.0061), so the excess belongs to the carrier, not to this enum.
  */
 enum ConfigurationSource: string
 {

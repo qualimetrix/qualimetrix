@@ -2,15 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Configuration\Contract\Document;
+namespace Qualimetrix\Analysis\Configuration\Document\Resolved;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 
 /**
  * A map — schema keys or names — with the layers that wrote into it. Keys are
  * canonical for a schema map and as written for a named map.
  */
-final readonly class ResolvedMap implements ResolvedValueInterface
+final readonly class ResolvedMap implements ResolvedMapInterface
 {
     /**
      * @param array<string, ResolvedValueInterface> $entries never empty: a map nothing was written into is absent
@@ -43,8 +45,8 @@ final readonly class ResolvedMap implements ResolvedValueInterface
         return $this->writers;
     }
 
-    public function refusal(string $summary): ConfigurationRefusal
+    public function refuse(string $summary): never
     {
-        return Provenance::refusalOf($this->writers, $summary);
+        throw Provenance::refusalOf($this->writers, $summary);
     }
 }

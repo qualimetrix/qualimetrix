@@ -328,9 +328,9 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\ResolvedBareName": {
-      "path": "src/Analysis/Configuration/Contract/Document/ResolvedBareName.php",
-      "kind": "class",
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\ResolvedBareNameInterface": {
+      "path": "src/Analysis/Configuration/Contract/Document/ResolvedBareNameInterface.php",
+      "kind": "interface",
       "owner": "Analysis.Configuration",
       "visibility": "contract",
       "consumers": [
@@ -360,9 +360,9 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\ResolvedList": {
-      "path": "src/Analysis/Configuration/Contract/Document/ResolvedList.php",
-      "kind": "class",
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\ResolvedListInterface": {
+      "path": "src/Analysis/Configuration/Contract/Document/ResolvedListInterface.php",
+      "kind": "interface",
       "owner": "Analysis.Configuration",
       "visibility": "contract",
       "consumers": [
@@ -384,9 +384,9 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\ResolvedMap": {
-      "path": "src/Analysis/Configuration/Contract/Document/ResolvedMap.php",
-      "kind": "class",
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\ResolvedMapInterface": {
+      "path": "src/Analysis/Configuration/Contract/Document/ResolvedMapInterface.php",
+      "kind": "interface",
       "owner": "Analysis.Configuration",
       "visibility": "contract",
       "consumers": [
@@ -408,9 +408,9 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\ResolvedOpaque": {
-      "path": "src/Analysis/Configuration/Contract/Document/ResolvedOpaque.php",
-      "kind": "class",
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\ResolvedOpaqueInterface": {
+      "path": "src/Analysis/Configuration/Contract/Document/ResolvedOpaqueInterface.php",
+      "kind": "interface",
       "owner": "Analysis.Configuration",
       "visibility": "contract",
       "consumers": [
@@ -423,13 +423,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\SectionSpot"
         }
       ]
-    },
-    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\ResolvedScalar": {
-      "path": "src/Analysis/Configuration/Contract/Document/ResolvedScalar.php",
-      "kind": "class",
-      "owner": "Analysis.Configuration",
-      "visibility": "internal",
-      "consumers": []
     },
     "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\ResolvedValueInterface": {
       "path": "src/Analysis/Configuration/Contract/Document/ResolvedValueInterface.php",
@@ -1057,6 +1050,41 @@
     },
     "Qualimetrix\\Analysis\\Configuration\\Document\\ReadingContext": {
       "path": "src/Analysis/Configuration/Document/ReadingContext.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\Resolved\\ResolvedBareName": {
+      "path": "src/Analysis/Configuration/Document/Resolved/ResolvedBareName.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\Resolved\\ResolvedList": {
+      "path": "src/Analysis/Configuration/Document/Resolved/ResolvedList.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\Resolved\\ResolvedMap": {
+      "path": "src/Analysis/Configuration/Document/Resolved/ResolvedMap.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\Resolved\\ResolvedOpaque": {
+      "path": "src/Analysis/Configuration/Document/Resolved/ResolvedOpaque.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\Resolved\\ResolvedScalar": {
+      "path": "src/Analysis/Configuration/Document/Resolved/ResolvedScalar.php",
       "kind": "class",
       "owner": "Analysis.Configuration",
       "visibility": "internal",

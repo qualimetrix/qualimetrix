@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaque;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaqueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
@@ -124,7 +124,7 @@ final class ConfigurationPipelineTest extends TestCase
         ));
         self::assertSame(['App'], $document->resolved()->get('coupling', 'framework_namespaces')?->plain(), 'An owner-registered section is read.');
         $rules = $document->resolved()->get('rules');
-        self::assertInstanceOf(ResolvedOpaque::class, $rules, 'A known root no section declares yet is carried unread.');
+        self::assertInstanceOf(ResolvedOpaqueInterface::class, $rules, 'A known root no section declares yet is carried unread.');
         self::assertSame([['size.loc' => false]], $rules->plain());
         self::assertSame('strict', $rules->contributors()[0]->origin->locator());
     }

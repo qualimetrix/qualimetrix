@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareName;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareNameInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
@@ -36,7 +36,7 @@ use Qualimetrix\Analysis\Configuration\Document\NameRecognition;
 #[CoversClass(LayerReading::class)]
 #[CoversClass(LayerMerge::class)]
 #[CoversClass(NameRecognition::class)]
-#[CoversClass(ResolvedBareName::class)]
+#[CoversClass(ResolvedBareNameInterface::class)]
 #[CoversClass(NameVocabulary::class)]
 final class NamedEntryTest extends TestCase
 {
@@ -55,10 +55,10 @@ final class NamedEntryTest extends TestCase
         $document = self::compose(self::file(['metrics' => ['computed.mine' => $body]]));
         $entry = $document->get('metrics', 'computed.mine');
 
-        self::assertInstanceOf(ResolvedBareName::class, $entry);
+        self::assertInstanceOf(ResolvedBareNameInterface::class, $entry);
         self::assertSame(['computed.mine' => null], $document->get('metrics')?->plain());
         self::assertSame(['metrics', 'computed.mine'], $entry->contributors()[0]->path);
-        self::assertSame('/p/qmx.yaml', $entry->refusal('No formula.')->origin()->locator());
+        self::assertSame('/p/qmx.yaml', Provenance::refusalOf($entry->contributors(), 'No formula.')->origin()->locator());
     }
 
     #[Test]
@@ -92,7 +92,7 @@ final class NamedEntryTest extends TestCase
             self::file(['metrics' => ['computed.mine' => []]]),
         )->get('metrics', 'computed.mine');
 
-        self::assertInstanceOf(ResolvedBareName::class, $entry);
+        self::assertInstanceOf(ResolvedBareNameInterface::class, $entry);
         self::assertSame(
             ['strict', '/p/qmx.yaml'],
             array_map(static fn(Provenance $writer): ?string => $writer->origin->locator(), $entry->contributors()),

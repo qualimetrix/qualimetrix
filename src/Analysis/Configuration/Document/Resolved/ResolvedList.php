@@ -2,15 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Configuration\Contract\Document;
+namespace Qualimetrix\Analysis\Configuration\Document\Resolved;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 
 /**
  * A replaced list — one writer — or an accumulated set — every layer that
  * added to it. Each item keeps the provenance of the layer that wrote it.
  */
-final readonly class ResolvedList implements ResolvedValueInterface
+final readonly class ResolvedList implements ResolvedListInterface
 {
     /**
      * @param list<ResolvedValueInterface> $items
@@ -38,8 +40,8 @@ final readonly class ResolvedList implements ResolvedValueInterface
         return $this->writers;
     }
 
-    public function refusal(string $summary): ConfigurationRefusal
+    public function refuse(string $summary): never
     {
-        return Provenance::refusalOf($this->writers, $summary);
+        throw Provenance::refusalOf($this->writers, $summary);
     }
 }

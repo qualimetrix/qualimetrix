@@ -9,7 +9,7 @@ use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedList;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\SelectorYamlDecoder;
@@ -86,8 +86,8 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
         array $paths,
         AbsolutePath $root,
         DirectoryPruner $authored,
-        ResolvedList $writtenPaths,
-        ?ResolvedList $excludes,
+        ResolvedListInterface $writtenPaths,
+        ?ResolvedListInterface $excludes,
     ): void {
         $excluded = self::excludedDirectories($paths, $root, $authored);
         if ($excluded === []) {
@@ -145,10 +145,10 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
      *
      * @return list<string>
      */
-    private static function analysedPaths(ResolvedList $written): array
+    private static function analysedPaths(ResolvedListInterface $written): array
     {
         if ($written->items() === []) {
-            throw $written->refusal(\sprintf(
+            $written->refuse(\sprintf(
                 'Invalid value for "%s": the list is empty, so this run would analyse nothing. Name at least one'
                 . ' path, or omit the key to analyse the working directory.',
                 ConfigurationRoot::Paths->value,
@@ -159,7 +159,7 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
         foreach ($written->items() as $item) {
             $path = $item->plain();
             if ($path === '') {
-                throw $item->refusal(\sprintf(
+                $item->refuse(\sprintf(
                     'Invalid entry in "%s": a path cannot be empty. Name a directory or a file, or omit the key to analyse the working directory.',
                     ConfigurationRoot::Paths->value,
                 ));
@@ -191,7 +191,7 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
      *
      * @return list<PathPattern>
      */
-    private function pathPatterns(ResolvedList $excludes): array
+    private function pathPatterns(ResolvedListInterface $excludes): array
     {
         $patterns = [];
         foreach ($excludes->items() as $index => $entry) {
@@ -205,7 +205,7 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
         }
 
         if (\count($patterns) > SelectorDefinition::MAX_SELECTOR_COUNT) {
-            throw $excludes->refusal(
+            $excludes->refuse(
                 \sprintf('Option "%s" must not contain more than %d selectors.', ConfigurationRoot::Exclude->value, SelectorDefinition::MAX_SELECTOR_COUNT),
             );
         }
@@ -250,9 +250,9 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
         return $value?->plain() === true;
     }
 
-    private static function list(?ResolvedValueInterface $value): ?ResolvedList
+    private static function list(?ResolvedValueInterface $value): ?ResolvedListInterface
     {
-        return $value === null ? null : ($value instanceof ResolvedList ? $value : throw new LogicException(
+        return $value === null ? null : ($value instanceof ResolvedListInterface ? $value : throw new LogicException(
             \sprintf('The document declares a list here, but resolved a %s.', $value::class),
         ));
     }

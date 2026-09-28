@@ -77,8 +77,9 @@ final class ConfigurationInputAdapter
      */
     public static function pathsRefusal(ConfigurationDocument $document, string $summary): ConfigurationRefusal
     {
-        return $document->resolved()->get(ConfigSchema::PATHS)?->refusal($summary)
-            ?? ConfigurationRefusal::aboutResolvedInput($summary, ConfigSchema::PATHS);
+        return ($paths = $document->resolved()->get(ConfigSchema::PATHS)) !== null
+            ? Provenance::refusalOf($paths->contributors(), $summary)
+            : ConfigurationRefusal::aboutResolvedInput($summary, ConfigSchema::PATHS);
     }
 
     public function exitPolicy(ConfigurationDocument $document): ExitPolicy

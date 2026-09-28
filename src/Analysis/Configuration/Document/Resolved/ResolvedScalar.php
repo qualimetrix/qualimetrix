@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Configuration\Contract\Document;
+namespace Qualimetrix\Analysis\Configuration\Document\Resolved;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 
 /** A scalar leaf and the one layer that won it. */
 final readonly class ResolvedScalar implements ResolvedValueInterface
@@ -24,8 +25,8 @@ final readonly class ResolvedScalar implements ResolvedValueInterface
         return [$this->provenance];
     }
 
-    public function refusal(string $summary): ConfigurationRefusal
+    public function refuse(string $summary): never
     {
-        return Provenance::refusalOf([$this->provenance], $summary);
+        throw Provenance::refusalOf([$this->provenance], $summary);
     }
 }

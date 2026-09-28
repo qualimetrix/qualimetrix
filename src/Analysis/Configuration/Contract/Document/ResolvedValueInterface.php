@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Contract\Document;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-
 /** One node of the resolved configuration document. */
 interface ResolvedValueInterface
 {
@@ -20,8 +18,8 @@ interface ResolvedValueInterface
     public function contributors(): array;
 
     /**
-     * A refusal of this node's value, naming whoever is responsible for it:
+     * Refuses this node's value, naming whoever is responsible for it:
      * the winning layer of a leaf, every contributor of a merged node.
      */
-    public function refusal(string $summary): ConfigurationRefusal;
+    public function refuse(string $summary): never;
 }

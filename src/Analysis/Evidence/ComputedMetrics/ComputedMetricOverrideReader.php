@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareName;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedList;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMap;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareNameInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeys;
@@ -30,7 +30,7 @@ final class ComputedMetricOverrideReader
      *
      * @throws ConfigurationRefusal
      */
-    public static function merge(ComputedMetricDefinition $base, ResolvedMap $entry): ComputedMetricDefinition
+    public static function merge(ComputedMetricDefinition $base, ResolvedMapInterface $entry): ComputedMetricDefinition
     {
         return new ComputedMetricDefinition(
             name: $base->name,
@@ -50,7 +50,7 @@ final class ComputedMetricOverrideReader
      *
      * @throws ConfigurationRefusal
      */
-    public static function create(string $name, ResolvedMap|ResolvedBareName $entry): ComputedMetricDefinition
+    public static function create(string $name, ResolvedMapInterface|ResolvedBareNameInterface $entry): ComputedMetricDefinition
     {
         return new ComputedMetricDefinition(
             name: $name,
@@ -71,7 +71,7 @@ final class ComputedMetricOverrideReader
      *
      * @return array<string, string>
      */
-    private static function formulas(ResolvedMap|ResolvedBareName $entry, array $defaults): array
+    private static function formulas(ResolvedMapInterface|ResolvedBareNameInterface $entry, array $defaults): array
     {
         $formulas = $defaults;
 
@@ -83,7 +83,7 @@ final class ComputedMetricOverrideReader
         }
 
         $perLevel = self::field($entry, ComputedMetricEntryKeys::FORMULAS);
-        foreach ($perLevel instanceof ResolvedMap ? $perLevel->plain() : [] as $level => $levelFormula) {
+        foreach ($perLevel instanceof ResolvedMapInterface ? $perLevel->plain() : [] as $level => $levelFormula) {
             $formulas[$level] = (string) $levelFormula;
         }
 
@@ -97,10 +97,10 @@ final class ComputedMetricOverrideReader
      *
      * @return list<SymbolLevel>
      */
-    private static function levels(ResolvedMap|ResolvedBareName $entry, array $defaults, string $name): array
+    private static function levels(ResolvedMapInterface|ResolvedBareNameInterface $entry, array $defaults, string $name): array
     {
         $written = self::field($entry, ComputedMetricEntryKeys::LEVELS);
-        if (!$written instanceof ResolvedList) {
+        if (!$written instanceof ResolvedListInterface) {
             return $defaults;
         }
 
@@ -110,7 +110,7 @@ final class ComputedMetricOverrideReader
         }
 
         if (ComputedMetricDefinition::hasDuplicateLevel($levels)) {
-            throw $written->refusal(ComputedMetricRefusalWording::duplicateLevel($name));
+            $written->refuse(ComputedMetricRefusalWording::duplicateLevel($name));
         }
 
         return $levels;
@@ -127,11 +127,11 @@ final class ComputedMetricOverrideReader
         $level = SymbolLevel::tryFrom($word);
 
         if ($level === null) {
-            throw $item->refusal(ComputedMetricRefusalWording::levelWordNotALevelAtAll($word));
+            $item->refuse(ComputedMetricRefusalWording::levelWordNotALevelAtAll($word));
         }
 
         if (!\in_array($level, ComputedMetricEntryKeys::REPORTING_LEVELS, true)) {
-            throw $item->refusal(ComputedMetricRefusalWording::levelWordNotAReportingLevel($word, self::reportingLevelWords()));
+            $item->refuse(ComputedMetricRefusalWording::levelWordNotAReportingLevel($word, self::reportingLevelWords()));
         }
 
         return $level;
@@ -146,26 +146,26 @@ final class ComputedMetricOverrideReader
         );
     }
 
-    private static function field(ResolvedMap|ResolvedBareName $entry, string $key): ?ResolvedValueInterface
+    private static function field(ResolvedMapInterface|ResolvedBareNameInterface $entry, string $key): ?ResolvedValueInterface
     {
-        return $entry instanceof ResolvedMap ? $entry->get($key) : null;
+        return $entry instanceof ResolvedMapInterface ? $entry->get($key) : null;
     }
 
-    private static function string(ResolvedMap|ResolvedBareName $entry, string $key): ?string
+    private static function string(ResolvedMapInterface|ResolvedBareNameInterface $entry, string $key): ?string
     {
         $value = self::field($entry, $key)?->plain();
 
         return \is_string($value) ? $value : null;
     }
 
-    private static function bool(ResolvedMap|ResolvedBareName $entry, string $key): ?bool
+    private static function bool(ResolvedMapInterface|ResolvedBareNameInterface $entry, string $key): ?bool
     {
         $value = self::field($entry, $key)?->plain();
 
         return \is_bool($value) ? $value : null;
     }
 
-    private static function number(ResolvedMap|ResolvedBareName $entry, string $key): ?float
+    private static function number(ResolvedMapInterface|ResolvedBareNameInterface $entry, string $key): ?float
     {
         $value = self::field($entry, $key)?->plain();
 

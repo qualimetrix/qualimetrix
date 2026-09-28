@@ -10,8 +10,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaque;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedScalar;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaqueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
@@ -24,6 +23,7 @@ use Qualimetrix\Analysis\Configuration\Document\KeyClaims;
 use Qualimetrix\Analysis\Configuration\Document\KeyRecognition;
 use Qualimetrix\Analysis\Configuration\Document\LayerReading;
 use Qualimetrix\Analysis\Configuration\Document\NameRecognition;
+use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedScalar;
 use Qualimetrix\Analysis\Configuration\Document\WrittenForm;
 use Qualimetrix\Analysis\Configuration\Document\WrittenNames;
 use Qualimetrix\Analysis\Configuration\UndeclaredRoot;
@@ -297,7 +297,7 @@ final class DocumentPhaseTest extends TestCase
         $layer = SampleDocument::file(['legacy_root' => ['x' => 1]]);
 
         $carried = DocumentComposer::compose(new DocumentSchema([new UndeclaredRoot('legacy_root')]), [$layer]);
-        self::assertInstanceOf(ResolvedOpaque::class, $carried->get('legacy_root'));
+        self::assertInstanceOf(ResolvedOpaqueInterface::class, $carried->get('legacy_root'));
         self::assertSame([['x' => 1]], $carried->get('legacy_root')->plain());
 
         $refusal = self::refusal(static fn() => DocumentComposer::compose(SampleDocument::schema(), [$layer]));

@@ -20,7 +20,8 @@ Configuration/
 ├── Contract/
 │   ├── ConfigurationDocument.php # ordered source contributions + the resolved document
 │   ├── Discovery/                # Composer autoload-path reader
-│   ├── Document/                 # the resolved document: values with provenance, diagnostics
+│   ├── Document/                 # the resolved document: provenance, diagnostics and read-only
+│   │                             # Resolved{Map,List,Opaque,BareName}Interface forms
 │   │   └── Schema/               # the port an owner declares its section through
 │   ├── Pipeline/                 # resolution request and pipeline contracts
 │   └── Refusal/                  # ConfigurationRefusal — the one carrier for a configuration
@@ -29,6 +30,7 @@ Configuration/
 │                                  # let a throw site name its source without importing the vocabulary
 ├── Discovery/          # Composer metadata reader
 ├── Document/           # the engine composing written layers into the resolved document
+│   └── Resolved/       # internal concrete resolved forms, including ResolvedScalar
 ├── Loader/             # each source as a written layer for the engine (YAML file or preset →
 │                       # LoadedDocument; command line → CommandLineLayer), and the legacy
 │                       # folded values: key normalization and the checks of roots the engine
@@ -132,9 +134,9 @@ precedence index within this composed document).
   (names another node declares, judged after the merge; exact unless the
   vocabulary's own judge says how a written name refers to the declared ones).
   A name is judged whatever is written under it: an entry whose body is `~`,
-  `{}` or nothing but `~` stays in the document as `ResolvedBareName`, which a
-  body any layer wrote stands over, and its owner says what naming it alone
-  means.
+  `{}` or nothing but `~` stays in the document as a
+  `ResolvedBareNameInterface`, which a body any layer wrote stands over. Its
+  owner says what naming it alone means.
 - A node may carry a hint (`NodeSchema::withHint()`): the engine adds it to its
   refusal of the form written at that node — `paths: [2024]` is told to quote
   the name, a bare string in `exclude` is shown the selector kinds.
@@ -143,10 +145,11 @@ precedence index within this composed document).
   written. A new format is a loader producing that tree (with lines, if it has
   them); an imported file is a layer whose origin names its importer through
   `ConfigurationOrigin::importedThrough()`, so a refusal names both files.
-- A refusal of a resolved value comes from the value itself —
-  `ResolvedValueInterface::refusal()` names the winning layer of a leaf, or every
-  contributor of a merged node through `ConfigurationRefusal::acrossLayers()`.
-  The JSON refusal envelope publishes those sources as `source`.
+- A resolved value refuses through `ResolvedValueInterface::refuse()`: it throws
+  a `ConfigurationRefusal` from `Provenance::refusalOf()`, naming the winning
+  layer of a leaf or every contributor of a merged node. A caller that must
+  carry the exception object creates it from the same provenance factory. The
+  JSON refusal envelope publishes those sources as `source`.
   Joint refusals order writers by their document precedence, including
   several presets of the same source kind. Their default position belongs to
   the last writer; an explicit null preserves a positionless refusal.
@@ -207,6 +210,11 @@ External consumers use only declared `Contract/` promises. Loader types,
 including `Loader/ConfigLoaderInterface`, are internal and are composed behind
 the Configuration boundary. Infrastructure composition registers the pipeline
 and its stages; Console adapts Symfony input into the resolution request.
+The resolved-document read surface consists of `ResolvedValueInterface` and the
+four shape contracts `ResolvedMapInterface`, `ResolvedListInterface`,
+`ResolvedOpaqueInterface`, and `ResolvedBareNameInterface`. Consumers read
+through those contracts; they do not construct, mutate, or import the concrete
+forms under `Document/Resolved/`.
 Consumers resolve only their named value: Run produces `RunConfiguration`,
 Finding produces `FindingConfiguration`, Cache and Parallel produce their local
 configurations, and Reporting resolves output and finding-projection values.

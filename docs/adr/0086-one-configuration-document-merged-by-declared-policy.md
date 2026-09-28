@@ -96,6 +96,51 @@ kebab-case or camelCase of its words; the same words in any other style are
 refused with the accepted spelling, at the root and in every declared section
 alike.
 
+## Document layout and measured policy exceptions
+
+The document contract publishes only the reading forms that named consumers
+need: `ResolvedMapInterface`, `ResolvedListInterface`,
+`ResolvedOpaqueInterface`, and `ResolvedBareNameInterface`. Their concrete
+forms, and `ResolvedScalar` which has no external reader, belong to the
+engine's `Configuration\Document\Resolved` subject. The contract no longer
+publishes construction or mutation of a resolved value.
+
+`ResolvedValueInterface::refusal(string): ConfigurationRefusal` is replaced by
+`refuse(string): never`. A resolved value now throws the refusal through
+`Provenance::refusalOf()` when the caller is stopping execution. A caller that
+must carry or inspect the exception object creates it with that provenance
+factory directly. This removes an exception factory from the broadly read value
+model and makes a forgotten `throw` impossible at the call site.
+
+The following narrowly scoped metric policies are retained because their
+signals describe the shape of a declared language or adapter rather than an
+actionable design fault. The numbers below are historical measurements of the
+accepted design across 1,078 classes; they are not a claim about a later live
+run.
+
+- `ConfigurationSource` keeps an inline ClassRank warning threshold of `0.025`.
+  This enum receives rank through its `ConfigurationOrigin` carrier and the
+  refusal carrier; removing the latter edge transfers the signal to
+  `RefusedPosition` instead of removing it.
+- `ComputedMetricFormulaValidator` keeps an inline Instability warning threshold
+  of `0.81`. Its `Ca=2`, `Ce=8` shape reaches the generic `0.80` boundary; the
+  measured alternative moves the signal to the section (`0.83`) rather than
+  reducing instability.
+- `ComputedMetricAuthorship` keeps an inline Instability warning threshold of
+  `0.82`. Its `Ca=2`, `Ce=9` shape is the necessary document-to-refusal adapter
+  for formula authorship.
+- `Contract\Document\Schema` has an exact Distance exclusion. Moving its two
+  helper types into the engine still measures `0.689`, above the warning
+  threshold of `0.5`, and reverses the dependency from the declaration contract
+  to the engine. The declaration language has different consumers from the
+  document reading model, so the exclusion records that intentional boundary.
+
+The existing inline ClassRank threshold of `0.03` on
+`ConfigurationRefusal` remains unchanged. The historical measurement placed
+`Contract\Document` at Distance `0.486` against its `0.5` warning threshold and
+`RefusedPosition` at ClassRank `0.00545` against `0.0061`; neither has room for
+unrelated concrete types or new exception-factory edges.
+
 ## Alternatives rejected
 
 - **Curing each recogniser and refusal site where it stood** — it leaves the
@@ -117,6 +162,19 @@ alike.
   without `relations`, were rejected as noise on a lawful configuration.
 - **`~` as deletion**, and a separate tombstone spelling — `~` would stop
   meaning "the layer below decides", and no measured case needed deletion.
+- **Keeping concrete resolved forms in `Contract`** — it would continue to
+  publish engine construction and mutation to consumers that only read values.
+- **A mirror interface over `NodeSchema` or a compatibility shim for old
+  resolved-form classes** — neither changes the declaration language's
+  responsibility, while a compatibility shim would preserve the construction
+  API the layout removes.
+- **Moving Schema helpers into the engine or merging Schema into Document** —
+  the measured helper move remains above the warning threshold and reverses a
+  dependency; merging joins two surfaces whose consumers are different only to
+  remove a metric row.
+- **Moving formula validation into authorship** — it raises the validator to
+  `0.857` outside the measured population boundary and makes the section `0.833`;
+  it also assigns an absent-level refusal to the wrong subject.
 
 ## What becomes unexpressible
 

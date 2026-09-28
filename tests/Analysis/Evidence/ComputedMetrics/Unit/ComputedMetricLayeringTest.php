@@ -11,7 +11,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMap;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
@@ -321,7 +321,7 @@ final class ComputedMetricLayeringTest extends TestCase
         $defaults = ComputedMetricDefaults::getDefaults()['health.complexity'];
         $document = DocumentComposer::compose(new DocumentSchema([new ComputedMetricsSection()]), $layers);
         $section = $document->get(ComputedMetricsSection::KEY);
-        self::assertInstanceOf(ResolvedMap::class, $section);
+        self::assertInstanceOf(ResolvedMapInterface::class, $section);
         $authorship = new ComputedMetricAuthorship($section->entries());
 
         self::assertSame('4', $metric->getFormulaForLevel(SymbolLevel::Namespace_));

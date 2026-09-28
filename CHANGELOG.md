@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+**Resolved document values now refuse by throwing, and their concrete forms are
+internal.** Replace
+`ResolvedValueInterface::refusal(string): ConfigurationRefusal` with
+`ResolvedValueInterface::refuse(string): never`; a call such as
+`$value->refusal($message)` becomes `$value->refuse($message)` and does not
+return. Replace reads and type checks against `ResolvedMap`, `ResolvedList`,
+`ResolvedOpaque`, and `ResolvedBareName` with their respective
+`*Interface` contracts under `Analysis\Configuration\Contract\Document`.
+Their concrete implementations, together with `ResolvedScalar`, now belong to
+the internal `Analysis\Configuration\Document\Resolved` subject and are not a
+consumer construction API. Build a `ConfigurationRefusal` directly with
+`Provenance::refusalOf()` only where the caller must inspect or carry the
+exception object rather than immediately throw it. See ADR 0086.
+
 **Finding-gate declaration derivation now writes complete measurable forms even
 when another change remains unexplained.** Previously a failed comparison wrote
 nothing; `--derive-declarations` now lists written files and still exits 5 with

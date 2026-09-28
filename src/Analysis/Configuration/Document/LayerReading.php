@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Document;
 
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareName;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedList;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMap;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaque;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedBareName;
+use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedList;
+use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedMap;
+use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedOpaque;
 
 /**
  * Phase 1, one layer: recognises every dictionary key, judges the form of

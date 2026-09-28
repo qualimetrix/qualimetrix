@@ -36,8 +36,8 @@ final readonly class ResolvedDocument
 
         foreach ($path as $segment) {
             $node = match (true) {
-                $node instanceof ResolvedMap => $node->get($segment),
-                $node instanceof ResolvedList && ctype_digit($segment) => $node->items()[(int) $segment] ?? null,
+                $node instanceof ResolvedMapInterface => $node->get($segment),
+                $node instanceof ResolvedListInterface && ctype_digit($segment) => $node->items()[(int) $segment] ?? null,
                 default => null,
             };
         }
