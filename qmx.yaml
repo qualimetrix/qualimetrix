@@ -1658,6 +1658,12 @@ rules:
       # The graph contract is intentionally a widely consumed type hub. Keep this
       # exact declaration measured by other rules without excluding its siblings.
       - exact: src/Analysis/Evidence/DependencyModel/Contract/DependencyGraphInterface.php
+      # Resolved values are the shared read port of declared section owners;
+      # CBO 21 is their intended inbound reach, not a missing decomposition.
+      - exact: src/Analysis/Configuration/Contract/Document/ResolvedValueInterface.php
+      # The section declaration language is built by each owner; CBO 20
+      # reflects those consumers and its declaration vocabulary.
+      - exact: src/Analysis/Configuration/Contract/Document/Schema/NodeSchema.php
       # AST visitors depend on many php-parser node types (not actionable coupling).
       # Exact capability roots preserve the visitor exclusion without enrolling
       # a future Analysis/Evidence sibling.
@@ -1702,6 +1708,10 @@ rules:
 
   # Core contracts and value objects are coupling hubs by design.
   coupling.class-rank:
+    suppress_paths:
+      # Every declared section reader names this value port: rank 0.00609151
+      # against scaled 0.00608863 measures that intended contract-hub reach.
+      - exact: src/Analysis/Configuration/Contract/Document/ResolvedValueInterface.php
     suppress_namespaces:
       - subtree: Qualimetrix\Analysis\Finding\Contract
       # Same reconfirmation as for the CBO channel above: the level vocabulary now
@@ -1790,6 +1800,9 @@ rules:
       # and makes the contract depend on the engine. Its parent with the
       # resolved shape interfaces measures 0.486.
       - exact: 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema'
+      # The shared document port has A=0.40, I=0.09524 and Distance 0.50476;
+      # its stable owner readership is intentional, with no new concrete types.
+      - exact: 'Qualimetrix\Analysis\Configuration\Contract\Document'
     max_distance_warning: 0.5
     max_distance_error: 0.7
 
@@ -2095,6 +2108,9 @@ rules:
       - exact: src/Infrastructure/Console/Application.php
       - exact: src/Infrastructure/Console/Command/GraphExportCommand.php
       - exact: src/Infrastructure/Console/Command/BaselineRenameChannelsCommand.php
+      # TCC=0/LCOM=3 measure three independent refusal facts, not its static
+      # factories; health 30 stays unchanged when those factories are moved.
+      - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php
     suppress_namespace_channels:
       health.cohesion:
         # Stateless expansion algorithms and their immutable result do not share

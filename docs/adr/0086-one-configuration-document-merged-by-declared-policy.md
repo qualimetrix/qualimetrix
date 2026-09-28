@@ -142,6 +142,40 @@ The existing inline ClassRank threshold of `0.03` on
 `RefusedPosition` at ClassRank `0.00545` against `0.0061`; neither has room for
 unrelated concrete types or new exception-factory edges.
 
+### Calibration after the declared consumers moved
+
+The remaining owners now read resolved values. With no new concrete type in
+`Contract\Document`, that root measures `A=0.40`, `Ca=38`, `Ce=4`,
+`I=0.095238` and Distance `0.504762`. The additional stable readers are the
+purpose of the contract, so its exact namespace has a Distance exclusion.
+Its child namespaces remain separately measured. The same policy is applied
+to the exact `ResolvedValueInterface` declaration for CBO `21` and ClassRank
+`0.00609151` against the scaled `0.00608863` boundary, and to the exact
+`NodeSchema` declaration for CBO `20`. A second interface or a split of the
+declaration language would preserve the readers and obscure the public subject.
+
+`CouplingAnalysis` reads its own declared section and builds the executable
+framework matcher. Its `Ca=2`, `Ce=11` shape gives Instability `0.846154`.
+Moving the document-to-selector work to a private sibling would move the
+dependencies with it and hide the signal below the minimum afferent count.
+It therefore has a partial inline warning threshold of `0.85`; the generic
+error boundary remains `0.95`. This replaces the earlier shorthand, which set
+both boundaries to `0.81`. A further outward edge gives `12 / 14 = 0.857143`
+and is still reported. The Coupling namespace's existing CBO allowance is
+recalibrated from `19` to `20` for its new declared-document dependency; no
+other baseline entry or snapshot metadata is regenerated.
+
+`ConfigurationRefusal` retains one carrier and fourteen named factories.
+TCC and LCOM exclude static factories and the constructor, so its cohesion
+score `30` measures the three readers of independent source, position and
+summary facts (`TCC=0`, `LCOM=3`). Moving the factories would leave those
+values unchanged. Health producers do not support inline threshold overrides,
+so only this declaration's `health.cohesion` has an exact path exclusion,
+using the existing stateless-carrier policy. This is stronger than a partial
+threshold: a future cohesion regression in that file is not published, and
+the exclusion has no staleness verdict. Other health channels, complexity,
+maintainability and the existing ClassRank threshold remain active.
+
 ## Alternatives rejected
 
 - **Curing each recogniser and refusal site where it stood** — it leaves the

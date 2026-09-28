@@ -18,7 +18,7 @@ use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
 
 /**
- * @qmx-threshold coupling.instability 0.81 -- Coupling configuration owns selector decoding and the executable framework matcher. Raw instability 0.80 is accepted after explicit selectors; further outward growth is reported.
+ * @qmx-threshold coupling.instability warning=0.85 -- The Coupling configuration-document adapter has Ca=2 and Ce=11 (I=0.84615); the next outward dependency, Ce=12 (I=0.85714), remains a warning.
  */
 final class CouplingAnalysis implements CouplingConfiguratorInterface
 {

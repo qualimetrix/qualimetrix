@@ -334,7 +334,7 @@
       {"channel":"health.maintainability","magnitudes":[44.2]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Coupling": [
-      {"channel":"coupling.cbo","magnitudes":[19]}
+      {"channel":"coupling.cbo","magnitudes":[20]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Design": [
       {"channel":"coupling.instability","magnitudes":[0.952381]}
