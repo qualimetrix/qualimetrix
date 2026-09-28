@@ -89,7 +89,7 @@ src/Analysis/Evidence/ComputedMetrics/Configuration/ComputedMetricAuthorship.php
 src/Analysis/Evidence/ComputedMetrics/Health/Contract/DrillDown/WorstClassDrillDown.php	23	coupling.instability	0.81 -- Namespace drill-down intentionally composes eight stable contracts while two reporting services depend on it. Raw instability 0.80 is accepted; further outward growth is reported.
 src/Analysis/Evidence/Coupling/ClassCboOptions.php	30	coupling.instability	warning=0.84 -- The docblock this annotation replaced
 src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php	23	coupling.instability	warning=0.81 -- The eighth efferent edge is
-src/Analysis/Evidence/Coupling/CouplingAnalysis.php	21	coupling.instability	0.81 -- Coupling configuration owns selector decoding and the executable framework matcher. Raw instability 0.80 is accepted after explicit selectors; further outward growth is reported.
+src/Analysis/Evidence/Coupling/CouplingAnalysis.php	21	coupling.instability	warning=0.85 -- The Coupling configuration-document adapter has Ca=2 and Ce=11 (I=0.84615); the next outward dependency, Ce=12 (I=0.85714), remains a warning.
 src/Analysis/Evidence/Coupling/NamespaceCboOptions.php	24	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/Design/DataClass/DataClassOptions.php	27	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/Design/GodClass/GodClassOptions.php	35	coupling.instability	warning=0.81 -- The eighth efferent edge is

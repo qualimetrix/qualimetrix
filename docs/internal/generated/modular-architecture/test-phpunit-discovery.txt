@@ -9917,12 +9917,16 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverReportOnlyTest::itExitsCleanOnAnInfoOnlyRunUnderEveryFailOnSetting
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverReportOnlyTest::itIgnoresInfoWhenAGatingFindingIsPresent
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverReportOnlyTest::itStillFailsOnAWarningUnderTheWarningThreshold
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsProgrammaticResolvedValues"never fail"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsProgrammaticResolvedValues"warning severity"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsTheRemainingThresholds"error"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsTheRemainingThresholds"none"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsTheRemainingThresholds"unset"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsTheRemainingThresholds"warning"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itKeepsTheProgrammaticNeverFailValue
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itNamesTheAllowedValuesWhenRejectingAnUnknownWord
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itPreservesTheAuthorWhenTheFactoryRefusesAnInvalidValue"non-scalar array"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itPreservesTheAuthorWhenTheFactoryRefusesAnInvalidValue"scalar true"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itRefusesToBeConstructedWithInfoAtAll
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itRejectsInfoAsAFailOnThreshold
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itUsesTheWinningThreshold
@@ -10471,7 +10475,11 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\FileProcessingTaskFactoryTest::itReadsRuntimeCollectorConfigurationForEveryTaskCreation
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\FileProcessingTaskFactoryTest::itRejectsAnInvalidTraversalParticipantClass
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\FileProcessingTaskTest::itRunsUnderTheMemoryLimitItCarries
+ - Qualimetrix\Tests\Infrastructure\Parallel\Unit\ParallelConfigurationResolverTest::itPreservesTheAuthorWhenRejectingAStringWorkerCount
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\ParallelConfigurationResolverTest::itRejectsNegativeWorkerCounts
+ - Qualimetrix\Tests\Infrastructure\Parallel\Unit\ParallelConfigurationResolverTest::itResolvesAllowedWorkerCounts"absent setting"
+ - Qualimetrix\Tests\Infrastructure\Parallel\Unit\ParallelConfigurationResolverTest::itResolvesAllowedWorkerCounts"null"
+ - Qualimetrix\Tests\Infrastructure\Parallel\Unit\ParallelConfigurationResolverTest::itResolvesAllowedWorkerCounts"positive integer"
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\ParallelConfigurationResolverTest::itUsesTheWinningWorkerValue
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\ParallelConfigurationStoreTest::itResetsToAutomaticWorkerSelection
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\Strategy\AmphpParallelStrategyTest::itAcceptsLargeWorkerCount
