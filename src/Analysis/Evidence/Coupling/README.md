@@ -8,10 +8,19 @@ classification for `coupling.cbo-app` and `coupling.ce-framework`. It consumes t
 DependencyModel, Measurement, Finding, ConfigurationDocument, and neutral Core
 contracts; it publishes one configuration contract for the runtime adapter.
 
-`CouplingAnalysis` owns the framework-prefix state for one analysis run. Each
-configuration document replaces the previous list, including an empty
-`coupling.frameworkNamespaces` contribution, so sequential runs cannot leak
-classification state.
+`CouplingAnalysis` owns the framework-prefix state for one analysis run. Its
+owner-declared `coupling` map merges key by key, so an empty map keeps lower
+values. The `framework_namespaces` list replaces as one ordered value, including
+an empty list, and Coupling reads that resolved selector list before replacing
+its run-local matcher. Sequential runs therefore cannot leak classification
+state.
+
+```text
+Coupling/
+└── Configuration/
+    └── CouplingSection.php # owner-declared coupling map; framework_namespaces
+                             # is the replaced list of selector maps
+```
 
 ## Metrics
 

@@ -3,6 +3,10 @@
 Parallel execution adapters own worker configuration and runtime transport.
 Their public contracts are limited to named external consumers.
 
+`ParallelConfigurationResolver` reads the declared resolved scalar
+`parallel.workers`; the worker memory limit remains a Console runtime concern,
+not Parallel configuration.
+
 **Worker count.** `WorkerCountDetector` caps the host's processor count by the
 CPU quota of the control group the process runs in (cgroup v2 `cpu.max`, cgroup
 v1 `cpu.cfs_quota_us`/`cpu.cfs_period_us`). Absence of those files means "no

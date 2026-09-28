@@ -936,6 +936,8 @@ Possible extensions:
 
 Reporting owns output projection and formatter composition, not feature state.
 It consumes named capability contracts and resolves its immutable output and
-finding-projection values from `ConfigurationDocument`; delivery adapters remain
-in Infrastructure. Keep formatter tests, templates, and documentation with
-their Reporting subject, and keep runtime values with their named owners.
+finding-projection values from declared resolved document sections: the output
+format and configured suppressions. `configurationDiagnostics` already arrives
+from Console as a published value. Delivery adapters remain in Infrastructure.
+Keep formatter tests, templates, and documentation with their Reporting subject,
+and keep runtime values with their named owners.

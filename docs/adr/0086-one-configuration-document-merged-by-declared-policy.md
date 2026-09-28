@@ -58,8 +58,9 @@ the merged value.
 
 **3. Five policies, and what they mean to an author.** A scalar goes to the last
 layer that writes it. A map merges key by key, and a written empty map changes
-nothing. A list is either replaced whole (`paths`, `only_rules`, `layers`, one
-layer's `allow` targets, `levels`) or accumulated (`exclude`, `suppress_*`,
+nothing. A list is either replaced whole (`paths`, `only_rules`, `layers`,
+`coupling.framework_namespaces`, one layer's `allow` targets, `levels`) or
+accumulated (`exclude`, `suppress_*`,
 `exclude_health`, `disabled_rules`) — declared per node, never inferred from the
 value. A map keyed by names merges entry by entry. A shorthand is expanded in
 the layer that wrote it, so a file's `warning` over a preset's `threshold` keeps
@@ -201,20 +202,17 @@ its own, not a second meaning for `~` or `{}`.
 
 ## Transitional state
 
-At acceptance two roots, `rules` and `coupling`, are not yet declared by their
-owners: the engine checks their spelling and carries each layer's value to the
-owner, which merges it — a sixth, transitional policy. `rules` keeps the
-layering of ADR 0058 until it is declared.
+`coupling` is declared by its owner: its map merges key by key and its
+`framework_namespaces` list replaces as declared. The one remaining
+transitional root is `rules`, which keeps the layering of ADR 0058 until Finding
+declares it. Finding alone receives the three named raw reads for
+`rules`, `only_rules` and `disabled_rules`; they are removed with that subtree.
 
-The per-layer contributions the owners folded before the engine also remain.
-Several owners — cache, parallel workers, `format`, `fail_on`, `memory_limit`,
-the finding suppressions, coupling, Run's discovery lists and the rule selection
-— still read their values from them, after the engine has judged the keys and
-forms of every declared root. Their refusals name the merged configuration
-(`source` kind `resolved`) rather than a layer. The contributions are removed
-owner by owner as each reads the resolved document, the rule selection last,
-together with the `rules` subtree; the stand-in that carries an undeclared root
-goes with the last undeclared root.
+Composer discovery is not an authored document root. Its production and
+development target lists travel through two named source-specific reads, while
+Run owns whether development targets join default paths. Every other owner
+reads its declared resolved value, so an ordinary refusal retains the winning
+or contributing provenance rather than rebuilding an origin from folded input.
 
 ## Consequences
 

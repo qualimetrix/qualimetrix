@@ -214,6 +214,12 @@ stderr as one `Warning:` line, after the runtime is configured, and
 `publishedDiagnostics()` gives `check`'s report the same warnings with their
 sources in the refusal envelope's `source` form.
 
+The adapter and runtime resolvers read `fail_on`, `memory_limit` and `format`
+from resolved leaves. When PHP rejects a requested memory limit, the runtime
+wrapper preserves the refusal's sources, position, summary and previous cause
+through `ConfigurationRefusal::acrossLayers()`; there is no origin getter to
+reconstruct.
+
 ### BaselineCleanupCommand
 
 Cleanup baseline from stale entries (findings that have already been fixed).
