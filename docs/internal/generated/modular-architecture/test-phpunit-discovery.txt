@@ -391,6 +391,7 @@ Available tests:
  - QmxFindingGate\Tests\NormalizationDeriverTest::itRefusesSomethingOtherThanAWarningClock"other level"
  - QmxFindingGate\Tests\NormalizationDeriverTest::itRefusesSomethingOtherThanAWarningClock"second out of range"
  - QmxFindingGate\Tests\NormalizationDeriverTest::itRefusesSomethingOtherThanAWarningClock"unpadded hour"
+ - QmxFindingGate\Tests\PharComparisonTest::itDoesNotApplyProductTransitionsToArchiveEquivalence
  - QmxFindingGate\Tests\ProcessTest::itMeasuresChildAgeInSecondsWhenWallTimeMovesBackwards
  - QmxFindingGate\Tests\ProcessTest::itPassesAdditionsToTheChildWhilePreservingFixedAndParentEnvironment
  - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"COLUMNS"

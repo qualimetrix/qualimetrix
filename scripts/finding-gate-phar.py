@@ -10,6 +10,15 @@ import shutil
 import tempfile
 
 
+def prepare_identity_comparison(tree: Path) -> None:
+    """An archive must match one commit, without permissions for a transition between commits."""
+    gate = tree / 'finding-gate'
+    for path in [*gate.glob('declared-*.tsv'), *(gate / 'maps').glob('*.tsv')]:
+        header = path.read_text().splitlines()[0] + '\n'
+        path.unlink()
+        path.write_text(header)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--reference', default='HEAD', help='Committed tree to compare with the existing archive (default: HEAD)')
@@ -67,6 +76,7 @@ def main() -> int:
             run(['php', str(archive), '--version'], shim)
             # The supplied archive owns the entry point. Only the candidate launcher now changes.
             (shim / 'bin/qmx').write_text("#!/usr/bin/env php\n<?php\nrequire dirname(__DIR__) . '/build/qmx.phar';\n")
+            prepare_identity_comparison(shim)
             result = run(['php', str(root / 'scripts/finding-gate.php'), '--candidate=' + str(shim), '--reference=' + commit, '--report=' + str(evidence / 'report.json')], root, check=False)
             verify_archive_copy(archive)
             artifact.update(gateExit=result.returncode, report=str(evidence / 'report.json'))
