@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Evidence\Coupling\Configuration\CouplingSection;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
 use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule;
@@ -23,6 +23,7 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 /**
  * The branches where the rule must say nothing.
@@ -152,12 +153,13 @@ final class UnmatchedFrameworkNamespaceRuleTest extends TestCase
     private function rule(array $prefixes, ?UnmatchedFrameworkNamespaceOptions $options = null): UnmatchedFrameworkNamespaceRule
     {
         $coupling = new CouplingAnalysis();
-        $coupling->replace($coupling->resolve(new ConfigurationDocument(
+        $coupling->replace($coupling->resolve(LayeredDocument::of(
             [[
                 'source' => 'test',
                 'values' => ['coupling' => ['frameworkNamespaces' => array_map(static fn(string $prefix): array => ['subtree' => $prefix], $prefixes)]],
             ]],
             AbsolutePath::fromString('/project'),
+            new CouplingSection(),
         )));
 
         return new UnmatchedFrameworkNamespaceRule(

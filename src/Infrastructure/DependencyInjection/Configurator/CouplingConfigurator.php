@@ -15,6 +15,7 @@ final class CouplingConfigurator implements ContainerConfiguratorInterface
 {
     private const string NAMESPACE = 'Qualimetrix\\Analysis\\Evidence\\Coupling\\';
     private const string ANALYSIS = self::NAMESPACE . 'CouplingAnalysis';
+    private const string SECTION = self::NAMESPACE . 'Configuration\\CouplingSection';
 
     public function __construct(private readonly string $srcDir) {}
 
@@ -35,5 +36,6 @@ final class CouplingConfigurator implements ContainerConfiguratorInterface
         $container->register(self::ANALYSIS, self::ANALYSIS);
         $container->setAlias(CouplingConfiguratorInterface::class, self::ANALYSIS)
             ->setPublic(true);
+        $container->register(self::SECTION)->setAutoconfigured(true);
     }
 }

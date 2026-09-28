@@ -7,11 +7,13 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Evidence\Coupling\Configuration\CouplingSection;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 /**
  * These refusals were bare `InvalidArgumentException`s: exit 3 without the
@@ -35,9 +37,12 @@ final class CouplingConfigurationRefusalTest extends TestCase
     #[DataProvider('provideUnexecutableValues')]
     public function itRefusesWithTheProductFraming(mixed $value): void
     {
-        $this->expectException(ConfigurationRefusal::class);
-
-        self::resolve($value);
+        try {
+            self::resolve($value);
+            self::fail('An unexecutable framework selector must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame(ConfigurationSource::ConfigFile, $refusal->origin()->source());
+        }
     }
 
     #[Test]
@@ -58,9 +63,10 @@ final class CouplingConfigurationRefusalTest extends TestCase
     /** @return list<\Qualimetrix\Core\Pattern\NamespacePattern> */
     private static function resolve(mixed $value): array
     {
-        $document = new ConfigurationDocument(
+        $document = LayeredDocument::of(
             [['source' => 'config', 'values' => ['coupling' => $value]]],
             AbsolutePath::fromString('/project'),
+            new CouplingSection(),
         );
 
         return (new CouplingAnalysis())->resolve($document);
