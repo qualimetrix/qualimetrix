@@ -32,15 +32,21 @@ final readonly class ExitPolicy
             return new self();
         }
 
+        return new self(self::resolvedPolicy($value));
+    }
+
+    private static function resolvedPolicy(ResolvedValueInterface $value): Severity|false
+    {
         $configured = $value->plain();
         if ($configured === false || $configured === 'none') {
-            return new self(false);
+            return false;
         }
-        if ($configured instanceof Severity && $configured->gatesRun()) {
-            return new self($configured);
-        }
-        if (\is_string($configured) && ($severity = Severity::tryFrom($configured))?->gatesRun() === true) {
-            return new self($severity);
+
+        $severity = $configured instanceof Severity
+            ? $configured
+            : (\is_string($configured) ? Severity::tryFrom($configured) : null);
+        if ($severity?->gatesRun() === true) {
+            return $severity;
         }
 
         $value->refuse(self::rejection(\is_scalar($configured) ? (string) $configured : get_debug_type($configured)));

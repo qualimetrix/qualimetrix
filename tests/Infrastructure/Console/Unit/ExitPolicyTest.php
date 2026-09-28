@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -57,6 +58,40 @@ final class ExitPolicyTest extends TestCase
     }
 
     #[Test]
+    #[DataProvider('provideProgrammaticValues')]
+    public function itAcceptsProgrammaticResolvedValues(mixed $configured, Severity|false $expected): void
+    {
+        self::assertSame($expected, ExitPolicy::fromResolvedValue(self::resolvedValue($configured))->failOn);
+    }
+
+    /** @return iterable<string, array{mixed, Severity|false}> */
+    public static function provideProgrammaticValues(): iterable
+    {
+        yield 'never fail' => [false, false];
+        yield 'warning severity' => [Severity::Warning, Severity::Warning];
+    }
+
+    #[Test]
+    #[DataProvider('provideInvalidValues')]
+    public function itPreservesTheAuthorWhenTheFactoryRefusesAnInvalidValue(mixed $configured, string $rejected): void
+    {
+        try {
+            ExitPolicy::fromResolvedValue(self::resolvedValue($configured));
+            self::fail('Invalid fail_on values must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
+            self::assertStringContainsString($rejected, $refusal->getMessage());
+        }
+    }
+
+    /** @return iterable<string, array{mixed, string}> */
+    public static function provideInvalidValues(): iterable
+    {
+        yield 'scalar true' => [true, '"1"'];
+        yield 'non-scalar array' => [[], 'array'];
+    }
+
+    #[Test]
     public function itNamesTheAllowedValuesWhenRejectingAnUnknownWord(): void
     {
         $this->expectException(ConfigurationRefusal::class);
@@ -87,5 +122,16 @@ final class ExitPolicyTest extends TestCase
         return LayeredDocument::of([
             ['source' => 'qmx.yaml', 'values' => [ConfigSchema::FAIL_ON => $value]],
         ], AbsolutePath::fromString('/project'));
+    }
+
+    private static function resolvedValue(mixed $plain): ResolvedValueInterface
+    {
+        $value = self::createStub(ResolvedValueInterface::class);
+        $value->method('plain')->willReturn($plain);
+        $value->method('refuse')->willReturnCallback(
+            static fn(string $summary): never => throw ConfigurationRefusal::aboutConfigFileDocument('qmx.yaml', $summary),
+        );
+
+        return $value;
     }
 }

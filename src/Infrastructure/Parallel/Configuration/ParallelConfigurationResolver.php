@@ -13,9 +13,14 @@ final class ParallelConfigurationResolver implements ParallelConfigurationResolv
 {
     public function resolve(ConfigurationDocument $document): ParallelConfiguration
     {
+        return new ParallelConfiguration($this->workerCount($document));
+    }
+
+    private function workerCount(ConfigurationDocument $document): ?int
+    {
         $value = $document->resolved()->get(ConfigurationRoot::Parallel->value, 'workers');
         if ($value === null) {
-            return new ParallelConfiguration();
+            return null;
         }
 
         $workers = $value->plain();
@@ -23,6 +28,6 @@ final class ParallelConfigurationResolver implements ParallelConfigurationResolv
             $value->refuse('parallel.workers must be a non-negative integer.');
         }
 
-        return new ParallelConfiguration($workers);
+        return $workers;
     }
 }
