@@ -48,8 +48,26 @@ architecture:
       patterns:
         - 'Qualimetrix\Analysis\Configuration\ConfigKeySpelling'
         - 'Qualimetrix\Analysis\Configuration\ConfigSchema'
+        - 'Qualimetrix\Analysis\Configuration\ConfigurationRoot'
         - 'Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument'
         - 'Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\Provenance'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareNameInterface'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaqueInterface'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\KeyDictionary'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeWording'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\RefusedName'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\Shorthand'
         - 'Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface'
         - 'Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface'
         - 'Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest'
@@ -58,8 +76,30 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource'
         - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition'
         - 'Qualimetrix\Analysis\Configuration\Discovery\ComposerReader'
+        - 'Qualimetrix\Analysis\Configuration\DocumentRoots'
+        - 'Qualimetrix\Analysis\Configuration\Document\AuthoredLayer'
+        - 'Qualimetrix\Analysis\Configuration\Document\AuthoredNode'
+        - 'Qualimetrix\Analysis\Configuration\Document\AuthoredShape'
+        - 'Qualimetrix\Analysis\Configuration\Document\DocumentComposer'
+        - 'Qualimetrix\Analysis\Configuration\Document\DocumentSchema'
+        - 'Qualimetrix\Analysis\Configuration\Document\KeyClaims'
+        - 'Qualimetrix\Analysis\Configuration\Document\KeyRecognition'
+        - 'Qualimetrix\Analysis\Configuration\Document\LayerMerge'
+        - 'Qualimetrix\Analysis\Configuration\Document\LayerReading'
+        - 'Qualimetrix\Analysis\Configuration\Document\NameRecognition'
+        - 'Qualimetrix\Analysis\Configuration\Document\PendingName'
+        - 'Qualimetrix\Analysis\Configuration\Document\ReadingContext'
+        - 'Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedBareName'
+        - 'Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedList'
+        - 'Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedMap'
+        - 'Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedOpaque'
+        - 'Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedScalar'
+        - 'Qualimetrix\Analysis\Configuration\Document\WrittenForm'
+        - 'Qualimetrix\Analysis\Configuration\Document\WrittenNames'
+        - 'Qualimetrix\Analysis\Configuration\Loader\CommandLineLayer'
         - 'Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface'
         - 'Qualimetrix\Analysis\Configuration\Loader\DocumentKeyNormalizer'
+        - 'Qualimetrix\Analysis\Configuration\Loader\LoadedDocument'
         - 'Qualimetrix\Analysis\Configuration\Loader\RootContainerShapes'
         - 'Qualimetrix\Analysis\Configuration\Loader\SectionNormalizationPolicy'
         - 'Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader'
@@ -76,6 +116,7 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Preset\PresetResolver'
         - 'Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions'
         - 'Qualimetrix\Analysis\Configuration\SelectorYamlDecoder'
+        - 'Qualimetrix\Analysis\Configuration\UndeclaredRoot'
     - name: analysis-evidence-circulardependency
       patterns:
         - 'Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis'
@@ -186,11 +227,11 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRuleOptions'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver'
-        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricContributionReader'
-        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeyRecognition'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricAuthorship'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeys'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording'
-        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricShapeRefusalWording'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricsSection'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ExcludeHealthSection'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormulaExclusionInterface'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition'
@@ -585,6 +626,8 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureFactoryResult'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureSection'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\CarriedValueForm'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageValidator'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\DuplicatePatternRejector'
@@ -593,6 +636,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerCriterionNormalizer'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\LayersValidator'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\LongFormAllowEntryNormalizer'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\SectionSpot'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\WildcardSelfAllowDetector'
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationWarning'
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface'
@@ -941,6 +985,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode'
         - 'Qualimetrix\Infrastructure\Console\Refusal\MachineReadableFormats'
         - 'Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter'
+        - 'Qualimetrix\Infrastructure\Console\ReportCoverageProjection'
         - 'Qualimetrix\Infrastructure\Console\ResolvedCheckScope'
         - 'Qualimetrix\Infrastructure\Console\ResultPresenter'
         - 'Qualimetrix\Infrastructure\Console\RuleInputValidator'
@@ -1198,7 +1243,6 @@ architecture:
       - core-symbol
       - external
     analysis-evidence-computedmetrics-health:
-      - analysis-configuration
       - analysis-evidence-computedmetrics
       - analysis-evidence-measurement
       - core-neutral
@@ -1665,14 +1709,6 @@ rules:
       - subtree: Qualimetrix\Analysis\Finding\Rule
       - subtree: Qualimetrix\Analysis\Evidence\DependencyModel\Contract
       - subtree: Qualimetrix\Core\Path
-      # X15's entry for the refusal carrier's own namespace is gone. It was
-      # added on a measurement — ConfigurationSource at 0.0071 against 0.0066 —
-      # that X16 invalidated when the carrier grew one shortcut per form and
-      # source: a call site now names one type instead of three, ConfigurationSource
-      # lost the inbound edges its rank came from, and the entry suppressed
-      # nothing. `docs/internal/generated/suppression/inert.tsv` is the oracle
-      # that said so, and a suppressor under which nothing is suppressed is the
-      # very thing this round exists to report.
 
   # Distance: leaf namespaces holding pure value objects, enums, and exceptions
   # are maximally concrete with few abstractions — that is the point of a
@@ -1747,6 +1783,12 @@ rules:
       # number and cost the reader.
       - exact: 'Qualimetrix\Analysis\Configuration\Contract'
       - exact: 'Qualimetrix\Analysis\Configuration\Contract\Refusal'
+      # The section declaration language has one port, a concrete builder,
+      # value types and enums. Moving its two internal helpers computes to
+      # 0.689 from the dependency graph, still above the warning ceiling,
+      # and makes the contract depend on the engine. Its parent with the
+      # resolved shape interfaces measures 0.486.
+      - exact: 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema'
     max_distance_warning: 0.5
     max_distance_error: 0.7
 
@@ -2052,12 +2094,6 @@ rules:
       - exact: src/Infrastructure/Console/Application.php
       - exact: src/Infrastructure/Console/Command/GraphExportCommand.php
       - exact: src/Infrastructure/Console/Command/BaselineRenameChannelsCommand.php
-      # The carrier's own three types, for the same reason the namespace entry
-      # below gives for their root: the file channel is addressed separately
-      # from the namespace one, so the root entry alone leaves these standing.
-      - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationOrigin.php
-      - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php
-      - exact: src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php
     suppress_namespace_channels:
       health.cohesion:
         # Stateless expansion algorithms and their immutable result do not share
@@ -2066,11 +2102,6 @@ rules:
         # The exact root recursively unions independent Debt and Impact
         # subjects; shared-field cohesion 48.6 is not a root invariant.
         - exact: 'Qualimetrix\Analysis\Evidence\Prioritization'
-        # An exception carrying an origin and a position, and three immutable
-        # values it is built from, share no fields with each other: cohesion is
-        # structurally inapplicable to this exact root, the same argument the
-        # Expansion entry above makes.
-        - exact: 'Qualimetrix\Analysis\Configuration\Contract\Refusal'
         # X16's exclude-binding root: three classes (46.7). Measured, not
         # argued: `cohesion.tcc.count` is 1 there, so the namespace TCC and LCC
         # averages the score is built from are decided by a single class — the

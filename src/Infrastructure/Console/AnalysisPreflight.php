@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
@@ -65,30 +65,35 @@ final readonly class AnalysisPreflight
             $input,
             $output,
         );
+        $this->configurationInputAdapter->writeDiagnostics($document, $output);
 
         return new PreparedAnalysisInput(
             $runConfiguration,
             $findingConfiguration,
             $this->fileDiscoveryFactory->create($runConfiguration->projectRoot, $runConfiguration->pathExcludes),
+            $document,
         );
     }
 
     /**
-     * The paths that do not exist, as messages. Empty when every path is
-     * readable.
+     * Refuses a run over a path that does not exist, naming every such path —
+     * a user who mistyped two should learn both from one run — and the layer
+     * that wrote them.
      *
-     * @return list<string>
+     * @throws ConfigurationRefusal
      */
-    public static function missingPaths(RunConfiguration $configuration): array
+    public static function refuseMissingPaths(PreparedAnalysisInput $prepared): void
     {
         $errors = [];
 
-        foreach ($configuration->paths as $path) {
+        foreach ($prepared->runConfiguration->paths as $path) {
             if (!$path->exists()) {
                 $errors[] = \sprintf("Error: path '%s' does not exist", $path->value());
             }
         }
 
-        return $errors;
+        if ($errors !== []) {
+            throw ConfigurationInputAdapter::pathsRefusal($prepared->document, implode("\n", $errors));
+        }
     }
 }

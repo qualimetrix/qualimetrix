@@ -5,16 +5,18 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Run\Unit\Configuration;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 /**
  * A directory the author named as a path and removed with their own `exclude:`
@@ -78,6 +80,51 @@ final class WrittenRootRemovedByExcludeRefusalTest extends TestCase
         $this->resolve([
             ['source' => 'qmx.yaml', 'values' => [ConfigSchema::PATHS => ['legacy'], ConfigSchema::EXCLUDES => [['regex' => 'leg.*']]]],
         ]);
+    }
+
+    /** @return iterable<string, array{list<array{source: string, values: array<string, mixed>}>, list<string>, ?list<string>}> */
+    public static function provideConflictingLayers(): iterable
+    {
+        yield 'CLI exclude over file paths' => [[
+            ['source' => 'qmx.yaml', 'values' => [ConfigSchema::PATHS => ['src']]],
+            ['source' => 'cli', 'values' => [ConfigSchema::EXCLUDES => [['subtree' => 'src']]]],
+        ], ['qmx.yaml', 'cli'], null];
+        yield 'CLI paths over file exclude' => [[
+            ['source' => 'qmx.yaml', 'values' => [ConfigSchema::EXCLUDES => [['subtree' => 'src']]]],
+            ['source' => 'cli', 'values' => [ConfigSchema::PATHS => ['src']]],
+        ], ['qmx.yaml', 'cli'], null];
+        yield 'later preset excludes earlier paths' => [[
+            ['source' => 'preset-first', 'values' => [ConfigSchema::PATHS => ['src']]],
+            ['source' => 'preset-second', 'values' => [ConfigSchema::EXCLUDES => [['subtree' => 'src']]]],
+        ], ['preset-first', 'preset-second'], ['exclude']];
+        yield 'later preset paths over earlier exclusion' => [[
+            ['source' => 'preset-first', 'values' => [ConfigSchema::EXCLUDES => [['subtree' => 'src']]]],
+            ['source' => 'preset-second', 'values' => [ConfigSchema::PATHS => ['src']]],
+        ], ['preset-first', 'preset-second'], ['paths']];
+    }
+
+    /**
+     * @param list<array{source: string, values: array<string, mixed>}> $sources
+     * @param list<string> $expectedSources
+     * @param ?list<string> $expectedPosition
+     */
+    #[Test]
+    #[DataProvider('provideConflictingLayers')]
+    public function itOrdersConflictingSourcesByDocumentPrecedenceAndUsesTheLastPosition(array $sources, array $expectedSources, ?array $expectedPosition): void
+    {
+        try {
+            $this->resolve($sources);
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame($expectedSources, array_map(
+                static fn(ConfigurationOrigin $origin): string => $origin->locator() ?? 'cli',
+                $refusal->sources(),
+            ));
+            self::assertSame($expectedPosition, $refusal->position()?->segments);
+
+            return;
+        }
+
+        self::fail('Expected a refusal of the excluded root.');
     }
 
     #[Test]
@@ -149,6 +196,6 @@ final class WrittenRootRemovedByExcludeRefusalTest extends TestCase
     private function resolve(array $sources): RunConfiguration
     {
         return (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))
-            ->resolve(new ConfigurationDocument($sources, AbsolutePath::fromString($this->root)));
+            ->resolve(LayeredDocument::of($sources, AbsolutePath::fromString($this->root)));
     }
 }

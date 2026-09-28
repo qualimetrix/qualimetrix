@@ -225,6 +225,7 @@ final class CheckCommand extends Command
         if ($selectionWarning !== null) {
             $this->writeWarning($output, $selectionWarning);
         }
+        $this->configurationInputAdapter->writeDiagnostics($document, $output);
         if ($output->isVerbose() && $document->appliedSources() !== []) {
             $this->resultPresenter->writeDiagnostic($output, \sprintf(
                 '<info>Configuration loaded from: %s</info>',
@@ -237,10 +238,7 @@ final class CheckCommand extends Command
 
         $pathErrors = $this->validatePaths($scopeResolution->paths);
         if ($pathErrors !== []) {
-            throw ConfigurationRefusal::aboutCommandLineInput(
-                'paths',
-                implode(' ', $pathErrors),
-            );
+            throw ConfigurationInputAdapter::pathsRefusal($document, implode(' ', $pathErrors));
         }
 
         $projectRoot = $runConfiguration->projectRoot;
@@ -298,6 +296,7 @@ final class CheckCommand extends Command
             projectionOptions: $projectionOptions,
             namespacePattern: $namespacePattern,
             projectScope: $this->findingFilterOrchestrator->projectScope($resolvedScope, $result, $projectionOptions),
+            configurationDiagnostics: $this->configurationInputAdapter->publishedDiagnostics($document),
         );
 
         return $this->presentProfile($input, $output, $exitCode);

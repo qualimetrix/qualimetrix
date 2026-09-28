@@ -7,6 +7,7 @@ namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
@@ -17,6 +18,9 @@ use Symfony\Component\DependencyInjection\Reference;
  */
 final class ConfigurationConfigurator implements ContainerConfiguratorInterface
 {
+    /** The tag an owner's configuration section carries once registered autoconfigured. */
+    public const string SECTION_TAG = 'qmx.configuration.document_section';
+
     private const string PRESET_RESOLVER = 'qmx.configuration.preset_resolver';
     private const string CONFIGURATION_PIPELINE = 'qmx.configuration.pipeline';
     private const string CONFIGURATION_PIPELINE_CLASS = 'Qualimetrix\\Analysis\\Configuration\\Pipeline\\ConfigurationPipeline';
@@ -79,6 +83,7 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
         // ConfigurationPipeline exposes an ordered document. Capability-owned
         // parsing and warning delivery happen later, after runtime logging.
         $container->register(self::CONFIGURATION_PIPELINE, self::CONFIGURATION_PIPELINE_CLASS)
+            ->setArgument('$sections', new TaggedIteratorArgument(self::SECTION_TAG))
             ->setAutowired(true)
             ->setPublic(true);
         $container->setAlias(ConfigurationPipelineInterface::class, self::CONFIGURATION_PIPELINE)

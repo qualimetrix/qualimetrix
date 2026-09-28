@@ -210,15 +210,7 @@ final class DirectivesCommand extends Command
 
         $prepared = $this->preflight->resolve($input, $output);
 
-        $missing = AnalysisPreflight::missingPaths($prepared->runConfiguration);
-        if ($missing !== []) {
-            // Every one of them, as `check` reports them: a user who mistyped
-            // two paths should learn both from one run.
-            throw ConfigurationRefusal::aboutCommandLineInput(
-                'paths',
-                implode("\n", $missing),
-            );
-        }
+        AnalysisPreflight::refuseMissingPaths($prepared);
 
         // The discovery the preflight resolved, not the pipeline's default: the
         // default knows nothing of the user's `exclude`, and a verdict is

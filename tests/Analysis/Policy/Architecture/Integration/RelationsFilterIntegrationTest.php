@@ -7,7 +7,6 @@ namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Integration;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
@@ -17,6 +16,8 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\WrittenFile;
+use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 
 /**
  * End-to-end test for Phase 2 Step G (direction 4: dependency-type filter).
@@ -169,7 +170,7 @@ final class RelationsFilterIntegrationTest extends TestCase
             YAML);
 
         try {
-            $loaded = (new YamlConfigLoader())->load($yamlPath);
+            $loaded = WrittenFile::foldedValues($yamlPath);
             $messages = $this->collectFindingMessages($loaded['architecture']);
 
             self::assertEdgeNotViolating($messages, 'OrderExtender', 'BaseEntity', 'YAML-loaded inheritance alias must accept Extends');
@@ -203,7 +204,7 @@ final class RelationsFilterIntegrationTest extends TestCase
     private function runPipelineWithConfig(array $configArray): AnalysisResult
     {
         $factory = new ArchitectureConfigurationFactory();
-        $result = $factory->fromArray($configArray);
+        $result = $factory->fromResolved(ArchitectureDocument::file($configArray));
 
         $container = (new ContainerFactory())->create();
 

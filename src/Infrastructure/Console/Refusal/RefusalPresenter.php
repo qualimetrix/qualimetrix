@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Refusal;
 
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Core\ProductIdentity;
@@ -44,7 +45,7 @@ final class RefusalPresenter
     /** A refusal caused by user input: a configuration key, value, file, or selector. */
     public function refusal(OutputInterface $output, ?string $format, ConfigurationRefusal $refusal): int
     {
-        $this->present($output, $format, self::refusalSentence($refusal->summary()), ConsoleExitCode::Refusal, $refusal->position());
+        $this->present($output, $format, self::refusalSentence($refusal->summary()), ConsoleExitCode::Refusal, $refusal->position(), $refusal->sources());
 
         return ConsoleExitCode::Refusal->value;
     }
@@ -60,7 +61,7 @@ final class RefusalPresenter
      */
     public function fallbackRefusal(OutputInterface $output, ?string $format, Throwable $failure): int
     {
-        $this->present($output, $format, self::refusalSentence($failure->getMessage()), ConsoleExitCode::Refusal, null);
+        $this->present($output, $format, self::refusalSentence($failure->getMessage()), ConsoleExitCode::Refusal, null, null);
 
         return ConsoleExitCode::Refusal->value;
     }
@@ -95,7 +96,7 @@ final class RefusalPresenter
      */
     public function internalError(OutputInterface $output, ?string $format, Throwable $failure): int
     {
-        $this->present($output, $format, \sprintf('Internal error: %s', $failure->getMessage()), ConsoleExitCode::InternalError, null);
+        $this->present($output, $format, \sprintf('Internal error: %s', $failure->getMessage()), ConsoleExitCode::InternalError, null, null);
 
         if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
             $this->writeStderr($output, '<comment>Stack trace:</comment>');
@@ -105,19 +106,21 @@ final class RefusalPresenter
         return ConsoleExitCode::InternalError->value;
     }
 
+    /** @param ?list<ConfigurationOrigin> $sources */
     private function present(
         OutputInterface $output,
         ?string $format,
         string $message,
         ConsoleExitCode $code,
         ?RefusedPosition $position,
+        ?array $sources,
     ): void {
         // Erase the progress frame first: printed on top of a live frame, the
         // message is destroyed by the frame's next redraw.
         $this->errorStream->stopProgress();
 
         if (MachineReadableFormats::carriesJson($format)) {
-            $this->writeEnvelope($output, $message, $code->value, $position);
+            $this->writeEnvelope($output, $message, $code->value, $position, $sources);
 
             return;
         }
@@ -159,8 +162,8 @@ final class RefusalPresenter
     }
 
     /**
-     * Writes the `{error, exit_code, position}` envelope to stdout — the shape
-     * every command's refusal and internal-error path shares.
+     * Writes the `{error, exit_code, position, source}` envelope to stdout —
+     * the shape every command's refusal and internal-error path shares.
      *
      * `position` is the refusal's {@see RefusedPosition} — `{path, written,
      * accepted, closed}` — and `null` whenever the run ended without one: a
@@ -171,6 +174,10 @@ final class RefusalPresenter
      * does not depend on what ended the run. The text path does not print it:
      * the wording of `$message` already names the key for a reader.
      *
+     * `source` lists every source a {@see ConfigurationRefusal} names —
+     * `{kind, name, imported_by}`, one entry, or each contributing layer of a
+     * refusal across layers — and is `null` for an outcome that is not one.
+     *
      * `JSON_INVALID_UTF8_SUBSTITUTE`: `$message` can embed raw CLI input
      * (an option value, a path) that the user typed, and PHP argv bytes are
      * not guaranteed valid UTF-8. Without this flag, `JSON_THROW_ON_ERROR`
@@ -180,10 +187,16 @@ final class RefusalPresenter
      * to returning. Substituting the invalid bytes keeps the envelope valid
      * JSON and keeps the refusal a refusal.
      */
-    private function writeEnvelope(OutputInterface $output, string $message, int $exitCode, ?RefusedPosition $position): void
+    /** @param ?list<ConfigurationOrigin> $sources */
+    private function writeEnvelope(OutputInterface $output, string $message, int $exitCode, ?RefusedPosition $position, ?array $sources): void
     {
         $payload = json_encode(
-            ['error' => $message, 'exit_code' => $exitCode, 'position' => self::positionDocument($position)],
+            [
+                'error' => $message,
+                'exit_code' => $exitCode,
+                'position' => self::positionDocument($position),
+                'source' => $sources === null ? null : array_map(self::sourceDocument(...), $sources),
+            ],
             \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_INVALID_UTF8_SUBSTITUTE | \JSON_THROW_ON_ERROR,
         ) . "\n";
 
@@ -202,6 +215,21 @@ final class RefusalPresenter
         $output->write($payload, false, OutputInterface::OUTPUT_RAW | OutputInterface::VERBOSITY_QUIET);
     }
 
+    /**
+     * One source as every structured document publishes it: the refusal
+     * envelope's `source` entries and a report's configuration diagnostics.
+     *
+     * @return array{kind: string, name: ?string, imported_by: ?array<string, mixed>}
+     */
+    public static function sourceDocument(ConfigurationOrigin $origin): array
+    {
+        return [
+            'kind' => $origin->source()->value,
+            'name' => $origin->locator(),
+            'imported_by' => $origin->importer() === null ? null : self::sourceDocument($origin->importer()),
+        ];
+    }
+
     /** @return ?array{path: list<string>, written: string, accepted: list<string>, closed: bool} */
     private static function positionDocument(?RefusedPosition $position): ?array
     {
@@ -210,10 +238,10 @@ final class RefusalPresenter
         }
 
         return [
-            'path' => $position->segments(),
-            'written' => $position->written(),
-            'accepted' => $position->accepted(),
-            'closed' => $position->isClosed(),
+            'path' => $position->segments,
+            'written' => $position->written,
+            'accepted' => $position->accepted,
+            'closed' => $position->closed,
         ];
     }
 }

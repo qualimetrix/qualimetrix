@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 
 /**
  * Pins that the three graph-backed membership criteria — {@code extends},
@@ -125,7 +126,7 @@ final class TemplateCriteriaExpansionIntegrationTest extends TestCase
      */
     private function expandedDomainLayers(array $configArray): array
     {
-        $result = (new ArchitectureConfigurationFactory())->fromArray($configArray);
+        $result = (new ArchitectureConfigurationFactory())->fromResolved(ArchitectureDocument::file($configArray));
 
         $container = (new ContainerFactory())->create();
 

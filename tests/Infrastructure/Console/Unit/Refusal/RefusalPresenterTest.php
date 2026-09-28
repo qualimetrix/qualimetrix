@@ -25,7 +25,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * A {@see ConfigurationRefusal} and a bare `InvalidArgumentException`-shaped
  * fallback both answer exit code 3, an internal error answers 1; a JSON
- * format gets the `{error, exit_code, position}` envelope on stdout, anything else gets
+ * format gets the `{error, exit_code, position, source}` envelope on stdout, anything else gets
  * one framed sentence on stderr; every write survives `-q`; a trace is added
  * only for an internal error and only from `VERBOSITY_VERBOSE` up.
  */
@@ -67,7 +67,7 @@ final class RefusalPresenterTest extends TestCase
         self::assertSame(3, $exit);
         self::assertSame('', $output->errorOutputContent());
         self::assertSame(
-            ['error' => 'Configuration error: unknown group "bogus"', 'exit_code' => 3, 'position' => null],
+            ['error' => 'Configuration error: unknown group "bogus"', 'exit_code' => 3, 'position' => null, 'source' => [['kind' => 'cli', 'name' => '--group', 'imported_by' => null]]],
             json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR),
         );
     }
@@ -144,7 +144,7 @@ final class RefusalPresenterTest extends TestCase
 
         self::assertSame(1, $exit);
         self::assertSame(
-            ['error' => 'Internal error: boom', 'exit_code' => 1, 'position' => null],
+            ['error' => 'Internal error: boom', 'exit_code' => 1, 'position' => null, 'source' => null],
             json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR),
         );
     }
@@ -212,7 +212,7 @@ final class RefusalPresenterTest extends TestCase
 
         self::assertSame(3, $exit);
         self::assertSame(
-            ['error' => 'Configuration error: unknown group "bogus"', 'exit_code' => 3, 'position' => null],
+            ['error' => 'Configuration error: unknown group "bogus"', 'exit_code' => 3, 'position' => null, 'source' => [['kind' => 'cli', 'name' => '--group', 'imported_by' => null]]],
             json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR),
         );
     }
@@ -380,13 +380,49 @@ final class RefusalPresenterTest extends TestCase
 
         foreach ($outputs as $output) {
             $envelope = json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR);
-            self::assertSame(['error', 'exit_code', 'position'], array_keys($envelope));
+            self::assertSame(['error', 'exit_code', 'position', 'source'], array_keys($envelope));
             self::assertNull($envelope['position']);
         }
     }
 
     /**
-     * The JSON envelope stays closed at its three keys: `present()` never
+     * `source` names what a configuration refusal is about — one entry, or
+     * every contributing layer, with the importing file of an imported one —
+     * and is null for the outcomes that are not configuration refusals.
+     */
+    #[Test]
+    public function itPublishesEverySourceARefusalNames(): void
+    {
+        $presenter = $this->presenter();
+        $outputs = [self::terminalOutput(), self::terminalOutput(), self::terminalOutput()];
+        $file = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/p/qmx.yaml');
+        $shared = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/p/shared.yaml')->importedThrough($file);
+
+        $presenter->refusal($outputs[0], 'json', ConfigurationRefusal::acrossLayers(
+            [ConfigurationOrigin::of(ConfigurationSource::Preset, 'strict'), $shared],
+            null,
+            'cycle',
+        ));
+        $presenter->fallbackRefusal($outputs[1], 'json', new RuntimeException('fallback'));
+        $presenter->internalError($outputs[2], 'json', new RuntimeException('defect'));
+
+        $sources = array_map(
+            static fn(SplitStreamConsoleOutput $output): mixed => json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR)['source'],
+            $outputs,
+        );
+
+        self::assertSame([
+            [
+                ['kind' => 'preset', 'name' => 'strict', 'imported_by' => null],
+                ['kind' => 'file', 'name' => '/p/shared.yaml', 'imported_by' => ['kind' => 'file', 'name' => '/p/qmx.yaml', 'imported_by' => null]],
+            ],
+            null,
+            null,
+        ], $sources);
+    }
+
+    /**
+     * The JSON envelope stays closed at its four keys: `present()` never
      * appends the pointer to `writeEnvelope()`'s output.
      */
     #[Test]
@@ -401,7 +437,7 @@ final class RefusalPresenterTest extends TestCase
         $this->presenter()->refusal($output, 'json', $refusal);
 
         self::assertSame(
-            ['error', 'exit_code', 'position'],
+            ['error', 'exit_code', 'position', 'source'],
             array_keys(json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR)),
         );
         self::assertStringNotContainsString('qualimetrix.dev', $output->standardOutputContent());

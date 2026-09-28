@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
+use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 
 /**
  * One resolved invocation: what to analyse, under which rule configuration,
- * over which file set.
+ * over which file set, and the document all three were derived from.
  *
  * The three travel together because they were derived from one configuration
  * document and disagree the moment they are not. A caller that keeps the run
@@ -23,5 +24,6 @@ final readonly class PreparedAnalysisInput
         public RunConfiguration $runConfiguration,
         public FindingConfiguration $findingConfiguration,
         public FileDiscoveryInterface $fileDiscovery,
+        public ConfigurationDocument $document,
     ) {}
 }

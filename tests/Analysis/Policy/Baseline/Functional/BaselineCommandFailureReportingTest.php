@@ -321,6 +321,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
     ): ConfigurationInputAdapter {
         return new ConfigurationInputAdapter(
             $pipeline,
+            new ErrorStream(),
         );
     }
 

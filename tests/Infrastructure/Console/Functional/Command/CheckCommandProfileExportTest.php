@@ -62,9 +62,9 @@ final class CheckCommandProfileExportTest extends TestCase
         $tester = $this->runCheck($options);
 
         self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
-        /** @var array{error: string, exit_code: int, position: mixed} $envelope */
+        /** @var array{error: string, exit_code: int, position: mixed, source: mixed} $envelope */
         $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
-        self::assertSame(['error', 'exit_code', 'position'], array_keys($envelope), 'Analysis ran: a report precedes the refusal.');
+        self::assertSame(['error', 'exit_code', 'position', 'source'], array_keys($envelope), 'Analysis ran: a report precedes the refusal.');
         self::assertStringContainsString($option, $envelope['error']);
         self::assertSame([], array_values(array_filter(self::filesIn($this->directory), is_file(...))));
     }

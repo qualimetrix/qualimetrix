@@ -31,6 +31,33 @@ final class ConfigKeySpelling
     }
 
     /**
+     * The three spellings of a schema key an author may write: snake_case,
+     * kebab-case and camelCase of its lowercase words. `fail_on` accepts
+     * `fail_on`, `fail-on` and `failOn`; `Fail_On`, `FAILON` and `failon` are
+     * none of them.
+     *
+     * @param string $canonical lowercase words joined by `_` or `-`
+     *
+     * @return non-empty-list<string>
+     */
+    public static function acceptedSpellings(string $canonical): array
+    {
+        $words = explode('_', str_replace('-', '_', $canonical));
+        $camel = $words[0] . implode('', array_map(ucfirst(...), \array_slice($words, 1)));
+
+        return array_values(array_unique([implode('_', $words), implode('-', $words), $camel]));
+    }
+
+    /**
+     * True when two spellings differ only in letter case and separators — the
+     * same key written in a style none of the accepted spellings has.
+     */
+    public static function sameWords(string $a, string $b): bool
+    {
+        return strtolower(str_replace(['_', '-'], '', $a)) === strtolower(str_replace(['_', '-'], '', $b));
+    }
+
+    /**
      * Rewrites a normalized key in the separator style `$authored` was written in.
      *
      * A camelCase original leaves the key alone: there is no separator to infer

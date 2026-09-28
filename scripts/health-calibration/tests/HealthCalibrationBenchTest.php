@@ -6,6 +6,7 @@ namespace Qualimetrix\HealthCalibration\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
@@ -674,7 +675,7 @@ final class HealthCalibrationBenchTest extends TestCase
         return (new ComputedMetricsConfigResolver(
             new ComputedMetricFormulaValidator(),
             new HealthFormulaExcluder(),
-        ))->resolve([]);
+        ))->resolve(ResolvedDocument::empty());
     }
 
     /**

@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureSection;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
@@ -182,7 +183,7 @@ final class DogfoodingTopologyTest extends TestCase
     {
         $repoRoot = ModularArchitectureManifest::repositoryRoot();
         $loader = new YamlConfigLoader();
-        $pipeline = new ConfigurationPipeline();
+        $pipeline = new ConfigurationPipeline([new ArchitectureSection()]);
         $pipeline->addStage(new DefaultsStage());
         $pipeline->addStage(new ComposerDiscoveryStage(new ComposerReader()));
         $pipeline->addStage(new PresetStage($loader, new PresetResolver()));
@@ -192,7 +193,7 @@ final class DogfoodingTopologyTest extends TestCase
         $document = $pipeline->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString($repoRoot)));
 
         return (new ArchitectureConfigurationFactory())
-            ->fromContributions($document->contributions('architecture'))
+            ->fromResolved($document->resolved())
             ->configuration;
     }
 

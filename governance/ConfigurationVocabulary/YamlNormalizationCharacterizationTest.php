@@ -333,6 +333,8 @@ final class YamlNormalizationCharacterizationTest extends TestCase
         $path = $this->tempDir . '/config_' . bin2hex(random_bytes(6)) . '.yaml';
         file_put_contents($path, $yaml);
 
-        return $this->loader->load($path);
+        $loaded = $this->loader->read($path);
+
+        return $loaded->deferredRefusal === null ? $loaded->values : throw $loaded->deferredRefusal;
     }
 }

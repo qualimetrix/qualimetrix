@@ -873,9 +873,11 @@ final class SyntheticTree
                     public static function addOptions(Command \$command, RuleRegistryInterface \$rules): array { return []; }
                 }
 
+                final class ErrorStream {}
+
                 final class ConfigurationInputAdapter
                 {
-                    public function __construct(ConfigurationPipelineInterface \$pipeline) {}
+                    public function __construct(ConfigurationPipelineInterface \$pipeline, ErrorStream \$errors) {}
                     public function adapt(ArgvInput \$input, string \$directory): ConfigurationResolutionRequest
                     {
                         if (\$input->tokens === []) { throw new \RuntimeException('A replay probe requires its complete argv.'); }

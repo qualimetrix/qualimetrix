@@ -130,15 +130,15 @@ final class RuntimeConfigurator
     /**
      * Applies PHP memory limit from configuration.
      *
-     * The default (512M) is set in DefaultsStage and can be overridden
-     * via qmx.yaml or --memory-limit CLI option.
+     * No layer sets a default: with no `memory_limit` written anywhere, PHP's
+     * own limit stands.
      */
     private function resolveRuntimeLimits(ConfigurationDocument $document): RuntimeLimits
     {
         $value = null;
         foreach ($document->contributions(ConfigSchema::MEMORY_LIMIT) as $candidate) {
-            if (\is_string($candidate)) {
-                $value = $candidate;
+            if (\is_string($candidate) || \is_int($candidate)) {
+                $value = (string) $candidate;
             }
         }
 

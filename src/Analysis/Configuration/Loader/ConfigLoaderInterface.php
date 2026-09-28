@@ -9,14 +9,11 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 interface ConfigLoaderInterface
 {
     /**
-     * Loads configuration from the given path.
+     * The document as written, for the engine, beside its folded values.
      *
-     *
-     * @throws ConfigurationRefusal If the configuration cannot be loaded
-     *
-     * @return array<string, mixed>
+     * @throws ConfigurationRefusal If the document cannot be read as a whole
      */
-    public function load(string $path): array;
+    public function read(string $path): LoadedDocument;
 
     /**
      * Returns whether this loader supports the given path.

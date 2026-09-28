@@ -124,11 +124,14 @@ final class CaseOutcomeCheckTest extends TestCase
     /** @return iterable<string,array{string,int}> */
     public static function provideRefusalEnvelopes(): iterable
     {
-        yield 'the coherent envelope' => ['{"error":"Refused input","exit_code":3,"position":null}', 0];
-        yield 'a different exit' => ['{"error":"Refused input","exit_code":2,"position":null}', 1];
+        $envelope = ['error' => 'Refused input', 'exit_code' => 3, 'position' => null,
+            'source' => [['kind' => 'resolved', 'name' => null, 'imported_by' => null]]];
+        yield 'the coherent envelope' => [json_encode($envelope, \JSON_THROW_ON_ERROR), 0];
+        yield 'a different exit' => [json_encode(array_replace($envelope, ['exit_code' => 2]), \JSON_THROW_ON_ERROR), 1];
         yield 'no exact error keys' => ['{"error":"Refused input","exit_code":3}', 1];
-        yield 'a malformed position' => ['{"error":"Refused input","exit_code":3,"position":"unknown"}', 1];
-        yield 'an empty error' => ['{"error":"","exit_code":3,"position":null}', 1];
+        yield 'the envelope before source publication' => ['{"error":"Refused input","exit_code":3,"position":null}', 1];
+        yield 'a malformed position' => [json_encode(array_replace($envelope, ['position' => 'unknown']), \JSON_THROW_ON_ERROR), 1];
+        yield 'an empty error' => [json_encode(array_replace($envelope, ['error' => '']), \JSON_THROW_ON_ERROR), 1];
         yield 'an analysis envelope' => ['{"violations":[]}', 1];
         yield 'malformed JSON' => ['not JSON', 1];
     }

@@ -7,7 +7,10 @@ namespace Qualimetrix\Analysis\Configuration\Pipeline\Stage;
 use Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
 use Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
@@ -49,13 +52,17 @@ final class ConfigFileStage implements ConfigurationStageInterface
             return null;
         }
 
-        $data = $this->loader->load($configPath);
+        $loaded = $this->loader->read($configPath);
 
-        $this->validateRuleNames($data, $configPath);
+        if ($loaded->deferredRefusal === null) {
+            $this->validateRuleNames($loaded->values, $configPath);
+        }
 
         return new ConfigurationLayer(
             basename($configPath),
-            $this->normalizeConfigData($data),
+            $this->normalizeConfigData($loaded->values),
+            authored: [new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $configPath), $loaded->authored)],
+            deferredRefusals: $loaded->deferredRefusal === null ? [] : [$loaded->deferredRefusal],
         );
     }
 

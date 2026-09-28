@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
+use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\WrittenFile;
 
 /**
  * Three spellings name one key, so a document can write one key twice
@@ -52,7 +53,7 @@ final class YamlConfigLoaderKeySpellingTest extends TestCase
         file_put_contents($this->path, $yaml);
 
         try {
-            (new YamlConfigLoader())->load($this->path);
+            WrittenFile::foldedValues($this->path);
             self::fail('Two spellings of one key must be refused.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString(\sprintf('"%s"', $first), $refusal->summary());
@@ -69,29 +70,33 @@ final class YamlConfigLoaderKeySpellingTest extends TestCase
             "suppressPaths: []\nrules:\n  complexity.ccn:\n    class: {max_warning: 1}\n    callable: {max_warning: 2}\n",
         );
 
-        $config = (new YamlConfigLoader())->load($this->path);
+        $config = WrittenFile::foldedValues($this->path);
 
         self::assertSame([], $config['suppressPaths']);
     }
 
-    /** @return iterable<string, array{string, string}> */
+    /** @return iterable<string, array{string}> */
     public static function provideAuthorStyles(): iterable
     {
-        yield 'snake' => ['exclude_healh: []', 'exclude_health'];
-        yield 'kebab' => ['exclude-healh: []', 'exclude-health'];
-        yield 'camel' => ['excludeHealh: []', 'excludeHealth'];
+        yield 'snake' => ['exclude_healh: []'];
+        yield 'kebab' => ['exclude-healh: []'];
+        yield 'camel' => ['excludeHealh: []'];
     }
 
+    /**
+     * The document has one voice: whatever style the author wrote the typo
+     * in, the key offered is the canonical one, which every style accepts.
+     */
     #[Test]
     #[DataProvider('provideAuthorStyles')]
-    public function itSuggestsARootKeyInTheAuthorsSpelling(string $yaml, string $suggestion): void
+    public function itSuggestsTheCanonicalRootKeyWhateverTheAuthorsStyle(string $yaml): void
     {
         file_put_contents($this->path, $yaml . "\n");
 
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage(\sprintf('did you mean "%s"?', $suggestion));
+        $this->expectExceptionMessage('did you mean "exclude_health"?');
 
-        (new YamlConfigLoader())->load($this->path);
+        WrittenFile::compose($this->path);
     }
 
     /** @return iterable<string, array{string, string}> */
@@ -109,7 +114,7 @@ final class YamlConfigLoaderKeySpellingTest extends TestCase
         file_put_contents($this->path, \sprintf("coupling:\n  %s: []\n", $written));
 
         try {
-            (new YamlConfigLoader())->load($this->path);
+            WrittenFile::foldedValues($this->path);
             self::fail('An unknown section key must be refused.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString($expected, $refusal->summary());

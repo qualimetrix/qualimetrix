@@ -175,6 +175,11 @@ final class ContainerFactory
         $container->registerForAutoconfiguration('Qualimetrix\\Analysis\\Configuration\\Pipeline\\ConfigurationStageInterface')
             ->addTag(ConfigurationStageCompilerPass::TAG);
 
+        // An owner declares its configuration root by registering its section
+        // autoconfigured; the pipeline composes the document against it.
+        $container->registerForAutoconfiguration('Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\DocumentSectionSchemaInterface')
+            ->addTag(ConfigurationConfigurator::SECTION_TAG);
+
     }
 
     /**

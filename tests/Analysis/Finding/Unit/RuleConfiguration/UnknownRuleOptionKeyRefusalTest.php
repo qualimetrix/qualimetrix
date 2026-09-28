@@ -9,7 +9,6 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityOptions;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
 use Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityOptions;
@@ -27,6 +26,7 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptio
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\WrittenFile;
 use Throwable;
 
 /**
@@ -737,7 +737,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
         file_put_contents($path, "rules:\n" . $rulesBlock);
 
         try {
-            $config = (new YamlConfigLoader())->load($path);
+            $config = WrittenFile::foldedValues($path);
         } finally {
             unlink($path);
         }

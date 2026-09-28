@@ -1,0 +1,22 @@
+--- candidate
++++ reference (mapped)
+@@ -7,13 +7,6 @@
+-            "computed.class-load"
+-        ],
+-        "written": "computed.class-load",
+-        "accepted": [],
+-        "closed": false
+-    },
+-    "source": [
+-        {
+-            "kind": "file",
+-            "name": "qmx.yaml",
+-            "imported_by": null
+-        }
+-    ]
++            "computed.project-load"
++        ],
++        "written": "computed.project-load",
++        "accepted": [],
++        "closed": false
++    }

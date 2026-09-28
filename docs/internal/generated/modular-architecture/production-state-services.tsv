@@ -1,5 +1,8 @@
 path	fqcn	proposed_owner	state_scope	mutable_static_properties	mutable_instance_properties	lifecycle_methods
-src/Analysis/Configuration/Pipeline/ConfigurationPipeline.php	Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline	Analysis.Configuration	"runtime or composition registry"	-	stages	addStage
+src/Analysis/Configuration/Document/KeyClaims.php	Qualimetrix\Analysis\Configuration\Document\KeyClaims	Analysis.Configuration	"request scratch or mutable internal value"	-	claimed	-
+src/Analysis/Configuration/Document/LayerMerge.php	Qualimetrix\Analysis\Configuration\Document\LayerMerge	Analysis.Configuration	"request scratch or mutable internal value"	-	emptyOverrides	-
+src/Analysis/Configuration/Document/WrittenNames.php	Qualimetrix\Analysis\Configuration\Document\WrittenNames	Analysis.Configuration	"request scratch or mutable internal value"	-	pending	-
+src/Analysis/Configuration/Pipeline/ConfigurationPipeline.php	Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline	Analysis.Configuration	"runtime or composition registry"	-	sections,stages	addSection,addStage
 src/Analysis/Evidence/CircularDependency/CircularDependencyAnalysis.php	Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis	Analysis.Evidence.CircularDependency	"request scratch or mutable internal value"	-	cycles	prepare,reset
 src/Analysis/Evidence/CircularDependency/CircularDependencyDetector.php	Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyDetector	Analysis.Evidence.CircularDependency	"request scratch or mutable internal value"	-	index,indices,lowlinks,onStack,sccs,stack,symbolPathMap	collectComponentRootedAt,detect,reset
 src/Analysis/Evidence/CodeSmell/CodeSmellVisitor.php	Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellVisitor	Analysis.Evidence.CodeSmell	"per-file or derivation state"	-	chainAttempts,locations,methodStack	reset
@@ -112,4 +115,4 @@ src/Infrastructure/Profiler/Profiler.php	Qualimetrix\Infrastructure\Profiler\Pro
 src/Infrastructure/Profiler/Span.php	Qualimetrix\Infrastructure\Profiler\Span	Infrastructure.Profiler	"adapter session or cache"	-	children,endMemory,endTime,parent,stopped	-
 src/Reporting/Formatter/FormatterRegistry.php	Qualimetrix\Reporting\Formatter\FormatterRegistry	Reporting	"runtime or composition registry"	-	formatters	register
 src/Reporting/Formatter/Html/HtmlTreeNode.php	Qualimetrix\Reporting\Formatter\Html\HtmlTreeNode	Reporting	"report projection or builder state"	-	children,debtMinutes,findings,metrics,name,path,type,violationCountTotal	-
-src/Reporting/ReportBuilder.php	Qualimetrix\Reporting\ReportBuilder	Reporting	"report projection or builder state"	-	coverage,duration,filesAnalyzed,filesSkipped,findings,metrics,namespaceTree,outOfScope,projectScope,suppressionComposition	addFinding,addFindings,build
+src/Reporting/ReportBuilder.php	Qualimetrix\Reporting\ReportBuilder	Reporting	"report projection or builder state"	-	configurationDiagnostics,coverage,duration,filesAnalyzed,filesSkipped,findings,metrics,namespaceTree,outOfScope,projectScope,suppressionComposition	addFinding,addFindings,build

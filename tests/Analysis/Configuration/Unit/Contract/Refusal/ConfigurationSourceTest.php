@@ -12,14 +12,24 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 #[CoversClass(ConfigurationSource::class)]
 final class ConfigurationSourceTest extends TestCase
 {
+    /** The backing values are the `kind` the JSON refusal envelope publishes. */
     #[Test]
-    public function itHasExactlyFiveCases(): void
+    public function itPublishesOneKindPerSource(): void
     {
-        // Defaults and ComposerJson do not produce ConfigurationRefusal.
-        // Adding a sixth case would change the source contract.
         self::assertSame(
-            ['ConfigFile', 'Preset', 'CommandLine', 'BaselineFile', 'Resolved'],
-            array_map(static fn(ConfigurationSource $case): string => $case->name, ConfigurationSource::cases()),
+            [
+                'Defaults' => 'defaults',
+                'ComposerJson' => 'composer',
+                'Preset' => 'preset',
+                'ConfigFile' => 'file',
+                'CommandLine' => 'cli',
+                'BaselineFile' => 'baseline',
+                'Resolved' => 'resolved',
+            ],
+            array_combine(
+                array_map(static fn(ConfigurationSource $case): string => $case->name, ConfigurationSource::cases()),
+                array_map(static fn(ConfigurationSource $case): string => $case->value, ConfigurationSource::cases()),
+            ),
         );
     }
 }

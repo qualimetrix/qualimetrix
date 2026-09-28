@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+**Resolved document values now refuse by throwing, and their concrete forms are
+internal.** Replace
+`ResolvedValueInterface::refusal(string): ConfigurationRefusal` with
+`ResolvedValueInterface::refuse(string): never`; a call such as
+`$value->refusal($message)` becomes `$value->refuse($message)` and does not
+return. Replace reads and type checks against `ResolvedMap`, `ResolvedList`,
+`ResolvedOpaque`, and `ResolvedBareName` with their respective
+`*Interface` contracts under `Analysis\Configuration\Contract\Document`.
+Their concrete implementations, together with `ResolvedScalar`, now belong to
+the internal `Analysis\Configuration\Document\Resolved` subject and are not a
+consumer construction API. Build a `ConfigurationRefusal` directly with
+`Provenance::refusalOf()` only where the caller must inspect or carry the
+exception object rather than immediately throw it. See ADR 0086.
+
 **Finding-gate declaration derivation now writes complete measurable forms even
 when another change remains unexplained.** Previously a failed comparison wrote
 nothing; `--derive-declarations` now lists written files and still exits 5 with
@@ -260,13 +274,6 @@ loose criterion matches, and the first instance in expansion order — which is
 binding-value alphabetical — wins it. Write `match: all` for the narrowing this
 almost certainly meant, or a static layer for the global net.
 
-**`relations:` written with no value is refused.** `relations:` followed by
-nothing — an empty list, commented-out items, a lost indent — parsed as "no
-filter declared", so a policy meant to be narrowed was silently widened to every
-relation kind. `relations: []` was already refused for exactly that reason; both
-spellings of the same slip now refuse alike. Drop the key entirely to keep "any
-relation allowed".
-
 **`architecture.coverage-gap: warn` or `error` with no `architecture.layers`
 is refused** with exit 3. With no layers every class is outside every layer,
 and the run reported none of them — so the strictest setting of the option was also the
@@ -383,12 +390,15 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   analyze", `directives` refused without saying why. Name a file or a directory
   inside it instead (`bin/qmx check vendor/acme/`); a `vendor` directory inside
   a path you name is still skipped, without a refusal.
-- **The JSON refusal envelope is `{error, exit_code, position}`** (was
+- **The JSON refusal envelope is `{error, exit_code, position, source}`** (was
   `{error, exit_code}`): `position` is `{path, written, accepted, closed}` when
   the refusal was raised at a place in a configuration document, and `null`
   otherwise — including a merged value such as `memory_limit: 010M` whose
-  message names the key. A consumer comparing the key set exactly must accept
-  the new key.
+  message names the key. `source` lists the configuration layers the refusal
+  is about, each `{kind, name, imported_by}` (`kind` is `defaults`, `composer`,
+  `preset`, `file`, `cli`, `baseline`, or `resolved` for a value not yet traced
+  to one layer), and is `null` for an outcome that is not a configuration
+  refusal. A consumer comparing the key set exactly must accept the new keys.
 - **`--format=json` `topIssues[].message` and every `--format=suppressed`
   entry's `message` are now the finding's message**, as in
   `violations[].message`; the recommendation they carried moved to a new
@@ -436,8 +446,9 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   `suppressPaths`) instead of the later silently winning; `memory_limit: 0`, a
   leading zero (`010M`, read by PHP as octal) and a limit the runtime rejects,
   each with the value quoted; and a `computed_metrics` entry written as
-  `name: ~`, now read as `name: {}`, so an invalid or unknown name or a user
-  metric without a formula is refused instead of silently dropped.
+  `name: ~` or `name: {}`, whose name is now judged whatever its body, so an
+  invalid or unknown name, or a user metric no layer gives a formula, is
+  refused instead of silently dropped.
 
 - **`complexity.cognitive` follows the SonarSource whitepaper (v1.7) where it
   did not.** A ternary gets the nesting increment and nests its branches; a
@@ -533,8 +544,83 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   each span gains `stopped` and loses `peak_memory_delta_bytes`, which was not
   a peak (memory is sampled only at span boundaries).
 
+**Configuration layers merge by one policy per key, declared by the key.**
+Defaults, presets, `qmx.yaml` and the command line used to be combined by each
+section its own way. They now combine by the policy the configuration page's
+generated table lists for every key; see
+[ADR 0086](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0086-one-configuration-document-merged-by-declared-policy.md).
+What changes for a configuration you already have:
+
+- `computed_metrics` merges metric by metric and key by key (was: a later
+  layer's `computed_metrics` replaced the earlier one whole, and a metric it
+  named was replaced whole). A preset's metric your file does not name now
+  stays; a file's `warning` over a preset's `threshold` keeps the preset's
+  `formula` and `error` instead of failing on the missing formula or resetting
+  `error` to the default.
+- A computed metric a lower layer wrote is removed only by `enabled: false`;
+  there is no way to replace a preset's whole set of computed metrics.
+- Outside `rules:`, `{}` and `~` never reset anything: `computed_metrics: {}` and
+  `health.complexity: ~` (or `: {}`) over a preset keep the preset's values
+  (was: back to the built-in defaults). To return to a default, write it.
+- A misspelt key is refused even when its value is `~` — under `architecture`
+  (the section, a `layers` entry, an `exclude:` block) and under a
+  `computed_metrics` entry, `formulas:` included (was: silently accepted). A
+  name under `architecture.allow` that `layers` does not declare is refused
+  even when written with `~` or `{}`.
+- A key is accepted in the snake_case, kebab-case or camelCase of its words,
+  at the root and in every section except `rules:` and `coupling:`, whose
+  owners still read their keys themselves; any other spelling of the same words
+  is refused as a misspelling, with the accepted one (was: `Fail_On` folded
+  silently at the root, `FAILON` and `failon` refused as unknown keys with a
+  did-you-mean hint, and each section reading spellings its own way).
+- A list item that is not a string, `~` included, is refused with its index —
+  `only_rules: [~]`, `disabled_rules: [5]`, `exclude: [~]` (was: a `~` item in
+  `only_rules` or `disabled_rules` silently accepted, and one in `exclude`
+  refused with a message about bare strings).
+- A value of the wrong shape is refused in whichever layer wrote it, even when
+  a later layer overrides it: a preset's `fail_on: 5` under a file that sets
+  `fail_on: error`, a preset's `architecture.coverage-gap: 5`, and a preset's
+  `architecture.layers` entry with `patterns: 42` or an allow target with a
+  misspelt key under a file that writes its own `layers` or `allow` list (was:
+  skipped).
+- An `exclude:` block of an `architecture.layers` entry that writes nothing —
+  `exclude: {}`, `exclude: []`, or criteria written only as `~` — excludes
+  nothing, like any other empty map (was: refused as an empty block). A block
+  that writes only `match`, or a criterion written as an empty list, is still
+  refused.
+- A computed metric a lower layer switched off with `enabled: false` stays off
+  when a higher layer writes only its thresholds or formula; write
+  `enabled: true` beside them to switch it back on (was: the higher layer's
+  metric replaced the lower one whole, switching it on).
+- Code constructing resolved-document provenance must pass the layer's
+  precedence index: `Provenance(origin, path, ?line = null)` becomes
+  `Provenance(origin, path, int layerIndex, ?line = null)`. Assign indices
+  from the same ordered document composition; the line remains optional.
+  Joint refusals sort these indices instead of relying on caller collection
+  order, and an explicitly supplied null position stays null.
+- `check --format=json` has a new top-level key, `configurationDiagnostics`:
+  the warnings about the configuration the run accepted, `[]` when there are
+  none. A consumer comparing the key set exactly must accept it.
+
 ### Changed
 
+- A configuration error names the layer that wrote the value — the preset,
+  the file, the command-line option — and quotes the key as you spelled it; an
+  error about two keys, or about a value several layers wrote, names each
+  layer in precedence order, lowest first, and positions the last writer. An
+  inherited project formula names the actual namespace-formula writer, even
+  when a later layer changed only its description; a built-in project formula
+  retains its default authorship under a namespace override. A path to analyse
+  that does not exist names the file, preset or
+  argument that wrote it. Values whose owners still judge them on the merged
+  configuration — listed in ADR 0086 — name the merged configuration instead,
+  with the key when the owner knows it, and a few name no source at all.
+- Warnings about a configuration that is legal but probably not what was meant
+  are printed on stderr by every command that reads the configuration. The
+  first is `only_rules: []` over a layer that filters the rules: it lifts the
+  filter, and now says so unless a layer above writes a filter again.
+- `memory_limit` accepts an unquoted integer, so `memory_limit: -1` means "no
+  limit" as it does in `php.ini`.
 - Namespace-level `coupling.cbo` is now counted over the namespace's whole
   subtree, the region its `coupling.ca`/`coupling.ce` cover, so a namespace
   holding only sub-namespaces no longer publishes 0. What `coupling.cbo` used

@@ -12,6 +12,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
+use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\WrittenFile;
 
 #[CoversClass(YamlConfigLoader::class)]
 final class YamlConfigLoaderTest extends TestCase
@@ -66,7 +67,7 @@ cache:
 format: text
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         self::assertArrayHasKey('rules', $config);
         // Rule name keys are preserved as-is (not normalized)
@@ -92,7 +93,7 @@ rules:
     count_traits: false
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         self::assertArrayHasKey('rules', $config);
         // Rule name keys are preserved as-is
@@ -109,7 +110,7 @@ YAML);
         $path = $this->tempDir . '/empty.yaml';
         file_put_contents($path, '');
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         self::assertSame([], $config);
     }
@@ -122,7 +123,7 @@ YAML);
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Configuration file not found');
 
-        $this->loader->load($path);
+        WrittenFile::foldedValues($path);
     }
 
     #[Test]
@@ -144,7 +145,7 @@ YAML);
             self::expectException(ConfigurationRefusal::class);
             self::expectExceptionMessage('Configuration file is not readable');
 
-            $this->loader->load($path);
+            WrittenFile::foldedValues($path);
         } finally {
             chmod($path, 0o644);
         }
@@ -164,7 +165,7 @@ YAML);
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Failed to parse configuration file');
 
-        $this->loader->load($path);
+        WrittenFile::foldedValues($path);
     }
 
     #[Test]
@@ -176,7 +177,7 @@ YAML);
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('is not valid YAML format');
 
-        $this->loader->load($path);
+        WrittenFile::foldedValues($path);
     }
 
     #[Test]
@@ -189,11 +190,26 @@ rules:
     warningThreshold: 15
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         // Rule name keys are preserved exactly as written
         self::assertArrayHasKey('cyclomaticComplexity', $config['rules']);
         self::assertSame(15, $config['rules']['cyclomaticComplexity']['warningThreshold']);
+    }
+
+    /** The document as written reaches the engine even when its folded values are refused; the refusal waits. */
+    #[Test]
+    public function itHoldsARefusalOfTheFoldedValuesBesideTheWrittenDocument(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, "rules: 5\nFail_On: error\n");
+
+        $loaded = $this->loader->read($path);
+
+        self::assertSame(['rules' => 5, 'Fail_On' => 'error'], $loaded->authored->plain());
+        self::assertSame([], $loaded->values);
+        self::assertNotNull($loaded->deferredRefusal);
+        self::assertStringContainsString('"rules" must be an associative array', $loaded->deferredRefusal->summary());
     }
 
     #[Test]
@@ -209,10 +225,10 @@ another_bad_key: true
 YAML);
 
         self::expectException(ConfigurationRefusal::class);
-        // Error message should show original key names (snake_case), not camelCase
-        self::expectExceptionMessage('"unknown_key", "another_bad_key"');
+        // The key as its author wrote it, not a folded spelling
+        self::expectExceptionMessage('Unknown key "unknown_key"');
 
-        $this->loader->load($path);
+        WrittenFile::compose($path);
     }
 
     /**
@@ -228,9 +244,9 @@ bogus_key: ~
 YAML);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Unknown configuration key: "bogus_key"');
+        self::expectExceptionMessage('Unknown key "bogus_key"');
 
-        $this->loader->load($path);
+        WrittenFile::compose($path);
     }
 
     #[Test]
@@ -245,7 +261,7 @@ YAML);
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Unknown key in "cache" section: "bogus"');
 
-        $this->loader->load($path);
+        WrittenFile::foldedValues($path);
     }
 
     /**
@@ -268,7 +284,7 @@ YAML);
             $allowed,
         ));
 
-        $this->loader->load($path);
+        WrittenFile::foldedValues($path);
     }
 
     #[Test]
@@ -289,7 +305,7 @@ YAML);
             \sprintf('Invalid value for "%s": expected a list of entries, got a map.', $field),
         );
 
-        $this->loader->load($path);
+        WrittenFile::foldedValues($path);
     }
 
     /**
@@ -313,7 +329,7 @@ suppress_namespaces: []
 exclude_health: []
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         self::assertSame([], $config['cache']);
         self::assertSame([], $config['paths']);
@@ -333,7 +349,7 @@ exclude: [vendor]
 exclude_health: [complexity]
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         self::assertSame('/tmp/x', $config['cache']['dir']);
         self::assertSame(2, $config['parallel']['workers']);
@@ -351,7 +367,7 @@ YAML);
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('"rules" must be an associative array');
 
-        $this->loader->load($path);
+        WrittenFile::foldedValues($path);
     }
 
     #[Test]
@@ -366,7 +382,7 @@ YAML);
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Rule "complexity" configuration must be an array, boolean, or null');
 
-        $this->loader->load($path);
+        WrittenFile::foldedValues($path);
     }
 
     #[Test]
@@ -379,7 +395,7 @@ rules:
   size: false
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         self::assertTrue($config['rules']['complexity']);
         self::assertFalse($config['rules']['size']);
@@ -394,7 +410,7 @@ rules:
   complexity: ~
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         self::assertNull($config['rules']['complexity']);
     }
@@ -408,7 +424,7 @@ YAML);
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('"cache" must be an associative array');
 
-        $this->loader->load($path);
+        WrittenFile::foldedValues($path);
     }
 
     #[Test]
@@ -418,9 +434,9 @@ YAML);
         file_put_contents($path, 'namespace: not_an_array');
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Unknown configuration key: "namespace"');
+        self::expectExceptionMessage('Unknown key "namespace"');
 
-        $this->loader->load($path);
+        WrittenFile::compose($path);
     }
 
     #[Test]
@@ -432,7 +448,7 @@ YAML);
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('"disabled_rules" must be a list');
 
-        $this->loader->load($path);
+        WrittenFile::foldedValues($path);
     }
 
     #[Test]
@@ -458,7 +474,7 @@ suppress_paths:
   - src/Entity/*
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         self::assertArrayHasKey('rules', $config);
         self::assertArrayHasKey('cache', $config);
@@ -475,7 +491,7 @@ YAML);
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('"suppress_paths" must be a list');
 
-        $this->loader->load($path);
+        WrittenFile::foldedValues($path);
     }
 
     // The retired root-level `exclude_paths`/`exclude_namespaces` spelling
@@ -549,7 +565,7 @@ YAML);
         file_put_contents($path, $document);
 
         try {
-            $this->loader->load($path);
+            WrittenFile::foldedValues($path);
             self::fail(\sprintf('"%s" was accepted instead of refused.', $authored));
         } catch (ConfigurationRefusal $e) {
             self::assertStringContainsString(
@@ -572,7 +588,7 @@ rules:
     error_threshold: 30
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         // Rule name key is preserved exactly as-is
         self::assertArrayHasKey('size.method-count', $config['rules']);
@@ -591,7 +607,7 @@ rules:
     enabled: false
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         self::assertArrayHasKey('code-smell.boolean-argument', $config['rules']);
         self::assertFalse($config['rules']['code-smell.boolean-argument']['enabled']);
@@ -608,7 +624,7 @@ suppress_paths:
   - vendor
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         // Root-level snake_case keys are normalized to camelCase
         self::assertArrayHasKey('disabledRules', $config);
@@ -626,7 +642,7 @@ parallel:
   workers: 4
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         self::assertSame(4, $config['parallel']['workers']);
     }
@@ -638,9 +654,9 @@ YAML);
         file_put_contents($path, "cache:\n  enabled: \"false\"\n");
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Invalid value for "cache.enabled": expected boolean, got string');
+        self::expectExceptionMessage('"cache.enabled" in configuration file "' . $path . '" must be boolean, got string.');
 
-        $this->loader->load($path);
+        WrittenFile::compose($path);
     }
 
     #[Test]
@@ -650,21 +666,33 @@ YAML);
         file_put_contents($path, "parallel:\n  workers: \"four\"\n");
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Invalid value for "parallel.workers": expected integer, got string');
+        self::expectExceptionMessage('"parallel.workers" in configuration file "' . $path . '" must be integer, got string.');
 
-        $this->loader->load($path);
+        WrittenFile::compose($path);
+    }
+
+    /** PHP reads an integer memory limit as bytes, and `-1` is the documented "no limit". */
+    #[Test]
+    #[TestWith([12345])]
+    #[TestWith([-1])]
+    public function itAcceptsAnIntegerMemoryLimit(int $limit): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, \sprintf("memory_limit: %d\n", $limit));
+
+        self::assertSame($limit, WrittenFile::compose($path)->get('memory_limit')?->plain());
     }
 
     #[Test]
-    public function itRejectsWrongTypeMemoryLimit(): void
+    public function itRejectsAMemoryLimitThatIsNeitherASizeNorANumber(): void
     {
         $path = $this->tempDir . '/config.yaml';
-        file_put_contents($path, "memory_limit: 12345\n");
+        file_put_contents($path, "memory_limit: true\n");
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Invalid value for "memory_limit": expected string, got integer');
+        self::expectExceptionMessage('"memory_limit" in configuration file "' . $path . '" must be string or integer, got bool.');
 
-        $this->loader->load($path);
+        WrittenFile::compose($path);
     }
 
     #[Test]
@@ -674,9 +702,9 @@ YAML);
         file_put_contents($path, "include_generated: \"yes\"\n");
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Invalid value for "include_generated": expected boolean, got string');
+        self::expectExceptionMessage('"include_generated" in configuration file "' . $path . '" must be boolean, got string.');
 
-        $this->loader->load($path);
+        WrittenFile::compose($path);
     }
 
     #[Test]
@@ -692,7 +720,7 @@ include_generated: ~
 memory_limit: ~
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         self::assertNull($config['cache']['enabled']);
         self::assertNull($config['parallel']['workers']);
@@ -711,7 +739,7 @@ coupling:
     - Doctrine
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         self::assertSame(['Symfony', 'Doctrine'], $config['coupling']['frameworkNamespaces']);
     }
@@ -727,7 +755,7 @@ YAML);
         }
 
         // Smoke test: the project's own config file must load without errors
-        $config = $this->loader->load($configPath);
+        $config = WrittenFile::foldedValues($configPath);
 
         self::assertNotEmpty($config, 'Project qmx.yaml should produce non-empty config');
     }
@@ -743,7 +771,7 @@ YAML);
         }
 
         // The example file is fully commented out — should parse as empty
-        $config = $this->loader->load($examplePath);
+        $config = WrittenFile::foldedValues($examplePath);
 
         self::assertSame([], $config);
     }
@@ -764,7 +792,7 @@ rules:
     enabled: true
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         // All rule name keys are preserved exactly as written
         self::assertArrayHasKey('complexity.ccn', $config['rules']);
@@ -790,7 +818,7 @@ computed_metrics:
     error_threshold: 50
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         // Computed metric name keys are preserved exactly as written
         self::assertArrayHasKey('computed.my-score', $config['computedMetrics']);
@@ -815,7 +843,7 @@ YAML);
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Unknown key in "cache" section: "typo_key"');
 
-        $this->loader->load($path);
+        WrittenFile::foldedValues($path);
     }
 
     #[Test]
@@ -828,9 +856,9 @@ namespace:
 YAML);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Unknown configuration key: "namespace"');
+        self::expectExceptionMessage('Unknown key "namespace"');
 
-        $this->loader->load($path);
+        WrittenFile::compose($path);
     }
 
     /**
@@ -849,9 +877,9 @@ aggregation:
 YAML);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Unknown configuration key: "aggregation"');
+        self::expectExceptionMessage('Unknown key "aggregation"');
 
-        $this->loader->load($path);
+        WrittenFile::compose($path);
     }
 
     #[Test]
@@ -866,7 +894,7 @@ YAML);
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('did you mean "workers"?');
 
-        $this->loader->load($path);
+        WrittenFile::foldedValues($path);
     }
 
     #[Test]
@@ -881,7 +909,7 @@ YAML);
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('did you mean "cache"?');
 
-        $this->loader->load($path);
+        WrittenFile::compose($path);
     }
 
     #[Test]
@@ -893,7 +921,7 @@ zzzzzzz: true
 YAML);
 
         try {
-            $this->loader->load($path);
+            WrittenFile::compose($path);
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
             self::assertStringContainsString('"zzzzzzz"', $e->getMessage());
@@ -914,7 +942,7 @@ YAML);
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Unknown keys in "cache" section');
 
-        $this->loader->load($path);
+        WrittenFile::foldedValues($path);
     }
 
     #[Test]
@@ -927,7 +955,7 @@ cache:
 YAML);
 
         try {
-            $this->loader->load($path);
+            WrittenFile::foldedValues($path);
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
             self::assertStringContainsString('Allowed keys: dir, enabled', $e->getMessage());
@@ -943,7 +971,7 @@ YAML);
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('"architecture" must be an associative array');
 
-        $this->loader->load($path);
+        WrittenFile::foldedValues($path);
     }
 
     #[Test]
@@ -956,7 +984,7 @@ YAML);
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('"computed_metrics" must be an associative array');
 
-        $this->loader->load($path);
+        WrittenFile::foldedValues($path);
     }
 
     #[Test]
@@ -979,7 +1007,7 @@ architecture:
       patterns: ['App\AppCore']
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         // Layer list preserved as a sequential list.
         self::assertIsArray($config['architecture']['layers']);
@@ -1005,7 +1033,7 @@ architecture:
       - app_service
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         // Source layer name in `allow` is still a map key — preserved verbatim
         // by the architecture section's PRESERVE_SUBTREE policy
@@ -1037,7 +1065,7 @@ architecture:
         allow_cross_instance: true
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         $entry = $config['architecture']['allow']['app-{m}'][0];
 
@@ -1063,7 +1091,7 @@ suppress_paths:
   - tests/
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         // CLI-style top-level snake_case keys are normalized to camelCase as before
         self::assertArrayHasKey('disabledRules', $config);
@@ -1087,7 +1115,7 @@ architecture:
       patterns: ['App\CoreV2']
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         self::assertSame('app-core', $config['architecture']['layers'][0]['name']);
         self::assertSame('app_core_v2', $config['architecture']['layers'][1]['name']);
@@ -1112,7 +1140,7 @@ rules:
       computed.my-score: ['App\Legacy']
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         self::assertSame(
             ['size.class-count', 'code-smell.*', 'size.class-count:namespace', 'computed.my-score'],
@@ -1136,7 +1164,7 @@ rules:
       size.class-count: ['App\Legacy']
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         self::assertSame(
             ['size.class-count'],
@@ -1162,7 +1190,7 @@ rules:
       warning_threshold: 5
 YAML);
 
-        $config = $this->loader->load($path);
+        $config = WrittenFile::foldedValues($path);
 
         self::assertSame(
             ['warningThreshold', 'suppressNamespaceChannels', 'callable'],

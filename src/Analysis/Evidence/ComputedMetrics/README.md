@@ -112,10 +112,11 @@ ComputedMetrics/
 │   │   └── ComputedMetricBranchTrace.php # the conditional operands one evaluation entered
 │   └── Finding/                      # computed finding channel family
 ├── Configuration/
-│   ├── ComputedMetricContributionReader.php
-│   ├── ComputedMetricEntryKeys.php           # declared entry-key set, formula-key set, six health names
-│   ├── ComputedMetricEntryKeyRecognition.php # refuses every entry key neither depth answers for
-│   └── ComputedMetricRefusalWording.php      # the words of every refusal this section raises
+│   ├── ComputedMetricsSection.php            # the `computed_metrics:` section declared to the document, and where an entry sits in it
+│   ├── ExcludeHealthSection.php              # the `exclude_health:` section declared to the document
+│   ├── ComputedMetricEntryKeys.php           # one entry's schema, reporting levels, six health names
+│   ├── ComputedMetricAuthorship.php          # which layers wrote each metric, for a refusal to name
+│   └── ComputedMetricRefusalWording.php      # the words of every refusal about what a value means
 ├── Finding/
 │   └── ComputedMetricFindingBuilder.php
 ├── ComputedMetricAnalysis.php        # instance-owned catalog and configuration facade
@@ -142,8 +143,9 @@ ComputedMetrics/
 ## Lifecycle and phase
 
 `AnalysisRuntimeConfigurator` resolves
-`ResolvedComputedMetricDefinitions` from the ordered `computed_metrics` and
-`exclude_health` contributions before mutating any owner state. It passes that
+`ResolvedComputedMetricDefinitions` from the `computed_metrics` and
+`exclude_health` sections of the resolved configuration document before
+mutating any owner state. It passes that
 immutable value to selector validation, which obtains the exact rule-channel
 snapshot. Only after all resolution and validation succeeds does the runtime
 replace the ComputedMetrics token and commit the selector snapshot. Run reset
@@ -204,35 +206,55 @@ are not public, and neither taxonomy namespace is an allow target.
 
 ## Configuration semantics
 
-- A later `computed_metrics` contribution replaces the complete previous map;
-  an explicit `{}` is a replacement, while omission retains the prior map.
-- `exclude_health` contributions append in source order and stable-deduplicate;
-  omission or `[]` adds nothing.
+The two sections are declared to the configuration document
+(`ComputedMetricsSection`, `ExcludeHealthSection`); the document engine reads
+every layer — defaults, presets, the configuration file, the command line —
+recognises its keys, judges the form of its values and merges the layers.
+The owner reads the merged result. The policy of every key is published in the
+generated table of `website/docs/getting-started/configuration.md`; the
+decision is [ADR 0086](../../../../docs/adr/0086-one-configuration-document-merged-by-declared-policy.md).
+
+- `computed_metrics` merges by metric name, and each metric key by key: a
+  layer changes only the keys it writes. `threshold` stands for `warning` plus
+  `error` and is expanded in the layer that wrote it, so a file's `warning`
+  over a preset's `threshold` keeps the preset's `error`. Writing
+  `threshold` beside `warning` or `error` in one layer is refused.
+- `formula` is the formula of every reporting level; `formulas.<level>`
+  refines one level beside it, whichever layer wrote either.
+  `ComputedMetricDefinition::formulaLevelFor()` selects the stored level
+  for both evaluation and authorship. Project inherits namespace only when
+  there is no stored project formula; an unchanged built-in project formula
+  keeps its default authorship under an authored namespace refinement.
+  A refusal about one formula names its exact writing leaf, even when another
+  layer changed only the metric's description. Health exclusions use the same
+  selection and order their formula and exclusion writers by precedence.
+- `levels` is replaced whole by the last layer that writes it.
+- `~` and `{}` write nothing under the name: a metric written either way
+  leaves the metric below it — a built-in dimension or a preset's metric —
+  unchanged, and a name nothing below defines is a user metric without a
+  formula, refused with the layer that wrote the name. A lower layer's metric
+  is removed only by `enabled: false`.
+- `exclude_health` accumulates across layers and deduplicates; `[]` adds
+  nothing. Each item is judged in the words of the layer that wrote it: a
+  file's typo names the file and the item's path, an option's names the
+  option.
 - Disabled built-in dimensions are folded into exclusions before formula
   validation and `health.overall` weight normalization.
 - Definitions may reference other computed metrics; cycles and unknown
   references fail configuration before publication.
-- Every entry answers to a declared vocabulary, not an open one read by
-  `isset()`: `ComputedMetricEntryKeys::acceptedEntryKeys()` names the nine
-  keys a `computed_metrics.<name>` entry may carry,
-  `acceptedFormulaKeys()` the three level words `formulas:` may carry, and
-  `acceptedHealthNames()` the six short names a `health.*` entry may name. A
-  key outside its depth's declared set, a value of the wrong shape, or a
-  name outside the closed `health.*` half refuses with
-  `Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal`
-  instead of being read silently or crashing — `ComputedMetricEntryKeyRecognition`
-  walks the keys, `ComputedMetricOverrideReader` checks every leaf value's
-  shape, and `ComputedMetricRefusalWording` holds the sentences both raise.
-
-Formulas, thresholds, metric names, channel names, CLI behavior, and report
-schemas are unchanged by the ownership migration. The YAML keys are not: a
-key or value form nothing previously read now refuses (see `CHANGELOG.md`).
+- A metric name is judged by the document engine in the layer that wrote it,
+  whatever is written under it (`ComputedMetricsSection`'s name predicate): a
+  `health.*` name must be one of
+  `ComputedMetricEntryKeys::acceptedHealthNames()`, any other must follow the
+  name grammar and not end in a level word. Every refusal about a resolved
+  definition names the layers that wrote it (`ComputedMetricAuthorship`); a
+  built-in definition no layer touched is attributed to the defaults.
 
 ## Tests
 
 Owned tests live under `tests/Analysis/Evidence/ComputedMetrics/`. The
-materialized slice contains 30 PHPUnit classes (two added for the declared
-entry-key vocabulary), one support class, and no fixtures when the three
+materialized slice contains 29 PHPUnit classes, one support class, and no
+fixtures when the three
 retained Reporting assembly tests are included. Topology tests classify 42 raw relations exactly: 37 classified
 relations (21 non-Health and 16 Health) plus five unchanged composed carriers.
 The classified set includes `ResolvedComputedMetricDefinitions` relations to

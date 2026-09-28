@@ -54,6 +54,14 @@ final readonly class ComputedMetricDefinition
      */
     public function getFormulaForLevel(SymbolLevel $level): ?string
     {
+        $key = $this->formulaLevelFor($level);
+
+        return $key === null ? null : $this->formulas[$key];
+    }
+
+    /** The stored level whose formula runs, also used to select its authorship. */
+    public function formulaLevelFor(SymbolLevel $level): ?string
+    {
         // A formula key is the level word itself; the levels this capability
         // has no formula for are the ones it does not report at.
         $key = match ($level) {
@@ -67,12 +75,12 @@ final readonly class ComputedMetricDefinition
 
         // Direct lookup
         if (isset($this->formulas[$key])) {
-            return $this->formulas[$key];
+            return $key;
         }
 
         // Project inherits from namespace
         if ($level === SymbolLevel::Project && isset($this->formulas[SymbolLevel::Namespace_->value])) {
-            return $this->formulas[SymbolLevel::Namespace_->value];
+            return SymbolLevel::Namespace_->value;
         }
 
         return null;
@@ -167,9 +175,9 @@ final readonly class ComputedMetricDefinition
 
     /**
      * The predicate {@see validateName()} and
-     * {@see \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricOverrideReader::create()}
-     * both ask, so the grammar is spelled once: the reader refuses a bad name
-     * before ever constructing a definition, and this invariant still holds
+     * {@see \Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricsSection}
+     * both ask, so the grammar is spelled once: the configuration refuses a bad
+     * name before ever constructing a definition, and this invariant still holds
      * for a caller that constructs one directly.
      */
     public static function isValidName(string $name): bool

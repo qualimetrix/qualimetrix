@@ -43,6 +43,7 @@ final class ErrorStreamContainerIdentityTest extends TestCase
      */
     private const array CONSUMERS = [
         'Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand',
+        'Qualimetrix\\Infrastructure\\Console\\ConfigurationInputAdapter',
         'Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator',
         'Qualimetrix\\Infrastructure\\Console\\ProfilePresenter',
         'Qualimetrix\\Infrastructure\\Console\\Progress\\ProgressConfigurator',

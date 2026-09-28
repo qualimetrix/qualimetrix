@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Configuration;
 
+use LogicException;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
+use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\SelectorYamlDecoder;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
@@ -30,39 +33,35 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
     public function resolve(ConfigurationDocument $document): RunConfiguration
     {
         $root = $document->workingDirectory();
-        $autoloadDev = self::autoloadDevPolicy($document->contributions(ConfigSchema::INCLUDE_AUTOLOAD_DEV));
-        $pathContributions = $document->contributions(ConfigSchema::PATHS);
-        $paths = self::analysedPaths(
-            $pathContributions,
-            $this->discoveredPaths($document, $autoloadDev),
-        );
+        $resolved = $document->resolved();
+        $autoloadDev = self::flag($resolved->get(ConfigurationRoot::IncludeAutoloadDev->value))
+            ? AutoloadDevPolicy::Include
+            : AutoloadDevPolicy::Exclude;
+        $writtenPaths = self::list($resolved->get(ConfigurationRoot::Paths->value));
         $pathList = array_map(
-            static fn(string $path): AbsolutePath => PathFactory::fromCliArgument(
-                self::acceptedPath($path),
-                $root,
-            ),
-            $paths,
+            static fn(string $path): AbsolutePath => PathFactory::fromCliArgument($path, $root),
+            $writtenPaths === null ? self::defaultPaths($this->discoveredPaths($document, $autoloadDev)) : self::analysedPaths($writtenPaths),
         );
 
-        $excludeContributions = $document->contributions(ConfigSchema::EXCLUDES);
-        $authoredExcludes = $this->accumulatedPathPatterns($excludeContributions);
+        $excludes = self::list($resolved->get(ConfigurationRoot::Exclude->value));
+        $authoredExcludes = $excludes === null ? [] : $this->pathPatterns($excludes);
 
-        if ($pathContributions !== []) {
-            self::refuseWrittenRootsExcluded($pathList, $root, new DirectoryPruner($root, $authoredExcludes));
+        if ($writtenPaths !== null) {
+            self::refuseWrittenRootsExcluded($pathList, $root, new DirectoryPruner($root, $authoredExcludes), $writtenPaths, $excludes);
         }
 
         return new RunConfiguration(
             coversProjectScope: $this->projectScopeCoverage->pathsCoverProjectScope($root, $pathList, $autoloadDev),
             paths: $pathList,
             pathExcludes: [...DirectoryPruner::builtInPatterns(), ...$authoredExcludes],
-            // The same contributions without the built-in floor: what the
-            // author actually asked to exclude, which is the only part of the
-            // merged list a miss can be reported about.
+            // The same patterns without the built-in floor: what the author
+            // actually asked to exclude, which is the only part of the merged
+            // list a miss can be reported about.
             authoredPathExcludes: $authoredExcludes,
             projectRoot: $root,
-            generatedFilePolicy: self::generatedFilePolicy(
-                $document->contributions(ConfigSchema::INCLUDE_GENERATED),
-            ),
+            generatedFilePolicy: self::flag($resolved->get(ConfigurationRoot::IncludeGenerated->value))
+                ? GeneratedFilePolicy::Include
+                : GeneratedFilePolicy::Exclude,
             autoloadDevPolicy: $autoloadDev,
         );
     }
@@ -76,19 +75,50 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
      * walked and not refused. The built-in `vendor`, `node_modules` and `.git`
      * floor is not asked here; discovery refuses a root it removes.
      *
+     * The refusal names the layer that wrote the paths and every layer that
+     * wrote an exclude: the conflict is between them.
+     *
      * @param list<AbsolutePath> $paths
      *
      * @throws ConfigurationRefusal
      */
-    private static function refuseWrittenRootsExcluded(array $paths, AbsolutePath $root, DirectoryPruner $authored): void
+    private static function refuseWrittenRootsExcluded(
+        array $paths,
+        AbsolutePath $root,
+        DirectoryPruner $authored,
+        ResolvedListInterface $writtenPaths,
+        ?ResolvedListInterface $excludes,
+    ): void {
+        $excluded = self::excludedDirectories($paths, $root, $authored);
+        if ($excluded === []) {
+            return;
+        }
+
+        $one = \count($excluded) === 1;
+
+        throw Provenance::refusalOf(
+            [...($excludes?->contributors() ?? []), ...$writtenPaths->contributors()],
+            \sprintf(
+                'Invalid value for "%s": %s %s by your own exclude, so analysis never enters %s and this run would'
+                . ' analyse nothing there. Remove the exclude selector, or name a path it does not remove.',
+                ConfigurationRoot::Paths->value,
+                implode(', ', $excluded),
+                $one ? 'is removed' : 'are removed',
+                $one ? 'it' : 'them',
+            ),
+        );
+    }
+
+    /**
+     * @param list<AbsolutePath> $paths
+     *
+     * @return list<string> each excluded directory with the selector that removes it
+     */
+    private static function excludedDirectories(array $paths, AbsolutePath $root, DirectoryPruner $authored): array
     {
         $excluded = [];
         foreach ($paths as $path) {
-            if (!$path->isDirectory()) {
-                continue;
-            }
-
-            $match = $authored->match($path);
+            $match = $path->isDirectory() ? $authored->match($path) : null;
             if ($match !== null) {
                 $excluded[] = \sprintf(
                     '"%s" (selector "%s")',
@@ -98,167 +128,85 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
             }
         }
 
-        if ($excluded === []) {
-            return;
-        }
-
-        $one = \count($excluded) === 1;
-
-        throw ConfigurationRefusal::aboutResolvedInput(
-            \sprintf(
-                'Invalid value for "%s": %s %s by your own exclude, so analysis never enters %s and this run would'
-                . ' analyse nothing there. Remove the exclude selector, or name a path it does not remove.',
-                ConfigSchema::PATHS,
-                implode(', ', $excluded),
-                $one ? 'is removed' : 'are removed',
-                $one ? 'it' : 'them',
-            ),
-            ConfigSchema::PATHS,
-        );
+        return $excluded;
     }
 
     /**
-     * The empty path reached {@see PathFactory} unframed and was answered
+     * The paths a layer wrote. Their form — a list of strings — is the
+     * document's to judge, in every layer; emptiness is asked here, of the
+     * list that won only: `paths: []` in a file and a directory on the command
+     * line is a lawful override, and the run analyses the directory.
+     *
+     * An empty entry reached {@see PathFactory} unframed and was answered
      * there in the vocabulary of the CLI, which misnames the door whenever the
      * value came from `paths:` in a document.
-     */
-    private static function acceptedPath(string $path): string
-    {
-        if ($path === '') {
-            throw ConfigurationRefusal::aboutResolvedInput(
-                \sprintf(
-                    'Invalid entry in "%s": a path cannot be empty. Name a directory or a file, or omit the key to analyse the working directory.',
-                    ConfigSchema::PATHS,
-                ),
-                ConfigSchema::PATHS,
-            );
-        }
-
-        return $path;
-    }
-
-    /**
-     * The paths this run will analyse: the last contribution that named any;
-     * when no source named one, the roots composer discovery found, or the
-     * working directory when it found none.
      *
-     * Two questions, and they are answered at different points on purpose.
-     * **Form** — is this a list, and is every entry a path — is asked of every
-     * contribution, because a malformed list is malformed whatever a later
-     * source says about it. **Emptiness** is asked once, of the effective list
-     * only: a document writing `paths: []` and a CLI invocation naming a
-     * directory is a lawful override, and the run analyses the directory.
-     *
-     * Until this door closed, both answers were the same silent one. Entries
-     * that were not strings — the dangling `-` that YAML reads as `null`, the
-     * unquoted directory name `2024` that it reads as an integer — were
-     * filtered out of the list and never mentioned; a list they emptied left
-     * discovery with nothing to find, and the run reported success over zero
-     * files. That is less analysis than the author asked for, reported as
-     * more.
-     *
-     * @param list<mixed> $contributions
-     * @param list<string> $discovered
+     * @throws ConfigurationRefusal
      *
      * @return list<string>
      */
-    private static function analysedPaths(array $contributions, array $discovered): array
+    private static function analysedPaths(ResolvedListInterface $written): array
     {
-        $paths = $discovered !== [] ? $discovered : ['.'];
-        foreach ($contributions as $candidate) {
-            $paths = self::acceptedPathList($candidate);
-        }
-
-        if ($paths === []) {
-            throw ConfigurationRefusal::aboutResolvedInput(
-                \sprintf(
-                    'Invalid value for "%s": the list is empty, so this run would analyse nothing. Name at least one'
-                    . ' path, or omit the key to analyse the working directory.',
-                    ConfigSchema::PATHS,
-                ),
-                ConfigSchema::PATHS,
-            );
-        }
-
-        return $paths;
-    }
-
-    /**
-     * One contribution's worth of paths, refused by form rather than filtered.
-     *
-     * @return list<string>
-     */
-    private static function acceptedPathList(mixed $candidate): array
-    {
-        if (!\is_array($candidate) || !array_is_list($candidate)) {
-            throw ConfigurationRefusal::aboutResolvedInput(
-                \sprintf(
-                    'Invalid value for "%s": expected a list of paths, got %s.',
-                    ConfigSchema::PATHS,
-                    \is_array($candidate) ? 'a map' : ConfigSchema::scalarTypeName($candidate),
-                ),
-                ConfigSchema::PATHS,
-            );
+        if ($written->items() === []) {
+            $written->refuse(\sprintf(
+                'Invalid value for "%s": the list is empty, so this run would analyse nothing. Name at least one'
+                . ' path, or omit the key to analyse the working directory.',
+                ConfigurationRoot::Paths->value,
+            ));
         }
 
         $paths = [];
-        foreach ($candidate as $index => $entry) {
-            if (!\is_string($entry)) {
-                // The dangling dash is the likeliest way to arrive here and
-                // the hardest to see, so it is named rather than left to the
-                // generic advice about quoting.
-                $hint = $entry === null
-                    ? 'A list item with nothing after its dash reads as this value.'
-                    : 'Quote a name that reads as a number or a keyword ("2024", "true").';
-
-                throw ConfigurationRefusal::aboutResolvedInput(
-                    \sprintf(
-                        'Invalid entry %d in "%s": a path must be a string, got %s. %s Name a path or remove the entry.',
-                        $index,
-                        ConfigSchema::PATHS,
-                        ConfigSchema::scalarTypeName($entry),
-                        $hint,
-                    ),
-                    ConfigSchema::PATHS,
-                );
+        foreach ($written->items() as $item) {
+            $path = $item->plain();
+            if ($path === '') {
+                $item->refuse(\sprintf(
+                    'Invalid entry in "%s": a path cannot be empty. Name a directory or a file, or omit the key to analyse the working directory.',
+                    ConfigurationRoot::Paths->value,
+                ));
             }
 
-            $paths[] = $entry;
+            $paths[] = (string) $path;
         }
 
         return $paths;
     }
 
-    /** @param list<mixed> $contributions
+    /**
+     * When no layer wrote `paths`: the roots composer discovery found, or the
+     * working directory when it found none.
+     *
+     * @param list<string> $discovered
+     *
+     * @return non-empty-list<string>
+     */
+    private static function defaultPaths(array $discovered): array
+    {
+        return $discovered !== [] ? $discovered : ['.'];
+    }
+
+    /**
+     * Each selector decoded in the words of the layer that wrote it.
+     *
+     * @throws ConfigurationRefusal
+     *
      * @return list<PathPattern>
      */
-    private function accumulatedPathPatterns(array $contributions): array
+    private function pathPatterns(ResolvedListInterface $excludes): array
     {
         $patterns = [];
-        foreach ($contributions as $candidate) {
-            if (!\is_array($candidate) || !array_is_list($candidate)) {
-                throw ConfigurationRefusal::aboutResolvedInput(
-                    \sprintf('Invalid value for "%s": expected a list of explicit selector mappings.', ConfigSchema::EXCLUDES),
-                    ConfigSchema::EXCLUDES,
-                );
-            }
-
-            foreach ($candidate as $index => $entry) {
-                $pattern = $entry instanceof PathPattern
-                    ? $entry
-                    : $this->selectorDecoder->decodePath(
-                        $entry,
-                        ConfigurationOrigin::of(ConfigurationSource::Resolved, ConfigSchema::EXCLUDES),
-                        [ConfigSchema::EXCLUDES, (string) $index],
-                    );
-                $patterns[$pattern->definition->display()] = $pattern;
-            }
+        foreach ($excludes->items() as $index => $entry) {
+            $writer = $entry->contributors()[0];
+            $pattern = $this->selectorDecoder->decodePath(
+                $entry->plain(),
+                $writer->origin,
+                $writer->path ?? [ConfigurationRoot::Exclude->value, (string) $index],
+            );
+            $patterns[$pattern->definition->display()] = $pattern;
         }
 
         if (\count($patterns) > SelectorDefinition::MAX_SELECTOR_COUNT) {
-            throw ConfigurationRefusal::aboutResolvedInput(
-                \sprintf('Option "%s" must not contain more than %d selectors.', ConfigSchema::EXCLUDES, SelectorDefinition::MAX_SELECTOR_COUNT),
-                ConfigSchema::EXCLUDES,
+            $excludes->refuse(
+                \sprintf('Option "%s" must not contain more than %d selectors.', ConfigurationRoot::Exclude->value, SelectorDefinition::MAX_SELECTOR_COUNT),
             );
         }
 
@@ -297,29 +245,15 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
         return \is_array($last) ? array_values(array_filter($last, \is_string(...))) : [];
     }
 
-    /** @param list<mixed> $contributions */
-    private static function autoloadDevPolicy(array $contributions): AutoloadDevPolicy
+    private static function flag(?ResolvedValueInterface $value): bool
     {
-        $policy = AutoloadDevPolicy::Exclude;
-        foreach ($contributions as $candidate) {
-            if (\is_bool($candidate)) {
-                $policy = $candidate ? AutoloadDevPolicy::Include : AutoloadDevPolicy::Exclude;
-            }
-        }
-
-        return $policy;
+        return $value?->plain() === true;
     }
 
-    /** @param list<mixed> $contributions */
-    private static function generatedFilePolicy(array $contributions): GeneratedFilePolicy
+    private static function list(?ResolvedValueInterface $value): ?ResolvedListInterface
     {
-        $policy = GeneratedFilePolicy::Exclude;
-        foreach ($contributions as $candidate) {
-            if (\is_bool($candidate)) {
-                $policy = $candidate ? GeneratedFilePolicy::Include : GeneratedFilePolicy::Exclude;
-            }
-        }
-
-        return $policy;
+        return $value === null ? null : ($value instanceof ResolvedListInterface ? $value : throw new LogicException(
+            \sprintf('The document declares a list here, but resolved a %s.', $value::class),
+        ));
     }
 }

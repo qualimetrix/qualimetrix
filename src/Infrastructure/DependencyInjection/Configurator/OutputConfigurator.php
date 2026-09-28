@@ -224,9 +224,8 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(FindingConfigurationResolver::class);
         $container->setAlias(FindingConfigurationResolverInterface::class, FindingConfigurationResolver::class);
         $container->register(ConfigurationInputAdapter::class)
-            ->setArguments([
-                new Reference(ConfigurationPipelineInterface::class),
-            ]);
+            ->setArgument('$configurationPipeline', new Reference(ConfigurationPipelineInterface::class))
+            ->setArgument('$errorStream', new Reference(ErrorStream::class));
         $container->register(RunConfigurationResolver::class)
             ->setArgument('$projectScopeCoverage', new Reference(ProjectScopeCoverage::class));
         $container->setAlias(RunConfigurationResolverInterface::class, RunConfigurationResolver::class);

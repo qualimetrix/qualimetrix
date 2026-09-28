@@ -6,7 +6,6 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\InvalidLayerDefinitionException;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
@@ -14,7 +13,6 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
-use Throwable;
 
 /**
  * Parses and validates the {@code architecture.layers} sub-tree.
@@ -42,23 +40,14 @@ use Throwable;
  * helpers stay inside the same namespace so the schema surface is
  * co-located.
  *
- * All errors surface as {@see ConfigurationRefusal} addressed to the
- * resolved document.
+ * The configuration engine has already recognised every key of an entry and
+ * judged the form of its name, `match` and `pending`, and, through
+ * {@see CarriedValueForm}, the criteria it carries unread; what is left here is
+ * what a value means. Every refusal names the layer that wrote the entry,
+ * through its {@see SectionSpot}.
  */
 final class LayersValidator
 {
-    private const array ALLOWED_ENTRY_KEYS = [
-        'name',
-        'patterns',
-        'suffix',
-        'attributes',
-        'implements',
-        'extends',
-        'match',
-        'exclude',
-        'pending',
-    ];
-
     private readonly LayerCriterionNormalizer $normalizer;
 
     public function __construct()
@@ -66,18 +55,8 @@ final class LayersValidator
         $this->normalizer = new LayerCriterionNormalizer();
     }
 
-    /** Builds the refusal noise every throw site in this class shares: a position under the resolved document. */
-    private static function refuse(string $position, string $summary, ?Throwable $previous = null): never
-    {
-        throw ConfigurationRefusal::atResolvedKey(
-            RefusedPosition::open(explode('.', $position), $position),
-            $summary,
-            previous: $previous,
-        );
-    }
-
     /**
-     * Parses the raw {@code layers} value into the declaration-order list of
+     * Parses the resolved {@code layers} list into the declaration-order list of
      * static {@see LayerDefinition}s and parameterised
      * {@see TemplateLayerDefinition}s.
      *
@@ -89,10 +68,10 @@ final class LayersValidator
      *
      * @return list<LayerDefinition|TemplateLayerDefinition>
      */
-    public function validate(mixed $layersRaw): array
+    public function validate(SectionSpot $layers): array
     {
-        $entries = $this->buildLayerEntries($layersRaw);
-        DuplicatePatternRejector::reject($entries);
+        $entries = $this->buildLayerEntries($layers);
+        DuplicatePatternRejector::reject($entries, $layers);
 
         return $entries;
     }
@@ -100,31 +79,12 @@ final class LayersValidator
     /**
      * @return list<LayerDefinition|TemplateLayerDefinition>
      */
-    private function buildLayerEntries(mixed $layersRaw): array
+    private function buildLayerEntries(SectionSpot $layers): array
     {
-        if ($layersRaw === [] || $layersRaw === null) {
-            return [];
-        }
-
-        if (!\is_array($layersRaw)) {
-            self::refuse(
-                'architecture.layers',
-                'architecture.layers: must be an ordered list of layer entries, got ' . get_debug_type($layersRaw) . '.',
-            );
-        }
-
-        if (!array_is_list($layersRaw)) {
-            self::refuse(
-                'architecture.layers',
-                'architecture.layers: must be an ordered list of layer entries (each entry an object with "name" and at least one criterion key), not a map. '
-                . 'See ADR 0006 for the schema change rationale.',
-            );
-        }
-
         $entries = [];
         $seenNames = [];
-        foreach ($layersRaw as $index => $entry) {
-            $entries[] = $this->buildSingleLayerEntry($index, $entry, $seenNames);
+        foreach (array_keys((array) $layers->value()) as $index) {
+            $entries[] = $this->buildSingleLayerEntry((int) $index, $layers->child($index), $seenNames);
         }
 
         return $entries;
@@ -135,27 +95,24 @@ final class LayersValidator
      *
      * @param-out array<string, true> $seenNames
      */
-    private function buildSingleLayerEntry(int $index, mixed $entry, array &$seenNames): LayerDefinition|TemplateLayerDefinition
+    private function buildSingleLayerEntry(int $index, SectionSpot $entry, array &$seenNames): LayerDefinition|TemplateLayerDefinition
     {
-        $entry = self::ensureEntryIsAssociativeArray($index, $entry);
-        self::rejectUnknownKeys($index, $entry);
-
-        $name = self::extractValidName($index, $entry);
-        self::rejectDuplicateName($index, $name, $seenNames);
+        $name = CarriedValueForm::layerName($index, $entry);
+        self::rejectDuplicateName($index, $name, $entry, $seenNames);
         $seenNames[$name] = true;
 
         $criteria = $this->normalizeCriteria($index, $name, $entry);
-        $mode = $this->normalizer->normalizeMatchMode($index, $name, $entry['match'] ?? null);
+        $mode = $this->normalizer->normalizeMatchMode($index, $name, $entry->child('match'));
         $isTemplate = TemplateLayerDefinition::containsCaptureVariable($name);
-        self::rejectCapturesInStaticPatterns($index, $name, $criteria['patterns'], $isTemplate);
-        $exclude = ExcludeBlockValidator::parse($index, $name, $entry['exclude'] ?? null, $isTemplate, $this->normalizer);
-        $lifecycle = $this->normalizer->normalizeLifecycle($index, $name, $entry, $isTemplate);
+        self::rejectCapturesInStaticPatterns($index, $name, $criteria['patterns'], $isTemplate, $entry->child('patterns'));
+        $exclude = ExcludeBlockValidator::parse($index, $name, $entry->child('exclude'), $isTemplate, $this->normalizer);
+        $lifecycle = $this->normalizer->normalizeLifecycle($index, $name, $entry->child('pending'), $isTemplate);
 
         if ($isTemplate) {
-            return self::buildTemplateDefinition($index, $name, $criteria, $mode, $exclude);
+            return self::buildTemplateDefinition($index, $name, $criteria, $mode, $exclude, $entry);
         }
 
-        return self::buildMembershipDefinition($index, $name, $criteria, $mode, $exclude, $lifecycle);
+        return self::buildMembershipDefinition($index, $name, $criteria, $mode, $exclude, $lifecycle, $entry);
     }
 
     /**
@@ -168,10 +125,10 @@ final class LayersValidator
      *
      * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
      */
-    private static function buildTemplateDefinition(int $index, string $nameTemplate, array $criteria, MatchMode $mode, ?ExcludeSpec $exclude): TemplateLayerDefinition
+    private static function buildTemplateDefinition(int $index, string $nameTemplate, array $criteria, MatchMode $mode, ?ExcludeSpec $exclude, SectionSpot $entry): TemplateLayerDefinition
     {
-        self::rejectAllEmptyCriteria($index, $nameTemplate, $criteria);
-        self::rejectUnboundNonPatternCriteria($index, $nameTemplate, $criteria, $mode);
+        self::rejectAllEmptyCriteria($index, $nameTemplate, $criteria, $entry);
+        self::rejectUnboundNonPatternCriteria($index, $nameTemplate, $criteria, $mode, $entry);
 
         try {
             return new TemplateLayerDefinition(
@@ -187,38 +144,32 @@ final class LayersValidator
                 ),
             );
         } catch (InvalidArgumentException $e) {
-            self::refuse(
-                \sprintf('architecture.layers[%d]', $index),
-                \sprintf('architecture.layers[%d] ("%s"): %s', $index, $nameTemplate, $e->getMessage()),
-                $e,
-            );
+            throw $entry->refusal(\sprintf('architecture.layers[%d] ("%s"): %s', $index, $nameTemplate, $e->getMessage()));
         }
     }
 
     /**
-     * Collects the five criterion lists from a single layer-entry map.
-     *
-     * @param array<string, mixed> $entry
+     * Collects the five criterion lists from a single layer entry.
      *
      * @return array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>}
      */
-    private function normalizeCriteria(int $index, string $name, array $entry): array
+    private function normalizeCriteria(int $index, string $name, SectionSpot $entry): array
     {
         return [
-            'patterns' => $this->normalizer->normalizePatternList($index, $name, $entry['patterns'] ?? null),
-            'suffix' => $this->normalizer->normalizeSuffixList($index, $name, $entry['suffix'] ?? null),
-            'attributes' => $this->normalizer->normalizeFqnList($index, $name, 'attributes', $entry['attributes'] ?? null),
-            'implements' => $this->normalizer->normalizeFqnList($index, $name, 'implements', $entry['implements'] ?? null),
-            'extends' => $this->normalizer->normalizeFqnList($index, $name, 'extends', $entry['extends'] ?? null),
+            'patterns' => $this->normalizer->normalizePatternList($index, $name, $entry->child('patterns')),
+            'suffix' => $this->normalizer->normalizeSuffixList($index, $name, $entry->child('suffix')),
+            'attributes' => $this->normalizer->normalizeFqnList($index, $name, 'attributes', $entry->child('attributes')),
+            'implements' => $this->normalizer->normalizeFqnList($index, $name, 'implements', $entry->child('implements')),
+            'extends' => $this->normalizer->normalizeFqnList($index, $name, 'extends', $entry->child('extends')),
         ];
     }
 
     /**
      * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
      */
-    private static function buildMembershipDefinition(int $index, string $name, array $criteria, MatchMode $mode, ?ExcludeSpec $exclude, LayerLifecycle $lifecycle): LayerDefinition
+    private static function buildMembershipDefinition(int $index, string $name, array $criteria, MatchMode $mode, ?ExcludeSpec $exclude, LayerLifecycle $lifecycle, SectionSpot $entry): LayerDefinition
     {
-        self::rejectAllEmptyCriteria($index, $name, $criteria);
+        self::rejectAllEmptyCriteria($index, $name, $criteria, $entry);
 
         try {
             return new LayerDefinition(
@@ -235,25 +186,20 @@ final class LayersValidator
                 lifecycle: $lifecycle,
             );
         } catch (InvalidLayerDefinitionException | InvalidArgumentException $e) {
-            self::refuse(
-                \sprintf('architecture.layers[%d]', $index),
-                \sprintf('architecture.layers[%d] ("%s"): %s', $index, $name, $e->getMessage()),
-                $e,
-            );
+            throw $entry->refusal(\sprintf('architecture.layers[%d] ("%s"): %s', $index, $name, $e->getMessage()));
         }
     }
 
     /**
      * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
      */
-    private static function rejectAllEmptyCriteria(int $index, string $name, array $criteria): void
+    private static function rejectAllEmptyCriteria(int $index, string $name, array $criteria, SectionSpot $entry): void
     {
         if (array_filter($criteria) !== []) {
             return;
         }
 
-        self::refuse(
-            \sprintf('architecture.layers[%d]', $index),
+        throw $entry->refusal(
             \sprintf(
                 'architecture.layers[%d] ("%s"): must declare at least one of "patterns", "suffix", "attributes", "implements" or "extends".',
                 $index,
@@ -288,7 +234,7 @@ final class LayersValidator
      *
      * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
      */
-    private static function rejectUnboundNonPatternCriteria(int $index, string $nameTemplate, array $criteria, MatchMode $mode): void
+    private static function rejectUnboundNonPatternCriteria(int $index, string $nameTemplate, array $criteria, MatchMode $mode, SectionSpot $entry): void
     {
         if ($mode === MatchMode::All) {
             return;
@@ -305,8 +251,7 @@ final class LayersValidator
             return;
         }
 
-        self::refuse(
-            \sprintf('architecture.layers[%d]', $index),
+        throw $entry->refusal(
             \sprintf(
                 'architecture.layers[%d] ("%s"): %s cannot be combined with "match: any" on a template layer. '
                 . 'Only "patterns" carry the capture variables, so %s would be copied into every expanded layer '
@@ -323,7 +268,7 @@ final class LayersValidator
     }
 
     /** @param list<string> $patterns */
-    private static function rejectCapturesInStaticPatterns(int $index, string $name, array $patterns, bool $isTemplate): void
+    private static function rejectCapturesInStaticPatterns(int $index, string $name, array $patterns, bool $isTemplate, SectionSpot $spot): void
     {
         if ($isTemplate) {
             return;
@@ -334,87 +279,28 @@ final class LayersValidator
                 continue;
             }
 
-            self::refuse(
-                \sprintf('architecture.layers[%d].patterns.%d', $index, $patternIndex),
+            throw (\is_array($spot->value()) ? $spot->child($patternIndex) : $spot)->refusal(
                 \sprintf(
                     'architecture.layers[%d] ("%s"): pattern "%s" contains a capture variable, but static layers have no binding target. Add the variable to the layer name or remove the capture.',
                     $index,
                     $name,
                     $pattern,
                 ),
+                written: $pattern,
             );
         }
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private static function ensureEntryIsAssociativeArray(int $index, mixed $entry): array
-    {
-        if (!\is_array($entry) || array_is_list($entry)) {
-            self::refuse(
-                \sprintf('architecture.layers[%d]', $index),
-                \sprintf(
-                    'architecture.layers[%d]: each entry must be a map with "name" and at least one criterion key, got %s.',
-                    $index,
-                    get_debug_type($entry),
-                ),
-            );
-        }
-
-        return $entry;
-    }
-
-    /**
-     * @param array<string, mixed> $entry
-     */
-    private static function rejectUnknownKeys(int $index, array $entry): void
-    {
-        $unknown = array_diff(array_keys($entry), self::ALLOWED_ENTRY_KEYS);
-        if ($unknown === []) {
-            return;
-        }
-
-        $accepted = self::ALLOWED_ENTRY_KEYS;
-        sort($accepted);
-
-        throw ConfigurationRefusal::atResolvedKey(
-            RefusedPosition::closed(['architecture', 'layers', (string) $index], implode(', ', $unknown), $accepted),
-            \sprintf(
-                'architecture.layers[%d]: unknown key(s) %s. Allowed keys: %s.',
-                $index,
-                self::quoteList($unknown),
-                self::quoteList(self::ALLOWED_ENTRY_KEYS),
-            ),
-        );
-    }
-
-    /**
-     * @param array<string, mixed> $entry
-     */
-    private static function extractValidName(int $index, array $entry): string
-    {
-        if (!\array_key_exists('name', $entry) || !\is_string($entry['name']) || $entry['name'] === '') {
-            self::refuse(
-                \sprintf('architecture.layers[%d].name', $index),
-                \sprintf('architecture.layers[%d]: missing or empty "name" (must be a non-empty string).', $index),
-            );
-        }
-
-        return $entry['name'];
     }
 
     /**
      * @param array<string, true> $seenNames
      */
-    private static function rejectDuplicateName(int $index, string $name, array $seenNames): void
+    private static function rejectDuplicateName(int $index, string $name, SectionSpot $entry, array $seenNames): void
     {
         if (!isset($seenNames[$name])) {
             return;
         }
 
-        self::refuse(
-            \sprintf('architecture.layers[%d].name', $index),
+        throw $entry->child('name')->refusal(
             \sprintf(
                 'architecture.layers[%d]: duplicate layer name "%s" — each layer must have a unique identifier.',
                 $index,

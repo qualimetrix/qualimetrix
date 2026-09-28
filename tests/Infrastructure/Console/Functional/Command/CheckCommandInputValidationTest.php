@@ -66,7 +66,7 @@ final class CheckCommandInputValidationTest extends TestCase
 
             self::assertSame(3, $tester->getStatusCode());
             self::assertStringContainsString(
-                'Invalid value for "cache.enabled": expected boolean, got string',
+                \sprintf('"cache.enabled" in configuration file "%s" must be boolean, got string.', $config),
                 self::envelopeError($tester),
             );
         } finally {

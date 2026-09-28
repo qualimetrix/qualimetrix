@@ -163,7 +163,7 @@ final class RulesListingAgreesWithRefusalTest extends TestCase
         try {
             RuleOptionKeyRecognition::refuseUnknownKeys($written, $ruleName, $optionsClass);
         } catch (ConfigurationRefusal $refusal) {
-            return $refusal->position()?->accepted() ?? [];
+            return $refusal->position()->accepted ?? [];
         }
 
         self::fail(\sprintf('Rule "%s" accepted an option nobody declares at depth "%s".', $ruleName, $level ?? '-'));

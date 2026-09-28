@@ -128,6 +128,30 @@ final class JsonFormatterTest extends TestCase
         self::assertSame([], $data['violations']);
     }
 
+    /**
+     * The section is always present, so the document's shape does not depend
+     * on whether the configuration drew a warning.
+     */
+    #[Test]
+    public function itPublishesTheConfigurationDiagnosticsSectionEvenWhenEmpty(): void
+    {
+        $empty = json_decode($this->formatter->format(ReportBuilder::create()->build(), new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
+        self::assertArrayHasKey('configurationDiagnostics', $empty);
+        self::assertSame([], $empty['configurationDiagnostics']);
+
+        $diagnostic = [
+            'message' => '"only_rules" is written empty in configuration file "qmx.yaml" and replaces the list preset "focused" wrote.',
+            'source' => [
+                ['kind' => 'preset', 'name' => 'focused', 'imported_by' => null],
+                ['kind' => 'file', 'name' => 'qmx.yaml', 'imported_by' => null],
+            ],
+        ];
+        $report = ReportBuilder::create()->configurationDiagnostics([$diagnostic])->build();
+        $data = json_decode($this->formatter->format($report, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame([$diagnostic], $data['configurationDiagnostics']);
+    }
+
     #[Test]
     public function itProducesIso8601Timestamp(): void
     {

@@ -48,6 +48,11 @@ final readonly class Report
      *                                        so `$findings` is then the whole run.
      * @param ?ReportProjectScope $projectScope Whether the run's paths covered the project;
      *                                          `null` only for a report no run measured
+     * @param list<array{message: string, source: list<array<string, mixed>>}> $configurationDiagnostics Warnings about
+     *                                                                                                   the accepted configuration,
+     *                                                                                                   already published: each
+     *                                                                                                   `source` entry is the
+     *                                                                                                   refusal envelope's
      */
     public function __construct(
         public array $findings,
@@ -69,6 +74,7 @@ final readonly class Report
         public ?SuppressionComposition $suppressionComposition = null,
         public ?OutOfScopeFindings $outOfScope = null,
         public ?ReportProjectScope $projectScope = null,
+        public array $configurationDiagnostics = [],
     ) {}
 
     /**

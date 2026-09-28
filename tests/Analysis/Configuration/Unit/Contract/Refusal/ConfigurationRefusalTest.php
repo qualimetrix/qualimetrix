@@ -70,6 +70,12 @@ final class ConfigurationRefusalTest extends TestCase
             ConfigurationSource::Preset,
             'strict',
         ];
+        yield 'defaults' => [
+            static fn(RefusedPosition $p): ConfigurationRefusal
+                => ConfigurationRefusal::atDefaultsKey($p, 'Refused.'),
+            ConfigurationSource::Defaults,
+            null,
+        ];
         yield 'resolved without a key' => [
             static fn(RefusedPosition $p): ConfigurationRefusal
                 => ConfigurationRefusal::atResolvedKey($p, 'Refused.'),
@@ -167,6 +173,31 @@ final class ConfigurationRefusalTest extends TestCase
         self::assertSame($position, $refusal->position());
         self::assertSame('Unknown rule name.', $refusal->summary());
         self::assertSame('Unknown rule name.', $refusal->getMessage());
+    }
+
+    #[Test]
+    public function itNamesItsOneOriginAsItsOnlySource(): void
+    {
+        $origin = ConfigurationOrigin::of(ConfigurationSource::Preset, 'strict');
+
+        $refusal = ConfigurationRefusal::aboutInput($origin, 'Refused.');
+
+        self::assertSame([$origin], $refusal->sources());
+    }
+
+    #[Test]
+    public function itNamesEveryContributingLayerOfARefusalAcrossLayers(): void
+    {
+        $preset = ConfigurationOrigin::of(ConfigurationSource::Preset, 'strict');
+        $file = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml');
+        $position = RefusedPosition::open(['architecture', 'allow'], 'allow');
+
+        $refusal = ConfigurationRefusal::acrossLayers([$preset, $file], $position, 'The allow graph has a cycle.');
+
+        self::assertSame([$preset, $file], $refusal->sources());
+        self::assertSame(ConfigurationSource::Resolved, $refusal->origin()->source());
+        self::assertSame($position, $refusal->position());
+        self::assertSame('The allow graph has a cycle.', $refusal->summary());
     }
 
     #[Test]

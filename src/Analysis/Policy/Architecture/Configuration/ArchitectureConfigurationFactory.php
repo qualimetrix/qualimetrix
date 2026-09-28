@@ -5,18 +5,19 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use InvalidArgumentException;
+use LogicException;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaqueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
-use Throwable;
 
 /**
- * Converts the raw YAML map under the {@code architecture:} key into a typed
- * {@see ArchitectureFactoryResult} carrying the resolved
- * {@see ArchitectureConfiguration} and any non-fatal warnings.
+ * Converts the resolved {@code architecture:} section into a typed
+ * {@see ArchitectureFactoryResult} carrying the {@see ArchitectureConfiguration}
+ * and any non-fatal warnings.
  *
  * Schema (declaration-order matching, first match wins):
  *
@@ -41,7 +42,8 @@ use Throwable;
  * {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration}; this class is a
  * thin orchestrator that:
  *
- * 1. Validates the top-level shape (`layers`, `allow`, `coverage-gap` keys only).
+ * 1. Reads the section the configuration engine resolved — keys recognised,
+ *    forms judged and layers merged as {@see ArchitectureSection} declares.
  * 2. Runs the validators in a deterministic order
  *    ({@see LayersValidator} → {@see AllowValidator} →
  *    {@see ExactAllowCycleValidator} → {@see CoverageValidator} →
@@ -49,29 +51,16 @@ use Throwable;
  * 3. Assembles the typed {@see ArchitectureConfiguration} and returns it
  *    together with the warning values.
  *
- * All structural errors surface as {@see ConfigurationRefusal} addressed to
- * the resolved document.
+ * Every refusal names the configuration layer that wrote the refused value,
+ * through the {@see SectionSpot} it was read from.
  *
  * **Warning delivery.** The factory does not depend on a PSR-3 logger. Architecture
- * consumes its ordered contributions through the neutral Configuration document
- * boundary when RuntimeConfigurator invokes the policy after configuring the user
- * logger. Warning values returned in {@see ArchitectureFactoryResult::$warnings}
+ * reads its section from the resolved Configuration document when
+ * RuntimeConfigurator invokes the policy after configuring the user logger. Warning values returned in {@see ArchitectureFactoryResult::$warnings}
  * are then logged immediately by RuntimeConfigurator.
  */
 final class ArchitectureConfigurationFactory
 {
-    private const array ALLOWED_TOP_LEVEL_KEYS = ['layers', 'allow', 'coverage-gap', 'max_expanded_layers'];
-
-    /** Builds the refusal noise every throw site in this class shares: a position under the resolved document. */
-    private static function refuse(string $position, string $summary, ?Throwable $previous = null): never
-    {
-        throw ConfigurationRefusal::atResolvedKey(
-            RefusedPosition::open(explode('.', $position), $position),
-            $summary,
-            previous: $previous,
-        );
-    }
-
     private readonly LayersValidator $layersValidator;
 
     private readonly AllowValidator $allowValidator;
@@ -97,22 +86,25 @@ final class ArchitectureConfigurationFactory
     }
 
     /**
-     * Converts the merged YAML map under {@code architecture:} to a typed VO
-     * paired with a list of non-fatal warnings.
-     *
-     * Callers can pass {@code $merged['architecture'] ?? []} directly; both
-     * associative and (degenerate) sequential arrays are accepted at the type
-     * level and rejected by structural validation below.
-     *
-     * Unknown top-level keys (typos like {@code layres:} or unrecognized fields
-     * like {@code imports:}) trigger a {@see ConfigurationRefusal} so that user
-     * mistakes never silently disable architecture rules.
-     *
-     * @param array<string, mixed>|array<int, mixed> $raw
+     * @throws ConfigurationRefusal
      */
-    public function fromArray(array $raw): ArchitectureFactoryResult
+    public function fromResolved(ResolvedDocument $document): ArchitectureFactoryResult
     {
-        if ($raw === []) {
+        $node = $document->get(ArchitectureSection::KEY);
+        if ($node instanceof ResolvedOpaqueInterface) {
+            throw new LogicException(\sprintf(
+                'The "%s" section reached the configuration document undeclared; %s must be registered with the configuration pipeline.',
+                ArchitectureSection::KEY,
+                ArchitectureSection::class,
+            ));
+        }
+
+        return $this->fromSection(SectionSpot::section(ArchitectureSection::KEY, $node));
+    }
+
+    private function fromSection(SectionSpot $section): ArchitectureFactoryResult
+    {
+        if (!$section->isWritten()) {
             return new ArchitectureFactoryResult(
                 new ArchitectureConfiguration(
                     new LayerRegistry([]),
@@ -122,24 +114,23 @@ final class ArchitectureConfigurationFactory
             );
         }
 
-        $this->validateTopLevelStructure($raw);
-
-        $entries = $this->layersValidator->validate($raw['layers'] ?? []);
-        $initialRegistry = self::buildInitialRegistry($entries);
+        $layers = $section->child('layers');
+        $entries = $this->layersValidator->validate($layers);
+        $initialRegistry = self::buildInitialRegistry($entries, $layers);
 
         $warnings = [];
+        $allow = $section->child('allow');
         $allowEntries = $this->allowValidator->validate(
-            $raw['allow'] ?? [],
+            $allow,
             self::collectAllReferenceableNames($entries),
             $warnings,
         );
-        $this->exactAllowCycleValidator->validate($allowEntries);
+        $this->exactAllowCycleValidator->validate($allowEntries, $allow);
 
-        $coverage = $this->coverageValidator->validate($raw['coverage-gap'] ?? null);
-        $this->coverageValidator->rejectModeWithNothingToJudge($coverage, $entries);
-        $maxExpandedLayers = self::validateMaxExpandedLayers(
-            $raw['max_expanded_layers'] ?? ArchitectureConfiguration::DEFAULT_MAX_EXPANDED_LAYERS,
-        );
+        $coverageGap = $section->child('coverage-gap');
+        $coverage = $this->coverageValidator->validate($coverageGap);
+        $this->coverageValidator->rejectModeWithNothingToJudge($coverage, $entries, $coverageGap, $layers);
+        $maxExpandedLayers = self::validateMaxExpandedLayers($section->child('max_expanded_layers'));
 
         $this->wildcardSelfAllowDetector->detect($allowEntries, $warnings);
 
@@ -155,40 +146,6 @@ final class ArchitectureConfigurationFactory
         );
     }
 
-    /** @param list<mixed> $contributions */
-    public function fromContributions(array $contributions): ArchitectureFactoryResult
-    {
-        $merged = [];
-        foreach ($contributions as $contribution) {
-            if (!\is_array($contribution)) {
-                self::refuse('architecture', 'Invalid configuration in architecture: expected an associative array.');
-            }
-            $merged = self::mergeContribution($merged, $contribution);
-        }
-
-        return $this->fromArray($merged);
-    }
-
-    /**
-     * @param array<string, mixed> $base
-     * @param array<string, mixed> $overlay
-     *
-     * @return array<string, mixed>
-     */
-    private static function mergeContribution(array $base, array $overlay): array
-    {
-        foreach ($overlay as $key => $value) {
-            if ($key === 'layers') {
-                $base[$key] = $value;
-            } elseif ($key === 'allow' && \is_array($value) && isset($base[$key]) && \is_array($base[$key])) {
-                $base[$key] = array_replace($base[$key], $value);
-            } else {
-                $base[$key] = $value;
-            }
-        }
-        return $base;
-    }
-
     /**
      * Builds the registry seeded with the static-only subset of entries.
      * Templates are deferred to {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage}
@@ -198,7 +155,7 @@ final class ArchitectureConfigurationFactory
      *
      * @param list<LayerDefinition|TemplateLayerDefinition> $entries
      */
-    private static function buildInitialRegistry(array $entries): LayerRegistry
+    private static function buildInitialRegistry(array $entries, SectionSpot $layers): LayerRegistry
     {
         $staticLayers = [];
         foreach ($entries as $entry) {
@@ -210,7 +167,7 @@ final class ArchitectureConfigurationFactory
         try {
             return new LayerRegistry($staticLayers);
         } catch (InvalidArgumentException $e) {
-            self::refuse('architecture.layers', \sprintf('architecture.layers: %s', $e->getMessage()), $e);
+            throw $layers->refusal(\sprintf('architecture.layers: %s', $e->getMessage()));
         }
     }
 
@@ -240,87 +197,25 @@ final class ArchitectureConfigurationFactory
     }
 
     /**
-     * Validates the {@code max_expanded_layers} value. Accepts a positive
-     * integer; rejects anything else with a config-load error pointing at
-     * the precise key, showing the offending value and the default ceiling
-     * so the user knows what to put back.
+     * Validates the {@code max_expanded_layers} value: the engine has already
+     * refused anything but an integer, so this refuses one below 1, showing
+     * the default ceiling so the user knows what to put back.
      */
-    private static function validateMaxExpandedLayers(mixed $value): int
+    private static function validateMaxExpandedLayers(SectionSpot $spot): int
     {
-        if (!\is_int($value) || $value < 1) {
-            $offending = \is_int($value)
-                ? (string) $value
-                : \sprintf('%s (%s)', get_debug_type($value), self::renderScalarForError($value));
-            self::refuse(
-                'architecture.max_expanded_layers',
-                \sprintf(
-                    'architecture.max_expanded_layers: must be a positive integer (>= 1) — the cumulative ceiling on template-layer expansions. Got %s. Omit the key to use the default of %d, or set a higher integer if your config legitimately produces more layers.',
-                    $offending,
-                    ArchitectureConfiguration::DEFAULT_MAX_EXPANDED_LAYERS,
-                ),
-            );
+        $value = $spot->value() ?? ArchitectureConfiguration::DEFAULT_MAX_EXPANDED_LAYERS;
+        if (!\is_int($value)) {
+            throw new LogicException('The configuration engine admits only an integer as architecture.max_expanded_layers.');
+        }
+
+        if ($value < 1) {
+            throw $spot->refusal(\sprintf(
+                'architecture.max_expanded_layers: must be a positive integer (>= 1) — the cumulative ceiling on template-layer expansions. Got %d. Omit the key to use the default of %d, or set a higher integer if your config legitimately produces more layers.',
+                $value,
+                ArchitectureConfiguration::DEFAULT_MAX_EXPANDED_LAYERS,
+            ));
         }
 
         return $value;
-    }
-
-    /**
-     * Best-effort scalar rendering for error context. Strings are quoted;
-     * other scalars are stringified verbatim; non-scalars fall back to a
-     * placeholder since {@see get_debug_type()} already named the kind.
-     */
-    private static function renderScalarForError(mixed $value): string
-    {
-        if (\is_string($value)) {
-            return '"' . $value . '"';
-        }
-        if (\is_bool($value)) {
-            return $value ? 'true' : 'false';
-        }
-        if (\is_float($value) || \is_int($value)) {
-            return (string) $value;
-        }
-
-        return '<not scalar>';
-    }
-
-    /**
-     * Validates that {@code $raw} is an associative map whose keys are exactly
-     * the well-known top-level architecture keys (`layers`, `allow`, `coverage-gap`).
-     *
-     * @param array<string, mixed>|array<int, mixed> $raw
-     */
-    private function validateTopLevelStructure(array $raw): void
-    {
-        if (array_is_list($raw)) {
-            self::refuse(
-                'architecture',
-                'architecture: must be a map with keys "layers", "allow", "coverage-gap"; a sequential list is not allowed.',
-            );
-        }
-
-        $unknown = [];
-        foreach (array_keys($raw) as $key) {
-            if (!\is_string($key) || !\in_array($key, self::ALLOWED_TOP_LEVEL_KEYS, true)) {
-                $unknown[] = (string) $key;
-            }
-        }
-
-        if ($unknown === []) {
-            return;
-        }
-
-        $accepted = self::ALLOWED_TOP_LEVEL_KEYS;
-        sort($accepted);
-
-        throw ConfigurationRefusal::atResolvedKey(
-            RefusedPosition::closed(['architecture'], implode(', ', $unknown), $accepted),
-            \sprintf(
-                'architecture: unknown %s %s. Allowed keys: %s.',
-                \count($unknown) === 1 ? 'key' : 'keys',
-                implode(', ', array_map(static fn(string $k): string => '"' . $k . '"', $unknown)),
-                implode(', ', array_map(static fn(string $k): string => '"' . $k . '"', self::ALLOWED_TOP_LEVEL_KEYS)),
-            ),
-        );
     }
 }

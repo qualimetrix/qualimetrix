@@ -8,7 +8,6 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
@@ -16,13 +15,14 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 final class RunConfigurationResolverTest extends TestCase
 {
     #[Test]
     public function itResolvesOwnerDefaultsAndLastPathContributionAgainstTheInvocationRoot(): void
     {
-        $configuration = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))->resolve(new ConfigurationDocument([
+        $configuration = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))->resolve(LayeredDocument::of([
             ['source' => 'composer', 'values' => ['paths' => ['lib'], 'excludes' => [['subtree' => 'build']]]],
             ['source' => 'cli', 'values' => ['paths' => ['src'], 'include_generated' => true]],
         ], AbsolutePath::fromString(sys_get_temp_dir())));
@@ -46,7 +46,7 @@ final class RunConfigurationResolverTest extends TestCase
         mkdir($rootB);
 
         try {
-            $document = new ConfigurationDocument([
+            $document = LayeredDocument::of([
                 ['source' => 'cli', 'values' => ['paths' => ['src']]],
             ], AbsolutePath::fromString($rootA));
             chdir($rootB);
@@ -106,7 +106,7 @@ final class RunConfigurationResolverTest extends TestCase
     {
         $root = sys_get_temp_dir();
         $configuration = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))
-            ->resolve(new ConfigurationDocument($sources, AbsolutePath::fromString($root)));
+            ->resolve(LayeredDocument::of($sources, AbsolutePath::fromString($root)));
 
         self::assertSame(
             array_map(static fn(string $path): string => $path === '.' ? $root : $root . '/' . $path, $expectedPaths),

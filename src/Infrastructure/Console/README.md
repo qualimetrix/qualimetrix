@@ -29,6 +29,7 @@ Console/
 ├── ChannelExclusionKeyValidator.php  # Whether one suppress_namespace_channels key can exclude anything
 ├── ChannelExclusionKeyHints.php      # What to say when it cannot
 ├── ResultPresenter.php
+├── ReportCoverageProjection.php     # The run's coverage as a report publishes it, failures relative to the project
 ├── ArtifactFile.php                 # A file an option names for an artifact (--output, --profile, graph --output): one model of the target for the precheck and the write
 ├── CommandLineSpelling.php          # An option or argument value as argv would spell it; every valued door reads through it
 ├── FormatOptionPairs.php            # The --format-opt door: every written pair judged, a repeated key and two spellings of one value refused
@@ -197,12 +198,21 @@ alone" forms (`null`, or `true` from an array input) before spelling the value.
 `Application::doRun()` reads the long `--format` off the raw tokens, so a
 refusal it catches is enveloped for the JSON formats like one a command catches,
 and `RefusalPresenter` frames the fallback path exactly like a carried refusal.
-The JSON envelope is `{error, exit_code, position}`: `position` publishes a
+The JSON envelope is `{error, exit_code, position, source}`: `position` publishes a
 refusal's `RefusedPosition` (`path`, `written`, `accepted`, `closed`) — the
 refused spot as its throw site located it — and is `null` for every outcome
 without one, including a merged value whose sentence names its key. On incomplete analysis, the selected report is
 still rendered for diagnosis and exit 4 takes precedence over finding policy.
 Non-payload diagnostics from `check` are written to stderr.
+
+`ConfigurationInputAdapter` resolves the configuration document for every
+command that reads it — `check`, and through `AnalysisPreflight` and
+`BaselineRun` `directives`, `debug:layer-assignment` and the `baseline:*`
+commands that measure — and answers its author there too:
+`writeDiagnostics()` prints each warning about the accepted configuration on
+stderr as one `Warning:` line, after the runtime is configured, and
+`publishedDiagnostics()` gives `check`'s report the same warnings with their
+sources in the refusal envelope's `source` form.
 
 ### BaselineCleanupCommand
 

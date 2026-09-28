@@ -199,7 +199,9 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
 
 **When to use:** Custom scripts, dashboards, programmatic processing.
 
-**Top-level keys:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (see [Project scope in every format](#project-scope-in-every-format)), `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, plus `violationGroups` when `--group-by` is passed — without it, the key is absent entirely, not an empty object.
+**Top-level keys:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (see [Project scope in every format](#project-scope-in-every-format)), `configurationDiagnostics`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, plus `violationGroups` when `--group-by` is passed — without it, the key is absent entirely, not an empty object.
+
+`configurationDiagnostics` lists the warnings about the configuration the run accepted — the same ones `check` prints on stderr — and is `[]` when there are none. Each entry is `{"message": "…", "source": [{"kind": "preset", "name": "…", "imported_by": null}, …]}`: `source` names every layer the warning is about, lowest precedence first, in the form a configuration error's `source` uses. For example, `only_rules: []` in `qmx.yaml` over a preset that filters the rules is lawful, and draws one entry naming both.
 
 `meta` identifies the tool that wrote the document: `version`, `package`, `timestamp`, and two documentation addresses — `docs`, the documentation site, and `llmsTxt`, the index written for AI agents. Every JSON report with an envelope object carries the same two addresses; see the exceptions in [Documentation addresses in JSON reports](#documentation-addresses).
 
@@ -228,6 +230,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
     },
     "outOfScope": null,
     "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
+    "configurationDiagnostics": [],
     "health": {
         "complexity": {
             "score": 78.0,
@@ -1023,13 +1026,25 @@ format, not the tool's) the way `metrics` keeps its own.
 
 Not every JSON output carries the addresses. `gitlab` is a bare array with no
 object to hold them; `graph:export`'s DOT output has no envelope at all; a
-refusal is always exactly `{"error": ..., "exit_code": ..., "position": ...}`,
+refusal is always exactly
+`{"error": ..., "exit_code": ..., "position": ..., "source": ...}`,
 `position` being `null` unless the refusal was raised at a place in a
 configuration document — a command-line value, a whole file and a merged value
 such as `memory_limit: 010M` carry `null` even when the message names the key.
 When present, `position` locates the refused spot as the check found it: for a
-required key that was left out, `path` ends at that key and `written` names it;
-and the baseline
+required key that was left out, `path` ends at that key and `written` names it.
+`source` lists the configuration layers the refusal is about, lowest precedence
+first — one for a value a single layer wrote, every contributing layer for a
+constraint between keys — each as `{"kind": ..., "name": ..., "imported_by": ...}`.
+`kind` is `defaults`, `composer`, `preset`, `file`, `cli`, `baseline` or
+`resolved`; `name` is the preset name, file path or option. `resolved` is what a
+refusal names when its owner still reads the merged value without the layer
+that wrote it — `memory_limit: 010M` and `--fail-on=bogus` today — and its
+`name` is the key when the owner knows it, otherwise `null` (a rule selector in
+`only_rules` or `disabled_rules`). `source` is `null` for an internal error and
+for a refusal raised without a configuration source, such as
+`parallel.workers: -3`. The
+baseline
 file — written by `baseline:generate`, `update`, `cleanup`, and rewritten in
 place by `baseline:rename-channels` — is a versioned input artifact the tool
 reads back, with its own schema, not a report.

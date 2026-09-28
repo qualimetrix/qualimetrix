@@ -199,7 +199,9 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 
 **Когда использовать:** Пользовательские скрипты, дашборды, программная обработка.
 
-**Ключи верхнего уровня:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (см. [Охват проекта во всех форматах](#project-scope-in-every-format)), `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, плюс `violationGroups`, когда передан `--group-by` — без него ключа нет вовсе, это не пустой объект.
+**Ключи верхнего уровня:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (см. [Охват проекта во всех форматах](#project-scope-in-every-format)), `configurationDiagnostics`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, плюс `violationGroups`, когда передан `--group-by` — без него ключа нет вовсе, это не пустой объект.
+
+`configurationDiagnostics` перечисляет предупреждения о конфигурации, которую прогон принял, — те же, что `check` печатает в stderr, — и равен `[]`, когда их нет. Каждая запись — `{"message": "…", "source": [{"kind": "preset", "name": "…", "imported_by": null}, …]}`: `source` называет каждый слой, о котором предупреждение, от младшего к старшему, в той же форме, что `source` ошибки конфигурации. Например, `only_rules: []` в `qmx.yaml` поверх пресета, фильтрующего правила, законно и даёт одну запись, называющую оба слоя.
 
 `meta` называет инструмент, записавший документ: `version`, `package`, `timestamp` и два адреса документации — `docs`, сайт документации, и `llmsTxt`, индекс для ИИ-агентов. Оба адреса есть в каждом JSON-отчёте, у которого есть объект-конверт; см. исключения в [Адреса документации в JSON-отчётах](#documentation-addresses).
 
@@ -228,6 +230,7 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
     },
     "outOfScope": null,
     "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
+    "configurationDiagnostics": [],
     "health": {
         "complexity": {
             "score": 78.0,
@@ -1025,13 +1028,23 @@ bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
 
 Адреса есть не в каждом JSON-выводе. `gitlab` — голый массив, в нём нет объекта
 для них; у DOT-вывода `graph:export` нет конверта вовсе; отказ — это всегда
-ровно `{"error": ..., "exit_code": ..., "position": ...}`, где `position` равен
-`null`, если отказ не привязан к месту в конфигурационном документе: значение
-из командной строки, файл целиком и объединённое значение вроде
-`memory_limit: 010M` дают `null`, даже когда сообщение называет ключ. Если
-`position` есть, он указывает отвергнутое место так, как его нашла проверка:
-для обязательного ключа, которого нет, `path` заканчивается этим ключом, а
-`written` называет его; а baseline-файл — который пишут
+ровно `{"error": ..., "exit_code": ..., "position": ..., "source": ...}`, где
+`position` равен `null`, если отказ не привязан к месту в конфигурационном
+документе: значение из командной строки, файл целиком и объединённое значение
+вроде `memory_limit: 010M` дают `null`, даже когда сообщение называет ключ.
+Если `position` есть, он указывает отвергнутое место так, как его нашла
+проверка: для обязательного ключа, которого нет, `path` заканчивается этим
+ключом, а `written` называет его. `source` перечисляет слои конфигурации, о
+которых отказ, от младшего к старшему — один для значения, написанного одним
+слоем, все вкладчики для ограничения между ключами, — каждый в виде
+`{"kind": ..., "name": ..., "imported_by": ...}`. `kind` — это `defaults`,
+`composer`, `preset`, `file`, `cli`, `baseline` или `resolved`; `name` — имя
+пресета, путь файла или опция. `resolved` называет отказ, владелец которого
+пока читает слитое значение без написавшего его слоя, — сегодня это
+`memory_limit: 010M` и `--fail-on=bogus`, — и его `name` — ключ, если владелец
+его знает, иначе `null` (селектор правила в `only_rules` или `disabled_rules`).
+`source` равен `null` при внутренней ошибке и при отказе без источника в
+конфигурации, например `parallel.workers: -3`. А baseline-файл — который пишут
 `baseline:generate`, `update`, `cleanup` и переписывает на месте
 `baseline:rename-channels` — это версионированный входной артефакт, который
 инструмент читает обратно, со своей схемой, а не отчёт.

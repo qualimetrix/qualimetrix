@@ -889,7 +889,7 @@ final class DirectivesCommandTest extends TestCase
     /**
      * A path that never existed is a distinct refusal from a scope that
      * existed but analysed nothing (the case directly above): the preflight
-     * ({@see \Qualimetrix\Infrastructure\Console\AnalysisPreflight::missingPaths()},
+     * ({@see \Qualimetrix\Infrastructure\Console\AnalysisPreflight::refuseMissingPaths()},
      * shared with `check`) rejects it before any discovery or measurement
      * runs, and this command has no test pinning that it inherits the check.
      */
@@ -904,6 +904,19 @@ final class DirectivesCommandTest extends TestCase
             "path '" . $this->tempDir . "/no-such-directory' does not exist",
             $tester->getErrorOutput(),
         );
+    }
+
+    /** A path the configuration file wrote is fixed in that file, and the refusal says so. */
+    #[Test]
+    public function itNamesTheFileThatWroteANonExistentPath(): void
+    {
+        $config = $this->writeConfig("paths: [no-such-directory]\n");
+        $tester = $this->audit(['--config' => $config, '--format' => 'json']);
+
+        self::assertSame(3, $tester->getStatusCode());
+        $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($envelope);
+        self::assertSame([['kind' => 'file', 'name' => $config, 'imported_by' => null]], $envelope['source']);
     }
 
     /**
