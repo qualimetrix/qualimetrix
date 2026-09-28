@@ -52,8 +52,9 @@ final class SelectorYamlDecoderTest extends TestCase
             $this->decoder()->decodePath($entry, self::origin(), ['suppress_paths', '3']);
             self::fail('Expected the malformed selector to be refused.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertSame(ConfigurationSource::ConfigFile, $refusal->origin()->source());
-            self::assertSame('/project/qmx.yaml', $refusal->origin()->locator());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
+            self::assertSame('/project/qmx.yaml', $refusal->sources()[0]->locator());
             self::assertStringContainsString($message, $refusal->summary());
             self::assertNotNull($refusal->position());
             self::assertSame(['suppress_paths', '3'], \array_slice($refusal->position()->segments, 0, 2));

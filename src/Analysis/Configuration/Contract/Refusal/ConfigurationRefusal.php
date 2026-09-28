@@ -222,11 +222,6 @@ final class ConfigurationRefusal extends RuntimeException
         return self::aboutInput(ConfigurationOrigin::of(ConfigurationSource::Resolved, $key), $summary, $previous);
     }
 
-    public function origin(): ConfigurationOrigin
-    {
-        return $this->origin;
-    }
-
     /**
      * Every source the refusal names: the contributing layers of an
      * {@see self::acrossLayers()} refusal, otherwise the one origin.

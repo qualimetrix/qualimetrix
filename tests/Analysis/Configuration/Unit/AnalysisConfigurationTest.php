@@ -15,19 +15,23 @@ use ReflectionClass;
 final class AnalysisConfigurationTest extends TestCase
 {
     #[Test]
-    public function itPreservesOrderedContributionsWithoutApplyingOwnerSemantics(): void
+    public function itExposesOnlyFindingsTemporaryOrderedRawInputs(): void
     {
         $document = new ConfigurationDocument([
             ['source' => 'strict', 'values' => ['rules' => ['size.loc' => ['warning' => 1000]]]],
-            ['source' => 'qmx.yaml', 'values' => ['rules' => ['size.loc' => ['error' => 2000]]]],
-            ['source' => 'cli', 'values' => ['format' => 'json']],
+            ['source' => 'qmx.yaml', 'values' => [
+                'rules' => ['size.loc' => ['error' => 2000]],
+                'only_rules' => ['size.loc'],
+                'disabled_rules' => ['security'],
+            ]],
         ], AbsolutePath::fromString('/project'));
 
         self::assertSame([
             ['size.loc' => ['warning' => 1000]],
             ['size.loc' => ['error' => 2000]],
-        ], $document->contributions('rules'));
-        self::assertSame(['json'], $document->contributions('format'));
+        ], $document->ruleContributions());
+        self::assertSame([['size.loc']], $document->onlyRuleContributions());
+        self::assertSame([['security']], $document->disabledRuleContributions());
     }
 
     #[Test]
@@ -40,14 +44,21 @@ final class AnalysisConfigurationTest extends TestCase
 
         self::assertNotContains('all', $methodNames);
         self::assertNotContains('sources', $methodNames);
+        self::assertNotContains('contributions', $methodNames);
     }
 
     #[Test]
-    public function itReturnsNoContributionForAnAbsentOwnerKey(): void
+    public function itKeepsComposerDiscoveryFactsSeparateFromAuthoredValues(): void
     {
-        $document = new ConfigurationDocument([], AbsolutePath::fromString('/project'));
+        $document = new ConfigurationDocument([
+            ['source' => 'composer.json', 'values' => [
+                'discovered_autoload_paths' => ['src'],
+                'discovered_autoload_dev_paths' => ['tests'],
+            ]],
+        ], AbsolutePath::fromString('/project'));
 
-        self::assertSame([], $document->contributions('cache.dir'));
+        self::assertSame(['src'], $document->discoveredProductionAutoloadTargets());
+        self::assertSame(['tests'], $document->discoveredDevelopmentAutoloadTargets());
     }
 
     #[Test]

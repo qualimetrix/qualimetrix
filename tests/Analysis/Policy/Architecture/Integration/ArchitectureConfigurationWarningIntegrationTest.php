@@ -56,7 +56,7 @@ YAML);
         $document = $this->createPipeline()->resolve(
             new ConfigurationResolutionRequest(AbsolutePath::fromString($this->tempDir)),
         );
-        self::assertCount(1, $document->contributions('architecture'));
+        self::assertNotNull($document->resolved()->get('architecture'));
 
         $policy = new ArchitecturePolicy();
         $resolved = $policy->resolve($document);
@@ -85,7 +85,7 @@ YAML);
         $document = $this->createPipeline()->resolve(
             new ConfigurationResolutionRequest(AbsolutePath::fromString($this->tempDir)),
         );
-        self::assertCount(1, $document->contributions('architecture'));
+        self::assertNotNull($document->resolved()->get('architecture'));
 
         $policy = new ArchitecturePolicy();
         $resolved = $policy->resolve($document);

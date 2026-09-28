@@ -76,7 +76,8 @@ final class DocumentPhaseTest extends TestCase
         $refusal = self::refusal(static fn() => SampleDocument::compose(SampleDocument::file($document)));
 
         self::assertSame([ConfigurationSource::ConfigFile], self::kinds($refusal));
-        self::assertSame('/p/qmx.yaml', $refusal->origin()->locator());
+        self::assertCount(1, $refusal->sources());
+        self::assertSame('/p/qmx.yaml', $refusal->sources()[0]->locator());
         self::assertSame($path, $refusal->position()?->segments);
         self::assertSame($written, $refusal->position()->written);
         self::assertTrue($refusal->position()->closed);
@@ -168,7 +169,8 @@ final class DocumentPhaseTest extends TestCase
             SampleDocument::file(['cache' => ['enabled' => false]]),
         ));
 
-        self::assertSame('strict', $refusal->origin()->locator());
+        self::assertCount(1, $refusal->sources());
+        self::assertSame('strict', $refusal->sources()[0]->locator());
         self::assertSame(['cache', 'enabled'], $refusal->position()?->segments);
         self::assertStringContainsString('must be boolean, got string', $refusal->summary());
     }
@@ -218,7 +220,8 @@ final class DocumentPhaseTest extends TestCase
             SampleDocument::file(['computed_metrics' => ['health.x' => ['threshold' => 5, 'warning' => 3]]]),
         ));
 
-        self::assertSame('/p/qmx.yaml', $refusal->origin()->locator());
+        self::assertCount(1, $refusal->sources());
+        self::assertSame('/p/qmx.yaml', $refusal->sources()[0]->locator());
         self::assertSame(['computed_metrics', 'health.x', 'threshold'], $refusal->position()?->segments);
         self::assertStringContainsString('both "threshold" and "warning"', $refusal->summary());
     }
@@ -256,7 +259,8 @@ final class DocumentPhaseTest extends TestCase
         ));
 
         self::assertSame(['architecture', 'allow', 'infra'], $refusal->position()?->segments);
-        self::assertSame('/p/qmx.yaml', $refusal->origin()->locator());
+        self::assertCount(1, $refusal->sources());
+        self::assertSame('/p/qmx.yaml', $refusal->sources()[0]->locator());
     }
 
     #[Test]
@@ -285,8 +289,9 @@ final class DocumentPhaseTest extends TestCase
         $refusal = self::refusal(static fn() => SampleDocument::compose(
             SampleDocument::cli(['fail_on' => 5], ['fail_on' => '--fail-on']),
         ));
-        self::assertSame(ConfigurationSource::CommandLine, $refusal->origin()->source());
-        self::assertSame('--fail-on', $refusal->origin()->locator());
+        self::assertCount(1, $refusal->sources());
+        self::assertSame(ConfigurationSource::CommandLine, $refusal->sources()[0]->source());
+        self::assertSame('--fail-on', $refusal->sources()[0]->locator());
         self::assertNull($refusal->position());
         self::assertStringContainsString('Option --fail-on must be string', $refusal->summary());
     }

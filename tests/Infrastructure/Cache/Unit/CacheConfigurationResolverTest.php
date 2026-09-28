@@ -44,7 +44,8 @@ final class CacheConfigurationResolverTest extends TestCase
             self::fail('An enabled cache directory beneath a file must be refused.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString('is not writable', $refusal->getMessage());
-            self::assertSame(ConfigurationSource::ConfigFile, $refusal->origin()->source());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
             self::assertSame(['cache', 'dir'], $refusal->position()?->segments);
         }
     }
@@ -126,7 +127,8 @@ final class CacheConfigurationResolverTest extends TestCase
             (new CacheConfigurationResolver())->resolve(LayeredDocument::of([], $projectRoot), $projectRoot);
             self::fail('The default cache directory beneath a file cannot be created.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertSame(ConfigurationSource::Defaults, $refusal->origin()->source());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame(ConfigurationSource::Defaults, $refusal->sources()[0]->source());
             self::assertNull($refusal->position());
         }
     }

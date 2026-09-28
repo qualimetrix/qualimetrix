@@ -176,7 +176,8 @@ final class ArtifactFileTest extends TestCase
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString('Failed to create the --output file', $refusal->getMessage());
             self::assertStringContainsString('Permission denied', $refusal->getMessage());
-            self::assertSame('--output', $refusal->origin()->locator());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame('--output', $refusal->sources()[0]->locator());
         }
 
         self::assertFileDoesNotExist($target);
@@ -383,7 +384,8 @@ final class ArtifactFileTest extends TestCase
             $file->write('new');
             self::fail('A link that leads to no file was written through.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertSame('--output', $refusal->origin()->locator());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame('--output', $refusal->sources()[0]->locator());
         }
 
         self::assertFileDoesNotExist($this->directory . '/nodir');

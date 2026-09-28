@@ -47,8 +47,9 @@ final class ConfigurationRefusalTest extends TestCase
 
         $refusal = $build($position);
 
-        self::assertSame($source, $refusal->origin()->source());
-        self::assertSame($locator, $refusal->origin()->locator());
+        self::assertCount(1, $refusal->sources());
+        self::assertSame($source, $refusal->sources()[0]->source());
+        self::assertSame($locator, $refusal->sources()[0]->locator());
         self::assertSame($position, $refusal->position());
         self::assertSame('Refused.', $refusal->summary());
     }
@@ -102,8 +103,9 @@ final class ConfigurationRefusalTest extends TestCase
     ): void {
         $refusal = $build();
 
-        self::assertSame($source, $refusal->origin()->source());
-        self::assertSame($locator, $refusal->origin()->locator());
+        self::assertCount(1, $refusal->sources());
+        self::assertSame($source, $refusal->sources()[0]->source());
+        self::assertSame($locator, $refusal->sources()[0]->locator());
         self::assertNull($refusal->position());
         self::assertSame('Refused.', $refusal->summary());
     }
@@ -169,7 +171,7 @@ final class ConfigurationRefusalTest extends TestCase
 
         $refusal = ConfigurationRefusal::at($origin, $position, 'Unknown rule name.');
 
-        self::assertSame($origin, $refusal->origin());
+        self::assertSame([$origin], $refusal->sources());
         self::assertSame($position, $refusal->position());
         self::assertSame('Unknown rule name.', $refusal->summary());
         self::assertSame('Unknown rule name.', $refusal->getMessage());
@@ -195,7 +197,6 @@ final class ConfigurationRefusalTest extends TestCase
         $refusal = ConfigurationRefusal::acrossLayers([$preset, $file], $position, 'The allow graph has a cycle.');
 
         self::assertSame([$preset, $file], $refusal->sources());
-        self::assertSame(ConfigurationSource::Resolved, $refusal->origin()->source());
         self::assertSame($position, $refusal->position());
         self::assertSame('The allow graph has a cycle.', $refusal->summary());
     }
@@ -207,7 +208,7 @@ final class ConfigurationRefusalTest extends TestCase
 
         $refusal = ConfigurationRefusal::aboutDocument($origin, 'File is not valid YAML.');
 
-        self::assertSame($origin, $refusal->origin());
+        self::assertSame([$origin], $refusal->sources());
         self::assertNull($refusal->position());
         self::assertSame('File is not valid YAML.', $refusal->summary());
     }
@@ -219,7 +220,7 @@ final class ConfigurationRefusalTest extends TestCase
 
         $refusal = ConfigurationRefusal::aboutInput($origin, 'Baseline path does not exist.');
 
-        self::assertSame($origin, $refusal->origin());
+        self::assertSame([$origin], $refusal->sources());
         self::assertNull($refusal->position());
         self::assertSame('Baseline path does not exist.', $refusal->summary());
     }

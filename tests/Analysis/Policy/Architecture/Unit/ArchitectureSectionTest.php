@@ -77,8 +77,9 @@ final class ArchitectureSectionTest extends TestCase
     {
         $refusal = self::refusal(static fn() => self::configure(ArchitectureDocument::file($section)));
 
-        self::assertSame(ConfigurationSource::ConfigFile, $refusal->origin()->source());
-        self::assertSame(ArchitectureDocument::FILE, $refusal->origin()->locator());
+        self::assertCount(1, $refusal->sources());
+        self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
+        self::assertSame(ArchitectureDocument::FILE, $refusal->sources()[0]->locator());
         self::assertSame($path, $refusal->position()?->segments);
         self::assertSame($path[\count($path) - 1], $refusal->position()->written);
         self::assertTrue($refusal->position()->closed);
@@ -281,7 +282,8 @@ final class ArchitectureSectionTest extends TestCase
         )));
 
         self::assertSame([ConfigurationSource::Preset], self::kinds($refusal));
-        self::assertSame('team', $refusal->origin()->locator());
+        self::assertCount(1, $refusal->sources());
+        self::assertSame('team', $refusal->sources()[0]->locator());
         self::assertSame($path, $refusal->position()?->segments);
     }
 
@@ -310,7 +312,8 @@ final class ArchitectureSectionTest extends TestCase
         )));
 
         self::assertSame([ConfigurationSource::Preset], self::kinds($refusal));
-        self::assertSame('strict', $refusal->origin()->locator());
+        self::assertCount(1, $refusal->sources());
+        self::assertSame('strict', $refusal->sources()[0]->locator());
         self::assertSame(['architecture', 'layers', '0', 'patterns', '0'], $refusal->position()?->segments);
     }
 

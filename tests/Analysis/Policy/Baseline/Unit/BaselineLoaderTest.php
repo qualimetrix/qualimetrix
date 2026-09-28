@@ -334,8 +334,9 @@ final class BaselineLoaderTest extends TestCase
             $this->loader->load($path);
             self::fail('Expected a ConfigurationRefusal.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertSame(ConfigurationSource::BaselineFile, $refusal->origin()->source());
-            self::assertSame($path, $refusal->origin()->locator());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame(ConfigurationSource::BaselineFile, $refusal->sources()[0]->source());
+            self::assertSame($path, $refusal->sources()[0]->locator());
             self::assertNull($refusal->position());
             self::assertStringContainsString('not found', $refusal->summary());
         }

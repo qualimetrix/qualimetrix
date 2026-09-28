@@ -41,7 +41,8 @@ final class CouplingConfigurationRefusalTest extends TestCase
             self::resolve($value);
             self::fail('An unexecutable framework selector must be refused.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertSame(ConfigurationSource::ConfigFile, $refusal->origin()->source());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
         }
     }
 

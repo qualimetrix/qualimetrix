@@ -104,7 +104,8 @@ final class RuntimeLoggerConfiguratorTest extends TestCase
                 'Option --log-file names "/ro/qmx.log", which cannot be opened for appending: Permission denied.',
                 $refusal->summary(),
             );
-            self::assertSame('--log-file', $refusal->origin()->locator());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame('--log-file', $refusal->sources()[0]->locator());
         }
     }
 

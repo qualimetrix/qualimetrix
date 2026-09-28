@@ -39,7 +39,8 @@ final class CacheDirectoryShapeRefusalTest extends TestCase
             self::resolve($value);
             self::fail('An unusable cache directory must be refused.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertSame(ConfigurationSource::CommandLine, $refusal->origin()->source());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame(ConfigurationSource::CommandLine, $refusal->sources()[0]->source());
             self::assertNull($refusal->position());
         }
     }

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Run\Configuration;
 
 use LogicException;
-use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
@@ -227,22 +226,10 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
         return $this->projectScopeCoverage->reachableTargets(
             $document->workingDirectory(),
             $autoloadDev->projectTargets(
-                self::lastStringList($document->contributions(ConfigSchema::DISCOVERED_AUTOLOAD_PATHS)),
-                self::lastStringList($document->contributions(ConfigSchema::DISCOVERED_AUTOLOAD_DEV_PATHS)),
+                $document->discoveredProductionAutoloadTargets(),
+                $document->discoveredDevelopmentAutoloadTargets(),
             ) ?? [],
         );
-    }
-
-    /**
-     * @param list<mixed> $contributions
-     *
-     * @return list<string>
-     */
-    private static function lastStringList(array $contributions): array
-    {
-        $last = $contributions === [] ? [] : $contributions[array_key_last($contributions)];
-
-        return \is_array($last) ? array_values(array_filter($last, \is_string(...))) : [];
     }
 
     private static function flag(?ResolvedValueInterface $value): bool

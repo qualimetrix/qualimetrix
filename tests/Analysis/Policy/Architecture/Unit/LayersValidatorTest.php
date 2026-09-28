@@ -260,7 +260,8 @@ final class LayersValidatorTest extends TestCase
             ]);
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ArchitectureDocument::FILE, $e->origin()->locator());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
             self::assertSame(['architecture', 'layers', '0', 'sufix'], $e->position()?->segments);
             self::assertStringContainsString('did you mean "suffix"', $e->getMessage());
         }
@@ -332,8 +333,9 @@ final class LayersValidatorTest extends TestCase
             ]));
             self::fail('Expected ConfigurationRefusal for unknown match mode.');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::ConfigFile, $e->origin()->source());
-            self::assertSame(ArchitectureDocument::FILE, $e->origin()->locator());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
             self::assertStringContainsString('"match"', $e->getMessage());
             self::assertStringContainsString('"any"', $e->getMessage());
             self::assertStringContainsString('"all"', $e->getMessage());
@@ -495,8 +497,9 @@ final class LayersValidatorTest extends TestCase
             ]));
             self::fail('Expected ConfigurationRefusal for FQN-shaped suffix.');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::ConfigFile, $e->origin()->source());
-            self::assertSame(ArchitectureDocument::FILE, $e->origin()->locator());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
             self::assertStringContainsString('"suffix"', $e->getMessage());
             self::assertStringContainsString('short class-name suffix', $e->getMessage());
             self::assertStringContainsString('App\\Repository', $e->getMessage());
@@ -596,8 +599,9 @@ final class LayersValidatorTest extends TestCase
             ]));
             self::fail('Expected ConfigurationRefusal for short-name "' . $kind . '" entry.');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::ConfigFile, $e->origin()->source());
-            self::assertSame(ArchitectureDocument::FILE, $e->origin()->locator());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
             self::assertStringContainsString('"' . $kind . '"', $e->getMessage());
             self::assertStringContainsString('fully-qualified', $e->getMessage());
             self::assertStringContainsString('Entity', $e->getMessage());
@@ -722,8 +726,9 @@ final class LayersValidatorTest extends TestCase
             ]));
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::ConfigFile, $e->origin()->source());
-            self::assertSame(ArchitectureDocument::FILE, $e->origin()->locator());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
             self::assertStringContainsString('App\\Shared', $e->getMessage());
             self::assertStringContainsString('"a"', $e->getMessage());
             self::assertStringContainsString('"b"', $e->getMessage());
@@ -1024,8 +1029,9 @@ final class LayersValidatorTest extends TestCase
             $this->validator->validate(ArchitectureDocument::layers('bad'));
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::ConfigFile, $e->origin()->source());
-            self::assertSame(ArchitectureDocument::FILE, $e->origin()->locator());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
         }
     }
 
@@ -1255,7 +1261,8 @@ final class LayersValidatorTest extends TestCase
             ]);
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ArchitectureDocument::FILE, $e->origin()->locator());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
             self::assertSame(['architecture', 'layers', '0', 'exclude', 'sufix'], $e->position()?->segments);
         }
     }

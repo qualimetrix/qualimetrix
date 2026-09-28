@@ -34,7 +34,8 @@ final class ParallelConfigurationResolverTest extends TestCase
             ], AbsolutePath::fromString('/project')));
             self::fail('Negative worker counts must be refused.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertSame('config.yaml', $refusal->origin()->locator());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame('config.yaml', $refusal->sources()[0]->locator());
         }
     }
 }

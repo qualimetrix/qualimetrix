@@ -37,8 +37,9 @@ final class RetiredSuppressionOptionsTest extends TestCase
             self::fail('The retired spelling was accepted.');
         } catch (ConfigurationRefusal $e) {
             self::assertStringContainsString('The "exclude_paths" option was retired', $e->getMessage());
-            self::assertSame(ConfigurationSource::CommandLine, $e->origin()->source());
-            self::assertSame('--rule-opt', $e->origin()->locator());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::CommandLine, $e->sources()[0]->source());
+            self::assertSame('--rule-opt', $e->sources()[0]->locator());
             self::assertNotNull($e->position());
             self::assertSame('exclude_paths', $e->position()->written);
             self::assertFalse($e->position()->closed);
@@ -54,8 +55,9 @@ final class RetiredSuppressionOptionsTest extends TestCase
             RetiredSuppressionOptions::refuseRuleOption(['excludeNamespaces' => null], $origin);
             self::fail('The retired spelling was accepted.');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
-            self::assertNull($e->origin()->locator());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::Resolved, $e->sources()[0]->source());
+            self::assertNull($e->sources()[0]->locator());
         }
     }
 
@@ -78,8 +80,9 @@ final class RetiredSuppressionOptionsTest extends TestCase
             );
             self::fail('The retired root key was accepted.');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::ConfigFile, $e->origin()->source());
-            self::assertSame('/tmp/qmx.yaml', $e->origin()->locator());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame('/tmp/qmx.yaml', $e->sources()[0]->locator());
             self::assertNotNull($e->position());
             self::assertSame('exclude_paths', $e->position()->written);
             self::assertFalse($e->position()->closed);
@@ -97,8 +100,9 @@ final class RetiredSuppressionOptionsTest extends TestCase
             );
             self::fail('The retired rule-option key was accepted.');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::ConfigFile, $e->origin()->source());
-            self::assertSame('/tmp/qmx.yaml', $e->origin()->locator());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame('/tmp/qmx.yaml', $e->sources()[0]->locator());
             self::assertNotNull($e->position());
             self::assertSame('exclude_namespaces', $e->position()->written);
             self::assertSame(['rules', 'exclude_namespaces'], $e->position()->segments);

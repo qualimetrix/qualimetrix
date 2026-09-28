@@ -278,7 +278,8 @@ final class FormatterContextFactoryTest extends TestCase
             self::fail('An unparsable value must be refused, not replaced by a default.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString($message, $refusal->getMessage());
-            self::assertSame($option, $refusal->origin()->locator());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame($option, $refusal->sources()[0]->locator());
         }
     }
 
@@ -419,7 +420,8 @@ final class FormatterContextFactoryTest extends TestCase
             self::fail('A value of the wrong shape must be refused.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString($message, $refusal->getMessage());
-            self::assertSame($option, $refusal->origin()->locator());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame($option, $refusal->sources()[0]->locator());
         }
     }
 
@@ -484,7 +486,8 @@ final class FormatterContextFactoryTest extends TestCase
             self::fail('Every written pair must be judged.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString($message, $refusal->getMessage());
-            self::assertSame('--format-opt', $refusal->origin()->locator());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame('--format-opt', $refusal->sources()[0]->locator());
         }
     }
 

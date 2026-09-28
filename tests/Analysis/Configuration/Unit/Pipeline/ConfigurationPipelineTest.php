@@ -48,7 +48,7 @@ final class ConfigurationPipelineTest extends TestCase
     }
 
     #[Test]
-    public function itRetainsOrderedContributionsInsteadOfApplyingFeatureMergeSemantics(): void
+    public function itRetainsFindingsOrderedRawInputsInsteadOfApplyingFeatureMergeSemantics(): void
     {
         $pipeline = new ConfigurationPipeline();
         $pipeline->addStage($this->stage(20, 'config', [
@@ -65,8 +65,8 @@ final class ConfigurationPipelineTest extends TestCase
         self::assertSame([
             ['size.loc' => ['warning' => 1000]],
             ['size.loc' => ['error' => 2000]],
-        ], $document->contributions('rules'));
-        self::assertSame([['security'], ['design']], $document->contributions('disabled_rules'));
+        ], $document->ruleContributions());
+        self::assertSame([['security'], ['design']], $document->disabledRuleContributions());
         self::assertSame(['config', 'cli'], $document->appliedSources());
     }
 
@@ -86,22 +86,26 @@ final class ConfigurationPipelineTest extends TestCase
         $pipeline->addStage($this->stage(15, 'preset:strict,ci', [], [
             ['format' => 'text'],
             ['format' => 'json'],
+        ], [
+            self::preset(['format' => 'text']),
+            new AuthoredLayer(
+                ConfigurationOrigin::of(ConfigurationSource::Preset, 'ci'),
+                AuthoredNode::fromPlain(['format' => 'json']),
+            ),
         ]));
 
         $document = $pipeline->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project')));
 
-        self::assertSame(['text', 'json'], $document->contributions('format'));
+        self::assertSame('json', $document->resolved()->get('format')?->plain());
         self::assertSame(['preset:strict,ci'], $document->appliedSources());
     }
 
     /**
-     * The engine runs beside the contributions: the layers stages hand over as
-     * written are composed against Configuration's roots and the sections
-     * owners register, in stage order, while `contributions()` still answers
-     * what it answered before.
+     * The engine composes the layers stages hand over as written against
+     * Configuration's roots and the sections owners register, in stage order.
      */
     #[Test]
-    public function itComposesTheAuthoredLayersBesideTheContributions(): void
+    public function itComposesTheAuthoredLayers(): void
     {
         $pipeline = new ConfigurationPipeline();
         $pipeline->addSection(self::couplingSection());
@@ -114,7 +118,6 @@ final class ConfigurationPipelineTest extends TestCase
 
         $document = $pipeline->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project')));
 
-        self::assertSame(['error', 'warning'], $document->contributions('fail_on'));
         $failOn = $document->resolved()->get('fail_on');
         self::assertNotNull($failOn);
         self::assertSame('warning', $failOn->plain());

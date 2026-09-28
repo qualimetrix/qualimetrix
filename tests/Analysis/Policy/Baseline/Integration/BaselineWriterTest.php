@@ -207,8 +207,9 @@ final class BaselineWriterTest extends TestCase
 
         $refusal = $this->refusalWithoutDiagnostics($path);
 
-        self::assertSame(ConfigurationSource::BaselineFile, $refusal->origin()->source());
-        self::assertSame($path, $refusal->origin()->locator());
+        self::assertCount(1, $refusal->sources());
+        self::assertSame(ConfigurationSource::BaselineFile, $refusal->sources()[0]->source());
+        self::assertSame($path, $refusal->sources()[0]->locator());
         self::assertSame(
             \sprintf('Cannot create the baseline directory %s: Not a directory', $this->tempDir . '/file/sub'),
             $refusal->summary(),

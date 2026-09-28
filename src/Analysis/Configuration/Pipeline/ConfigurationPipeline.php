@@ -18,11 +18,11 @@ use Qualimetrix\Analysis\Configuration\DocumentRoots;
  * Collects configuration from multiple stages (defaults, composer, config file, cli)
  * and merges them according to priority order.
  *
- * Capability-specific configuration remains an ordered normalized document
- * until its owning capability explicitly consumes it. Alongside it, the
- * layers a stage hands over as written are composed by the document engine
- * against the roots Configuration declares and the sections owners register;
- * a known root nobody declares yet is carried unread
+ * Capability-specific configuration is composed from the layers a stage hands
+ * over as written, except Finding's temporary ordered raw rule inputs and
+ * Composer discovery facts, which remain outside the authored document.
+ * The engine composes authored layers against the roots Configuration declares
+ * and the sections owners register; a known root nobody declares yet is carried unread
  * ({@see DocumentRoots::completing()}).
  */
 final class ConfigurationPipeline implements ConfigurationPipelineInterface

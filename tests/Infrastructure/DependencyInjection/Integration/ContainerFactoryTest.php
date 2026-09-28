@@ -628,7 +628,7 @@ PHP;
 
         self::assertArrayHasKey(
             'health.cohesion',
-            array_merge(...array_values($document->contributions('rules'))),
+            array_merge(...array_values($document->ruleContributions())),
         );
 
         $invented = $this->tempDir . '/invented-producer.yaml';

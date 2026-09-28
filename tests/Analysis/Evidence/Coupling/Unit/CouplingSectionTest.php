@@ -40,8 +40,9 @@ final class CouplingSectionTest extends TestCase
             ], AbsolutePath::fromString('/project'), new CouplingSection());
             self::fail('A selector written with the wrong shape must be refused before a later layer replaces it.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertSame(ConfigurationSource::Preset, $refusal->origin()->source());
-            self::assertSame('preset:broken', $refusal->origin()->locator());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame(ConfigurationSource::Preset, $refusal->sources()[0]->source());
+            self::assertSame('preset:broken', $refusal->sources()[0]->locator());
             self::assertSame(['coupling', 'frameworkNamespaces', '0'], $refusal->position()?->segments);
         }
     }
