@@ -92,11 +92,14 @@ scopes and reject changes elsewhere.
 - Summary ranking rows retain count, order, record correspondence and score
   tolerance checks. Whether locations carry `:line` and scores use the
   renderer's decimal precision is proven by product formatter tests.
-- Gate end-to-end tests, observed witnesses and negative controls run in
-  `composer check:gate` and a separate CI job. The normal aggregate keeps
-  cheap regression tests and stays within the eight-minute local budget.
-  This isolates the cost of process and repository wiring; future changes
-  to the gate still require that separate group.
+- Gate end-to-end captures and both self-test witnesses run in
+  `composer check:gate`, with CI on every pull request and pushes to `main`.
+  Negative controls retain `composer gate:controls` and a separate daily
+  `main` workflow with manual dispatch. Both groups are locally required for
+  changes to `scripts/finding-gate*`, `scripts/finding-gate-controls/` or
+  `finding-gate/`. The normal aggregate keeps cheap regression tests within
+  the eight-minute local budget. This separates the measured control cost
+  from each pull request while preserving its observed self-test witnesses.
 
 ## Rejected alternatives
 
