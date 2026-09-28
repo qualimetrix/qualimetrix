@@ -244,39 +244,18 @@ final class RenameControls
     }
 
     /**
-     * A root configuration key renamed in product code, translated by the
-     * fourth `inputs.tsv` shape — a document key with its trailing colon.
+     * The concrete namespace-suppression root renamed through its declaration,
+     * consumer key and every corpus document writing that canonical root.
      *
-     * `suppress_namespaces` is the cheapest key to rename: its root-level
-     * writing occurs exactly once in the corpus,
-     * `finding-gate/cases/rule-exclusion-ledger/qmx.yaml`, so the mutation
-     * reaches one product file plus that one corpus file — `suppress_paths`
-     * would have needed fifteen. The corpus file is edited alongside the schema
-     * because the corpus belongs to the candidate: a mutated schema left facing
-     * an un-renamed root key in its own corpus would refuse it with exit 3
-     * before the reference side is even reached.
-     *
-     * What the schema edit renames, and what it deliberately leaves alone.
-     * `ConfigSchema::SUPPRESS_NAMESPACES` is the flat RESULT key the loader
-     * produces after normalization — an internal identifier, not what a
-     * document writes — so it stays `suppress_namespaces` untouched. What a
-     * document writes is `ENTRIES`' camelCase SOURCE path, matched after the
-     * loader's own generic snake_case-to-camelCase pass, and `sectionPolicies()`
-     * keys its entry by that same source path: renaming one without the other
-     * throws `LogicException` the moment the root key is read at all, which is
-     * how this was measured to need both.
-     *
-     * The per-rule key of the same spelling, nested under
-     * `rules: {code-smell.long-parameter-list: {...}}` in the same file, is
-     * deliberately left alone: it is a different mechanism, keyed by
-     * `RuleOptionsFactory`'s own alias resolution rather than by `ENTRIES`, and
-     * the mutation does not touch it.
+     * Resolved readers use canonical document keys; preserving the former flat
+     * result key would drop the renamed value rather than preserve suppression.
+     * The per-rule key of the same spelling remains a separate vocabulary.
      */
     public static function rootKeyRenamed(): Control
     {
         return Control::greenWith(
             'root-key-renamed',
-            'the root configuration key suppress_namespaces is renamed, translated by an inputs.tsv row written as the document spells it',
+            'the declared suppress_namespaces root and its consumer key are renamed, translated by their document spelling',
             self::rootKeyMutation()->and(ChannelRenamePlants::trackedMapPlus(
                 'inputs.tsv',
                 ["suppress_namespaces:\tsuppress_ns:\tthe root configuration key's document spelling is renamed"],
@@ -291,11 +270,16 @@ final class RenameControls
         return Mutation::edit(
             'src/Analysis/Configuration/ConfigSchema.php',
             [
+                "public const string SUPPRESS_NAMESPACES = 'suppress_namespaces';" => "public const string SUPPRESS_NAMESPACES = 'suppress_ns';",
                 "['suppressNamespaces', self::SUPPRESS_NAMESPACES, self::LIST, null]," => "['suppressNs', self::SUPPRESS_NAMESPACES, self::LIST, null],",
                 "'suppressNamespaces' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE," => "'suppressNs' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,",
             ],
-            "the root key's document spelling is renamed: the ENTRIES source path and its normalization policy, both keyed by that spelling rather than by the SUPPRESS_NAMESPACES result-key constant",
-        )->and(Mutation::renameRootKeyInCorpus(
+            "the namespace-suppression source path, normalization policy and resolved reader key are renamed together",
+        )->and(Mutation::edit(
+            'src/Analysis/Configuration/ConfigurationRoot.php',
+            ["case SuppressNamespaces = 'suppress_namespaces';" => "case SuppressNamespaces = 'suppress_ns';"],
+            'the same canonical root declaration retains its selector-set schema',
+        ))->and(Mutation::renameRootKeyInCorpus(
             'suppress_namespaces',
             'suppress_ns',
             'every case addressing the root key writes the new name at root indent; the per-rule key of the same'
