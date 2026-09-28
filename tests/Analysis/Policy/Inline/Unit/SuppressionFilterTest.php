@@ -511,7 +511,7 @@ final class SuppressionFilterTest extends TestCase
     #[Test]
     #[RunInSeparateProcess]
     #[PreserveGlobalState(false)]
-    public function itIndexesEachAnnotatedFileOnceWhenLoadingSuppressions(): void
+    public function itLoadsSuppressionsWithoutReindexingOrCopyingTheGrowingMaps(): void
     {
         self::assertFalse(class_exists(MetricSubject::class, false));
 
@@ -539,7 +539,7 @@ PHP);
 
         try {
             $suppressions = [];
-            for ($index = 0; $index < 12; $index++) {
+            for ($index = 0; $index < 2048; $index++) {
                 $file = "src/File{$index}.php";
                 $declaration = DeclarationPath::of(
                     SymbolPath::forClass('Demo', "File{$index}"),
@@ -558,9 +558,24 @@ PHP);
                 )];
             }
 
-            (new SuppressionFilter())->apply([], $suppressions);
+            $filter = new SuppressionFilter();
+            $filter->apply([], []);
 
-            self::assertSame(12, $GLOBALS['suppressionFilterCanonicalReads']);
+            $beforeCopy = memory_get_usage();
+            $copy = [...$suppressions];
+            $copyBytes = memory_get_usage() - $beforeCopy;
+            unset($copy);
+
+            $GLOBALS['suppressionFilterCanonicalReads'] = 0;
+            memory_reset_peak_usage();
+            $filter->apply([], $suppressions);
+            $residentBytes = memory_get_usage();
+            $transientBytes = memory_get_peak_usage() - $residentBytes;
+
+            self::assertSame(2048, $GLOBALS['suppressionFilterCanonicalReads'], 'Each annotated file must be indexed once');
+            // A discarded copy still raises the peak; compare it with a copy
+            // measured in this process rather than a machine-dependent byte limit.
+            self::assertLessThan(intdiv($copyBytes, 2), $transientBytes, 'Loading must not discard copies of the growing maps');
         } finally {
             unset($GLOBALS['suppressionFilterCanonicalReads']);
         }
