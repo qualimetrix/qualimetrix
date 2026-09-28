@@ -10,13 +10,15 @@ use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
 
 /**
- * Single source of truth for all configuration keys.
+ * Vocabulary for current configuration keys and legacy ingress mappings.
  *
- * Every config key used anywhere in the pipeline is defined here as a constant.
- * The ENTRIES array unifies YAML-to-flat-key mappings with root key type constraints.
+ * Constants name the keys still carried through the legacy flat projection.
+ * ENTRIES maps YAML paths to those keys and preserves their ingress constraints.
+ * Declared owner sections receive their form validation and merge policy from
+ * the configuration document engine.
  *
- * Consumers (YamlConfigLoader, ConfigDataNormalizer, source stages, and owner resolvers)
- * all reference these constants instead of string literals.
+ * Consumers (YamlConfigLoader, ConfigDataNormalizer, and legacy source stages)
+ * reference these constants instead of string literals.
  *
  * Adding a new config option:
  * 1. Add a constant below

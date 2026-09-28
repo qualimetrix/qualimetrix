@@ -70,11 +70,16 @@ review projections, not the manifest or a runtime/DI registry. A direct
 cycles fail configuration loading, while `architecture.circular-dependency`
 checks cycles in actual class dependencies.
 
-`ConfigurationDocument` is the concrete public source seam. It preserves the
-ordered contributions and invocation working directory only; it is not a
-generic configuration interface or invocation context. Run, Finding, Cache,
-Parallel, Reporting, and Console resolve their own values from it, retaining
-mutable state only inside the owner that needs a per-container store.
+`ConfigurationDocument` is the concrete public source seam. It carries the
+invocation working directory, a resolved document with provenance and
+diagnostics, and ordered contributions during migration; it is not a generic
+configuration interface or invocation context. Architecture and ComputedMetrics
+read their owner-declared sections from the resolved document, and Run reads its
+ordinary roots there. Remaining contribution readers are Coupling, Run's
+internal Composer-discovery lists, Cache, Console, Parallel, Reporting,
+FindingProjection, and Finding's narrow `rules`, `only_rules`, and
+`disabled_rules` boundary. Mutable state remains only inside the owner that
+needs a per-container store.
 
 ### 2. Five-Phase Pipeline
 

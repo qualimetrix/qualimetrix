@@ -8,10 +8,11 @@ It owns source resolution and schema semantics, not a cross-owner runtime DTO.
 Each feature resolves its own immutable projection from that concrete document;
 owner-local runtime state exists only where a long-lived service needs it.
 
-The document is a narrow public source seam: its contributions and working
-directory are consumed by named owners, while Symfony input remains inside the
-Console adapter. It does not expose a generic configuration interface, a
-universal invocation context, or a carrier for feature fields.
+The document is a narrow public source seam: it carries the invocation working
+directory, a resolved document with provenance and diagnostics, and ordered
+contributions while named owners complete their migrations. Symfony input
+remains inside the Console adapter. It does not expose a generic configuration
+interface, a universal invocation context, or a carrier for feature fields.
 
 ## Structure
 
@@ -40,7 +41,7 @@ Configuration/
 │   └── Stage/          # defaults, Composer, preset, file, CLI stages
 ├── Preset/             # built-in and custom preset resolution
 ├── ConfigKeySpelling.php   # the snake/kebab/camel fold of a key, and its inverse
-├── ConfigSchema.php        # every YAML key, its result key, type and normalization policy
+├── ConfigSchema.php        # canonical ingress keys and legacy flat mappings
 ├── ConfigurationRoot.php   # the roots Configuration declares: key and schema of each
 ├── DocumentRoots.php       # every root of the document and who declares it
 ├── UndeclaredRoot.php      # the stand-in for a known root no owner has declared yet
@@ -52,20 +53,22 @@ Configuration/
 
 `ConfigurationPipelineInterface` runs ordered stages over a
 `ConfigurationResolutionRequest`, then produces `ConfigurationDocument`.
-`ConfigSchema` remains the single source of YAML key names and types. The
-precedence order, lowest first, is defaults, Composer discovery, presets, the
-configuration file, and CLI options — the stage priorities 0, 10, 15, 20 and 30.
-Stages do not merge: the document keeps every contribution in that order, and
-each owner folds its own key — a scalar is usually taken from the last layer
-that wrote it, while each collection states its own semantics (`disabled_rules`
-accumulates, `only_rules` is replaced). Composer discovery contributes the
-production and `autoload-dev` targets — every autoload form, `psr-4`, `psr-0`,
-`classmap` and `files`, the list the scope denominator also reads — under two
-internal keys rather than `paths`: `include_autoload_dev`, which a later
-source may write, decides which of them Run takes as the default paths. The
-lists are the manifest as written: Run, not the reader, drops a target that
-lies inside `vendor`, `node_modules` or `.git`, because that is Run's
-discovery rule.
+`ConfigSchema` names canonical ingress keys and keeps the legacy flat mappings;
+it is not the authority for value form or merge semantics. `ConfigurationRoot`
+declares Configuration-owned roots, and a capability declares its own root
+through `DocumentSectionSchemaInterface`. The precedence order, lowest first,
+is defaults, Composer discovery, presets, the configuration file, and CLI
+options — the stage priorities 0, 10, 15, 20 and 30. Stages preserve each
+source contribution in that order; the document engine merges each declared
+root by its `NodeSchema`. A scalar normally takes the last writer, while the
+declared collection policy determines whether a list replaces or a set
+accumulates. Composer discovery contributes the production and `autoload-dev`
+targets — every autoload form, `psr-4`, `psr-0`, `classmap` and `files`, the
+list the scope denominator also reads — under two internal keys rather than
+`paths`: `include_autoload_dev`, which a later source may write, decides which
+of them Run takes as the default paths. The lists are the manifest as written:
+Run, not the reader, drops a target that lies inside `vendor`, `node_modules`
+or `.git`, because that is Run's discovery rule.
 
 A key is written once per document. `suppress_paths`, `suppress-paths` and
 `suppressPaths` fold into one key, so writing two of them in one mapping is
@@ -86,17 +89,16 @@ because the rule layer already imports Configuration and the reverse edge would
 be a cycle. `ConfigKeySpelling` is that fold and its inverse, shared by every
 door rather than spelled out again in each.
 
-`ConfigurationDocument` preserves ordered source contributions. Feature leaves
-consume their own contribution key: for example,
-Architecture policy parses and merges only `architecture` after the Console
-logger exists, then returns typed warnings through its own contract. The
-central pipeline neither contains an Architecture object nor transports a
-feature-specific deferred warning. ComputedMetrics folds `computed_metrics` and
-`exclude_health` directly from the same ordered document and publishes an
-instance-owned catalog only after full validation. Coupling likewise folds the
-canonical `coupling.framework_namespaces` contribution into its own run-scoped
-state. The document root remains normalized and schema-governed even though the
-mixed carrier copies that value.
+`ConfigurationDocument` exposes the resolved document, its diagnostics and the
+working directory to named owners. Architecture reads its registered
+`architecture` section from the resolved document after the Console logger
+exists, then returns typed warnings through its own contract. ComputedMetrics
+likewise reads its registered `computed_metrics` and `exclude_health` sections
+and publishes an instance-owned catalog only after full validation. The central
+pipeline neither contains an Architecture or ComputedMetrics object nor
+transports feature-specific deferred warnings. The transition still retains
+ordered contributions for the legacy readers named below; it does not turn the
+document into a cross-owner runtime DTO.
 
 ## Document engine
 
@@ -171,7 +173,14 @@ decision and what it leaves unexpressible are recorded in
 [ADR 0086](../../../docs/adr/0086-one-configuration-document-merged-by-declared-policy.md).
 
 The engine runs in every resolution, beside `contributions()` while owners
-move to it. Every stage hands its sources over as written through
+move to it. The remaining legacy readers are Coupling (`coupling`), Run's two
+internal discovered-autoload lists, Cache (`cache.dir`, `cache.enabled`),
+Console (`fail_on`, `memory_limit`, `format`), Parallel (`parallel.workers`),
+Reporting (`format`), FindingProjection (`suppress_paths`,
+`suppress_namespaces`), and Finding's narrow rule boundary (`rules`,
+`only_rules`, `disabled_rules`). `rules` remains an undeclared root; the other
+Finding keys are declared but still read through their ordered contributions.
+Every stage hands its sources over as written through
 `ConfigurationLayer::$authored`, read before any key is folded or any `~`
 erased: the defaults (empty), each preset as a layer of its own, the file, and
 the command line — a layer without positions whose every value carries the
@@ -318,8 +327,9 @@ Use `--rule-opt=RULE:OPTION=VALUE` for every option without a short alias.
   fails with `ConfigurationRefusal` (`Contract/Refusal/`).
 - Two analysis invocations in one process do not leak owner-local runtime or
   rule-option state.
-- Every new YAML key is added to `ConfigSchema` and consumed by its natural
-  owner, rather than extending a generic configuration carrier.
+- Every new YAML key has a canonical ingress mapping where needed and is
+  declared by its natural owner (`ConfigurationRoot` or an owner section),
+  rather than extending a generic configuration carrier.
 
 
 ## Locality
