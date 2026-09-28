@@ -4,21 +4,22 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Parallel\Unit;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\ConfigSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Parallel\Configuration\ParallelConfigurationResolver;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 final class ParallelConfigurationResolverTest extends TestCase
 {
     #[Test]
-    public function itUsesTheLastWorkerContribution(): void
+    public function itUsesTheWinningWorkerValue(): void
     {
-        $configuration = (new ParallelConfigurationResolver())->resolve(new ConfigurationDocument([
-            ['source' => 'config', 'values' => ['parallel.workers' => 2]],
-            ['source' => 'cli', 'values' => ['parallel.workers' => 0]],
+        $configuration = (new ParallelConfigurationResolver())->resolve(LayeredDocument::of([
+            ['source' => 'config.yaml', 'values' => [ConfigSchema::PARALLEL_WORKERS => 2]],
+            ['source' => 'cli', 'values' => [ConfigSchema::PARALLEL_WORKERS => 0]],
         ], AbsolutePath::fromString('/project')));
 
         self::assertSame(0, $configuration->workers);
@@ -27,9 +28,13 @@ final class ParallelConfigurationResolverTest extends TestCase
     #[Test]
     public function itRejectsNegativeWorkerCounts(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        (new ParallelConfigurationResolver())->resolve(new ConfigurationDocument([
-            ['source' => 'config', 'values' => ['parallel.workers' => -1]],
-        ], AbsolutePath::fromString('/project')));
+        try {
+            (new ParallelConfigurationResolver())->resolve(LayeredDocument::of([
+                ['source' => 'config.yaml', 'values' => [ConfigSchema::PARALLEL_WORKERS => -1]],
+            ], AbsolutePath::fromString('/project')));
+            self::fail('Negative worker counts must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('config.yaml', $refusal->origin()->locator());
+        }
     }
 }

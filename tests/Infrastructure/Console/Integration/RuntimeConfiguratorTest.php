@@ -50,6 +50,8 @@ use Qualimetrix\Infrastructure\Profiler\ProfileSession;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use Qualimetrix\Subprocess\ChildProcess;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use Qualimetrix\Tests\Infrastructure\Console\Support\SplitStreamConsoleOutput;
 use ReflectionClass;
 use RuntimeException;
@@ -58,6 +60,8 @@ use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
+
+require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
 
 #[CoversClass(RuntimeConfigurator::class)]
 #[CoversClass(RuntimeLimitsController::class)]
@@ -222,7 +226,7 @@ final class RuntimeConfiguratorTest extends TestCase
 
         $this->configurator->resetRunState();
         $this->configure(
-            new ConfigurationDocument([], AbsolutePath::fromString($this->projectRoot)),
+            LayeredDocument::of([], AbsolutePath::fromString($this->projectRoot)),
             AbsolutePath::fromString($this->projectRoot),
             $this->input(),
             new BufferedOutput(),
@@ -241,7 +245,7 @@ final class RuntimeConfiguratorTest extends TestCase
 
         try {
             $this->configure(
-                new ConfigurationDocument([
+                LayeredDocument::of([
                     ['source' => 'test', 'values' => [
                         'cache.enabled' => false,
                         'parallel.workers' => 0,
@@ -278,7 +282,7 @@ final class RuntimeConfiguratorTest extends TestCase
 
         $this->configurator->resetRunState();
         $this->configure(
-            new ConfigurationDocument([], $root),
+            LayeredDocument::of([], $root),
             $root,
             $this->input(),
             new BufferedOutput(),
@@ -332,7 +336,7 @@ final class RuntimeConfiguratorTest extends TestCase
 
         try {
             $this->configure(
-                new ConfigurationDocument([
+                LayeredDocument::of([
                     ['source' => 'custom', 'values' => [
                         'cache.enabled' => false,
                         'parallel.workers' => 0,
@@ -366,7 +370,7 @@ final class RuntimeConfiguratorTest extends TestCase
     public function itReportsAnUnapplicableMemoryLimitAfterCommittingStoresAndBeforeLaterEffects(): void
     {
         $root = AbsolutePath::fromString($this->projectRoot);
-        $document = new ConfigurationDocument([
+        $document = LayeredDocument::of([
             ['source' => 'custom', 'values' => [
                 'cache.enabled' => false,
                 'parallel.workers' => 0,
@@ -397,7 +401,7 @@ final class RuntimeConfiguratorTest extends TestCase
     public function itAppliesAnIntegerMemoryLimit(): void
     {
         $root = AbsolutePath::fromString($this->projectRoot);
-        $document = new ConfigurationDocument([['source' => 'custom', 'values' => ['memory_limit' => 1]]], $root);
+        $document = LayeredDocument::of([['source' => 'custom', 'values' => ['memory_limit' => 1]]], $root);
         $this->configurator->resetRunState();
 
         $this->expectException(RuntimeException::class);
@@ -463,6 +467,53 @@ final class RuntimeConfiguratorTest extends TestCase
         } finally {
             restore_error_handler();
         }
+    }
+
+    #[Test]
+    public function itPreservesTheMemoryLimitAuthorAndRuntimeCauseWhenIniSetThrows(): void
+    {
+        $script = \sprintf(<<<'PHP'
+namespace Qualimetrix\Infrastructure\Console {
+    function ini_set(string $option, string $value): string|false
+    {
+        throw new \RuntimeException('the runtime refused this limit');
+    }
+}
+
+namespace {
+    require %s;
+
+    $document = \Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument::of([
+        ['source' => 'qmx.yaml', 'values' => ['memory_limit' => '512M']],
+    ], \Qualimetrix\Core\Path\AbsolutePath::fromString('/project'));
+
+    try {
+        (new \Qualimetrix\Infrastructure\Console\RuntimeLimitsController())->apply(
+            \Qualimetrix\Infrastructure\Console\RuntimeLimits::fromResolvedValue(
+                $document->resolved()->get('memory_limit'),
+            ),
+        );
+    } catch (\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal $refusal) {
+        echo json_encode([
+            'sources' => array_map(static fn($source) => [$source->source()->value, $source->locator()], $refusal->sources()),
+            'position' => $refusal->position()?->segments,
+            'previous' => $refusal->getPrevious()?->getMessage(),
+        ], JSON_THROW_ON_ERROR);
+    }
+}
+PHP, var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true));
+
+        $run = ChildProcess::run([\PHP_BINARY, '-r', $script]);
+
+        self::assertSame(0, $run['exitCode'], $run['stderr']);
+        self::assertSame(
+            [
+                'sources' => [['file', 'qmx.yaml']],
+                'position' => ['memory_limit'],
+                'previous' => 'the runtime refused this limit',
+            ],
+            json_decode($run['stdout'], true, flags: \JSON_THROW_ON_ERROR),
+        );
     }
 
     /**
@@ -583,7 +634,7 @@ final class RuntimeConfiguratorTest extends TestCase
 
     private function customDocument(): ConfigurationDocument
     {
-        return new ConfigurationDocument([
+        return LayeredDocument::of([
             ['source' => 'qmx.yaml', 'values' => [
                 'cache.dir' => 'cache',
                 'cache.enabled' => false,

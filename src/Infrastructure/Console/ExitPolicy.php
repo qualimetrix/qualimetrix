@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
@@ -25,33 +26,24 @@ final readonly class ExitPolicy
         }
     }
 
-    /** @param iterable<mixed> $contributions */
-    public static function fromContributions(iterable $contributions): self
+    public static function fromResolvedValue(?ResolvedValueInterface $value): self
     {
-        $value = null;
-        foreach ($contributions as $candidate) {
-            $value = $candidate;
-        }
-
-        return self::fromValue($value);
-    }
-
-    private static function fromValue(mixed $value): self
-    {
-        if ($value === false || $value === 'none') {
-            return new self(false);
-        }
         if ($value === null) {
             return new self();
         }
-        if ($value instanceof Severity) {
-            return new self($value);
+
+        $configured = $value->plain();
+        if ($configured === false || $configured === 'none') {
+            return new self(false);
         }
-        if (\is_string($value) && Severity::tryFrom($value)?->gatesRun() === true) {
-            return new self(Severity::from($value));
+        if ($configured instanceof Severity && $configured->gatesRun()) {
+            return new self($configured);
+        }
+        if (\is_string($configured) && ($severity = Severity::tryFrom($configured))?->gatesRun() === true) {
+            return new self($severity);
         }
 
-        throw self::refusal(\is_scalar($value) ? (string) $value : get_debug_type($value));
+        $value->refuse(self::rejection(\is_scalar($configured) ? (string) $configured : get_debug_type($configured)));
     }
 
     private static function refusal(string $value): ConfigurationRefusal

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use RuntimeException;
 use Throwable;
@@ -42,13 +41,10 @@ final readonly class RuntimeLimitsController
         if ($limits->memoryLimit !== null) {
             $this->setMemoryLimit(
                 $limits->memoryLimit,
-                static fn(): Throwable => ConfigurationRefusal::aboutResolvedInput(
-                    \sprintf(
-                        'Cannot set requested memory_limit "%s": the PHP runtime refused it. A limit below the memory this process already uses is refused.',
-                        $limits->memoryLimit,
-                    ),
-                    ConfigSchema::MEMORY_LIMIT,
-                ),
+                static fn(): Throwable => $limits->refusal(\sprintf(
+                    'Cannot set requested memory_limit "%s": the PHP runtime refused it. A limit below the memory this process already uses is refused.',
+                    $limits->memoryLimit,
+                )),
             );
         }
     }
@@ -63,7 +59,12 @@ final readonly class RuntimeLimitsController
             } catch (Throwable $exception) {
                 $wrapped = $failure();
                 throw $wrapped instanceof ConfigurationRefusal
-                    ? ConfigurationRefusal::aboutInput($wrapped->origin(), $wrapped->summary(), $exception)
+                    ? ConfigurationRefusal::acrossLayers(
+                        $wrapped->sources(),
+                        $wrapped->position(),
+                        $wrapped->summary(),
+                        $exception,
+                    )
                     : new RuntimeException($wrapped->getMessage(), 0, $exception);
             }
         } finally {

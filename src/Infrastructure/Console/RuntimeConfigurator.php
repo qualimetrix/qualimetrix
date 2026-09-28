@@ -135,14 +135,7 @@ final class RuntimeConfigurator
      */
     private function resolveRuntimeLimits(ConfigurationDocument $document): RuntimeLimits
     {
-        $value = null;
-        foreach ($document->contributions(ConfigSchema::MEMORY_LIMIT) as $candidate) {
-            if (\is_string($candidate) || \is_int($candidate)) {
-                $value = (string) $candidate;
-            }
-        }
-
-        return new RuntimeLimits($value);
+        return RuntimeLimits::fromResolvedValue($document->resolved()->get(ConfigSchema::MEMORY_LIMIT));
     }
 
     /**
@@ -164,14 +157,9 @@ final class RuntimeConfigurator
      */
     private function resolveFormat(ConfigurationDocument $document): ?string
     {
-        $value = null;
-        foreach ($document->contributions(ConfigSchema::FORMAT) as $contribution) {
-            if (\is_string($contribution)) {
-                $value = $contribution;
-            }
-        }
+        $format = $document->resolved()->get(ConfigSchema::FORMAT)?->plain();
 
-        return $value;
+        return \is_string($format) ? $format : null;
     }
 
     /**
