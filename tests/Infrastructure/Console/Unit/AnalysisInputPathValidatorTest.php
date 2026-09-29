@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
@@ -12,6 +13,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Console\AnalysisInputPathValidator;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
+#[CoversClass(AnalysisInputPathValidator::class)]
 final class AnalysisInputPathValidatorTest extends TestCase
 {
     private string $directory;

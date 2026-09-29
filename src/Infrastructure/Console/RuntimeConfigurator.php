@@ -7,11 +7,8 @@ namespace Qualimetrix\Infrastructure\Console;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
-use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
-use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface;
 use Qualimetrix\Infrastructure\Profiler\Contract\ProfileSessionControlInterface;
 use Symfony\Component\Console\Input\InputInterface;
@@ -55,43 +52,28 @@ final class RuntimeConfigurator
      */
     public function configure(
         ConfigurationDocument $document,
-        RunConfiguration $runConfiguration,
+        ResolvedRunConfiguration $run,
         ?FindingConfiguration $findingConfiguration,
-        CacheConfiguration $cacheConfiguration,
-        ParallelConfiguration $parallelConfiguration,
         InputInterface $input,
         OutputInterface $output,
         ?AnalysisPreflightProfile $profile = null,
     ): void {
         $profile ??= AnalysisPreflightProfile::analysis();
-        $this->projectSourceConfigurator->configure($runConfiguration->projectRoot, $runConfiguration->paths);
+        $this->projectSourceConfigurator->configure($run->runConfiguration->projectRoot, $run->runConfiguration->paths);
 
         // Pure preflight: no store or external-effect mutation is allowed
         // until every owner has accepted its immutable value.
         $runtimeLimits = $this->resolveRuntimeLimits($document);
-        $architecturePolicy = null;
-        $frameworkNamespaces = [];
-        if ($findingConfiguration !== null) {
-            $architecturePolicy = $this->analysisRuntimeConfigurator->resolveArchitecturePolicy($document);
-            $computedMetrics = $this->analysisRuntimeConfigurator->resolveComputedMetrics($document);
-            $lcomConfiguration = $this->analysisRuntimeConfigurator->resolveLcom($findingConfiguration);
-            ProfilePresenter::refuseImpossibleExport($input);
-            $channels = $this->analysisRuntimeConfigurator->resolveRuleChannels($input, $findingConfiguration, $computedMetrics);
-            $frameworkNamespaces = $this->analysisRuntimeConfigurator->resolveCoupling($document);
-        } else {
-            $frameworkNamespaces = $this->analysisRuntimeConfigurator->resolveCoupling($document);
-        }
+        $prepared = $findingConfiguration === null ? null : $this->analysisRuntimeConfigurator->prepare($document, $findingConfiguration, $input);
+        $frameworkNamespaces = $prepared !== null ? $prepared->frameworkNamespaces : $this->analysisRuntimeConfigurator->resolveCoupling($document);
 
         // Built-in stores commit only after complete preflight. An unexpected
         // custom-store failure is fail-closed, but is not claimed to roll back.
-        $this->cacheFactory->replaceConfiguration($cacheConfiguration);
-        $this->parallelConfigurationStore->replace($parallelConfiguration);
-        if ($findingConfiguration !== null) {
-            $this->analysisRuntimeConfigurator->replace($findingConfiguration, $lcomConfiguration, $architecturePolicy, $computedMetrics, $frameworkNamespaces, $channels);
-            if (($input->hasOption('show-suppressed') && $input->getOption('show-suppressed') === true)
-                || ($profile->requiresReportingFormat && $this->resolveFormat($document) === 'suppressed')) {
-                $this->analysisRuntimeConfigurator->captureExcludedFindings();
-            }
+        $this->cacheFactory->replaceConfiguration($run->cacheConfiguration);
+        $this->parallelConfigurationStore->replace($run->parallelConfiguration);
+        if ($prepared !== null) {
+            $this->analysisRuntimeConfigurator->replace($prepared);
+            $this->captureExcludedFindings($document, $input, $profile);
         } else {
             $this->analysisRuntimeConfigurator->replaceCoupling($frameworkNamespaces);
         }
@@ -100,13 +82,21 @@ final class RuntimeConfigurator
         // analysis; committed stores are reset at the next invocation entry.
         $this->runtimeLimitsController->apply($runtimeLimits);
         $logger = $this->runtimeLoggerConfigurator->configure($input, $output);
-        if ($architecturePolicy !== null) {
-            foreach ($architecturePolicy->warnings() as $warning) {
+        if ($prepared !== null) {
+            foreach ($prepared->architecturePolicy->warnings() as $warning) {
                 $logger->warning($warning->message, $warning->context);
             }
         }
         $this->progressConfigurator->configure($input, $output);
         $this->configureProfiler($input);
+    }
+
+    private function captureExcludedFindings(ConfigurationDocument $document, InputInterface $input, AnalysisPreflightProfile $profile): void
+    {
+        if (($input->hasOption('show-suppressed') && $input->getOption('show-suppressed') === true)
+            || ($profile->requiresReportingFormat && $this->resolveFormat($document) === 'suppressed')) {
+            $this->analysisRuntimeConfigurator->captureExcludedFindings();
+        }
     }
 
     public function clearCacheIfRequested(InputInterface $input): bool

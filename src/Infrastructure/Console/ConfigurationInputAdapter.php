@@ -149,44 +149,97 @@ final class ConfigurationInputAdapter
     {
         $values = [];
         $names = [];
-        $this->put($values, $names, ConfigSchema::PATHS, CommandLineSpelling::arguments($input, 'paths'), 'paths');
-        if ($profile->mapsOption('exclude')) {
-            $this->put($values, $names, ConfigSchema::EXCLUDES, array_map(
-                function (string $selector): array {
-                    $definition = $this->selectorDecoder->decodePath($selector, '--exclude')->definition;
+        $this->pathOverrides($input, $profile, $values, $names);
+        $this->singleValuedOverrides($input, $profile, $values, $names);
+        $this->repeatableOverrides($input, $profile, $values, $names);
+        $this->switchOverrides($input, $profile, $values, $names);
+        $this->workerOverride($input, $profile, $values, $names);
 
-                    return [$definition->kind->value => $definition->value];
-                },
-                CommandLineSpelling::options($input, 'exclude'),
-            ), '--exclude');
+        return [$values, $names];
+    }
+
+    /**
+     * @param array<string, mixed> $values
+     * @param array<string, string> $names
+     */
+    private function pathOverrides(InputInterface $input, AnalysisPreflightProfile $profile, array &$values, array &$names): void
+    {
+        $this->put($values, $names, ConfigSchema::PATHS, CommandLineSpelling::arguments($input, 'paths'), 'paths');
+        if (!$profile->mapsOption('exclude')) {
+            return;
         }
+
+        $this->put($values, $names, ConfigSchema::EXCLUDES, array_map(
+            function (string $selector): array {
+                $definition = $this->selectorDecoder->decodePath($selector, '--exclude')->definition;
+
+                return [$definition->kind->value => $definition->value];
+            },
+            CommandLineSpelling::options($input, 'exclude'),
+        ), '--exclude');
+    }
+
+    /**
+     * @param array<string, mixed> $values
+     * @param array<string, string> $names
+     */
+    private function singleValuedOverrides(InputInterface $input, AnalysisPreflightProfile $profile, array &$values, array &$names): void
+    {
         foreach (self::SINGLE_VALUED as $option => $key) {
             if ($profile->mapsOption($option)) {
                 $this->put($values, $names, $key, CommandLineSpelling::option($input, $option), '--' . $option);
             }
         }
+    }
+
+    /**
+     * @param array<string, mixed> $values
+     * @param array<string, string> $names
+     */
+    private function repeatableOverrides(InputInterface $input, AnalysisPreflightProfile $profile, array &$values, array &$names): void
+    {
         foreach (self::REPEATABLE as $option => $key) {
             if ($profile->mapsOption($option)) {
                 $this->put($values, $names, $key, CommandLineSpelling::options($input, $option), '--' . $option);
             }
         }
+    }
 
-        if ($profile->mapsOption('no-cache') && $this->option($input, 'no-cache') === true) {
-            $this->put($values, $names, ConfigSchema::CACHE_ENABLED, false, '--no-cache');
+    /**
+     * @param array<string, mixed> $values
+     * @param array<string, string> $names
+     */
+    private function switchOverrides(InputInterface $input, AnalysisPreflightProfile $profile, array &$values, array &$names): void
+    {
+        foreach (self::SWITCHES as $option => [$key, $value]) {
+            if ($profile->mapsOption($option) && $this->option($input, $option) === true) {
+                $this->put($values, $names, $key, $value, '--' . $option);
+            }
         }
-        if ($profile->mapsOption('include-generated') && $this->option($input, 'include-generated') === true) {
-            $this->put($values, $names, ConfigSchema::INCLUDE_GENERATED, true, '--include-generated');
+    }
+
+    /**
+     * @param array<string, mixed> $values
+     * @param array<string, string> $names
+     */
+    private function workerOverride(InputInterface $input, AnalysisPreflightProfile $profile, array &$values, array &$names): void
+    {
+        if (!$profile->mapsOption('workers')) {
+            return;
         }
-        if ($profile->mapsOption('include-autoload-dev') && $this->option($input, 'include-autoload-dev') === true) {
-            $this->put($values, $names, ConfigSchema::INCLUDE_AUTOLOAD_DEV, true, '--include-autoload-dev');
-        }
+
         $workers = CommandLineSpelling::option($input, 'workers');
-        if ($profile->mapsOption('workers') && $workers !== null) {
+        if ($workers !== null) {
             $this->put($values, $names, ConfigSchema::PARALLEL_WORKERS, (int) $workers, '--workers');
         }
-
-        return [$values, $names];
     }
+
+    /** @var array<string, array{string, bool}> switch => configuration key and value */
+    private const array SWITCHES = [
+        'no-cache' => [ConfigSchema::CACHE_ENABLED, false],
+        'include-generated' => [ConfigSchema::INCLUDE_GENERATED, true],
+        'include-autoload-dev' => [ConfigSchema::INCLUDE_AUTOLOAD_DEV, true],
+    ];
 
     /** @var array<string, string> single-valued option => configuration key */
     private const array SINGLE_VALUED = [

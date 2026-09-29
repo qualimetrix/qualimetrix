@@ -12,12 +12,8 @@ use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface;
-use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
-use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason;
-use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReasonKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
@@ -45,8 +41,7 @@ final readonly class FindingFilterOrchestrator
         private ErrorStream $errorStream,
         private UnboundSuppressionAudit $unboundSuppressionAudit,
         private ComposerManifestReaderInterface $composerReader,
-        private ManifestSnapshotControlInterface $manifestSnapshot,
-        private AnalysedInstallAnchorInterface $installAnchor,
+        private ObservedProjectScopeReasons $observedProjectScopeReasons,
     ) {}
 
     public function projectionOptions(
@@ -134,7 +129,7 @@ final readonly class FindingFilterOrchestrator
             $scope->projectRoot->value(),
             $this->composerReader->read($scope->projectRoot)->psr4Roots(),
             array_map(static fn(AbsolutePath $path): string => $path->value(), $scope->paths),
-            projectDeclared: $resolvedScope->measurement->namespaceMapUsable,
+            projectDeclared: $resolvedScope->measurement->universe->namespaceMapUsable,
         );
     }
 
@@ -149,15 +144,8 @@ final readonly class FindingFilterOrchestrator
         FindingProjectionOptions $options,
     ): ReportProjectScope {
         $valueScope = $this->valueScope($resolvedScope);
-        $source = $this->composerReader->read($resolvedScope->measurement->projectRoot)->source();
-        $reasons = array_map(static fn($issue): ProjectScopeReason => ProjectScopeReason::manifest($issue, $issue->source !== $source), $this->manifestSnapshot->observedIssues());
-        foreach ($this->installAnchor->observedRootOmissions() as $omission) {
-            $reasons[] = new ProjectScopeReason(ProjectScopeReasonKind::OmittedComposerRoot, [
-                'cause' => $omission->cause, 'candidate' => $omission->candidate,
-                'startDirectory' => $omission->startDirectory ?? '', 'lastDirectory' => $omission->lastDirectory ?? '',
-                'visitedLevels' => $omission->visitedLevels,
-            ]);
-        }
+        $source = $this->composerReader->read($resolvedScope->measurement->universe->projectRoot)->source();
+        $reasons = $this->observedProjectScopeReasons->forMainSource($source);
         $report = $resolvedScope->projectScope->withReasons($reasons);
 
         if ($valueScope === null) {

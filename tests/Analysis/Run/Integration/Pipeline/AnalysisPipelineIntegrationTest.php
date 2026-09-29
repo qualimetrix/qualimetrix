@@ -324,32 +324,13 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             $input = new ArrayInput(['--profile' => true], $checkCommand->getDefinition());
             $projectRoot = AbsolutePath::fromString($fixtureRoot);
             $findingConfiguration = $ruleInputValidator->resolve($document, $input);
-            $runtimeConfigurator->configure(
-                $document,
-                self::runConfigurationFor($document),
-                $findingConfiguration,
-                new CacheConfiguration(PathFactory::fromCliArgument('.qmx-cache', $projectRoot), true),
-                new ParallelConfiguration(),
-                $input,
-                new BufferedOutput(),
-            );
+            $runtimeConfigurator->configure($document, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration(self::runConfigurationFor($document), new CacheConfiguration(PathFactory::fromCliArgument('.qmx-cache', $projectRoot), true), new ParallelConfiguration()), $findingConfiguration, $input, new BufferedOutput());
             $ruleConfiguration->configureSelection(new RuleSelection(disabled: array_values($disabledRules)));
             $result = $pipeline->analyze(new RunConfiguration(
                 pathExcludes: [],
                 projectRoot: AbsolutePath::fromString($fixtureRoot),
                 generatedFilePolicy: GeneratedFilePolicy::Include,
-                projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(
-                    projectRoot: AbsolutePath::fromString($fixtureRoot),
-                    paths: [AbsolutePath::fromString($path)],
-                    pathsAuthored: true,
-                    scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered,
-                    denominator: [],
-                    uncoveredRoots: [],
-                    prunedTargets: [],
-                    reasons: [],
-                    namespaceMapUsable: true,
-                    pathResolutions: [],
-                ),
+                projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: AbsolutePath::fromString($fixtureRoot), pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [AbsolutePath::fromString($path)], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
                 authoredPathExcludes: [],
                 autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
             ));
@@ -1093,18 +1074,7 @@ PHP);
             pathExcludes: [],
             projectRoot: $root,
             generatedFilePolicy: GeneratedFilePolicy::Include,
-            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(
-                projectRoot: $root,
-                paths: [$root],
-                pathsAuthored: true,
-                scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered,
-                denominator: [],
-                uncoveredRoots: [],
-                prunedTargets: [],
-                reasons: [],
-                namespaceMapUsable: true,
-                pathResolutions: [],
-            ),
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
             authoredPathExcludes: [],
             autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         );
@@ -1117,18 +1087,7 @@ PHP);
             pathExcludes: [],
             projectRoot: $root,
             generatedFilePolicy: GeneratedFilePolicy::Include,
-            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(
-                projectRoot: $root,
-                paths: [$root],
-                pathsAuthored: true,
-                scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Narrowed,
-                denominator: [],
-                uncoveredRoots: ['uncovered'],
-                prunedTargets: [],
-                reasons: [],
-                namespaceMapUsable: true,
-                pathResolutions: [],
-            ),
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Narrowed, uncoveredRoots: ['uncovered']),
             authoredPathExcludes: [],
             autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         );

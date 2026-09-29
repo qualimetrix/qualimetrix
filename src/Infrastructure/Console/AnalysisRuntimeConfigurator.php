@@ -32,12 +32,12 @@ final readonly class AnalysisRuntimeConfigurator
         private RuleInputValidator $ruleInputValidator,
     ) {}
 
-    public function resolveArchitecturePolicy(ConfigurationDocument $document): ResolvedArchitecturePolicyInterface
+    private function resolveArchitecturePolicy(ConfigurationDocument $document): ResolvedArchitecturePolicyInterface
     {
         return $this->architecturePolicyConfigurator->resolve($document);
     }
 
-    public function resolveComputedMetrics(ConfigurationDocument $document): ResolvedComputedMetricDefinitions
+    private function resolveComputedMetrics(ConfigurationDocument $document): ResolvedComputedMetricDefinitions
     {
         return $this->computedMetricConfigurator->resolve($document);
     }
@@ -48,12 +48,12 @@ final readonly class AnalysisRuntimeConfigurator
         return $this->couplingConfigurator->resolve($document);
     }
 
-    public function resolveLcom(FindingConfiguration $findingConfiguration): LcomCollectionConfiguration
+    private function resolveLcom(FindingConfiguration $findingConfiguration): LcomCollectionConfiguration
     {
         return $this->lcomConfigurationResolver->resolve($findingConfiguration);
     }
 
-    public function resolveRuleChannels(
+    private function resolveRuleChannels(
         InputInterface $input,
         FindingConfiguration $findingConfiguration,
         ResolvedComputedMetricDefinitions $definitions,
@@ -61,23 +61,26 @@ final readonly class AnalysisRuntimeConfigurator
         return $this->ruleInputValidator->validate($input, $findingConfiguration, $definitions);
     }
 
-    /**
-     * @param list<NamespacePattern> $frameworkNamespaces
-     */
-    public function replace(
-        FindingConfiguration $findingConfiguration,
-        LcomCollectionConfiguration $lcomConfiguration,
-        ResolvedArchitecturePolicyInterface $architecturePolicy,
-        ResolvedComputedMetricDefinitions $computedMetrics,
-        array $frameworkNamespaces,
-        RuleChannelRegistryInterface $channels,
-    ): void {
-        $this->architecturePolicyConfigurator->replace($architecturePolicy);
-        $this->computedMetricConfigurator->replace($computedMetrics);
-        $this->couplingConfigurator->replace($frameworkNamespaces);
-        $this->ruleOptionsRegistry->replace($findingConfiguration);
-        $this->lcomConfigurationStore->replace($lcomConfiguration);
-        $this->ruleInputValidator->replaceChannels($channels);
+    public function prepare(ConfigurationDocument $document, FindingConfiguration $findingConfiguration, InputInterface $input): PreparedAnalysisRuntimeConfiguration
+    {
+        $architecturePolicy = $this->resolveArchitecturePolicy($document);
+        $computedMetrics = $this->resolveComputedMetrics($document);
+        $lcomConfiguration = $this->resolveLcom($findingConfiguration);
+        ProfilePresenter::refuseImpossibleExport($input);
+        $channels = $this->resolveRuleChannels($input, $findingConfiguration, $computedMetrics);
+        $frameworkNamespaces = $this->resolveCoupling($document);
+
+        return new PreparedAnalysisRuntimeConfiguration($findingConfiguration, $lcomConfiguration, $architecturePolicy, $computedMetrics, $frameworkNamespaces, $channels);
+    }
+
+    public function replace(PreparedAnalysisRuntimeConfiguration $configuration): void
+    {
+        $this->architecturePolicyConfigurator->replace($configuration->architecturePolicy);
+        $this->computedMetricConfigurator->replace($configuration->computedMetrics);
+        $this->couplingConfigurator->replace($configuration->frameworkNamespaces);
+        $this->ruleOptionsRegistry->replace($configuration->findingConfiguration);
+        $this->lcomConfigurationStore->replace($configuration->lcomConfiguration);
+        $this->ruleInputValidator->replaceChannels($configuration->channels);
     }
 
     /**

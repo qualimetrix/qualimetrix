@@ -537,29 +537,12 @@ final class ConfigurationRefusalRoutingTest extends TestCase
 
     private function realAnalysisPreflight(): AnalysisPreflight
     {
-        return new AnalysisPreflight(
-            $this->realRuntimeConfigurator(),
-            $this->throwingConfigurationInputAdapter(),
-            $this->inert(RunConfigurationResolverInterface::class),
-            $this->inert(CacheConfigurationResolverInterface::class),
-            $this->inert(ParallelConfigurationResolverInterface::class),
-            $this->inert('Qualimetrix\\Infrastructure\\Console\\RuleInputValidator'),
-            $this->inert(FileDiscoveryFactoryInterface::class),
-        );
+        return new AnalysisPreflight($this->realRuntimeConfigurator(), $this->throwingConfigurationInputAdapter(), new \Qualimetrix\Infrastructure\Console\RunConfigurationPreparation($this->inert(RunConfigurationResolverInterface::class), $this->inert(CacheConfigurationResolverInterface::class), $this->inert(ParallelConfigurationResolverInterface::class)), $this->inert('Qualimetrix\\Infrastructure\\Console\\RuleInputValidator'), $this->inert(FileDiscoveryFactoryInterface::class));
     }
 
     private function realBaselineRun(): BaselineRun
     {
-        return new BaselineRun(
-            $this->realRuntimeConfigurator(),
-            $this->inert('Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet'),
-            $this->inert('Qualimetrix\\Infrastructure\\Console\\RuleInputValidator'),
-            $this->throwingConfigurationInputAdapter(),
-            $this->inert(RunConfigurationResolverInterface::class),
-            $this->inert(ConfiguredFindingExclusionsResolverInterface::class),
-            $this->inert(CacheConfigurationResolverInterface::class),
-            $this->inert(ParallelConfigurationResolverInterface::class),
-        );
+        return new BaselineRun($this->realRuntimeConfigurator(), $this->inert('Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet'), $this->inert('Qualimetrix\\Infrastructure\\Console\\RuleInputValidator'), $this->throwingConfigurationInputAdapter(), new \Qualimetrix\Infrastructure\Console\RunConfigurationPreparation($this->inert(RunConfigurationResolverInterface::class), $this->inert(CacheConfigurationResolverInterface::class), $this->inert(ParallelConfigurationResolverInterface::class)), $this->inert(ConfiguredFindingExclusionsResolverInterface::class));
     }
 
     private function nonExistentBaselinePath(): string

@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
-use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
-use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -40,9 +37,7 @@ final readonly class AnalysisPreflight
     public function __construct(
         private RuntimeConfigurator $runtimeConfigurator,
         private ConfigurationInputAdapter $configurationInputAdapter,
-        private RunConfigurationResolverInterface $runConfigurationResolver,
-        private CacheConfigurationResolverInterface $cacheConfigurationResolver,
-        private ParallelConfigurationResolverInterface $parallelConfigurationResolver,
+        private RunConfigurationPreparation $runConfigurationPreparation,
         private RuleInputValidator $ruleInputValidator,
         private FileDiscoveryFactoryInterface $fileDiscoveryFactory,
         private AnalysisInputPathValidator $pathValidator = new AnalysisInputPathValidator(),
@@ -54,7 +49,8 @@ final readonly class AnalysisPreflight
         $this->runtimeConfigurator->resetRunState();
 
         $document = $this->configurationInputAdapter->resolve($input, $profile);
-        $runConfiguration = $this->runConfigurationResolver->resolve($document);
+        $run = $this->runConfigurationPreparation->resolve($document);
+        $runConfiguration = $run->runConfiguration;
         $this->pathValidator->validate($runConfiguration->paths, $document);
         $findingConfiguration = $profile->requiresFindingConfiguration
             ? $this->ruleInputValidator->resolve($document, $input)
@@ -62,10 +58,8 @@ final readonly class AnalysisPreflight
 
         $this->runtimeConfigurator->configure(
             $document,
-            $runConfiguration,
+            $run,
             $findingConfiguration,
-            $this->cacheConfigurationResolver->resolve($document, $runConfiguration->projectRoot),
-            $this->parallelConfigurationResolver->resolve($document),
             $input,
             $output,
             $profile,

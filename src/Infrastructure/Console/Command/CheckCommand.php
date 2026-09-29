@@ -197,9 +197,7 @@ final class CheckCommand extends Command
         $this->resultPresenter->assertOutputIsWritable($input);
         $namespacePattern = $this->resultPresenter->bindOutputOptions($input);
         $resolved = $this->configurationResolvers->resolve($document);
-        $runConfiguration = $resolved->runConfiguration;
-        $cacheConfiguration = $resolved->cacheConfiguration;
-        $parallelConfiguration = $resolved->parallelConfiguration;
+        $runConfiguration = $resolved->run->runConfiguration;
         $findingConfiguration = $this->ruleInputValidator->resolve($document, $input);
         $findingExclusions = $resolved->findingExclusions;
         $outputFormat = $resolved->outputFormat;
@@ -209,10 +207,8 @@ final class CheckCommand extends Command
         // Configure runtime using resolved config
         $this->runtimeConfigurator->configure(
             $document,
-            $runConfiguration,
+            $resolved->run,
             $findingConfiguration,
-            $cacheConfiguration,
-            $parallelConfiguration,
             $input,
             $output,
         );

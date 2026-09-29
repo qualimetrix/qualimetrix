@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile;
 
+#[CoversClass(AnalysisPreflightProfile::class)]
 final class AnalysisPreflightProfileTest extends TestCase
 {
     /** @return iterable<string, array{string}> */

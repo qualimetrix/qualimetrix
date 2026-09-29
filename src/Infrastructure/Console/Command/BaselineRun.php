@@ -5,15 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
-use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
-use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Console\AnalysisInputPathValidator;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
+use Qualimetrix\Infrastructure\Console\RunConfigurationPreparation;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
-use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Symfony\Component\Console\Input\InputInterface;
@@ -43,19 +41,16 @@ final readonly class BaselineRun implements BaselineRunInterface
         private MeasuredFindingSet $measuredFindingSet,
         private RuleInputValidator $ruleInputValidator,
         private ConfigurationInputAdapter $configurationInputAdapter,
-        private RunConfigurationResolverInterface $runConfigurationResolver,
+        private RunConfigurationPreparation $runConfigurationPreparation,
         private ConfiguredFindingExclusionsResolverInterface $findingExclusionsResolver,
-        private CacheConfigurationResolverInterface $cacheConfigurationResolver,
-        private ParallelConfigurationResolverInterface $parallelConfigurationResolver,
     ) {}
 
     public function measure(InputInterface $input, OutputInterface $output): BaselineRunContext
     {
         $this->runtimeConfigurator->resetRunState();
         $document = $this->configurationInputAdapter->resolve($input);
-        $configuration = $this->runConfigurationResolver->resolve($document);
-        $cacheConfiguration = $this->cacheConfigurationResolver->resolve($document, $configuration->projectRoot);
-        $parallelConfiguration = $this->parallelConfigurationResolver->resolve($document);
+        $runConfiguration = $this->runConfigurationPreparation->resolve($document);
+        $configuration = $runConfiguration->runConfiguration;
         $findingConfiguration = $this->ruleInputValidator->resolve($document, $input);
         $exclusions = $this->findingExclusionsResolver->resolve($document);
 
@@ -65,10 +60,8 @@ final readonly class BaselineRun implements BaselineRunInterface
         // and the two would measure different sets on the same project.
         $this->runtimeConfigurator->configure(
             $document,
-            $configuration,
+            $runConfiguration,
             $findingConfiguration,
-            $cacheConfiguration,
-            $parallelConfiguration,
             $input,
             $output,
         );

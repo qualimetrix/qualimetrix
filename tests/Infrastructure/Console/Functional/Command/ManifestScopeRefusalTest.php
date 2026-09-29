@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional\Command;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Symfony\Component\Process\Process;
 
+#[CoversClass(CheckCommand::class)]
 final class ManifestScopeRefusalTest extends TestCase
 {
     /** @return iterable<string, array{string, list<string>, int, ?string}> */
