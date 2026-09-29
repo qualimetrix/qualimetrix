@@ -39,6 +39,10 @@ final class SurfaceComparison
     /** @var array<string, list<SurfaceStage>> built-in step => the registered stages that run before it */
     private readonly array $registered;
 
+    private bool $trialMode = false;
+    /** @var array{valid:bool,visibleResidual:bool,authorityResidual:bool}|null */
+    private ?array $trialResult = null;
+
     /** @param list<SurfaceStage> $stages the forms' registered stages, in wiring order */
     public function __construct(
         private readonly GateReport $report,
@@ -82,7 +86,9 @@ final class SurfaceComparison
                 [$countCandidate, $countReference] = $stage->countInputs($candidate, $reference);
             }
         }
-        $this->compareFindingCounts($countCandidate, $countReference);
+        if (!$this->trialMode) {
+            $this->compareFindingCounts($countCandidate, $countReference);
+        }
         $keys = array_keys($candidate + $reference);
         sort($keys);
 
@@ -93,8 +99,10 @@ final class SurfaceComparison
             Interruption::raiseIfRequested();
 
             $pair = new SurfacePair($key, Surfaces::surfaceClass($key), $candidate[$key] ?? null, $reference[$key] ?? null);
-            foreach (['candidate', 'reference'] as $side) {
-                $this->report->sourceEvidence($side, $key, 'surface', $pair->candidate !== null && $pair->reference !== null);
+            if (!$this->trialMode) {
+                foreach (['candidate', 'reference'] as $side) {
+                    $this->report->sourceEvidence($side, $key, 'surface', $pair->candidate !== null && $pair->reference !== null);
+                }
             }
 
             foreach (self::STAGES as $step) {
@@ -107,13 +115,29 @@ final class SurfaceComparison
                     $stage->applyStage($pair);
 
                     if ($pair->settled) {
+                        if ($this->trialMode) {
+                            $this->trialResult = ['valid' => false, 'visibleResidual' => false, 'authorityResidual' => $this->report->hasSemanticResidual($key)];
+                            return;
+                        }
                         continue 3;
                     }
                 }
 
-                $this->step($step, $pair);
+                if ($this->trialMode) {
+                    $result = $this->trialStep($step, $pair);
+                    if ($result !== null) {
+                        $this->trialResult = $result;
+                        return;
+                    }
+                } else {
+                    $this->step($step, $pair);
+                }
 
                 if ($pair->settled) {
+                    if ($this->trialMode) {
+                        $this->trialResult = ['valid' => false, 'visibleResidual' => false, 'authorityResidual' => false];
+                        return;
+                    }
                     continue 2;
                 }
             }
@@ -123,62 +147,59 @@ final class SurfaceComparison
     /** @return array{valid:bool,visibleResidual:bool,authorityResidual:bool} */
     public function trialSurface(string $key, string $candidate, string $reference): array
     {
-        foreach ($this->registered['difference'] ?? [] as $stage) {
-            if ($stage instanceof RecordStage) {
-                $stage->countInputs([$key => $candidate], [$key => $reference]);
-            }
+        $this->trialMode = true;
+        $this->trialResult = null;
+        try {
+            $this->compareSurfaces([$key => $candidate], [$key => $reference]);
+            return $this->trialResult ?? throw new GateError('The semantic surface trial has no difference step.');
+        } finally {
+            $this->trialMode = false;
+            $this->trialResult = null;
         }
-        $pair = new SurfacePair($key, Surfaces::surfaceClass($key), $candidate, $reference);
-        foreach (self::STAGES as $step) {
-            foreach ($this->registered[$step] ?? [] as $stage) {
-                $stage->applyStage($pair);
-                if ($pair->settled) {
-                    return ['valid' => false, 'visibleResidual' => false, 'authorityResidual' => $this->report->hasSemanticResidual($key)];
-                }
-            }
-            if ($step === 'difference') {
-                return ['valid' => true, 'visibleResidual' => $pair->candidate !== $pair->reference, 'authorityResidual' => $this->report->hasSemanticResidual($key)];
-            }
-            if ($step === 'presence') {
-                continue;
-            }
-            if ($step === 'payload') {
-                if ($pair->surface === 'format:html' && !$this->bothRefusals($pair->key)) {
-                    try {
-                        $pair->candidate = ReportPayload::of((string) $pair->candidate, $pair->key, 'candidate');
-                        $pair->reference = ReportPayload::of((string) $pair->reference, $pair->key, 'reference');
-                    } catch (GateError) {
-                        return ['valid' => false, 'visibleResidual' => false, 'authorityResidual' => false];
-                    }
-                }
-                continue;
-            }
-            if ($step === 'published-order') {
-                $pair->ordered = PublishedOrder::handles($pair->surface);
-                continue;
-            }
-            try {
-                if ($step === 'fingerprints') {
-                    $pair->candidate = $this->fingerprintCheck->trialSubstitute('candidate', $pair->key, (string) $pair->candidate);
-                    $pair->reference = $this->fingerprintCheck->trialSubstitute('reference', $pair->key, (string) $pair->reference);
-                    if ($pair->candidate === null || $pair->reference === null) {
-                        return ['valid' => false, 'visibleResidual' => false, 'authorityResidual' => false];
-                    }
-                } elseif ($step === 'translation') {
-                    $this->translation($pair);
-                } elseif ($step === 'reorder') {
-                    $this->reorder($pair);
-                } elseif ($step === 'normalization') {
-                    $this->normalization($pair);
-                }
-            } catch (GateError) {
-                return ['valid' => false, 'visibleResidual' => false, 'authorityResidual' => false];
-            }
-            if ($pair->settled) {
-                return ['valid' => false, 'visibleResidual' => false, 'authorityResidual' => false];
-            }
+    }
+
+    /** @return array{valid:bool,visibleResidual:bool,authorityResidual:bool}|null */
+    private function trialStep(string $step, SurfacePair $pair): ?array
+    {
+        if ($step === 'difference') {
+            return ['valid' => true, 'visibleResidual' => $pair->candidate !== $pair->reference, 'authorityResidual' => $this->report->hasSemanticResidual($pair->key)];
         }
-        throw new GateError('The semantic surface trial has no difference step.');
+        if ($step === 'presence') {
+            return null;
+        }
+        if ($step === 'payload') {
+            if ($pair->surface === 'format:html' && !$this->bothRefusals($pair->key)) {
+                try {
+                    $pair->candidate = ReportPayload::of((string) $pair->candidate, $pair->key, 'candidate');
+                    $pair->reference = ReportPayload::of((string) $pair->reference, $pair->key, 'reference');
+                } catch (GateError) {
+                    return ['valid' => false, 'visibleResidual' => false, 'authorityResidual' => false];
+                }
+            }
+            return null;
+        }
+        if ($step === 'published-order') {
+            $pair->ordered = PublishedOrder::handles($pair->surface);
+            return null;
+        }
+        try {
+            if ($step === 'fingerprints') {
+                $pair->candidate = $this->fingerprintCheck->trialSubstitute('candidate', $pair->key, (string) $pair->candidate);
+                $pair->reference = $this->fingerprintCheck->trialSubstitute('reference', $pair->key, (string) $pair->reference);
+                if ($pair->candidate === null || $pair->reference === null) {
+                    return ['valid' => false, 'visibleResidual' => false, 'authorityResidual' => false];
+                }
+            } elseif ($step === 'translation') {
+                $this->translation($pair);
+            } elseif ($step === 'reorder') {
+                $this->reorder($pair);
+            } elseif ($step === 'normalization') {
+                $this->normalization($pair);
+            }
+        } catch (GateError) {
+            return ['valid' => false, 'visibleResidual' => false, 'authorityResidual' => false];
+        }
+        return $pair->settled ? ['valid' => false, 'visibleResidual' => false, 'authorityResidual' => false] : null;
     }
 
     private function bothRefusals(string $key): bool

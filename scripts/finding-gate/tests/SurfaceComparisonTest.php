@@ -70,6 +70,56 @@ final class SurfaceComparisonTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsRejectedBaselineSourceLocalWithoutSilencingUnknownAuthority(): void
+    {
+        $configured = SyntheticTree::clean();
+        $configured['declarations']['cases/alpha/baseline-src/src/Alpha.php'] = "<?php\n";
+        $configuredRoot = SyntheticTree::fixture($configured);
+        try {
+            foreach ([$this->root => 'format:json', $configuredRoot => 'check:baseline-source'] as $root => $source) {
+                $maps = RenameMaps::load($root . '/finding-gate/maps', MetricVocabulary::ofTree($root));
+                $options = Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root);
+                foreach ([[false, false], [false, null], [null, null], [true, true]] as [$candidateState, $referenceState]) {
+                    $report = new GateReport();
+                    $run = new RunContext(
+                        $options,
+                        $report,
+                        Corpus::load($root),
+                        $maps,
+                        ChannelSplit::of($maps),
+                        MetricVocabulary::ofTree($root),
+                        Normalization::fromRules([]),
+                        \QmxFindingGate\Declarations::load($root),
+                        $root,
+                    );
+                    foreach (['candidate' => $candidateState, 'reference' => $referenceState] as $side => $state) {
+                        if ($state !== null) {
+                            $report->sourceEvidence($side, 'case:alpha|' . $source, 'records', $state);
+                        }
+                        if ($state === false) {
+                            $report->fail(FailureClass::RECORD_PROJECTION_MISMATCH, $side . ' / case:alpha|' . $source, 'The source was rejected.');
+                        }
+                    }
+                    $pair = new SurfacePair('case:alpha|baseline-file', 'baseline-file', '{}', '{}');
+                    \QmxFindingGate\RecordStage::create($run)->applyStage($pair);
+                    $scopes = array_column($report->raised(), 'scope');
+                    if ($candidateState === false) {
+                        self::assertContains('candidate / case:alpha|' . $source, $scopes, $report->render());
+                    }
+                    self::assertSame(
+                        $candidateState === false && $referenceState === false ? [] : [($candidateState === false ? 'reference' : 'candidate') . ' / case:alpha|baseline-file'],
+                        array_values(array_filter($scopes, static fn(string $scope): bool => str_ends_with($scope, '|baseline-file'))),
+                        $report->render(),
+                    );
+                    self::assertSame($candidateState === false && $referenceState === false, !$pair->settled);
+                }
+            }
+        } finally {
+            SyntheticTree::remove($configuredRoot);
+        }
+    }
+
+    #[Test]
     public function itComparesFindingCountsOnlyWhenBothDeclaredSidesPublishFindings(): void
     {
         SyntheticTree::remove($this->root);
@@ -508,12 +558,15 @@ final class SurfaceComparisonTest extends TestCase
             [$semantic, $semanticWritten] = RecordedComparison::derive($tree, $root);
             self::assertSame([], $semantic->failureClasses(), $semantic->render());
             self::assertContains(\QmxFindingGate\DeclaredRecords::DERIVED, $semanticWritten);
-            $tree['candidateDeclarations'][\QmxFindingGate\DeclaredRecords::DERIVED] = Fs::read($root . '/finding-gate/' . \QmxFindingGate\DeclaredRecords::DERIVED);
+            $measured = Fs::read($root . '/finding-gate/' . \QmxFindingGate\DeclaredRecords::DERIVED);
+            $tree['candidateDeclarations'][\QmxFindingGate\DeclaredRecords::DERIVED] = $measured;
         } finally {
             SyntheticTree::remove($root);
         }
         $semanticOnly = RecordedComparison::report($tree);
         self::assertSame([], $semanticOnly->failureClasses(), $semanticOnly->render());
+        unset($tree['candidateDeclarations'][\QmxFindingGate\DeclaredRecords::DERIVED]);
+        self::assertArrayNotHasKey(\QmxFindingGate\DeclaredRecords::DERIVED, $tree['candidateDeclarations']);
         $tree['candidateDeclarations'][DeclaredExactSurfaces::INDEX] = Tsv::render(DeclaredExactSurfaces::COLUMNS, [
             ['alpha', 'format:metrics', 'declared-exact-surfaces/metrics.diff', 'Measure any remaining metric publication change.'],
         ]);
@@ -523,9 +576,11 @@ final class SurfaceComparisonTest extends TestCase
             [$report, $written] = RecordedComparison::derive($tree, $root);
             self::assertContains(\QmxFindingGate\DeclaredRecords::DERIVED, $written, $report->render());
             self::assertNotContains(DeclaredExactSurfaces::INDEX, $written, $report->render());
+            self::assertSame($measured, Fs::read($root . '/finding-gate/' . \QmxFindingGate\DeclaredRecords::DERIVED));
         } finally {
             SyntheticTree::remove($root);
         }
+        $tree['candidateDeclarations'][\QmxFindingGate\DeclaredRecords::DERIVED] = $measured;
         self::assertContains(FailureClass::DELTA_STALE, RecordedComparison::report($tree)->failureClasses());
     }
 

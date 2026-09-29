@@ -62,7 +62,15 @@ final class BaselineEligibility
     {
         $groups = [];
         foreach ($records as $record) {
-            $identity = ReportRecords::identity('json', $record);
+            try {
+                $identity = ReportRecords::identity('json', $record);
+            } catch (GateError) {
+                $channel = $record['channel'] ?? null;
+                if (!\is_string($channel) || $channel === '') {
+                    throw new GateError('A malformed baseline source record has no usable channel.');
+                }
+                $identity = DeclaredRecords::canonical(['channel' => $channel, 'invalidTransport' => $record]);
+            }
             $value = $record['metricValue'] ?? null;
             if ($value !== null && !\is_int($value) && !\is_float($value)) {
                 throw new GateError('A baseline source metric value is not numeric.');

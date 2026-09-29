@@ -531,7 +531,6 @@ final class CheckWitnesses
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
                 ],
             ),
             self::witness(
@@ -1260,7 +1259,10 @@ final class CheckWitnesses
                 ]);
                 return $tree;
             },
-            [[FailureClass::NONDETERMINISM_UNDECLARED, 'case:alpha|format:json', 'RankingCheck::checkRepeatedCaptures <- ' . ($scenario === self::WHOLE_RUN ? 'Gate::compare' : 'Gate::deriveNormalization')]],
+            [
+                [FailureClass::NONDETERMINISM_UNDECLARED, 'baseline eligibility', 'RankingCheck::checkRepeatedCaptures#1 <- ' . ($scenario === self::WHOLE_RUN ? 'Gate::compare' : 'Gate::deriveNormalization')],
+                [FailureClass::NONDETERMINISM_UNDECLARED, 'case:alpha|format:json', 'RankingCheck::checkRepeatedCaptures#2 <- ' . ($scenario === self::WHOLE_RUN ? 'Gate::compare' : 'Gate::deriveNormalization')],
+            ],
             [],
             static function (string $root): void {
                 $file = $root . '/bin/qmx';
@@ -1282,6 +1284,20 @@ final class CheckWitnesses
                     throw new GateError('The repeated-value witness has no unique private capture site.');
                 }
                 Fs::write($file, str_replace($anchor, $fault, $source));
+
+                $probe = $root . '/vendor/autoload.php';
+                $source = Fs::read($probe);
+                $anchor = "return (object) ['baseline' => (object) ['entries' => \$entries], 'uncaptured' => []];";
+                $marker = var_export($root . '/replay/baseline-partition-pass', true);
+                $fault = "                        \$marker = " . $marker . ";\n"
+                    . "                        \$seen = is_file(\$marker) ? (int) file_get_contents(\$marker) : 0;\n"
+                    . "                        file_put_contents(\$marker, (string) (\$seen + 1));\n"
+                    . "                        \$uncaptured = \$seen === 1 ? [array_shift(\$entries)] : [];\n"
+                    . "                        return (object) ['baseline' => (object) ['entries' => \$entries], 'uncaptured' => \$uncaptured];";
+                if (substr_count($source, $anchor) !== 1) {
+                    throw new GateError('The repeated-value witness has no unique baseline generator site.');
+                }
+                Fs::write($probe, str_replace($anchor, $fault, $source));
             },
         );
     }

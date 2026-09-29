@@ -91,6 +91,10 @@ final class RecordStage implements SurfaceStage
                 || ($pair->surface === 'baseline-file' && !CaseOutcome::applies(CaseOutcome::CHECK_BASELINE_FILE, $outcome))) {
                 continue;
             }
+            if ($pair->surface === 'baseline-file'
+                && $this->run->report->sourceRejected($side, 'case:' . $case . '|' . $this->baselineView($case), 'records')) {
+                continue;
+            }
             $text = $side === 'candidate' ? $pair->candidate : $pair->reference;
             try {
                 if ($report !== null) {

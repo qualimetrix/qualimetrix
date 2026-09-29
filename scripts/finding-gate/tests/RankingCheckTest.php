@@ -6,7 +6,7 @@ namespace QmxFindingGate\Tests;
 
 use PHPUnit\Framework\Attributes\{DataProvider, Group, Test};
 use PHPUnit\Framework\TestCase;
-use QmxFindingGate\{DeclaredFields, DeclaredRecords, DeclaredValues, FailureClass, Fs, GateError, GateModes, GateReport, Options, RankingSchema, ReportRecords, SyntheticTree, Tsv, ValueCheck};
+use QmxFindingGate\{BaselineEligibility, DeclaredFields, DeclaredRecords, DeclaredValues, FailureClass, Fs, GateError, GateModes, GateReport, Options, RankingSchema, ReportRecords, SyntheticTree, Tsv, ValueCheck};
 
 /** @phpstan-import-type Specification from SyntheticTree */
 final class RankingCheckTest extends TestCase
@@ -26,6 +26,63 @@ final class RankingCheckTest extends TestCase
             $report = $this->reportFor($tree, public: true);
             self::assertSame(GateReport::EXIT_GREEN, $report->exitCode(), $report->render());
         }
+    }
+
+    #[Test]
+    public function itTransportsMalformedBaselineGroupsWithoutLicensingTheirIdentity(): void
+    {
+        $valid = self::records(1)[0];
+        $missingEdge = $valid;
+        unset($missingEdge['edge']);
+        $missingEdge['metricValue'] = null;
+        $malformedEdge = $valid;
+        $malformedEdge['edge'] = ['target' => ''];
+        $malformedEdge['metricValue'] = 3;
+
+        $validKey = ReportRecords::identity('json', $valid);
+        $groups = BaselineEligibility::groups([$valid, $valid, $missingEdge, $malformedEdge]);
+        self::assertSame([$valid['metricValue'], $valid['metricValue']], $groups[$validKey]);
+        self::assertCount(3, $groups);
+        foreach (array_diff(array_keys($groups), [$validKey]) as $key) {
+            $transport = json_decode($key, true, 512, \JSON_THROW_ON_ERROR);
+            self::assertSame($valid['channel'], $transport['channel']);
+            self::assertArrayHasKey('invalidTransport', $transport);
+        }
+        self::assertSame(2, array_sum(array_map('count', array_filter($groups, static fn(string $key): bool => $key !== $validKey, \ARRAY_FILTER_USE_KEY))));
+
+        $decisions = array_fill_keys(array_keys($groups), true);
+        $eligibility = new BaselineEligibility();
+        $eligibility->supply('candidate', ['case:alpha|format:json' => $decisions]);
+        self::assertTrue($eligibility->eligible('candidate', 'case:alpha|format:json', $valid));
+        foreach ([$missingEdge, $malformedEdge] as $record) {
+            try {
+                $eligibility->eligible('candidate', 'case:alpha|format:json', $record);
+                self::fail('Malformed records cannot use transport decisions as valid eligibility.');
+            } catch (GateError $error) {
+                self::assertStringContainsString('record', $error->getMessage());
+            }
+        }
+        foreach ([array_diff_key($missingEdge, ['channel' => true]), array_replace($missingEdge, ['metricValue' => 'invalid'])] as $record) {
+            try {
+                BaselineEligibility::groups([$record]);
+                self::fail('Unusable transport input must be refused.');
+            } catch (GateError $error) {
+                self::assertNotSame('', $error->getMessage());
+            }
+        }
+        try {
+            (new BaselineEligibility())->eligible('candidate', 'case:alpha|format:json', $valid);
+            self::fail('A missing source decision must be refused.');
+        } catch (GateError $error) {
+            self::assertStringContainsString('no product eligibility decision', $error->getMessage());
+        }
+
+        $tree = SyntheticTree::clean();
+        $tree['candidateFindings']['alpha'] = [$missingEdge];
+        $report = $this->reportFor($tree, public: true);
+        self::assertContains(FailureClass::RECORD_PROJECTION_MISMATCH, $report->failureClasses(), $report->render());
+        self::assertNotContains('candidate-1', array_column($report->raised(), 'scope'), $report->render());
+        self::assertContains('candidate / case:alpha|format:json', array_column($report->raised(), 'scope'), $report->render());
     }
 
     #[Test]
@@ -428,12 +485,15 @@ final class RankingCheckTest extends TestCase
             [$semantic, $semanticWritten] = RecordedComparison::derive($tree, $root);
             self::assertSame([], $semantic->failureClasses(), $semantic->render());
             self::assertContains(DeclaredValues::DERIVED, $semanticWritten);
-            $tree['candidateDeclarations'][DeclaredValues::DERIVED] = Fs::read($root . '/finding-gate/' . DeclaredValues::DERIVED);
+            $measured = Fs::read($root . '/finding-gate/' . DeclaredValues::DERIVED);
+            $tree['candidateDeclarations'][DeclaredValues::DERIVED] = $measured;
         } finally {
             SyntheticTree::remove($root);
         }
         $semanticOnly = RecordedComparison::report($tree);
         self::assertSame([], $semanticOnly->failureClasses(), $semanticOnly->render());
+        unset($tree['candidateDeclarations'][DeclaredValues::DERIVED]);
+        self::assertArrayNotHasKey(DeclaredValues::DERIVED, $tree['candidateDeclarations']);
         $tree['candidateDeclarations'][\QmxFindingGate\DeclaredExactSurfaces::INDEX] = Tsv::render(\QmxFindingGate\DeclaredExactSurfaces::COLUMNS, [
             ['alpha', 'format:json', 'declared-exact-surfaces/json.diff', 'Measure any remaining JSON change.'],
         ]);
@@ -443,9 +503,11 @@ final class RankingCheckTest extends TestCase
             [$report, $written] = RecordedComparison::derive($tree, $root);
             self::assertContains(DeclaredValues::DERIVED, $written, $report->render());
             self::assertNotContains(\QmxFindingGate\DeclaredExactSurfaces::INDEX, $written, $report->render());
+            self::assertSame($measured, Fs::read($root . '/finding-gate/' . DeclaredValues::DERIVED));
         } finally {
             SyntheticTree::remove($root);
         }
+        $tree['candidateDeclarations'][DeclaredValues::DERIVED] = $measured;
         self::assertContains(FailureClass::DELTA_STALE, RecordedComparison::report($tree)->failureClasses());
     }
 

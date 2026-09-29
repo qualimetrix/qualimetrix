@@ -124,7 +124,7 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
                 $this->mismatch('case:' . $case->id, 'The analysis side of the declared transition did not produce a complete analysis.');
                 continue;
             }
-            $snapshot = $this->snapshot($case, $refused);
+            $snapshot = $this->refusalSnapshot($case, $refused);
             if ($snapshot === null) {
                 continue;
             }
@@ -166,7 +166,7 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
     }
 
     /** @param array<string,string> $artifacts */
-    private function snapshot(CaseDefinition $case, array $artifacts): ?string
+    private function refusalSnapshot(CaseDefinition $case, array $artifacts): ?string
     {
         $run = $this->run();
         $plan = CapturePlan::forCorpus($run->corpus, $run->declarations->surfaces);
