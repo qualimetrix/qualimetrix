@@ -229,7 +229,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
         "debtPer1kLoc": 2.1
     },
     "outOfScope": null,
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": [], "reasons": []},
     "configurationDiagnostics": [],
     "health": {
         "complexity": {
@@ -523,7 +523,7 @@ Raw metric values for every symbol (file, class, namespace, method, function, pr
             }
         }
     ],
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": [], "reasons": []},
     "summary": {
         "filesAnalyzed": 45,
         "filesSkipped": 0,
@@ -925,7 +925,7 @@ a finding back, and the identity leads to the finding's own record.
         "failed": 0,
         "failures": []
     },
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": [], "reasons": []},
     "mechanisms": [
         "suppression",
         "path-suppression",
@@ -1120,7 +1120,7 @@ an empty denominator and report `covered` on an authored subset.
 `missing-target` reasons name this existing limit; the state does not prove
 that every declared target exists.
 
-The eight whole-project channels are
+The whole-project channels are
 `architecture.unreachable-layer`, `architecture.empty-template`,
 `architecture.unmatched-exclude`, `coupling.unmatched-framework-namespace`,
 `discovery.unmatched-exclude`, `suppression.unmatched-path`,

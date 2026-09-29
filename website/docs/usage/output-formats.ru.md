@@ -229,7 +229,7 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
         "debtPer1kLoc": 2.1
     },
     "outOfScope": null,
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": [], "reasons": []},
     "configurationDiagnostics": [],
     "health": {
         "complexity": {
@@ -523,7 +523,7 @@ bin/qmx check src/ --format=json --no-progress > report.json
             }
         }
     ],
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": [], "reasons": []},
     "summary": {
         "filesAnalyzed": 45,
         "filesSkipped": 0,
@@ -928,7 +928,7 @@ xdg-open report.html  # Linux
         "failed": 0,
         "failures": []
     },
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": [], "reasons": []},
     "mechanisms": [
         "suppression",
         "path-suppression",
@@ -1122,7 +1122,7 @@ development-цели. При отсутствии манифеста или це
 Причины `missing-target` называют это ограничение; состояние не доказывает,
 что каждая объявленная цель существует.
 
-Восемь каналов всего проекта:
+Каналы всего проекта:
 `architecture.unreachable-layer`, `architecture.empty-template`,
 `architecture.unmatched-exclude`, `coupling.unmatched-framework-namespace`,
 `discovery.unmatched-exclude`, `suppression.unmatched-path`,

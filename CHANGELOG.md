@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `ComposerAutoloadPathReaderInterface` with
 `Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface::read($root)`.
 Read production/development targets and PSR-4 roots from its typed facts.
+Construct each accepted autoload section as `ComposerAutoloadSection($mappings, $complete)`
+and pass those two values to the seven-argument `ComposerManifestFacts` constructor;
+replace `productionComplete`/`developmentComplete` with `production->complete`/
+`development->complete`, and `scopeIssues(bool)` with
+`productionScopeIssues()` or `allScopeIssues()`.
 Missing, unreadable, invalid and partially accepted sources now retain reasons.
 `Application` construction requires the same reader's
 `ManifestSnapshotControlInterface` as its third argument.
@@ -31,11 +36,21 @@ constructor `paths:` and `coversProjectScope:` arguments with
 `autoloadDevPolicy: AutoloadDevPolicy::Include|Exclude`.
 Measurement/state imports move from `Analysis\Run\Configuration` to
 `Analysis\Run\Contract\Configuration`.
-Call `measure(root, paths, autoloadDev, pathsAuthored)` with explicit origin;
-replace `narrowedTo()`/`coveringProjectScope()` with
-`ProjectScopeCoverage::narrow()` and `withProjectScope()`.
+Call `measure(root, paths, autoloadDev, PathsAuthorship::Authored|Inferred)`
+with explicit origin. Construct the seven-field `ProjectScopeUniverse` once,
+then pass it with current paths, state and uncovered roots to the four-argument
+`ProjectScopeMeasurement` constructor. Read root, authoredness, denominator,
+pruned targets, reasons, namespace usability and captured path aliases through
+`measurement->universe`. Replace `narrowedTo()`, `coveringProjectScope()` and
+static `ProjectScopeCoverage::narrow()` with `measurement->narrowTo($paths)`
+and `withProjectScope()`; narrowing retains the same universe and performs no IO.
 Paths and the coverage boolean are derived from that measurement; a different
 uncaptured project root is refused as a programmer error. See ADR 0089.
+
+**HTML debt calculation is one complete operation.** Replace the consecutive
+`HtmlDebtCalculator::computeDebt()` and `aggregateBottomUp()` calls with
+`calculate($root, $findingsByNode, $nodesByPath)`, which assigns own debt and
+then aggregates counts and debt through the tree. Its numeric output is unchanged.
 
 **An undeclared or damaged subset is unmeasured.** Previously a manifest-less
 subset was `unknown` and judged as the whole project. It is now `unmeasured`,

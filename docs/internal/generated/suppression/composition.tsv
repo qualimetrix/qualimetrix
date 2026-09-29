@@ -25,7 +25,6 @@ rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contra
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Rule/RuleOptionsInterface.php	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Rule/ThresholdAwareOptionsInterface.php	Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Rule/ThresholdParser.php	Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser	error	1
-rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/RuleConfigurationInterface.php	Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Severity.php	Qualimetrix\Analysis\Finding\Contract\Severity	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Policy/Inline/Contract/AnnotationSuppressionInterface.php	Qualimetrix\Analysis\Policy\Inline\Contract	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path	error	1
@@ -46,6 +45,7 @@ rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/Severity.php	Qualimetrix\Analysis\Finding\Contract\Severity	warning	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path\AbsolutePath	error	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Core/Path/RelativePath.php	Qualimetrix\Core\Path\RelativePath	error	1
+rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Core/Symbol/MetricSubject.php	Qualimetrix\Core\Symbol\MetricSubject	warning	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Core/Symbol/SymbolLevel.php	Qualimetrix\Core\Symbol\SymbolLevel	warning	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Core/Symbol/SymbolPath.php	Qualimetrix\Core\Symbol\SymbolPath	error	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Core/Symbol/SymbolType.php	Qualimetrix\Core\Symbol\SymbolType	warning	1
@@ -65,6 +65,8 @@ rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Find
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Finding/Contract/Rule/Override/IndependentAxisValidator.php	Qualimetrix\Analysis\Finding\Contract\Rule\Override	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Policy/Architecture/Configuration/Allow/AllowAliasExpander.php	Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Policy/Architecture/Layer/AnalysedDeclarations.php	Qualimetrix\Analysis\Policy\Architecture\Layer	warning	1
+rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/ProjectManifest/Contract/ComposerAutoloadSection.php	Qualimetrix\Analysis\ProjectManifest\Contract	warning	1
+rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Run/Contract/Configuration/AutoloadDevPolicy.php	Qualimetrix\Analysis\Run\Contract\Configuration	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Pattern/CompiledSelector.php	Qualimetrix\Core\Pattern	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/ProductIdentity.php	Qualimetrix\Core	error	1
@@ -139,7 +141,8 @@ rule-path-suppression	complexity.wmc	complexity.wmc	src/Analysis/Evidence/Comple
 rule-path-suppression	complexity.wmc	complexity.wmc	src/Analysis/Evidence/Coupling/RfcVisitor.php	Qualimetrix\Analysis\Evidence\Coupling\RfcVisitor	error	1
 rule-path-suppression	complexity.wmc	complexity.wmc	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor	error	1
 rule-path-suppression	complexity.wmc	complexity.wmc	src/Analysis/Evidence/Size/MethodCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\MethodCountVisitor	warning	1
-rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/ConfigurationDocument.php	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	warning	1
+rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/ConfigurationDocument.php	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	error	1
+rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Document/Provenance.php	Qualimetrix\Analysis\Configuration\Contract\Document\Provenance	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Document/ResolvedValueInterface.php	Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Document/Schema/NodeSchema.php	Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/CodeSmell/CodeSmellVisitor.php	Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellVisitor	warning	1
@@ -153,6 +156,7 @@ rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Coupling/R
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/DependencyModel/Contract/DependencyGraphInterface.php	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Size/MethodStatementCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\MethodStatementCountVisitor	error	1
+rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Run/Contract/Configuration/RunConfiguration.php	Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Run/Pipeline/AnalysisPipeline.php	Qualimetrix\Analysis\Run\Pipeline	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Run/Pipeline/AnalysisPipeline.php	Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Run/Pipeline/DependencyGraphAnalyzer.php	Qualimetrix\Analysis\Run\Pipeline\DependencyGraphAnalyzer	warning	1
@@ -186,6 +190,7 @@ rule-path-suppression	coupling.instability	coupling.instability	src/Infrastructu
 rule-path-suppression	coupling.instability	coupling.instability	src/Infrastructure/Console/ResultPresenter.php	Qualimetrix\Infrastructure\Console\ResultPresenter	warning	1
 rule-path-suppression	coupling.instability	coupling.instability	src/Infrastructure/Console/RuleInputValidator.php	Qualimetrix\Infrastructure\Console\RuleInputValidator	warning	1
 rule-path-suppression	coupling.instability	coupling.instability	src/Infrastructure/Console/RuntimeConfigurator.php	Qualimetrix\Infrastructure\Console\RuntimeConfigurator	warning	1
+rule-path-suppression	coupling.instability	coupling.instability	src/Infrastructure/Console/RuntimeLoggerConfigurator.php	Qualimetrix\Infrastructure\Console\RuntimeLoggerConfigurator	warning	1
 rule-path-suppression	design.god-class	design.god-class	src/Reporting/Formatter/Health/HealthTextFormatter.php	Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter	warning	1
 rule-path-suppression	design.noc	design.noc	src/Analysis/Evidence/Measurement/Contract/AbstractCollector.php	Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector	error	1
 rule-path-suppression	design.noc	design.noc	src/Analysis/Finding/Contract/Rule/AbstractRule.php	Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule	error	1

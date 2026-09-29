@@ -243,6 +243,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\AnalysisInputPathValidator"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunConfigurationPreparation"
         }
       ]
     },
@@ -715,10 +719,6 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ConfigurationConfigurator"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
         }
       ]
     },
@@ -1786,7 +1786,7 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "relation": "composition_binding",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\MeasurementConfigurator",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CohesionConfigurator",
           "operations": [
             "service_alias",
             "service_registration"
@@ -1827,6 +1827,10 @@
         {
           "owner": "Infrastructure.Parallel",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\WorkerBootstrap"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\PreparedAnalysisRuntimeConfiguration"
         }
       ]
     },
@@ -1842,11 +1846,7 @@
         },
         {
           "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\MeasurementConfigurator"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CohesionConfigurator"
         }
       ]
     },
@@ -1865,16 +1865,12 @@
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\DependencyModelConfigurator"
         },
         {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\MeasurementConfigurator"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
-        },
-        {
           "owner": "Infrastructure.Parallel",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\FileProcessingTaskFactory"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CohesionConfigurator"
         }
       ]
     },
@@ -1929,7 +1925,7 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "relation": "composition_binding",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\MeasurementConfigurator",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CohesionConfigurator",
           "operations": [
             "service_alias",
             "service_registration"
@@ -2346,6 +2342,10 @@
         {
           "owner": "Infrastructure.Rule",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\Contract\\RuleChannelSnapshotFactoryInterface"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\PreparedAnalysisRuntimeConfiguration"
         }
       ]
     },
@@ -2774,10 +2774,6 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CouplingConfigurator"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
         }
       ]
     },
@@ -6591,6 +6587,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\PreparedAnalysisInput"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\PreparedAnalysisRuntimeConfiguration"
         }
       ]
     },
@@ -6977,10 +6977,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnjudgedExcludeFinding"
         },
         {
-          "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit"
-        },
-        {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\DrillDown\\FindingFilter"
         },
@@ -7051,6 +7047,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\ReportBuilder"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeFinding"
         }
       ]
     },
@@ -7417,12 +7417,12 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnjudgedExcludeFinding"
         },
         {
-          "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit"
-        },
-        {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Sarif\\SarifFormatter"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeFinding"
         }
       ]
     },
@@ -7478,7 +7478,7 @@
         },
         {
           "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit"
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeFinding"
         }
       ]
     },
@@ -7527,10 +7527,6 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\FindingConfigurator"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
         },
         {
           "owner": "Infrastructure.Console",
@@ -8599,6 +8595,10 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\PreparedAnalysisRuntimeConfiguration"
         }
       ]
     },
@@ -9535,10 +9535,6 @@
         },
         {
           "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\RuleConfigurator"
         },
         {
@@ -10211,10 +10207,6 @@
         },
         {
           "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit"
-        },
-        {
-          "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeOptions"
         },
         {
@@ -10272,6 +10264,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\ReportBuilder"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeFinding"
         }
       ]
     },
@@ -10760,10 +10756,6 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ArchitectureConfigurator"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
         }
       ]
     },
@@ -10839,6 +10831,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\AnalysisRuntimeConfigurator"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\PreparedAnalysisRuntimeConfiguration"
         }
       ]
     },
@@ -12393,6 +12389,12 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResolvedRunConfiguration",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\RunConfiguration"
         }
       ]
     },
@@ -12402,10 +12404,6 @@
       "owner": "Analysis.Run",
       "visibility": "contract",
       "consumers": [
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckResolvedConfiguration"
-        },
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver"
@@ -12423,16 +12421,16 @@
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\PreparedAnalysisInput"
         },
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator"
-        },
-        {
           "owner": "Infrastructure.Git",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Git\\GitScopeResolver"
         },
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResolvedRunConfiguration"
         }
       ]
     },
@@ -12443,20 +12441,12 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRun"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckConfigurationResolvers"
-        },
-        {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\AnalysisPreflight"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunConfigurationPreparation"
         }
       ]
     },
@@ -13221,10 +13211,6 @@
         },
         {
           "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit"
-        },
-        {
-          "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\FileSetInspection\\FileSetInspectionComposite"
         },
         {
@@ -13368,10 +13354,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\PathsNormalizer"
         },
         {
-          "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
-        },
-        {
           "owner": "Infrastructure.Composer",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\ComposerAutoloadMap"
         },
@@ -13386,6 +13368,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlProjectMetadata"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeUniverse"
         }
       ]
     },
@@ -13983,16 +13969,20 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\ExcludeBindingProbe"
         },
         {
-          "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit"
-        },
-        {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliSelectorDecoder"
         },
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressionCompositionBuilder"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\ExcludeBindingVerdict"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeFinding"
         }
       ]
     },
@@ -14192,10 +14182,6 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\MeasurementConfigurator"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
         },
         {
           "owner": "Infrastructure.Parallel",
@@ -14634,7 +14620,7 @@
         },
         {
           "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit"
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeFinding"
         }
       ]
     },
@@ -15622,10 +15608,6 @@
         },
         {
           "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit"
-        },
-        {
-          "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\DependencyGraphAnalyzer"
         },
         {
@@ -15667,6 +15649,10 @@
         {
           "owner": "Reporting.GraphProjection",
           "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\NamespaceFilter"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeFinding"
         }
       ]
     },
@@ -16093,10 +16079,6 @@
         },
         {
           "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ParserConfigurator"
         }
       ]
@@ -16165,11 +16147,7 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckResolvedConfiguration"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResolvedRunConfiguration"
         }
       ]
     },
@@ -16180,24 +16158,12 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRun"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckConfigurationResolvers"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
-        },
-        {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ParserConfigurator"
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\AnalysisPreflight"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunConfigurationPreparation"
         }
       ]
     },
@@ -16266,16 +16232,12 @@
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\DesignConfigurator"
         },
         {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
-        },
-        {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ProjectSourceConfigurator"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ObservedProjectScopeReasons"
         }
       ]
     },
@@ -16343,7 +16305,6 @@
           "relation": "composition_binding",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
           "operations": [
-            "service_reference",
             "service_registration"
           ]
         }
@@ -16794,7 +16755,6 @@
           "relation": "composition_binding",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
           "operations": [
-            "service_reference",
             "service_registration"
           ]
         }
@@ -16849,7 +16809,6 @@
           "relation": "composition_binding",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
           "operations": [
-            "service_reference",
             "service_registration"
           ]
         }
@@ -16887,7 +16846,6 @@
           "relation": "composition_binding",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
           "operations": [
-            "service_reference",
             "service_registration"
           ]
         }
@@ -16918,7 +16876,6 @@
           "relation": "composition_binding",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
           "operations": [
-            "service_reference",
             "service_registration"
           ]
         }
@@ -16935,7 +16892,6 @@
           "relation": "composition_binding",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
           "operations": [
-            "service_reference",
             "service_registration"
           ]
         }
@@ -16959,7 +16915,6 @@
           "relation": "composition_binding",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
           "operations": [
-            "service_reference",
             "service_registration"
           ]
         }
@@ -16978,14 +16933,6 @@
           "operations": [
             "service_alias",
             "service_registration"
-          ]
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "relation": "composition_binding",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
-          "operations": [
-            "service_reference"
           ]
         }
       ]
@@ -17156,7 +17103,6 @@
           "relation": "composition_binding",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
           "operations": [
-            "service_reference",
             "service_registration"
           ]
         }
@@ -17167,7 +17113,16 @@
       "kind": "class",
       "owner": "Infrastructure.Console",
       "visibility": "internal",
-      "consumers": []
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "operations": [
+            "service_registration"
+          ]
+        }
+      ]
     },
     "Qualimetrix\\Infrastructure\\Console\\ScopeWarningChecker": {
       "path": "src/Infrastructure/Console/ScopeWarningChecker.php",
@@ -17606,10 +17561,6 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CoreServicesConfigurator"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
         }
       ]
     },
@@ -17748,11 +17699,7 @@
       "consumers": [
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckResolvedConfiguration"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResolvedRunConfiguration"
         }
       ]
     },
@@ -17763,24 +17710,12 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRun"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckConfigurationResolvers"
-        },
-        {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CollectorConfigurator"
         },
         {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
-        },
-        {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\AnalysisPreflight"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunConfigurationPreparation"
         }
       ]
     },
@@ -17801,10 +17736,6 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\DependencyModelConfigurator"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
         }
       ]
     },
@@ -17968,10 +17899,6 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CoreServicesConfigurator"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
         }
       ]
     },
@@ -17988,10 +17915,6 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CoreServicesConfigurator"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
         }
       ]
     },
@@ -18134,10 +18057,6 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleInputValidator"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
         },
         {
           "owner": "Infrastructure.DependencyInjection",
@@ -19062,10 +18981,6 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
         }
       ]
     },
@@ -19364,7 +19279,6 @@
           "relation": "composition_binding",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
           "operations": [
-            "service_reference",
             "service_registration"
           ]
         }
@@ -19383,10 +19297,6 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\MeasurementConfigurator"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
         }
       ]
     },
@@ -19402,7 +19312,7 @@
         },
         {
           "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ProjectManifestConfigurator"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\ProjectManifest\\ProjectManifestConfigurator"
         }
       ]
     },
@@ -19459,6 +19369,10 @@
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlProjectMetadata",
           "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestReaderInterface"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeCoverage"
         }
       ]
     },
@@ -19498,11 +19412,7 @@
         },
         {
           "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ProjectManifestConfigurator"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\ProjectManifest\\ProjectManifestConfigurator"
         },
         {
           "owner": "Reporting",
@@ -19540,12 +19450,6 @@
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Application",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ManifestSnapshotControlInterface"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
           "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ManifestSnapshotControlInterface"
         },
         {
@@ -19616,12 +19520,6 @@
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Application",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ManifestIssue"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
           "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ManifestIssue"
         },
         {
@@ -19723,16 +19621,12 @@
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Application"
         },
         {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\ProjectManifest\\ProjectManifestConfigurator"
+        },
+        {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ProjectManifestConfigurator"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ObservedProjectScopeReasons"
         }
       ]
     },
@@ -19762,12 +19656,6 @@
         {
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckResolvedConfiguration",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\RunConfiguration"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\RunConfiguration"
         },
@@ -19784,12 +19672,6 @@
           "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\RunConfiguration"
         },
         {
-          "owner": "Infrastructure.Console",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\RunConfiguration"
-        },
-        {
           "owner": "Infrastructure.Git",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Git\\GitScopeResolver",
@@ -19799,6 +19681,12 @@
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\RunConfiguration"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResolvedRunConfiguration",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\RunConfiguration"
         }
       ]
@@ -19810,10 +19698,6 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
-        },
-        {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\ReportProjectScope"
         },
@@ -19821,55 +19705,53 @@
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResolvedCheckScope",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeUniverse"
         },
         {
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckResolvedConfiguration",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeUniverse"
         },
         {
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeUniverse"
         },
         {
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeUniverse"
         },
         {
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\PreparedAnalysisInput",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeUniverse"
         },
         {
           "owner": "Infrastructure.Git",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Git\\GitScopeResolver",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeUniverse"
         },
         {
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeUniverse"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ObservedProjectScopeReasons"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResolvedRunConfiguration",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeUniverse"
         }
       ]
     },
@@ -19879,10 +19761,6 @@
       "owner": "Analysis.Run",
       "visibility": "contract",
       "consumers": [
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
-        },
         {
           "owner": "Reporting",
           "relation": "contract_surface",
@@ -19904,12 +19782,6 @@
         {
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckResolvedConfiguration",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeReason"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeReason"
         },
@@ -19926,12 +19798,6 @@
           "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeReason"
         },
         {
-          "owner": "Infrastructure.Console",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeReason"
-        },
-        {
           "owner": "Infrastructure.Git",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Git\\GitScopeResolver",
@@ -19941,6 +19807,16 @@
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeReason"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ObservedProjectScopeReasons"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResolvedRunConfiguration",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeReason"
         }
       ]
@@ -19964,12 +19840,6 @@
         {
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckResolvedConfiguration",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
         },
@@ -19986,12 +19856,6 @@
           "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
         },
         {
-          "owner": "Infrastructure.Console",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
-        },
-        {
           "owner": "Infrastructure.Git",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Git\\GitScopeResolver",
@@ -20001,6 +19865,12 @@
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResolvedRunConfiguration",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
         }
       ]
@@ -20014,7 +19884,7 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "relation": "composition_binding",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ProjectManifestConfigurator",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\ProjectManifest\\ProjectManifestConfigurator",
           "operations": [
             "service_alias",
             "service_registration"
@@ -20028,12 +19898,6 @@
       "owner": "Infrastructure.Composer",
       "visibility": "contract",
       "consumers": [
-        {
-          "owner": "Infrastructure.Console",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
-          "carrier_fqcn": "Qualimetrix\\Infrastructure\\Composer\\Contract\\AnalysedInstallAnchorInterface"
-        },
         {
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
@@ -20060,7 +19924,6 @@
           "relation": "composition_binding",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
           "operations": [
-            "service_reference",
             "service_registration"
           ]
         }
@@ -20094,18 +19957,193 @@
           "relation": "composition_binding",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
           "operations": [
-            "service_reference",
             "service_registration"
           ]
         }
       ]
     },
-    "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ProjectManifestConfigurator": {
-      "path": "src/Infrastructure/DependencyInjection/Configurator/ProjectManifestConfigurator.php",
+    "Qualimetrix\\Infrastructure\\DependencyInjection\\ProjectManifest\\ProjectManifestConfigurator": {
+      "path": "src/Infrastructure/DependencyInjection/ProjectManifest/ProjectManifestConfigurator.php",
       "kind": "class",
       "owner": "Infrastructure.DependencyInjection",
       "visibility": "internal",
       "consumers": []
+    },
+    "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerAutoloadSection": {
+      "path": "src/Analysis/ProjectManifest/Contract/ComposerAutoloadSection.php",
+      "kind": "class",
+      "owner": "Analysis.ProjectManifest",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Composer",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\ComposerManifestReader"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\ProjectNamespaceSourceControlInterface",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Namespace_\\ProjectNamespaceResolver",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Pipeline\\Stage\\ComposerDiscoveryStage",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Analysis.Run",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeCoverage",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Infrastructure.Composer",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\ComposerAutoloadMap",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ProjectSourceConfigurator",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Reporting",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlProjectMetadata",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\PathsAuthorship": {
+      "path": "src/Analysis/Run/Contract/Configuration/PathsAuthorship.php",
+      "kind": "enum",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeUniverse": {
+      "path": "src/Analysis/Run/Contract/Configuration/ProjectScopeUniverse.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResolvedCheckScope",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\PreparedAnalysisInput",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Git",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Git\\GitScopeResolver",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResolvedRunConfiguration",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeFinding": {
+      "path": "src/Analysis/Run/ExcludeBinding/UnmatchedExcludeFinding.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Console\\ObservedProjectScopeReasons": {
+      "path": "src/Infrastructure/Console/ObservedProjectScopeReasons.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "operations": [
+            "service_registration"
+          ]
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\PreparedAnalysisRuntimeConfiguration": {
+      "path": "src/Infrastructure/Console/PreparedAnalysisRuntimeConfiguration.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Console\\ResolvedRunConfiguration": {
+      "path": "src/Infrastructure/Console/ResolvedRunConfiguration.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Console\\RunConfigurationPreparation": {
+      "path": "src/Infrastructure/Console/RunConfigurationPreparation.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "operations": [
+            "service_registration"
+          ]
+        }
+      ]
     }
   },
   "enforcement_seams": {}

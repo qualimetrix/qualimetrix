@@ -798,6 +798,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\ThresholdOverrideExtractionResult'
     - name: analysis-projectmanifest
       patterns:
+        - 'Qualimetrix\Analysis\ProjectManifest\Contract\ComposerAutoloadSection'
         - 'Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestDecoder'
         - 'Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts'
         - 'Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface'
@@ -825,10 +826,12 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Contract\Collection\SuccessfulFileProcessing'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy'
+        - 'Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReasonKind'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState'
+        - 'Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface'
@@ -859,6 +862,7 @@ architecture:
         - 'Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeBindingVerdict'
         - 'Qualimetrix\Analysis\Run\ExcludeBinding\UnjudgedExcludeFinding'
         - 'Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit'
+        - 'Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeFinding'
         - 'Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeOptions'
         - 'Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeRule'
         - 'Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite'
@@ -998,8 +1002,10 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\MeasuredAnalysisRun'
         - 'Qualimetrix\Infrastructure\Console\MeasuredFindingSet'
         - 'Qualimetrix\Infrastructure\Console\MemoryLimitSection'
+        - 'Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons'
         - 'Qualimetrix\Infrastructure\Console\OutputHelper'
         - 'Qualimetrix\Infrastructure\Console\PreparedAnalysisInput'
+        - 'Qualimetrix\Infrastructure\Console\PreparedAnalysisRuntimeConfiguration'
         - 'Qualimetrix\Infrastructure\Console\ProfilePresenter'
         - 'Qualimetrix\Infrastructure\Console\ProfileSummaryRenderer'
         - 'Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar'
@@ -1011,9 +1017,11 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter'
         - 'Qualimetrix\Infrastructure\Console\ReportCoverageProjection'
         - 'Qualimetrix\Infrastructure\Console\ResolvedCheckScope'
+        - 'Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration'
         - 'Qualimetrix\Infrastructure\Console\ResultPresenter'
         - 'Qualimetrix\Infrastructure\Console\RuleInputValidator'
         - 'Qualimetrix\Infrastructure\Console\RuleListingPresenter'
+        - 'Qualimetrix\Infrastructure\Console\RunConfigurationPreparation'
         - 'Qualimetrix\Infrastructure\Console\RunningBinaryLocator'
         - 'Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface'
         - 'Qualimetrix\Infrastructure\Console\RuntimeConfigurator'
@@ -1058,11 +1066,11 @@ architecture:
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\MeasurementConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\OutputConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\ParserConfigurator'
-        - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\ProjectManifestConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\RuleConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\SecurityConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\SizeConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory'
+        - 'Qualimetrix\Infrastructure\DependencyInjection\ProjectManifest\ProjectManifestConfigurator'
     - name: infrastructure-git
       patterns:
         - 'Qualimetrix\Infrastructure\Git\ChangeStatus'
@@ -1705,6 +1713,12 @@ rules:
       # The section declaration language is built by each owner; its reach
       # reflects those consumers and its declaration vocabulary.
       - exact: src/Analysis/Configuration/Contract/Document/Schema/NodeSchema.php
+      # Provenance is read by document owners and refusal adapters: inbound Ca=17,
+      # CBO=20. The exact carrier's readership is its contract responsibility.
+      - exact: src/Analysis/Configuration/Contract/Document/Provenance.php
+      # RunConfiguration is the shared run-policy carrier: inbound Ca=17, CBO=21.
+      # Its exact declaration deliberately serves those named run consumers.
+      - exact: src/Analysis/Run/Contract/Configuration/RunConfiguration.php
       # AST visitors depend on many php-parser node types (not actionable coupling).
       # Exact capability roots preserve the visitor exclusion without enrolling
       # a future Analysis/Evidence sibling.
@@ -1843,6 +1857,12 @@ rules:
       # The shared document port has A=0.40, I=0.09524 and Distance 0.50476;
       # its stable owner readership is intentional, with no new concrete types.
       - exact: 'Qualimetrix\Analysis\Configuration\Contract\Document'
+      # Shared manifest ports and immutable facts form a stable concrete hub;
+      # exact Contract distance is 0.600000 (A=0.333333, I=0.066667).
+      - exact: 'Qualimetrix\Analysis\ProjectManifest\Contract'
+      # Shared run policies and scope records deliberately have many consumers;
+      # exact Contract configuration distance is 0.684615 (A=0.20, I=0.115385).
+      - exact: 'Qualimetrix\Analysis\Run\Contract\Configuration'
     max_distance_warning: 0.5
     max_distance_error: 0.7
 

@@ -35,9 +35,13 @@ format written into the analysis document.
 `Analysis\ProjectManifest` owns immutable `ComposerManifestFacts`, read state,
 typed issues and the pure decoder. It records accepted autoload records,
 production and development integrity separately, package metadata and source
-identity. The root must be a JSON object; path records must be non-empty
-strings or lists of those strings. Rejected records retain their locations,
-and valid siblings survive. Numeric-looking strings remain strings.
+identity. Each `ComposerAutoloadSection` owns its accepted mappings, integrity,
+targets and PSR-4 roots. Production and development are two values of that
+same subject; rejected-record ordering remains with the source facts.
+The root must be a JSON object; path records must be strings or lists of
+strings. The existing trailing-slash trimming and empty-to-dot normalization
+are preserved. Rejected records retain their locations, and valid siblings
+survive. Numeric-looking strings remain strings.
 
 `Infrastructure\Composer\ComposerManifestReader` owns IO, classmap glob
 expansion and a snapshot keyed by the canonical project directory. Missing,
@@ -58,19 +62,26 @@ no Composer PHP is executed and no runtime class is loaded to resolve ancestry.
 
 ### Run owns one measured scope
 
-`ProjectScopeMeasurement` and `ProjectScopeState` live under
-`Analysis\Run\Contract\Configuration`. The measurement carries the root,
-paths and their authoredness, captured denominator, uncovered and pruned
-targets, reasons, namespace-map usability and written-to-canonical path facts.
-`RunConfiguration` requires that measurement and both explicit enum policies.
-Its public paths and coverage boolean are derived from the measurement,
-rather than supplied independently.
+`ProjectScopeUniverse`, `ProjectScopeMeasurement` and `ProjectScopeState` live
+under `Analysis\Run\Contract\Configuration`. The universe holds seven
+immutable initial facts: canonical root, path authoredness, denominator,
+pruned targets, reasons, namespace-map usability and written-to-canonical
+path resolutions. It resolves captured aliases and computes coverage without
+IO. The measurement holds that universe, current paths, state and uncovered
+targets. `RunConfiguration` requires the measurement and both explicit enum
+policies; paths and its coverage boolean derive from that measurement.
 
-`measure(root, paths, autoloadDev, pathsAuthored)` performs the initial
-measurement. Pure `narrow(initial, finalPaths)` retains the captured evidence
-and can only close a coverage answer. It performs no IO and cannot reopen a
-closed answer. `withProjectScope()` transfers that measurement with every
-other run field intact. An unrelated measured root is a programmer error.
+These values have different lifecycles. The initial universe is captured once;
+each narrowed verdict retains the same universe instance while paths, state
+and uncovered targets can change. Bundling the ten former constructor fields
+into a generic parameter array would obscure this distinction.
+
+`measure(root, paths, autoloadDev, PathsAuthorship)` performs the initial
+measurement with an explicit authored/inferred enum. Pure
+`measurement->narrowTo(finalPaths)` can only close a coverage answer. It
+performs no IO and cannot reopen a closed answer. `withProjectScope()`
+transfers that measurement with every other run field intact. A different
+uncaptured project root is a programmer error.
 
 | Selected manifest and paths                                                                      | State and whole-project judgement             |
 | ------------------------------------------------------------------------------------------------ | --------------------------------------------- |
@@ -185,9 +196,13 @@ Replace `ComposerReader` and `ComposerAutoloadPathReaderInterface` reads with
 control into `Application`; bind Measurement from those facts before collection.
 Replace constructor `paths:` and `coversProjectScope:` arguments with
 `projectScope:`, and supply `AutoloadDevPolicy` explicitly.
-Replace `narrowedTo()` and `coveringProjectScope()` with pure measurement
-narrowing and `withProjectScope()`. Move measurement/state imports from Run's
-internal Configuration namespace to its Contract namespace.
+Construct `ProjectScopeUniverse` from the seven initial fields, then construct
+`ProjectScopeMeasurement` from that universe, current paths, state and uncovered
+targets. Read initial facts through `measurement->universe`; supply
+`PathsAuthorship::Authored` or `Inferred` to `measure()`. Replace `narrowedTo()`,
+`coveringProjectScope()` and static `ProjectScopeCoverage::narrow()` with
+`measurement->narrowTo()` and `withProjectScope()`. Move measurement/state
+imports from Run's internal Configuration namespace to its Contract namespace.
 Consumers of `projectScope` accept `unmeasured` and retain `reasons`.
 Replace static `HtmlProjectMetadata::of()` with an instance constructed from
 the reader and pass it as `HtmlTreeBuilder`'s third argument.
@@ -196,3 +211,8 @@ discovery inputs, and compose it with the shared `AnalysisFileDiscovery`.
 Correct integrations following the former documented alias: use
 `--direction`, while global `-d` selects the working directory. Correct automatic config spelling,
 and write explicit paths when damaged Composer defaults cannot establish them.
+
+Replace consecutive `HtmlDebtCalculator::computeDebt()` and `aggregateBottomUp()`
+with `calculate(root, findingsByNode, nodesByPath)`. The two former steps are
+one complete debt operation; node counts, own debt and aggregated totals remain
+unchanged.

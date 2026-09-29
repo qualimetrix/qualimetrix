@@ -86,7 +86,9 @@ per-container store.
 typed integrity issues. Its Infrastructure adapter provides one canonical-root
 snapshot per invocation, shared by discovery, Run scope, namespace attribution,
 external ancestry and HTML metadata. Run derives paths and coverage from one
-mandatory measurement; Reporting preserves four states and their source reasons.
+mandatory measurement over an immutable captured universe. Pure narrowing keeps
+that universe and can only close the current verdict; Reporting preserves four
+states and their source reasons.
 Console's command profiles restrict consumers without hiding context-free
 document invalidity. See [ADR 0089](adr/0089-composer-manifest-facts-and-project-scope-reasons.md).
 
