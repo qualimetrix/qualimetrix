@@ -74,7 +74,7 @@ final class ExcludeBlockValidator
 
         $criteria = self::normalizeCriteria($index, $layerName, $value, $normalizer);
         self::rejectAllEmptyCriteria($index, $layerName, $criteria, $value);
-        self::rejectInvalidCapturePlacements($index, $layerName, $criteria, $isTemplate, $value);
+        CarriedValueForm::rejectInvalidExcludeCapturePlacements($index, $layerName, $criteria, $isTemplate, $value);
 
         $mode = $normalizer->normalizeMatchMode($index, $layerName . '.exclude', $value->child('match'));
 
@@ -134,82 +134,4 @@ final class ExcludeBlockValidator
         );
     }
 
-    /**
-     * For static (non-template) layers, captures are rejected anywhere in
-     * the exclude block — there is no name template to bind variables.
-     *
-     * For template layers, captures are accepted in
-     * {@code exclude.patterns} only (mirroring the positive-side carve-out
-     * documented on {@see TemplateLayerDefinition}); captures inside
-     * {@code suffix}/{@code attributes}/{@code implements}/{@code extends}
-     * are rejected with a "wrong place" error.
-     *
-     * Cross-template variable scoping (every exclude variable must be
-     * declared by the template) is enforced by
-     * {@see TemplateLayerDefinition} at construction.
-     *
-     * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
-     */
-    public static function rejectInvalidCapturePlacements(int $index, string $layerName, array $criteria, bool $isTemplate, SectionSpot $spot): void
-    {
-        if ($isTemplate) {
-            self::rejectCapturesInKinds(
-                $spot,
-                $index,
-                $layerName,
-                $criteria,
-                ['suffix', 'attributes', 'implements', 'extends'],
-                'captures are only allowed in exclude.patterns (suffix/attributes/implements/extends are fixed strings).',
-            );
-
-            return;
-        }
-
-        self::rejectCapturesInKinds(
-            $spot,
-            $index,
-            $layerName,
-            $criteria,
-            ['patterns', 'suffix', 'attributes', 'implements', 'extends'],
-            \sprintf(
-                'capture variables in exclude are only allowed for template layers (a name containing {var}); the layer name "%s" has none.',
-                $layerName,
-            ),
-        );
-    }
-
-    /**
-     * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
-     * @param list<string> $kindsToScan
-     */
-    private static function rejectCapturesInKinds(
-        SectionSpot $spot,
-        int $index,
-        string $layerName,
-        array $criteria,
-        array $kindsToScan,
-        string $rejectionReason,
-    ): void {
-        foreach ($kindsToScan as $kind) {
-            foreach ($criteria[$kind] as $entryIndex => $entry) {
-                if (!TemplateLayerDefinition::containsCaptureVariable($entry)) {
-                    continue;
-                }
-
-                $kindSpot = $spot->child($kind);
-                throw (\is_array($kindSpot->value()) ? $kindSpot->child($entryIndex) : $kindSpot)->refusal(
-                    \sprintf(
-                        'architecture.layers[%d] ("%s"): exclude.%s entry at index %d "%s" contains a capture variable — %s',
-                        $index,
-                        $layerName,
-                        $kind,
-                        $entryIndex,
-                        $entry,
-                        $rejectionReason,
-                    ),
-                    written: $entry,
-                );
-            }
-        }
-    }
 }

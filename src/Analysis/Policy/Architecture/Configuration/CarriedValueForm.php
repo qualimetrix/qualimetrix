@@ -134,6 +134,40 @@ final class CarriedValueForm
         return $value;
     }
 
+    /**
+     * For static layers, captures have no binding source and are refused
+     * throughout exclude. Template layers may use captures in patterns only.
+     *
+     * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
+     */
+    public static function rejectInvalidExcludeCapturePlacements(int $index, string $layerName, array $criteria, bool $isTemplate, SectionSpot $spot): void
+    {
+        if ($isTemplate) {
+            self::rejectExcludeCapturesInKinds(
+                $spot,
+                $index,
+                $layerName,
+                $criteria,
+                ['suffix', 'attributes', 'implements', 'extends'],
+                'captures are only allowed in exclude.patterns (suffix/attributes/implements/extends are fixed strings).',
+            );
+
+            return;
+        }
+
+        self::rejectExcludeCapturesInKinds(
+            $spot,
+            $index,
+            $layerName,
+            $criteria,
+            ['patterns', 'suffix', 'attributes', 'implements', 'extends'],
+            \sprintf(
+                'capture variables in exclude are only allowed for template layers (a name containing {var}); the layer name "%s" has none.',
+                $layerName,
+            ),
+        );
+    }
+
     /** A short-form target: the selector string itself, refused when it is not one. */
     public static function selector(string $source, int $index, SectionSpot $entry): string
     {
@@ -242,6 +276,41 @@ final class CarriedValueForm
         }
 
         return $entries;
+    }
+
+    /**
+     * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
+     * @param list<string> $kindsToScan
+     */
+    private static function rejectExcludeCapturesInKinds(
+        SectionSpot $spot,
+        int $index,
+        string $layerName,
+        array $criteria,
+        array $kindsToScan,
+        string $rejectionReason,
+    ): void {
+        foreach ($kindsToScan as $kind) {
+            foreach ($criteria[$kind] as $entryIndex => $entry) {
+                if (!TemplateLayerDefinition::containsCaptureVariable($entry)) {
+                    continue;
+                }
+
+                $kindSpot = $spot->child($kind);
+                throw (\is_array($kindSpot->value()) ? $kindSpot->child($entryIndex) : $kindSpot)->refusal(
+                    \sprintf(
+                        'architecture.layers[%d] ("%s"): exclude.%s entry at index %d "%s" contains a capture variable — %s',
+                        $index,
+                        $layerName,
+                        $kind,
+                        $entryIndex,
+                        $entry,
+                        $rejectionReason,
+                    ),
+                    written: $entry,
+                );
+            }
+        }
     }
 
     /**

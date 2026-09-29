@@ -49,7 +49,7 @@ final class LayerCriterionNormalizer
         $exclude = $spot->child('exclude');
         if ($exclude->isWritten()) {
             $criteria = self::judgeCriteria($index, $name . '.exclude', $exclude);
-            ExcludeBlockValidator::rejectInvalidCapturePlacements(
+            CarriedValueForm::rejectInvalidExcludeCapturePlacements(
                 $index,
                 $name,
                 $criteria,
