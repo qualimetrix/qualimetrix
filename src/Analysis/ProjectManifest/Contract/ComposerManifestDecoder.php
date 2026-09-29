@@ -25,85 +25,108 @@ final class ComposerManifestDecoder
         }
 
         $issues = [];
-        $name = $document->name ?? null;
-        if (property_exists($document, 'name') && (!\is_string($name) || $name === '')) {
-            $issues[] = new ManifestIssue(ManifestIssueKind::InvalidField, $source, ['name'], 'Expected a non-empty string; received ' . get_debug_type($name) . '.');
-            $name = null;
+        $name = $this->name($document, $source, $issues);
+        $vendorDirectory = $this->vendorDirectory($document, $source, $issues);
+        $production = $this->section($document, 'autoload', $source, $issues);
+        $development = $this->section($document, 'autoload-dev', $source, $issues);
+
+        return new ComposerManifestFacts($root, ManifestReadState::Read, $name, $vendorDirectory, $production, $development, $issues);
+    }
+
+    /** @param list<ManifestIssue> $issues */
+    private function name(stdClass $document, string $source, array &$issues): ?string
+    {
+        if (!property_exists($document, 'name')) {
+            return null;
         }
-
-        $vendorDirectory = 'vendor';
-        if (property_exists($document, 'config')) {
-            if (!$document->config instanceof stdClass) {
-                $issues[] = new ManifestIssue(ManifestIssueKind::InvalidField, $source, ['config'], 'Expected an object; received ' . get_debug_type($document->config) . '.');
-            } elseif (property_exists($document->config, 'vendor-dir')) {
-                $vendor = $document->config->{'vendor-dir'};
-                if (\is_string($vendor) && $vendor !== '') {
-                    $vendorDirectory = $vendor;
-                } else {
-                    $issues[] = new ManifestIssue(ManifestIssueKind::InvalidField, $source, ['config', 'vendor-dir'], 'Expected a non-empty string; received ' . get_debug_type($vendor) . '.');
-                }
-            }
+        if (\is_string($document->name) && $document->name !== '') {
+            return $document->name;
         }
+        $issues[] = new ManifestIssue(ManifestIssueKind::InvalidField, $source, ['name'], 'Expected a non-empty string; received ' . get_debug_type($document->name) . '.');
 
-        [$production, $productionComplete] = $this->section($document, 'autoload', $source, $issues);
-        [$development, $developmentComplete] = $this->section($document, 'autoload-dev', $source, $issues);
+        return null;
+    }
 
-        return new ComposerManifestFacts($root, ManifestReadState::Read, $name, $vendorDirectory, $production, $development, $productionComplete, $developmentComplete, $issues);
+    /** @param list<ManifestIssue> $issues */
+    private function vendorDirectory(stdClass $document, string $source, array &$issues): string
+    {
+        if (!property_exists($document, 'config')) {
+            return 'vendor';
+        }
+        if (!$document->config instanceof stdClass) {
+            $issues[] = new ManifestIssue(ManifestIssueKind::InvalidField, $source, ['config'], 'Expected an object; received ' . get_debug_type($document->config) . '.');
+
+            return 'vendor';
+        }
+        if (!property_exists($document->config, 'vendor-dir')) {
+            return 'vendor';
+        }
+        $vendor = $document->config->{'vendor-dir'};
+        if (\is_string($vendor) && $vendor !== '') {
+            return $vendor;
+        }
+        $issues[] = new ManifestIssue(ManifestIssueKind::InvalidField, $source, ['config', 'vendor-dir'], 'Expected a non-empty string; received ' . get_debug_type($vendor) . '.');
+
+        return 'vendor';
     }
 
     private function invalid(AbsolutePath $root, ManifestIssueKind $kind, string $detail): ComposerManifestFacts
     {
-        return new ComposerManifestFacts($root, ManifestReadState::Invalid, null, 'vendor', [], [], false, false, [
+        return new ComposerManifestFacts($root, ManifestReadState::Invalid, null, 'vendor', new ComposerAutoloadSection([], false), new ComposerAutoloadSection([], false), [
             new ManifestIssue($kind, rtrim($root->value(), '/') . '/composer.json', [], $detail),
         ]);
     }
 
-    /**
-     * @param list<ManifestIssue> $issues
-     *
-     * @return array{array{'psr-4'?: array<string, list<string>>, 'psr-0'?: array<string, list<string>>, classmap?: list<string>, files?: list<string>}, bool}
-     */
-    private function section(stdClass $document, string $name, string $source, array &$issues): array
+    /** @param list<ManifestIssue> $issues */
+    private function section(stdClass $document, string $name, string $source, array &$issues): ComposerAutoloadSection
     {
         if (!property_exists($document, $name)) {
-            return [[], true];
+            return new ComposerAutoloadSection([], true);
         }
-
         $section = $document->{$name};
         if (!$section instanceof stdClass) {
             $issues[] = new ManifestIssue(ManifestIssueKind::InvalidField, $source, [$name], 'Expected an object; received ' . get_debug_type($section) . '.');
 
-            return [[], false];
+            return new ComposerAutoloadSection([], false);
         }
-
         $before = \count($issues);
         $accepted = [];
-        foreach (['psr-4', 'psr-0', 'classmap', 'files'] as $kind) {
-            if (!property_exists($section, $kind)) {
-                continue;
+        foreach (['psr-4', 'psr-0'] as $kind) {
+            if (property_exists($section, $kind)) {
+                $accepted[$kind] = $this->prefixMap($section->{$kind}, $source, [$name, $kind], $issues);
             }
-
-            $value = $section->{$kind};
-            if ($kind === 'psr-4' || $kind === 'psr-0') {
-                if (!$value instanceof stdClass) {
-                    $issues[] = new ManifestIssue(ManifestIssueKind::InvalidField, $source, [$name, $kind], 'Expected a prefix object; received ' . get_debug_type($value) . '.');
-                    continue;
-                }
-
-                $map = [];
-                foreach (get_object_vars($value) as $prefix => $paths) {
-                    $entries = $this->paths($paths, true, $source, [$name, $kind, (string) $prefix], $issues);
-                    if ($entries !== []) {
-                        $map[(string) $prefix] = $entries;
-                    }
-                }
-                $accepted[$kind] = $map;
-            } else {
-                $accepted[$kind] = $this->paths($value, false, $source, [$name, $kind], $issues);
+        }
+        foreach (['classmap', 'files'] as $kind) {
+            if (property_exists($section, $kind)) {
+                $accepted[$kind] = $this->listPaths($section->{$kind}, $source, [$name, $kind], $issues, 'a list of strings');
             }
         }
 
-        return [$accepted, \count($issues) === $before];
+        return new ComposerAutoloadSection($accepted, \count($issues) === $before);
+    }
+
+    /**
+     * @param list<string> $location
+     * @param list<ManifestIssue> $issues
+     *
+     * @return array<string, list<string>>
+     */
+    private function prefixMap(mixed $value, string $source, array $location, array &$issues): array
+    {
+        if (!$value instanceof stdClass) {
+            $issues[] = new ManifestIssue(ManifestIssueKind::InvalidField, $source, $location, 'Expected a prefix object; received ' . get_debug_type($value) . '.');
+
+            return [];
+        }
+        $map = [];
+        foreach (get_object_vars($value) as $prefix => $paths) {
+            $entries = $this->prefixPaths($paths, $source, [...$location, (string) $prefix], $issues);
+            if ($entries !== []) {
+                $map[(string) $prefix] = $entries;
+            }
+        }
+
+        return $map;
     }
 
     /**
@@ -112,13 +135,25 @@ final class ComposerManifestDecoder
      *
      * @return list<string>
      */
-    private function paths(mixed $value, bool $allowsString, string $source, array $location, array &$issues): array
+    private function prefixPaths(mixed $value, string $source, array $location, array &$issues): array
     {
-        if ($allowsString && \is_string($value)) {
+        if (\is_string($value)) {
             return [self::normalize($value)];
         }
+
+        return $this->listPaths($value, $source, $location, $issues, 'a string or a list of strings');
+    }
+
+    /**
+     * @param list<string> $location
+     * @param list<ManifestIssue> $issues
+     *
+     * @return list<string>
+     */
+    private function listPaths(mixed $value, string $source, array $location, array &$issues, string $expected): array
+    {
         if (!\is_array($value) || !array_is_list($value)) {
-            $issues[] = new ManifestIssue(ManifestIssueKind::InvalidField, $source, $location, 'Expected ' . ($allowsString ? 'a string or ' : '') . 'a list of strings; received ' . get_debug_type($value) . '.');
+            $issues[] = new ManifestIssue(ManifestIssueKind::InvalidField, $source, $location, 'Expected ' . $expected . '; received ' . get_debug_type($value) . '.');
 
             return [];
         }

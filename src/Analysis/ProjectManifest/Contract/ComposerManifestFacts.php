@@ -9,20 +9,14 @@ use Qualimetrix\Core\Path\AbsolutePath;
 /** Accepted records survive damaged siblings; completeness belongs to each autoload section. */
 final readonly class ComposerManifestFacts
 {
-    /**
-     * @param array{'psr-4'?: array<string, list<string>>, 'psr-0'?: array<string, list<string>>, classmap?: list<string>, files?: list<string>} $production
-     * @param array{'psr-4'?: array<string, list<string>>, 'psr-0'?: array<string, list<string>>, classmap?: list<string>, files?: list<string>} $development
-     * @param list<ManifestIssue> $issues
-     */
+    /** @param list<ManifestIssue> $issues */
     public function __construct(
         public AbsolutePath $root,
         public ManifestReadState $state,
         public ?string $name,
         public string $vendorDirectory,
-        public array $production,
-        public array $development,
-        public bool $productionComplete,
-        public bool $developmentComplete,
+        public ComposerAutoloadSection $production,
+        public ComposerAutoloadSection $development,
         public array $issues,
     ) {}
 
@@ -34,13 +28,13 @@ final readonly class ComposerManifestFacts
     /** @return list<string> */
     public function productionTargets(): array
     {
-        return self::targets($this->production);
+        return $this->production->targets();
     }
 
     /** @return list<string> */
     public function developmentTargets(): array
     {
-        return self::targets($this->development);
+        return $this->development->targets();
     }
 
     /** @return array<string, list<string>> Both accepted PSR-4 sections, in declaration order. */
@@ -48,8 +42,7 @@ final readonly class ComposerManifestFacts
     {
         $map = [];
         foreach ([$this->production, $this->development] as $section) {
-            /** @var array<string, list<string>> $prefixes */
-            $prefixes = $section['psr-4'] ?? [];
+            $prefixes = $section->psr4Roots();
             foreach ($prefixes as $prefix => $paths) {
                 $map[$prefix] = array_values(array_unique([...($map[$prefix] ?? []), ...$paths]));
             }
@@ -59,29 +52,25 @@ final readonly class ComposerManifestFacts
     }
 
     /** @return list<ManifestIssue> Metadata errors do not damage the selected code universe. */
-    public function scopeIssues(bool $includeDevelopment): array
+    public function productionScopeIssues(): array
     {
-        return array_values(array_filter($this->issues, static fn(ManifestIssue $issue): bool => $issue->location === []
-            || $issue->location[0] === 'autoload'
-            || ($includeDevelopment && $issue->location[0] === 'autoload-dev')));
+        return $this->issuesFor(['autoload']);
+    }
+
+    /** @return list<ManifestIssue> */
+    public function allScopeIssues(): array
+    {
+        return $this->issuesFor(['autoload', 'autoload-dev']);
     }
 
     /**
-     * @param array{'psr-4'?: array<string, list<string>>, 'psr-0'?: array<string, list<string>>, classmap?: list<string>, files?: list<string>} $section
+     * @param list<string> $sections
      *
-     * @return list<string>
+     * @return list<ManifestIssue>
      */
-    private static function targets(array $section): array
+    private function issuesFor(array $sections): array
     {
-        $paths = [];
-        foreach (['psr-4', 'psr-0'] as $kind) {
-            foreach ($section[$kind] ?? [] as $prefixPaths) {
-                foreach ($prefixPaths as $path) {
-                    $paths[] = $path;
-                }
-            }
-        }
-
-        return array_values(array_unique([...$paths, ...($section['classmap'] ?? []), ...($section['files'] ?? [])]));
+        return array_values(array_filter($this->issues, static fn(ManifestIssue $issue): bool => $issue->location === []
+            || \in_array($issue->location[0], $sections, true)));
     }
 }

@@ -41,8 +41,8 @@ final class ComposerManifestDecoderTest extends TestCase
             JSON);
         self::assertSame(['src', '.', 'legacy', 'helpers.php'], $facts->productionTargets());
         self::assertSame(['App\\' => ['src', '.'], 'Test\\' => ['tests']], $facts->psr4Roots());
-        self::assertFalse($facts->productionComplete);
-        self::assertTrue($facts->developmentComplete);
+        self::assertFalse($facts->production->complete);
+        self::assertTrue($facts->development->complete);
         self::assertSame([
             ['autoload', 'psr-4', 'App\\', '1'], ['autoload', 'psr-4', 'App\\', '3'],
             ['autoload', 'psr-4', 'Dropped\\'], ['autoload', 'classmap', '1'], ['autoload', 'files', '1'],
@@ -55,7 +55,7 @@ final class ComposerManifestDecoderTest extends TestCase
     {
         $facts = (new ComposerManifestDecoder())->decode(AbsolutePath::fromString('/manifest-fixture'), '{"autoload":{"classmap":{"named":"legacy"},"files":"helpers.php","psr-0":{"Old_":{"named":"legacy"}}}}');
         self::assertSame([], $facts->productionTargets());
-        self::assertFalse($facts->productionComplete);
+        self::assertFalse($facts->production->complete);
         self::assertCount(3, $facts->issues);
     }
 
@@ -63,11 +63,11 @@ final class ComposerManifestDecoderTest extends TestCase
     public function itKeepsMetadataAndExcludedDevelopmentDamageOutOfProductionIntegrity(): void
     {
         $facts = (new ComposerManifestDecoder())->decode(AbsolutePath::fromString('/manifest-fixture'), '{"name":false,"config":{"vendor-dir":[]},"autoload":{"files":["helpers.php"]},"autoload-dev":{"classmap":[false]}}');
-        self::assertTrue($facts->productionComplete);
-        self::assertFalse($facts->developmentComplete);
+        self::assertTrue($facts->production->complete);
+        self::assertFalse($facts->development->complete);
         self::assertNull($facts->name);
         self::assertSame('vendor', $facts->vendorDirectory);
-        self::assertSame([], $facts->scopeIssues(false));
-        self::assertCount(1, $facts->scopeIssues(true));
+        self::assertSame([], $facts->productionScopeIssues());
+        self::assertCount(1, $facts->allScopeIssues());
     }
 }

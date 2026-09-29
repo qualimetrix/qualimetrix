@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Composer;
 
+use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerAutoloadSection;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestDecoder;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface;
@@ -54,8 +55,6 @@ final class ComposerManifestReader implements ComposerManifestReaderInterface, M
             $facts->vendorDirectory,
             $this->expandClassmap($facts->production, $key),
             $this->expandClassmap($facts->development, $key),
-            $facts->productionComplete,
-            $facts->developmentComplete,
             $facts->issues,
         );
     }
@@ -72,37 +71,52 @@ final class ComposerManifestReader implements ComposerManifestReaderInterface, M
 
     private function unavailable(AbsolutePath $root, ManifestReadState $state, ManifestIssueKind $kind, string $detail): ComposerManifestFacts
     {
-        return new ComposerManifestFacts($root, $state, null, 'vendor', [], [], false, false, [
+        return new ComposerManifestFacts($root, $state, null, 'vendor', new ComposerAutoloadSection([], false), new ComposerAutoloadSection([], false), [
             new ManifestIssue($kind, rtrim($root->value(), '/') . '/composer.json', [], $detail),
         ]);
     }
 
-    /**
-     * @param array{'psr-4'?: array<string, list<string>>, 'psr-0'?: array<string, list<string>>, classmap?: list<string>, files?: list<string>} $section
-     *
-     * @return array{'psr-4'?: array<string, list<string>>, 'psr-0'?: array<string, list<string>>, classmap?: list<string>, files?: list<string>}
-     */
-    private function expandClassmap(array $section, string $root): array
+    private function expandClassmap(ComposerAutoloadSection $section, string $root): ComposerAutoloadSection
     {
-        if (!isset($section['classmap'])) {
+        if (!isset($section->mappings['classmap'])) {
             return $section;
         }
 
         $expanded = [];
-        foreach ($section['classmap'] as $path) {
-            $matches = str_contains($path, '*') ? glob(str_starts_with($path, '/') ? $path : $root . '/' . $path, \GLOB_ONLYDIR) : false;
-            if ($matches === false || $matches === []) {
+        foreach ($section->mappings['classmap'] as $path) {
+            $matches = $this->classmapMatches($path, $root);
+            if ($matches === []) {
                 $expanded[] = $path;
                 continue;
             }
-
-            sort($matches);
             foreach ($matches as $match) {
-                $expanded[] = str_starts_with($match, $root . '/') ? substr($match, \strlen($root) + 1) : $match;
+                $expanded[] = $this->relativeMatch($match, $root);
             }
         }
-        $section['classmap'] = array_values(array_unique($expanded));
+        $mappings = $section->mappings;
+        $mappings['classmap'] = array_values(array_unique($expanded));
 
-        return $section;
+        return new ComposerAutoloadSection($mappings, $section->complete);
+    }
+
+    /** @return list<string> */
+    private function classmapMatches(string $path, string $root): array
+    {
+        if (!str_contains($path, '*')) {
+            return [];
+        }
+        $absolute = str_starts_with($path, '/') ? $path : $root . '/' . $path;
+        $matches = glob($absolute, \GLOB_ONLYDIR);
+        if ($matches === false) {
+            return [];
+        }
+        sort($matches);
+
+        return $matches;
+    }
+
+    private function relativeMatch(string $match, string $root): string
+    {
+        return str_starts_with($match, $root . '/') ? substr($match, \strlen($root) + 1) : $match;
     }
 }
