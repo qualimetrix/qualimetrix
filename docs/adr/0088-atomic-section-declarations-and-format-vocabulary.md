@@ -74,6 +74,9 @@ supplies it automatically. Scope callers replace
 `measure()` result.
 
 The two exact Run and Reporting Configuration namespace health exclusions are
-removed. The unchanged namespace cohesion calculation now gives 85.4 for\nboth subjects: no class contributes multi-operation instance TCC, and the\nmean LCOM is 1 (four Run classes, three Reporting classes). Baseline values,\nthresholds and metric implementations are unchanged.
+removed. The unchanged namespace cohesion calculation now gives 85.4 for
+both subjects: no class contributes multi-operation instance TCC, and the
+mean LCOM is 1 (four Run classes, three Reporting classes). Baseline values,
+thresholds and metric implementations are unchanged.
 Existing owner-level tests protect both format dictionary boundaries and
 scope semantics. No new repository control or gate form is introduced.
