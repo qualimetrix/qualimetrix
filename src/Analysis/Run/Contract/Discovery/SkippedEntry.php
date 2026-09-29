@@ -24,6 +24,16 @@ final readonly class SkippedEntry
         public string $detail,
     ) {}
 
+    public static function nonRegular(AbsolutePath $path, string $detail): self
+    {
+        return new self($path, AnalysisFailureKind::NotRegularFile, $detail);
+    }
+
+    public static function directorySymlink(AbsolutePath $path, string $detail): self
+    {
+        return new self($path, AnalysisFailureKind::DirectorySymlink, $detail);
+    }
+
     /**
      * The name the reader was pointed at, not the name it resolves to.
      *

@@ -5,16 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Run\ExcludeBinding;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Discovery\DirectoryPruner;
-use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Pattern\PathPattern;
-use Qualimetrix\Core\Symbol\MetricSubject;
-use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
  * The question `UnmatchedExcludeRule` names but cannot ask, and the findings
@@ -60,18 +52,6 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  */
 final readonly class UnmatchedExcludeAudit
 {
-    /**
-     * What one finding here is about: the pattern.
-     *
-     * Without it every finding on this channel shared one baseline identity —
-     * project subject, one channel, no occurrence — and the entry bounded
-     * their *number*. Accepting two stale patterns then accepted any two,
-     * including one introduced by the next edit. A value that points at
-     * nothing is the whole content of the finding, so it is the whole content
-     * of the identity too.
-     */
-    private const string OCCURRENCE_KIND = 'unmatched-exclude-pattern';
-
     public function __construct(
         private RuleOptionsInterface $options,
         private ExcludeBindingProbe $probe,
@@ -96,89 +76,12 @@ final readonly class UnmatchedExcludeAudit
             return [];
         }
 
-        $pruner = new DirectoryPruner($configuration->projectRoot, $configuration->pathExcludes);
-        $inRun = $this->probe->judge(
-            $configuration->paths,
-            $configuration->authoredPathExcludes,
-            $pruner,
-        );
-
-        // The same question against the whole tree: a pattern that binds
-        // somewhere the run did not look names code that exists, and this run
-        // cannot tell that from a pattern whose directory is gone. A pattern
-        // the run could not judge is asked again for the same reason — the
-        // subtree that blocked it may not be the only place it could bind.
-        $unsettled = self::unsettled($configuration->authoredPathExcludes, $inRun);
-        if ($unsettled === []) {
-            return [];
-        }
-
-        $inProject = $this->probe->judge([$configuration->projectRoot], $unsettled, $pruner);
-
-        return [
-            ...array_map(self::finding(...), $inProject->unbound),
-            ...self::unjudgedFindings($inProject->unlistable, $configuration->projectRoot),
-        ];
-    }
-
-    /**
-     * The patterns the run left without a settled answer, in authored order.
-     *
-     * @param list<PathPattern> $authored
-     *
-     * @return list<PathPattern>
-     */
-    private static function unsettled(array $authored, ExcludeBindingVerdict $verdict): array
-    {
-        $open = array_fill_keys(array_keys($verdict->unlistable), true);
-        foreach ($verdict->unbound as $pattern) {
-            $open[$pattern->definition->display()] = true;
-        }
-
-        return array_values(array_filter(
-            $authored,
-            static fn(PathPattern $pattern): bool => isset($open[$pattern->definition->display()]),
-        ));
-    }
-
-    /**
-     * @param array<string, AbsolutePath> $unlistable
-     *
-     * @return list<Finding>
-     */
-    private static function unjudgedFindings(array $unlistable, AbsolutePath $projectRoot): array
-    {
-        $findings = [];
-        foreach ($unlistable as $display => $directory) {
-            $findings[] = UnjudgedExcludeFinding::forPattern($display, $directory, $projectRoot);
+        $verdict = $this->probe->judgeProject($configuration);
+        $findings = array_map(UnmatchedExcludeFinding::forPattern(...), $verdict->unbound);
+        foreach ($verdict->unlistable as $display => $directory) {
+            $findings[] = UnjudgedExcludeFinding::forPattern($display, $directory, $configuration->projectRoot);
         }
 
         return $findings;
-    }
-
-    private static function finding(PathPattern $pattern): Finding
-    {
-        $display = $pattern->definition->display();
-
-        return new Finding(
-            location: Location::none(),
-            subject: MetricSubject::aggregate(SymbolPath::forProject()),
-            symbolPath: SymbolPath::forProject(),
-            ruleName: UnmatchedExcludeOptions::CHANNEL,
-            code: UnmatchedExcludeOptions::CHANNEL,
-            message: \sprintf(
-                'The exclude pattern "%s" matched no directory anywhere in the project, so nothing was left out'
-                . ' for it. Every file it was written to skip was measured, and this report covers them.',
-                $display,
-            ),
-            severity: Severity::Warning,
-            recommendation: \sprintf(
-                'Check "%s" against project-relative directory paths. Exact selectors name one directory,'
-                . ' subtree selectors include descendants, and regex selectors match the full path. Drop the'
-                . ' entry if its target is gone.',
-                $display,
-            ),
-            occurrenceKey: OccurrenceKey::semantic(self::OCCURRENCE_KIND, ['pattern' => $display]),
-        );
     }
 }

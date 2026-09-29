@@ -10,7 +10,6 @@ use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry;
 use Qualimetrix\Analysis\Run\Contract\Discovery\SkipReportingDiscoveryInterface;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
@@ -131,13 +130,12 @@ final readonly class AnalysisFileDiscovery
             return null;
         }
 
-        return new SkippedEntry(
-            AbsolutePath::fromString($file->getPathname()),
-            $file->isDir()
-                ? AnalysisFailureKind::DirectorySymlink
-                : AnalysisFailureKind::NotRegularFile,
-            'Discovered entry is not a regular file',
-        );
+        $path = AbsolutePath::fromString($file->getPathname());
+        $detail = 'Discovered entry is not a regular file';
+
+        return $file->isDir()
+            ? SkippedEntry::directorySymlink($path, $detail)
+            : SkippedEntry::nonRegular($path, $detail);
     }
 
     /**

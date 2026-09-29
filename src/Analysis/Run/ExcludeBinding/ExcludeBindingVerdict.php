@@ -32,4 +32,23 @@ final readonly class ExcludeBindingVerdict
         public array $unbound,
         public array $unlistable,
     ) {}
+
+    /**
+     * @param list<PathPattern> $authored
+     *
+     * @return list<PathPattern>
+     */
+    public function unsettled(array $authored): array
+    {
+        $open = array_fill_keys(array_keys($this->unlistable), true);
+        foreach ($this->unbound as $pattern) {
+            $open[$pattern->definition->display()] = true;
+        }
+
+        return array_values(array_filter(
+            $authored,
+            static fn(PathPattern $pattern): bool => isset($open[$pattern->definition->display()]),
+        ));
+    }
+
 }

@@ -272,11 +272,8 @@ final class FinderFileDiscovery implements FileDiscoveryInterface, SkipReporting
             return true;
         }
 
-        $this->record(
-            AbsolutePath::fromString($entry->getPathname()),
-            AnalysisFailureKind::NotRegularFile,
-            $detail,
-        );
+        $path = AbsolutePath::fromString($entry->getPathname());
+        $this->skippedEntries[$path->value()] ??= SkippedEntry::nonRegular($path, $detail);
 
         return false;
     }
@@ -295,9 +292,8 @@ final class FinderFileDiscovery implements FileDiscoveryInterface, SkipReporting
             // files a run measures and could leave the project root entirely,
             // while a cycle would not terminate. What is said instead is that
             // this subtree was not read.
-            $this->record(
+            $this->skippedEntries[$path->value()] ??= SkippedEntry::directorySymlink(
                 $path,
-                AnalysisFailureKind::DirectorySymlink,
                 'Symbolic link to a directory is not traversed',
             );
 
