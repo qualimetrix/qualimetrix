@@ -53,6 +53,10 @@ final class GateReport
      */
     private int $declaredDeltaCount = 0;
 
+    private int $declaredExactSurfaceCount = 0;
+
+    private int $exactSurfaceUsedCount = 0;
+
     /**
      * How many moves of a compared field this run licensed rather than refused.
      *
@@ -92,6 +96,16 @@ final class GateReport
     public function countDeclaredDeltas(int $count): void
     {
         $this->declaredDeltaCount = $count;
+    }
+
+    public function countExactSurfaces(int $count): void
+    {
+        $this->declaredExactSurfaceCount = $count;
+    }
+
+    public function usedExactSurface(): void
+    {
+        ++$this->exactSurfaceUsedCount;
     }
 
     public function countFieldMoves(int $count): void
@@ -214,12 +228,13 @@ final class GateReport
             // waived.
             self::VERDICT_GREEN => \sprintf(
                 '  GREEN — the two trees are finding-equivalent under the declared maps%s%s.',
-                $this->declaredDeltaCount === 0 && $this->fieldMoveCount === 0
+                $this->declaredDeltaCount === 0 && $this->fieldMoveCount === 0 && $this->exactSurfaceUsedCount === 0
                     ? ''
                     : \sprintf(
-                        ' and %d declared delta(s), %d licensed field move(s)',
+                        ' and %d declared delta(s), %d licensed field move(s)%s',
                         $this->declaredDeltaCount,
                         $this->fieldMoveCount,
+                        $this->exactSurfaceUsedCount === 0 ? '' : \sprintf(', %d exact surface(s)', $this->exactSurfaceUsedCount),
                     ),
                 $this->otherDeclarations(),
             ),
@@ -249,6 +264,8 @@ final class GateReport
             // stays GREEN under a declared map row has to be able to assert that
             // it stayed green without a declared delta absorbing the difference.
             'declaredDeltaCount' => $this->declaredDeltaCount,
+            'declaredExactSurfaceCount' => $this->declaredExactSurfaceCount,
+            'exactSurfaceUsedCount' => $this->exactSurfaceUsedCount,
             'fieldMoveCount' => $this->fieldMoveCount,
             ...$this->declarationCounts(),
         ];

@@ -12,12 +12,12 @@ architecture.pending-layer-matched	channel	?		8	14	0	0	0	25	0	2	0	0	0	0
 architecture.potential-shadow	channel	?		21	18	0	0	0	45	0	3	0	0	0	0
 architecture.unassigned-class	channel	?		33	32	0	0	0	24	0	4	0	0	0	0
 architecture.unmatched-exclude	channel	?		13	10	0	0	0	20	0	3	0	0	0	0
-architecture.unreachable-layer	channel	?		29	33	0	0	0	61	0	2	0	0	0	0
+architecture.unreachable-layer	channel	?		29	37	0	0	0	61	0	2	0	0	0	0
 code-smell.boolean-argument	channel	?		5	37	1	2	25	37	0	5	0	0	1	1
 code-smell.constructor-overinjection	channel	?		15	11	2	2	5	32	0	4	0	0	0	0
 code-smell.count-in-loop	channel	?		1	8	0	0	0	12	0	3	0	0	1	1
 code-smell.debug-code	channel	?		1	45	0	0	0	14	0	3	0	0	1	1
-code-smell.empty-catch	channel	?		5	9	0	0	0	23	0	3	0	0	1	1
+code-smell.empty-catch	channel	?		5	10	0	0	0	23	0	3	0	0	1	1
 code-smell.error-suppression	channel	?		1	14	1	2	2	20	0	3	0	0	1	1
 code-smell.eval	channel	?		1	29	0	0	0	16	0	9	0	0	1	1
 code-smell.exit	channel	?		1	9	0	0	0	17	0	3	0	0	1	1
@@ -28,7 +28,7 @@ code-smell.superglobals	channel	?		2	7	1	0	0	12	0	3	0	0	1	1
 code-smell.unreachable-code	channel	?		8	53	0	1	0	31	0	5	0	0	0	0
 code-smell.unused-private	channel	?		3	8	0	0	0	16	0	3	0	0	0	0
 cohesion.lcom	channel	?		41	179	2	2	0	45	0	12	0	0	0	0
-complexity.ccn	channel	?		74	1246	2	3	31	228	0	41	0	0	0	0
+complexity.ccn	channel	?		74	1248	2	3	31	228	0	41	0	0	0	0
 complexity.cognitive	channel	?		22	94	2	2	14	56	0	20	0	0	0	0
 complexity.npath	channel	?		19	108	2	2	4	52	0	14	0	0	0	0
 complexity.wmc	channel	?		21	87	2	2	3	38	0	12	0	0	0	0
@@ -70,7 +70,7 @@ cohesion.lcc	metric-key	?		7	50	0	0	0	6	0	0	0	0	0	0
 cohesion.lcom	metric-key	?		41	179	2	2	0	45	0	12	0	0	0	0
 cohesion.pure-method-count	metric-key	?		5	8	0	0	0	2	0	0	0	0	0	0
 cohesion.tcc	metric-key	?		26	114	0	0	0	16	0	3	0	0	0	0
-complexity.ccn	metric-key	?		74	1246	2	3	31	228	0	41	0	0	0	0
+complexity.ccn	metric-key	?		74	1248	2	3	31	228	0	41	0	0	0	0
 complexity.cognitive	metric-key	?		22	94	2	2	14	56	0	20	0	0	0	0
 complexity.npath	metric-key	?		19	108	2	2	4	52	0	14	0	0	0	0
 complexity.wmc	metric-key	?		21	87	2	2	3	38	0	12	0	0	0	0
@@ -155,7 +155,7 @@ code-smell.boolean-argument	producer	?		5	37	1	2	25	37	0	5	0	0	0	0
 code-smell.constructor-overinjection	producer	?		15	11	2	2	5	32	0	4	0	0	0	0
 code-smell.count-in-loop	producer	?		1	8	0	0	0	12	0	3	0	0	0	0
 code-smell.debug-code	producer	?		1	45	0	0	0	14	0	3	0	0	0	0
-code-smell.empty-catch	producer	?		5	9	0	0	0	23	0	3	0	0	0	0
+code-smell.empty-catch	producer	?		5	10	0	0	0	23	0	3	0	0	0	0
 code-smell.error-suppression	producer	?		1	14	1	2	2	20	0	3	0	0	0	0
 code-smell.eval	producer	?		1	29	0	0	0	16	0	9	0	0	0	0
 code-smell.exit	producer	?		1	9	0	0	0	17	0	3	0	0	0	0
@@ -166,11 +166,11 @@ code-smell.superglobals	producer	?		2	7	1	0	0	12	0	3	0	0	0	0
 code-smell.unreachable-code	producer	?		8	53	0	1	0	31	0	5	0	0	0	0
 code-smell.unused-private	producer	?		3	8	0	0	0	16	0	3	0	0	0	0
 cohesion.lcom	producer	?		41	179	2	2	0	45	0	12	0	0	0	0
-complexity.ccn	producer	?		74	1246	2	3	31	228	0	41	0	0	0	0
+complexity.ccn	producer	?		74	1248	2	3	31	228	0	41	0	0	0	0
 complexity.cognitive	producer	?		22	94	2	2	14	56	0	20	0	0	0	0
 complexity.npath	producer	?		19	108	2	2	4	52	0	14	0	0	0	0
 complexity.wmc	producer	?		21	87	2	2	3	38	0	12	0	0	0	0
-computed	producer	?		127	114	0	1	0	57	0	9	0	0	0	0
+computed	producer	?		127	114	0	1	0	57	0	8	0	0	0	0
 coupling.cbo	producer	?		73	365	2	5	5	140	0	10	0	0	0	0
 coupling.class-rank	producer	?		24	123	0	2	2	42	0	39	0	0	0	0
 coupling.distance	producer	?		33	94	2	2	1	49	0	41	0	0	0	0

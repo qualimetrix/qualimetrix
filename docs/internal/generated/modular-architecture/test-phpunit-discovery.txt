@@ -287,6 +287,7 @@ Available tests:
  - QmxFindingGate\Tests\DeclaredOutcomesTest::itRefusesAnOutcomeFileThatEscapesThroughALink
  - QmxFindingGate\Tests\DeclaredOutcomesTest::itRefusesAnOutcomeWithoutItsMeasuredOutput
  - QmxFindingGate\Tests\DeclaredOutcomesTest::itRefusesSharedSnapshotFilesAndUnknownCredit
+ - QmxFindingGate\Tests\DeclaredRecordsTest::itAsksTheProductAboutCompleteRawBaselineGroups
  - QmxFindingGate\Tests\DeclaredRecordsTest::itClaimsIdenticalDerivedRecordsOneInstanceEach
  - QmxFindingGate\Tests\DeclaredRecordsTest::itKeepsAnIntentWithoutAnyConsumedRecordStale
  - QmxFindingGate\Tests\DeclaredRecordsTest::itKeepsIdenticalSelectorsAndRecordsInDifferentViewsIndependent
@@ -307,6 +308,7 @@ Available tests:
  - QmxFindingGate\Tests\DeclaredRecordsTest::itRefusesAnIntentWithoutAnExplainedReason
  - QmxFindingGate\Tests\DeclaredRecordsTest::itRefusesOverlappingSelectorsAcrossWildcardCases
  - QmxFindingGate\Tests\DeclaredRecordsTest::itRefusesUnknownReportViewCombinations
+ - QmxFindingGate\Tests\DeclaredRecordsTest::itWithdrawsAnUncapturableProjectGroupWithoutInventingABaselineEntry
  - QmxFindingGate\Tests\DeclaredStructuralMapsTest::itMovesOriginalValuesSimultaneouslyWithoutInventingCredit
  - QmxFindingGate\Tests\DeclaredStructuralMapsTest::itPreservesIdleInputBytesAndKeepsTheMoveStale
  - QmxFindingGate\Tests\DeclaredStructuralMapsTest::itRefusesAStructuralMapRowItCouldNotApply"a move onto itself"
@@ -552,9 +554,13 @@ Available tests:
  - QmxFindingGate\Tests\SurfaceComparisonTest::itComparesFindingCountsOnlyWhenBothDeclaredSidesPublishFindings
  - QmxFindingGate\Tests\SurfaceComparisonTest::itComparesOnePositionIndependentDeltaForEveryCaseOfASurfaceClass
  - QmxFindingGate\Tests\SurfaceComparisonTest::itComparesTheWholeHtmlRefusalWithoutRequiringAnAnalysisPayload
+ - QmxFindingGate\Tests\SurfaceComparisonTest::itDeclaresA244LineNonRecordDeltaAndRefusesANeighbouringByte
+ - QmxFindingGate\Tests\SurfaceComparisonTest::itKeepsDistinctRawRankingNumbersBeyondFloatPrecision
  - QmxFindingGate\Tests\SurfaceComparisonTest::itKeepsSarifPathProtectionOutsideItsDeclaredCaptureSourceUri
  - QmxFindingGate\Tests\SurfaceComparisonTest::itKeepsStructuralMetadataOutsideComparedRecordsAndRefusesRecordOverreach
+ - QmxFindingGate\Tests\SurfaceComparisonTest::itLeavesAnExactIntentionStaleWhenAMetricChangeIsSemanticallyExplained
  - QmxFindingGate\Tests\SurfaceComparisonTest::itLooksUpAnIntentionWithoutCreditingItAsPerformed
+ - QmxFindingGate\Tests\SurfaceComparisonTest::itMeasuresAndChecksOneExactCaseSurface
  - QmxFindingGate\Tests\SurfaceComparisonTest::itRefusesADirectDeltaComparisonWithoutAnExplicitIntention
  - QmxFindingGate\Tests\SurfaceComparisonTest::itRefusesAFirstOnlyOrSecondOnlySurfaceInEitherDirection
  - QmxFindingGate\Tests\SurfaceComparisonTest::itRefusesAStageBeforeAStepThatDoesNotExist
@@ -564,7 +570,9 @@ Available tests:
  - QmxFindingGate\Tests\SurfaceComparisonTest::itRefusesDifferentCaseMeasurementsOfOneSurfaceClassWhileDeriving
  - QmxFindingGate\Tests\SurfaceComparisonTest::itRefusesDifferentUnlicensedBytesInBothDirectionsAndAcceptsEquality
  - QmxFindingGate\Tests\SurfaceComparisonTest::itRefusesOverlappingFullSurfaceAndClassStructuralIntentions
+ - QmxFindingGate\Tests\SurfaceComparisonTest::itRetainsTheOrdinaryLimitForMetricAndDirectiveRecords
  - QmxFindingGate\Tests\SurfaceComparisonTest::itRunsARegisteredStageBeforeTheStepItNames
+ - QmxFindingGate\Tests\SurfaceComparisonTest::itUsesAnExactMetricSurfaceWithoutPairingItsChangedRecords
  - QmxFindingGate\Tests\SyntheticTreeTest::itKeepsBreachAnnotationsAndRawStructuredMessagesInTheirPublishedViews
  - QmxFindingGate\Tests\SyntheticTreeTest::itKeepsGeneratedSummaryRowsWhenReusingAnAnswerAsAnOverride
  - QmxFindingGate\Tests\SyntheticTreeTest::itKeepsIndependentPrivateAnswerOverridesAndTheirOwnMetadata

@@ -961,6 +961,31 @@ final class CheckWitnesses
                 [[FailureClass::DELTA_MISMATCH, 'case:alpha|format:summary', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#3 <- SurfaceComparison::compareFinalBytes']],
             ),
             self::witness(
+                'exact-surface-mismatch',
+                self::DECLARATIONS,
+                static function (array $tree): array {
+                    $tree['candidateAnswers']['case:alpha|rules'] = ['stdout' => "Changed rule listing\n"];
+                    $tree['candidateDeclarations'][DeclaredExactSurfaces::INDEX] = Tsv::render(DeclaredExactSurfaces::COLUMNS, [
+                        ['alpha', 'rules', 'declared-exact-surfaces/rules.diff', 'The complete rule listing changes.'],
+                    ]);
+                    $tree['candidateDeclarations']['declared-exact-surfaces/rules.diff'] = self::NO_DIFF;
+                    return $tree;
+                },
+                [[FailureClass::DELTA_MISMATCH, 'case:alpha|rules', 'ExactSurfaceDeltaCheck::checkExact <- SurfaceComparison::compareSurfaces']],
+            ),
+            self::witness(
+                'exact-surface-stale',
+                self::DECLARATIONS,
+                static function (array $tree): array {
+                    $tree['candidateDeclarations'][DeclaredExactSurfaces::INDEX] = Tsv::render(DeclaredExactSurfaces::COLUMNS, [
+                        ['alpha', 'rules', 'declared-exact-surfaces/rules.diff', 'The complete rule listing changes.'],
+                    ]);
+                    $tree['candidateDeclarations']['declared-exact-surfaces/rules.diff'] = self::NO_DIFF;
+                    return $tree;
+                },
+                [[FailureClass::DELTA_STALE, 'case:alpha|rules', 'ExactSurfaceDeltaCheck::checkStale <- Gate::compare']],
+            ),
+            self::witness(
                 'delta-too-large',
                 self::DECLARATIONS,
                 static function (array $tree): array {

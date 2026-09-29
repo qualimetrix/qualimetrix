@@ -50,6 +50,7 @@ final class SurfaceComparison
         private readonly string $temporaryDirectory,
         array $stages = [],
         private readonly ?RecordCheck $records = null,
+        private readonly ?ExactSurfaceDeltaCheck $exact = null,
     ) {
         $registered = [];
 
@@ -94,6 +95,11 @@ final class SurfaceComparison
             $pair = new SurfacePair($key, Surfaces::surfaceClass($key), $candidate[$key] ?? null, $reference[$key] ?? null);
 
             foreach (self::STAGES as $step) {
+                if ($step === 'difference' && $this->exact?->selected($key) === true) {
+                    $this->exact->checkExact($pair);
+                    $pair->settle();
+                    continue 2;
+                }
                 foreach ($this->registered[$step] ?? [] as $stage) {
                     $stage->applyStage($pair);
 
@@ -109,6 +115,77 @@ final class SurfaceComparison
                 }
             }
         }
+    }
+
+    public function trialSurface(string $key, string $candidate, string $reference): bool
+    {
+        foreach ($this->registered['difference'] ?? [] as $stage) {
+            if ($stage instanceof RecordStage) {
+                $stage->countInputs([$key => $candidate], [$key => $reference]);
+            }
+        }
+        $pair = new SurfacePair($key, Surfaces::surfaceClass($key), $candidate, $reference);
+        foreach (self::STAGES as $step) {
+            foreach ($this->registered[$step] ?? [] as $stage) {
+                $stage->applyStage($pair);
+                if ($pair->settled) {
+                    return false;
+                }
+            }
+            if ($step === 'difference') {
+                return $pair->candidate === $pair->reference;
+            }
+            if ($step === 'presence') {
+                continue;
+            }
+            if ($step === 'payload') {
+                if ($pair->surface === 'format:html' && !$this->bothRefusals($pair->key)) {
+                    try {
+                        $pair->candidate = ReportPayload::of((string) $pair->candidate, $pair->key, 'candidate');
+                        $pair->reference = ReportPayload::of((string) $pair->reference, $pair->key, 'reference');
+                    } catch (GateError) {
+                        return false;
+                    }
+                }
+                continue;
+            }
+            if ($step === 'published-order') {
+                $pair->ordered = PublishedOrder::handles($pair->surface);
+                continue;
+            }
+            try {
+                if ($step === 'fingerprints') {
+                    $pair->candidate = $this->fingerprintCheck->trialSubstitute('candidate', $pair->key, (string) $pair->candidate);
+                    $pair->reference = $this->fingerprintCheck->trialSubstitute('reference', $pair->key, (string) $pair->reference);
+                    if ($pair->candidate === null || $pair->reference === null) {
+                        return false;
+                    }
+                } elseif ($step === 'translation') {
+                    $this->translation($pair);
+                } elseif ($step === 'reorder') {
+                    $this->reorder($pair);
+                } elseif ($step === 'normalization') {
+                    $this->normalization($pair);
+                }
+            } catch (GateError) {
+                return false;
+            }
+            if ($pair->settled) {
+                return false;
+            }
+        }
+        throw new GateError('The semantic surface trial has no difference step.');
+    }
+
+    private function bothRefusals(string $key): bool
+    {
+        foreach ($this->corpus->cases as $case) {
+            if ($key === 'case:' . $case->id . '|format:html') {
+                return CaseOutcome::of($case, 'candidate') === CaseOutcome::REFUSAL
+                    && CaseOutcome::of($case, 'reference') === CaseOutcome::REFUSAL;
+            }
+        }
+        return false;
     }
 
     private function step(string $step, SurfacePair $pair): void
@@ -300,6 +377,9 @@ final class SurfaceComparison
                 continue;
             }
             $key = Surfaces::key('case:' . $case->id, 'format:json');
+            if ($this->exact?->selected($key) === true) {
+                continue;
+            }
             $left = self::findingCount($candidate[$key] ?? '');
             $right = self::findingCount($this->maps->forward($reference[$key] ?? '', Surfaces::surfaceClass($key)));
 

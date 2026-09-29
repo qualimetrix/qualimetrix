@@ -14,6 +14,7 @@ final class Declarations
 {
     private function __construct(
         public readonly DeclaredDelta $delta,
+        public readonly DeclaredExactSurfaces $exactSurfaces,
         public readonly DeclaredFieldMoves $fieldMoves,
         public readonly DeclaredRecords $records,
         public readonly DeclaredValues $values,
@@ -27,9 +28,11 @@ final class Declarations
     {
         $root = $candidateRoot . '/finding-gate';
         $fields = DeclaredFields::load($root);
+        $delta = DeclaredDelta::load($root);
 
         return new self(
-            DeclaredDelta::load($root),
+            $delta,
+            DeclaredExactSurfaces::load($root, $delta),
             DeclaredFieldMoves::load($root),
             DeclaredRecords::load($root),
             DeclaredValues::load($root),

@@ -30,6 +30,9 @@ final class RecordStage implements SurfaceStage
         foreach ($this->run->corpus->cases as $case) {
             $this->records->prepare($case->id);
             $key = 'case:' . $case->id . '|format:json';
+            if ($this->run->isExactSurface($key)) {
+                continue;
+            }
             foreach (['candidate', 'reference'] as $side) {
                 if (!CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($case, $side))) {
                     continue;
@@ -343,7 +346,7 @@ final class RecordStage implements SurfaceStage
         $view = $this->baselineView($case);
         $published = $this->records->authority($case, $view, $side);
         $entries = ReportRecords::baselineEntries($text, $published);
-        $removed = array_map(RankingSchema::physical(...), $this->records->licensedResiduals($case, $view, $side));
+        $removed = $this->eligibleBaselineResiduals($case, $view, $side);
         $edits = [];
         $entryCounts = [];
         $deletedCounts = [];
@@ -396,6 +399,32 @@ final class RecordStage implements SurfaceStage
             }
         }
         return $edits === [] ? $text : ReportRecords::edit($text, $edits);
+    }
+
+    /** @return list<array<string,mixed>> */
+    private function eligibleBaselineResiduals(string $case, string $view, string $side): array
+    {
+        $raw = $this->records->rawAuthority($case, $view, $side);
+        $comparative = $this->records->comparative($case, $view, $side);
+        if (\count($raw) !== \count($comparative)) {
+            throw new GateError('The raw baseline source and comparative authority have different populations.');
+        }
+        $remaining = $this->records->licensedResiduals($case, $view, $side);
+        $eligible = [];
+        foreach ($comparative as $index => $record) {
+            $at = array_search($record, $remaining, true);
+            if ($at === false) {
+                continue;
+            }
+            unset($remaining[$at]);
+            if ($this->run->baselineEligibility->eligible($side, 'case:' . $case . '|' . $view, $raw[$index])) {
+                $eligible[] = RankingSchema::physical($record);
+            }
+        }
+        if ($remaining !== []) {
+            throw new GateError('A licensed baseline source residual has no complete raw occurrence.');
+        }
+        return $eligible;
     }
 
     private function directiveExit(SurfacePair $pair): void

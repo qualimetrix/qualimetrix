@@ -56,6 +56,9 @@ final class RankingCheck implements CaseCheck
 
     public function checkRepeatedCaptures(CaptureResult $first, CaptureResult $second): void
     {
+        if ($first->baselineEligibility !== $second->baselineEligibility) {
+            $this->run->report->fail(FailureClass::NONDETERMINISM_UNDECLARED, 'baseline eligibility', 'The same candidate inputs produced different product baseline eligibility decisions.');
+        }
         $records = RecordCheck::create($this->run);
         $fields = null;
         foreach ($this->run->corpus->cases as $case) {

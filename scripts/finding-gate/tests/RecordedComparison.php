@@ -27,6 +27,12 @@ final class RecordedComparison
         return self::compare($tree, null, false, $root, $referencePrepare)[0];
     }
 
+    /** @param Specification $tree */
+    public static function stageReport(array $tree, string $key): GateReport
+    {
+        return self::compare($tree, null, false, null, null, $key)[0];
+    }
+
     /** @param Specification $tree
      * @return array{GateReport,list<string>}
      */
@@ -40,7 +46,7 @@ final class RecordedComparison
      *
      * @return array{GateReport,list<string>}
      */
-    private static function compare(array $tree, ?callable $prepare, bool $derive, ?string $root, ?callable $referencePrepare = null): array
+    private static function compare(array $tree, ?callable $prepare, bool $derive, ?string $root, ?callable $referencePrepare = null, ?string $stageOnly = null): array
     {
         $owned = $root === null;
         $root ??= SyntheticTree::fixture($tree);
@@ -73,8 +79,10 @@ final class RecordedComparison
             ];
             foreach ($captures as $side => $capture) {
                 $run->rankings->supply($side, $capture->rankings);
+                $run->baselineEligibility->supply($side, $capture->baselineEligibility);
             }
             $derivations = [];
+            $exact = new \QmxFindingGate\ExactSurfaceDeltaCheck($run);
             if ($derive) {
                 foreach (\QmxFindingGate\Wiring::gate()->list('derivations') as $name) {
                     $class = 'QmxFindingGate\\' . $name;
@@ -85,6 +93,8 @@ final class RecordedComparison
                     $derivation->startDeriving();
                     $derivations[] = $derivation;
                 }
+                $exact->startDeriving();
+                $derivations[] = $exact;
             }
             $records = \QmxFindingGate\RecordCheck::create($run);
             $ranking = \QmxFindingGate\RankingCheck::create($run);
@@ -93,6 +103,17 @@ final class RecordedComparison
                     $ranking->checkCase($side, $case, \QmxFindingGate\CaseOutcome::ANALYSIS, $capture->artifacts);
                     $records->checkCase($side, $case, \QmxFindingGate\CaseOutcome::ANALYSIS, $capture->artifacts);
                 }
+            }
+            if ($stageOnly !== null) {
+                $stage = \QmxFindingGate\RecordStage::create($run);
+                $stage->countInputs($captures['candidate']->artifacts, $captures['reference']->artifacts);
+                $stage->applyStage(new \QmxFindingGate\SurfacePair(
+                    $stageOnly,
+                    \QmxFindingGate\Surfaces::surfaceClass($stageOnly),
+                    $captures['candidate']->artifacts[$stageOnly] ?? null,
+                    $captures['reference']->artifacts[$stageOnly] ?? null,
+                ));
+                return [$report, []];
             }
             foreach (DeclaredFields::REPORTS as $fieldReport) {
                 foreach ($declarations->fields->views($fieldReport) as $view) {
@@ -118,7 +139,8 @@ final class RecordedComparison
                     $fingerprints->checkFingerprints($side, $case, ReportRecords::decode($capture->rankings['case:' . $case->id . '|format:json']['physical']['stdout'] ?? $capture->rankings['case:' . $case->id . '|format:json']['ranked']['stdout'])['violations'], $capture->artifacts);
                 }
             }
-            $comparison = new \QmxFindingGate\SurfaceComparison($report, $run->corpus, $maps, $run->normalization, $fingerprints, $delta, $root, $stages, $records);
+            $exact->plan($captures, $records, $fingerprints);
+            $comparison = new \QmxFindingGate\SurfaceComparison($report, $run->corpus, $maps, $run->normalization, $fingerprints, $delta, $root, $stages, $records, $exact);
             $a = $captures['candidate']->artifacts;
             $b = $captures['reference']->artifacts;
             $renameCheck = new \QmxFindingGate\RenameMapCheck($report, $run->corpus, $maps, $run->split);
@@ -130,6 +152,7 @@ final class RecordedComparison
             (new \QmxFindingGate\RenameMapCheck($report, $run->corpus, $maps, $run->split))->checkStaleMaps();
             if (!$derive) {
                 (new \QmxFindingGate\StaleDeclarationCheck($report, $declarations))->checkStaleDeclarations();
+                $exact->checkStale();
             }
             $paths = [];
             foreach ($derivations as $derivation) {
@@ -149,6 +172,7 @@ final class RecordedComparison
         $answers = json_decode(Fs::read($root . '/replay/answers.json'), true, 512, \JSON_THROW_ON_ERROR);
         $artifacts = [];
         $rankings = [];
+        $baselineEligibility = [];
         foreach ($run->capturePlan->invocations() as $descriptor) {
             $surface = $descriptor['surface'];
             $key = $descriptor['scope'] . '|' . $surface;
@@ -171,9 +195,14 @@ final class RecordedComparison
                     'ranked' => ['stdout' => $slot['stdout'] ?? '', 'stderr' => $slot['stderr'] ?? ($answer['stderr'] ?? ''), 'exit' => $slot['exit'] ?? ($answer['exit'] ?? 0)],
                     'physical' => ($document['violationsMeta']['truncated'] ?? false) === true && $physical !== null ? ['stdout' => $physical['stdout'] ?? '', 'stderr' => $physical['stderr'] ?? ($answer['stderr'] ?? ''), 'exit' => $physical['exit'] ?? ($answer['exit'] ?? 0)] : null,
                 ];
+                $complete = ReportRecords::decode($physical['stdout'] ?? $slot['stdout'] ?? $stdout);
+                if (\is_array($complete['violations'] ?? null)) {
+                    $groups = \QmxFindingGate\BaselineEligibility::groups(\QmxFindingGate\BaselineEligibility::validatedRecords($complete['violations']));
+                    $baselineEligibility[$key] = $answer['baselineEligibility'] ?? array_fill_keys(array_keys($groups), true);
+                }
             }
         }
-        return new \QmxFindingGate\CaptureResult($artifacts, $rankings);
+        return new \QmxFindingGate\CaptureResult($artifacts, $rankings, $baselineEligibility);
     }
 
 }

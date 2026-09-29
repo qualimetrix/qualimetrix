@@ -170,6 +170,53 @@ final class DeclaredRecordsTest extends TestCase
         $this->load();
     }
 
+    #[Test]
+    public function itWithdrawsAnUncapturableProjectGroupWithoutInventingABaselineEntry(): void
+    {
+        $tree = \QmxFindingGate\SyntheticTree::clean();
+        $record = \QmxFindingGate\SyntheticTree::finding($tree['tuple'], 'architecture.unreachable-layer', 'project:');
+        $tree['findings']['alpha'] = [$record];
+        $tree['candidateFindings']['alpha'] = [];
+        $tree['declarations']['cases/alpha/baseline-src/src/Alpha.php'] = "<?php\n";
+        $tree['answers']['case:alpha|check:baseline-source']['baselineEligibility'] = [\QmxFindingGate\ReportRecords::identity('json', $record) => false];
+        $empty = '{"version":13,"scope":["src"],"entries":{}}';
+        $tree['answers']['case:alpha|baseline-file'] = ['stdout' => $empty, 'file' => $empty];
+        $tree['candidateAnswers']['case:alpha|baseline-file'] = ['stdout' => $empty, 'file' => $empty];
+        $tree['candidateDeclarations'][DeclaredRecords::INDEX] = Tsv::render(DeclaredRecords::COLUMNS, [
+            ['withdrawn', 'alpha', 'json', 'format:json', '{"channel":"architecture.unreachable-layer"}', 'The configuration diagnostic is removed.'],
+            ['withdrawn', 'alpha', 'json', 'check:baseline-source', '{"channel":"architecture.unreachable-layer"}', 'The configuration diagnostic is removed.'],
+        ]);
+        $tree['candidateDeclarations'][DeclaredRecords::DERIVED] = Tsv::render(DeclaredRecords::DERIVED_COLUMNS, [
+            ['withdrawn', 'alpha', 'json', 'format:json', DeclaredRecords::canonical($record + ['ranking.impactScore' => 45, 'ranking.coupling.class-rank' => 1])],
+            ['withdrawn', 'alpha', 'json', 'check:baseline-source', DeclaredRecords::canonical($record + ['ranking.impactScore' => 45, 'ranking.coupling.class-rank' => 1])],
+        ]);
+        $report = RecordedComparison::stageReport($tree, 'case:alpha|baseline-file');
+        self::assertSame([], $report->failureClasses(), $report->render());
+        $tree['answers']['case:alpha|check:baseline-source']['baselineEligibility'] = [\QmxFindingGate\ReportRecords::identity('json', $record) => true];
+        $eligible = RecordedComparison::stageReport($tree, 'case:alpha|baseline-file');
+        self::assertContains(\QmxFindingGate\FailureClass::RECORD_PROJECTION_MISMATCH, $eligible->failureClasses(), $eligible->render());
+        self::assertStringContainsString('A licensed baseline source residual has no matching published entry.', $eligible->render());
+    }
+
+    #[Test]
+    public function itAsksTheProductAboutCompleteRawBaselineGroups(): void
+    {
+        $root = \dirname(__DIR__, 3);
+        $records = [];
+        foreach ([
+            ['architecture.unreachable-layer', 1],
+            ['not-declared.by-product', null],
+            ['code-smell.empty-catch', null],
+            ['complexity.ccn', 1],
+            ['complexity.ccn', null],
+        ] as $index => [$channel, $magnitude]) {
+            $records[] = ['subject' => 'file:probe-' . $index . '.php', 'channel' => $channel, 'occurrence' => null, 'edge' => null, 'metricValue' => $magnitude];
+        }
+        $records[4]['subject'] = $records[3]['subject'];
+        $actual = \QmxFindingGate\BaselineEligibility::capture($root, $root, ['check', 'src', '--no-ansi', '-c', 'qmx.yaml', '-f', 'json'], $records);
+        self::assertSame([false, false, true, false], array_values($actual));
+    }
+
     private function intent(string $report, string $selector, string $change = 'withdrawn'): void
     {
         Fs::write($this->root . '/' . DeclaredRecords::INDEX, Tsv::render(DeclaredRecords::COLUMNS, [[$change, '*', $report, $report === 'directives' ? 'directives' : 'format:' . $report, $selector, 'why']]));

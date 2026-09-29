@@ -54,6 +54,8 @@ final class Gate
 
     private readonly DeclaredDeltaCheck $declaredDeltaCheck;
 
+    private readonly ExactSurfaceDeltaCheck $exactSurfaceDeltaCheck;
+
     private readonly SurfaceComparison $surfaceComparison;
 
     private readonly CoverageCheck $coverageCheck;
@@ -153,12 +155,13 @@ final class Gate
         );
         $this->rankings = $run->rankings;
         $this->context = $run;
+        $this->exactSurfaceDeltaCheck = new ExactSurfaceDeltaCheck($run);
         $this->records = RecordCheck::create($run);
         $this->caseOutcomeCheck = CaseOutcomeCheck::create($run);
         $wiring = Wiring::of(__DIR__);
         $this->caseChecks = self::registered($wiring, 'caseChecks', CaseCheck::class, $run);
         $this->runChecks = self::registered($wiring, 'runChecks', RunCheck::class, $run);
-        $this->derivations = self::registered($wiring, 'derivations', Derivation::class, $run);
+        $this->derivations = [...self::registered($wiring, 'derivations', Derivation::class, $run), $this->exactSurfaceDeltaCheck];
 
         foreach ($this->caseChecks as $check) {
             CaseOutcome::applies($check->name(), CaseOutcome::ANALYSIS);
@@ -179,6 +182,7 @@ final class Gate
             $this->temporaryDirectory,
             self::registered($wiring, 'surfaceStages', SurfaceStage::class, $run),
             $this->records,
+            $this->exactSurfaceDeltaCheck,
         );
     }
 
@@ -206,6 +210,8 @@ final class Gate
             $this->declaredDelta->totalBytes(),
         ));
         $this->report->countDeclaredDeltas($this->declaredDelta->count());
+        $this->report->fact('declared exact surfaces', $this->declarations->exactSurfaces->count());
+        $this->report->countExactSurfaces($this->declarations->exactSurfaces->count());
 
         if (!$this->declaredDelta->isEmpty()) {
             $this->report->warn(\sprintf(
@@ -276,6 +282,8 @@ final class Gate
             $referenceArtifacts = $referenceCapture->artifacts;
             $this->rankings->supply('candidate', $firstCapture->rankings);
             $this->rankings->supply('reference', $referenceCapture->rankings);
+            $this->context->baselineEligibility->supply('candidate', $firstCapture->baselineEligibility);
+            $this->context->baselineEligibility->supply('reference', $referenceCapture->baselineEligibility);
 
             $this->renameMapCheck->checkReferenceInput($first, $referenceArtifacts);
             if (\in_array(FailureClass::REFERENCE_INPUT_UNTRANSLATED, $this->report->failureClasses(), true)) {
@@ -283,6 +291,7 @@ final class Gate
             }
             $this->checkFindings('candidate', $first, trackObserved: true);
             $this->checkFindings('reference', $referenceArtifacts, trackObserved: false);
+            $this->exactSurfaceDeltaCheck->plan(['candidate' => $firstCapture, 'reference' => $referenceCapture], $this->records, $this->fingerprintCheck);
             $this->renameMapCheck->checkSplitExplanation($first, $referenceArtifacts);
             $this->surfaceComparison->compareSurfaces($first, $referenceArtifacts);
 
@@ -305,6 +314,7 @@ final class Gate
             $this->normalizationCheck->checkStaleNormalization();
             $this->renameMapCheck->checkStaleMaps();
             $this->declaredDeltaCheck->checkStaleDeclaredDelta();
+            $this->exactSurfaceDeltaCheck->checkStale();
             $this->declaredDeltaCheck->checkStaleFieldMoves();
             $this->staleDeclarationCheck->checkStaleDeclarations();
             $secondAuthority = $this->captureAuthority('candidate-2', $secondCapture);

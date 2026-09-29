@@ -184,6 +184,11 @@ final class DeclaredDelta
         return isset($this->entries[$surface]) ? $surface : $surfaceKey;
     }
 
+    public function hasSurfaceIntention(string $surfaceKey): bool
+    {
+        return isset($this->entries[$this->intentOf($surfaceKey)]);
+    }
+
     private function reasonFor(string $surface, string $diff): string
     {
         return $this->entries[$surface]['reason'];

@@ -73,6 +73,7 @@ final class Mutation
 
     /** Where the derived declarations live, relative to the repository root. */
     private const DERIVED_DECLARATIONS = 'finding-gate/declared-delta';
+    private const EXACT_DERIVED_DECLARATIONS = 'finding-gate/declared-exact-surfaces';
 
     /**
      * A root configuration key renamed in every corpus document that writes it
@@ -377,34 +378,33 @@ final class Mutation
      */
     private static function renameThroughDerivedDeclarations(array $action, Scratch $scratch, string $repository): void
     {
-        $directory = $scratch->path($action['path']);
-
-        if (!is_dir($directory)) {
-            return;
-        }
-
-        $files = glob($directory . '/*.diff');
-
-        foreach ($files === false ? [] : $files as $file) {
-            $original = $repository . '/' . $action['path'] . '/' . basename($file);
-            $before = is_file($original) ? hash_file('sha256', $original) : false;
-
-            if ($before === false) {
-                // The scratch tree holds a derived declaration the repository
-                // does not, so there is no hardlink to write through and
-                // nothing to compare against. Rewriting it is still correct.
-                $before = null;
+        foreach ([$action['path'], self::EXACT_DERIVED_DECLARATIONS] as $relativeDirectory) {
+            $directory = $scratch->path($relativeDirectory);
+            if (!is_dir($directory)) {
+                continue;
             }
+            $files = glob($directory . '/*.diff');
+            foreach ($files === false ? [] : $files as $file) {
+                $original = $repository . '/' . $relativeDirectory . '/' . basename($file);
+                $before = is_file($original) ? hash_file('sha256', $original) : false;
 
-            $contents = Shell::read($file);
-            $rewritten = strtr($contents, $action['replacements']);
+                if ($before === false) {
+                    // The scratch tree holds a derived declaration the repository
+                    // does not, so there is no hardlink to write through and
+                    // nothing to compare against. Rewriting it is still correct.
+                    $before = null;
+                }
 
-            if ($rewritten !== $contents) {
-                Shell::replace($file, $rewritten);
-            }
+                $contents = Shell::read($file);
+                $rewritten = strtr($contents, $action['replacements']);
 
-            if (\is_string($before)) {
-                self::assertRepositoryUntouched($original, $before);
+                if ($rewritten !== $contents) {
+                    Shell::replace($file, $rewritten);
+                }
+
+                if (\is_string($before)) {
+                    self::assertRepositoryUntouched($original, $before);
+                }
             }
         }
     }

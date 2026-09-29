@@ -98,7 +98,8 @@ final class DeclaredDeltaCheck implements Derivation
      */
     private function checkAgainstDeclaredDelta(string $key, ExactDiff $diff, string $declared, string $left, string $right): void
     {
-        if ($diff->changedLineCount() > DeclaredDelta::MAX_CHANGED_LINES) {
+        if (ReportViews::recordBearingSurface(Surfaces::surfaceClass($key))
+            && $diff->changedLineCount() > DeclaredDelta::MAX_CHANGED_LINES) {
             $this->report->fail(
                 FailureClass::DELTA_TOO_LARGE,
                 $key,

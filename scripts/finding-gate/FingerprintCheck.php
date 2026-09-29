@@ -26,6 +26,27 @@ final class FingerprintCheck
 
     public function __construct(private readonly GateReport $report) {}
 
+    public function forkFor(GateReport $report): self
+    {
+        $copy = new self($report);
+        $copy->fingerprintIdentities = $this->fingerprintIdentities;
+        return $copy;
+    }
+
+    public function trialSubstitute(string $side, string $key, string $text): ?string
+    {
+        if (Surfaces::surfaceClass($key) !== Fingerprints::OPAQUE_SURFACE) {
+            return $text;
+        }
+        $scope = substr($key, 0, (int) strpos($key, '|'));
+        $identities = $this->fingerprintIdentities[$side . '|' . substr($scope, \strlen('case:'))] ?? null;
+        if (!str_starts_with($scope, 'case:') || $identities === null) {
+            return $text;
+        }
+        $substitution = Fingerprints::substitute($text, $identities['preimages'], $identities['published']);
+        return $substitution->isComplete() ? $substitution->text : null;
+    }
+
     /**
      * @param list<array<string, mixed>> $findings
      * @param array<string, string> $artifacts

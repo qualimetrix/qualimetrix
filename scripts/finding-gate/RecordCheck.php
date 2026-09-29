@@ -48,6 +48,17 @@ final class RecordCheck implements CaseCheck, RunCheck
         return $check;
     }
 
+    public function trialCopy(RunContext $trial): self
+    {
+        $copy = self::create($trial);
+        $copy->records = $this->records;
+        $copy->publications = $this->publications;
+        $copy->physical = $this->physical;
+        $copy->raw = $this->raw;
+        $copy->identityReady = $this->identityReady;
+        return $copy;
+    }
+
     public function name(): string
     {
         return CaseOutcome::CHECK_RECORDS;
@@ -283,6 +294,9 @@ final class RecordCheck implements CaseCheck, RunCheck
         }
         $this->ranking->supplyFields($case);
         foreach (ReportViews::forCase($definition) as $view => $report) {
+            if ($this->run->isExactSurface('case:' . $case . '|' . $view)) {
+                continue;
+            }
             $candidate = $this->records[$case][$view]['candidate'] ?? null;
             $reference = $this->records[$case][$view]['reference'] ?? null;
             $left = $this->base($report, $view, $candidate ?? []);

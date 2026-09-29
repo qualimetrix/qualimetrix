@@ -18,11 +18,15 @@ final readonly class CaptureResult
     /** @var array<string,RankingCapture> */
     public array $rankings;
 
+    /** @var array<string,array<string,bool>> */
+    public array $baselineEligibility;
+
     /**
      * @param array<array-key,mixed> $artifacts
      * @param array<array-key,mixed> $rankings
+     * @param array<array-key,mixed> $baselineEligibility
      */
-    public function __construct(array $artifacts, array $rankings)
+    public function __construct(array $artifacts, array $rankings, array $baselineEligibility = [])
     {
         $publications = [];
         foreach ($artifacts as $key => $value) {
@@ -44,16 +48,20 @@ final readonly class CaptureResult
         }
         $this->artifacts = $publications;
         $this->rankings = $evidence;
+        $eligibility = new BaselineEligibility();
+        $eligibility->supply('candidate', $baselineEligibility);
+        $this->baselineEligibility = $baselineEligibility;
     }
 
     public function merge(self $other): self
     {
         $artifacts = array_intersect_key($this->artifacts, $other->artifacts);
         $rankings = array_intersect_key($this->rankings, $other->rankings);
-        if ($artifacts !== [] || $rankings !== []) {
-            throw new GateError('Capture results overlap: ' . implode(', ', [...array_keys($artifacts), ...array_keys($rankings)]));
+        $eligibility = array_intersect_key($this->baselineEligibility, $other->baselineEligibility);
+        if ($artifacts !== [] || $rankings !== [] || $eligibility !== []) {
+            throw new GateError('Capture results overlap: ' . implode(', ', [...array_keys($artifacts), ...array_keys($rankings), ...array_keys($eligibility)]));
         }
-        return new self($this->artifacts + $other->artifacts, $this->rankings + $other->rankings);
+        return new self($this->artifacts + $other->artifacts, $this->rankings + $other->rankings, $this->baselineEligibility + $other->baselineEligibility);
     }
 
     /** @return ProcessCapture */
