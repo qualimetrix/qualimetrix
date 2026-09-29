@@ -33,10 +33,10 @@ final class ConfigurationInputAdapter
         private readonly CliSelectorDecoder $selectorDecoder = new CliSelectorDecoder(),
     ) {}
 
-    public function resolve(InputInterface $input): ConfigurationDocument
+    public function resolve(InputInterface $input, ?AnalysisPreflightProfile $profile = null): ConfigurationDocument
     {
         return $this->configurationPipeline->resolve(
-            $this->adapt($input, self::currentWorkingDirectory()->value()),
+            $this->adapt($input, self::currentWorkingDirectory()->value(), $profile ?? AnalysisPreflightProfile::analysis()),
         );
     }
 
@@ -87,11 +87,11 @@ final class ConfigurationInputAdapter
         return ExitPolicy::fromResolvedValue($document->resolved()->get(ConfigSchema::FAIL_ON));
     }
 
-    public function adapt(InputInterface $input, string $workingDirectory): ConfigurationResolutionRequest
+    public function adapt(InputInterface $input, string $workingDirectory, ?AnalysisPreflightProfile $profile = null): ConfigurationResolutionRequest
     {
         $this->refuseEmptyValues($input);
 
-        [$values, $optionNames] = $this->overrides($input);
+        [$values, $optionNames] = $this->overrides($input, $profile ?? AnalysisPreflightProfile::analysis());
 
         return new ConfigurationResolutionRequest(
             self::absoluteWorkingDirectory($workingDirectory),
@@ -145,37 +145,43 @@ final class ConfigurationInputAdapter
      *
      * @return array{array<string, mixed>, array<string, string>}
      */
-    private function overrides(InputInterface $input): array
+    private function overrides(InputInterface $input, AnalysisPreflightProfile $profile): array
     {
         $values = [];
         $names = [];
         $this->put($values, $names, ConfigSchema::PATHS, CommandLineSpelling::arguments($input, 'paths'), 'paths');
-        $this->put($values, $names, ConfigSchema::EXCLUDES, array_map(
-            function (string $selector): array {
-                $definition = $this->selectorDecoder->decodePath($selector, '--exclude')->definition;
+        if ($profile->mapsOption('exclude')) {
+            $this->put($values, $names, ConfigSchema::EXCLUDES, array_map(
+                function (string $selector): array {
+                    $definition = $this->selectorDecoder->decodePath($selector, '--exclude')->definition;
 
-                return [$definition->kind->value => $definition->value];
-            },
-            CommandLineSpelling::options($input, 'exclude'),
-        ), '--exclude');
+                    return [$definition->kind->value => $definition->value];
+                },
+                CommandLineSpelling::options($input, 'exclude'),
+            ), '--exclude');
+        }
         foreach (self::SINGLE_VALUED as $option => $key) {
-            $this->put($values, $names, $key, CommandLineSpelling::option($input, $option), '--' . $option);
+            if ($profile->mapsOption($option)) {
+                $this->put($values, $names, $key, CommandLineSpelling::option($input, $option), '--' . $option);
+            }
         }
         foreach (self::REPEATABLE as $option => $key) {
-            $this->put($values, $names, $key, CommandLineSpelling::options($input, $option), '--' . $option);
+            if ($profile->mapsOption($option)) {
+                $this->put($values, $names, $key, CommandLineSpelling::options($input, $option), '--' . $option);
+            }
         }
 
-        if ($this->option($input, 'no-cache') === true) {
+        if ($profile->mapsOption('no-cache') && $this->option($input, 'no-cache') === true) {
             $this->put($values, $names, ConfigSchema::CACHE_ENABLED, false, '--no-cache');
         }
-        if ($this->option($input, 'include-generated') === true) {
+        if ($profile->mapsOption('include-generated') && $this->option($input, 'include-generated') === true) {
             $this->put($values, $names, ConfigSchema::INCLUDE_GENERATED, true, '--include-generated');
         }
-        if ($this->option($input, 'include-autoload-dev') === true) {
+        if ($profile->mapsOption('include-autoload-dev') && $this->option($input, 'include-autoload-dev') === true) {
             $this->put($values, $names, ConfigSchema::INCLUDE_AUTOLOAD_DEV, true, '--include-autoload-dev');
         }
         $workers = CommandLineSpelling::option($input, 'workers');
-        if ($workers !== null) {
+        if ($profile->mapsOption('workers') && $workers !== null) {
             $this->put($values, $names, ConfigSchema::PARALLEL_WORKERS, (int) $workers, '--workers');
         }
 

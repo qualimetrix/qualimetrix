@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
+use Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
 use Symfony\Component\Config\FileLocator;
@@ -76,6 +77,7 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
         $container->register(self::LAYER_ASSIGNMENT_COMMAND)
             ->setArguments([
                 new Reference(AnalysisPreflight::class),
+                (new Definition(AnalysisPreflightProfile::class))->setFactory([AnalysisPreflightProfile::class, 'analysis']),
                 new Reference(self::LAYER_ASSIGNMENT_RESOLVER),
                 new Reference(RefusalPresenter::class),
             ])

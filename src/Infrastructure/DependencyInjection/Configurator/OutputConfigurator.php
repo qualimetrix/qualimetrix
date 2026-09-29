@@ -39,14 +39,18 @@ use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
+use Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery;
+use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface;
+use Qualimetrix\Infrastructure\Console\AnalysisInputPathValidator;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\CheckConfigurationResolvers;
@@ -484,6 +488,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         // audit — and never AnalysisPipelineInterface: analysing and auditing
         // are two questions, and the four consumers of the first do not ask
         // the second.
+        $container->register(AnalysisInputPathValidator::class);
         $container->register(AnalysisPreflight::class)
             ->setArguments([
                 new Reference(RuntimeConfigurator::class),
@@ -493,6 +498,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(ParallelConfigurationResolverInterface::class),
                 new Reference(RuleInputValidator::class),
                 new Reference(FileDiscoveryFactoryInterface::class),
+                new Reference(AnalysisInputPathValidator::class),
             ]);
         $container->register(DirectivesCommand::class)
             ->setArguments([
@@ -511,12 +517,21 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(RuleChannelRegistryInterface::class),
                 new Reference(ChannelDeclarationRegistryInterface::class),
                 new Reference(RuleListingPresenter::class),
+                new Reference(ConfigurationInputAdapter::class),
+                new Reference(FindingConfigurationResolverInterface::class),
+                new Reference(ComputedMetricConfiguratorInterface::class),
             ])
             ->setPublic(true);
 
-        $container->register(self::DEPENDENCY_GRAPH_ANALYZER, self::DEPENDENCY_GRAPH_ANALYZER_CLASS)
+        $container->register(AnalysisFileDiscovery::class)
             ->setArguments([
                 new Reference(FileDiscoveryInterface::class),
+                new Reference(GeneratedFileFilterInterface::class),
+                new Reference(UnmatchedExcludeAudit::class),
+            ]);
+        $container->register(self::DEPENDENCY_GRAPH_ANALYZER, self::DEPENDENCY_GRAPH_ANALYZER_CLASS)
+            ->setArguments([
+                new Reference(AnalysisFileDiscovery::class),
                 new Reference(FileParserInterface::class),
                 new Reference(DependencyTraversalParticipantInterface::class),
                 new Reference(DependencyGraphBuilderInterface::class),
@@ -529,6 +544,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(DependencyGraphAnalyzerInterface::class),
                 new Reference('Qualimetrix\\Reporting\\GraphProjection\\Contract\\DependencyGraphProjectionInterface'),
+                new Reference(AnalysisPreflight::class),
                 new Reference(ErrorStream::class),
                 new Reference(RefusalPresenter::class),
                 new Reference(DelegatingLogger::class),

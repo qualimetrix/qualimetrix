@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
+use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\RuleListingPresenter;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -38,6 +42,9 @@ final class RulesCommand extends Command
         private readonly RuleChannelRegistryInterface $channels,
         private readonly ChannelDeclarationRegistryInterface $declarations,
         private readonly RuleListingPresenter $presenter,
+        private readonly ConfigurationInputAdapter $configurationInputAdapter,
+        private readonly FindingConfigurationResolverInterface $findingConfigurationResolver,
+        private readonly ComputedMetricConfiguratorInterface $computedMetrics,
     ) {
         parent::__construct();
     }
@@ -45,6 +52,8 @@ final class RulesCommand extends Command
     protected function configure(): void
     {
         $this
+            ->addOption('config', 'c', InputOption::VALUE_REQUIRED, 'Path to configuration file')
+            ->addOption('preset', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Apply a named preset or preset file', [])
             ->addOption(
                 'group',
                 'g',
@@ -56,6 +65,9 @@ final class RulesCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $document = $this->configurationInputAdapter->resolve($input);
+        $selection = $this->findingConfigurationResolver->resolve($document, new FindingCliOverrides())->selection;
+        $definitions = $this->computedMetrics->resolve($document)->all();
         $groupFilter = CommandLineSpelling::option($input, 'group');
 
         if ($groupFilter !== null && !\in_array($groupFilter, $this->families(), true)) {
@@ -73,7 +85,21 @@ final class RulesCommand extends Command
             );
         }
 
+        $this->configurationInputAdapter->writeDiagnostics($document, $output);
         $this->presenter->present($output, $this->rulesIn($groupFilter));
+        if ($definitions !== []) {
+            $output->writeln('');
+            $output->writeln('<info>Computed metrics:</info> ' . implode(', ', array_map(
+                static fn($definition): string => $definition->name,
+                $definitions,
+            )));
+        }
+        if ($selection->only !== []) {
+            $output->writeln('<comment>Only selected by configuration:</comment> ' . implode(', ', $selection->only));
+        }
+        if ($selection->disabled !== []) {
+            $output->writeln('<comment>Disabled by configuration:</comment> ' . implode(', ', $selection->disabled));
+        }
 
         return self::SUCCESS;
     }

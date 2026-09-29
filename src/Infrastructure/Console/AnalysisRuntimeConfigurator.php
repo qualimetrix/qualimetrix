@@ -80,6 +80,14 @@ final readonly class AnalysisRuntimeConfigurator
         $this->ruleInputValidator->replaceChannels($channels);
     }
 
+    /**
+     * @param list<NamespacePattern> $frameworkNamespaces
+     */
+    public function replaceCoupling(array $frameworkNamespaces): void
+    {
+        $this->couplingConfigurator->replace($frameworkNamespaces);
+    }
+
     public function captureExcludedFindings(): void
     {
         $this->ruleOptionsRegistry->captureExcludedFindings();

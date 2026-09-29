@@ -8,6 +8,7 @@ use ArrayIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
@@ -104,6 +105,28 @@ final class AnalysisFileDiscoveryTest extends TestCase
 
         self::assertSame([$file], $result->eligibleFiles);
         self::assertSame([], $result->generatedExcludedFiles);
+    }
+
+    #[Test]
+    public function itSelectsEligibleFilesWithoutReadingFindingOptions(): void
+    {
+        $file = new SplFileInfo('/project/src/A.php');
+        $default = self::createStub(FileDiscoveryInterface::class);
+        $default->method('discover')->willReturn(new ArrayIterator([$file]));
+        $filter = self::createStub(GeneratedFileFilterInterface::class);
+        $filter->method('filter')->willReturn([$file]);
+        $options = $this->createMock(RuleOptionsInterface::class);
+        $options->expects(self::never())->method('isEnabled');
+
+        $result = (new AnalysisFileDiscovery(
+            $default,
+            $filter,
+            new UnmatchedExcludeAudit($options, new ExcludeBindingProbe()),
+        ))->discoverEligible(self::configuration(['/project/src'], GeneratedFilePolicy::Exclude));
+
+        self::assertSame([$file], $result->eligibleFiles);
+        self::assertSame(1, $result->discoveredCount);
+        self::assertSame([], $result->unmatchedExcludeFindings);
     }
 
     private function discovery(FileDiscoveryInterface $default): AnalysisFileDiscovery

@@ -12,9 +12,10 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
+use Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile;
 use Qualimetrix\Infrastructure\Console\ArtifactFile;
 use Qualimetrix\Infrastructure\Console\CliSelectorDecoder;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
@@ -44,6 +45,7 @@ final class GraphExportCommand extends Command
     public function __construct(
         private readonly DependencyGraphAnalyzerInterface $analyzer,
         private readonly DependencyGraphProjectionInterface $projection,
+        private readonly AnalysisPreflight $preflight,
         private readonly ErrorStream $errorStream,
         private readonly RefusalPresenter $refusalPresenter,
         private readonly LoggerInterface $logger = new NullLogger(),
@@ -55,9 +57,17 @@ final class GraphExportCommand extends Command
     protected function configure(): void
     {
         $this
+            ->addOption('config', 'c', InputOption::VALUE_REQUIRED, 'Path to configuration file')
+            ->addOption('preset', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Apply a named preset or preset file', [])
+            ->addOption('exclude', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Directories to exclude', [])
+            ->addOption('include-generated', null, InputOption::VALUE_NONE, 'Include generated files')
+            ->addOption('include-autoload-dev', null, InputOption::VALUE_NONE, 'Include composer autoload-dev files')
+            ->addOption('no-cache', null, InputOption::VALUE_NONE, 'Disable caching')
+            ->addOption('workers', 'w', InputOption::VALUE_REQUIRED, 'Number of parallel workers')
+            ->addOption('memory-limit', null, InputOption::VALUE_REQUIRED, 'PHP memory limit')
             ->addArgument(
                 'paths',
-                InputArgument::IS_ARRAY | InputArgument::REQUIRED,
+                InputArgument::IS_ARRAY | InputArgument::OPTIONAL,
                 'Paths to analyze',
             )
             ->addOption(
@@ -150,15 +160,17 @@ final class GraphExportCommand extends Command
         $outputFile = $outputPath === null ? null : new ArtifactFile($outputPath, '--output');
         $outputFile?->refuseUnwritable();
 
-        $cwd = AbsolutePath::fromString((string) getcwd());
-        $paths = self::resolvePaths($input, $cwd);
+        $prepared = $this->preflight->resolve($input, $output, AnalysisPreflightProfile::graph());
         $request = $this->buildProjectionRequest($input, $format, $direction);
 
         $this->logger->info('Starting dependency graph export', [
-            'paths' => array_map(static fn(AbsolutePath $p): string => $p->value(), $paths),
+            'paths' => array_map(static fn(AbsolutePath $p): string => $p->value(), $prepared->runConfiguration->paths),
         ]);
 
-        $result = $this->analyzeDependencyGraph($paths, $cwd);
+        $result = $this->analyzeDependencyGraph(
+            $prepared->runConfiguration,
+            $prepared->fileDiscovery,
+        );
         $this->logger->info('Discovered files', [
             'count' => $result->coverage->discoveredFiles(),
         ]);
@@ -263,15 +275,6 @@ final class GraphExportCommand extends Command
         return $direction;
     }
 
-    /** @return list<AbsolutePath> */
-    private static function resolvePaths(InputInterface $input, AbsolutePath $cwd): array
-    {
-        return array_map(
-            static fn(string $raw): AbsolutePath => PathFactory::fromCliArgument($raw, $cwd),
-            CommandLineSpelling::arguments($input, 'paths'),
-        );
-    }
-
     private function buildProjectionRequest(InputInterface $input, GraphExportFormat $format, GraphDirection $direction): GraphProjectionRequest
     {
         $includeNamespaces = CommandLineSpelling::options($input, 'namespace');
@@ -304,10 +307,11 @@ final class GraphExportCommand extends Command
         }
     }
 
-    /** @param list<AbsolutePath> $paths */
-    private function analyzeDependencyGraph(array $paths, AbsolutePath $projectRoot): DependencyGraphAnalysisResult
-    {
-        return $this->analyzer->analyze($paths, $projectRoot);
+    private function analyzeDependencyGraph(
+        \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration $configuration,
+        \Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface $fileDiscovery,
+    ): DependencyGraphAnalysisResult {
+        return $this->analyzer->analyze($configuration, $fileDiscovery);
     }
 
     private function writeIncompleteAnalysis(OutputInterface $output, IncompleteAnalysisException $exception): void

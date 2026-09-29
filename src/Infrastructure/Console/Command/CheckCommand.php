@@ -10,8 +10,8 @@ use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
-use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Infrastructure\Console\AnalysisInputPathValidator;
 use Qualimetrix\Infrastructure\Console\CheckConfigurationResolvers;
 use Qualimetrix\Infrastructure\Console\CheckScopeResolver;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
@@ -236,10 +236,7 @@ final class CheckCommand extends Command
         $resolvedScope = $this->checkScopeResolver->resolve($input, $runConfiguration);
         $scopeResolution = $resolvedScope->scope;
 
-        $pathErrors = $this->validatePaths($scopeResolution->paths);
-        if ($pathErrors !== []) {
-            throw ConfigurationInputAdapter::pathsRefusal($document, implode(' ', $pathErrors));
-        }
+        (new AnalysisInputPathValidator())->validate($scopeResolution->paths, $document);
 
         $projectRoot = $runConfiguration->projectRoot;
         foreach ($resolvedScope->warnings as $warning) {
@@ -322,25 +319,6 @@ final class CheckCommand extends Command
     private function runAnalysis(RunConfiguration $configuration, \Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface $fileDiscovery): \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult
     {
         return $this->analyzer->analyze($configuration, $fileDiscovery);
-    }
-
-    /**
-     * Validates that all provided paths exist.
-     *
-     * @param list<AbsolutePath> $paths
-     *
-     * @return list<string> Error messages (empty if all valid)
-     */
-    private function validatePaths(array $paths): array
-    {
-        $errors = [];
-        foreach ($paths as $path) {
-            if (!$path->exists()) {
-                $errors[] = \sprintf("Error: path '%s' does not exist", $path->value());
-            }
-        }
-
-        return $errors;
     }
 
     /**

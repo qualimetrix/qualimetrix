@@ -56,52 +56,54 @@ final class RuntimeConfigurator
     public function configure(
         ConfigurationDocument $document,
         RunConfiguration $runConfiguration,
-        FindingConfiguration $findingConfiguration,
+        ?FindingConfiguration $findingConfiguration,
         CacheConfiguration $cacheConfiguration,
         ParallelConfiguration $parallelConfiguration,
         InputInterface $input,
         OutputInterface $output,
+        ?AnalysisPreflightProfile $profile = null,
     ): void {
+        $profile ??= AnalysisPreflightProfile::analysis();
         $this->projectSourceConfigurator->configure($runConfiguration->projectRoot, $runConfiguration->paths);
 
         // Pure preflight: no store or external-effect mutation is allowed
         // until every owner has accepted its immutable value.
-        $architecturePolicy = $this->analysisRuntimeConfigurator->resolveArchitecturePolicy($document);
-        $computedMetrics = $this->analysisRuntimeConfigurator->resolveComputedMetrics($document);
-        $frameworkNamespaces = $this->analysisRuntimeConfigurator->resolveCoupling($document);
-        $lcomConfiguration = $this->analysisRuntimeConfigurator->resolveLcom($findingConfiguration);
         $runtimeLimits = $this->resolveRuntimeLimits($document);
-        ProfilePresenter::refuseImpossibleExport($input);
-        $capture = ($input->hasOption('show-suppressed') && $input->getOption('show-suppressed') === true)
-            || $this->resolveFormat($document) === 'suppressed';
-        $channels = $this->analysisRuntimeConfigurator->resolveRuleChannels(
-            $input,
-            $findingConfiguration,
-            $computedMetrics,
-        );
+        $architecturePolicy = null;
+        $frameworkNamespaces = [];
+        if ($findingConfiguration !== null) {
+            $architecturePolicy = $this->analysisRuntimeConfigurator->resolveArchitecturePolicy($document);
+            $computedMetrics = $this->analysisRuntimeConfigurator->resolveComputedMetrics($document);
+            $lcomConfiguration = $this->analysisRuntimeConfigurator->resolveLcom($findingConfiguration);
+            ProfilePresenter::refuseImpossibleExport($input);
+            $channels = $this->analysisRuntimeConfigurator->resolveRuleChannels($input, $findingConfiguration, $computedMetrics);
+            $frameworkNamespaces = $this->analysisRuntimeConfigurator->resolveCoupling($document);
+        } else {
+            $frameworkNamespaces = $this->analysisRuntimeConfigurator->resolveCoupling($document);
+        }
 
         // Built-in stores commit only after complete preflight. An unexpected
         // custom-store failure is fail-closed, but is not claimed to roll back.
         $this->cacheFactory->replaceConfiguration($cacheConfiguration);
         $this->parallelConfigurationStore->replace($parallelConfiguration);
-        $this->analysisRuntimeConfigurator->replace(
-            $findingConfiguration,
-            $lcomConfiguration,
-            $architecturePolicy,
-            $computedMetrics,
-            $frameworkNamespaces,
-            $channels,
-        );
-        if ($capture) {
-            $this->analysisRuntimeConfigurator->captureExcludedFindings();
+        if ($findingConfiguration !== null) {
+            $this->analysisRuntimeConfigurator->replace($findingConfiguration, $lcomConfiguration, $architecturePolicy, $computedMetrics, $frameworkNamespaces, $channels);
+            if (($input->hasOption('show-suppressed') && $input->getOption('show-suppressed') === true)
+                || ($profile->requiresReportingFormat && $this->resolveFormat($document) === 'suppressed')) {
+                $this->analysisRuntimeConfigurator->captureExcludedFindings();
+            }
+        } else {
+            $this->analysisRuntimeConfigurator->replaceCoupling($frameworkNamespaces);
         }
 
         // These are fallible process/output effects. Failure aborts before
         // analysis; committed stores are reset at the next invocation entry.
         $this->runtimeLimitsController->apply($runtimeLimits);
         $logger = $this->runtimeLoggerConfigurator->configure($input, $output);
-        foreach ($architecturePolicy->warnings() as $warning) {
-            $logger->warning($warning->message, $warning->context);
+        if ($architecturePolicy !== null) {
+            foreach ($architecturePolicy->warnings() as $warning) {
+                $logger->warning($warning->message, $warning->context);
+            }
         }
         $this->progressConfigurator->configure($input, $output);
         $this->configureProfiler($input);

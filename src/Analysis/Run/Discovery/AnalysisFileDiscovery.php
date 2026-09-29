@@ -49,8 +49,23 @@ final readonly class AnalysisFileDiscovery
         RunConfiguration $configuration,
         ?FileDiscoveryInterface $override = null,
     ): DiscoveredAnalysisFiles {
+        $selection = $this->discoverEligible($configuration, $override);
+
+        return DiscoveredAnalysisFiles::fromDiscovery(
+            $selection->eligibleFiles,
+            $selection->generatedExcludedFiles,
+            $selection->discoveredCount,
+            $this->unmatchedExcludeAudit->findings($configuration),
+            $selection->skippedEntries,
+        );
+    }
+
+    /** Selects files without consulting analysis-only finding state. */
+    public function discoverEligible(
+        RunConfiguration $configuration,
+        ?FileDiscoveryInterface $override = null,
+    ): DiscoveredAnalysisFiles {
         $projectRoot = $configuration->projectRoot;
-        $unmatchedExcludes = $this->unmatchedExcludeAudit->findings($configuration);
 
         $discovery = $override ?? $this->defaultDiscovery;
         // preserve_keys=false: discover() may yield AbsolutePath object keys.
@@ -94,7 +109,7 @@ final readonly class AnalysisFileDiscovery
             $eligible,
             $excluded,
             \count($filesByPath),
-            $unmatchedExcludes,
+            [],
             array_values($skipsByPath),
         );
     }

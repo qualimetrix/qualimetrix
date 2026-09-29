@@ -92,6 +92,19 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     #[Test]
+    public function itAcceptsTheStrictPresetBeforeResolvingAnAssignment(): void
+    {
+        $config = $this->writeConfig([['service', ['App\\Service\\**']]]);
+        $this->declareClasses(['App\\Service\\UserService']);
+        $tester = $this->newTester();
+
+        self::assertSame(Command::SUCCESS, $tester->execute([
+            'fqn' => 'App\\Service\\UserService', '--config' => $config, '--preset' => ['strict'],
+        ]), $tester->getDisplay());
+        self::assertStringContainsString('Assigned to: service', $tester->getDisplay());
+    }
+
+    #[Test]
     public function itReportsTheAssignmentAndShadowedLayersForAClassMatchingMultipleLayers(): void
     {
         // any-foo declared first → it captures App\Service\Foo before service has a chance.
@@ -506,7 +519,7 @@ final class LayerAssignmentCommandTest extends TestCase
         $resolverConstructor = (new ReflectionClass(LayerAssignmentResolver::class))->getConstructor();
         self::assertNotNull($commandConstructor);
         self::assertNotNull($resolverConstructor);
-        self::assertCount(3, $commandConstructor->getParameters());
+        self::assertCount(4, $commandConstructor->getParameters());
         self::assertCount(6, $resolverConstructor->getParameters());
     }
 

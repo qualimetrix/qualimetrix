@@ -26,6 +26,53 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(RuleCompilerPass::class)]
 final class RulesCommandWiringTest extends TestCase
 {
+    #[Test]
+    public function itListsComputedNamesAndFinalSelectorsWithoutMeasuringAPhpTree(): void
+    {
+        $directory = sys_get_temp_dir() . '/qmx-rules-document-' . bin2hex(random_bytes(6));
+        mkdir($directory);
+        file_put_contents($directory . '/composer.json', '{invalid');
+        file_put_contents($directory . '/qmx.yaml', "only_rules: [complexity.ccn]\ndisabled_rules: [size.class-count]\ncomputed_metrics:\n  computed.delivery-risk:\n    formula: '1'\n");
+        $previous = getcwd();
+        self::assertNotFalse($previous);
+        chdir($directory);
+        try {
+            $command = (new ContainerFactory())->create()->get(RulesCommand::class);
+            self::assertInstanceOf(RulesCommand::class, $command);
+            $tester = new CommandTester($command);
+            self::assertSame(0, $tester->execute([]));
+            self::assertStringContainsString('computed.delivery-risk', $tester->getDisplay());
+            self::assertStringContainsString('Only selected by configuration: complexity.ccn', $tester->getDisplay());
+            self::assertStringContainsString('Disabled by configuration: size.class-count', $tester->getDisplay());
+        } finally {
+            chdir($previous);
+            unlink($directory . '/composer.json');
+            unlink($directory . '/qmx.yaml');
+            rmdir($directory);
+        }
+    }
+
+    #[Test]
+    public function itRefusesAnInvalidComputedFormulaBeforeWritingTheListing(): void
+    {
+        $config = sys_get_temp_dir() . '/qmx-rules-formula-' . bin2hex(random_bytes(6)) . '.yaml';
+        file_put_contents($config, "computed_metrics:\n  computed.delivery-risk:\n    formula: 'unknown_metric + 1'\n");
+        try {
+            $command = (new ContainerFactory())->create()->get(RulesCommand::class);
+            self::assertInstanceOf(RulesCommand::class, $command);
+            $tester = new CommandTester($command);
+            try {
+                $tester->execute(['--config' => $config]);
+                self::fail('Invalid computed formula must refuse before listing rules.');
+            } catch (ConfigurationRefusal $refusal) {
+                self::assertStringContainsString('unknown_metric', $refusal->summary());
+                self::assertSame('', $tester->getDisplay());
+            }
+        } finally {
+            unlink($config);
+        }
+    }
+
     /**
      * An unknown group, and a known group in the wrong case, are refused
      * instead of answered with an

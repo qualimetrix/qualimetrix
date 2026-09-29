@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Exception;
 use InvalidArgumentException;
+use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
@@ -210,8 +211,6 @@ final class DirectivesCommand extends Command
 
         $prepared = $this->preflight->resolve($input, $output);
 
-        AnalysisPreflight::refuseMissingPaths($prepared);
-
         // The discovery the preflight resolved, not the pipeline's default: the
         // default knows nothing of the user's `exclude`, and a verdict is
         // relative to the file set that was measured.
@@ -236,7 +235,8 @@ final class DirectivesCommand extends Command
         }
 
         $exitCode = self::exitCodeFor($report);
-        $selection = $prepared->findingConfiguration->selection;
+        $selection = ($prepared->findingConfiguration
+            ?? throw new LogicException('Directive auditing requires a finding configuration.'))->selection;
         $presenter = new DirectiveAuditPresenter($report, $selection->only, $selection->disabled);
 
         if ($format === 'json') {

@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
-use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
+use Qualimetrix\Infrastructure\Console\AnalysisInputPathValidator;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
@@ -75,7 +73,7 @@ final readonly class BaselineRun implements BaselineRunInterface
             $output,
         );
         $this->configurationInputAdapter->writeDiagnostics($document, $output);
-        $this->assertPathsExist($document, $configuration->paths);
+        (new AnalysisInputPathValidator())->validate($configuration->paths, $document);
 
         $run = $this->measuredFindingSet->run(
             $configuration,
@@ -98,31 +96,6 @@ final readonly class BaselineRun implements BaselineRunInterface
         $projectRoot = $configuration->projectRoot;
 
         return new BaselineRunContext($run, RunScope::record($configuration->paths, $projectRoot), $projectRoot);
-    }
-
-    /**
-     * A path that does not exist would silently measure nothing, and a
-     * baseline captured from nothing is indistinguishable from a project with
-     * no findings — the one file state that must never be written by
-     * accident.
-     *
-     * @param list<AbsolutePath> $paths
-     *
-     * @throws ConfigurationRefusal
-     */
-    private function assertPathsExist(ConfigurationDocument $document, array $paths): void
-    {
-        $missing = [];
-
-        foreach ($paths as $path) {
-            if (!$path->exists()) {
-                $missing[] = $path->value();
-            }
-        }
-
-        if ($missing !== []) {
-            throw ConfigurationInputAdapter::pathsRefusal($document, \sprintf('Path(s) do not exist: %s', implode(', ', $missing)));
-        }
     }
 
 }
