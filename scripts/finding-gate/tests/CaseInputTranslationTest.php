@@ -210,7 +210,7 @@ final class CaseInputTranslationTest extends TestCase
                     && realpath($file) === realpath(getcwd() . '/src/Analysis/Configuration/' . basename($file));
             }
             echo json_encode([
-                'root' => ConfigurationRoot::SuppressNamespaces->key(),
+                'root' => ConfigurationRoot::SuppressNamespaces->declaration()->key,
                 'patterns' => count($patterns),
                 'matches' => $patterns !== [] && $patterns[0]->matches('Corpus\\Root\\Child'),
                 'loadedFromClone' => $loadedFromClone,

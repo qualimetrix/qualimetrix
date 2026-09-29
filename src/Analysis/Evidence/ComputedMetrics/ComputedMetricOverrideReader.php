@@ -10,7 +10,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeys;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricValueForm;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -18,9 +18,9 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * One merged `computed_metrics` entry, read into a definition.
  *
  * The document engine has already judged every key and the form of every
- * value, judged the metric's name, and merged the layers key by key; what is
- * left here is what a key's meaning adds — which words are levels — and
- * laying the entry over the definition it overrides. Each refusal names the
+ * value, including the level vocabulary and duplicates, judged the metric's
+ * name, and merged the layers key by key. This reader lays the entry over
+ * the definition it overrides. Each refusal names the
  * layers that wrote the value it is about.
  */
 final class ComputedMetricOverrideReader
@@ -104,46 +104,7 @@ final class ComputedMetricOverrideReader
             return $defaults;
         }
 
-        $levels = [];
-        foreach ($written->items() as $item) {
-            $levels[] = self::mapLevel((string) $item->plain(), $item);
-        }
-
-        if (ComputedMetricDefinition::hasDuplicateLevel($levels)) {
-            $written->refuse(ComputedMetricRefusalWording::duplicateLevel($name));
-        }
-
-        return $levels;
-    }
-
-    /**
-     * `callable` and `file` are real level words this capability does not
-     * report at — a different mistake from a word that is no level at all.
-     *
-     * @throws ConfigurationRefusal
-     */
-    private static function mapLevel(string $word, ResolvedValueInterface $item): SymbolLevel
-    {
-        $level = SymbolLevel::tryFrom($word);
-
-        if ($level === null) {
-            $item->refuse(ComputedMetricRefusalWording::levelWordNotALevelAtAll($word));
-        }
-
-        if (!\in_array($level, ComputedMetricEntryKeys::REPORTING_LEVELS, true)) {
-            $item->refuse(ComputedMetricRefusalWording::levelWordNotAReportingLevel($word, self::reportingLevelWords()));
-        }
-
-        return $level;
-    }
-
-    /** @return list<string> */
-    private static function reportingLevelWords(): array
-    {
-        return array_map(
-            static fn(SymbolLevel $level): string => $level->value,
-            ComputedMetricEntryKeys::REPORTING_LEVELS,
-        );
+        return ComputedMetricValueForm::levels($written, $name, ComputedMetricEntryKeys::REPORTING_LEVELS);
     }
 
     private static function field(ResolvedMapInterface|ResolvedBareNameInterface $entry, string $key): ?ResolvedValueInterface

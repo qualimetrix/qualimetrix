@@ -137,11 +137,14 @@ final class ExactAllowCycleValidatorTest extends TestCase
             ),
         ];
 
-        $this->validator->validate($entries, ArchitectureDocument::allow([
-            'application' => ['domain-*'],
-            'domain-*' => ['application'],
-            'app-{module}' => ['domain-{module}'],
-        ]));
+        $this->validator->validate($entries, ArchitectureDocument::spot([
+            'layers' => [['name' => 'application', 'patterns' => ['App\\Application']]],
+            'allow' => [
+                'application' => ['domain-*'],
+                'domain-*' => ['application'],
+                'app-{module}' => ['domain-{module}'],
+            ],
+        ], 'allow'));
 
         self::addToAssertionCount(1);
     }

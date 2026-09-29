@@ -12,13 +12,14 @@ use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 final class PresetIntegrationTest extends TestCase
 {
     #[Test]
     public function itRetainsBuiltInPresetDocumentsInRequestedOrder(): void
     {
-        $pipeline = new ConfigurationPipeline();
+        $pipeline = new ConfigurationPipeline(LayeredDocument::standaloneSections());
         $pipeline->addStage(new PresetStage(new YamlConfigLoader(), new PresetResolver()));
 
         $document = $pipeline->resolve(
@@ -33,7 +34,7 @@ final class PresetIntegrationTest extends TestCase
     #[Test]
     public function itDeduplicatesPresetNamesBeforeLoading(): void
     {
-        $pipeline = new ConfigurationPipeline();
+        $pipeline = new ConfigurationPipeline(LayeredDocument::standaloneSections());
         $pipeline->addStage(new PresetStage(new YamlConfigLoader(), new PresetResolver()));
 
         $document = $pipeline->resolve(

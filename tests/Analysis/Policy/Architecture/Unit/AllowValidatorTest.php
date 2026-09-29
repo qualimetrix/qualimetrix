@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelector;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\SelectorKind;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowValidator;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\LongFormAllowEntryNormalizer;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\SectionSpot;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationWarning;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 
@@ -626,7 +627,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
         $entries = $this->validator->validate(
-            ArchitectureDocument::allow(['domain-*' => ['shared']]),
+            self::allowSpot(['domain-*' => ['shared']]),
             ['domain-Order', 'shared'],
             $warnings,
         );
@@ -645,7 +646,7 @@ final class AllowValidatorTest extends TestCase
         // cross-validated because Step D template-expansion may produce them.
         $warnings = [];
         $entries = $this->validator->validate(
-            ArchitectureDocument::allow(['unknown-*' => ['shared']]),
+            self::allowSpot(['unknown-*' => ['shared']]),
             ['shared'],
             $warnings,
         );
@@ -763,7 +764,7 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage('architecture.allow.app-{m');
 
         $this->validator->validate(
-            ArchitectureDocument::allow(['app-{m' => []]),
+            ArchitectureDocument::spot(['allow' => ['app-{m' => []]], 'allow'),
             ['app-Order'],
             $warnings,
         );
@@ -811,7 +812,7 @@ final class AllowValidatorTest extends TestCase
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('architecture.allow');
 
-        $this->validator->validate(ArchitectureDocument::allow(['a', 'b']), ['a'], $warnings);
+        $this->validator->validate(self::allowSpot(['a', 'b']), ['a'], $warnings);
     }
 
     #[Test]
@@ -900,7 +901,7 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage("source 'shared-*' is a glob selector and declares no capture variables");
 
         $this->validator->validate(
-            ArchitectureDocument::allow(['shared-*' => ['domain-{m}']]),
+            self::allowSpot(['shared-*' => ['domain-{m}']]),
             ['shared-Lib', 'domain-Order'],
             $warnings,
         );
@@ -1046,6 +1047,14 @@ final class AllowValidatorTest extends TestCase
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    private static function allowSpot(mixed $allow): SectionSpot
+    {
+        return ArchitectureDocument::spot([
+            'layers' => [['name' => 'source', 'patterns' => ['App\\Source']]],
+            'allow' => $allow,
+        ], 'allow');
+    }
 
     /**
      * @param list<string> $expectedTargetNames

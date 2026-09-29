@@ -19,6 +19,7 @@ use QmxFindingGate\DeclaredSurfaces;
 use QmxFindingGate\EquivalenceTuple;
 use QmxFindingGate\FailureClass;
 use QmxFindingGate\Fs;
+use QmxFindingGate\GateError;
 use QmxFindingGate\GateReport;
 use QmxFindingGate\Options;
 use QmxFindingGate\RenameMaps;
@@ -93,20 +94,42 @@ final class RefusalDeclarationsTest extends TestCase
     }
 
     #[Test]
-    public function itWritesTheExpressibleDeltaBesideAnUnexpressibleRemainder(): void
+    public function itDoesNotMisclassifyATupleRefusalAsDeltaOverreach(): void
     {
         $key = 'case:refused|format:json';
-        $rejected = 'case:malformed|format:gitlab';
         $report = new GateReport();
-        $check = $this->check($report, [$key, $rejected]);
+        $check = $this->check($report, [$key]);
+        Fs::write($this->root . '/' . EquivalenceTuple::TRACKED_PATH, "field\tsource\nmessage\tmissing\n");
+
+        $this->expectException(GateError::class);
+        $this->expectExceptionMessage('expected "<file>::<method>"');
+
+        $check->checkDifference($key, '{"error":"refused","exit_code":3,"position":null,"source":[]}', '{"error":"refused","exit_code":3,"position":null}');
+    }
+
+    #[Test]
+    public function itTreatsOnlyARefusingBaselineWithoutRecordsAsDeltaOverreach(): void
+    {
+        $key = 'case:refused|check:baseline';
+        $report = new GateReport();
+        $check = $this->check($report, [$key]);
         $check->startDeriving();
         $check->checkDifference($key, '{"error":"refused","exit_code":3,"position":null,"source":[]}', '{"error":"refused","exit_code":3,"position":null}');
-        $check->checkDifference($rejected, '{"probe":1}', '[]');
         self::assertContains(FailureClass::DELTA_OVERREACH, $report->failureClasses());
-        self::assertNotSame([], $check->rewriteDerived());
-        $declarations = DeclaredDelta::load($this->root . '/finding-gate');
-        self::assertStringContainsString('"source":[]', (string) $declarations->claim($key));
-        self::assertSame("placeholder\n", $declarations->claim($rejected));
+        self::assertSame([], $check->rewriteDerived());
+    }
+
+    #[Test]
+    public function itPreservesAMalformedGitLabPublicationError(): void
+    {
+        $key = 'case:malformed|format:gitlab';
+        $report = new GateReport();
+        $check = $this->check($report, [$key]);
+
+        $this->expectException(GateError::class);
+        $this->expectExceptionMessage('GitLab publishes a result list');
+
+        $check->checkDifference($key, '{"probe":1}', '[]');
     }
 
     #[Test]

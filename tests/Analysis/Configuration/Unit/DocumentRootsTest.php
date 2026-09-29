@@ -12,7 +12,9 @@ use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
 use Qualimetrix\Analysis\Configuration\DocumentRoots;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 #[CoversClass(DocumentRoots::class)]
 final class DocumentRootsTest extends TestCase
@@ -33,10 +35,10 @@ final class DocumentRootsTest extends TestCase
     public function itDeclaresNoRootAnOwnerDeclares(): void
     {
         $declared = self::keys(ConfigurationRoot::cases());
-        $ownerRoots = array_map(
+        $ownerRoots = array_values(array_unique(array_map(
             static fn(string $root): string => strtolower((string) preg_replace('/[A-Z]/', '_$0', $root)),
-            [...ConfigSchema::DOCUMENT_ROOTS, ConfigSchema::RULES],
-        );
+            [...ConfigSchema::DOCUMENT_ROOTS, ConfigSchema::RULES, ...self::keys(LayeredDocument::standaloneSections())],
+        )));
 
         self::assertSame([], array_values(array_intersect($declared, $ownerRoots)));
         self::assertSame([], array_values(array_diff($declared, DocumentRoots::known())));
@@ -49,20 +51,15 @@ final class DocumentRootsTest extends TestCase
     {
         $standIns = static fn(array $sections): array => self::keys(array_values(array_filter(
             $sections,
-            static fn(DocumentSectionSchemaInterface $section): bool => $section->schema()->policy === MergePolicy::PerLayer,
+            static fn(DocumentSectionSchemaInterface $section): bool => $section->declaration()->schema->policy === MergePolicy::PerLayer,
         )));
 
         self::assertContains('coupling', $standIns(DocumentRoots::completing([])));
 
         $completed = DocumentRoots::completing([new class implements DocumentSectionSchemaInterface {
-            public function key(): string
+            public function declaration(): SectionDeclaration
             {
-                return 'coupling';
-            }
-
-            public function schema(): NodeSchema
-            {
-                return NodeSchema::map([]);
+                return new SectionDeclaration('coupling', NodeSchema::map([]));
             }
         }]);
         self::assertNotContains('coupling', $standIns($completed));
@@ -86,6 +83,6 @@ final class DocumentRootsTest extends TestCase
      */
     private static function keys(array $sections): array
     {
-        return array_map(static fn(DocumentSectionSchemaInterface $section): string => $section->key(), $sections);
+        return array_map(static fn(DocumentSectionSchemaInterface $section): string => $section->declaration()->key, $sections);
     }
 }

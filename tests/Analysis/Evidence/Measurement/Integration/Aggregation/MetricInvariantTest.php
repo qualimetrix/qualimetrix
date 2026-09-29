@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregatio
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
@@ -18,6 +18,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 /**
  * Integration test that verifies mathematical invariants hold for ALL
@@ -46,7 +47,9 @@ final class MetricInvariantTest extends TestCase
 
         /** @var ArchitecturePolicyConfiguratorInterface $architecturePolicy */
         $architecturePolicy = $container->get(ArchitecturePolicyConfiguratorInterface::class);
-        $document = new ConfigurationDocument([], $fixtureRoot);
+        $configurationPipeline = $container->get(ConfigurationPipelineInterface::class);
+        \assert($configurationPipeline instanceof ConfigurationPipelineInterface);
+        $document = LayeredDocument::of([], $fixtureRoot, ...LayeredDocument::sectionsOf($configurationPipeline));
         $architecturePolicy->replace($architecturePolicy->resolve($document));
 
         /** @var AnalysisPipelineInterface $pipeline */

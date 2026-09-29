@@ -59,8 +59,8 @@ internals are not a public API. The generated qmx projection enforces the leaf o
 ## Configuration and lifecycle
 
 `ArchitectureSection` declares the `architecture:` section to the
-configuration document engine (`DocumentSectionSchemaInterface`): its keys at
-every level, the form of each value and how the configuration layers that
+configuration document engine (`DocumentSectionSchemaInterface::declaration()`),
+returning an atomic `SectionDeclaration`: its keys at every level, the form of each value and how the configuration layers that
 wrote it merge. The engine recognises and shapes every layer before merging,
 so a misspelt key — in the section, a `layers[i]` entry or its `exclude:` — is
 refused with its writer and spelling whatever its value, `~` included. The
@@ -85,17 +85,20 @@ criterion (`patterns`, `suffix`, … — one string or a list) and an allow targ
 `LongFormAllowEntryNormalizer` judge them; the latter recognises the long-form
 keys by the document's spelling rule (snake_case, kebab-case or camelCase).
 Their form is judged in every layer that writes them, before the merge —
-`ArchitectureSection` declares `CarriedValueForm::ofLayerEntry()` on a layer
+`ArchitectureSection` declares `LayerCriterionNormalizer::ofLayerEntry()` on a layer
 entry and `CarriedValueForm::ofAllowTarget()` on a target — so a preset's
 malformed criterion or target is refused even under a file that replaces
-`layers` or the target list. What they mean (a pattern's syntax, a selector, a
-relation kind, the layer a target names) is judged on the merged value only.
-An allow source name is judged by the engine after the merge, against the
-names the merged `layers` declares and in the words of the layer that wrote
-it, whatever is written under it (`allow: {infrq: ~}` is refused): an exact
-name must be declared, a glob or captured selector passes because it names
-layers only template expansion produces, and a malformed selector is left to
-`AllowValidator` and the selector grammar. A source written `~` keeps the
+`layers` or the target list. Static-layer name grammar, fixed exclude capture
+placement, pattern and selector syntax, match and relation kinds, the coverage
+mode and a positive expansion ceiling are also judged in each writing layer,
+using the same parsers as the resolved validators. Layer references,
+source/target capture compatibility, template bindings and cycles are judged
+on the merged value only.
+An allow source name's syntax is judged even when its value is `~`. Its
+membership is judged after merging against the names the merged `layers`
+declares, in the words of its writing layer (`allow: {infrq: ~}` is refused):
+an exact name must be declared; a glob or captured selector may name layers
+only template expansion produces. A source written `~` keeps the
 targets a lower layer gave it; with none, it allows nothing.
 
 `ArchitectureConfigurationFactory::fromResolved()` reads the section from

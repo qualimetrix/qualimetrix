@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Run\Configuration;
 
 use LogicException;
+use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
@@ -36,10 +37,10 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
         $autoloadDev = self::flag($resolved->get(ConfigurationRoot::IncludeAutoloadDev->value))
             ? AutoloadDevPolicy::Include
             : AutoloadDevPolicy::Exclude;
-        $writtenPaths = self::list($resolved->get(ConfigurationRoot::Paths->value));
+        $writtenPaths = self::list($resolved->get(ConfigSchema::PATHS));
         $pathList = array_map(
             static fn(string $path): AbsolutePath => PathFactory::fromCliArgument($path, $root),
-            $writtenPaths === null ? self::defaultPaths($this->discoveredPaths($document, $autoloadDev)) : self::analysedPaths($writtenPaths),
+            $writtenPaths === null ? self::defaultPaths($this->discoveredPaths($document, $autoloadDev)) : PathsSection::read($writtenPaths),
         );
 
         $excludes = self::list($resolved->get(ConfigurationRoot::Exclude->value));
@@ -49,8 +50,10 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
             self::refuseWrittenRootsExcluded($pathList, $root, new DirectoryPruner($root, $authoredExcludes), $writtenPaths, $excludes);
         }
 
+        $scope = $this->projectScopeCoverage->measure($root, $pathList, $autoloadDev);
+
         return new RunConfiguration(
-            coversProjectScope: $this->projectScopeCoverage->pathsCoverProjectScope($root, $pathList, $autoloadDev),
+            coversProjectScope: $scope->state()->coversProjectScope(),
             paths: $pathList,
             pathExcludes: [...DirectoryPruner::builtInPatterns(), ...$authoredExcludes],
             // The same patterns without the built-in floor: what the author
@@ -100,7 +103,7 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
             \sprintf(
                 'Invalid value for "%s": %s %s by your own exclude, so analysis never enters %s and this run would'
                 . ' analyse nothing there. Remove the exclude selector, or name a path it does not remove.',
-                ConfigurationRoot::Paths->value,
+                ConfigSchema::PATHS,
                 implode(', ', $excluded),
                 $one ? 'is removed' : 'are removed',
                 $one ? 'it' : 'them',
@@ -128,46 +131,6 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
         }
 
         return $excluded;
-    }
-
-    /**
-     * The paths a layer wrote. Their form — a list of strings — is the
-     * document's to judge, in every layer; emptiness is asked here, of the
-     * list that won only: `paths: []` in a file and a directory on the command
-     * line is a lawful override, and the run analyses the directory.
-     *
-     * An empty entry reached {@see PathFactory} unframed and was answered
-     * there in the vocabulary of the CLI, which misnames the door whenever the
-     * value came from `paths:` in a document.
-     *
-     * @throws ConfigurationRefusal
-     *
-     * @return list<string>
-     */
-    private static function analysedPaths(ResolvedListInterface $written): array
-    {
-        if ($written->items() === []) {
-            $written->refuse(\sprintf(
-                'Invalid value for "%s": the list is empty, so this run would analyse nothing. Name at least one'
-                . ' path, or omit the key to analyse the working directory.',
-                ConfigurationRoot::Paths->value,
-            ));
-        }
-
-        $paths = [];
-        foreach ($written->items() as $item) {
-            $path = $item->plain();
-            if ($path === '') {
-                $item->refuse(\sprintf(
-                    'Invalid entry in "%s": a path cannot be empty. Name a directory or a file, or omit the key to analyse the working directory.',
-                    ConfigurationRoot::Paths->value,
-                ));
-            }
-
-            $paths[] = (string) $path;
-        }
-
-        return $paths;
     }
 
     /**
@@ -223,7 +186,7 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
      */
     private function discoveredPaths(ConfigurationDocument $document, AutoloadDevPolicy $autoloadDev): array
     {
-        return $this->projectScopeCoverage->reachableTargets(
+        return ProjectScopeCoverage::reachableTargets(
             $document->workingDirectory(),
             $autoloadDev->projectTargets(
                 $document->discoveredProductionAutoloadTargets(),

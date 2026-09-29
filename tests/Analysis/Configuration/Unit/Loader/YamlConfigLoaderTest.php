@@ -20,6 +20,24 @@ final class YamlConfigLoaderTest extends TestCase
     private YamlConfigLoader $loader;
     private string $tempDir;
 
+    #[Test]
+    #[TestWith(['computed_metrics', 'computed_metrics'])]
+    #[TestWith(['computedMetrics', 'computed_metrics'])]
+    #[TestWith(['computed-metrics', 'computed_metrics'])]
+    #[TestWith(['exclude_health', 'exclude_health'])]
+    #[TestWith(['excludeHealth', 'exclude_health'])]
+    #[TestWith(['exclude-health', 'exclude_health'])]
+    public function itUsesOneCanonicalNameForEverySpellingOfAnOwnerRoot(string $written, string $canonical): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        $value = $canonical === ConfigSchema::COMPUTED_METRICS
+            ? '{computed.sample: {formula: "1"}}'
+            : '[complexity]';
+        file_put_contents($path, \sprintf("%s: %s\n", $written, $value));
+
+        self::assertSame([$canonical], array_keys(WrittenFile::foldedValues($path)));
+    }
+
     protected function setUp(): void
     {
         $this->loader = new YamlConfigLoader();
@@ -333,7 +351,7 @@ YAML);
 
         self::assertSame([], $config['cache']);
         self::assertSame([], $config['paths']);
-        self::assertSame([], $config['excludeHealth']);
+        self::assertSame([], $config['exclude_health']);
     }
 
     #[Test]
@@ -355,7 +373,7 @@ YAML);
         self::assertSame(2, $config['parallel']['workers']);
         self::assertSame(['Symfony'], $config['coupling']['frameworkNamespaces']);
         self::assertSame(['src'], $config['paths']);
-        self::assertSame(['complexity'], $config['excludeHealth']);
+        self::assertSame(['complexity'], $config['exclude_health']);
     }
 
     #[Test]
@@ -821,13 +839,13 @@ YAML);
         $config = WrittenFile::foldedValues($path);
 
         // Computed metric name keys are preserved exactly as written
-        self::assertArrayHasKey('computed.my-score', $config['computedMetrics']);
-        self::assertArrayHasKey('health.complexity', $config['computedMetrics']);
+        self::assertArrayHasKey('computed.my-score', $config['computed_metrics']);
+        self::assertArrayHasKey('health.complexity', $config['computed_metrics']);
 
         // Option keys within metrics are still normalized
-        self::assertSame('loc * 2', $config['computedMetrics']['computed.my-score']['formula']);
-        self::assertSame(80, $config['computedMetrics']['computed.my-score']['warningThreshold']);
-        self::assertSame(50, $config['computedMetrics']['health.complexity']['errorThreshold']);
+        self::assertSame('loc * 2', $config['computed_metrics']['computed.my-score']['formula']);
+        self::assertSame(80, $config['computed_metrics']['computed.my-score']['warningThreshold']);
+        self::assertSame(50, $config['computed_metrics']['health.complexity']['errorThreshold']);
     }
 
     #[Test]

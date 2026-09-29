@@ -130,7 +130,7 @@ final class ArchitectureConfigurationFactory
         $coverageGap = $section->child('coverage-gap');
         $coverage = $this->coverageValidator->validate($coverageGap);
         $this->coverageValidator->rejectModeWithNothingToJudge($coverage, $entries, $coverageGap, $layers);
-        $maxExpandedLayers = self::validateMaxExpandedLayers($section->child('max_expanded_layers'));
+        $maxExpandedLayers = CarriedValueForm::maxExpandedLayers($section->child('max_expanded_layers'));
 
         $this->wildcardSelfAllowDetector->detect($allowEntries, $warnings);
 
@@ -194,28 +194,5 @@ final class ArchitectureConfigurationFactory
         }
 
         return $names;
-    }
-
-    /**
-     * Validates the {@code max_expanded_layers} value: the engine has already
-     * refused anything but an integer, so this refuses one below 1, showing
-     * the default ceiling so the user knows what to put back.
-     */
-    private static function validateMaxExpandedLayers(SectionSpot $spot): int
-    {
-        $value = $spot->value() ?? ArchitectureConfiguration::DEFAULT_MAX_EXPANDED_LAYERS;
-        if (!\is_int($value)) {
-            throw new LogicException('The configuration engine admits only an integer as architecture.max_expanded_layers.');
-        }
-
-        if ($value < 1) {
-            throw $spot->refusal(\sprintf(
-                'architecture.max_expanded_layers: must be a positive integer (>= 1) — the cumulative ceiling on template-layer expansions. Got %d. Omit the key to use the default of %d, or set a higher integer if your config legitimately produces more layers.',
-                $value,
-                ArchitectureConfiguration::DEFAULT_MAX_EXPANDED_LAYERS,
-            ));
-        }
-
-        return $value;
     }
 }

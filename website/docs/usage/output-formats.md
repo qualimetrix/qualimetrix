@@ -1029,8 +1029,10 @@ object to hold them; `graph:export`'s DOT output has no envelope at all; a
 refusal is always exactly
 `{"error": ..., "exit_code": ..., "position": ..., "source": ...}`,
 `position` being `null` unless the refusal was raised at a place in a
-configuration document — a command-line value, a whole file and a merged value
-such as `memory_limit: 010M` carry `null` even when the message names the key.
+configuration document — a command-line value, a whole-file refusal or a
+synthetic merged-input refusal carries `null` even when the message names a key.
+A file's invalid `memory_limit`, `fail_on` or `parallel.workers` retains its
+writing layer and document position.
 When present, `position` locates the refused spot as the check found it: for a
 required key that was left out, `path` ends at that key and `written` names it.
 `source` lists the configuration layers the refusal is about, lowest precedence
@@ -1038,13 +1040,12 @@ first — one for a value a single layer wrote, every contributing layer for a
 constraint between keys — each as `{"kind": ..., "name": ..., "imported_by": ...}`.
 `kind` is `defaults`, `composer`, `preset`, `file`, `cli`, `baseline` or
 `resolved`; `name` is the preset name, file path or option. `resolved` is what a
-refusal names when its owner still reads the merged value without the layer
-that wrote it — `memory_limit: 010M` and `--fail-on=bogus` today — and its
-`name` is the key when the owner knows it, otherwise `null` (a rule selector in
-`only_rules` or `disabled_rules`). `source` is `null` for an internal error and
-for a refusal raised without a configuration source, such as
-`parallel.workers: -3`. The
-baseline
+refusal names when its owner has no authored provenance; its `name` is the
+key when known, otherwise `null`. `source` is `null` for an internal error or a
+refusal raised without a configuration source. Text refusals name the same
+authored layers in their message or a separate `Source:` line, including under
+`--quiet`; a synthetic merged origin is not labeled as an author.
+The baseline
 file — written by `baseline:generate`, `update`, `cleanup`, and rewritten in
 place by `baseline:rename-channels` — is a versioned input artifact the tool
 reads back, with its own schema, not a report.

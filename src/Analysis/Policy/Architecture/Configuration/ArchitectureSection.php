@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionS
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\InvalidSelectorException;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelectorParser;
 
@@ -25,25 +26,20 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelectorPa
  * them, and an allow target, written as a layer name or a long-form map. The
  * keys of a long-form target are therefore recognised by
  * {@see LongFormAllowEntryNormalizer}, not here. Both are judged in every
- * layer that writes them, before the layers merge, by {@see CarriedValueForm},
+ * layer that writes them, before the layers merge, by their shared normalizers,
  * so a malformed value a higher layer replaces is refused all the same.
  *
  * An allow source is judged against the layer names `layers` declares once
  * every layer is merged, so a preset's layer is known to the file that allows
  * it. Only an exact name must be declared: a glob or captured selector names
  * layers that exist only after template expansion, and a malformed selector
- * is refused by {@see AllowValidator} in the words of the selector grammar.
+ * is refused in the layer that wrote it, in the words of the selector grammar.
  */
 final readonly class ArchitectureSection implements DocumentSectionSchemaInterface
 {
     public const string KEY = 'architecture';
 
-    public function key(): string
-    {
-        return self::KEY;
-    }
-
-    public function schema(): NodeSchema
+    public function declaration(): SectionDeclaration
     {
         $criteria = [
             'patterns' => NodeSchema::opaque(),
@@ -54,20 +50,20 @@ final readonly class ArchitectureSection implements DocumentSectionSchemaInterfa
             'match' => NodeSchema::scalar(ScalarForm::String),
         ];
 
-        return NodeSchema::map([
+        return new SectionDeclaration(self::KEY, NodeSchema::map([
             'layers' => NodeSchema::list(NodeSchema::map([
                 'name' => NodeSchema::scalar(ScalarForm::String),
                 ...$criteria,
                 'pending' => NodeSchema::scalar(ScalarForm::Boolean),
                 'exclude' => NodeSchema::map($criteria),
-            ])->judgedInEachLayer(CarriedValueForm::ofLayerEntry(...))),
+            ])->judgedInEachLayer(LayerCriterionNormalizer::ofLayerEntry(...))),
             'allow' => NodeSchema::namedMap(
                 NodeSchema::list(NodeSchema::opaque()->judgedInEachLayer(CarriedValueForm::ofAllowTarget(...))),
                 NameVocabulary::fromSibling('layers', self::layerNames(...), self::refersToALayer(...)),
-            ),
-            'coverage-gap' => NodeSchema::scalar(ScalarForm::String),
-            'max_expanded_layers' => NodeSchema::scalar(ScalarForm::Integer),
-        ]);
+            )->judgedInEachLayer(CarriedValueForm::ofAllowMap(...)),
+            'coverage-gap' => NodeSchema::scalar(ScalarForm::String)->judgedInEachLayer(CarriedValueForm::ofCoverageMode(...)),
+            'max_expanded_layers' => NodeSchema::scalar(ScalarForm::Integer)->judgedInEachLayer(CarriedValueForm::ofExpansionCeiling(...)),
+        ]));
     }
 
     /**

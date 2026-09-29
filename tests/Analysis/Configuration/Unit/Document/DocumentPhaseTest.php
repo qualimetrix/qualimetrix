@@ -12,8 +12,12 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaqueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\IntegerJudgement;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\RefusedName;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
@@ -214,6 +218,26 @@ final class DocumentPhaseTest extends TestCase
     }
 
     #[Test]
+    public function itRefusesAnIntegerJudgementAtTheSourceBeforeALaterLayerWins(): void
+    {
+        $section = new readonly class implements DocumentSectionSchemaInterface {
+            public function declaration(): SectionDeclaration
+            {
+                return new SectionDeclaration('workers', NodeSchema::scalar(ScalarForm::Integer)->judgedInEachLayer(new IntegerJudgement(static fn(int $value): ?string => $value < 0 ? 'Workers must be non-negative.' : null)));
+            }
+        };
+
+        $refusal = self::refusal(static fn() => DocumentComposer::compose(
+            new DocumentSchema([$section]),
+            [SampleDocument::preset(['workers' => -1]), SampleDocument::file(['workers' => 0])],
+        ));
+
+        self::assertSame('strict', $refusal->sources()[0]->locator());
+        self::assertSame(['workers'], $refusal->position()?->segments);
+        self::assertStringContainsString('Workers must be non-negative.', $refusal->summary());
+    }
+
+    #[Test]
     public function itRefusesAShorthandMixedWithItsFullFormInOneLayer(): void
     {
         $refusal = self::refusal(static fn() => SampleDocument::compose(
@@ -324,14 +348,9 @@ final class DocumentPhaseTest extends TestCase
     public function itRejectsASiblingVocabularyAnywhereBelowAListItemAsASchemaDefect(): void
     {
         $section = new readonly class implements DocumentSectionSchemaInterface {
-            public function key(): string
+            public function declaration(): SectionDeclaration
             {
-                return 'groups';
-            }
-
-            public function schema(): NodeSchema
-            {
-                return NodeSchema::list(NodeSchema::map([
+                return new SectionDeclaration('groups', NodeSchema::list(NodeSchema::map([
                     'members' => NodeSchema::map([
                         'names' => NodeSchema::stringList(),
                         'allow' => NodeSchema::namedMap(
@@ -339,7 +358,7 @@ final class DocumentPhaseTest extends TestCase
                             NameVocabulary::fromSibling('names', static fn(mixed $names): array => \is_array($names) ? array_values(array_filter($names, 'is_string')) : []),
                         ),
                     ]),
-                ]));
+                ])));
             }
         };
 
@@ -356,6 +375,61 @@ final class DocumentPhaseTest extends TestCase
 
         self::assertSame([], $document->roots());
         self::assertSame([], $document->diagnostics());
+    }
+
+    /** @param non-empty-list<string> $path */
+    #[Test]
+    #[DataProvider('provideUndeclaredReadPaths')]
+    public function itRefusesAReadPathTheSchemaDoesNotDeclareEvenWhenNoLayerWroteIt(array $path): void
+    {
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('does not declare the resolved path');
+
+        SampleDocument::compose()->get(...$path);
+    }
+
+    /** @return iterable<string, array{non-empty-list<string>}> */
+    public static function provideUndeclaredReadPaths(): iterable
+    {
+        yield 'unknown root' => [['fail_onn']];
+        yield 'noncanonical root' => [['computedMetrics']];
+        yield 'unknown field below absent map' => [['cache', 'dri']];
+        yield 'unknown field below absent named entry' => [['computed_metrics', 'my-metric', 'formla']];
+        yield 'noncanonical fixed name' => [['computed_metrics', 'my-metric', 'formulas', 'Class']];
+        yield 'nonnumeric list index' => [['architecture', 'layers', 'first']];
+        yield 'noncanonical list index' => [['paths', '01']];
+        yield 'unknown field below absent list item' => [['architecture', 'layers', '0', 'nam']];
+        yield 'descendant of scalar' => [['fail_on', 'value']];
+        yield 'descendant of opaque value' => [['rules', 'enabled']];
+        yield 'shorthand is not a resolved field' => [['computed_metrics', 'my-metric', 'threshold']];
+    }
+
+    #[Test]
+    public function itReadsADeclaredUnwrittenPathAsAbsent(): void
+    {
+        $document = SampleDocument::compose();
+
+        self::assertNull($document->get('cache', 'dir'));
+        self::assertNull($document->get('architecture', 'layers', '2', 'name'));
+        self::assertNull($document->get('architecture', 'allow', 'unwritten-layer', '0'));
+        self::assertNull($document->get('computed_metrics', 'my-metric', 'formulas', 'class'));
+    }
+
+    #[Test]
+    public function itReadsUnwrittenDynamicNameSlotsWithoutRejudgingAuthoredNames(): void
+    {
+        $section = new readonly class implements DocumentSectionSchemaInterface {
+            public function declaration(): SectionDeclaration
+            {
+                return new SectionDeclaration('names', NodeSchema::namedMap(
+                    NodeSchema::stringList(),
+                    NameVocabulary::predicate(static fn(string $name): RefusedName => RefusedName::open('This name cannot be authored.')),
+                ));
+            }
+        };
+        $document = DocumentComposer::compose(new DocumentSchema([$section]), []);
+
+        self::assertNull($document->get('names', 'unwritten name', '0'));
     }
 
     private static function leaf(mixed $value): ResolvedScalar

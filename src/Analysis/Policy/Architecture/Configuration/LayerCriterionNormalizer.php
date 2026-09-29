@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 
 /**
@@ -31,6 +33,50 @@ use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
  */
 final class LayerCriterionNormalizer
 {
+    /**
+     * @param list<string> $path canonical path of the entry, its index last
+     *
+     * @throws ConfigurationRefusal naming the layer that wrote the entry
+     */
+    public static function ofLayerEntry(ResolvedValueInterface $entry, array $path): void
+    {
+        $index = (int) $path[\count($path) - 1];
+        $spot = SectionSpot::node($path, $entry);
+        $name = CarriedValueForm::layerName($index, $spot);
+
+        self::judgeCriteria($index, $name, $spot);
+
+        $exclude = $spot->child('exclude');
+        if ($exclude->isWritten()) {
+            $criteria = self::judgeCriteria($index, $name . '.exclude', $exclude);
+            CarriedValueForm::rejectInvalidExcludeCapturePlacements(
+                $index,
+                $name,
+                $criteria,
+                TemplateLayerDefinition::containsCaptureVariable($name),
+                $exclude,
+            );
+        }
+    }
+
+    /**
+     * @return array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>}
+     */
+    private static function judgeCriteria(int $index, string $name, SectionSpot $entry): array
+    {
+        $normalizer = new LayerCriterionNormalizer();
+        $criteria = [
+            'patterns' => $normalizer->normalizePatternList($index, $name, $entry->child('patterns')),
+            'suffix' => $normalizer->normalizeSuffixList($index, $name, $entry->child('suffix')),
+            'attributes' => $normalizer->normalizeFqnList($index, $name, 'attributes', $entry->child('attributes')),
+            'implements' => $normalizer->normalizeFqnList($index, $name, 'implements', $entry->child('implements')),
+            'extends' => $normalizer->normalizeFqnList($index, $name, 'extends', $entry->child('extends')),
+        ];
+        $normalizer->normalizeMatchMode($index, $name, $entry->child('match'));
+
+        return $criteria;
+    }
+
     /**
      * @return list<string>
      */

@@ -61,6 +61,22 @@ final class ParallelConfigurationResolverTest extends TestCase
     }
 
     #[Test]
+    public function itRefusesANegativeCountEvenWhenTheCommandLineOverridesIt(): void
+    {
+        try {
+            LayeredDocument::of([
+                ['source' => 'qmx.yaml', 'values' => [ConfigSchema::PARALLEL_WORKERS => -1]],
+                ['source' => 'cli', 'values' => [ConfigSchema::PARALLEL_WORKERS => 0]],
+            ], AbsolutePath::fromString('/project'));
+            self::fail('The command line hid a negative worker count.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
+            self::assertSame(['parallel', 'workers'], $refusal->position()?->segments);
+            self::assertStringContainsString('non-negative integer', $refusal->summary());
+        }
+    }
+
+    #[Test]
     public function itPreservesTheAuthorWhenRejectingAStringWorkerCount(): void
     {
         try {

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Document;
 
+use Closure;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\IntegerJudgement;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
@@ -64,7 +66,14 @@ final class LayerReading
     private static function judged(NodeSchema $schema, ReadingContext $at, ?ResolvedValueInterface $value): ?ResolvedValueInterface
     {
         $judge = $schema->layerJudge();
-        if ($value !== null && $judge !== null) {
+        if ($value !== null && $judge instanceof IntegerJudgement) {
+            $integer = $value->plain();
+            \assert(\is_int($integer));
+            $refusal = $judge->refusal($integer);
+            if ($refusal !== null) {
+                $value->refuse($refusal);
+            }
+        } elseif ($value !== null && $judge instanceof Closure) {
             $judge($value, $at->canonicalPath);
         }
 

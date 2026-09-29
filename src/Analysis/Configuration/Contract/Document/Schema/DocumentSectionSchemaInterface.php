@@ -12,8 +12,5 @@ namespace Qualimetrix\Analysis\Configuration\Contract\Document\Schema;
  */
 interface DocumentSectionSchemaInterface
 {
-    /** Canonical root key: lowercase words joined by `_` or `-`. */
-    public function key(): string;
-
-    public function schema(): NodeSchema;
+    public function declaration(): SectionDeclaration;
 }

@@ -1,5 +1,7 @@
 path	fqcn	classification	target_owner
 src/Reporting/Configuration/OutputFormatResolver.php	Qualimetrix\Reporting\Configuration\OutputFormatResolver	"output projection"	Reporting
+src/Reporting/Configuration/OutputFormatSection.php	Qualimetrix\Reporting\Configuration\OutputFormatSection	"output projection"	Reporting
+src/Reporting/Configuration/OutputFormatVocabulary.php	Qualimetrix\Reporting\Configuration\OutputFormatVocabulary	"output projection"	Reporting
 src/Reporting/Contract/OutputFormat.php	Qualimetrix\Reporting\Contract\OutputFormat	"output projection"	Reporting
 src/Reporting/Contract/OutputFormatResolverInterface.php	Qualimetrix\Reporting\Contract\OutputFormatResolverInterface	"output projection"	Reporting
 src/Reporting/CoverageFailure.php	Qualimetrix\Reporting\CoverageFailure	"output projection"	Reporting

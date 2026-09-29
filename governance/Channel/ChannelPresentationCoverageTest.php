@@ -7,7 +7,7 @@ namespace Qualimetrix\Governance\Channel;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 /**
  * "Answers for every channel" is only an invariant if the swept set comes
@@ -85,7 +86,9 @@ final class ChannelPresentationCoverageTest extends TestCase
         $configurator = $container->get(ComputedMetricConfiguratorInterface::class);
         \assert($configurator instanceof ComputedMetricConfiguratorInterface);
 
-        $document = new ConfigurationDocument([], AbsolutePath::fromString('/'));
+        $configurationPipeline = $container->get(ConfigurationPipelineInterface::class);
+        \assert($configurationPipeline instanceof ConfigurationPipelineInterface);
+        $document = LayeredDocument::of([], AbsolutePath::fromString('/'), ...LayeredDocument::sectionsOf($configurationPipeline));
         $configurator->replace($configurator->resolve($document));
 
         $universe = $container->get(ChannelUniverseInterface::class);

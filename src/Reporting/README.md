@@ -31,6 +31,7 @@ Reporting/
 ├── ReportBuilder.php                       # Builder for creating reports
 ├── ReportCoverage.php                      # Reporting-safe coverage projection
 ├── ReportProjectScope.php                  # Covered / narrowed / unknown project scope, the targets left out, the channels and suppression values left unjudged
+├── Configuration/                          # OutputFormatSection, OutputFormatVocabulary and OutputFormatResolver
 ├── CoverageFailure.php                     # One projected parse/processing failure
 ├── FormatterContext.php                    # Context passed to formatters (color, grouping, filters, options)
 ├── GroupBy.php                             # Grouping mode enum (None, File, Rule, Severity)
@@ -128,14 +129,18 @@ queried through `GitScopeQueryInterface`; its Infrastructure adapter never
 leaks into Reporting. Git changes only the reported list and cannot alter the
 measured, accepted, or stale Baseline facts.
 
-Configuration-owned `OutputFormat` carries the resolved formatter name to the
+Reporting-owned `OutputFormat` carries the resolved formatter name to the
 Console presenter without adding output policy to the transitional runtime
-configuration. `OutputFormatResolver` closes that set before a single file is
-read: it asks `FormatterRegistryInterface` which names exist, rather than
-holding a list that could fall out of step with the registry, and refuses an
-unknown one with `ConfigurationRefusal`. Every contribution is judged, not only
-the winning one — a `format:` typo in a file is answered even when the command
-line overrode it.
+configuration. `OutputFormatVocabulary` asks `FormatterRegistryInterface`
+which names exist and owns the canonical `format` key. `OutputFormatSection` returns an atomic
+`SectionDeclaration` through `DocumentSectionSchemaInterface`: the
+`format` string scalar uses the vocabulary in every writing layer before
+merge, so a typo remains refused even under a valid command-line override.
+`OutputFormatResolver` uses that same vocabulary for the winner before a
+single file is read, including documents composed without the real format
+section. Refusals retain their source. Infrastructure registers the section
+with autoconfiguration and the vocabulary and resolver as separate services.
+See [ADR 0088](../../docs/adr/0088-atomic-section-declarations-and-format-vocabulary.md).
 
 ### Suppression composition
 

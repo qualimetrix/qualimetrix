@@ -244,14 +244,12 @@ final class DefaultPathsMatchScopeDenominatorTest extends TestCase
             $configuration->coversProjectScope,
             'A run over the default paths must cover the scope it is judged against.',
         );
-        self::assertSame(
-            [],
-            (new ProjectScopeCoverage(new ComposerReader()))->uncoveredAutoloadRoots(
-                $configuration->projectRoot,
-                $configuration->paths,
-                $configuration->autoloadDevPolicy,
-            ),
+        $measurement = (new ProjectScopeCoverage(new ComposerReader()))->measure(
+            $configuration->projectRoot,
+            $configuration->paths,
+            $configuration->autoloadDevPolicy,
         );
+        self::assertSame([], $measurement->uncoveredRoots);
     }
 
     /**

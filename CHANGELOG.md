@@ -9,6 +9,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+**Document sections return one atomic declaration.** Replace
+`DocumentSectionSchemaInterface::key(): string` and `schema(): NodeSchema`
+with `declaration(): SectionDeclaration`, returning
+`new SectionDeclaration($key, $schema)`. Consumers read its readonly
+`key` and `schema` properties. `OutputFormatResolver` no longer provides a
+schema: register `OutputFormatSection` with `OutputFormatVocabulary`; the
+resolver takes that same vocabulary for winner validation. See ADR 0088.
+
+**Project-scope callers read one measurement.** Replace
+`ProjectScopeCoverage::pathsCoverProjectScope()` and
+`uncoveredAutoloadRoots()` with `measure()`, then read
+`$measurement->state()->coversProjectScope()` and `$measurement->uncoveredRoots`.
+Call `ProjectScopeCoverage::reachableTargets()` statically. Scope semantics
+remain unchanged. See ADR 0088.
+
+**Invalid authored configuration values cannot be hidden by an override.**
+A lower layer with an unknown format or exit policy, an empty cache directory
+or path list, invalid worker count or memory-limit syntax, malformed
+Architecture value or invalid computed formula syntax or level list now
+refuses with exit code 3 even when a higher layer supplies a valid replacement.
+Correct the layer that wrote the invalid value; its source is named in both
+text and JSON refusals. References requiring the merged document are still
+judged after merging. Rule-specific meanings remain on the temporary Finding
+boundary. Custom document composition must register the owning sections:
+`ConfigurationRoot::Paths`, `FailOn`, `MemoryLimit`, `Parallel` and `Format` are removed;
+use Run's `PathsSection`, Console's `ExitPolicySection` and `MemoryLimitSection`,
+and `ParallelConfigurationResolver` as schema providers. For `Format`, register
+Reporting's `OutputFormatSection` with its registry-backed
+`OutputFormatVocabulary`. Compiled container
+composition registers them automatically. See ADR 0086.
+
+**Exit policy values are textual.** Replace the former YAML `fail_on: false`
+with the equivalent `fail_on: none`; `false` is refused with exit code 3.
+`none` still means that findings do not fail the run. See ADR 0086.
+
+**Programmatic worker configuration requires a non-negative count.**
+`new ParallelConfiguration(-1)` now throws `InvalidArgumentException` rather
+than carrying an invalid worker count. Use `null` for automatic detection,
+`0` for sequential execution, or a positive count. The same integer grammar
+is applied to each authored `parallel.workers` value. See ADR 0086.
+
+**Resolved-document reads require declared canonical paths.**
+`get()` now throws `LogicException` for a path the schema does not declare;
+only a declared but unwritten path returns `null`. When constructing a document,
+replace `new ResolvedDocument($roots, $diagnostics)` with
+`new ResolvedDocument($schema, $roots, $diagnostics)`. Use `computed_metrics`
+and `exclude_health` as the canonical `ConfigSchema` roots instead of the
+former internal `computedMetrics` and `excludeHealth` projections. See ADR 0086.
+
 **Resolved document values now refuse by throwing, and their concrete forms are
 internal.** Replace
 `ResolvedValueInterface::refusal(string): ConfigurationRefusal` with
@@ -30,7 +79,9 @@ uses the named `ruleContributions()`, `onlyRuleContributions()` and
 `disabledRuleContributions()` operations until Finding declares its rule subtree; Composer's production and
 development autoload targets are separate non-authored facts. `coupling` now
 deep-merges as a map, `framework_namespaces` replaces as a list, and `coupling:
-{}` preserves lower fields. A malformed written value is refused in the layer
+{}` preserves lower fields. Its keys follow the shared snake_case, kebab-case
+and camelCase spelling rule; former Title-case keys such as
+`FrameworkNamespaces` are refused. A malformed written value is refused in the layer
 that wrote it, while a final or joint refusal carries the winning or
 contributing sources and position, with the original cause where one exists. See ADR 0086 for the declared-policy
 rationale; rule-option semantics are unchanged.
@@ -580,8 +631,8 @@ What changes for a configuration you already have:
   name under `architecture.allow` that `layers` does not declare is refused
   even when written with `~` or `{}`.
 - A key is accepted in the snake_case, kebab-case or camelCase of its words,
-  at the root and in every section except `rules:` and `coupling:`, whose
-  owners still read their keys themselves; any other spelling of the same words
+  at the root and in every declared section, including `coupling:`; `rules:`
+  still has its own reader. Any other spelling of the same words
   is refused as a misspelling, with the accepted one (was: `Fail_On` folded
   silently at the root, `FAILON` and `failon` refused as unknown keys with a
   did-you-mean hint, and each section reading spellings its own way).
@@ -623,10 +674,10 @@ What changes for a configuration you already have:
   inherited project formula names the actual namespace-formula writer, even
   when a later layer changed only its description; a built-in project formula
   retains its default authorship under a namespace override. A path to analyse
-  that does not exist names the file, preset or
-  argument that wrote it. Values whose owners still judge them on the merged
-  configuration — listed in ADR 0086 — name the merged configuration instead,
-  with the key when the owner knows it, and a few name no source at all.
+  that does not exist names the file, preset or argument that wrote it.
+  Final-value refusals name their authors in text and in JSON `source`.
+  The remaining raw Finding rule-option reader does not yet preserve that
+  authored provenance; see ADR 0086's transitional state.
 - Warnings about a configuration that is legal but probably not what was meant
   are printed on stderr by every command that reads the configuration. The
   first is `only_rules: []` over a layer that filters the rules: it lifts the

@@ -20,11 +20,12 @@ final readonly class DocumentSchema
     {
         $fields = [];
         foreach ($sections as $section) {
-            if (isset($fields[$section->key()])) {
-                throw new LogicException(\sprintf('Two sections declare the configuration root "%s".', $section->key()));
+            $declaration = $section->declaration();
+            if (isset($fields[$declaration->key])) {
+                throw new LogicException(\sprintf('Two sections declare the configuration root "%s".', $declaration->key));
             }
 
-            $fields[$section->key()] = $section->schema();
+            $fields[$declaration->key] = $declaration->schema;
         }
 
         $this->root = NodeSchema::map($fields);

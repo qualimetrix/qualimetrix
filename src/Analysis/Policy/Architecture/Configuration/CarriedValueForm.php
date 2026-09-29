@@ -4,50 +4,26 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
+use InvalidArgumentException;
+use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\InvalidSelectorException;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelector;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelectorParser;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\InvalidLayerDefinitionException;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 
 /**
- * The form of the two values {@see ArchitectureSection} carries unread — a
- * layer's criterion and an allow target — as a single configuration layer
- * wrote them. The section declares {@see ofLayerEntry()} and
- * {@see ofAllowTarget()} as judgements the engine passes on every layer
- * before the layers merge, so a malformed value a higher layer replaces is
- * refused in the layer that wrote it all the same.
- *
- * Only the form is judged here: what a value means — a pattern's syntax, a
- * selector, a relation kind, the layer a target names — is judged on the
- * merged value by the validators, which read a layer's name, a criterion and
- * a short-form target through the judgements here.
+ * Context-free value forms for {@see ArchitectureSection}, judged in each
+ * layer that writes them before merging. Resolved validators use the same
+ * parsers; references to declared layers and cross-field constraints are
+ * judged only after merging.
  */
 final class CarriedValueForm
 {
-    /** The criterion keys of a layer entry and of its `exclude` block. */
-    private const array CRITERIA = ['patterns', 'suffix', 'attributes', 'implements', 'extends'];
-
-    /**
-     * @param list<string> $path canonical path of the entry, its index last
-     *
-     * @throws ConfigurationRefusal naming the layer that wrote the entry
-     */
-    public static function ofLayerEntry(ResolvedValueInterface $entry, array $path): void
-    {
-        $index = (int) $path[\count($path) - 1];
-        $spot = SectionSpot::node($path, $entry);
-        $name = self::layerName($index, $spot);
-
-        foreach (self::CRITERIA as $kind) {
-            self::criterionEntries($index, $name, $kind, $spot->child($kind));
-        }
-
-        $exclude = $spot->child('exclude');
-        if ($exclude->isWritten()) {
-            foreach (self::CRITERIA as $kind) {
-                self::criterionEntries($index, $name . '.exclude', $kind, $exclude->child($kind));
-            }
-        }
-    }
-
     /**
      * @param list<string> $path canonical path of the target: architecture, allow, source, index
      *
@@ -62,12 +38,66 @@ final class CarriedValueForm
         $value = $entry->value();
 
         if (\is_array($value) && !array_is_list($value)) {
-            LongFormAllowEntryNormalizer::judgeForm($source, $index, $entry);
+            [$selector] = LongFormAllowEntryNormalizer::normalize($source, $index, $entry);
+            self::parseSelector($selector, $entry->display(), $entry->child('target'));
 
             return;
         }
 
-        self::selector($source, $index, $entry);
+        self::parseSelector(self::selector($source, $index, $entry), $entry->display(), $entry);
+    }
+
+    /** @param list<string> $path */
+    public static function ofCoverageMode(ResolvedValueInterface $value, array $path): void
+    {
+        (new CoverageValidator())->validate(SectionSpot::node($path, $value));
+    }
+
+    /** @param list<string> $path */
+    public static function ofExpansionCeiling(ResolvedValueInterface $value, array $path): void
+    {
+        self::maxExpandedLayers(SectionSpot::node($path, $value));
+    }
+
+    /** @param list<string> $path */
+    public static function ofAllowMap(ResolvedValueInterface $value, array $path): void
+    {
+        $allow = SectionSpot::node($path, $value);
+        foreach ($allow->keys() as $source) {
+            self::parseSelector($source, $allow->child($source)->display(), $allow->child($source));
+        }
+    }
+
+    public static function parseSelector(string $raw, string $context, SectionSpot $spot): LayerSelector
+    {
+        try {
+            return LayerSelectorParser::parse($raw);
+        } catch (InvalidSelectorException $e) {
+            throw $spot->refusal(\sprintf('%s: %s', $context, $e->getMessage()), written: $raw);
+        }
+    }
+
+    /**
+     * Validates the {@code max_expanded_layers} value: the engine has already
+     * refused anything but an integer, so this refuses one below 1, showing
+     * the default ceiling so the user knows what to put back.
+     */
+    public static function maxExpandedLayers(SectionSpot $spot): int
+    {
+        $value = $spot->value() ?? ArchitectureConfiguration::DEFAULT_MAX_EXPANDED_LAYERS;
+        if (!\is_int($value)) {
+            throw new LogicException('The configuration engine admits only an integer as architecture.max_expanded_layers.');
+        }
+
+        if ($value < 1) {
+            throw $spot->refusal(\sprintf(
+                'architecture.max_expanded_layers: must be a positive integer (>= 1) — the cumulative ceiling on template-layer expansions. Got %d. Omit the key to use the default of %d, or set a higher integer if your config legitimately produces more layers.',
+                $value,
+                ArchitectureConfiguration::DEFAULT_MAX_EXPANDED_LAYERS,
+            ));
+        }
+
+        return $value;
     }
 
     /** The entry's name, refused when it is missing or empty. */
@@ -79,7 +109,63 @@ final class CarriedValueForm
             throw $name->refusal(\sprintf('architecture.layers[%d]: missing or empty "name" (must be a non-empty string).', $index));
         }
 
+        if (TemplateLayerDefinition::containsCaptureVariable($value)) {
+            try {
+                CapturePattern::extractVariables($value);
+            } catch (InvalidArgumentException $error) {
+                throw $name->refusal(\sprintf(
+                    'architecture.layers[%d] ("%s"): TemplateLayerDefinition: name template "%s" has invalid capture grammar — %s',
+                    $index,
+                    $value,
+                    $value,
+                    $error->getMessage(),
+                ));
+            }
+
+            return $value;
+        }
+
+        try {
+            LayerDefinition::assertValidDeclaredName($value);
+        } catch (InvalidLayerDefinitionException $error) {
+            throw $name->refusal(\sprintf('architecture.layers[%d] ("%s"): %s', $index, $value, $error->getMessage()));
+        }
+
         return $value;
+    }
+
+    /**
+     * For static layers, captures have no binding source and are refused
+     * throughout exclude. Template layers may use captures in patterns only.
+     *
+     * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
+     */
+    public static function rejectInvalidExcludeCapturePlacements(int $index, string $layerName, array $criteria, bool $isTemplate, SectionSpot $spot): void
+    {
+        if ($isTemplate) {
+            self::rejectExcludeCapturesInKinds(
+                $spot,
+                $index,
+                $layerName,
+                $criteria,
+                ['suffix', 'attributes', 'implements', 'extends'],
+                'captures are only allowed in exclude.patterns (suffix/attributes/implements/extends are fixed strings).',
+            );
+
+            return;
+        }
+
+        self::rejectExcludeCapturesInKinds(
+            $spot,
+            $index,
+            $layerName,
+            $criteria,
+            ['patterns', 'suffix', 'attributes', 'implements', 'extends'],
+            \sprintf(
+                'capture variables in exclude are only allowed for template layers (a name containing {var}); the layer name "%s" has none.',
+                $layerName,
+            ),
+        );
     }
 
     /** A short-form target: the selector string itself, refused when it is not one. */
@@ -190,6 +276,41 @@ final class CarriedValueForm
         }
 
         return $entries;
+    }
+
+    /**
+     * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
+     * @param list<string> $kindsToScan
+     */
+    private static function rejectExcludeCapturesInKinds(
+        SectionSpot $spot,
+        int $index,
+        string $layerName,
+        array $criteria,
+        array $kindsToScan,
+        string $rejectionReason,
+    ): void {
+        foreach ($kindsToScan as $kind) {
+            foreach ($criteria[$kind] as $entryIndex => $entry) {
+                if (!TemplateLayerDefinition::containsCaptureVariable($entry)) {
+                    continue;
+                }
+
+                $kindSpot = $spot->child($kind);
+                throw (\is_array($kindSpot->value()) ? $kindSpot->child($entryIndex) : $kindSpot)->refusal(
+                    \sprintf(
+                        'architecture.layers[%d] ("%s"): exclude.%s entry at index %d "%s" contains a capture variable — %s',
+                        $index,
+                        $layerName,
+                        $kind,
+                        $entryIndex,
+                        $entry,
+                        $rejectionReason,
+                    ),
+                    written: $entry,
+                );
+            }
+        }
     }
 
     /**

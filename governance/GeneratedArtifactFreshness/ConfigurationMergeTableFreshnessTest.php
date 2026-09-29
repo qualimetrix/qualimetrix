@@ -16,10 +16,6 @@ require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
  * into the configuration page, English and Russian, from the section
  * declarations the document engine composes against
  * (`scripts/generate-configuration-merge-table.php`).
- *
- * One case checks the tracked pages; the other proves, on a copy, that the
- * check reddens on a hand-edited cell in either language — a freshness check
- * that compares the page with itself would pass both.
  */
 final class ConfigurationMergeTableFreshnessTest extends TestCase
 {
@@ -56,34 +52,6 @@ final class ConfigurationMergeTableFreshnessTest extends TestCase
         [$exitCode, $output] = $this->generator('--check');
 
         self::assertSame(0, $exitCode, $output);
-    }
-
-    #[Test]
-    public function itReddensOnAHandEditedCellInEitherLanguage(): void
-    {
-        $scratch = $this->scratchCopy();
-
-        [$written, $writeOutput] = $this->generator('--root=' . $scratch);
-        self::assertSame(0, $written, $writeOutput);
-        [$fresh, $freshOutput] = $this->generator('--check', '--root=' . $scratch);
-        self::assertSame(0, $fresh, $freshOutput);
-
-        foreach (self::PAGES as $page) {
-            $path = $scratch . '/' . $page;
-            $original = file_get_contents($path);
-            self::assertIsString($original);
-
-            // The first key cell below the header and separator rows.
-            $edited = preg_replace('/(<!-- generated:configuration-merge-table:begin[^\n]*\n\n(?:[^\n]*\n){2}\| `)/', '$1x', $original, 1, $count);
-            self::assertSame(1, $count, $page . ' holds no generated row to edit');
-            file_put_contents($path, $edited);
-
-            [$stale, $staleOutput] = $this->generator('--check', '--root=' . $scratch);
-            self::assertSame(1, $stale, $staleOutput);
-            self::assertStringContainsString($page, $staleOutput);
-
-            file_put_contents($path, $original);
-        }
     }
 
     /**

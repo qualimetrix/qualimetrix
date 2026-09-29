@@ -133,10 +133,10 @@ final class ArchitectureSectionTest extends TestCase
     #[Test]
     public function itLeavesAMalformedSourceSelectorToTheSelectorGrammar(): void
     {
-        $refusal = self::refusal(static fn() => self::configure(ArchitectureDocument::file([
+        $refusal = self::refusal(static fn() => ArchitectureDocument::file([
             'layers' => self::LAYERS,
             'allow' => ['in[fra' => null],
-        ])));
+        ]));
 
         self::assertStringContainsString('character classes are not part of the selector grammar', $refusal->summary());
         self::assertSame(['architecture', 'allow', 'in[fra'], $refusal->position()?->segments);
@@ -213,12 +213,10 @@ final class ArchitectureSectionTest extends TestCase
     }
 
     #[Test]
-    public function itJudgesTheMeaningOfTheLayersOnlyInTheListThatWon(): void
+    public function itJudgesTemplateBindingsOnlyInTheListThatWon(): void
     {
-        // Form is judged in every layer; what a pattern means is judged in the
-        // list the run uses, and the file's list replaced the preset's.
         $result = self::configure(ArchitectureDocument::compose(
-            ArchitectureDocument::presetLayer(['layers' => [['name' => 'broken', 'patterns' => ['App\\[bad']]]]),
+            ArchitectureDocument::presetLayer(['layers' => [['name' => 'app-{m}', 'patterns' => ['App\\Static']]]]),
             ArchitectureDocument::fileLayer(['layers' => self::LAYERS]),
         ));
 
@@ -235,6 +233,78 @@ final class ArchitectureSectionTest extends TestCase
      */
     public static function provideMalformedValuesAHigherLayerReplaces(): iterable
     {
+        yield 'coverage mode word' => [
+            ['coverage-gap' => 'bogus'],
+            ['coverage-gap' => 'ignore'],
+            ['architecture', 'coverage-gap'],
+        ];
+        yield 'zero expansion ceiling' => [
+            ['max_expanded_layers' => 0],
+            ['max_expanded_layers' => 10],
+            ['architecture', 'max_expanded_layers'],
+        ];
+        yield 'negative expansion ceiling' => [
+            ['max_expanded_layers' => -1],
+            ['max_expanded_layers' => 10],
+            ['architecture', 'max_expanded_layers'],
+        ];
+        yield 'layer match word' => [
+            ['layers' => [['name' => 'old', 'patterns' => ['App\\Old'], 'match' => 'bogus']]],
+            ['layers' => self::LAYERS],
+            ['architecture', 'layers', '0', 'match'],
+        ];
+        yield 'exclude match word' => [
+            ['layers' => [['name' => 'old', 'patterns' => ['App\\Old'], 'exclude' => ['suffix' => 'Legacy', 'match' => 'bogus']]]],
+            ['layers' => self::LAYERS],
+            ['architecture', 'layers', '0', 'exclude', 'match'],
+        ];
+        yield 'template name syntax' => [
+            ['layers' => [['name' => 'app-{m', 'patterns' => ['App\\Old']]]],
+            ['layers' => self::LAYERS],
+            ['architecture', 'layers', '0', 'name'],
+        ];
+        yield 'static layer name syntax' => [
+            ['layers' => [['name' => 'INVALID', 'patterns' => ['App\\Old']]]],
+            ['layers' => self::LAYERS],
+            ['architecture', 'layers', '0', 'name'],
+        ];
+        yield 'pattern syntax' => [
+            ['layers' => [['name' => 'old', 'patterns' => ['App\\[bad']]]],
+            ['layers' => self::LAYERS],
+            ['architecture', 'layers', '0', 'patterns', '0'],
+        ];
+        yield 'exclude pattern syntax' => [
+            ['layers' => [['name' => 'old', 'patterns' => ['App\\Old'], 'exclude' => ['patterns' => ['App\\[bad']]]]],
+            ['layers' => self::LAYERS],
+            ['architecture', 'layers', '0', 'exclude', 'patterns', '0'],
+        ];
+        yield 'suffix syntax' => [
+            ['layers' => [['name' => 'old', 'suffix' => ['App\\Suffix']]]],
+            ['layers' => self::LAYERS],
+            ['architecture', 'layers', '0', 'suffix', '0'],
+        ];
+        foreach (['attributes', 'implements', 'extends'] as $kind) {
+            yield $kind . ' name syntax' => [
+                ['layers' => [['name' => 'old', $kind => ['ShortName']]]],
+                ['layers' => self::LAYERS],
+                ['architecture', 'layers', '0', $kind, '0'],
+            ];
+        }
+        yield 'short target syntax' => [
+            ['layers' => self::LAYERS, 'allow' => ['infra' => ['dom{ain']]],
+            ['allow' => ['infra' => ['domain']]],
+            ['architecture', 'allow', 'infra', '0'],
+        ];
+        yield 'long target syntax' => [
+            ['layers' => self::LAYERS, 'allow' => ['infra' => [['target' => 'dom{ain']]]],
+            ['allow' => ['infra' => ['domain']]],
+            ['architecture', 'allow', 'infra', '0', 'target'],
+        ];
+        yield 'relation kind word' => [
+            ['layers' => self::LAYERS, 'allow' => ['infra' => [['target' => 'domain', 'relations' => ['extnds']]]]],
+            ['allow' => ['infra' => ['domain']]],
+            ['architecture', 'allow', 'infra', '0', 'relations', '0'],
+        ];
         yield 'criterion of a layer' => [
             ['layers' => [['name' => 'old', 'patterns' => 42]]],
             ['layers' => self::LAYERS],
@@ -250,6 +320,23 @@ final class ArchitectureSectionTest extends TestCase
             ['layers' => self::LAYERS],
             ['architecture', 'layers', '0', 'exclude', 'suffix'],
         ];
+        foreach ([
+            'suffix' => 'Foo{m}',
+            'attributes' => 'App\\Attr{m}',
+            'implements' => 'App\\Port{m}',
+            'extends' => 'App\\Base{m}',
+        ] as $kind => $value) {
+            yield 'static exclude ' . $kind . ' capture' => [
+                ['layers' => [['name' => 'old', 'patterns' => ['App\\Old'], 'exclude' => [$kind => [$value]]]]],
+                ['layers' => self::LAYERS],
+                ['architecture', 'layers', '0', 'exclude', $kind, '0'],
+            ];
+            yield 'template exclude ' . $kind . ' capture' => [
+                ['layers' => [['name' => 'old-{m}', 'patterns' => ['App\\{m}'], 'exclude' => [$kind => [$value]]]]],
+                ['layers' => self::LAYERS],
+                ['architecture', 'layers', '0', 'exclude', $kind, '0'],
+            ];
+        }
         yield 'allow target of the wrong shape' => [
             ['layers' => self::LAYERS, 'allow' => ['infra' => [42]]],
             ['allow' => ['infra' => ['domain']]],
@@ -276,10 +363,10 @@ final class ArchitectureSectionTest extends TestCase
     #[DataProvider('provideMalformedValuesAHigherLayerReplaces')]
     public function itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt(array $preset, array $file, array $path): void
     {
-        $refusal = self::refusal(static fn() => self::configure(ArchitectureDocument::compose(
+        $refusal = self::refusal(static fn() => ArchitectureDocument::compose(
             ArchitectureDocument::presetLayer($preset, 'team'),
             ArchitectureDocument::fileLayer($file),
-        )));
+        ));
 
         self::assertSame([ConfigurationSource::Preset], self::kinds($refusal));
         self::assertCount(1, $refusal->sources());
@@ -288,14 +375,11 @@ final class ArchitectureSectionTest extends TestCase
     }
 
     #[Test]
-    public function itJudgesWhatAnAllowTargetMeansOnlyInTheListThatWon(): void
+    public function itJudgesTheLayersAnAllowTargetNamesOnlyInTheListThatWon(): void
     {
-        // A relation kind and a selector's grammar are meaning, not form: the
-        // file's target list replaced the preset's, so neither is judged.
         $result = self::configure(ArchitectureDocument::compose(
             ArchitectureDocument::presetLayer(['layers' => self::LAYERS, 'allow' => ['infra' => [
-                ['target' => 'domain', 'relations' => ['extnds']],
-                'dom{ain',
+                'undeclared',
             ]]]),
             ArchitectureDocument::fileLayer(['allow' => ['infra' => ['domain']]]),
         ));
@@ -443,7 +527,7 @@ final class ArchitectureSectionTest extends TestCase
     #[Test]
     public function itReadsANeverWrittenSectionAsNoPolicy(): void
     {
-        self::assertTrue(self::configure(ResolvedDocument::empty())->configuration->isEmpty());
+        self::assertTrue(self::configure(DocumentComposer::compose(new DocumentSchema([new ArchitectureSection()]), []))->configuration->isEmpty());
     }
 
     #[Test]

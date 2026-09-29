@@ -62,25 +62,6 @@ final class LongFormAllowEntryNormalizer
     }
 
     /**
-     * The form of a long-form entry as one configuration layer wrote it: its
-     * keys, a non-empty `target`, a boolean flag and a relation list of
-     * strings. Whether the target selector parses and each relation is a
-     * known kind is judged on the merged value, by {@see normalize()}.
-     *
-     * @throws ConfigurationRefusal naming the layer that wrote the entry
-     */
-    public static function judgeForm(string $source, int $index, SectionSpot $entry): void
-    {
-        [$keys] = self::judgeKeysAndTarget($source, $index, $entry);
-        self::parseAllowCrossInstanceFlag($source, $index, $entry->child($keys['allow_cross_instance'] ?? 'allow_cross_instance'));
-
-        $relations = $entry->child($keys['relations'] ?? 'relations');
-        if ($relations->isWritten()) {
-            self::relationTokens($relations, \sprintf('architecture.allow.%s[%d]', $source, $index));
-        }
-    }
-
-    /**
      * @return array{array<string, string>, string} the recognised keys and the written target
      */
     private static function judgeKeysAndTarget(string $source, int $index, SectionSpot $entry): array

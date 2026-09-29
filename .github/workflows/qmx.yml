@@ -110,7 +110,7 @@ jobs:
   check:
     name: Full validation (composer check)
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 20
 
     strategy:
       fail-fast: false

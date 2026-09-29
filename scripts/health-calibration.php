@@ -86,7 +86,6 @@ namespace Qualimetrix\HealthCalibration;
 
 use InvalidArgumentException;
 use JsonException;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
@@ -97,6 +96,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDependencyGraphC
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricsSection;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ExcludeHealthSection;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\MetricLookup;
@@ -1689,8 +1689,10 @@ function definitionsFor(?string $candidatesPath): array
         new HealthFormulaExcluder(),
     );
 
+    $schema = new DocumentSchema([new ComputedMetricsSection(), new ExcludeHealthSection()]);
+
     if ($candidatesPath === null) {
-        return $resolver->resolve(ResolvedDocument::empty());
+        return $resolver->resolve(DocumentComposer::compose($schema, []));
     }
 
     $raw = @file_get_contents($candidatesPath);
@@ -1714,7 +1716,7 @@ function definitionsFor(?string $candidatesPath): array
     }
 
     return $resolver->resolve(DocumentComposer::compose(
-        new DocumentSchema([new ComputedMetricsSection()]),
+        $schema,
         [new AuthoredLayer(
             ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $candidatesPath),
             AuthoredNode::fromPlain([ComputedMetricsSection::KEY => $section]),

@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
@@ -22,6 +23,7 @@ use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 /**
  * The roots Configuration declares, judged by the document engine through the
@@ -134,7 +136,7 @@ fail_on: error
     {
         $document = $this->resolve("memory_limit: -1\n");
 
-        self::assertSame(-1, $document->resolved()->get(ConfigurationRoot::MemoryLimit->value)?->plain());
+        self::assertSame(-1, $document->resolved()->get(ConfigSchema::MEMORY_LIMIT)?->plain());
     }
 
     /** @return iterable<string, array{string, string}> */
@@ -212,12 +214,12 @@ fail_on: error
     #[Test]
     public function itNamesTheOptionOfAMalformedCommandLineValue(): void
     {
-        $refusal = $this->refusal('', ['format' => 5], ['format' => '--format']);
+        $refusal = $this->refusal('', ['fail_on' => 5], ['fail_on' => '--fail-on']);
 
-        self::assertSame('Option --format must be string, got int.', $refusal->summary());
+        self::assertSame('Option --fail-on must be string, got int.', $refusal->summary());
         self::assertNull($refusal->position());
         self::assertCount(1, $refusal->sources());
-        self::assertSame('--format', $refusal->sources()[0]->locator());
+        self::assertSame('--fail-on', $refusal->sources()[0]->locator());
     }
 
     /** Each preset is a layer of its own, so a refusal names the preset that wrote the value. */
@@ -298,7 +300,7 @@ fail_on: error
     private function pipeline(): ConfigurationPipeline
     {
         $loader = new YamlConfigLoader();
-        $pipeline = new ConfigurationPipeline();
+        $pipeline = new ConfigurationPipeline(LayeredDocument::standaloneSections());
         $pipeline->addStage(new DefaultsStage());
         $pipeline->addStage(new PresetStage($loader, new PresetResolver()));
         $pipeline->addStage(new ConfigFileStage($loader));

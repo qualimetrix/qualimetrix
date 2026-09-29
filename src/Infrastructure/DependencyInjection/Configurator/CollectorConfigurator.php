@@ -31,7 +31,7 @@ final class CollectorConfigurator implements ContainerConfiguratorInterface
     {
         $container->register(ParallelConfigurationStore::class);
         $container->setAlias(ParallelConfigurationStoreInterface::class, ParallelConfigurationStore::class);
-        $container->register(ParallelConfigurationResolver::class);
+        $container->register(ParallelConfigurationResolver::class)->setAutoconfigured(true);
         $container->setAlias(ParallelConfigurationResolverInterface::class, ParallelConfigurationResolver::class);
 
         // WorkerCountDetector for auto-detecting CPU cores

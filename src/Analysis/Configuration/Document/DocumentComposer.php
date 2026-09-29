@@ -71,6 +71,7 @@ final class DocumentComposer
         }
 
         return new ResolvedDocument(
+            $root,
             $merged instanceof ResolvedMap ? $merged->entries() : [],
             $merge->diagnostics(),
         );

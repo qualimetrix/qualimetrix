@@ -121,7 +121,7 @@ final class YamlKeyReachabilityTest extends TestCase
     }
 
     /**
-     * Identifier sections ({@code rules}, {@code computedMetrics}):
+     * Identifier sections ({@code rules}, {@code computed_metrics}):
      * immediate children (rule names, computed-metric names) preserve
      * snake_case / kebab-case verbatim; their nested option keys ARE
      * normalized to camelCase. Both halves must hold or downstream factories
@@ -263,10 +263,10 @@ final class YamlKeyReachabilityTest extends TestCase
             'error',
         ];
 
-        yield 'exclude_health → excludeHealth (list)' => [
+        yield 'exclude_health → exclude_health (list)' => [
             'exclude_health',
             "exclude_health:\n  - tests/**\n",
-            ['excludeHealth'],
+            ['exclude_health'],
             ['tests/**'],
         ];
 
@@ -376,25 +376,25 @@ final class YamlKeyReachabilityTest extends TestCase
             12,
         ];
 
-        // computed_metrics → computedMetrics root; child identifiers preserved.
-        yield 'computed_metrics → computedMetrics root key' => [
+        // computed_metrics → computed_metrics root; child identifiers preserved.
+        yield 'computed_metrics → computed_metrics root key' => [
             'computed_metrics',
             "computed_metrics:\n  computed.my-score:\n    formula: 'loc * 2'\n",
-            ['computedMetrics', 'computed.my-score', 'formula'],
+            ['computed_metrics', 'computed.my-score', 'formula'],
             'loc * 2',
         ];
 
         yield 'computed_metrics: dotted metric name preserved' => [
             'computed_metrics.computed.my-score',
             "computed_metrics:\n  computed.my-score:\n    formula: 'size.loc'\n",
-            ['computedMetrics', 'computed.my-score'],
+            ['computed_metrics', 'computed.my-score'],
             ['formula' => 'size.loc'],
         ];
 
         yield 'computed_metrics: option warning_threshold → warningThreshold' => [
             'computed_metrics.<name>.warning_threshold',
             "computed_metrics:\n  computed.my-score:\n    formula: 'size.loc'\n    warning_threshold: 80\n",
-            ['computedMetrics', 'computed.my-score', 'warningThreshold'],
+            ['computed_metrics', 'computed.my-score', 'warningThreshold'],
             80,
         ];
     }

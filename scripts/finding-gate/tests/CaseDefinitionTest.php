@@ -102,6 +102,15 @@ final class CaseDefinitionTest extends TestCase
     }
 
     #[Test]
+    public function itRefusesAnUnknownCaseDefinitionKey(): void
+    {
+        $this->expectException(GateError::class);
+        $this->expectExceptionMessage('declares unknown key(s): arg.');
+
+        $this->load(extra: ['arg' => ['--format=json']]);
+    }
+
+    #[Test]
     public function itRefusesAWorkingDirectoryEvenInsideTheCase(): void
     {
         $this->assertRefused('The gate runs a case in its own directory', args: ['-d', 'src']);

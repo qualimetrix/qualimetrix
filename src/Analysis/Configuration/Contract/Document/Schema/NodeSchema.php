@@ -27,7 +27,7 @@ final readonly class NodeSchema
 {
     /**
      * @param list<ScalarForm> $scalarForms
-     * @param ?Closure(ResolvedValueInterface, list<string>): void $layerJudge
+     * @param Closure(ResolvedValueInterface, list<string>): void|IntegerJudgement|null $layerJudge
      */
     private function __construct(
         public MergePolicy $policy,
@@ -36,7 +36,7 @@ final readonly class NodeSchema
         private ?self $element = null,
         private ?NameVocabulary $names = null,
         private NodeWording $wording = new NodeWording(),
-        private ?Closure $layerJudge = null,
+        private Closure|IntegerJudgement|null $layerJudge = null,
     ) {}
 
     /** A scalar leaf written as one of `$forms`; no form accepts any scalar. */
@@ -120,19 +120,23 @@ final readonly class NodeSchema
      * the value. The judge receives the value as that one layer wrote it and
      * the node's canonical path, and refuses by throwing.
      *
-     * @param Closure(ResolvedValueInterface, list<string>): void $judge
+     * @param Closure(ResolvedValueInterface, list<string>): void|IntegerJudgement $judge
      */
-    public function judgedInEachLayer(Closure $judge): self
+    public function judgedInEachLayer(Closure|IntegerJudgement $judge): self
     {
+        if ($judge instanceof IntegerJudgement && ($this->policy !== MergePolicy::LastWriterWins || $this->scalarForms !== [ScalarForm::Integer])) {
+            throw new LogicException('An integer judgement requires a last-writer-wins integer scalar.');
+        }
+
         return new self($this->policy, $this->scalarForms, $this->keys, $this->element, $this->names, $this->wording, $judge);
     }
 
     /**
      * The owner's judgement of each layer's value; null when the node declares none.
      *
-     * @return ?Closure(ResolvedValueInterface, list<string>): void
+     * @return Closure(ResolvedValueInterface, list<string>): void|IntegerJudgement|null
      */
-    public function layerJudge(): ?Closure
+    public function layerJudge(): Closure|IntegerJudgement|null
     {
         return $this->layerJudge;
     }

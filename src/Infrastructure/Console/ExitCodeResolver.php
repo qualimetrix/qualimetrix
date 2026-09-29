@@ -18,7 +18,7 @@ use Qualimetrix\Reporting\ReportCoverage;
  * Default (null): only errors cause non-zero exit code (same as `fail_on: error`).
  * - `fail_on: warning` — Warning and Error fail; Info-only is exit 0.
  * - `fail_on: error` (default) — only Error fails; Info and Warning are exit 0.
- * - `fail_on: none` (or `false`) — never fail on findings.
+ * - `fail_on: none` — never fail on findings.
  *
  * {@see Severity::Info} is not a possible threshold ({@see ExitPolicy}
  * rejects it) and no threshold reaches down to it, so Info findings never

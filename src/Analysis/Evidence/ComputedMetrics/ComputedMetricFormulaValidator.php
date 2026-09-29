@@ -8,11 +8,11 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricAuthorship;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricsSection;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricValueForm;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use ReflectionClass;
-use Symfony\Component\ExpressionLanguage\SyntaxError;
 
 /**
  * Validates computed metric definitions: formula syntax, level coverage,
@@ -70,27 +70,9 @@ final class ComputedMetricFormulaValidator
 
                 $levelKey = $level->value;
 
-                try {
-                    $this->expression->parse($formula);
-                } catch (SyntaxError $e) {
-                    // Narrow on purpose: the try body is one call, and SyntaxError
-                    // is the exact family that call's contract names. Widening this
-                    // to Throwable/InvalidArgumentException would let a product
-                    // defect from inside ExpressionLanguage masquerade as a user
-                    // refusal.
-                    throw $authorship->refuseFormula(
-                        $definition,
-                        $levelKey,
-                        ComputedMetricRefusalWording::invalidFormulaSyntax($definition->name, $levelKey, $e->getMessage(), $formula),
-                    );
-                }
-
-                if (!$this->expression->everyAccessIsALiteralIndex($formula)) {
-                    throw $authorship->refuseFormula(
-                        $definition,
-                        $levelKey,
-                        ComputedMetricRefusalWording::everyAccessMustBeALiteralIndex($definition->name, $formula),
-                    );
+                $refusal = ComputedMetricValueForm::formulaRefusal($this->expression, $definition->name, $levelKey, $formula);
+                if ($refusal !== null) {
+                    throw $authorship->refuseFormula($definition, $levelKey, $refusal);
                 }
             }
         }

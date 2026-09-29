@@ -42,11 +42,12 @@ final class ConfigSchema
     public const string FAIL_ON = 'fail_on';
     public const string CACHE_DIR = 'cache.dir';
     public const string CACHE_ENABLED = 'cache.enabled';
+    public const string PARALLEL = 'parallel';
     public const string PARALLEL_WORKERS = 'parallel.workers';
     public const string COUPLING = 'coupling';
     public const string COUPLING_FRAMEWORK_NAMESPACES = 'coupling.framework_namespaces';
-    public const string COMPUTED_METRICS = 'computedMetrics';
-    public const string EXCLUDE_HEALTH = 'excludeHealth';
+    public const string COMPUTED_METRICS = 'computed_metrics';
+    public const string EXCLUDE_HEALTH = 'exclude_health';
     public const string INCLUDE_GENERATED = 'include_generated';
     public const string INCLUDE_AUTOLOAD_DEV = 'include_autoload_dev';
     public const string MEMORY_LIMIT = 'memory_limit';
@@ -78,7 +79,7 @@ final class ConfigSchema
     public const array INTERNAL_KEYS = [self::DISCOVERED_AUTOLOAD_PATHS, self::DISCOVERED_AUTOLOAD_DEV_PATHS];
 
     /** Capability-owned roots transported in ordered configuration documents. */
-    public const array DOCUMENT_ROOTS = [self::COUPLING, self::COMPUTED_METRICS, self::EXCLUDE_HEALTH, self::ARCHITECTURE];
+    public const array DOCUMENT_ROOTS = [self::COUPLING, self::COMPUTED_METRICS, self::EXCLUDE_HEALTH, self::ARCHITECTURE, self::FORMAT, self::PARALLEL];
 
     // -------------------------------------------------------------------------
     // Root key types

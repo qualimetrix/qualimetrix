@@ -18,6 +18,24 @@ final class CacheConfigurationResolverTest extends TestCase
     private string $root;
 
     #[Test]
+    public function itRefusesAnEmptyDirectoryInALayerTheCommandLineOverrides(): void
+    {
+        $root = AbsolutePath::fromString($this->root);
+
+        try {
+            (new CacheConfigurationResolver())->resolve(LayeredDocument::of([
+                ['source' => 'qmx.yaml', 'values' => ['cache.dir' => '']],
+                ['source' => 'cli', 'values' => ['cache.dir' => 'cache', 'cache.enabled' => false]],
+            ], $root), $root);
+            self::fail('An empty lower-layer cache directory was accepted.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
+            self::assertSame(['cache', 'dir'], $refusal->position()?->segments);
+            self::assertStringContainsString('a directory path cannot be empty', $refusal->summary());
+        }
+    }
+
+    #[Test]
     public function itAppliesOwnerDefaultsAndLastOverrides(): void
     {
         $configuration = (new CacheConfigurationResolver())->resolve(LayeredDocument::of([

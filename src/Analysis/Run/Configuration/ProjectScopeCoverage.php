@@ -97,9 +97,9 @@ use RuntimeException;
 final readonly class ProjectScopeCoverage
 {
     /**
-     * Every channel that is silent on a `Narrowed` run because it reads
-     * {@see self::pathsCoverProjectScope()}, directly or through the answer a
-     * run configuration or rule context carries — a report names them as not
+     * Every channel that is silent on a `Narrowed` run because it reads a
+     * {@see ProjectScopeMeasurement::state()} answer, directly or through the
+     * answer a run configuration or rule context carries — a report names them as not
      * judged. Only the Architecture names come from their owner's contract:
      * the others are declared on classes internal to their capability, and
      * importing Discovery's own would tie this namespace to the one it gates.
@@ -121,36 +121,7 @@ final readonly class ProjectScopeCoverage
     public function __construct(private ComposerAutoloadPathReaderInterface $composerReader) {}
 
     /**
-     * Whether a whole-project channel may judge this run: `Covered` or
-     * `Unknown`, never `Narrowed`.
-     *
-     * @param list<AbsolutePath> $analyzedPaths
-     */
-    public function pathsCoverProjectScope(AbsolutePath $projectRoot, array $analyzedPaths, AutoloadDevPolicy $autoloadDev): bool
-    {
-        return $this->measure($projectRoot, $analyzedPaths, $autoloadDev)->state()->coversProjectScope();
-    }
-
-    /**
-     * The autoload targets the policy counts that no analysed path
-     * contains, in the spelling `composer.json` uses.
-     *
-     * Empty on a project whose production autoload this class cannot read:
-     * there is no target to name, which is why the state and this list are
-     * taken from one measurement — emptiness here is `Covered` or `Unknown`,
-     * and only {@see ProjectScopeMeasurement::state()} tells which.
-     *
-     * @param list<AbsolutePath> $analyzedPaths
-     *
-     * @return list<string>
-     */
-    public function uncoveredAutoloadRoots(AbsolutePath $projectRoot, array $analyzedPaths, AutoloadDevPolicy $autoloadDev): array
-    {
-        return $this->measure($projectRoot, $analyzedPaths, $autoloadDev)->uncoveredRoots;
-    }
-
-    /**
-     * The one measurement both answers above are read from.
+     * The one measurement callers read state and uncovered targets from.
      *
      * @param list<AbsolutePath> $analyzedPaths
      */
@@ -162,7 +133,7 @@ final readonly class ProjectScopeCoverage
         // paths this product can compare a run against, or it declares none
         // and the run's own paths are the project. A missing manifest is that
         // second case.
-        [$autoloadPaths, $prunedTargets] = $this->partition(
+        [$autoloadPaths, $prunedTargets] = self::partition(
             $projectRoot,
             $this->declaredTargets($composerJsonPath->value(), $autoloadDev) ?? [],
         );
@@ -213,9 +184,9 @@ final readonly class ProjectScopeCoverage
      *
      * @return list<string>
      */
-    public function reachableTargets(AbsolutePath $projectRoot, array $targets): array
+    public static function reachableTargets(AbsolutePath $projectRoot, array $targets): array
     {
-        return $this->partition($projectRoot, $targets)[0];
+        return self::partition($projectRoot, $targets)[0];
     }
 
     /**
@@ -223,7 +194,7 @@ final readonly class ProjectScopeCoverage
      *
      * @return array{list<string>, list<array{target: string, directory: string}>}
      */
-    private function partition(AbsolutePath $projectRoot, array $targets): array
+    private static function partition(AbsolutePath $projectRoot, array $targets): array
     {
         $pruner = new DirectoryPruner($projectRoot, DirectoryPruner::builtInPatterns());
 

@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionS
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\Shorthand;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
@@ -114,14 +115,9 @@ final class SampleDocument
         return new readonly class ($key, $schema) implements DocumentSectionSchemaInterface {
             public function __construct(private string $key, private NodeSchema $schema) {}
 
-            public function key(): string
+            public function declaration(): SectionDeclaration
             {
-                return $this->key;
-            }
-
-            public function schema(): NodeSchema
-            {
-                return $this->schema;
+                return new SectionDeclaration($this->key, $this->schema);
             }
         };
     }

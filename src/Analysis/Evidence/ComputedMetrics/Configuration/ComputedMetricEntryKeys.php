@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration;
 
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\Shorthand;
@@ -48,7 +50,7 @@ final class ComputedMetricEntryKeys
     {
         $formulas = [];
         foreach (self::REPORTING_LEVELS as $level) {
-            $formulas[$level->value] = NodeSchema::scalar(ScalarForm::String);
+            $formulas[$level->value] = NodeSchema::scalar(ScalarForm::String)->judgedInEachLayer(ComputedMetricValueForm::ofFormula(...));
         }
 
         return NodeSchema::map(
@@ -56,14 +58,21 @@ final class ComputedMetricEntryKeys
                 self::DESCRIPTION => NodeSchema::scalar(ScalarForm::String),
                 self::ENABLED => NodeSchema::scalar(ScalarForm::Boolean),
                 self::ERROR => NodeSchema::scalar(ScalarForm::Number),
-                self::FORMULA => NodeSchema::scalar(ScalarForm::String),
+                self::FORMULA => NodeSchema::scalar(ScalarForm::String)->judgedInEachLayer(ComputedMetricValueForm::ofFormula(...)),
                 self::FORMULAS => NodeSchema::map($formulas),
                 self::INVERTED => NodeSchema::scalar(ScalarForm::Boolean),
-                self::LEVELS => NodeSchema::stringList(),
+                self::LEVELS => NodeSchema::stringList()->judgedInEachLayer(self::ofLevels(...)),
                 self::WARNING => NodeSchema::scalar(ScalarForm::Number),
             ],
             Shorthand::spreading(self::THRESHOLD, [self::WARNING, self::ERROR]),
         );
+    }
+
+    /** @param list<string> $path */
+    private static function ofLevels(ResolvedValueInterface $value, array $path): void
+    {
+        \assert($value instanceof ResolvedListInterface);
+        ComputedMetricValueForm::levels($value, $path[1], self::REPORTING_LEVELS);
     }
 
     /**

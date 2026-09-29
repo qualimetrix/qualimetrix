@@ -105,11 +105,11 @@ config	baseline:cleanup	architecture	layer-patterns	config-key	yes
 config	baseline:cleanup	architecture	unknown-subkey	config-key	yes		
 config	baseline:cleanup	cache.dir	whole-value	config-key	yes		invariant:no-cache
 config	baseline:cleanup	cache.enabled	whole-value	config-key	no	boolean; nothing to point at	invariant:no-cache
-config	baseline:cleanup	computedMetrics	whole-value	config-key	yes		
+config	baseline:cleanup	computed_metrics	whole-value	config-key	yes		
 config	baseline:cleanup	coupling.frameworkNamespaces	whole-value	config-key	yes		
 config	baseline:cleanup	disabledRules	whole-value	config-key	yes		
 config	baseline:cleanup	exclude	whole-value	config-key	yes		
-config	baseline:cleanup	excludeHealth	whole-value	config-key	yes		
+config	baseline:cleanup	exclude_health	whole-value	config-key	yes		
 config	baseline:cleanup	failOn	whole-value	config-key	yes		invariant:fail-on
 config	baseline:cleanup	format	whole-value	config-key	yes		invariant:format
 config	baseline:cleanup	includeAutoloadDev	whole-value	config-key	no	boolean; nothing to point at	
@@ -126,11 +126,11 @@ config	baseline:explain	architecture	layer-patterns	config-key	yes
 config	baseline:explain	architecture	unknown-subkey	config-key	yes		
 config	baseline:explain	cache.dir	whole-value	config-key	yes		invariant:no-cache
 config	baseline:explain	cache.enabled	whole-value	config-key	no	boolean; nothing to point at	invariant:no-cache
-config	baseline:explain	computedMetrics	whole-value	config-key	yes		
+config	baseline:explain	computed_metrics	whole-value	config-key	yes		
 config	baseline:explain	coupling.frameworkNamespaces	whole-value	config-key	yes		
 config	baseline:explain	disabledRules	whole-value	config-key	yes		
 config	baseline:explain	exclude	whole-value	config-key	yes		
-config	baseline:explain	excludeHealth	whole-value	config-key	yes		
+config	baseline:explain	exclude_health	whole-value	config-key	yes		
 config	baseline:explain	failOn	whole-value	config-key	yes		invariant:fail-on
 config	baseline:explain	format	whole-value	config-key	yes		invariant:format
 config	baseline:explain	includeAutoloadDev	whole-value	config-key	no	boolean; nothing to point at	
@@ -147,11 +147,11 @@ config	baseline:generate	architecture	layer-patterns	config-key	yes
 config	baseline:generate	architecture	unknown-subkey	config-key	yes		
 config	baseline:generate	cache.dir	whole-value	config-key	yes		invariant:no-cache
 config	baseline:generate	cache.enabled	whole-value	config-key	no	boolean; nothing to point at	invariant:no-cache
-config	baseline:generate	computedMetrics	whole-value	config-key	yes		
+config	baseline:generate	computed_metrics	whole-value	config-key	yes		
 config	baseline:generate	coupling.frameworkNamespaces	whole-value	config-key	yes		
 config	baseline:generate	disabledRules	whole-value	config-key	yes		
 config	baseline:generate	exclude	whole-value	config-key	yes		
-config	baseline:generate	excludeHealth	whole-value	config-key	yes		
+config	baseline:generate	exclude_health	whole-value	config-key	yes		
 config	baseline:generate	failOn	whole-value	config-key	yes		invariant:fail-on
 config	baseline:generate	format	whole-value	config-key	yes		invariant:format
 config	baseline:generate	includeAutoloadDev	whole-value	config-key	no	boolean; nothing to point at	
@@ -168,11 +168,11 @@ config	baseline:update	architecture	layer-patterns	config-key	yes
 config	baseline:update	architecture	unknown-subkey	config-key	yes		
 config	baseline:update	cache.dir	whole-value	config-key	yes		invariant:no-cache
 config	baseline:update	cache.enabled	whole-value	config-key	no	boolean; nothing to point at	invariant:no-cache
-config	baseline:update	computedMetrics	whole-value	config-key	yes		
+config	baseline:update	computed_metrics	whole-value	config-key	yes		
 config	baseline:update	coupling.frameworkNamespaces	whole-value	config-key	yes		
 config	baseline:update	disabledRules	whole-value	config-key	yes		
 config	baseline:update	exclude	whole-value	config-key	yes		
-config	baseline:update	excludeHealth	whole-value	config-key	yes		
+config	baseline:update	exclude_health	whole-value	config-key	yes		
 config	baseline:update	failOn	whole-value	config-key	yes		invariant:fail-on
 config	baseline:update	format	whole-value	config-key	yes		invariant:format
 config	baseline:update	includeAutoloadDev	whole-value	config-key	no	boolean; nothing to point at	
@@ -189,11 +189,11 @@ config	check	architecture	layer-patterns	config-key	yes
 config	check	architecture	unknown-subkey	config-key	yes		
 config	check	cache.dir	whole-value	config-key	yes		invariant:no-cache
 config	check	cache.enabled	whole-value	config-key	no	boolean; nothing to point at	invariant:no-cache
-config	check	computedMetrics	whole-value	config-key	yes		
+config	check	computed_metrics	whole-value	config-key	yes		
 config	check	coupling.frameworkNamespaces	whole-value	config-key	yes		
 config	check	disabledRules	whole-value	config-key	yes		
 config	check	exclude	whole-value	config-key	yes		
-config	check	excludeHealth	whole-value	config-key	yes		
+config	check	exclude_health	whole-value	config-key	yes		
 config	check	failOn	whole-value	config-key	yes		invariant:fail-on
 config	check	format	whole-value	config-key	yes		invariant:format
 config	check	includeAutoloadDev	whole-value	config-key	no	boolean; nothing to point at	
@@ -210,11 +210,11 @@ config	debug:layer-assignment	architecture	layer-patterns	config-key	yes
 config	debug:layer-assignment	architecture	unknown-subkey	config-key	yes		
 config	debug:layer-assignment	cache.dir	whole-value	config-key	yes		invariant:no-cache
 config	debug:layer-assignment	cache.enabled	whole-value	config-key	no	boolean; nothing to point at	invariant:no-cache
-config	debug:layer-assignment	computedMetrics	whole-value	config-key	yes		
+config	debug:layer-assignment	computed_metrics	whole-value	config-key	yes		
 config	debug:layer-assignment	coupling.frameworkNamespaces	whole-value	config-key	yes		
 config	debug:layer-assignment	disabledRules	whole-value	config-key	yes		
 config	debug:layer-assignment	exclude	whole-value	config-key	yes		
-config	debug:layer-assignment	excludeHealth	whole-value	config-key	yes		
+config	debug:layer-assignment	exclude_health	whole-value	config-key	yes		
 config	debug:layer-assignment	failOn	whole-value	config-key	yes		invariant:fail-on
 config	debug:layer-assignment	format	whole-value	config-key	yes		invariant:format
 config	debug:layer-assignment	includeAutoloadDev	whole-value	config-key	no	boolean; nothing to point at	
@@ -231,11 +231,11 @@ config	directives	architecture	layer-patterns	config-key	yes
 config	directives	architecture	unknown-subkey	config-key	yes		
 config	directives	cache.dir	whole-value	config-key	yes		invariant:no-cache
 config	directives	cache.enabled	whole-value	config-key	no	boolean; nothing to point at	invariant:no-cache
-config	directives	computedMetrics	whole-value	config-key	yes		
+config	directives	computed_metrics	whole-value	config-key	yes		
 config	directives	coupling.frameworkNamespaces	whole-value	config-key	yes		
 config	directives	disabledRules	whole-value	config-key	yes		
 config	directives	exclude	whole-value	config-key	yes		
-config	directives	excludeHealth	whole-value	config-key	yes		
+config	directives	exclude_health	whole-value	config-key	yes		
 config	directives	failOn	whole-value	config-key	yes		invariant:fail-on
 config	directives	format	whole-value	config-key	yes		invariant:format
 config	directives	includeAutoloadDev	whole-value	config-key	no	boolean; nothing to point at	

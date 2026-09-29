@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Configuration\Integration;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -16,6 +17,7 @@ use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ComposerDiscoveryStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 #[CoversClass(ConfigurationPipeline::class)]
 final class ConfigurationPipelineIntegrationTest extends TestCase
@@ -41,21 +43,22 @@ final class ConfigurationPipelineIntegrationTest extends TestCase
         file_put_contents($this->directory . '/composer.json', json_encode([
             'autoload' => ['psr-4' => ['App\\' => 'src/']],
         ], \JSON_THROW_ON_ERROR));
-        file_put_contents($this->directory . '/qmx.yaml', "paths: [lib]\nexclude: [{subtree: build}]\nformat: text\n");
+        file_put_contents($this->directory . '/qmx.yaml', "paths: [lib]\nexclude: [{subtree: build}]\nfail_on: warning\n");
 
         $document = $this->pipeline()->resolve(new ConfigurationResolutionRequest(
             AbsolutePath::fromString($this->directory),
             null,
             [],
-            ['paths' => ['app'], 'format' => 'json'],
+            ['paths' => ['app'], 'fail_on' => 'error'],
         ));
 
         self::assertSame(['defaults', 'composer.json', 'qmx.yaml', 'cli'], $document->appliedSources());
         self::assertSame(['app'], $document->resolved()->get('paths')?->plain());
-        self::assertSame('json', $document->resolved()->get('format')?->plain());
+        self::assertSame('error', $document->resolved()->get('fail_on')?->plain());
         self::assertSame([['subtree' => 'build']], $document->resolved()->get('exclude')?->plain());
         self::assertSame(['src'], $document->discoveredProductionAutoloadTargets());
-        self::assertNull($document->resolved()->get('discovered_autoload_paths'), 'Composer discovery is no written layer.');
+        $this->expectException(LogicException::class);
+        $document->resolved()->get('discovered_autoload_paths');
     }
 
     #[Test]
@@ -71,7 +74,7 @@ final class ConfigurationPipelineIntegrationTest extends TestCase
 
     private function pipeline(): ConfigurationPipeline
     {
-        $pipeline = new ConfigurationPipeline();
+        $pipeline = new ConfigurationPipeline(LayeredDocument::standaloneSections());
         $pipeline->addStage(new CliStage());
         $pipeline->addStage(new ConfigFileStage(new YamlConfigLoader()));
         $pipeline->addStage(new DefaultsStage());

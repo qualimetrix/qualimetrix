@@ -121,7 +121,46 @@ final class RefusalPresenterTest extends TestCase
 
         self::assertSame(3, $exit);
         self::assertStringContainsString('Configuration error: bad value', $fallback->errorOutputContent());
-        self::assertSame($carried->errorOutputContent(), $fallback->errorOutputContent());
+        self::assertSame(
+            strtok($carried->errorOutputContent(), "\n"),
+            strtok($fallback->errorOutputContent(), "\n"),
+        );
+        self::assertStringContainsString('Source: option --x.', $carried->errorOutputContent());
+        self::assertStringNotContainsString('Source:', $fallback->errorOutputContent());
+    }
+
+    #[Test]
+    public function itNamesThePresetThatWroteARefusedWinnerEvenUnderQuiet(): void
+    {
+        $output = self::terminalOutput(OutputInterface::VERBOSITY_QUIET);
+        $refusal = ConfigurationRefusal::aboutInput(
+            ConfigurationOrigin::of(ConfigurationSource::Preset, 'strict'),
+            'parallel.workers must be a non-negative integer.',
+        );
+
+        $this->presenter()->refusal($output, 'text', $refusal);
+
+        self::assertStringContainsString('Source: preset "strict".', $output->errorOutputContent());
+        self::assertSame('', $output->standardOutputContent());
+    }
+
+    #[Test]
+    public function itNamesEveryContributorIncludingItsImporterWithoutRepeatingMentionedSources(): void
+    {
+        $output = self::terminalOutput();
+        $preset = ConfigurationOrigin::of(ConfigurationSource::Preset, 'strict');
+        $file = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/p/shared.yaml')->importedThrough(
+            ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/p/qmx.yaml'),
+        );
+        $refusal = ConfigurationRefusal::acrossLayers([$preset, $file], null, 'Values from preset "strict" conflict.');
+
+        $this->presenter()->refusal($output, null, $refusal);
+
+        self::assertSame(1, substr_count($output->errorOutputContent(), 'preset "strict"'));
+        self::assertStringContainsString(
+            'Source: configuration file "/p/shared.yaml" (imported by configuration file "/p/qmx.yaml").',
+            $output->errorOutputContent(),
+        );
     }
 
     #[Test]

@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
+use Qualimetrix\Analysis\Run\Configuration\ProjectScopeMeasurement;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeState;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
@@ -55,7 +56,7 @@ final class ProjectScopeCoverageTest extends TestCase
     {
         $this->writeComposerJson(['src/', 'lib/']);
 
-        self::assertTrue($this->covers($this->configuration(['src', 'lib'])));
+        self::assertTrue($this->measure($this->configuration(['src', 'lib']))->state()->coversProjectScope());
     }
 
     /**
@@ -70,8 +71,10 @@ final class ProjectScopeCoverageTest extends TestCase
 
         $configuration = $this->configuration(['src']);
 
-        self::assertFalse($this->covers($configuration));
-        self::assertSame(['lib'], $this->uncovered($configuration));
+        $measurement = $this->measure($configuration);
+
+        self::assertFalse($measurement->state()->coversProjectScope());
+        self::assertSame(['lib'], $measurement->uncoveredRoots);
     }
 
     /**
@@ -91,7 +94,7 @@ final class ProjectScopeCoverageTest extends TestCase
     {
         $this->writeManifest($manifest);
 
-        self::assertTrue($this->covers($this->configuration($paths)));
+        self::assertTrue($this->measure($this->configuration($paths))->state()->coversProjectScope());
     }
 
     /** @return iterable<string, array{array<string, mixed>, list<string>}> */
@@ -135,8 +138,10 @@ final class ProjectScopeCoverageTest extends TestCase
 
         $configuration = $this->configuration(['src']);
 
-        self::assertFalse($this->covers($configuration));
-        self::assertSame($expectedUncovered, $this->uncovered($configuration));
+        $measurement = $this->measure($configuration);
+
+        self::assertFalse($measurement->state()->coversProjectScope());
+        self::assertSame($expectedUncovered, $measurement->uncoveredRoots);
     }
 
     /** @return iterable<string, array{array<string, mixed>, list<string>}> */
@@ -185,9 +190,11 @@ final class ProjectScopeCoverageTest extends TestCase
 
         $configuration = $this->configuration(['src']);
 
-        self::assertTrue($this->covers($configuration));
-        self::assertSame([], $this->uncovered($configuration));
-        self::assertSame(ProjectScopeState::Unknown, $this->state($configuration));
+        $measurement = $this->measure($configuration);
+
+        self::assertTrue($measurement->state()->coversProjectScope());
+        self::assertSame([], $measurement->uncoveredRoots);
+        self::assertSame(ProjectScopeState::Unknown, $measurement->state());
     }
 
     /** Covered and Narrowed are told apart by the uncovered list, Unknown by the manifest. */
@@ -196,9 +203,11 @@ final class ProjectScopeCoverageTest extends TestCase
     {
         $this->writeComposerJson(['src/', 'lib/']);
 
-        self::assertSame(ProjectScopeState::Covered, $this->state($this->configuration(['src', 'lib'])));
-        self::assertSame(ProjectScopeState::Narrowed, $this->state($this->configuration(['src'])));
-        self::assertFalse($this->covers($this->configuration(['src'])));
+        self::assertSame(ProjectScopeState::Covered, $this->measure($this->configuration(['src', 'lib']))->state());
+
+        $measurement = $this->measure($this->configuration(['src']));
+        self::assertSame(ProjectScopeState::Narrowed, $measurement->state());
+        self::assertFalse($measurement->state()->coversProjectScope());
     }
 
     /** @return iterable<string, array{?string}> */
@@ -225,7 +234,7 @@ final class ProjectScopeCoverageTest extends TestCase
     {
         $this->writeManifest($autoload);
 
-        self::assertTrue($this->covers($this->configuration(['src', 'lib'])));
+        self::assertTrue($this->measure($this->configuration(['src', 'lib']))->state()->coversProjectScope());
     }
 
     /** @return iterable<string, array{array<string, mixed>}> */
@@ -259,9 +268,9 @@ final class ProjectScopeCoverageTest extends TestCase
             'autoload-dev' => ['classmap' => ['legacy/']],
         ]);
 
-        self::assertTrue($this->covers($this->configuration(['src'])));
-        self::assertSame(['legacy'], $this->uncovered($this->configuration(['src'], AutoloadDevPolicy::Include)));
-        self::assertTrue($this->covers($this->configuration(['src', 'legacy'], AutoloadDevPolicy::Include)));
+        self::assertTrue($this->measure($this->configuration(['src']))->state()->coversProjectScope());
+        self::assertSame(['legacy'], $this->measure($this->configuration(['src'], AutoloadDevPolicy::Include))->uncoveredRoots);
+        self::assertTrue($this->measure($this->configuration(['src', 'legacy'], AutoloadDevPolicy::Include))->state()->coversProjectScope());
     }
 
     /** A manifest with only `autoload-dev` is judged once the policy counts it. */
@@ -270,8 +279,8 @@ final class ProjectScopeCoverageTest extends TestCase
     {
         $this->writeManifest(['autoload-dev' => ['psr-4' => ['Fixture\\Tests\\' => 'lib/']]]);
 
-        self::assertSame([], $this->uncovered($this->configuration(['src'])), 'Unreadable without the policy: nothing to name');
-        self::assertSame(['lib'], $this->uncovered($this->configuration(['src'], AutoloadDevPolicy::Include)));
+        self::assertSame([], $this->measure($this->configuration(['src']))->uncoveredRoots, 'Unreadable without the policy: nothing to name');
+        self::assertSame(['lib'], $this->measure($this->configuration(['src'], AutoloadDevPolicy::Include))->uncoveredRoots);
     }
 
     /** @param array<string, mixed> $manifest */
@@ -294,20 +303,9 @@ final class ProjectScopeCoverageTest extends TestCase
         $this->writeManifest(['autoload' => ['psr-4' => $map]]);
     }
 
-    private function covers(RunConfiguration $configuration): bool
+    private function measure(RunConfiguration $configuration): ProjectScopeMeasurement
     {
-        return $this->coverage()->pathsCoverProjectScope($configuration->projectRoot, $configuration->paths, $configuration->autoloadDevPolicy);
-    }
-
-    private function state(RunConfiguration $configuration): ProjectScopeState
-    {
-        return $this->coverage()->measure($configuration->projectRoot, $configuration->paths, $configuration->autoloadDevPolicy)->state();
-    }
-
-    /** @return list<string> */
-    private function uncovered(RunConfiguration $configuration): array
-    {
-        return $this->coverage()->uncoveredAutoloadRoots($configuration->projectRoot, $configuration->paths, $configuration->autoloadDevPolicy);
+        return $this->coverage()->measure($configuration->projectRoot, $configuration->paths, $configuration->autoloadDevPolicy);
     }
 
     private function coverage(): ProjectScopeCoverage

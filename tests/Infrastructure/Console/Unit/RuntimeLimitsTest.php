@@ -63,6 +63,23 @@ final class RuntimeLimitsTest extends TestCase
         self::assertSame($value, RuntimeLimits::fromResolvedValue(self::document($value)->resolved()->get(ConfigSchema::MEMORY_LIMIT))->memoryLimit);
     }
 
+    #[Test]
+    #[DataProvider('provideNonPositiveSizes')]
+    public function itRefusesAMalformedSizeEvenWhenTheCommandLineOverridesIt(string $size): void
+    {
+        try {
+            LayeredDocument::of([
+                ['source' => 'qmx.yaml', 'values' => [ConfigSchema::MEMORY_LIMIT => $size]],
+                ['source' => 'cli', 'values' => [ConfigSchema::MEMORY_LIMIT => '512M']],
+            ], AbsolutePath::fromString('/project'));
+            self::fail('The command line hid a malformed memory limit.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
+            self::assertSame(['memory_limit'], $refusal->position()?->segments);
+            self::assertStringContainsString('positive size', $refusal->summary());
+        }
+    }
+
     private static function document(string $value): ConfigurationDocument
     {
         return LayeredDocument::of([

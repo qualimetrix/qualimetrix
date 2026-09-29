@@ -27,6 +27,8 @@ Configuration/
 │   ├── Document/                 # the resolved document: provenance, diagnostics and read-only
 │   │                             # Resolved{Map,List,Opaque,BareName}Interface forms
 │   │   └── Schema/               # the port an owner declares its section through
+│   │       ├── IntegerJudgement.php # pure integer grammar
+│   │       └── SectionDeclaration.php # atomic canonical key and node schema
 │   ├── Pipeline/                 # resolution request and pipeline contracts
 │   └── Refusal/                  # ConfigurationRefusal — the one carrier for a configuration
 │                                  # refusal by user input, and its origin/position vocabulary;
@@ -44,7 +46,7 @@ Configuration/
 ├── Preset/             # built-in and custom preset resolution
 ├── ConfigKeySpelling.php   # the snake/kebab/camel fold of a key, and its inverse
 ├── ConfigSchema.php        # canonical ingress keys and legacy flat mappings
-├── ConfigurationRoot.php   # the roots Configuration declares: key and schema of each
+├── ConfigurationRoot.php   # the roots Configuration declares: one atomic declaration each
 ├── DocumentRoots.php       # every root of the document and who declares it
 ├── UndeclaredRoot.php      # the stand-in for a known root no owner has declared yet
 ├── SelectorYamlDecoder.php  # explicit selector mapping → Core path/namespace pattern
@@ -107,7 +109,8 @@ does not turn the document into a cross-owner runtime DTO.
 `Document/DocumentComposer` composes the layers, lowest precedence first, into
 `Contract/Document/ResolvedDocument` in four fixed phases: (1) each layer alone
 — every dictionary key recognised, every written value's form judged,
-shorthands expanded, `~` dropped as "not written" at any depth (a named-map
+shorthands expanded, `~` under a map key dropped as "not written" (a list item
+written `~` is refused, and a named-map
 entry keeps its name, see below); (2) the layers
 merged by each node's declared `MergePolicy`; (3) names whose vocabulary is
 another node (`allow` keyed by the layer names `layers` declares) judged
@@ -118,8 +121,9 @@ author spelled it, the line when the format reports one, and the layer's
 precedence index within this composed document).
 
 - An owner declares its root through
-  `Contract/Document/Schema/DocumentSectionSchemaInterface` — a key and a
-  `NodeSchema` built from `scalar`, `map` (with `Shorthand`s), `list`
+  `Contract/Document/Schema/DocumentSectionSchemaInterface` — `declaration()` returns one immutable
+  `SectionDeclaration` with readonly `key` and `schema`. The engine reads
+  this pair once per provider in its fold. Its `NodeSchema` is built from `scalar`, `map` (with `Shorthand`s), `list`
   (replaced whole), `set` (accumulated), `namedMap` (with a `NameVocabulary`)
   or `opaque` (kept per layer for an owner that still folds it) — and
   `ConfigurationPipeline::addSection()` registers it. What the engine tells an
@@ -129,6 +133,11 @@ precedence index within this composed document).
   higher layer replaces is still refused in the layer that wrote it. An empty collection reads
   by the declaration: a map it changes nothing, a list it replaces, a set it
   adds nothing to.
+- Invalidity visible without merged context is judged in every writing layer:
+  form, forbidden emptiness and closed-dictionary membership. Reporting declares
+  its format dictionary this way; `format: bogus` and `cache.dir: ""` refuse
+  even under a valid CLI override. A constraint requiring merged context is
+  judged only on the winning value.
 - A dictionary key is accepted in its snake_case, camelCase or kebab-case
   spelling (`ConfigKeySpelling::acceptedSpellings()`); the same words in any
   other style are refused with the canonical key offered.
@@ -153,7 +162,8 @@ precedence index within this composed document).
   a `ConfigurationRefusal` from `Provenance::refusalOf()`, naming the winning
   layer of a leaf or every contributor of a merged node. A caller that must
   carry the exception object creates it from the same provenance factory. The
-  JSON refusal envelope publishes those sources as `source`.
+  text presenter names those authors and the JSON refusal envelope publishes
+  those sources as `source`.
   Joint refusals order writers by their document precedence, including
   several presets of the same source kind. Their default position belongs to
   the last writer; an explicit null preserves a positionless refusal.
@@ -190,10 +200,13 @@ the command line — a layer without positions whose every value carries the
 option that wrote it (`ConfigurationResolutionRequest::$cliOptionNames`), so a
 refusal names `option --format`.
 
-The root dictionary is closed: `ConfigurationRoot` declares every root outside
-the capability-owned `DOCUMENT_ROOTS` and `rules`; an owner declares its own
-root by registering its section autoconfigured (the container hands every such
-section to `ConfigurationPipeline`); a known root nobody declared yet is
+The root dictionary is closed: `ConfigSchema` enumerates the accepted root
+keys. `ConfigurationRoot` declares the roots with Configuration-owned value
+forms. Run declares `paths`, Console declares `fail_on` and `memory_limit`,
+Parallel declares `parallel`, and Reporting declares `format`; the evidence
+and policy owners declare their own sections. Each owner registers its section
+autoconfigured, and the container hands those instances to
+`ConfigurationPipeline`. A known root nobody declared yet is
 carried unread (`UndeclaredRoot`), and any other root is refused as unknown,
 `~` or not. A suggestion offers the canonical key, whatever the style of the
 key it answers.
@@ -231,6 +244,21 @@ Finding produces `FindingConfiguration`, Cache and Parallel produce their local
 configurations, and Reporting resolves output and finding-projection values.
 No consumer may construct a feature configuration factory through Configuration
 or add a feature field to a shared carrier.
+
+`IntegerJudgement` lets an owner supply a pure integer grammar returning a
+refusal message or `null` to `NodeSchema::judgedInEachLayer()`. The declaration
+accepts it only on an integer scalar. Layer reading establishes that form and
+retains authored provenance when it raises the message; the grammar does not
+need a resolved-node parameter to judge a numeric range.
+
+`ResolvedDocument::get()` takes canonical schema paths. An undeclared path is
+a programmer error (`LogicException`), including a misspelt child beneath an
+unwritten parent. A declared but unwritten value remains `null`. The canonical
+`ConfigSchema` roots are `computed_metrics` and `exclude_health`, matching the
+document's section keys.
+An open named map declares a name slot structurally: a read of an unwritten
+name returns `null`. Lookup does not repeat the owner's authored-name judgement;
+fixed dictionaries still reject an undeclared name.
 
 `ConfigurationDocument` has no generic raw-value operation. Its three named
 Finding reads and two Composer discovery facts are temporary or source-specific
@@ -342,3 +370,6 @@ Use `--rule-opt=RULE:OPTION=VALUE` for every option without a short alias.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+The atomic declaration and shared Reporting format vocabulary are described in
+[ADR 0088](../../../docs/adr/0088-atomic-section-declarations-and-format-vocabulary.md).
