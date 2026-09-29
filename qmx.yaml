@@ -1550,6 +1550,9 @@ rules:
       - subtree: Qualimetrix\Core\Path
     suppress_namespace_channels:
       coupling.cbo:namespace:
+        # Shared authored-value contracts have intentional inbound reach from
+        # named section owners; namespace CBO is 16 at the inclusive bound 16.
+        - exact: 'Qualimetrix\Analysis\Configuration\Contract\Document'
         # Re-measured 2026-09-24 over the classes the namespace declares itself
         # (`coupling.cbo-own`, the scope the rule judges): union 19, the same as
         # at ddc4dff9. Numbers further down are from when the entry was written.
@@ -1713,6 +1716,10 @@ rules:
 
   # Core contracts and value objects are coupling hubs by design.
   coupling.class-rank:
+    suppress_paths:
+      # The shared read port has 29 inbound readers; ClassRank 0.00624447
+      # against 0.00607457 measures that intended contract popularity.
+      - exact: src/Analysis/Configuration/Contract/Document/ResolvedValueInterface.php
     suppress_namespaces:
       - subtree: Qualimetrix\Analysis\Finding\Contract
       # Same reconfirmation as for the CBO channel above: the level vocabulary now
