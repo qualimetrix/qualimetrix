@@ -50,8 +50,10 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
             self::refuseWrittenRootsExcluded($pathList, $root, new DirectoryPruner($root, $authoredExcludes), $writtenPaths, $excludes);
         }
 
+        $scope = $this->projectScopeCoverage->measure($root, $pathList, $autoloadDev);
+
         return new RunConfiguration(
-            coversProjectScope: $this->projectScopeCoverage->pathsCoverProjectScope($root, $pathList, $autoloadDev),
+            coversProjectScope: $scope->state()->coversProjectScope(),
             paths: $pathList,
             pathExcludes: [...DirectoryPruner::builtInPatterns(), ...$authoredExcludes],
             // The same patterns without the built-in floor: what the author
@@ -184,7 +186,7 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
      */
     private function discoveredPaths(ConfigurationDocument $document, AutoloadDevPolicy $autoloadDev): array
     {
-        return $this->projectScopeCoverage->reachableTargets(
+        return ProjectScopeCoverage::reachableTargets(
             $document->workingDirectory(),
             $autoloadDev->projectTargets(
                 $document->discoveredProductionAutoloadTargets(),

@@ -79,6 +79,9 @@ entry may name a single file, which changes nothing: discovery analyses the
 file, and the denominator's question is containment. A declared target
 missing on disk is skipped by the denominator, and as a default path it is
 refused by the path check before analysis, as a stale PSR-4 root always was.
+`ProjectScopeCoverage::measure()` is the single measurement operation.
+Callers read `state()->coversProjectScope()` and `uncoveredRoots` from its
+result; the former convenience operations are removed.
 `ProjectScopeMeasurement` carries both halves of one measurement — the
 uncovered targets the console warns about, and the `ProjectScopeState` a
 channel reads, beside the pruned targets. There are three states: `Covered`

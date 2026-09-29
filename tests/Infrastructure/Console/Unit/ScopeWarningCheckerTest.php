@@ -43,7 +43,7 @@ final class ScopeWarningCheckerTest extends TestCase
     public function itReturnsNoWarningsWhenComposerJsonIsMissing(): void
     {
         // Missing composer.json is reported by CheckCommand, not ScopeWarningChecker
-        $warnings = $this->checker->describe($this->coverage->uncoveredAutoloadRoots($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude));
+        $warnings = $this->checker->describe($this->coverage->measure($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude)->uncoveredRoots);
 
         self::assertSame([], $warnings);
     }
@@ -60,7 +60,7 @@ final class ScopeWarningCheckerTest extends TestCase
         ]);
         mkdir($this->tempDir . '/src', 0o755, true);
 
-        $warnings = $this->checker->describe($this->coverage->uncoveredAutoloadRoots($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude));
+        $warnings = $this->checker->describe($this->coverage->measure($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude)->uncoveredRoots);
 
         self::assertSame([], $warnings);
     }
@@ -79,7 +79,7 @@ final class ScopeWarningCheckerTest extends TestCase
         mkdir($this->tempDir . '/src', 0o755, true);
         mkdir($this->tempDir . '/lib', 0o755, true);
 
-        $warnings = $this->checker->describe($this->coverage->uncoveredAutoloadRoots($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude));
+        $warnings = $this->checker->describe($this->coverage->measure($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude)->uncoveredRoots);
 
         self::assertCount(1, $warnings);
         self::assertSame(
@@ -107,7 +107,7 @@ final class ScopeWarningCheckerTest extends TestCase
         mkdir($this->tempDir . '/tests', 0o755, true);
 
         // Analyzing only src/ should NOT warn about missing tests/ (autoload-dev)
-        $warnings = $this->checker->describe($this->coverage->uncoveredAutoloadRoots($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude));
+        $warnings = $this->checker->describe($this->coverage->measure($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude)->uncoveredRoots);
 
         self::assertSame([], $warnings);
     }
@@ -131,7 +131,7 @@ final class ScopeWarningCheckerTest extends TestCase
         mkdir($this->tempDir . '/tests', 0o755, true);
 
         // Passing the project root itself models the `qmx check .` invocation
-        $warnings = $this->checker->describe($this->coverage->uncoveredAutoloadRoots($this->projectRoot, [$this->projectRoot], AutoloadDevPolicy::Exclude));
+        $warnings = $this->checker->describe($this->coverage->measure($this->projectRoot, [$this->projectRoot], AutoloadDevPolicy::Exclude)->uncoveredRoots);
 
         self::assertSame([], $warnings);
     }
@@ -150,7 +150,7 @@ final class ScopeWarningCheckerTest extends TestCase
         mkdir($this->tempDir . '/src', 0o755, true);
 
         // Analyzing src covers src; lib doesn't exist so it's skipped — no warning
-        $warnings = $this->checker->describe($this->coverage->uncoveredAutoloadRoots($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude));
+        $warnings = $this->checker->describe($this->coverage->measure($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude)->uncoveredRoots);
 
         self::assertSame([], $warnings);
     }
