@@ -109,7 +109,7 @@ Reporting/
     │   ├── HtmlFormatter.php              # Interactive HTML report with D3 treemap
     │   ├── HtmlTreeBuilder.php            # Builds namespace tree from MetricRepository
     │   ├── HtmlTreeNode.php               # Internal VO for tree construction
-    │   ├── HtmlDebtCalculator.php         # Computes and aggregates technical debt for HTML reports
+    │   ├── HtmlDebtCalculator.php         # Completes own debt and bottom-up totals for HTML trees
     │   ├── HtmlMetricAggregator.php       # Bottom-up metric aggregation for HTML tree
     │   ├── HtmlProjectMetadata.php        # The report's `project` object: analysed project's name, version, docs addresses
     │   └── HtmlFindingPartitioner.php   # Puts every finding on exactly one tree node (root at the latest)
