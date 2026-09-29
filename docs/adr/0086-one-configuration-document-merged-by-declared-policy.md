@@ -290,15 +290,12 @@ or contributing provenance rather than rebuilding an origin from folded input.
   raises the owner's refusal message at the written node.
   Parallel's value constructor enforces the same non-negative invariant for
   callers outside document composition.
-- Repository namespace health-cohesion exclusions remain exact. Run's
-  configuration has one TCC contributor that delegates property access to
-  private work; its fieldless paths declaration contributes only LCOM.
-  Reporting's configuration requires constant section metadata while both
-  validation phases reuse one private catalog validator. Direct-property TCC
-  misses that shared work. These two namespace health interpretations are
-  excluded; class evidence, other channels and child namespaces remain judged.
-  A second TCC contributor or a change of responsibilities requires revisiting
-  the exclusions. Neither the academic metrics nor their formulas change.
+- Root metadata is an atomic key/schema declaration, and Reporting's section
+  and runtime resolver share one registry-backed vocabulary. Run exposes one
+  scope measurement instead of disconnected convenience operations. The two
+  Configuration namespace health exclusions added for these subjects are
+  removed; quality evidence remains judged. See
+  [ADR 0088](0088-atomic-section-declarations-and-format-vocabulary.md).
 - Breaking for authors, each in the changelog: a computed metric merges per
   key; `{}` and `name: ~` no longer reset; a misspelt key written with `~`, a
   key in an unaccepted spelling and a non-string list item are refused;

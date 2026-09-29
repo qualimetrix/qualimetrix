@@ -95,6 +95,8 @@ use Qualimetrix\Infrastructure\Profiler\Contract\ProfileSessionControlInterface;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Reporting\Configuration\OutputFormatResolver;
+use Qualimetrix\Reporting\Configuration\OutputFormatSection;
+use Qualimetrix\Reporting\Configuration\OutputFormatVocabulary;
 use Qualimetrix\Reporting\Contract\OutputFormatResolverInterface;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
 use Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver;
@@ -235,9 +237,14 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(RunConfigurationResolver::class)
             ->setArgument('$projectScopeCoverage', new Reference(ProjectScopeCoverage::class));
         $container->setAlias(RunConfigurationResolverInterface::class, RunConfigurationResolver::class);
+        $container->register(OutputFormatVocabulary::class)
+            ->setArguments([new Reference(FormatterRegistryInterface::class)]);
+        $container->register(OutputFormatSection::class)
+            ->setAutoconfigured(true)
+            ->setArguments([new Reference(OutputFormatVocabulary::class)]);
         $container->register(OutputFormatResolver::class)
             ->setAutoconfigured(true)
-            ->setArguments([new Reference(FormatterRegistryInterface::class)]);
+            ->setArguments([new Reference(OutputFormatVocabulary::class)]);
         $container->setAlias(OutputFormatResolverInterface::class, OutputFormatResolver::class);
         $container->register(ConfiguredFindingExclusionsResolver::class);
         $container->setAlias(

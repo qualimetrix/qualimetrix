@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionS
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\RefusedName;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
@@ -27,17 +28,12 @@ final readonly class ComputedMetricsSection implements DocumentSectionSchemaInte
 
     private const string HEALTH_PREFIX = 'health.';
 
-    public function key(): string
+    public function declaration(): SectionDeclaration
     {
-        return self::KEY;
-    }
-
-    public function schema(): NodeSchema
-    {
-        return NodeSchema::namedMap(
+        return new SectionDeclaration(self::KEY, NodeSchema::namedMap(
             ComputedMetricEntryKeys::entrySchema(),
             NameVocabulary::predicate(self::refuseName(...)),
-        );
+        ));
     }
 
     /** The refused spot of a metric's entry, or of a key below it. */

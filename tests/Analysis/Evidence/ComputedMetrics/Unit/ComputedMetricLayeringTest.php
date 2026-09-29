@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
@@ -495,14 +496,9 @@ final class ComputedMetricLayeringTest extends TestCase
     public function itRefusesToReadASectionTheDocumentCarriedUnread(): void
     {
         $unread = new readonly class implements DocumentSectionSchemaInterface {
-            public function key(): string
+            public function declaration(): SectionDeclaration
             {
-                return ComputedMetricsSection::KEY;
-            }
-
-            public function schema(): NodeSchema
-            {
-                return NodeSchema::opaque();
+                return new SectionDeclaration(ComputedMetricsSection::KEY, NodeSchema::opaque());
             }
         };
 

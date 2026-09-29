@@ -59,8 +59,8 @@ internals are not a public API. The generated qmx projection enforces the leaf o
 ## Configuration and lifecycle
 
 `ArchitectureSection` declares the `architecture:` section to the
-configuration document engine (`DocumentSectionSchemaInterface`): its keys at
-every level, the form of each value and how the configuration layers that
+configuration document engine (`DocumentSectionSchemaInterface::declaration()`),
+returning an atomic `SectionDeclaration`: its keys at every level, the form of each value and how the configuration layers that
 wrote it merge. The engine recognises and shapes every layer before merging,
 so a misspelt key — in the section, a `layers[i]` entry or its `exclude:` — is
 refused with its writer and spelling whatever its value, `~` included. The

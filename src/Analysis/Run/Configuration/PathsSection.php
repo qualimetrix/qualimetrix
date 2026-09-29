@@ -10,23 +10,19 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 
 final class PathsSection implements DocumentSectionSchemaInterface
 {
-    public function key(): string
+    public function declaration(): SectionDeclaration
     {
-        return ConfigSchema::PATHS;
-    }
-
-    public function schema(): NodeSchema
-    {
-        return NodeSchema::list(
+        return new SectionDeclaration(ConfigSchema::PATHS, NodeSchema::list(
             NodeSchema::scalar(ScalarForm::String)->withHint('Quote a name that reads as a number or a keyword ("2024", "true").'),
         )->judgedInEachLayer(static function (ResolvedValueInterface $value): void {
             \assert($value instanceof ResolvedListInterface);
             self::read($value);
-        });
+        }));
     }
 
     /**

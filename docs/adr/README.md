@@ -119,6 +119,8 @@ What follows from the decision: trade-offs, constraints, and implications.
 
 - [0087 — The Finding Gate Declares Measured Changes](0087-the-finding-gate-declares-measured-changes.md) — complete physical records, one correspondence for ranking values, occurrence-preserving order and exact measured declaration forms.
 
+- [0088 — Atomic Section Declarations and a Shared Format Vocabulary](0088-atomic-section-declarations-and-format-vocabulary.md) — one key/schema declaration per provider, one registered format dictionary for both validation boundaries, and one project-scope measurement for callers.
+
 ## Superseded history
 
 - [0008 — ArchitectureProcessor Service](0008-architecture-processor-service.md) — replaced by the capability-oriented topology in ADR 0022.

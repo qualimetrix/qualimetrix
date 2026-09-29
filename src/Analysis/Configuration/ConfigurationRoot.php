@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
 use Qualimetrix\Core\Pattern\SelectorKind;
 
 /** Configuration's document declarations, apart from the sections their consumers register. */
@@ -22,14 +23,9 @@ enum ConfigurationRoot: string implements DocumentSectionSchemaInterface
     case IncludeAutoloadDev = 'include_autoload_dev';
     case Cache = 'cache';
 
-    public function key(): string
+    public function declaration(): SectionDeclaration
     {
-        return $this->value;
-    }
-
-    public function schema(): NodeSchema
-    {
-        return self::schemas()[$this->value];
+        return new SectionDeclaration($this->value, self::schemas()[$this->value]);
     }
 
     /** @return array<string, NodeSchema> root key => schema */

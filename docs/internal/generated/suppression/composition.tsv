@@ -75,8 +75,6 @@ rule-namespace-suppression	coupling.instability	coupling.instability	src/Analysi
 rule-namespace-suppression	coupling.instability	coupling.instability	src/Analysis/Finding/SuppressionBinding/UnboundSuppressionAudit.php	Qualimetrix\Analysis\Finding\SuppressionBinding	warning	1
 rule-namespace-suppression	health.cohesion	health.cohesion	(no file)	Qualimetrix\Analysis\Evidence\Prioritization	warning	1
 rule-namespace-suppression	health.cohesion	health.cohesion	(no file)	Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion	warning	1
-rule-namespace-suppression	health.cohesion	health.cohesion	(no file)	Qualimetrix\Analysis\Run\Configuration	warning	1
-rule-namespace-suppression	health.cohesion	health.cohesion	(no file)	Qualimetrix\Reporting\Configuration	warning	1
 rule-path-suppression	code-smell.constructor-overinjection	code-smell.constructor-overinjection	src/Analysis/Run/Contract/Collection/SuccessfulFileProcessing.php	Qualimetrix\Analysis\Run\Contract\Collection\SuccessfulFileProcessing::__construct	warning	1
 rule-path-suppression	code-smell.constructor-overinjection	code-smell.constructor-overinjection	src/Reporting/FormatterContext.php	Qualimetrix\Reporting\FormatterContext::__construct	warning	1
 rule-path-suppression	code-smell.constructor-overinjection	code-smell.constructor-overinjection	src/Reporting/Report.php	Qualimetrix\Reporting\Report::__construct	error	1
@@ -143,7 +141,7 @@ rule-path-suppression	complexity.wmc	complexity.wmc	src/Analysis/Evidence/Coupli
 rule-path-suppression	complexity.wmc	complexity.wmc	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor	error	1
 rule-path-suppression	complexity.wmc	complexity.wmc	src/Analysis/Evidence/Size/MethodCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\MethodCountVisitor	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/ConfigurationDocument.php	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	error	1
-rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Document/ResolvedValueInterface.php	Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface	warning	1
+rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Document/ResolvedValueInterface.php	Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Document/Schema/NodeSchema.php	Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/CodeSmell/CodeSmellVisitor.php	Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellVisitor	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/CodeSmell/UnreachableCodeVisitor.php	Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeVisitor	error	1

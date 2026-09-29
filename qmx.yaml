@@ -68,6 +68,7 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeWording'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\RefusedName'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\Shorthand'
         - 'Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface'
         - 'Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface'
@@ -1118,6 +1119,8 @@ architecture:
     - name: reporting
       patterns:
         - 'Qualimetrix\Reporting\Configuration\OutputFormatResolver'
+        - 'Qualimetrix\Reporting\Configuration\OutputFormatSection'
+        - 'Qualimetrix\Reporting\Configuration\OutputFormatVocabulary'
         - 'Qualimetrix\Reporting\Contract\OutputFormat'
         - 'Qualimetrix\Reporting\Contract\OutputFormatResolverInterface'
         - 'Qualimetrix\Reporting\CoverageFailure'
@@ -2153,13 +2156,4 @@ rules:
         # namespace stopped reporting. The entry was measured inert, and an
         # inert suppression is exactly what this round is about.
         - exact: 'Qualimetrix\Analysis\Run\ExcludeBinding'
-        # One TCC contributor delegates field access to private helpers. The
-        # fieldless paths schema contributes only LCOM: its constant key and
-        # DSL builder are separate components, not separate run subjects.
-        # Revisit when another class contributes TCC or responsibilities change.
-        - exact: 'Qualimetrix\Analysis\Run\Configuration'
-        # The schema key is required constant metadata. Both layer validation
-        # and winner resolution call the same catalog validator; direct-field
-        # TCC does not follow that private call and reports zero. Revisit when
-        # another TCC contributor or configuration responsibility is introduced.
-        - exact: 'Qualimetrix\Reporting\Configuration'
+

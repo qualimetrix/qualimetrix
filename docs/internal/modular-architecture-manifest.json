@@ -126,6 +126,14 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\PathsSection"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Configuration\\OutputFormatSection"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Configuration\\OutputFormatVocabulary"
         }
       ]
     },
@@ -488,7 +496,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Configuration\\OutputFormatResolver"
+          "source_fqcn": "Qualimetrix\\Reporting\\Configuration\\OutputFormatVocabulary"
         },
         {
           "owner": "Analysis.Evidence.Coupling",
@@ -517,6 +525,10 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricEntryKeys"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Configuration\\OutputFormatSection"
         }
       ]
     },
@@ -544,7 +556,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Configuration\\OutputFormatResolver"
+          "source_fqcn": "Qualimetrix\\Reporting\\Configuration\\OutputFormatSection"
         },
         {
           "owner": "Infrastructure.Console",
@@ -622,7 +634,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Configuration\\OutputFormatResolver"
+          "source_fqcn": "Qualimetrix\\Reporting\\Configuration\\OutputFormatSection"
         },
         {
           "owner": "Infrastructure.Console",
@@ -685,7 +697,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Configuration\\OutputFormatResolver"
+          "source_fqcn": "Qualimetrix\\Reporting\\Configuration\\OutputFormatSection"
         },
         {
           "owner": "Infrastructure.Console",
@@ -19288,6 +19300,83 @@
         {
           "owner": "Infrastructure.Parallel",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\Configuration\\ParallelConfigurationResolver"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\SectionDeclaration": {
+      "path": "src/Analysis/Configuration/Contract/Document/Schema/SectionDeclaration.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricsSection"
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ExcludeHealthSection"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ArchitectureSection"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Configuration\\CouplingSection"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Configuration\\OutputFormatSection"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ExitPolicySection"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\MemoryLimitSection"
+        },
+        {
+          "owner": "Infrastructure.Parallel",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\Configuration\\ParallelConfigurationResolver"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\PathsSection"
+        }
+      ]
+    },
+    "Qualimetrix\\Reporting\\Configuration\\OutputFormatSection": {
+      "path": "src/Reporting/Configuration/OutputFormatSection.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "internal",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "operations": [
+            "service_registration"
+          ]
+        }
+      ]
+    },
+    "Qualimetrix\\Reporting\\Configuration\\OutputFormatVocabulary": {
+      "path": "src/Reporting/Configuration/OutputFormatVocabulary.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "internal",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "operations": [
+            "service_reference",
+            "service_registration"
+          ]
         }
       ]
     }

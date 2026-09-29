@@ -58,7 +58,7 @@ final class DocumentRoots
     public static function completing(array $ownerSections): array
     {
         $sections = [...ConfigurationRoot::cases(), ...$ownerSections];
-        $declared = array_map(static fn(DocumentSectionSchemaInterface $section): string => $section->key(), $sections);
+        $declared = array_map(static fn(DocumentSectionSchemaInterface $section): string => $section->declaration()->key, $sections);
 
         foreach (self::known() as $root) {
             if (!\in_array($root, $declared, true)) {

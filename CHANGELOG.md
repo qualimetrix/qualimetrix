@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+**Document sections return one atomic declaration.** Replace
+`DocumentSectionSchemaInterface::key(): string` and `schema(): NodeSchema`
+with `declaration(): SectionDeclaration`, returning
+`new SectionDeclaration($key, $schema)`. Consumers read its readonly
+`key` and `schema` properties. `OutputFormatResolver` no longer provides a
+schema: register `OutputFormatSection` with `OutputFormatVocabulary`; the
+resolver takes that same vocabulary for winner validation. See ADR 0088.
+
+**Project-scope callers read one measurement.** Replace
+`ProjectScopeCoverage::pathsCoverProjectScope()` and
+`uncoveredAutoloadRoots()` with `measure()`, then read
+`$measurement->state()->coversProjectScope()` and `$measurement->uncoveredRoots`.
+Call `ProjectScopeCoverage::reachableTargets()` statically. Scope semantics
+remain unchanged. See ADR 0088.
+
 **Invalid authored configuration values cannot be hidden by an override.**
 A lower layer with an unknown format or exit policy, an empty cache directory
 or path list, invalid worker count or memory-limit syntax, malformed
@@ -18,9 +33,11 @@ Correct the layer that wrote the invalid value; its source is named in both
 text and JSON refusals. References requiring the merged document are still
 judged after merging. Rule-specific meanings remain on the temporary Finding
 boundary. Custom document composition must register the owning sections:
-`ConfigurationRoot::Paths`, `FailOn`, `MemoryLimit` and `Parallel` are removed;
+`ConfigurationRoot::Paths`, `FailOn`, `MemoryLimit`, `Parallel` and `Format` are removed;
 use Run's `PathsSection`, Console's `ExitPolicySection` and `MemoryLimitSection`,
-and `ParallelConfigurationResolver` as schema providers. Compiled container
+and `ParallelConfigurationResolver` as schema providers. For `Format`, register
+Reporting's `OutputFormatSection` with its registry-backed
+`OutputFormatVocabulary`. Compiled container
 composition registers them automatically. See ADR 0086.
 
 **Exit policy values are textual.** Replace the former YAML `fail_on: false`

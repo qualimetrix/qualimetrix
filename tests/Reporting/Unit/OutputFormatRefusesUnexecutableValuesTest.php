@@ -13,6 +13,8 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Reporting\Configuration\OutputFormatResolver;
+use Qualimetrix\Reporting\Configuration\OutputFormatSection;
+use Qualimetrix\Reporting\Configuration\OutputFormatVocabulary;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
@@ -91,8 +93,8 @@ final class OutputFormatRefusesUnexecutableValuesTest extends TestCase
     #[Test]
     public function itStillDefaultsWhenNobodyNamedAFormat(): void
     {
-        $resolver = new OutputFormatResolver(self::registry());
-        $document = LayeredDocument::of([], AbsolutePath::fromString('/project'), $resolver);
+        [$resolver, $section] = self::resolverAndSection();
+        $document = LayeredDocument::of([], AbsolutePath::fromString('/project'), $section);
 
         self::assertSame('summary', $resolver->resolve($document)->value);
     }
@@ -119,11 +121,11 @@ final class OutputFormatRefusesUnexecutableValuesTest extends TestCase
             $sources[] = ['source' => 'cli', 'values' => ['format' => 'json']];
         }
 
-        $resolver = new OutputFormatResolver(self::registry());
+        [$resolver, $section] = self::resolverAndSection();
         $document = LayeredDocument::of(
             $sources,
             AbsolutePath::fromString('/project'),
-            $resolver,
+            $section,
         );
 
         return $resolver->resolve($document);
@@ -152,5 +154,13 @@ final class OutputFormatRefusesUnexecutableValuesTest extends TestCase
                 return [];
             }
         };
+    }
+
+    /** @return array{OutputFormatResolver, OutputFormatSection} */
+    private static function resolverAndSection(): array
+    {
+        $vocabulary = new OutputFormatVocabulary(self::registry());
+
+        return [new OutputFormatResolver($vocabulary), new OutputFormatSection($vocabulary)];
     }
 }

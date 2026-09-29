@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\RefusedName;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
@@ -220,14 +221,9 @@ final class DocumentPhaseTest extends TestCase
     public function itRefusesAnIntegerJudgementAtTheSourceBeforeALaterLayerWins(): void
     {
         $section = new readonly class implements DocumentSectionSchemaInterface {
-            public function key(): string
+            public function declaration(): SectionDeclaration
             {
-                return 'workers';
-            }
-
-            public function schema(): NodeSchema
-            {
-                return NodeSchema::scalar(ScalarForm::Integer)->judgedInEachLayer(new IntegerJudgement(static fn(int $value): ?string => $value < 0 ? 'Workers must be non-negative.' : null));
+                return new SectionDeclaration('workers', NodeSchema::scalar(ScalarForm::Integer)->judgedInEachLayer(new IntegerJudgement(static fn(int $value): ?string => $value < 0 ? 'Workers must be non-negative.' : null)));
             }
         };
 
@@ -352,14 +348,9 @@ final class DocumentPhaseTest extends TestCase
     public function itRejectsASiblingVocabularyAnywhereBelowAListItemAsASchemaDefect(): void
     {
         $section = new readonly class implements DocumentSectionSchemaInterface {
-            public function key(): string
+            public function declaration(): SectionDeclaration
             {
-                return 'groups';
-            }
-
-            public function schema(): NodeSchema
-            {
-                return NodeSchema::list(NodeSchema::map([
+                return new SectionDeclaration('groups', NodeSchema::list(NodeSchema::map([
                     'members' => NodeSchema::map([
                         'names' => NodeSchema::stringList(),
                         'allow' => NodeSchema::namedMap(
@@ -367,7 +358,7 @@ final class DocumentPhaseTest extends TestCase
                             NameVocabulary::fromSibling('names', static fn(mixed $names): array => \is_array($names) ? array_values(array_filter($names, 'is_string')) : []),
                         ),
                     ]),
-                ]));
+                ])));
             }
         };
 
@@ -428,17 +419,12 @@ final class DocumentPhaseTest extends TestCase
     public function itReadsUnwrittenDynamicNameSlotsWithoutRejudgingAuthoredNames(): void
     {
         $section = new readonly class implements DocumentSectionSchemaInterface {
-            public function key(): string
+            public function declaration(): SectionDeclaration
             {
-                return 'names';
-            }
-
-            public function schema(): NodeSchema
-            {
-                return NodeSchema::namedMap(
+                return new SectionDeclaration('names', NodeSchema::namedMap(
                     NodeSchema::stringList(),
                     NameVocabulary::predicate(static fn(string $name): RefusedName => RefusedName::open('This name cannot be authored.')),
-                );
+                ));
             }
         };
         $document = DocumentComposer::compose(new DocumentSchema([$section]), []);

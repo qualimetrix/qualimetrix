@@ -49,7 +49,7 @@ final class LayeredDocument
 
         $declarations = [];
         foreach ([...self::standaloneSections(), ...$sections] as $section) {
-            $declarations[$section->key()] = $section;
+            $declarations[$section->declaration()->key] = $section;
         }
 
         return new ConfigurationDocument(

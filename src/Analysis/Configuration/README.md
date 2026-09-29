@@ -27,7 +27,8 @@ Configuration/
 │   ├── Document/                 # the resolved document: provenance, diagnostics and read-only
 │   │                             # Resolved{Map,List,Opaque,BareName}Interface forms
 │   │   └── Schema/               # the port an owner declares its section through
-│   │       └── IntegerJudgement.php # pure integer grammar
+│   │       ├── IntegerJudgement.php # pure integer grammar
+│   │       └── SectionDeclaration.php # atomic canonical key and node schema
 │   ├── Pipeline/                 # resolution request and pipeline contracts
 │   └── Refusal/                  # ConfigurationRefusal — the one carrier for a configuration
 │                                  # refusal by user input, and its origin/position vocabulary;
@@ -45,7 +46,7 @@ Configuration/
 ├── Preset/             # built-in and custom preset resolution
 ├── ConfigKeySpelling.php   # the snake/kebab/camel fold of a key, and its inverse
 ├── ConfigSchema.php        # canonical ingress keys and legacy flat mappings
-├── ConfigurationRoot.php   # the roots Configuration declares: key and schema of each
+├── ConfigurationRoot.php   # the roots Configuration declares: one atomic declaration each
 ├── DocumentRoots.php       # every root of the document and who declares it
 ├── UndeclaredRoot.php      # the stand-in for a known root no owner has declared yet
 ├── SelectorYamlDecoder.php  # explicit selector mapping → Core path/namespace pattern
@@ -120,8 +121,9 @@ author spelled it, the line when the format reports one, and the layer's
 precedence index within this composed document).
 
 - An owner declares its root through
-  `Contract/Document/Schema/DocumentSectionSchemaInterface` — a key and a
-  `NodeSchema` built from `scalar`, `map` (with `Shorthand`s), `list`
+  `Contract/Document/Schema/DocumentSectionSchemaInterface` — `declaration()` returns one immutable
+  `SectionDeclaration` with readonly `key` and `schema`. The engine reads
+  this pair once per provider in its fold. Its `NodeSchema` is built from `scalar`, `map` (with `Shorthand`s), `list`
   (replaced whole), `set` (accumulated), `namedMap` (with a `NameVocabulary`)
   or `opaque` (kept per layer for an owner that still folds it) — and
   `ConfigurationPipeline::addSection()` registers it. What the engine tells an
@@ -368,3 +370,6 @@ Use `--rule-opt=RULE:OPTION=VALUE` for every option without a short alias.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+The atomic declaration and shared Reporting format vocabulary are described in
+[ADR 0088](../../../docs/adr/0088-atomic-section-declarations-and-format-vocabulary.md).

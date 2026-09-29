@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionS
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\InvalidSelectorException;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelectorParser;
 
@@ -38,12 +39,7 @@ final readonly class ArchitectureSection implements DocumentSectionSchemaInterfa
 {
     public const string KEY = 'architecture';
 
-    public function key(): string
-    {
-        return self::KEY;
-    }
-
-    public function schema(): NodeSchema
+    public function declaration(): SectionDeclaration
     {
         $criteria = [
             'patterns' => NodeSchema::opaque(),
@@ -54,7 +50,7 @@ final readonly class ArchitectureSection implements DocumentSectionSchemaInterfa
             'match' => NodeSchema::scalar(ScalarForm::String),
         ];
 
-        return NodeSchema::map([
+        return new SectionDeclaration(self::KEY, NodeSchema::map([
             'layers' => NodeSchema::list(NodeSchema::map([
                 'name' => NodeSchema::scalar(ScalarForm::String),
                 ...$criteria,
@@ -67,7 +63,7 @@ final readonly class ArchitectureSection implements DocumentSectionSchemaInterfa
             )->judgedInEachLayer(CarriedValueForm::ofAllowMap(...)),
             'coverage-gap' => NodeSchema::scalar(ScalarForm::String)->judgedInEachLayer(CarriedValueForm::ofCoverageMode(...)),
             'max_expanded_layers' => NodeSchema::scalar(ScalarForm::Integer)->judgedInEachLayer(CarriedValueForm::ofExpansionCeiling(...)),
-        ]);
+        ]));
     }
 
     /**

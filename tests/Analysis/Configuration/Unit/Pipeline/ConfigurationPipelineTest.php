@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaqueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
@@ -262,14 +263,9 @@ final class ConfigurationPipelineTest extends TestCase
     private static function couplingSection(): DocumentSectionSchemaInterface
     {
         return new class implements DocumentSectionSchemaInterface {
-            public function key(): string
+            public function declaration(): SectionDeclaration
             {
-                return 'coupling';
-            }
-
-            public function schema(): NodeSchema
-            {
-                return NodeSchema::map(['framework_namespaces' => NodeSchema::stringList()]);
+                return new SectionDeclaration('coupling', NodeSchema::map(['framework_namespaces' => NodeSchema::stringList()]));
             }
         };
     }

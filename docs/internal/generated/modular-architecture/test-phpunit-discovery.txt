@@ -6918,7 +6918,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt"relation kind word"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt"relation list of an allow target"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt"short target syntax"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt"static exclude attributes capture"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt"static exclude extends capture"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt"static exclude implements capture"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt"static exclude suffix capture"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt"static layer name syntax"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt"suffix syntax"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt"template exclude attributes capture"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt"template exclude extends capture"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt"template exclude implements capture"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt"template exclude suffix capture"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt"template name syntax"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMalformedValueInTheLayerThatWroteItEvenWhenAHigherLayerReplacesIt"zero expansion ceiling"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureSectionTest::itRefusesAMisspeltKeyWrittenAsTildeNamingItsFileAndSpelling"exclude block"
@@ -11603,6 +11612,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatResolverTest::itRefusesAnUnknownFormatInTheFileEvenWhenTheCommandLineOverridesIt
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatResolverTest::itRefusesAnUnknownWinningFormatAtItsAuthoredPath
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatResolverTest::itUsesSummaryByDefaultAndTheLastExplicitFormat
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatResolverTest::itValidatesTheWinningFormatAgainstTheRegistryWhenTheSectionHasNoDictionaryJudge
  - Qualimetrix\Tests\Reporting\Unit\ReportBuilderTest::itAddsFinding
  - Qualimetrix\Tests\Reporting\Unit\ReportBuilderTest::itAddsFindings
  - Qualimetrix\Tests\Reporting\Unit\ReportBuilderTest::itAddsFindingsFromIterator

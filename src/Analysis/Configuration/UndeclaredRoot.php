@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Configuration;
 
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
 
 /**
  * A known root whose owner has not declared its section: recognised by the
@@ -15,13 +16,8 @@ final readonly class UndeclaredRoot implements DocumentSectionSchemaInterface
 {
     public function __construct(private string $key) {}
 
-    public function key(): string
+    public function declaration(): SectionDeclaration
     {
-        return $this->key;
-    }
-
-    public function schema(): NodeSchema
-    {
-        return NodeSchema::opaque();
+        return new SectionDeclaration($this->key, NodeSchema::opaque());
     }
 }
