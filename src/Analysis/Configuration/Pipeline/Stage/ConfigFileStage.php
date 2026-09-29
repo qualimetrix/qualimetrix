@@ -57,16 +57,17 @@ final class ConfigFileStage implements ConfigurationStageInterface
             return $diagnostics === [] ? null : new ConfigurationLayer('config_file', [], diagnostics: $diagnostics);
         }
 
-        $loaded = $this->loader->read($configPath);
+        $sourceName = $request->configFilePath ?? basename($configPath);
+        $loaded = $this->loader->read($configPath, $sourceName);
 
         if ($loaded->deferredRefusal === null) {
-            $this->validateRuleNames($loaded->values, $configPath);
+            $this->validateRuleNames($loaded->values, $sourceName);
         }
 
         return new ConfigurationLayer(
             basename($configPath),
             $this->normalizeConfigData($loaded->values),
-            authored: [new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $configPath), $loaded->authored)],
+            authored: [new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $sourceName), $loaded->authored)],
             deferredRefusals: $loaded->deferredRefusal === null ? [] : [$loaded->deferredRefusal],
             diagnostics: $diagnostics,
         );
@@ -107,15 +108,15 @@ final class ConfigFileStage implements ConfigurationStageInterface
             sort($entries, \SORT_STRING);
         } catch (UnexpectedValueException) {
             throw ConfigurationRefusal::aboutConfigFileDocument(
-                $dir,
-                \sprintf('Configuration directory cannot be listed: %s', $dir),
+                '.',
+                'Configuration directory cannot be listed: .',
             );
         }
 
         $exact = array_values(array_intersect($entries, self::CONFIG_FILE_NAMES));
         if (\count($exact) > 1) {
             throw ConfigurationRefusal::aboutConfigFileDocument(
-                $dir,
+                '.',
                 'Both qmx.yaml and qmx.yml exist; keep exactly one configuration file.',
             );
         }
@@ -130,13 +131,12 @@ final class ConfigFileStage implements ConfigurationStageInterface
                 continue;
             }
 
-            $path = $dir . '/' . $entry;
             $diagnostics[] = new ConfigurationDiagnostic(
                 \sprintf(
                     'Ignored configuration-like filename "%s"; auto-discovery accepts only exact qmx.yaml or qmx.yml.',
                     $entry,
                 ),
-                [new Provenance(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path), null, 0)],
+                [new Provenance(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $entry), null, 0)],
             );
         }
 
@@ -169,12 +169,12 @@ final class ConfigFileStage implements ConfigurationStageInterface
     /**
      * @param array<string, mixed> $data
      */
-    private function validateRuleNames(array $data, string $configPath): void
+    private function validateRuleNames(array $data, string $sourceName): void
     {
         if ($this->knownRuleNamesProvider === null) {
             return;
         }
 
-        RuleNameValidator::validateRuleNames($data, basename($configPath), $this->knownRuleNamesProvider, $configPath);
+        RuleNameValidator::validateRuleNames($data, basename($sourceName), $this->knownRuleNamesProvider, $sourceName);
     }
 }

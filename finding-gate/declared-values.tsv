@@ -1,0 +1,2 @@
+kind	key	level	reason
+exit	rules	*	Rules now judges the complete configuration document before listing.

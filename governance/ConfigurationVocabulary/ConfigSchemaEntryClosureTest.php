@@ -66,7 +66,7 @@ final class ConfigSchemaEntryClosureTest extends TestCase
         try {
             $loader = new YamlConfigLoader();
             // If any ENTRIES root key is not in allowedRootKeys(), this throws
-            $loaded = $loader->read($tmpFile);
+            $loaded = $loader->read($tmpFile, $tmpFile);
             $config = $loaded->deferredRefusal === null ? $loaded->values : throw $loaded->deferredRefusal;
             self::assertNotEmpty($config, 'Full config YAML should produce non-empty result');
         } finally {

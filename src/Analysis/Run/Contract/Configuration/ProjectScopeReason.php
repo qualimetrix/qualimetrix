@@ -14,7 +14,7 @@ final readonly class ProjectScopeReason
 
     public static function mainManifest(ManifestIssue $issue): self
     {
-        return new self(ProjectScopeReasonKind::ManifestIssue, ['issueKind' => $issue->kind->value, 'source' => $issue->source, 'location' => $issue->location, 'detail' => $issue->detail, 'auxiliary' => false]);
+        return new self(ProjectScopeReasonKind::ManifestIssue, ['issueKind' => $issue->kind->value, 'source' => 'composer.json', 'location' => $issue->location, 'detail' => $issue->detail, 'auxiliary' => false]);
     }
 
     public static function auxiliaryManifest(ManifestIssue $issue): self

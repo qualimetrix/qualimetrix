@@ -124,6 +124,7 @@ use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RunConfigurationPreparation;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\DependencyInjection\Registration\EvidenceRegistration;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface;
@@ -142,6 +143,7 @@ use ReflectionProperty;
 use SplFileInfo;
 
 #[CoversClass(ContainerFactory::class)]
+#[CoversClass(EvidenceRegistration::class)]
 final class ContainerFactoryTest extends TestCase
 {
     private ContainerFactory $factory;

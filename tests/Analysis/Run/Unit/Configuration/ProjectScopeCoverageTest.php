@@ -9,6 +9,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
+use Qualimetrix\Analysis\Run\Configuration\ProjectScopeDefaults;
+use Qualimetrix\Analysis\Run\Configuration\ProjectScopePaths;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState;
@@ -28,6 +30,8 @@ use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
  * has nothing to do with the answer under test.
  */
 #[CoversClass(ProjectScopeCoverage::class)]
+#[CoversClass(ProjectScopeDefaults::class)]
+#[CoversClass(ProjectScopePaths::class)]
 final class ProjectScopeCoverageTest extends TestCase
 {
     private string $tempDir;
@@ -233,6 +237,11 @@ final class ProjectScopeCoverageTest extends TestCase
         self::assertFalse($measurement->state()->coversProjectScope());
         self::assertSame([], $measurement->uncoveredRoots);
         self::assertSame(ProjectScopeState::Unmeasured, $measurement->state());
+        foreach ($measurement->universe->reasons as $reason) {
+            if (isset($reason->data['source'])) {
+                self::assertSame('composer.json', $reason->data['source']);
+            }
+        }
     }
 
     /** Covered and Narrowed are told apart by the uncovered list, Unknown by the manifest. */

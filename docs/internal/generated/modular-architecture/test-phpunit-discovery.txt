@@ -1971,6 +1971,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsWrongTypeCacheEnabled
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsWrongTypeIncludeGenerated
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsWrongTypeParallelWorkers
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itReportsTheChosenSourceNameForMalformedPhysicalYaml
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itShowsAllowedKeysInSubKeyError
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itShowsNoSuggestionForDistantKey
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itStillAcceptsTheWellShapedFormOfEveryShapedRoot
@@ -9585,8 +9586,13 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ManifestScopeRefusalTest::itPublishesTheMeasuredVerdictOrRefusesUnusableDefaults"invalid authored root judges"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ManifestScopeRefusalTest::itPublishesTheMeasuredVerdictOrRefusesUnusableDefaults"invalid authored subset withholds"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ManifestScopeRefusalTest::itPublishesTheMeasuredVerdictOrRefusesUnusableDefaults"invalid defaults refuse"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ManifestScopeRefusalTest::itPublishesTheMeasuredVerdictOrRefusesUnusableDefaults"no declared code withholds a subset"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ManifestScopeRefusalTest::itPublishesTheMeasuredVerdictOrRefusesUnusableDefaults"partial inferred root withholds"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ManifestScopeRefusalTest::itPublishesTheMeasuredVerdictOrRefusesUnusableDefaults"same partial authored root judges"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\RulesSourcePathTest::itNamesTheAuthoredSourceWithoutLeakingAnAutoDiscoveredRoot"auto-discovered computed metric"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\RulesSourcePathTest::itNamesTheAuthoredSourceWithoutLeakingAnAutoDiscoveredRoot"auto-discovered malformed YAML"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\RulesSourcePathTest::itNamesTheAuthoredSourceWithoutLeakingAnAutoDiscoveredRoot"explicit external computed metric"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\RulesSourcePathTest::itNamesTheAuthoredSourceWithoutLeakingAnAutoDiscoveredRoot"explicit external malformed YAML"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationDiagnosticsChannelTest::itPublishesTheWarningWithBothLayersInTheJsonReport
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationDiagnosticsChannelTest::itWritesAnIgnoredNearConfigFilenameWarningToTheErrorStream
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationDiagnosticsChannelTest::itWritesTheWarningToStderrFromEveryCommandThatReadsTheDocument"baseline:cleanup"

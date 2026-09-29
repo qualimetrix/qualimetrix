@@ -45,7 +45,10 @@ pruned targets, reasons, namespace usability and captured path aliases through
 static `ProjectScopeCoverage::narrow()` with `measurement->narrowTo($paths)`
 and `withProjectScope()`; narrowing retains the same universe and performs no IO.
 Paths and the coverage boolean are derived from that measurement; a different
-uncaptured project root is refused as a programmer error. See ADR 0089.
+uncaptured project root is refused as a programmer error.
+`ProjectScopeCoverage::reachableTargets()` is removed from the public measurement
+service. Resolve run inputs through `RunConfigurationResolverInterface`;
+path acquisition now belongs to Run's private `ProjectScopePaths`. See ADR 0089.
 
 **HTML debt calculation is one complete operation.** Replace the consecutive
 `HtmlDebtCalculator::computeDebt()` and `aggregateBottomUp()` calls with

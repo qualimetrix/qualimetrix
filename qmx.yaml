@@ -814,6 +814,8 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Configuration\PathsNormalizer'
         - 'Qualimetrix\Analysis\Run\Configuration\PathsSection'
         - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage'
+        - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeDefaults'
+        - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopePaths'
         - 'Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput'
@@ -1071,6 +1073,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\SizeConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory'
         - 'Qualimetrix\Infrastructure\DependencyInjection\ProjectManifest\ProjectManifestConfigurator'
+        - 'Qualimetrix\Infrastructure\DependencyInjection\Registration\EvidenceRegistration'
     - name: infrastructure-git
       patterns:
         - 'Qualimetrix\Infrastructure\Git\ChangeStatus'
@@ -1858,8 +1861,11 @@ rules:
       # its stable owner readership is intentional, with no new concrete types.
       - exact: 'Qualimetrix\Analysis\Configuration\Contract\Document'
       # Shared manifest ports and immutable facts form a stable concrete hub;
-      # exact Contract distance is 0.600000 (A=0.333333, I=0.066667).
+      # exact Contract distance is 0.604167 (A=0.333333, I=0.062500).
       - exact: 'Qualimetrix\Analysis\ProjectManifest\Contract'
+      # The parent contains the same eight Contract declarations and no own
+      # implementation; its aggregate distance is also 0.604167.
+      - exact: 'Qualimetrix\Analysis\ProjectManifest'
       # Shared run policies and scope records deliberately have many consumers;
       # exact Contract configuration distance is 0.684615 (A=0.20, I=0.115385).
       - exact: 'Qualimetrix\Analysis\Run\Contract\Configuration'
@@ -1890,6 +1896,16 @@ rules:
         # and is read back only by the console and the container, and a
         # namespace channel is not addressable by `@qmx-threshold`.
         - exact: 'Qualimetrix\Analysis\Finding\SuppressionBinding'
+        # Ca=3 / Ce=32 (I=0.914286). Scope checking and two composition
+        # adapters read this internal group of four run configuration operations;
+        # one additional incoming edge alone would put I below 0.9.
+        - exact: 'Qualimetrix\Analysis\Run\Configuration'
+        # Ca=2 / Ce=20 (I=0.909091). This discovery audit reads the run and
+        # finding vocabularies; two orchestration readers do not make it a hub.
+        - exact: 'Qualimetrix\Analysis\Run\ExcludeBinding'
+        # Ca=2 / Ce=171 (I=0.988439). Composition adapters name their exact
+        # services; moving one incoming edge cannot reduce that responsibility.
+        - exact: 'Qualimetrix\Infrastructure\DependencyInjection\Configurator'
     suppress_paths:
       # Note: visitors and DI configurators are NOT listed here. They are indeed
       # inherently unstable, but `min_afferent: 2` below already filters them out

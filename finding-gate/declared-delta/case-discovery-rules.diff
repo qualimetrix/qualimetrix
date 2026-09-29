@@ -1,0 +1,4 @@
+--- candidate
++++ reference (mapped)
+@@ -245,1 +245,0 @@
+-Only selected by configuration: discovery.unmatched-exclude

@@ -1,1 +1,141 @@
 surface	file	reason
+case:annotations|check:output:file	declared-delta/case-annotations-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:annotations|format:json	declared-delta/case-annotations-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:annotations|format:metrics	declared-delta/case-annotations-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:annotations|format:suppressed	declared-delta/case-annotations-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:applied-threshold|check:output:file	declared-delta/case-applied-threshold-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:applied-threshold|format:json	declared-delta/case-applied-threshold-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:applied-threshold|format:metrics	declared-delta/case-applied-threshold-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:applied-threshold|format:suppressed	declared-delta/case-applied-threshold-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:baseline-cycle|check:baseline	declared-delta/case-baseline-cycle-check-baseline.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:baseline-cycle|check:baseline-source	declared-delta/case-baseline-cycle-check-baseline-source.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:baseline-cycle|check:output:file	declared-delta/case-baseline-cycle-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:baseline-cycle|format:json	declared-delta/case-baseline-cycle-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:baseline-cycle|format:metrics	declared-delta/case-baseline-cycle-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:baseline-cycle|format:suppressed	declared-delta/case-baseline-cycle-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:baseline-cycle|rules	declared-delta/case-baseline-cycle-rules.diff	Rules reads the complete configuration document and publishes its configured selection, computed entries, or exact refusal.
+case:complexity|check:output:file	declared-delta/case-complexity-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:complexity|format:json	declared-delta/case-complexity-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:complexity|format:metrics	declared-delta/case-complexity-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:complexity|format:suppressed	declared-delta/case-complexity-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:computed-cross-level|stderr:rules	declared-delta/case-computed-cross-level-stderr-rules.diff	Rules reads the complete configuration document and publishes its exact refusal source.
+case:config-precedence|check:output:file	declared-delta/case-config-precedence-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:config-precedence|format:json	declared-delta/case-config-precedence-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:config-precedence|format:metrics	declared-delta/case-config-precedence-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:config-precedence|format:suppressed	declared-delta/case-config-precedence-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:config-precedence|rules	declared-delta/case-config-precedence-rules.diff	Rules reads the complete configuration document and publishes its configured selection, computed entries, or exact refusal.
+case:coupling|check:output:file	declared-delta/case-coupling-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:coupling|format:json	declared-delta/case-coupling-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:coupling|format:metrics	declared-delta/case-coupling-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:coupling|format:suppressed	declared-delta/case-coupling-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:cycle|check:output:file	declared-delta/case-cycle-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:cycle|format:json	declared-delta/case-cycle-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:cycle|format:metrics	declared-delta/case-cycle-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:cycle|format:suppressed	declared-delta/case-cycle-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:design|check:output:file	declared-delta/case-design-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:design|format:json	declared-delta/case-design-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:design|format:metrics	declared-delta/case-design-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:design|format:suppressed	declared-delta/case-design-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:directive-placement|check:output:file	declared-delta/case-directive-placement-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:directive-placement|format:json	declared-delta/case-directive-placement-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:directive-placement|format:metrics	declared-delta/case-directive-placement-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:directive-placement|format:suppressed	declared-delta/case-directive-placement-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:directive-placement|rules	declared-delta/case-directive-placement-rules.diff	Rules reads the complete configuration document and publishes its configured selection, computed entries, or exact refusal.
+case:disabled-rule-duplication|check:output:file	declared-delta/case-disabled-rule-duplication-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:disabled-rule-duplication|format:json	declared-delta/case-disabled-rule-duplication-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:disabled-rule-duplication|format:metrics	declared-delta/case-disabled-rule-duplication-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:disabled-rule-duplication|format:suppressed	declared-delta/case-disabled-rule-duplication-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:disabled-rule|check:output:file	declared-delta/case-disabled-rule-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:disabled-rule|format:json	declared-delta/case-disabled-rule-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:disabled-rule|format:metrics	declared-delta/case-disabled-rule-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:disabled-rule|format:suppressed	declared-delta/case-disabled-rule-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:discovery|check:output:file	declared-delta/case-discovery-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:discovery|format:json	declared-delta/case-discovery-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:discovery|format:metrics	declared-delta/case-discovery-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:discovery|format:suppressed	declared-delta/case-discovery-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:discovery|rules	declared-delta/case-discovery-rules.diff	Rules reads the complete configuration document and publishes its configured selection, computed entries, or exact refusal.
+case:duplicate-declaration|check:output:file	declared-delta/case-duplicate-declaration-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:duplicate-declaration|format:json	declared-delta/case-duplicate-declaration-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:duplicate-declaration|format:metrics	declared-delta/case-duplicate-declaration-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:duplicate-declaration|format:suppressed	declared-delta/case-duplicate-declaration-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:duplication-size|check:output:file	declared-delta/case-duplication-size-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:duplication-size|format:json	declared-delta/case-duplication-size-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:duplication-size|format:metrics	declared-delta/case-duplication-size-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:duplication-size|format:suppressed	declared-delta/case-duplication-size-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:duplication-size|rules	declared-delta/case-duplication-size-rules.diff	Rules reads the complete configuration document and publishes its configured selection, computed entries, or exact refusal.
+case:duplication|check:output:file	declared-delta/case-duplication-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:duplication|format:json	declared-delta/case-duplication-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:duplication|format:metrics	declared-delta/case-duplication-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:duplication|format:suppressed	declared-delta/case-duplication-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:excluded-path|check:output:file	declared-delta/case-excluded-path-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:excluded-path|format:json	declared-delta/case-excluded-path-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:excluded-path|format:metrics	declared-delta/case-excluded-path-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:excluded-path|format:suppressed	declared-delta/case-excluded-path-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:external-parent|check:output:file	declared-delta/case-external-parent-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:external-parent|format:json	declared-delta/case-external-parent-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:external-parent|format:metrics	declared-delta/case-external-parent-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:external-parent|format:suppressed	declared-delta/case-external-parent-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:health|check:output:file	declared-delta/case-health-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:health|format:json	declared-delta/case-health-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:health|format:metrics	declared-delta/case-health-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:health|format:suppressed	declared-delta/case-health-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:health|rules	declared-delta/case-health-rules.diff	Rules reads the complete configuration document and publishes its configured selection, computed entries, or exact refusal.
+case:incomplete-directory-symlink|check:output:file	declared-delta/case-incomplete-directory-symlink-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:incomplete-directory-symlink|format:json	declared-delta/case-incomplete-directory-symlink-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:incomplete-directory-symlink|format:metrics	declared-delta/case-incomplete-directory-symlink-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:incomplete-directory-symlink|format:suppressed	declared-delta/case-incomplete-directory-symlink-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:incomplete-directory-symlink|rules	declared-delta/case-incomplete-directory-symlink-rules.diff	Rules reads the complete configuration document and publishes its configured selection, computed entries, or exact refusal.
+case:layered-threshold|check:output:file	declared-delta/case-layered-threshold-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:layered-threshold|format:json	declared-delta/case-layered-threshold-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:layered-threshold|format:metrics	declared-delta/case-layered-threshold-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:layered-threshold|format:suppressed	declared-delta/case-layered-threshold-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:layers|check:output:file	declared-delta/case-layers-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:layers|format:json	declared-delta/case-layers-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:layers|format:metrics	declared-delta/case-layers-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:layers|format:suppressed	declared-delta/case-layers-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:only-rules|check:output:file	declared-delta/case-only-rules-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:only-rules|format:json	declared-delta/case-only-rules-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:only-rules|format:metrics	declared-delta/case-only-rules-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:only-rules|format:suppressed	declared-delta/case-only-rules-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:only-rules|rules	declared-delta/case-only-rules-rules.diff	Rules reads the complete configuration document and publishes its configured selection, computed entries, or exact refusal.
+case:parallel-files|check:output:file	declared-delta/case-parallel-files-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:parallel-files|check:parallel	declared-delta/case-parallel-files-check-parallel.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:parallel-files|format:json	declared-delta/case-parallel-files-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:parallel-files|format:metrics	declared-delta/case-parallel-files-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:parallel-files|format:suppressed	declared-delta/case-parallel-files-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:parallel-files|rules	declared-delta/case-parallel-files-rules.diff	Rules reads the complete configuration document and publishes its configured selection, computed entries, or exact refusal.
+case:rule-exclusion-ledger|check:output:file	declared-delta/case-rule-exclusion-ledger-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:rule-exclusion-ledger|format:json	declared-delta/case-rule-exclusion-ledger-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:rule-exclusion-ledger|format:metrics	declared-delta/case-rule-exclusion-ledger-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:rule-exclusion-ledger|format:suppressed	declared-delta/case-rule-exclusion-ledger-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:scoped-layers|check:baseline	declared-delta/case-scoped-layers-check-baseline.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:scoped-layers|check:output:file	declared-delta/case-scoped-layers-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:scoped-layers|format:json	declared-delta/case-scoped-layers-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:scoped-layers|format:metrics	declared-delta/case-scoped-layers-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:scoped-layers|format:suppressed	declared-delta/case-scoped-layers-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:scoped-layers|rules	declared-delta/case-scoped-layers-rules.diff	Rules reads the complete configuration document and publishes its configured selection, computed entries, or exact refusal.
+case:security|check:output:file	declared-delta/case-security-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:security|format:json	declared-delta/case-security-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:security|format:metrics	declared-delta/case-security-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:security|format:suppressed	declared-delta/case-security-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:selector-after-split|rules	declared-delta/case-selector-after-split-rules.diff	Rules reads the complete configuration document and publishes its configured selection, computed entries, or exact refusal.
+case:smells|check:output:file	declared-delta/case-smells-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:smells|format:json	declared-delta/case-smells-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:smells|format:metrics	declared-delta/case-smells-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:smells|format:suppressed	declared-delta/case-smells-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:stderr-warning|check:output:file	declared-delta/case-stderr-warning-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:stderr-warning|format:json	declared-delta/case-stderr-warning-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:stderr-warning|format:metrics	declared-delta/case-stderr-warning-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:stderr-warning|format:suppressed	declared-delta/case-stderr-warning-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:stderr-warning|rules	declared-delta/case-stderr-warning-rules.diff	Rules reads the complete configuration document and publishes its configured selection, computed entries, or exact refusal.
+case:suppression|check:output:file	declared-delta/case-suppression-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:suppression|format:json	declared-delta/case-suppression-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:suppression|format:metrics	declared-delta/case-suppression-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:suppression|format:suppressed	declared-delta/case-suppression-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:suppression|rules	declared-delta/case-suppression-rules.diff	Rules reads the complete configuration document and publishes its configured selection, computed entries, or exact refusal.
+case:threshold-raising|check:output:file	declared-delta/case-threshold-raising-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:threshold-raising|format:json	declared-delta/case-threshold-raising-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:threshold-raising|format:metrics	declared-delta/case-threshold-raising-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:threshold-raising|format:suppressed	declared-delta/case-threshold-raising-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:threshold-raising|rules	declared-delta/case-threshold-raising-rules.diff	Rules reads the complete configuration document and publishes its configured selection, computed entries, or exact refusal.
+tree|rules	declared-delta/tree-rules.diff	Rules reads the complete configuration document and publishes its configured selection, computed entries, or exact refusal.

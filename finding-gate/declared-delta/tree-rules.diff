@@ -1,0 +1,5 @@
+--- candidate
++++ reference (mapped)
+@@ -246,2 +246,0 @@
+-Computed metrics: health.complexity, health.cohesion, health.coupling, health.typing, health.maintainability, health.overall
+-

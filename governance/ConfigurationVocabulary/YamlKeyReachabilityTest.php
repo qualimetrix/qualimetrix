@@ -693,7 +693,7 @@ final class YamlKeyReachabilityTest extends TestCase
         $path = $this->tempDir . '/config_' . bin2hex(random_bytes(6)) . '.yaml';
         file_put_contents($path, $yaml);
 
-        $loaded = $this->loader->read($path);
+        $loaded = $this->loader->read($path, $path);
 
         return $loaded->deferredRefusal === null ? $loaded->values : throw $loaded->deferredRefusal;
     }

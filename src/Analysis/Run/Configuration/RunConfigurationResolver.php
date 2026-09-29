@@ -23,6 +23,14 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
 
+/**
+ * @qmx-threshold coupling.cbo warning=21 -- Raw CBO 20 (Ce=19, Ca=1). Initial
+ * path pruning belongs to ProjectScopePaths; this resolver still needs
+ * ProjectScopeCoverage for the measured verdict. Extracting the shared
+ * operation adds one named dependency without adding a policy or read.
+ * The inclusive warning bound reports the next distinct coupling; the
+ * configured error bound remains unchanged.
+ */
 final class RunConfigurationResolver implements RunConfigurationResolverInterface
 {
     public function __construct(
@@ -177,7 +185,7 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
     /**
      * The targets composer discovery contributed, taken under the run's
      * policy and kept to the ones a walk of the project reaches, through the
-     * same two questions {@see ProjectScopeCoverage} asks of the
+     * same two questions {@see ProjectScopePaths} asks of the
      * denominator. They are only the default — a `paths` any source wrote
      * replaces them, flag or no flag, and is never pruned here.
      *
@@ -185,7 +193,7 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
      */
     private function discoveredPaths(ConfigurationDocument $document, AutoloadDevPolicy $autoloadDev): array
     {
-        return ProjectScopeCoverage::reachableTargets(
+        return ProjectScopePaths::reachableTargets(
             $document->workingDirectory(),
             $autoloadDev->projectTargets(
                 $document->discoveredProductionAutoloadTargets(),

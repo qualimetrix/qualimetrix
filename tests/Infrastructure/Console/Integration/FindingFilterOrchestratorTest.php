@@ -96,6 +96,7 @@ final class FindingFilterOrchestratorTest extends TestCase
             self::assertSame('manifest-issue', $reasons[0]['kind']);
             self::assertSame('invalid-root', $reasons[0]['issueKind']);
             self::assertTrue($reasons[0]['auxiliary']);
+            self::assertSame(realpath($root . '/dependency/composer.json'), $reasons[0]['source']);
             self::assertSame('omitted-composer-root', $reasons[1]['kind']);
             self::assertSame('unresolvable', $reasons[1]['cause']);
             self::assertSame($report->reasons, $report->withReasons($report->reasons)->reasons);

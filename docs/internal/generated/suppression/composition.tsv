@@ -45,7 +45,6 @@ rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/Severity.php	Qualimetrix\Analysis\Finding\Contract\Severity	warning	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path\AbsolutePath	error	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Core/Path/RelativePath.php	Qualimetrix\Core\Path\RelativePath	error	1
-rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Core/Symbol/MetricSubject.php	Qualimetrix\Core\Symbol\MetricSubject	warning	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Core/Symbol/SymbolLevel.php	Qualimetrix\Core\Symbol\SymbolLevel	warning	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Core/Symbol/SymbolPath.php	Qualimetrix\Core\Symbol\SymbolPath	error	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Core/Symbol/SymbolType.php	Qualimetrix\Core\Symbol\SymbolType	warning	1
@@ -65,6 +64,7 @@ rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Find
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Finding/Contract/Rule/Override/IndependentAxisValidator.php	Qualimetrix\Analysis\Finding\Contract\Rule\Override	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Policy/Architecture/Configuration/Allow/AllowAliasExpander.php	Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Policy/Architecture/Layer/AnalysedDeclarations.php	Qualimetrix\Analysis\Policy\Architecture\Layer	warning	1
+rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/ProjectManifest/Contract/ComposerAutoloadSection.php	Qualimetrix\Analysis\ProjectManifest	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/ProjectManifest/Contract/ComposerAutoloadSection.php	Qualimetrix\Analysis\ProjectManifest\Contract	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Run/Contract/Configuration/AutoloadDevPolicy.php	Qualimetrix\Analysis\Run\Contract\Configuration	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path	error	1
@@ -74,6 +74,9 @@ rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Symbol/C
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Infrastructure/Serializer/IgbinarySerializer.php	Qualimetrix\Infrastructure\Serializer	error	1
 rule-namespace-suppression	coupling.instability	coupling.instability	src/Analysis/Evidence/Coupling/AbstractnessCollector.php	Qualimetrix\Analysis\Evidence\Coupling	warning	1
 rule-namespace-suppression	coupling.instability	coupling.instability	src/Analysis/Finding/SuppressionBinding/UnboundSuppressionAudit.php	Qualimetrix\Analysis\Finding\SuppressionBinding	warning	1
+rule-namespace-suppression	coupling.instability	coupling.instability	src/Analysis/Run/Configuration/PathsNormalizer.php	Qualimetrix\Analysis\Run\Configuration	warning	1
+rule-namespace-suppression	coupling.instability	coupling.instability	src/Analysis/Run/ExcludeBinding/ExcludeBindingProbe.php	Qualimetrix\Analysis\Run\ExcludeBinding	warning	1
+rule-namespace-suppression	coupling.instability	coupling.instability	src/Infrastructure/DependencyInjection/Configurator/AnalysisConfigurator.php	Qualimetrix\Infrastructure\DependencyInjection\Configurator	warning	1
 rule-namespace-suppression	health.cohesion	health.cohesion	(no file)	Qualimetrix\Analysis\Evidence\Prioritization	warning	1
 rule-namespace-suppression	health.cohesion	health.cohesion	(no file)	Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion	warning	1
 rule-path-suppression	code-smell.constructor-overinjection	code-smell.constructor-overinjection	src/Analysis/Run/Contract/Collection/SuccessfulFileProcessing.php	Qualimetrix\Analysis\Run\Contract\Collection\SuccessfulFileProcessing::__construct	warning	1

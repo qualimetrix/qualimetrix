@@ -29,6 +29,7 @@ Run/
 │                               # CollectionPhaseFold assembles per-file
 │                               # results into the phase output
 ├── Configuration/              # run resolution, PathsSection, PathsNormalizer,
+│                               # ProjectScopePaths, ProjectScopeDefaults,
 │                               # and one project scope measurement
 ├── Discovery/                  # discovery coordination and implementations
 ├── ExcludeBinding/             # what the run's exclude patterns bound to, and
@@ -61,6 +62,21 @@ same `ComposerManifestReaderInterface` snapshot. Run applies its built-in
 `vendor`, `node_modules` and `.git` floor to defaults and the denominator,
 and names removed targets as reasons. Authored directory exclusions remain a
 separate discovery policy.
+
+`ProjectScopePaths` captures initial path pruning, canonicalization,
+denominator and written-path resolutions. `ProjectScopeDefaults` judges
+selected manifest completeness and refuses inferred paths with no usable
+universe. `ProjectScopeCoverage` keeps the initial verdict and source reasons;
+these operations use the same snapshot and preserve their evaluation order.
+Report-facing reasons name the analysed manifest as `composer.json`; auxiliary
+manifest issues retain their full dependency path so that the source remains
+identifiable. Manifest reading and main-versus-auxiliary classification use
+physical paths before those reasons are published.
+This separation adds one named dependency to `RunConfigurationResolver`:
+it asks `ProjectScopePaths` for initial pruning while retaining
+`ProjectScopeCoverage` for the verdict. Its raw class CBO is 20, so a point
+warning boundary of 21 accepts the transferred edge and still reports the
+next distinct coupling; the configured error boundary of 30 is unchanged.
 
 `measure(root, paths, autoloadDev, PathsAuthorship)` captures one immutable
 `Contract\Configuration\ProjectScopeUniverse`: canonical root, initial

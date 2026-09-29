@@ -126,7 +126,7 @@ final class PresetStage implements ConfigurationStageInterface
 
         foreach ($presetNames as $name) {
             $path = $this->resolver->resolve($name, $workingDirectory);
-            $loaded = $this->loader->read($path);
+            $loaded = $this->loader->read($path, $path);
 
             if ($loaded->deferredRefusal !== null) {
                 $deferred[] = $loaded->deferredRefusal;

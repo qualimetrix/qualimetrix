@@ -8,11 +8,9 @@ use Qualimetrix\Analysis\Evidence\Cohesion\Configuration\LcomCollectionConfigura
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationResolverInterface;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
 use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore;
-use Symfony\Component\Config\FileLocator;
+use Qualimetrix\Infrastructure\DependencyInjection\Registration\EvidenceRegistration;
 use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Definition;
-use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 
 /** Registers the exact collector and rule roots owned by Cohesion. */
 final class CohesionConfigurator implements ContainerConfiguratorInterface
@@ -23,14 +21,14 @@ final class CohesionConfigurator implements ContainerConfiguratorInterface
 
     public function configure(ContainerBuilder $container): void
     {
-        $loader = new PhpFileLoader($container, new FileLocator($this->srcDir));
+        $loader = EvidenceRegistration::loader($container, $this->srcDir);
         $loader->registerClasses(
-            (new Definition())->setAutoconfigured(true)->setAutowired(true),
+            EvidenceRegistration::collectors(),
             self::NAMESPACE,
             $this->srcDir . '/Analysis/Evidence/Cohesion/**/*Collector.php',
         );
         $loader->registerClasses(
-            (new Definition())->setAutoconfigured(true)->setAutowired(false)->setLazy(true),
+            EvidenceRegistration::rules(),
             self::NAMESPACE,
             $this->srcDir . '/Analysis/Evidence/Cohesion/**/*Rule.php',
         );

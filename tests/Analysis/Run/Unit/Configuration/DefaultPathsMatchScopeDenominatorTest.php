@@ -13,6 +13,8 @@ use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ComposerDiscoveryStage;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
+use Qualimetrix\Analysis\Run\Configuration\ProjectScopeDefaults;
+use Qualimetrix\Analysis\Run\Configuration\ProjectScopePaths;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState;
@@ -38,6 +40,8 @@ use SplFileInfo;
 #[CoversClass(ComposerDiscoveryStage::class)]
 #[CoversClass(RunConfigurationResolver::class)]
 #[CoversClass(ProjectScopeCoverage::class)]
+#[CoversClass(ProjectScopeDefaults::class)]
+#[CoversClass(ProjectScopePaths::class)]
 #[CoversClass(ComposerManifestReader::class)]
 final class DefaultPathsMatchScopeDenominatorTest extends TestCase
 {

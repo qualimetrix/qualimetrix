@@ -110,6 +110,11 @@ and `qmx.yml`. Both exact names together refuse with exit 3; specify one through
 rather than being loaded. An exact name beside a near name is loaded without
 that warning. Explicit `--config` selects its named file directly.
 An unlistable search directory refuses instead of inferring that no config exists.
+The loader reads the physical file while auto-discovered `qmx.yaml` or
+`qmx.yml` is named by its filename in authored origins, diagnostics and
+refusals. An explicit `--config` keeps the supplied path as its source name;
+presets keep their resolved file path. Directory discovery refusals name `.`
+and near-file diagnostics name the observed directory entry.
 Every document-reading command uses this same stage and judges the complete
 context-free document before consuming its own values. Console's closed
 preflight profile controls CLI ingress and actual consumers, not the schema.

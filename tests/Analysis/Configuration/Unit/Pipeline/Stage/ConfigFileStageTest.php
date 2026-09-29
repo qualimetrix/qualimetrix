@@ -64,7 +64,7 @@ final class ConfigFileStageTest extends TestCase
     {
         touch($this->directory . '/qmx.yaml');
         $this->loader->expects(self::once())->method('read')
-            ->with($this->directory . '/qmx.yaml')
+            ->with($this->directory . '/qmx.yaml', 'qmx.yaml')
             ->willReturn(new LoadedDocument(
                 AuthoredNode::fromPlain(['cache' => ['enabled' => false], 'paths' => ['src']]),
                 ['cache' => ['enabled' => false], 'paths' => ['src']],
@@ -78,7 +78,7 @@ final class ConfigFileStageTest extends TestCase
         self::assertSame(['paths' => ['src'], 'cache.enabled' => false], $layer->values);
         self::assertCount(1, $layer->authored);
         self::assertSame(ConfigurationSource::ConfigFile, $layer->authored[0]->origin->source());
-        self::assertSame($this->directory . '/qmx.yaml', $layer->authored[0]->origin->locator());
+        self::assertSame('qmx.yaml', $layer->authored[0]->origin->locator());
         self::assertSame(['cache' => ['enabled' => false], 'paths' => ['src']], $layer->authored[0]->root->plain());
     }
 
@@ -106,7 +106,7 @@ final class ConfigFileStageTest extends TestCase
         touch($this->directory . '/qmx.yaml');
         touch($this->directory . '/custom.yaml');
         $this->loader->expects(self::once())->method('read')
-            ->with($this->directory . '/custom.yaml')
+            ->with($this->directory . '/custom.yaml', $this->directory . '/custom.yaml')
             ->willReturn(new LoadedDocument(AuthoredNode::fromPlain(['format' => 'json']), ['format' => 'json']));
 
         $layer = (new ConfigFileStage($this->loader))->apply(
@@ -116,6 +116,7 @@ final class ConfigFileStageTest extends TestCase
         self::assertNotNull($layer);
         self::assertSame('custom.yaml', $layer->source);
         self::assertSame(['format' => 'json'], $layer->values);
+        self::assertSame($this->directory . '/custom.yaml', $layer->authored[0]->origin->locator());
     }
 
     #[Test]
@@ -177,7 +178,7 @@ final class ConfigFileStageTest extends TestCase
         self::assertSame([], $layer->values);
         self::assertCount(1, $layer->diagnostics);
         self::assertStringContainsString($name, $layer->diagnostics[0]->message);
-        self::assertSame($this->directory . '/' . $name, $layer->diagnostics[0]->sources[0]->origin->locator());
+        self::assertSame($name, $layer->diagnostics[0]->sources[0]->origin->locator());
     }
 
     #[Test]
@@ -186,7 +187,7 @@ final class ConfigFileStageTest extends TestCase
         touch($this->directory . '/qmx.yaml.bak');
         touch($this->directory . '/qmx.yaml');
         $this->loader->expects(self::once())->method('read')
-            ->with($this->directory . '/qmx.yaml')
+            ->with($this->directory . '/qmx.yaml', 'qmx.yaml')
             ->willReturn(new LoadedDocument(AuthoredNode::fromPlain([]), []));
 
         $layer = (new ConfigFileStage($this->loader))

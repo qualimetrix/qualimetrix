@@ -116,6 +116,8 @@ Infrastructure/
 │   │   └── OutputConfigurator.php
 │   ├── ProjectManifest/
 │   │   └── ProjectManifestConfigurator.php # Shared invocation snapshot and exact public aliases
+│   ├── Registration/
+│   │   └── EvidenceRegistration.php   # Fresh evidence loaders and registration prototypes
 │   └── CompilerPass/
 │       ├── CollectorCompilerPass.php
 │       ├── GlobalCollectorCompilerPass.php
@@ -244,6 +246,10 @@ Creates a unified Symfony DI ContainerBuilder without parameters. Delegates conf
 - `DuplicationConfigurator` — internal Duplication detector/provider wiring and capability-owned rule registration; the detector is autoconfigured as a Run-owned FileSet participant
 - `AnalysisConfigurator` — Run pipeline, discovery, collection, and strategies
 - `OutputConfigurator` — formatters, GraphProjection, and exact composition for Reporting finding projection, Inline annotation suppression, and the Git query adapter
+
+`Registration/EvidenceRegistration` supplies fresh loader and collector/rule
+prototypes to Cohesion, Complexity, Coupling, Maintainability and Size. Each
+configurator retains its literal exact resource roots and special bindings.
 
 **Method:**
 - `create(): ContainerBuilder` — runs all configurators and returns a compiled container

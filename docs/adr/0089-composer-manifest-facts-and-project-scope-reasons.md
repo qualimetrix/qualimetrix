@@ -83,6 +83,15 @@ performs no IO and cannot reopen a closed answer. `withProjectScope()`
 transfers that measurement with every other run field intact. A different
 uncaptured project root is a programmer error.
 
+Initial filesystem path acquisition and default eligibility have separate
+responsibilities from the verdict. Private `ProjectScopePaths` owns pruning,
+denominator resolution and captured aliases; `ProjectScopeDefaults` owns
+selected-section completeness and refusal of unusable inferred paths.
+`ProjectScopeCoverage` retains the manifest read and measurement operation.
+The former public `reachableTargets()` utility moves to the private path
+subject; cross-owner adapters resolve inputs through the Run resolver contract.
+No alias or additional manifest read is retained.
+
 | Selected manifest and paths                                                                      | State and whole-project judgement             |
 | ------------------------------------------------------------------------------------------------ | --------------------------------------------- |
 | Intact selected autoload, every counted target reached                                           | `covered`, judge                              |
@@ -203,6 +212,8 @@ targets. Read initial facts through `measurement->universe`; supply
 `coveringProjectScope()` and static `ProjectScopeCoverage::narrow()` with
 `measurement->narrowTo()` and `withProjectScope()`. Move measurement/state
 imports from Run's internal Configuration namespace to its Contract namespace.
+Replace `ProjectScopeCoverage::reachableTargets()` calls in adapters with the
+Run resolver contract; Run's own resolver uses private `ProjectScopePaths`.
 Consumers of `projectScope` accept `unmeasured` and retain `reasons`.
 Replace static `HtmlProjectMetadata::of()` with an instance constructed from
 the reader and pass it as `HtmlTreeBuilder`'s third argument.

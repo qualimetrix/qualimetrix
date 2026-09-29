@@ -14,6 +14,13 @@ logger holder, lazy Options, factories and tagged collections bound explicitly.
 Run preparation and observed scope reasons are services; their immutable result
 records are values constructed by the operation, never container services.
 
+`Registration/EvidenceRegistration` creates a fresh loader and fresh collector
+and lazy rule prototypes for Cohesion, Complexity, Coupling, Maintainability
+and Size. Their configurators retain the literal `registerClasses()` calls,
+namespace and exact owned resource roots. LCOM tagged collections and Coupling
+aliases remain explicit in their respective configurators. Prototypes and
+loaders are not cached or registered as services.
+
 ## Invocation source bindings
 
 `ComposerManifestReaderInterface` and `ManifestSnapshotControlInterface` alias

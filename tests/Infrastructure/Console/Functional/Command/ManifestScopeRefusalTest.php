@@ -24,6 +24,7 @@ final class ManifestScopeRefusalTest extends TestCase
         yield 'same partial authored root judges' => ['{"autoload":{"classmap":["",false]}}', ['.'], 0, 'unknown'];
         yield 'invalid authored subset withholds' => ['{invalid', ['src'], 0, 'unmeasured'];
         yield 'invalid authored root judges' => ['{invalid', ['.'], 0, 'unknown'];
+        yield 'no declared code withholds a subset' => ['{"name":"acme/demo"}', ['src'], 0, 'unmeasured'];
     }
 
     /** @param list<string> $paths */
@@ -48,6 +49,11 @@ final class ManifestScopeRefusalTest extends TestCase
             } else {
                 self::assertSame($state, $report['projectScope']['state']);
                 self::assertNotEmpty($report['projectScope']['reasons']);
+                foreach ($report['projectScope']['reasons'] as $reason) {
+                    if (isset($reason['source']) && ($reason['auxiliary'] ?? null) !== true) {
+                        self::assertSame('composer.json', $reason['source']);
+                    }
+                }
                 self::assertCount($state === 'unmeasured' ? 8 : 0, $report['projectScope']['unjudgedChannels']);
             }
         } finally {
