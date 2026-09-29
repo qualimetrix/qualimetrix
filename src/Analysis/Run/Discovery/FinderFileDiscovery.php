@@ -128,7 +128,15 @@ final class FinderFileDiscovery implements FileDiscoveryInterface, SkipReporting
                 continue;
             }
 
-            if ($this->acceptRegularPhpFile(new SplFileInfo($path->value()), 'Explicit path is not a regular file')) {
+            $entry = new SplFileInfo($path->value());
+            if ($entry->isFile() && $entry->getExtension() !== 'php') {
+                throw ConfigurationRefusal::aboutResolvedInput(
+                    \sprintf('"%s" is not a PHP file, so it cannot be analysed as an explicit path.', $path->value()),
+                    ConfigSchema::PATHS,
+                );
+            }
+
+            if ($this->acceptRegularPhpFile($entry, 'Explicit path is not a regular file')) {
                 $files[] = $path;
             }
         }
