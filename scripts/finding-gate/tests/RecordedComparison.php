@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace QmxFindingGate\Tests;
 
-use QmxFindingGate\{DeclaredFields, Fs, GateReport, Options, ReportRecords, SyntheticTree, ValueCheck};
+use QmxFindingGate\{Fs, GateReport, Options, ReportRecords, SyntheticTree, ValueCheck};
 
 /**
  * Recorded publications exercise the comparison stages without capture processes or Git.
@@ -34,19 +34,22 @@ final class RecordedComparison
     }
 
     /** @param Specification $tree
+     * @param (callable(\QmxFindingGate\CaptureResult):\QmxFindingGate\CaptureResult)|null $secondCandidate
+     *
      * @return array{GateReport,list<string>}
      */
-    public static function derive(array $tree, string $root, ?callable $referencePrepare = null): array
+    public static function derive(array $tree, string $root, ?callable $referencePrepare = null, ?callable $secondCandidate = null): array
     {
-        return self::compare($tree, null, true, $root, $referencePrepare);
+        return self::compare($tree, null, true, $root, $referencePrepare, null, $secondCandidate);
     }
 
     /** @param Specification $tree
      * @param (callable(string):void)|null $prepare
+     * @param (callable(\QmxFindingGate\CaptureResult):\QmxFindingGate\CaptureResult)|null $secondCandidate
      *
      * @return array{GateReport,list<string>}
      */
-    private static function compare(array $tree, ?callable $prepare, bool $derive, ?string $root, ?callable $referencePrepare = null, ?string $stageOnly = null): array
+    private static function compare(array $tree, ?callable $prepare, bool $derive, ?string $root, ?callable $referencePrepare = null, ?string $stageOnly = null, ?callable $secondCandidate = null): array
     {
         $owned = $root === null;
         $root ??= SyntheticTree::fixture($tree);
@@ -102,6 +105,26 @@ final class RecordedComparison
                 foreach ($run->corpus->cases as $case) {
                     $ranking->checkCase($side, $case, \QmxFindingGate\CaseOutcome::ANALYSIS, $capture->artifacts);
                     $records->checkCase($side, $case, \QmxFindingGate\CaseOutcome::ANALYSIS, $capture->artifacts);
+                    try {
+                        $complete = $records->rawAuthority($case->id, 'format:json', $side);
+                    } catch (\QmxFindingGate\GateError) {
+                        $complete = null;
+                    }
+                    \QmxFindingGate\CaseOutcomeCheck::create($run)->findingsOf($side, $case, $capture->artifacts, $complete);
+                }
+            }
+            $tuple = new \QmxFindingGate\TupleCheck($run->options, $report);
+            $tuple->checkTuple();
+            $tupleShape = \QmxFindingGate\EquivalenceTuple::load($root);
+            foreach ($captures as $side => $capture) {
+                foreach ($run->corpus->cases as $case) {
+                    $source = $capture->rankings['case:' . $case->id . '|format:json'] ?? null;
+                    if ($source === null) {
+                        continue;
+                    }
+                    $text = $source['physical']['stdout'] ?? $source['ranked']['stdout'];
+                    $document = ReportRecords::decode($text);
+                    $tuple->checkTupleAgainstFindings($side, $case, $tupleShape, $document['violations']);
                 }
             }
             if ($stageOnly !== null) {
@@ -115,15 +138,7 @@ final class RecordedComparison
                 ));
                 return [$report, []];
             }
-            foreach (DeclaredFields::REPORTS as $fieldReport) {
-                foreach ($declarations->fields->views($fieldReport) as $view) {
-                    foreach ($run->corpus->cases as $case) {
-                        foreach (['candidate', 'reference'] as $side) {
-                            $declarations->fields->requireMeasurements($fieldReport, $case->id, $view, $side);
-                        }
-                    }
-                }
-            }
+            $declarations->fields->registerRequired($run->corpus, $run->capturePlan);
             $stages = [];
             foreach (\QmxFindingGate\Wiring::gate()->list('surfaceStages') as $name) {
                 $class = 'QmxFindingGate\\' . $name;
@@ -149,6 +164,12 @@ final class RecordedComparison
             $records->checkRun($a, $b);
             ValueCheck::create($run)->checkRun($a, $b);
             \QmxFindingGate\FieldValuesCheck::create($run)->checkRun($a, $b);
+            \QmxFindingGate\CaptureCheck::create($run)->checkRun($a, $b);
+            $normalizationCheck = \QmxFindingGate\NormalizationCheck::create($run);
+            $normalizationCheck->checkRun($a, $b);
+            $normalizationCheck->checkDeterminism($a, $a);
+            $ranking->checkRepeatedCaptures($captures['candidate'], $secondCandidate === null ? $captures['candidate'] : $secondCandidate($captures['candidate']));
+            $comparison->checkPathLeaks($a, $b, $reference);
             (new \QmxFindingGate\RenameMapCheck($report, $run->corpus, $maps, $run->split))->checkStaleMaps();
             if (!$derive) {
                 (new \QmxFindingGate\StaleDeclarationCheck($report, $declarations))->checkStaleDeclarations();

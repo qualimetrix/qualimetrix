@@ -90,18 +90,23 @@ final class FingerprintCheck
         ];
 
         foreach ($comparisons as $label => [$recomputed, $published]) {
+            $surface = $label === 'sarif partialFingerprints' ? 'format:sarif' : 'format:gitlab';
+            $key = Surfaces::key($scope, $surface);
             // A surface that failed to decode already reported RUN_FAILED
             // below and has nothing left to compare against — reporting a
             // mismatch on top would blame the finding identity for what is
             // really a dead artifact.
             if ($published === null) {
+                $this->report->sourceEvidence($side, $key, 'fingerprint', false);
                 continue;
             }
 
             if ($recomputed === $published) {
+                $this->report->sourceEvidence($side, $key, 'fingerprint', true);
                 continue;
             }
 
+            $this->report->sourceEvidence($side, $key, 'fingerprint', false);
             $this->report->fail(
                 FailureClass::FINGERPRINT_MISMATCH,
                 \sprintf('%s / %s / %s', $side, $case->id, $label),
@@ -141,12 +146,14 @@ final class FingerprintCheck
         $raw = $artifacts[Surfaces::key($scope, $surface)] ?? null;
 
         if ($raw === null) {
+            $this->report->sourceEvidence($side, Surfaces::key($scope, $surface), 'fingerprint', false);
             return null;
         }
 
         try {
             return $decode($raw);
         } catch (JsonException $exception) {
+            $this->report->sourceEvidence($side, Surfaces::key($scope, $surface), 'fingerprint', false);
             $exit = $artifacts[Surfaces::key($scope, 'exit:' . $surface)] ?? null;
 
             $this->report->fail(
@@ -159,6 +166,8 @@ final class FingerprintCheck
                     $exception->getMessage(),
                     $exit ?? 'nothing',
                 ),
+                [],
+                ['side' => $side, 'key' => Surfaces::key($scope, $surface), 'role' => 'fingerprint'],
             );
 
             return null;
@@ -196,6 +205,7 @@ final class FingerprintCheck
         $this->substitutedFingerprints += $substitution->replaced;
 
         if (!$substitution->isComplete()) {
+            $this->report->sourceEvidence($side, $key, 'fingerprint', false);
             $this->report->fail(
                 FailureClass::FINGERPRINT_OPAQUE,
                 $side . ' / ' . $key,

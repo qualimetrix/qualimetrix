@@ -39,6 +39,13 @@ final class FieldValuesCheck implements RunCheck, Derivation
         $this->deriving = true;
     }
 
+    public function trialCopy(RunContext $trial): self
+    {
+        $copy = self::create($trial);
+        $copy->deriving = $this->deriving;
+        return $copy;
+    }
+
     public function checkRun(array $candidate, array $reference): void
     {
         $fields = $this->run->declarations->fields;
@@ -73,11 +80,13 @@ final class FieldValuesCheck implements RunCheck, Derivation
         foreach (DeclaredFields::REPORTS as $report) {
             foreach ($fields->measurements($report) as $publication) {
                 $view = $publication['view'];
+                $valid = true;
                 foreach ($fields->changes($report, $view) as $field => $change) {
                     $present = ($change === DeclaredFields::ADDED) === ($publication['side'] === 'candidate');
                     foreach ($publication['records'] as $record) {
                         $hasField = \array_key_exists($field, $record['fields']);
                         if ($hasField !== $present) {
+                            $valid = false;
                             $problems[] = $report . '/' . $view . '/' . $publication['case'] . '/' . $publication['side'] . ' publishes the wrong presence of ' . $field;
                             continue;
                         }
@@ -90,6 +99,7 @@ final class FieldValuesCheck implements RunCheck, Derivation
                         }
                     }
                 }
+                $this->run->report->sourceEvidence($publication['side'], 'case:' . $publication['case'] . '|' . $view, 'schema', $valid);
             }
         }
         $this->measured = true;

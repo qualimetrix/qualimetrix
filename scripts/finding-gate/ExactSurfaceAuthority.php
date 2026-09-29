@@ -18,6 +18,74 @@ final class ExactSurfaceAuthority
         ];
     }
 
+    /** @return list<array{side:string,key:string,role:string}> */
+    public static function requiredEvidence(string $key, RunContext $run): array
+    {
+        $surface = Surfaces::surfaceClass($key);
+        $case = str_starts_with($key, 'case:') ? substr($key, 5, (int) strpos($key, '|') - 5) : null;
+        $sources = [$key => ['capture', 'surface', 'normalization', 'path']];
+        if ($case !== null && ReportViews::recordBearingSurface($surface)) {
+            $source = self::source($surface, $case, $run);
+            if ($source !== null) {
+                $sources[$source] = array_values(array_unique([...($sources[$source] ?? []), 'capture', 'surface', 'normalization', 'path', 'records']));
+                if (!\in_array($surface, ['format:metrics', 'format:suppressed', 'directives'], true)) {
+                    $sources[$source][] = 'ranking';
+                }
+            }
+            $sources['case:' . $case . '|format:json'][] = 'outcome';
+            if ($surface !== 'baseline-file' && !\in_array($surface, ['baseline:cleanup:file', 'baseline:rename-channels:file', 'baseline:update:file'], true)) {
+                $sources[$key] = array_values(array_unique([...($sources[$key] ?? []), 'records']));
+            }
+            if (\in_array($surface, ['format:sarif', 'format:gitlab'], true)) {
+                $sources[$key][] = 'fingerprint';
+            }
+            $schemaReport = match ($surface) {
+                'format:metrics' => 'metrics',
+                'format:suppressed' => 'suppressed',
+                'directives' => 'directives',
+                default => 'json',
+            };
+            $schemaView = \in_array($surface, ['check:output:file', 'check:parallel', 'check:baseline', 'check:baseline-source'], true) ? $surface : ReportViews::main($schemaReport);
+            if ($run->declarations->fields->changes($schemaReport, $schemaView) !== []) {
+                $sources['case:' . $case . '|' . $schemaView][] = 'schema';
+            }
+            if ($schemaReport === 'json' && $run->declarations->fields->changes('json', 'ranking') !== []) {
+                $sources['case:' . $case . '|ranking'][] = 'schema';
+            }
+            if ($surface === 'baseline-file') {
+                $sources[$key][] = 'records';
+                $sources[$key][] = 'outcome';
+                $definition = null;
+                foreach ($run->corpus->cases as $item) {
+                    if ($item->id === $case) {
+                        $definition = $item;
+                        break;
+                    }
+                }
+                $baselineSource = 'case:' . $case . '|' . ($definition?->baselineSource() === null ? 'format:json' : 'check:baseline-source');
+                $sources[$baselineSource] = array_values(array_unique([...($sources[$baselineSource] ?? []), 'capture', 'surface', 'normalization', 'path', 'records', 'ranking']));
+            }
+        }
+        $required = [];
+        foreach ($sources as $source => $roles) {
+            foreach (['candidate', 'reference'] as $side) {
+                foreach (array_unique($roles) as $role) {
+                    $required[] = ['side' => $side, 'key' => $source, 'role' => $role];
+                }
+                if ($side === 'candidate') {
+                    $required[] = ['side' => $side, 'key' => $source, 'role' => 'repeatable'];
+                }
+            }
+        }
+        if ($case !== null && ReportViews::recordBearingSurface($surface) && !\in_array($surface, ['format:metrics', 'format:suppressed', 'directives'], true)) {
+            $required[] = ['side' => '*', 'key' => 'finding', 'role' => 'tuple-schema'];
+            foreach (['candidate', 'reference'] as $side) {
+                $required[] = ['side' => $side, 'key' => 'case:' . $case . '|format:json', 'role' => 'tuple'];
+            }
+        }
+        return $required;
+    }
+
     private static function one(SurfacePair $pair, string $side, CaptureResult $capture, RunContext $run): string
     {
         $visible = $side === 'candidate' ? $pair->candidate : $pair->reference;
@@ -45,43 +113,41 @@ final class ExactSurfaceAuthority
             return $framed . self::frame('records', json_encode($rows, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES));
         }
         $slot = $capture->rankings[$source] ?? throw new GateError('An exact surface has no complete finding authority: ' . $source);
-        $physical = $slot['physical']['stdout'] ?? $slot['ranked']['stdout'];
-        $ranked = $slot['ranked']['stdout'];
-        $rawPhysical = ReportRecords::rawRecords($physical, 'violations');
-        $rawIssues = ReportRecords::rawRecords($ranked, 'topIssues');
-        $issues = [];
-        foreach ($rawIssues as $raw) {
-            $mapped = $side === 'reference' ? $run->maps->forward($raw, Surfaces::surfaceClass($source)) : $raw;
-            $decoded = ReportRecords::object($mapped);
-            $join = RankingSchema::joinKey($decoded, true);
+        [$physical, $ranking] = self::rawPopulation($slot, $source, $side, $run);
+        return $framed . self::frame('physical-records', $physical) . self::frame('ranking-records', $ranking);
+    }
+
+    /** @param array{ranked:array{stdout:string,stderr:string,exit:int},physical:?array{stdout:string,stderr:string,exit:int}} $slot
+     * @return array{string,string}
+     */
+    public static function rawPopulation(array $slot, string $source, string $side, RunContext $run): array
+    {
+        $physicalText = $slot['physical']['stdout'] ?? $slot['ranked']['stdout'];
+        $rankingText = $slot['ranked']['stdout'];
+        $surface = Surfaces::surfaceClass($source);
+        $physical = [];
+        foreach (ReportRecords::rawRecords($physicalText, 'violations') as $raw) {
+            $mapped = $side === 'reference' ? $run->maps->forward($raw, $surface) : $raw;
+            $physical[] = self::canonical($mapped);
+        }
+        $ranking = [];
+        foreach (ReportRecords::rawRecords($rankingText, 'topIssues') as $raw) {
+            $mapped = $side === 'reference' ? $run->maps->forward($raw, $surface) : $raw;
             $members = self::objectMembers($mapped);
-            $values = [];
-            foreach (RankingSchema::VALUES as $field) {
-                if (!isset($members[$field])) {
-                    throw new GateError('An exact ranking has no joined value: ' . $field);
-                }
-                $values[$field] = $members[$field];
+            unset($members['rank']);
+            ksort($members, \SORT_STRING);
+            $parts = [];
+            foreach ($members as $name => $value) {
+                $parts[] = json_encode($name, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES) . ':' . $value;
             }
-            $issues[$join][] = $values;
+            $ranking[] = '{' . implode(',', $parts) . '}';
         }
-        $rows = [];
-        foreach ($rawPhysical as $raw) {
-            $mapped = $side === 'reference' ? $run->maps->forward($raw, Surfaces::surfaceClass($source)) : $raw;
-            $decoded = ReportRecords::object($mapped);
-            $join = RankingSchema::joinKey($decoded, false);
-            if (($issues[$join] ?? []) === []) {
-                throw new GateError('An exact physical finding has no complete ranked occurrence.');
-            }
-            $values = array_shift($issues[$join]);
-            $rows[] = json_encode([self::canonical($mapped), $values], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES);
-        }
-        foreach ($issues as $remaining) {
-            if ($remaining !== []) {
-                throw new GateError('An exact ranking has no complete physical occurrence.');
-            }
-        }
-        sort($rows, \SORT_STRING);
-        return $framed . self::frame('records', json_encode($rows, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES));
+        sort($physical, \SORT_STRING);
+        sort($ranking, \SORT_STRING);
+        return [
+            json_encode($physical, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES),
+            json_encode($ranking, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES),
+        ];
     }
 
     private static function source(string $surface, string $case, RunContext $run): ?string

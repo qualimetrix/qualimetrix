@@ -29,7 +29,7 @@ final class ExactSurfaceDeltaCheck implements Derivation
             return;
         }
         $report = new GateReport();
-        $declarations = Declarations::load($this->run->options->candidateRoot);
+        $declarations = $this->run->declarations->trialCopy();
         $maps = clone $this->run->maps;
         $normalization = clone $this->run->normalization;
         $trial = new RunContext(
@@ -45,6 +45,9 @@ final class ExactSurfaceDeltaCheck implements Derivation
         );
         $records = $verifiedRecords->trialCopy($trial);
         $fingerprints = $verifiedFingerprints->forkFor($report);
+        RankingCheck::create($this->run)->trialCopy($trial);
+        ValueCheck::create($this->run)->trialCopy($trial);
+        FieldValuesCheck::create($this->run)->trialCopy($trial);
         foreach ($captures as $side => $capture) {
             $trial->rankings->supply($side, $capture->rankings);
             $trial->baselineEligibility->supply($side, $capture->baselineEligibility);
@@ -71,7 +74,8 @@ final class ExactSurfaceDeltaCheck implements Derivation
             if ($candidate === null || $reference === null) {
                 continue;
             }
-            if (!$comparison->trialSurface($key, $candidate, $reference)) {
+            $result = $comparison->trialSurface($key, $candidate, $reference);
+            if ($result['valid'] && ($result['visibleResidual'] || $result['authorityResidual'])) {
                 $this->run->selectExactSurface($key);
             }
         }
@@ -119,9 +123,21 @@ final class ExactSurfaceDeltaCheck implements Derivation
     /** @return list<string> */
     public function rewriteDerived(): array
     {
-        if ($this->derived === null || $this->derived === [] || !$this->run->report->canDerive()) {
+        if ($this->derived === null || $this->derived === [] || !$this->run->report->canDeriveExact()) {
             return [];
         }
-        return $this->run->declarations->exactSurfaces->rewrite($this->derived);
+        $eligible = [];
+        foreach ($this->derived as $key => $diff) {
+            foreach (ExactSurfaceAuthority::requiredEvidence($key, $this->run) as $source) {
+                if (!$this->run->report->sourceValid($source['side'], $source['key'], $source['role'])) {
+                    continue 2;
+                }
+                if ($this->run->report->sourceRejected('*', Surfaces::surfaceClass($source['key']), 'normalization')) {
+                    continue 2;
+                }
+            }
+            $eligible[$key] = $diff;
+        }
+        return $this->run->declarations->exactSurfaces->rewrite($eligible);
     }
 }

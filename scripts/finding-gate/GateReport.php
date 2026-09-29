@@ -47,6 +47,41 @@ final class GateReport
     /** @var array<string, mixed> */
     private array $facts = [];
 
+    /** @var array<string,true> */
+    private array $semanticResiduals = [];
+
+    /** @var array<string,bool> */
+    private array $sourceEvidence = [];
+
+    /** @var array<int,array{side:string,key:string,role:string}> */
+    private array $sourceFailures = [];
+
+    public function sourceEvidence(string $side, string $key, string $role, bool $valid, string $pass = 'first'): void
+    {
+        $address = implode("\0", [$side, $pass, $key, $role]);
+        $this->sourceEvidence[$address] = ($this->sourceEvidence[$address] ?? true) && $valid;
+    }
+
+    public function sourceValid(string $side, string $key, string $role, string $pass = 'first'): bool
+    {
+        return $this->sourceEvidence[implode("\0", [$side, $pass, $key, $role])] ?? false;
+    }
+
+    public function sourceRejected(string $side, string $key, string $role, string $pass = 'first'): bool
+    {
+        return ($this->sourceEvidence[implode("\0", [$side, $pass, $key, $role])] ?? null) === false;
+    }
+
+    public function semanticResidual(string $surface): void
+    {
+        $this->semanticResiduals[$surface] = true;
+    }
+
+    public function hasSemanticResidual(string $surface): bool
+    {
+        return isset($this->semanticResiduals[$surface]);
+    }
+
     /**
      * How many surfaces this run compared against a declaration rather than for
      * equality, so the verdict sentence can name them.
@@ -113,14 +148,20 @@ final class GateReport
         $this->fieldMoveCount = $count;
     }
 
-    /** @param list<string> $diff */
-    public function fail(string $failureClass, string $scope, string $detail, array $diff = []): void
+    /** @param list<string> $diff
+     * @param array{side:string,key:string,role:string}|null $source
+     */
+    public function fail(string $failureClass, string $scope, string $detail, array $diff = [], ?array $source = null): void
     {
         if (!\in_array($failureClass, FailureClass::ALL, true)) {
             throw new GateError(\sprintf('Unknown failure class "%s".', $failureClass));
         }
 
+        $index = \count($this->failures);
         $this->failures[] = ['class' => $failureClass, 'scope' => $scope, 'detail' => $detail, 'diff' => $diff];
+        if ($source !== null) {
+            $this->sourceFailures[$index] = $source;
+        }
         $frames = debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS);
         $chain = [];
 
@@ -198,6 +239,25 @@ final class GateReport
             FailureClass::CANDIDATE_INPUT_REFUSED, FailureClass::REFERENCE_INPUT_UNTRANSLATED,
             ...$formFailures,
         ]) === [];
+    }
+
+    public function canDeriveExact(): bool
+    {
+        if ($this->limits !== []) {
+            return false;
+        }
+        foreach ($this->failures as $index => $failure) {
+            if (\in_array($failure['class'], [FailureClass::ENV_MISMATCH, FailureClass::CORPUS_INVALID, FailureClass::CANDIDATE_INPUT_REFUSED, FailureClass::REFERENCE_INPUT_UNTRANSLATED], true)) {
+                return false;
+            }
+            if ($failure['class'] === FailureClass::RUN_FAILED) {
+                $source = $this->sourceFailures[$index] ?? null;
+                if ($source === null || !$this->sourceRejected($source['side'], $source['key'], $source['role'])) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     public function render(): string

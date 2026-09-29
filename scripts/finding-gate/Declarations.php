@@ -43,6 +43,21 @@ final class Declarations
         );
     }
 
+    public function trialCopy(): self
+    {
+        return new self(
+            clone $this->delta,
+            clone $this->exactSurfaces,
+            clone $this->fieldMoves,
+            clone $this->records,
+            clone $this->values,
+            $this->fields->trialCopy(),
+            clone $this->outcomes,
+            clone $this->surfaces,
+            clone $this->structuralMaps,
+        );
+    }
+
     /**
      * The count of every form the report publishes besides the declared deltas
      * and field moves, by its report key ({@see GateReport::DECLARATION_COUNTS}).

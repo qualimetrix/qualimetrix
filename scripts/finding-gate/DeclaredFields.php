@@ -105,6 +105,54 @@ final class DeclaredFields
         return new self($changes, $derived, is_file($path) ? Fs::read($path) : '');
     }
 
+    public function trialCopy(): self
+    {
+        $copy = clone $this;
+        $copy->credited = [];
+        return $copy;
+    }
+
+    public function registerRequired(Corpus $corpus, CapturePlan $plan): void
+    {
+        $cases = [];
+        foreach ($corpus->cases as $case) {
+            $cases['case:' . $case->id] = $case;
+        }
+        foreach (self::REPORTS as $report) {
+            foreach ($this->views($report) as $view) {
+                if ($report === 'json' && $view === 'ranking') {
+                    foreach ($corpus->cases as $case) {
+                        foreach (['candidate', 'reference'] as $side) {
+                            if (!CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($case, $side))) {
+                                continue;
+                            }
+                            foreach ($plan->rankingInvocations() as $source) {
+                                $key = Surfaces::key($source['scope'], $source['surface']);
+                                if ($source['scope'] === 'case:' . $case->id && $plan->requiredOn($key, $side)) {
+                                    $this->requireMeasurements('json', $case->id, 'ranking', $side);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    continue;
+                }
+                foreach ($plan->invocations() as $invocation) {
+                    if (($invocation['surface'] !== $view && ($report !== 'json-document' || $invocation['outputFileKind'] !== $view)) || !str_starts_with($invocation['scope'], 'case:')) {
+                        continue;
+                    }
+                    $key = Surfaces::key($invocation['scope'], $invocation['surface']);
+                    foreach (['candidate', 'reference'] as $side) {
+                        if ($plan->requiredOn($key, $side)
+                            && CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($cases[$invocation['scope']], $side))) {
+                            $this->requireMeasurements($report, substr($invocation['scope'], 5), $view, $side);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public function count(): int
     {
         return \count($this->changes);

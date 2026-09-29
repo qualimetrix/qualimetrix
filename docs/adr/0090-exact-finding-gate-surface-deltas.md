@@ -28,17 +28,26 @@ record-bearing publications. Non-record publications retain full byte precision
 without that size limit. The existing diff computation budget remains.
 
 A separate exact case/surface intention is the last resort after semantic
-forms. An isolated trial decides whether those forms explain the publication;
-a fully explained surface makes the exact intention stale. Otherwise the
+forms. An isolated trial preserves the main pass's derive mode, authored
+intentions, required-publication registry and verified authority, with separate
+credits and measurements. It decides whether those forms explain the visible
+publication and complete hidden population; a fully explained surface makes
+the exact intention stale. Otherwise the
 whole normalized surface is measured before semantic erasure, and its records
 are judged through this exact measurement rather than cross-side pairing.
 
 The measurement includes length-framed visible bytes and the complete
-comparative record authority. For finding projections this is an
-occurrence-preserving physical multiset with its joined ranking values,
-including hidden records. JSON numeric tokens are preserved. Same-side source,
-projection, completeness and validity checks remain mandatory. Support metadata
-and order outside published slices remain outside the cross-side promise.
+record authority. For finding projections this is independent raw physical
+and ranking identity/value multisets, including hidden records and their
+multiplicity. JSON numeric tokens remain precise throughout measurement;
+decoded float joins cannot attribute these raw occurrences. Same-side source,
+projection, completeness and validity checks remain mandatory. Each exact
+write requires positive producer-scoped evidence for its own visible and
+support suppliers, including candidate repeatability. An invalid supplier
+blocks only dependent measurements; an independent valid surface can still
+be derived. Invalid rows retain their previous paths, reasons and diff bytes.
+Support metadata and order outside published slices remain outside the
+cross-side promise.
 An additional undeclared byte or authority change fails the measured delta.
 
 This supersedes ADR 0087's rejection of whole-report diffs when the explicit

@@ -26,6 +26,7 @@ final class NormalizationCheck implements RunCheck
         foreach (['candidate' => $candidate, 'reference' => $reference] as $side => $artifacts) {
             foreach ($artifacts as $key => $content) {
                 $surface = Surfaces::surfaceClass($key);
+                $this->report->sourceEvidence($side, $key, 'normalization', true);
                 if (str_starts_with($surface, 'exit:') || str_starts_with($surface, 'stderr')) {
                     continue;
                 }
@@ -43,6 +44,7 @@ final class NormalizationCheck implements RunCheck
                         if (!$reported) {
                             throw $error;
                         }
+                        $this->report->sourceEvidence($side, $key, 'normalization', false);
                         continue;
                     }
                 }
@@ -59,6 +61,7 @@ final class NormalizationCheck implements RunCheck
                     $changed = $changed || !\is_array($after) || !\array_key_exists($section, $after) || $before[$section] !== $after[$section];
                 }
                 if ($changed) {
+                    $this->report->sourceEvidence($side, $key, 'normalization', false);
                     $this->report->fail(FailureClass::NORMALIZATION_OVERREACH, $side . ' / ' . $key, 'Normalization changes the complete published records of this readable report.');
                 }
             }
@@ -100,6 +103,7 @@ final class NormalizationCheck implements RunCheck
                     $last,
                 ),
             );
+            $this->report->sourceEvidence('*', $rule->surface, 'normalization', false);
         }
     }
 
@@ -126,6 +130,7 @@ final class NormalizationCheck implements RunCheck
             return;
         }
 
+        $this->report->sourceEvidence($side, $key, 'normalization', false);
         $this->report->fail(
             FailureClass::NORMALIZATION_OVERREACH,
             $side . ' / ' . $key,
@@ -156,7 +161,10 @@ final class NormalizationCheck implements RunCheck
                 }
             }
             if ($detail !== null) {
+                $this->report->sourceEvidence('candidate', $key, 'repeatable', false);
                 $this->report->fail(FailureClass::NONDETERMINISM_UNDECLARED, $key, $detail, $diff);
+            } else {
+                $this->report->sourceEvidence('candidate', $key, 'repeatable', true);
             }
         }
     }

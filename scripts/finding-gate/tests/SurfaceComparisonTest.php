@@ -369,6 +369,71 @@ final class SurfaceComparisonTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsAnInvalidExactSupplierUnmeasuredWhileDerivingAValidNeighbour(): void
+    {
+        $tree = SyntheticTree::clean();
+        $answers = json_decode(Fs::read($this->root . '/replay/answers.json'), true, 512, \JSON_THROW_ON_ERROR);
+        $answer = $answers['case:alpha|format:json'];
+        $visible = \QmxFindingGate\ReportRecords::decode($answer['stdout']);
+        $visible['violationsMeta'] = ['total' => 3, 'shown' => 1, 'limit' => 1, 'truncated' => true, 'byRule' => ['replay.alpha' => 3]];
+        $visible['announcedNeighbour'] = 1;
+        $answer['stdout'] = \QmxFindingGate\ValueCheck::value($visible);
+        $ranked = $visible;
+        $issue = $ranked['topIssues'][0];
+        $ranked['topIssues'] = [$issue, ['rank' => 2, ...array_diff_key($issue, ['rank' => true])], ['rank' => 3, ...array_diff_key($issue, ['rank' => true])]];
+        unset($ranked['announcedNeighbour']);
+        $answer['ranked']['stdout'] = \QmxFindingGate\ValueCheck::value($ranked);
+        $physical = $ranked;
+        $physical['violations'] = array_fill(0, 3, $visible['violations'][0]);
+        $physical['violationsMeta'] = ['total' => 4, 'shown' => 3, 'limit' => null, 'truncated' => false, 'byRule' => ['replay.alpha' => 4]];
+        $answer['physical']['stdout'] = \QmxFindingGate\ValueCheck::value($physical);
+        $tree['candidateAnswers']['case:alpha|format:json'] = $answer;
+        $tree['candidateAnswers']['case:alpha|check:output'] = ['file' => $answer['stdout']];
+        $tree['candidateAnswers']['case:alpha|check:parallel'] = ['stdout' => $answer['stdout']];
+        $tree['candidateAnswers']['case:alpha|rules'] = ['stdout' => "Changed rule listing.\n"];
+        $tree['candidateDeclarations'][DeclaredExactSurfaces::INDEX] = Tsv::render(DeclaredExactSurfaces::COLUMNS, [
+            ['alpha', 'format:json', 'declared-exact-surfaces/json.diff', 'The JSON surface changes.'],
+            ['alpha', 'rules', 'declared-exact-surfaces/rules.diff', 'The rule listing changes independently.'],
+        ]);
+        $tree['candidateDeclarations']['declared-exact-surfaces/json.diff'] = "pending json\n";
+        $tree['candidateDeclarations']['declared-exact-surfaces/rules.diff'] = "pending rules\n";
+        $root = SyntheticTree::fixture($tree);
+        try {
+            [$report, $written] = RecordedComparison::derive($tree, $root);
+            self::assertContains(FailureClass::RANKING_PROJECTION_MISMATCH, $report->failureClasses(), $report->render());
+            self::assertContains(FailureClass::RUN_FAILED, $report->failureClasses(), $report->render());
+            self::assertNotContains('declared-exact-surfaces/' . md5('case:alpha|format:json') . '.diff', $written, $report->render());
+            self::assertSame("pending json\n", Fs::read($root . '/finding-gate/declared-exact-surfaces/json.diff'));
+            self::assertContains('declared-exact-surfaces/' . md5('case:alpha|rules') . '.diff', $written, $report->render());
+            $rows = Tsv::rows($root . '/finding-gate/' . DeclaredExactSurfaces::INDEX, DeclaredExactSurfaces::COLUMNS);
+            self::assertSame('declared-exact-surfaces/json.diff', $rows[0]['file']);
+            self::assertNotSame("pending rules\n", Fs::read($root . '/finding-gate/' . $rows[1]['file']));
+        } finally {
+            SyntheticTree::remove($root);
+        }
+        unset($answer['physical']);
+        $tree['candidateAnswers']['case:alpha|format:json'] = $answer;
+        $root = SyntheticTree::fixture($tree);
+        try {
+            [$missing, $written] = RecordedComparison::derive($tree, $root);
+            self::assertContains(FailureClass::RUN_FAILED, $missing->failureClasses(), $missing->render());
+            self::assertNotContains('declared-exact-surfaces/' . md5('case:alpha|format:json') . '.diff', $written, $missing->render());
+            self::assertContains('declared-exact-surfaces/' . md5('case:alpha|rules') . '.diff', $written, $missing->render());
+        } finally {
+            SyntheticTree::remove($root);
+        }
+        $unknown = new GateReport();
+        $unknown->fail(FailureClass::RUN_FAILED, 'candidate / alpha', 'The source has no validated authority.', [], ['side' => 'candidate', 'key' => 'case:alpha|format:json', 'role' => 'records']);
+        self::assertFalse($unknown->canDeriveExact());
+        $global = new GateReport();
+        $global->fail(FailureClass::RUN_FAILED, 'candidate-2', 'The candidate capture failed.');
+        self::assertFalse($global->canDeriveExact());
+        $limited = new GateReport();
+        $limited->limit('The corpus is incomplete.');
+        self::assertFalse($limited->canDeriveExact());
+    }
+
+    #[Test]
     public function itUsesAnExactMetricSurfaceWithoutPairingItsChangedRecords(): void
     {
         $tree = SyntheticTree::clean();
@@ -421,6 +486,95 @@ final class SurfaceComparisonTest extends TestCase
             SyntheticTree::remove($root);
         }
         self::assertContains(FailureClass::DELTA_STALE, RecordedComparison::report($tree)->failureClasses());
+    }
+
+    #[Test]
+    public function itDerivesFreshRecordIntentionsBeforeConsideringAnExactMetricSurface(): void
+    {
+        $tree = SyntheticTree::clean();
+        $answers = json_decode(Fs::read($this->root . '/replay/answers.json'), true, 512, \JSON_THROW_ON_ERROR);
+        $metrics = json_decode($answers['case:alpha|format:metrics']['stdout'], true, 512, \JSON_THROW_ON_ERROR);
+        $oldName = $metrics['symbols'][0]['name'];
+        $newName = str_replace('Alpha', 'Beta', $oldName);
+        $metrics['symbols'][0]['name'] = $newName;
+        $tree['candidateAnswers']['case:alpha|format:metrics'] = ['stdout' => json_encode($metrics, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n"];
+        $tree['candidateDeclarations'][\QmxFindingGate\DeclaredRecords::INDEX] = Tsv::render(\QmxFindingGate\DeclaredRecords::COLUMNS, [
+            ['introduced', 'alpha', 'metrics', 'format:metrics', \QmxFindingGate\ValueCheck::value(['type' => 'method', 'name' => $newName]), 'The replacement method is introduced.'],
+            ['withdrawn', 'alpha', 'metrics', 'format:metrics', \QmxFindingGate\ValueCheck::value(['type' => 'method', 'name' => $oldName]), 'The former method is withdrawn.'],
+        ]);
+        $root = SyntheticTree::fixture($tree);
+        try {
+            self::assertFileDoesNotExist($root . '/finding-gate/' . \QmxFindingGate\DeclaredRecords::DERIVED);
+            [$semantic, $semanticWritten] = RecordedComparison::derive($tree, $root);
+            self::assertSame([], $semantic->failureClasses(), $semantic->render());
+            self::assertContains(\QmxFindingGate\DeclaredRecords::DERIVED, $semanticWritten);
+            $tree['candidateDeclarations'][\QmxFindingGate\DeclaredRecords::DERIVED] = Fs::read($root . '/finding-gate/' . \QmxFindingGate\DeclaredRecords::DERIVED);
+        } finally {
+            SyntheticTree::remove($root);
+        }
+        $semanticOnly = RecordedComparison::report($tree);
+        self::assertSame([], $semanticOnly->failureClasses(), $semanticOnly->render());
+        $tree['candidateDeclarations'][DeclaredExactSurfaces::INDEX] = Tsv::render(DeclaredExactSurfaces::COLUMNS, [
+            ['alpha', 'format:metrics', 'declared-exact-surfaces/metrics.diff', 'Measure any remaining metric publication change.'],
+        ]);
+        $tree['candidateDeclarations']['declared-exact-surfaces/metrics.diff'] = "pending\n";
+        $root = SyntheticTree::fixture($tree);
+        try {
+            [$report, $written] = RecordedComparison::derive($tree, $root);
+            self::assertContains(\QmxFindingGate\DeclaredRecords::DERIVED, $written, $report->render());
+            self::assertNotContains(DeclaredExactSurfaces::INDEX, $written, $report->render());
+        } finally {
+            SyntheticTree::remove($root);
+        }
+        self::assertContains(FailureClass::DELTA_STALE, RecordedComparison::report($tree)->failureClasses());
+    }
+
+    #[Test]
+    public function itSuppliesRequiredSchemaDuringAnExactMetricTrial(): void
+    {
+        $tree = SyntheticTree::clean();
+        $answers = json_decode(Fs::read($this->root . '/replay/answers.json'), true, 512, \JSON_THROW_ON_ERROR);
+        $metrics = json_decode($answers['case:alpha|format:metrics']['stdout'], true, 512, \JSON_THROW_ON_ERROR);
+        $metrics['symbols'][0]['extra'] = 2;
+        $tree['candidateAnswers']['case:alpha|format:metrics'] = ['stdout' => json_encode($metrics, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n"];
+        $tree['candidateDeclarations'][\QmxFindingGate\DeclaredFields::INDEX] = Tsv::render(\QmxFindingGate\DeclaredFields::COLUMNS, [
+            ['added', 'metrics', 'format:metrics', 'extra', 'The metric record gains one field.'],
+        ]);
+        $root = SyntheticTree::fixture($tree);
+        try {
+            self::assertFileDoesNotExist($root . '/finding-gate/' . \QmxFindingGate\DeclaredFields::DERIVED);
+            [$semantic, $semanticWritten] = RecordedComparison::derive($tree, $root);
+            self::assertSame([], $semantic->failureClasses(), $semantic->render());
+            self::assertContains(\QmxFindingGate\DeclaredFields::DERIVED, $semanticWritten);
+            $tree['candidateDeclarations'][\QmxFindingGate\DeclaredFields::DERIVED] = Fs::read($root . '/finding-gate/' . \QmxFindingGate\DeclaredFields::DERIVED);
+        } finally {
+            SyntheticTree::remove($root);
+        }
+        $semanticOnly = RecordedComparison::report($tree);
+        self::assertSame([], $semanticOnly->failureClasses(), $semanticOnly->render());
+        $tree['candidateDeclarations'][DeclaredExactSurfaces::INDEX] = Tsv::render(DeclaredExactSurfaces::COLUMNS, [
+            ['alpha', 'format:metrics', 'declared-exact-surfaces/metrics.diff', 'Measure any remaining metric publication change.'],
+        ]);
+        $tree['candidateDeclarations']['declared-exact-surfaces/metrics.diff'] = "pending\n";
+        $root = SyntheticTree::fixture($tree);
+        try {
+            [$report, $written] = RecordedComparison::derive($tree, $root);
+            self::assertContains(\QmxFindingGate\DeclaredFields::DERIVED, $written, $report->render());
+            self::assertNotContains(DeclaredExactSurfaces::INDEX, $written, $report->render());
+        } finally {
+            SyntheticTree::remove($root);
+        }
+        self::assertContains(FailureClass::DELTA_STALE, RecordedComparison::report($tree)->failureClasses());
+        $metrics['symbols'][0]['metrics']['ccn'] = 2;
+        $tree['candidateAnswers']['case:alpha|format:metrics'] = ['stdout' => json_encode($metrics, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n"];
+        $root = SyntheticTree::fixture($tree);
+        try {
+            [$report, $written] = RecordedComparison::derive($tree, $root);
+            self::assertContains(\QmxFindingGate\DeclaredFields::DERIVED, $written, $report->render());
+            self::assertContains(DeclaredExactSurfaces::INDEX, $written, $report->render());
+        } finally {
+            SyntheticTree::remove($root);
+        }
     }
 
     #[Test]

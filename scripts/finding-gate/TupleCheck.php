@@ -20,8 +20,9 @@ final class TupleCheck
     {
         $tracked = EquivalenceTuple::load($this->options->candidateRoot);
         $derived = EquivalenceTuple::derive($this->options->candidateRoot);
+        $valid = $tracked->equals($derived);
 
-        if (!$tracked->equals($derived)) {
+        if (!$valid) {
             $this->report->fail(
                 FailureClass::TUPLE_FIELD_DRIFT,
                 EquivalenceTuple::TRACKED_PATH,
@@ -39,6 +40,7 @@ final class TupleCheck
         // replacing the hash would retire it from the comparison — the same hole
         // `normalization-overreach` exists for.
         $outside = array_values(array_diff(Fingerprints::INPUT_FIELDS, $derived->fields));
+        $this->report->sourceEvidence('*', 'finding', 'tuple-schema', $valid && $outside === []);
 
         if ($outside !== []) {
             $this->report->fail(
@@ -66,6 +68,7 @@ final class TupleCheck
                 continue;
             }
 
+            $this->report->sourceEvidence($side, 'case:' . $case->id . '|format:json', 'tuple', false);
             $this->report->fail(
                 FailureClass::FINDING_TUPLE_MISMATCH,
                 \sprintf('%s / %s / finding #%d', $side, $case->id, $index),
@@ -76,5 +79,6 @@ final class TupleCheck
 
             return;
         }
+        $this->report->sourceEvidence($side, 'case:' . $case->id . '|format:json', 'tuple', true);
     }
 }

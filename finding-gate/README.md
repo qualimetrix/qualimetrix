@@ -472,18 +472,25 @@ not write a measurement for it.
 When semantic forms leave a residual, this last resort compares the whole
 normalized publication before semantic fields or records are removed. Records
 on that selected surface are judged by the exact delta, without cross-side
-pairing. Record-bearing surfaces also retain complete comparative authority:
-the physical finding multiset and joined ranking values, including hidden
-occurrences and their multiplicity. JSON scalar tokens retain their original
-numeric spelling. Metrics and directives retain their complete record evidence;
+pairing. Record-bearing surfaces also retain complete authority: independent
+physical finding and ranking identity/value multisets, including hidden
+occurrences and their multiplicity. These raw sets preserve JSON scalar tokens
+through measurement without attributing occurrences through decoded floats.
+Metrics, directives and suppressed findings retain their complete raw population;
 baseline surfaces retain their full normalized entries. Same-side source,
 projection, completeness and validity checks still run. Support metadata and
 hidden-tail ordering acquire no additional promise.
 
 The measurement is a byte-exact diff of length-framed visible bytes and record
 evidence. A neighbouring undeclared byte or hidden record change refuses.
-There is no 200-line cap on this route. It is exact but coarse: prefer semantic
-intentions because their measurements explain which record or value changed.
+There is no 200-line cap on this route. Derivation requires positive validity
+and completeness evidence for the concrete publication and each of its own
+suppliers, including repeated candidate authority. An invalid supplier prevents
+its dependent measurement from being written; an independent valid surface
+can still be measured. Existing rows and diff bytes for invalid measurements
+remain unchanged. Semantic residuals do not make an otherwise valid source
+invalid. It is exact but coarse: prefer semantic intentions because their
+measurements explain which record or value changed.
 
 Declarations belong to a particular reference comparison. Retire consumed maps
 and declarations when the next reference already contains their change;

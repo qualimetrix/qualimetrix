@@ -36,6 +36,15 @@ final class RankingCheck implements CaseCheck
         return $check;
     }
 
+    public function trialCopy(RunContext $trial): self
+    {
+        $copy = self::create($trial);
+        $copy->metadata = $this->metadata;
+        $copy->observed = $this->observed;
+        $copy->fieldMeasurements = $this->fieldMeasurements;
+        return $copy;
+    }
+
     public function name(): string
     {
         return CaseOutcome::CHECK_RANKING;
@@ -57,6 +66,9 @@ final class RankingCheck implements CaseCheck
     public function checkRepeatedCaptures(CaptureResult $first, CaptureResult $second): void
     {
         if ($first->baselineEligibility !== $second->baselineEligibility) {
+            foreach (array_keys($first->baselineEligibility + $second->baselineEligibility) as $source) {
+                $this->run->report->sourceEvidence('candidate', $source, 'repeatable', ($first->baselineEligibility[$source] ?? null) === ($second->baselineEligibility[$source] ?? null));
+            }
             $this->run->report->fail(FailureClass::NONDETERMINISM_UNDECLARED, 'baseline eligibility', 'The same candidate inputs produced different product baseline eligibility decisions.');
         }
         $records = RecordCheck::create($this->run);
@@ -70,6 +82,10 @@ final class RankingCheck implements CaseCheck
                 if ($descriptor['scope'] !== 'case:' . $case->id || !$this->run->capturePlan->requiredOn($key, 'candidate')) {
                     continue;
                 }
+                if ($this->run->report->sourceRejected('candidate', $key, 'ranking')) {
+                    $this->run->report->sourceEvidence('candidate', $key, 'repeatable', false);
+                    continue;
+                }
                 $fields ??= $this->fields('candidate');
                 $bags = [];
                 foreach ([$first, $second] as $capture) {
@@ -78,10 +94,17 @@ final class RankingCheck implements CaseCheck
                     $physicalRecords = ReportRecords::extract('json', $physical['stdout'], $records->fields('json', $descriptor['surface'], 'candidate'));
                     $rankedRecords = RankingSchema::records(ReportRecords::decode($slot['ranked']['stdout']), $fields);
                     $rankedRecords = array_map(static fn(array $record): array => array_diff_key($record, ['rank' => true]), $rankedRecords);
-                    $bags[] = [self::captureBag($physicalRecords), self::captureBag($rankedRecords)];
+                    $bags[] = [
+                        self::captureBag($physicalRecords),
+                        self::captureBag($rankedRecords),
+                        ExactSurfaceAuthority::rawPopulation($slot, $key, 'candidate', $this->run),
+                    ];
                 }
                 if ($bags[0] !== $bags[1]) {
+                    $this->run->report->sourceEvidence('candidate', $key, 'repeatable', false);
                     $this->run->report->fail(FailureClass::NONDETERMINISM_UNDECLARED, $key, 'Complete physical or ranked values changed between candidate passes.');
+                } else {
+                    $this->run->report->sourceEvidence('candidate', $key, 'repeatable', true);
                 }
             }
         }
@@ -147,8 +170,11 @@ final class RankingCheck implements CaseCheck
         }
         $before = $this->ambiguities;
         try {
-            return $this->anatomy($side, $case, $view, $published, $artifacts);
+            $observed = $this->anatomy($side, $case, $view, $published, $artifacts);
+            $this->run->report->sourceEvidence($side, $key, 'ranking', true);
+            return $observed;
         } catch (GateError $error) {
+            $this->run->report->sourceEvidence($side, $key, 'ranking', false);
             if ($before === $this->ambiguities) {
                 $this->projectionProblem($side, $key, $error);
             }
@@ -158,6 +184,7 @@ final class RankingCheck implements CaseCheck
 
     private function projectionProblem(string $side, string $key, GateError $error): void
     {
+        $this->run->report->sourceEvidence($side, $key, 'ranking', false);
         $this->run->report->fail(FailureClass::RANKING_PROJECTION_MISMATCH, $side . ' / ' . $key, $error->getMessage());
     }
 
@@ -458,6 +485,7 @@ final class RankingCheck implements CaseCheck
         foreach ($measurement['moved'] as $movement) {
             $subject = 'case:' . $case . '|' . $view . '|record:' . $movement['label'] . '|occurrence:' . $movement['occurrence'];
             if (!$intended) {
+                $this->run->report->semanticResidual('case:' . $case . '|' . $view);
                 $this->run->report->fail(FailureClass::RANKING_ORDER_MISMATCH, $subject, 'An unchanged ranked finding moved relative to other unchanged findings.');
             } else {
                 $this->values->measure(DeclaredValues::ORDER, 'ranking', $subject, '*', $movement['referencePosition'], $movement['candidatePosition']);

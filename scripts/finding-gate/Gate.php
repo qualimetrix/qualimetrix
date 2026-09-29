@@ -88,43 +88,7 @@ final class Gate
         $this->split = ChannelSplit::of($this->maps);
         $this->corpus = Corpus::load($this->options->candidateRoot, $this->options->cases);
         $capturePlan = CapturePlan::forCorpus($this->corpus, $this->declarations->surfaces);
-        $outcomeCases = [];
-        foreach ($this->corpus->cases as $outcomeCase) {
-            $outcomeCases['case:' . $outcomeCase->id] = $outcomeCase;
-        }
-        foreach (DeclaredFields::REPORTS as $fieldReport) {
-            foreach ($this->declarations->fields->views($fieldReport) as $view) {
-                if ($fieldReport === 'json' && $view === 'ranking') {
-                    foreach ($this->corpus->cases as $case) {
-                        foreach (['candidate', 'reference'] as $side) {
-                            if (!CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($case, $side))) {
-                                continue;
-                            }
-                            foreach ($capturePlan->rankingInvocations() as $source) {
-                                $key = Surfaces::key($source['scope'], $source['surface']);
-                                if ($source['scope'] === 'case:' . $case->id && $capturePlan->requiredOn($key, $side)) {
-                                    $this->declarations->fields->requireMeasurements('json', $case->id, 'ranking', $side);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    continue;
-                }
-                foreach ($capturePlan->invocations() as $invocation) {
-                    if (($invocation['surface'] !== $view && ($fieldReport !== 'json-document' || $invocation['outputFileKind'] !== $view)) || !str_starts_with($invocation['scope'], 'case:')) {
-                        continue;
-                    }
-                    $key = Surfaces::key($invocation['scope'], $invocation['surface']);
-                    foreach (['candidate', 'reference'] as $side) {
-                        if ($capturePlan->requiredOn($key, $side)
-                            && CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($outcomeCases[$invocation['scope']], $side))) {
-                            $this->declarations->fields->requireMeasurements($fieldReport, substr($invocation['scope'], 5), $view, $side);
-                        }
-                    }
-                }
-            }
-        }
+        $this->declarations->fields->registerRequired($this->corpus, $capturePlan);
         $witness = new ChannelWitness($this->options->candidateRoot);
         $this->temporaryDirectory = Fs::temporaryDirectory('finding-gate-run-');
 

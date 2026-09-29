@@ -60,6 +60,90 @@ final class RankingCheckTest extends TestCase
         self::assertNotSame([], array_filter($report->raised(), static fn(array $failure): bool => str_contains($failure['detail'], 'raw prefix')), $report->render());
     }
 
+    #[Test]
+    public function itDistinguishesRawRankingAssociationsAfterSameSideValidation(): void
+    {
+        $records = self::records(3);
+        $visible = $records[0];
+        $a = $records[1];
+        $b = $a;
+        $b['metricValue'] = 7;
+        $physicalA = str_replace('"techDebtMinutes":15', '"techDebtMinutes":15.000000000000000001', ValueCheck::value($a));
+        $physicalB = str_replace('"techDebtMinutes":15', '"techDebtMinutes":15.000000000000000002', ValueCheck::value($b));
+        $firstIssue = ValueCheck::value(self::issue($visible, 1, 30));
+        $issueA = str_replace(['"impactScore":20', '"debtMinutes":15'], ['"impactScore":20.000000000000000001', '"debtMinutes":15.000000000000000001'], ValueCheck::value(self::issue($a, 2, 20)));
+        $issueB = str_replace(['"impactScore":20', '"debtMinutes":15'], ['"impactScore":20.000000000000000002', '"debtMinutes":15.000000000000000002'], ValueCheck::value(self::issue($b, 3, 20)));
+        $changedA = str_replace('"impactScore":20.000000000000000001', '"impactScore":20.000000000000000002', $issueA);
+        $changedB = str_replace('"impactScore":20.000000000000000002', '"impactScore":20.000000000000000001', $issueB);
+        $document = static fn(array $physical, array $ranking, bool $truncated): string => '{"violations":[' . implode(',', $physical) . '],"topIssues":[' . implode(',', $ranking) . '],"violationsMeta":' . ValueCheck::value([
+            'total' => 3, 'shown' => \count($physical), 'limit' => $truncated ? 1 : null, 'truncated' => $truncated, 'byRule' => ['replay.alpha' => 3],
+        ]) . '}';
+        $firstPhysical = ValueCheck::value($visible);
+        $published = $document([$firstPhysical], [$firstIssue], true);
+        $referenceRanked = $document([$firstPhysical], [$firstIssue, $issueA, $issueB], true);
+        $candidateRanked = $document([$firstPhysical], [$firstIssue, $changedA, $changedB], true);
+        $referencePhysical = $document([$firstPhysical, $physicalA, $physicalB], [$firstIssue, $issueA, $issueB], false);
+        $candidatePhysical = $document([$firstPhysical, $physicalB, $physicalA], [$firstIssue, $changedA, $changedB], false);
+        $tree = self::rankedTree([$visible, $a, $b], self::issues([$visible, $a, $b], [30, 20, 20]), 1, 1);
+        $root = SyntheticTree::fixture($tree);
+        try {
+            $vocabulary = \QmxFindingGate\MetricVocabulary::ofTree($root);
+            $maps = \QmxFindingGate\RenameMaps::load($root . '/finding-gate/maps', $vocabulary);
+            $run = new \QmxFindingGate\RunContext(
+                Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root),
+                new GateReport(),
+                \QmxFindingGate\Corpus::load($root),
+                $maps,
+                \QmxFindingGate\ChannelSplit::of($maps),
+                $vocabulary,
+                \QmxFindingGate\Normalization::fromRules([]),
+                \QmxFindingGate\Declarations::load($root),
+                $root,
+            );
+            $artifacts = [
+                'case:alpha|format:json' => $published,
+                'case:alpha|exit:format:json' => '2',
+                'case:alpha|stderr:format:json' => '',
+                'case:alpha|format:summary' => $tree['answers']['case:alpha|format:summary']['stdout'] ?? '',
+            ];
+            $captures = [];
+            foreach (['candidate' => [$candidateRanked, $candidatePhysical], 'reference' => [$referenceRanked, $referencePhysical]] as $side => [$ranked, $physical]) {
+                $captures[$side] = new \QmxFindingGate\CaptureResult($artifacts, ['case:alpha|format:json' => [
+                    'ranked' => ['stdout' => $ranked, 'stderr' => '', 'exit' => 2],
+                    'physical' => ['stdout' => $physical, 'stderr' => '', 'exit' => 2],
+                ]]);
+                $run->rankings->supply($side, $captures[$side]->rankings);
+                \QmxFindingGate\RankingCheck::create($run)->observe($side, $run->corpus->cases[0], 'format:json', \QmxFindingGate\ReportRecords::decode($published)['violations'], $artifacts);
+            }
+            if (!isset($captures['candidate'], $captures['reference'])) {
+                throw new GateError('The precision fixture requires both sides.');
+            }
+            self::assertSame([], $run->report->failureClasses(), $run->report->render());
+            self::assertNotSame($candidateRanked, $referenceRanked);
+            [$candidate, $reference] = \QmxFindingGate\ExactSurfaceAuthority::pair(
+                new \QmxFindingGate\SurfacePair('case:alpha|format:json', 'format:json', $published, $published),
+                $captures,
+                $run,
+            );
+            self::assertNotSame($candidate, $reference);
+
+            $slot = static fn(string $ranked, string $physical): \QmxFindingGate\CaptureResult => new \QmxFindingGate\CaptureResult($artifacts, ['case:alpha|format:json' => [
+                'ranked' => ['stdout' => $ranked, 'stderr' => '', 'exit' => 2],
+                'physical' => ['stdout' => $physical, 'stderr' => '', 'exit' => 2],
+            ]]);
+            $permutedPhysical = $document([$firstPhysical, $physicalA, $physicalB], [$firstIssue, $changedA, $changedB], false);
+            \QmxFindingGate\RankingCheck::create($run)->checkRepeatedCaptures($captures['candidate'], $slot($candidateRanked, $permutedPhysical));
+            self::assertSame([], $run->report->failureClasses(), $run->report->render());
+            $rawDrift = str_replace('"impactScore":20.000000000000000002', '"impactScore":20.000000000000000003', $candidateRanked);
+            self::assertNotSame($candidateRanked, $rawDrift);
+            self::assertSame(json_decode($candidateRanked, true, 512, \JSON_THROW_ON_ERROR), json_decode($rawDrift, true, 512, \JSON_THROW_ON_ERROR));
+            \QmxFindingGate\RankingCheck::create($run)->checkRepeatedCaptures($captures['candidate'], $slot($rawDrift, $candidatePhysical));
+            self::assertContains(FailureClass::NONDETERMINISM_UNDECLARED, $run->report->failureClasses(), $run->report->render());
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
     /** @return iterable<string,array{string}> */
     public static function repeatedCaptureChanges(): iterable
     {
@@ -283,6 +367,86 @@ final class RankingCheckTest extends TestCase
             $mutated['candidateAnswers']['case:alpha|format:json'] = $answer;
             $this->red($mutated, $field === 'subject' ? FailureClass::RECORD_UNDECLARED : FailureClass::VALUE_MISMATCH);
         }
+    }
+
+    #[Test]
+    public function itSelectsExactForAnUnexplainedHiddenPhysicalValue(): void
+    {
+        $records = self::records(3);
+        $issues = self::issues($records, [30, 20, 10]);
+        $tree = self::rankedTree($records, $issues, 2, 1);
+        $tree['declarations']['cases/alpha/case.json'] = self::definition(['--detail=1', '--format-opt=violations=1']);
+        $candidate = $records;
+        $candidate[2]['metricValue'] = 7;
+        $tree['candidateFindings']['alpha'] = $candidate;
+        self::publish($tree, 'candidateAnswers', $candidate, $issues, 2, 1);
+        self::assertSame($tree['answers']['case:alpha|format:json']['stdout'] ?? null, $tree['candidateAnswers']['case:alpha|format:json']['stdout'] ?? null);
+        $tree['candidateDeclarations'][\QmxFindingGate\DeclaredExactSurfaces::INDEX] = Tsv::render(\QmxFindingGate\DeclaredExactSurfaces::COLUMNS, [
+            ['alpha', 'format:json', 'declared-exact-surfaces/json.diff', 'The complete JSON finding authority changes.'],
+        ]);
+        $tree['candidateDeclarations']['declared-exact-surfaces/json.diff'] = "pending\n";
+        $answer = $tree['candidateAnswers']['case:alpha|format:json'];
+        if (!isset($answer['physical']['stdout'])) {
+            throw new GateError('The raw repeatability fixture requires complete physical output.');
+        }
+        $answer['physical']['stdout'] = str_replace('"metricValue":7', '"metricValue":7.000000000000000001', $answer['physical']['stdout']);
+        $tree['candidateAnswers']['case:alpha|format:json'] = $answer;
+        $root = SyntheticTree::fixture($tree);
+        try {
+            [$report, $written] = RecordedComparison::derive($tree, $root);
+            self::assertContains(\QmxFindingGate\DeclaredExactSurfaces::INDEX, $written, $report->render());
+            self::assertSame([], array_values(array_filter($report->raised(), static fn(array $failure): bool => $failure['class'] === FailureClass::VALUE_MISMATCH && str_starts_with($failure['scope'], 'case:alpha|format:json'))), $report->render());
+            $firstDiff = Fs::read($root . '/finding-gate/' . Tsv::rows($root . '/finding-gate/' . \QmxFindingGate\DeclaredExactSurfaces::INDEX, \QmxFindingGate\DeclaredExactSurfaces::COLUMNS)[0]['file']);
+            [$drift, $blocked] = RecordedComparison::derive($tree, $root, null, static function (\QmxFindingGate\CaptureResult $first): \QmxFindingGate\CaptureResult {
+                $rankings = $first->rankings;
+                $key = 'case:alpha|format:json';
+                $physical = $rankings[$key]['physical'] ?? throw new GateError('The repeated capture requires complete physical output.');
+                $physical['stdout'] = str_replace('7.000000000000000001', '7.000000000000000002', $physical['stdout']);
+                $rankings[$key]['physical'] = $physical;
+                return new \QmxFindingGate\CaptureResult($first->artifacts, $rankings, $first->baselineEligibility);
+            });
+            self::assertContains(FailureClass::NONDETERMINISM_UNDECLARED, $drift->failureClasses(), $drift->render());
+            self::assertNotContains(\QmxFindingGate\DeclaredExactSurfaces::INDEX, $blocked, $drift->render());
+            self::assertSame($firstDiff, Fs::read($root . '/finding-gate/' . Tsv::rows($root . '/finding-gate/' . \QmxFindingGate\DeclaredExactSurfaces::INDEX, \QmxFindingGate\DeclaredExactSurfaces::COLUMNS)[0]['file']));
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
+    #[Test]
+    public function itDerivesFreshRankingValueBeforeConsideringAnExactJsonSurface(): void
+    {
+        $records = self::records(1);
+        $tree = self::rankedTree($records, self::issues($records, [45]), 1, 1);
+        self::publish($tree, 'candidateAnswers', $records, self::issues($records, [44]), 1, 1);
+        $tree['candidateDeclarations'][DeclaredValues::INDEX] = Tsv::render(DeclaredValues::COLUMNS, [
+            ['field', 'ranking.impactScore', '*', 'The ranking score changes.'],
+        ]);
+        $root = SyntheticTree::fixture($tree);
+        try {
+            self::assertFileDoesNotExist($root . '/finding-gate/' . DeclaredValues::DERIVED);
+            [$semantic, $semanticWritten] = RecordedComparison::derive($tree, $root);
+            self::assertSame([], $semantic->failureClasses(), $semantic->render());
+            self::assertContains(DeclaredValues::DERIVED, $semanticWritten);
+            $tree['candidateDeclarations'][DeclaredValues::DERIVED] = Fs::read($root . '/finding-gate/' . DeclaredValues::DERIVED);
+        } finally {
+            SyntheticTree::remove($root);
+        }
+        $semanticOnly = RecordedComparison::report($tree);
+        self::assertSame([], $semanticOnly->failureClasses(), $semanticOnly->render());
+        $tree['candidateDeclarations'][\QmxFindingGate\DeclaredExactSurfaces::INDEX] = Tsv::render(\QmxFindingGate\DeclaredExactSurfaces::COLUMNS, [
+            ['alpha', 'format:json', 'declared-exact-surfaces/json.diff', 'Measure any remaining JSON change.'],
+        ]);
+        $tree['candidateDeclarations']['declared-exact-surfaces/json.diff'] = "pending\n";
+        $root = SyntheticTree::fixture($tree);
+        try {
+            [$report, $written] = RecordedComparison::derive($tree, $root);
+            self::assertContains(DeclaredValues::DERIVED, $written, $report->render());
+            self::assertNotContains(\QmxFindingGate\DeclaredExactSurfaces::INDEX, $written, $report->render());
+        } finally {
+            SyntheticTree::remove($root);
+        }
+        self::assertContains(FailureClass::DELTA_STALE, RecordedComparison::report($tree)->failureClasses());
     }
 
     #[Test]

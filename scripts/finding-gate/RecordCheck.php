@@ -56,6 +56,7 @@ final class RecordCheck implements CaseCheck, RunCheck
         $copy->physical = $this->physical;
         $copy->raw = $this->raw;
         $copy->identityReady = $this->identityReady;
+        $copy->deriving = $this->deriving;
         return $copy;
     }
 
@@ -110,6 +111,7 @@ final class RecordCheck implements CaseCheck, RunCheck
                         $observed = $this->ranking->observe($side, $case, $surface, $raw, $artifacts);
                     } catch (GateError $error) {
                         $this->identityReady[$case->id][$surface][$side] = false;
+                        $this->run->report->sourceEvidence($side, $key, 'records', false);
                         continue;
                     }
                     $this->publications[$case->id][$surface][$side] = $observed['published'];
@@ -117,6 +119,7 @@ final class RecordCheck implements CaseCheck, RunCheck
                     $this->raw[$case->id][$surface][$side] = $observed['rawAuthority'];
                     $this->records[$case->id][$surface][$side] = $observed['comparative'];
                 }
+                $this->run->report->sourceEvidence($side, $key, 'records', $this->identityReady[$case->id][$surface][$side]);
             } catch (GateError $error) {
                 $this->publicationProblem($side, $key, $error);
             }
@@ -167,6 +170,7 @@ final class RecordCheck implements CaseCheck, RunCheck
                 } elseif (!self::sameMultiset($actual, $expected)) {
                     throw new GateError('The readable finding projection differs from the complete authoritative record multiset.');
                 }
+                $this->run->report->sourceEvidence($side, $key, 'records', true);
             } catch (GateError $error) {
                 $this->publicationProblem($side, $key, $error);
             }
@@ -179,6 +183,7 @@ final class RecordCheck implements CaseCheck, RunCheck
                 if (!self::sameMultiset($actual, $expected)) {
                     throw new GateError('The complete checkstyle projection multiset differs from authoritative records.');
                 }
+                $this->run->report->sourceEvidence($side, $key, 'records', true);
             } catch (GateError $error) {
                 $this->publicationProblem($side, $key, $error);
             }
@@ -210,6 +215,7 @@ final class RecordCheck implements CaseCheck, RunCheck
                 if ($surface !== 'format:summary' && $budget !== [] && (preg_match('~^\.\.\. and ([0-9]+) more\. Use --detail=all to see all violations$~m', $artifacts[$key], $remaining) !== 1 || (int) $remaining[1] !== \count($budget))) {
                     throw new GateError('The prose publication omitted an authoritative finding projection.');
                 }
+                $this->run->report->sourceEvidence($side, $key, 'records', true);
             } catch (GateError $error) {
                 $this->publicationProblem($side, $key, $error);
             }
@@ -220,6 +226,7 @@ final class RecordCheck implements CaseCheck, RunCheck
             try {
                 $sourceRecords = $this->physical[$case->id][$source][$side] ?? throw new GateError('The baseline source publication is unavailable.');
                 ReportRecords::baselineEntries($this->mapped($side, 'baseline-file', $artifacts[$key]), $sourceRecords);
+                $this->run->report->sourceEvidence($side, $key, 'records', true);
             } catch (GateError $error) {
                 $this->publicationProblem($side, $key, $error);
             }
@@ -234,6 +241,7 @@ final class RecordCheck implements CaseCheck, RunCheck
                 if ($projected !== $this->publications[$case->id]['format:json'][$side]) {
                     throw new GateError('A same-input check publication differs from its authoritative JSON records.');
                 }
+                $this->run->report->sourceEvidence($side, $key, 'records', true);
             } catch (GateError $error) {
                 $this->publicationProblem($side, $key, $error);
             }
@@ -242,6 +250,7 @@ final class RecordCheck implements CaseCheck, RunCheck
 
     private function publicationProblem(string $side, string $key, GateError $error): void
     {
+        $this->run->report->sourceEvidence($side, $key, 'records', false);
         $this->run->report->fail(FailureClass::RECORD_PROJECTION_MISMATCH, $side . ' / ' . $key, $error->getMessage());
     }
 
@@ -294,9 +303,6 @@ final class RecordCheck implements CaseCheck, RunCheck
         }
         $this->ranking->supplyFields($case);
         foreach (ReportViews::forCase($definition) as $view => $report) {
-            if ($this->run->isExactSurface('case:' . $case . '|' . $view)) {
-                continue;
-            }
             $candidate = $this->records[$case][$view]['candidate'] ?? null;
             $reference = $this->records[$case][$view]['reference'] ?? null;
             $left = $this->base($report, $view, $candidate ?? []);
@@ -333,6 +339,9 @@ final class RecordCheck implements CaseCheck, RunCheck
                     }
                     $this->run->declarations->fields->supply($report, $case, $view, $side, $supplied);
                 }
+            }
+            if ($this->run->isExactSurface('case:' . $case . '|' . $view)) {
+                continue;
             }
             if (!$identityReady || $candidate === null || $reference === null) {
                 continue;
@@ -442,6 +451,7 @@ final class RecordCheck implements CaseCheck, RunCheck
             break;
         }
         if (!$intent || (!$this->deriving && !$this->run->declarations->records->claim($change, $case, $report, $view, $canonical))) {
+            $this->run->report->semanticResidual('case:' . $case . '|' . $view);
             $this->run->report->fail(FailureClass::RECORD_UNDECLARED, 'case:' . $case . '|' . $view, 'No exact declared record instance licenses this ' . $change . ' residual.', [$canonical]);
             return;
         }

@@ -93,6 +93,9 @@ final class SurfaceComparison
             Interruption::raiseIfRequested();
 
             $pair = new SurfacePair($key, Surfaces::surfaceClass($key), $candidate[$key] ?? null, $reference[$key] ?? null);
+            foreach (['candidate', 'reference'] as $side) {
+                $this->report->sourceEvidence($side, $key, 'surface', $pair->candidate !== null && $pair->reference !== null);
+            }
 
             foreach (self::STAGES as $step) {
                 if ($step === 'difference' && $this->exact?->selected($key) === true) {
@@ -117,7 +120,8 @@ final class SurfaceComparison
         }
     }
 
-    public function trialSurface(string $key, string $candidate, string $reference): bool
+    /** @return array{valid:bool,visibleResidual:bool,authorityResidual:bool} */
+    public function trialSurface(string $key, string $candidate, string $reference): array
     {
         foreach ($this->registered['difference'] ?? [] as $stage) {
             if ($stage instanceof RecordStage) {
@@ -129,11 +133,11 @@ final class SurfaceComparison
             foreach ($this->registered[$step] ?? [] as $stage) {
                 $stage->applyStage($pair);
                 if ($pair->settled) {
-                    return false;
+                    return ['valid' => false, 'visibleResidual' => false, 'authorityResidual' => $this->report->hasSemanticResidual($key)];
                 }
             }
             if ($step === 'difference') {
-                return $pair->candidate === $pair->reference;
+                return ['valid' => true, 'visibleResidual' => $pair->candidate !== $pair->reference, 'authorityResidual' => $this->report->hasSemanticResidual($key)];
             }
             if ($step === 'presence') {
                 continue;
@@ -144,7 +148,7 @@ final class SurfaceComparison
                         $pair->candidate = ReportPayload::of((string) $pair->candidate, $pair->key, 'candidate');
                         $pair->reference = ReportPayload::of((string) $pair->reference, $pair->key, 'reference');
                     } catch (GateError) {
-                        return false;
+                        return ['valid' => false, 'visibleResidual' => false, 'authorityResidual' => false];
                     }
                 }
                 continue;
@@ -158,7 +162,7 @@ final class SurfaceComparison
                     $pair->candidate = $this->fingerprintCheck->trialSubstitute('candidate', $pair->key, (string) $pair->candidate);
                     $pair->reference = $this->fingerprintCheck->trialSubstitute('reference', $pair->key, (string) $pair->reference);
                     if ($pair->candidate === null || $pair->reference === null) {
-                        return false;
+                        return ['valid' => false, 'visibleResidual' => false, 'authorityResidual' => false];
                     }
                 } elseif ($step === 'translation') {
                     $this->translation($pair);
@@ -168,10 +172,10 @@ final class SurfaceComparison
                     $this->normalization($pair);
                 }
             } catch (GateError) {
-                return false;
+                return ['valid' => false, 'visibleResidual' => false, 'authorityResidual' => false];
             }
             if ($pair->settled) {
-                return false;
+                return ['valid' => false, 'visibleResidual' => false, 'authorityResidual' => false];
             }
         }
         throw new GateError('The semantic surface trial has no difference step.');
@@ -237,6 +241,8 @@ final class SurfaceComparison
             $pair->candidate = ReportPayload::of((string) $pair->candidate, $pair->key, 'candidate');
             $pair->reference = ReportPayload::of((string) $pair->reference, $pair->key, 'reference');
         } catch (GateError $error) {
+            $this->report->sourceEvidence('candidate', $pair->key, 'surface', false);
+            $this->report->sourceEvidence('reference', $pair->key, 'surface', false);
             $this->report->fail(FailureClass::REPORT_PAYLOAD_UNREADABLE, $pair->key, $error->getMessage());
 
             $pair->settle();
@@ -353,6 +359,7 @@ final class SurfaceComparison
             }
 
             if ($disorder !== null) {
+                $this->report->sourceEvidence($side, $key, 'surface', false);
                 $this->report->fail(FailureClass::PUBLISHED_ORDER_DRIFT, $key, 'The ' . $side . ': ' . $disorder);
                 $ordered = false;
             }
@@ -412,12 +419,14 @@ final class SurfaceComparison
 
         foreach (['candidate' => $candidate, 'reference' => $reference] as $side => $artifacts) {
             foreach ($artifacts as $key => $content) {
+                $this->report->sourceEvidence($side, $key, 'path', true);
                 $content = $this->normalization->normalizeCaptureMetadata(Surfaces::surfaceClass($key), $content);
                 if (str_ends_with($key, '|stderr:check:output')) {
                     $content = preg_replace_callback('~^Report written to [^\r\n]+$~m', fn(array $marker): string => $this->normalization->normalize('stderr:check:output', $marker[0]), $content) ?? throw new GateError('Cannot inspect the exact output diagnostic marker.');
                 }
                 foreach ($paths as $path) {
                     if (str_contains($content, $path)) {
+                        $this->report->sourceEvidence($side, $key, 'path', false);
                         $this->report->fail(
                             FailureClass::PATH_LEAK,
                             $side . ' / ' . $key,

@@ -328,23 +328,28 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
         $report = json_decode($artifacts[$key] ?? '', true);
 
         if (!\is_array($report) || !\is_array($report['violations'] ?? null)) {
-            $this->report->fail(FailureClass::RUN_FAILED, $side . ' / ' . $case->id, 'The JSON surface carries no findings section.');
+            $this->report->sourceEvidence($side, $key, 'outcome', false);
+            $this->report->fail(FailureClass::RUN_FAILED, $side . ' / ' . $case->id, 'The JSON surface carries no findings section.', [], ['side' => $side, 'key' => $key, 'role' => 'outcome']);
 
             return null;
         }
 
         if (($report['violationsMeta']['truncated'] ?? false) === true && $complete === null) {
+            $this->report->sourceEvidence($side, $key, 'outcome', false);
             $this->report->fail(
                 FailureClass::RUN_FAILED,
                 $side . ' / ' . $case->id,
                 'The JSON surface truncated its findings, so the comparison would silently cover a prefix.'
                 . ' Add --format-opt=violations=all to the case arguments.',
+                [],
+                ['side' => $side, 'key' => $key, 'role' => 'outcome'],
             );
         }
 
         if (CaseOutcome::applies(CaseOutcome::CHECK_BASELINE_FILE, CaseOutcome::of($case, $side === 'reference' ? 'reference' : 'candidate'))) {
             $this->checkBaselineSurface($side, $case, $artifacts);
         }
+        $this->report->sourceEvidence($side, $key, 'outcome', true);
 
         /** @var list<array<string, mixed>> $findings */
         $findings = $complete ?? array_values($report['violations']);
@@ -367,23 +372,33 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
     private function checkBaselineSurface(string $side, CaseDefinition $case, array $artifacts): void
     {
         $scope = 'case:' . $case->id;
+        $key = Surfaces::key($scope, 'baseline-file');
         $exit = $artifacts[Surfaces::key($scope, 'exit:baseline:generate')] ?? null;
 
         if ($exit !== '0') {
+            $this->report->sourceEvidence($side, $key, 'outcome', false);
             $this->report->fail(
                 FailureClass::RUN_FAILED,
                 $side . ' / ' . $case->id . ' / baseline:generate',
                 \sprintf('baseline:generate exited %s, so its file is not a surface either side can be held to.', $exit ?? 'nothing'),
+                [],
+                ['side' => $side, 'key' => $key, 'role' => 'outcome'],
             );
         }
 
-        if (trim($artifacts[Surfaces::key($scope, 'baseline-file')] ?? '') === '') {
+        if (trim($artifacts[$key] ?? '') === '') {
+            $this->report->sourceEvidence($side, $key, 'outcome', false);
             $this->report->fail(
                 FailureClass::RUN_FAILED,
                 $side . ' / ' . $case->id . ' / baseline-file',
                 'baseline:generate wrote no baseline. An empty baseline compares equal to an empty baseline, so the'
                 . ' whole surface would drop out of the comparison unnoticed.',
+                [],
+                ['side' => $side, 'key' => $key, 'role' => 'outcome'],
             );
+        }
+        if ($exit === '0' && trim($artifacts[$key] ?? '') !== '') {
+            $this->report->sourceEvidence($side, $key, 'outcome', true);
         }
     }
 }

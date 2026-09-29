@@ -96,15 +96,20 @@ final class DeclaredExactSurfaces
      */
     public function rewrite(array $measured): array
     {
+        if ($measured === []) {
+            return [];
+        }
         $rows = [];
         $written = [];
-        ksort($this->entries);
         foreach ($this->entries as $key => $entry) {
-            $diff = $measured[$key] ?? $entry['diff'];
-            $file = self::DIRECTORY . '/' . md5($key) . '.diff';
-            Fs::write($this->root . '/' . $file, $diff);
+            if (isset($measured[$key])) {
+                $file = self::DIRECTORY . '/' . md5($key) . '.diff';
+                Fs::write($this->root . '/' . $file, $measured[$key]);
+                $written[] = $file;
+            } else {
+                $file = $entry['file'];
+            }
             $rows[] = [$entry['case'], $entry['surface'], $file, $entry['reason']];
-            $written[] = $file;
         }
         Fs::write($this->root . '/' . self::INDEX, Tsv::render(self::COLUMNS, $rows));
         $written[] = self::INDEX;
