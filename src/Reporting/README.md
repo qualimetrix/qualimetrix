@@ -132,7 +132,7 @@ measured, accepted, or stale Baseline facts.
 Reporting-owned `OutputFormat` carries the resolved formatter name to the
 Console presenter without adding output policy to the transitional runtime
 configuration. `OutputFormatVocabulary` asks `FormatterRegistryInterface`
-which names exist. `OutputFormatSection` returns an atomic
+which names exist and owns the canonical `format` key. `OutputFormatSection` returns an atomic
 `SectionDeclaration` through `DocumentSectionSchemaInterface`: the
 `format` string scalar uses the vocabulary in every writing layer before
 merge, so a typo remains refused even under a valid command-line override.

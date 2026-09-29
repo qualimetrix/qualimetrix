@@ -36,7 +36,9 @@ There are no compatibility methods.
 **2. The format dictionary is a Reporting subject.**
 `OutputFormatVocabulary` asks `FormatterRegistryInterface` for accepted names.
 `OutputFormatSection` declares the format string scalar and its per-layer
-judgement through that vocabulary. `OutputFormatResolver` resolves the
+judgement through that vocabulary. Its canonical root key lives on the
+vocabulary; `ConfigSchema::FORMAT` remains the transitional ingress address,
+not a runtime dependency of Reporting. `OutputFormatResolver` resolves the
 winning runtime `OutputFormat` through the same vocabulary and keeps the
 unwritten default. Shape, membership refusal wording and provenance remain
 the same. Infrastructure registers the section, vocabulary and resolver

@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Configuration;
 
-use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 
 final readonly class OutputFormatVocabulary
 {
+    public const string KEY = 'format';
+
     public function __construct(private FormatterRegistryInterface $formatters) {}
 
     public function accepted(ResolvedValueInterface $format): string
@@ -18,7 +19,7 @@ final readonly class OutputFormatVocabulary
         if (!\is_string($value)) {
             $format->refuse(\sprintf(
                 'Invalid value for "%s": expected the name of an output format, got %s.',
-                ConfigSchema::FORMAT,
+                self::KEY,
                 get_debug_type($value),
             ));
         }

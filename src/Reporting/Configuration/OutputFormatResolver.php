@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Configuration;
 
-use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Reporting\Contract\OutputFormat;
 use Qualimetrix\Reporting\Contract\OutputFormatResolverInterface;
@@ -17,7 +16,7 @@ final readonly class OutputFormatResolver implements OutputFormatResolverInterfa
 
     public function resolve(ConfigurationDocument $document): OutputFormat
     {
-        $format = $document->resolved()->get(ConfigSchema::FORMAT);
+        $format = $document->resolved()->get(OutputFormatVocabulary::KEY);
 
         return new OutputFormat($format === null ? OutputFormat::DEFAULT : $this->vocabulary->accepted($format));
     }

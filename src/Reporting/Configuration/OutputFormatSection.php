@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Configuration;
 
-use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
@@ -18,7 +17,7 @@ final readonly class OutputFormatSection implements DocumentSectionSchemaInterfa
     public function declaration(): SectionDeclaration
     {
         return new SectionDeclaration(
-            ConfigSchema::FORMAT,
+            OutputFormatVocabulary::KEY,
             NodeSchema::scalar(ScalarForm::String)->judgedInEachLayer(function (ResolvedValueInterface $format): void {
                 $this->vocabulary->accepted($format);
             }),

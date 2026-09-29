@@ -2156,4 +2156,3 @@ rules:
         # namespace stopped reporting. The entry was measured inert, and an
         # inert suppression is exactly what this round is about.
         - exact: 'Qualimetrix\Analysis\Run\ExcludeBinding'
-
