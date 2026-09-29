@@ -71,12 +71,23 @@ final class AnalysisPipelineTest extends TestCase
 
         $pipeline = $this->pipeline($discovery, $collection);
         $configuration = new RunConfiguration(
-            [$root],
-            [new PathPattern(new SelectorDefinition(SelectorKind::Subtree, 'vendor'))],
-            $root,
-            GeneratedFilePolicy::Include,
-            coversProjectScope: true,
+            pathExcludes: [new PathPattern(new SelectorDefinition(SelectorKind::Subtree, 'vendor'))],
+            projectRoot: $root,
+            generatedFilePolicy: GeneratedFilePolicy::Include,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(
+                projectRoot: $root,
+                paths: [$root],
+                pathsAuthored: true,
+                scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered,
+                denominator: [],
+                uncoveredRoots: [],
+                prunedTargets: [],
+                reasons: [],
+                namespaceMapUsable: true,
+                pathResolutions: [],
+            ),
             authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         );
 
         $result = $pipeline->analyze($configuration);
@@ -98,7 +109,25 @@ final class AnalysisPipelineTest extends TestCase
         $collection->method('collect')->willReturn(new CollectionPhaseOutput([], []));
 
         $result = $this->pipeline($default, $collection)->analyze(
-            new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []),
+            new RunConfiguration(
+                pathExcludes: [],
+                projectRoot: $root,
+                generatedFilePolicy: GeneratedFilePolicy::Include,
+                projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(
+                    projectRoot: $root,
+                    paths: [$root],
+                    pathsAuthored: true,
+                    scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered,
+                    denominator: [],
+                    uncoveredRoots: [],
+                    prunedTargets: [],
+                    reasons: [],
+                    namespaceMapUsable: true,
+                    pathResolutions: [],
+                ),
+                authoredPathExcludes: [],
+                autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
+            ),
             $override,
         );
 
@@ -124,8 +153,44 @@ final class AnalysisPipelineTest extends TestCase
         );
         $pipeline = $this->pipeline($discovery, $collection);
 
-        $pipeline->analyze(new RunConfiguration([$firstRoot], [], $firstRoot, GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []));
-        $pipeline->analyze(new RunConfiguration([$secondRoot], [], $secondRoot, GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []));
+        $pipeline->analyze(new RunConfiguration(
+            pathExcludes: [],
+            projectRoot: $firstRoot,
+            generatedFilePolicy: GeneratedFilePolicy::Include,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(
+                projectRoot: $firstRoot,
+                paths: [$firstRoot],
+                pathsAuthored: true,
+                scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered,
+                denominator: [],
+                uncoveredRoots: [],
+                prunedTargets: [],
+                reasons: [],
+                namespaceMapUsable: true,
+                pathResolutions: [],
+            ),
+            authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
+        ));
+        $pipeline->analyze(new RunConfiguration(
+            pathExcludes: [],
+            projectRoot: $secondRoot,
+            generatedFilePolicy: GeneratedFilePolicy::Include,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(
+                projectRoot: $secondRoot,
+                paths: [$secondRoot],
+                pathsAuthored: true,
+                scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered,
+                denominator: [],
+                uncoveredRoots: [],
+                prunedTargets: [],
+                reasons: [],
+                namespaceMapUsable: true,
+                pathResolutions: [],
+            ),
+            authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
+        ));
 
         self::assertSame([$firstRoot->value(), $secondRoot->value()], $seenRoots);
     }
@@ -167,7 +232,25 @@ final class AnalysisPipelineTest extends TestCase
             $collection->method('collect')->willReturn(new CollectionPhaseOutput([], []));
 
             $result = $this->pipeline($discovery, $collection)->analyze(
-                new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []),
+                new RunConfiguration(
+                    pathExcludes: [],
+                    projectRoot: $root,
+                    generatedFilePolicy: GeneratedFilePolicy::Include,
+                    projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(
+                        projectRoot: $root,
+                        paths: [$root],
+                        pathsAuthored: true,
+                        scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered,
+                        denominator: [],
+                        uncoveredRoots: [],
+                        prunedTargets: [],
+                        reasons: [],
+                        namespaceMapUsable: true,
+                        pathResolutions: [],
+                    ),
+                    authoredPathExcludes: [],
+                    autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
+                ),
             );
 
             self::assertSame(5.0, $result->duration);

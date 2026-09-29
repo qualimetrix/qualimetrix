@@ -403,12 +403,23 @@ final class AncestryBorderIntegrationTest extends TestCase
 
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
         $result = $pipeline->analyze(new RunConfiguration(
-            [$root],
-            [],
-            $root,
-            GeneratedFilePolicy::Include,
-            coversProjectScope: true,
+            pathExcludes: [],
+            projectRoot: $root,
+            generatedFilePolicy: GeneratedFilePolicy::Include,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(
+                projectRoot: $root,
+                paths: [$root],
+                pathsAuthored: true,
+                scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered,
+                denominator: [],
+                uncoveredRoots: [],
+                prunedTargets: [],
+                reasons: [],
+                namespaceMapUsable: true,
+                pathResolutions: [],
+            ),
             authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         ));
 
         $prepared = $holder->getPreparedConfiguration();

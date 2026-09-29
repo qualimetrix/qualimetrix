@@ -159,12 +159,23 @@ final class SkippedEntryReachesCoverageTest extends TestCase
             ->build();
 
         return $pipeline->analyze(new RunConfiguration(
-            paths: [AbsolutePath::fromString($this->root . '/src')],
             pathExcludes: [],
             projectRoot: $root,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
-            coversProjectScope: true,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(
+                projectRoot: $root,
+                paths: [AbsolutePath::fromString($this->root . '/src')],
+                pathsAuthored: true,
+                scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered,
+                denominator: [],
+                uncoveredRoots: [],
+                prunedTargets: [],
+                reasons: [],
+                namespaceMapUsable: true,
+                pathResolutions: [],
+            ),
             authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         ));
     }
 

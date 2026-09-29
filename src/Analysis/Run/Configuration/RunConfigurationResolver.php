@@ -19,7 +19,6 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Discovery\DirectoryPruner;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
 
@@ -38,8 +37,8 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
             ? AutoloadDevPolicy::Include
             : AutoloadDevPolicy::Exclude;
         $writtenPaths = self::list($resolved->get(ConfigSchema::PATHS));
-        $pathList = array_map(
-            static fn(string $path): AbsolutePath => PathFactory::fromCliArgument($path, $root),
+        $pathList = PathsNormalizer::normalize(
+            $root,
             $writtenPaths === null ? self::defaultPaths($this->discoveredPaths($document, $autoloadDev)) : PathsSection::read($writtenPaths),
         );
 

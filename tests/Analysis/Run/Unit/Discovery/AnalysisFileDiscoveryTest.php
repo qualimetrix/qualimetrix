@@ -118,12 +118,23 @@ final class AnalysisFileDiscoveryTest extends TestCase
     private static function configuration(array $paths, GeneratedFilePolicy $policy): RunConfiguration
     {
         return new RunConfiguration(
-            paths: array_map(AbsolutePath::fromString(...), $paths),
             pathExcludes: [],
             projectRoot: AbsolutePath::fromString('/project'),
             generatedFilePolicy: $policy,
-            coversProjectScope: true,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(
+                projectRoot: AbsolutePath::fromString('/project'),
+                paths: array_map(AbsolutePath::fromString(...), $paths),
+                pathsAuthored: true,
+                scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered,
+                denominator: [],
+                uncoveredRoots: [],
+                prunedTargets: [],
+                reasons: [],
+                namespaceMapUsable: true,
+                pathResolutions: [],
+            ),
             authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         );
     }
 

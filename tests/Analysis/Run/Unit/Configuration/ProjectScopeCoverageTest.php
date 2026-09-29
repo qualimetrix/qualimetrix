@@ -214,18 +214,7 @@ final class ProjectScopeCoverageTest extends TestCase
         ];
     }
 
-    /**
-     * `Unknown`: the manifest declares no production autoload this product
-     * can read *at all*. There is no denominator and no target to name, and the
-     * project is what the user named, so a whole-project channel judges the
-     * paths. It used to close the gate instead, which silenced
-     * `architecture.unreachable-layer` on every such project for good.
-     *
-     * The state, not the verdict, is what keeps it apart from `Covered`: both
-     * cover and both name nothing.
-     *
-     * @param ?string $manifest raw `composer.json` content, or null for no manifest at all
-     */
+    /** @param ?string $manifest raw `composer.json` content, or null for no manifest at all */
     #[Test]
     #[DataProvider('provideManifestsThatDeclareNoProductionAutoload')]
     public function itWithholdsSubsetJudgementWhenTheManifestDeclaresNoUsableUniverse(?string $manifest): void

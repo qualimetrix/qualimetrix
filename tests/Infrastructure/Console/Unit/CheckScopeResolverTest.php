@@ -273,6 +273,7 @@ final class CheckScopeResolverTest extends TestCase
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
             projectScope: (new ProjectScopeCoverage($this->reader))->measure($root, $absolutePaths, \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude, true),
             authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         );
     }
 }

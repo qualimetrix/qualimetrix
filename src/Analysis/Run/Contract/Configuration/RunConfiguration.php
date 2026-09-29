@@ -26,7 +26,7 @@ final readonly class RunConfiguration
         public GeneratedFilePolicy $generatedFilePolicy,
         public ProjectScopeMeasurement $projectScope,
         public array $authoredPathExcludes,
-        public AutoloadDevPolicy $autoloadDevPolicy = AutoloadDevPolicy::Exclude,
+        public AutoloadDevPolicy $autoloadDevPolicy,
     ) {
         $sameRoot = $projectRoot->equals($projectScope->projectRoot);
         foreach ($projectScope->pathResolutions as $resolution) {

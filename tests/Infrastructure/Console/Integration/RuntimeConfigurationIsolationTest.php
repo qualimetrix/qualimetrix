@@ -405,7 +405,25 @@ final class RuntimeConfigurationIsolationTest extends TestCase
     {
         $root = $document->workingDirectory();
 
-        return new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: false, authoredPathExcludes: []);
+        return new RunConfiguration(
+            pathExcludes: [],
+            projectRoot: $root,
+            generatedFilePolicy: GeneratedFilePolicy::Include,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(
+                projectRoot: $root,
+                paths: [$root],
+                pathsAuthored: true,
+                scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Narrowed,
+                denominator: [],
+                uncoveredRoots: ['uncovered'],
+                prunedTargets: [],
+                reasons: [],
+                namespaceMapUsable: true,
+                pathResolutions: [],
+            ),
+            authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
+        );
     }
 
 }

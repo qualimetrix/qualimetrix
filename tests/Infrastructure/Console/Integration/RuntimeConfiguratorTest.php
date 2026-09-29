@@ -665,7 +665,14 @@ PHP, var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true));
     {
         $root = $document->workingDirectory();
 
-        return new RunConfiguration([], $root, GeneratedFilePolicy::Include, projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement($root, [$root], true, \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Unmeasured, [], [], [], [], false, []), authoredPathExcludes: []);
+        return new RunConfiguration(
+            [],
+            $root,
+            GeneratedFilePolicy::Include,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement($root, [$root], true, \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Unmeasured, [], [], [], [], false, []),
+            authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
+        );
     }
 
 }

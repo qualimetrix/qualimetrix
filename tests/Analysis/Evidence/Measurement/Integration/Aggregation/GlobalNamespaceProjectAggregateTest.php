@@ -59,12 +59,23 @@ final class GlobalNamespaceProjectAggregateTest extends TestCase
         $pipeline = $container->get(AnalysisPipelineInterface::class);
 
         $result = $pipeline->analyze(new RunConfiguration(
-            [$fixtureRoot],
-            [],
-            AbsolutePath::fromString((string) getcwd()),
-            GeneratedFilePolicy::Include,
-            coversProjectScope: true,
+            pathExcludes: [],
+            projectRoot: AbsolutePath::fromString((string) getcwd()),
+            generatedFilePolicy: GeneratedFilePolicy::Include,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(
+                projectRoot: AbsolutePath::fromString((string) getcwd()),
+                paths: [$fixtureRoot],
+                pathsAuthored: true,
+                scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered,
+                denominator: [],
+                uncoveredRoots: [],
+                prunedTargets: [],
+                reasons: [],
+                namespaceMapUsable: true,
+                pathResolutions: [],
+            ),
             authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         ));
 
         self::$repository = $result->metrics;

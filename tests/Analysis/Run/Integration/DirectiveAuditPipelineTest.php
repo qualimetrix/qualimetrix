@@ -95,7 +95,25 @@ final class DirectiveAuditPipelineTest extends TestCase
         $root = AbsolutePath::fromString(self::FIXTURE);
 
         return $pipeline->auditDirectives(
-            new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []),
+            new RunConfiguration(
+                pathExcludes: [],
+                projectRoot: $root,
+                generatedFilePolicy: GeneratedFilePolicy::Include,
+                projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(
+                    projectRoot: $root,
+                    paths: [$root],
+                    pathsAuthored: true,
+                    scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered,
+                    denominator: [],
+                    uncoveredRoots: [],
+                    prunedTargets: [],
+                    reasons: [],
+                    namespaceMapUsable: true,
+                    pathResolutions: [],
+                ),
+                authoredPathExcludes: [],
+                autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
+            ),
         );
     }
 
