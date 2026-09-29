@@ -3,6 +3,21 @@
 This is the Symfony composition root. References to private declarations are
 recorded as exact manifest composition bindings and do not widen public APIs.
 
+## Invocation source bindings
+
+`ComposerManifestReaderInterface` and `ManifestSnapshotControlInterface` alias
+one Infrastructure Composer reader. `Application` begins its snapshot after
+working-directory selection and before the first read; each root caches success,
+absence and failure for that invocation. The next invocation clears them.
+Measurement's namespace resolver is likewise composed under both its read port
+and `ProjectNamespaceSourceControlInterface`. Console's
+`ProjectSourceConfigurator` binds current facts and the analysed install anchor
+before collection. No configuration field transports a feature's runtime state.
+`OutputConfigurator` composes Run's existing `AnalysisFileDiscovery` for graph
+export with discovery, generated-file filtering and the lazy exclude audit.
+Exact private composition bindings and named public consumers remain manifest
+entries rather than wildcard visibility.
+
 ## Compiler passes that write into named services
 
 A pass that writes into a service it names by id implements

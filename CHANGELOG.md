@@ -9,6 +9,89 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+**Composer metadata is one invocation snapshot.** Replace
+`Analysis\Configuration\Discovery\ComposerReader` and
+`ComposerAutoloadPathReaderInterface` with
+`Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface::read($root)`.
+Read production/development targets and PSR-4 roots from its typed facts.
+Missing, unreadable, invalid and partially accepted sources now retain reasons.
+`Application` construction requires the same reader's
+`ManifestSnapshotControlInterface` as its third argument.
+Replace `ProjectNamespaceResolver($composerJsonPath, $overridePrefixes)`
+with explicit prefix construction or `ProjectNamespaceSourceControlInterface::bind($facts)`;
+construction no longer reads the working directory.
+Replace static `HtmlProjectMetadata::of(...)` with
+`(new HtmlProjectMetadata($reader))->of(...)`, and pass that metadata object
+as `HtmlTreeBuilder`'s third constructor argument.
+See ADR 0089.
+
+**Run configuration carries measured paths and explicit policies.** Replace
+constructor `paths:` and `coversProjectScope:` arguments with
+`projectScope: ProjectScopeMeasurement`, and always supply
+`autoloadDevPolicy: AutoloadDevPolicy::Include|Exclude`.
+Measurement/state imports move from `Analysis\Run\Configuration` to
+`Analysis\Run\Contract\Configuration`.
+Call `measure(root, paths, autoloadDev, pathsAuthored)` with explicit origin;
+replace `narrowedTo()`/`coveringProjectScope()` with
+`ProjectScopeCoverage::narrow()` and `withProjectScope()`.
+Paths and the coverage boolean are derived from that measurement; a different
+uncaptured project root is refused as a programmer error. See ADR 0089.
+
+**An undeclared or damaged subset is unmeasured.** Previously a manifest-less
+subset was `unknown` and judged as the whole project. It is now `unmeasured`,
+with the eight whole-project channels withheld. A whole root remains
+`unknown` and judges; a damaged manifest requires that root to be authored.
+Surviving inferred fragments of a partial manifest are also unmeasured.
+Unusable damaged defaults refuse with exit 3; write explicit paths.
+Structured `projectScope` adds `reasons[]` in every state and accepts
+`unmeasured`; consumers must retain those causes. Missing on-disk targets
+still remain outside the denominator and are named as reasons.
+Namespace location uses accepted PSR-4 facts independently of the state.
+See ADR 0089 and the amendment to ADR 0084.
+
+**Graph export resolves the configured run.** Previously graph paths and
+discovery bypassed the document. Omitted paths now follow the same Composer
+defaults as `check`, configured directory exclusions apply and generated files
+are excluded unless included. Graph accepts configuration/presets, cache,
+workers, memory limits and inclusion flags. Its `--format/-f` still selects
+`dot|json` independently of Reporting's document `format:`.
+Correct integrations following the former documented direction alias: use
+`--direction`; global `-d` selects the working directory.
+Debug accepts `--preset`; all four measuring baseline commands share
+`--no-cache`, `--workers` and `--memory-limit`. See ADR 0089.
+
+**Rules reads the current configuration document.** Previously the listing
+could succeed beside an invalid document. It now refuses invalid declared
+document values with exit 3, lists configured computed metric names and marks
+selection through the final `disabled_rules`/`only_rules`.
+It does not require analysis paths. Raw per-rule enable switches remain on
+the existing rule-option boundary until the shared selection resolver replaces
+that boundary. Programmatic command composition must provide the document
+adapter and the named resolvers. See ADR 0089.
+
+**Automatic configuration names are exact.** Previously filesystem lookup
+could accept a case variant, and two config files silently preferred one.
+Automatic discovery accepts directory entries named exactly `qmx.yaml` or
+`qmx.yml` and refuses two exact names with exit 3. Near spellings warn when
+no exact name exists. Rename the automatic file or use `--config` explicitly.
+An unlistable configuration search directory also refuses instead of inferring
+that no config exists. Every measuring command now refuses a missing input or an explicitly named
+existing regular non-PHP file before discovery; direct Finder use also refuses
+the non-PHP file instead of silently dropping it. See ADR 0089.
+
+
+**Graph analysis receives its complete run policy.** Replace
+`DependencyGraphAnalyzerInterface::analyze($paths, $projectRoot)` with
+`analyze($runConfiguration, $fileDiscovery)`. Both inputs are mandatory.
+Construct the analyzer with `AnalysisFileDiscovery` instead of a bare finder;
+the shared discovery applies generated-file policy and counts skipped files
+in coverage. See ADR 0089.
+
+**Debug command composition declares its preflight profile.** Replace the
+three-argument `LayerAssignmentCommand` constructor with the four-argument
+constructor, passing `AnalysisPreflightProfile::analysis()` after the preflight.
+See ADR 0089.
+
 **Document sections return one atomic declaration.** Replace
 `DocumentSectionSchemaInterface::key(): string` and `schema(): NodeSchema`
 with `declaration(): SectionDeclaration`, returning
@@ -21,8 +104,9 @@ resolver takes that same vocabulary for winner validation. See ADR 0088.
 `ProjectScopeCoverage::pathsCoverProjectScope()` and
 `uncoveredAutoloadRoots()` with `measure()`, then read
 `$measurement->state()->coversProjectScope()` and `$measurement->uncoveredRoots`.
-Call `ProjectScopeCoverage::reachableTargets()` statically. Scope semantics
-remain unchanged. See ADR 0088.
+Call `ProjectScopeCoverage::reachableTargets()` statically. That consolidation
+preserved its then-current scope policy; the later four-state amendment is
+recorded above and in ADR 0089. See ADR 0088 for the consolidation.
 
 **Invalid authored configuration values cannot be hidden by an override.**
 A lower layer with an unknown format or exit policy, an empty cache directory

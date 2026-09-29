@@ -74,6 +74,7 @@ src/
 ├── Core/              # Cross-cutting primitives (no project imports; PHP, PhpParser\Node, Composer\InstalledVersions)
 ├── Analysis/          # Orchestration plus taxonomy-only capability grouping
 │   ├── Configuration/       # ordered configuration document resolution
+│   ├── ProjectManifest/     # analysed Composer source facts and invocation snapshot contracts
 │   ├── Finding/             # rule language, execution, findings and filtering
 │   ├── Evidence/
 │   │   ├── DependencyModel/     # graph model plus extraction/traversal contract

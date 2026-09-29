@@ -22,9 +22,12 @@ Console/
 ├── ExitPolicySection.php            # every writing layer's fail_on value, using the resolved ExitPolicy validator
 ├── MemoryLimitSection.php           # every writing layer's memory_limit syntax, using RuntimeLimits
 ├── RuntimeConfigurator.php
+├── AnalysisPreflightProfile.php     # Closed analysis and graph consumer profiles
+├── AnalysisInputPathValidator.php   # Missing path and explicit non-PHP regular-file refusal
+├── ProjectSourceConfigurator.php    # Current manifest facts, namespace binding and DIT install anchor
 ├── RuntimeLoggerConfigurator.php    # Creates, publishes, and returns the logger for one run
 ├── AnalysisRuntimeConfigurator.php  # Per-run rule, collector, cache, and feature state
-├── CheckScopeResolver.php           # Git scope first, then warnings for that exact scope
+├── CheckScopeResolver.php           # Pure transfer of the initial measurement after Git resolution
 ├── ResolvedCheckScope.php           # Resolved Git scope plus deferred warning messages
 ├── ErrorStream.php                   # The run's single error-stream owner: the progress section and every diagnostic writer
 ├── RuleInputValidator.php            # Fail-closed selector/option-owner validation
@@ -74,39 +77,28 @@ is judged only when configuring that runtime. `fail_on: false` is refused;
 
 **Name:** `check`
 
-`CheckCommand` has ten constructor dependencies and thirteen properties. Its
-direct collaborators are `RuleRegistryInterface`, `AnalysisPipelineInterface`,
-`CacheFactory`, `FindingFilterOrchestrator`,
-`ConfigurationPipelineInterface`, `RuntimeConfigurator`, `ResultPresenter`,
-`RuleInputValidator`, and `CheckScopeResolver`. The command
-has no logger, `GitScopeResolver`, or `ScopeWarningChecker` property.
+`CheckCommand` orchestrates the shared document, runtime, rule inputs, scope
+and report adapters. `ConfigurationInputAdapter` and
+`CheckConfigurationResolvers` prepare its inputs; the command does not perform
+another manifest read.
 
-`CheckScopeResolver` owns the narrow scope seam. It resolves
-`GitScopeResolution` first, so invalid Git references fail before warnings or a
-payload are produced, and only then asks Run's `ProjectScopeCoverage` which of
-the project's autoload targets — production, plus `autoload-dev` under
-`AutoloadDevPolicy::Include` — the resolved paths leave uncovered. That one
-measurement feeds every output of `ResolvedCheckScope`: `ScopeWarningChecker`
-renders its uncovered targets as the partial-autoload warning, its
-`ProjectScopeState` decides the `coversProjectScope` boolean `CheckCommand` puts
-on the scoped `RunConfiguration` (true for `Covered` and for `Unknown`, where
-the manifest declares nothing and the paths are the project), and the same
-state becomes the `Reporting\ReportProjectScope` `ResultPresenter` adds to the
-report — naming, on a `Narrowed` run, the uncovered targets and
-`ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS` as not judged. A rule that must
-stay quiet on a slice, the warning about that slice and the report's statement
-of it cannot disagree. The suppression audit reads the same answer rather than
-measuring again: `FindingFilterOrchestrator::valueScope()` builds Finding's
-per-value `ValueScopeJudgement` once from `ResolvedCheckScope` — `null` on a
-narrowed run — and both the audit's findings and the values it skipped, which
-`projectScope()` adds to the report's scope, are read from it. The measurement's pruned targets —
-declared entries under a `vendor`, `node_modules` or `.git` directory, which are
-neither analysed by default nor counted — get a warning line of their own,
-independent of coverage: a whole-project run can still have dropped them.
-The coverage is taken for the resolved paths, not the configured ones: a Git
-report scope narrows the run after the configuration was resolved. `CheckCommand` validates the resolved paths
-before emitting the messages through its stderr-only warning route; structured
-stdout remains a clean report payload.
+`RunConfigurationResolver` creates one initial `ProjectScopeMeasurement`.
+`CheckScopeResolver` resolves Git first, then transfers that captured evidence
+with pure `ProjectScopeCoverage::narrow()` and renders its warnings. Git
+currently preserves analysis paths; `reportScope` limits finding publication.
+The initial measurement is reused by identity when those paths are unchanged.
+Coverage is derived from that measurement rather than supplied independently
+as a boolean. `Covered` and `Unknown` permit whole-project judgement;
+`Narrowed` and `Unmeasured` withhold the eight registered whole-project channels.
+
+`FindingFilterOrchestrator` creates Finding's per-value suppression judgement
+from this same evidence. Accepted PSR-4 facts place namespaces independently
+of the scope enum. Reporting names every unjudged value and preserves the
+typed source reasons, including missing/pruned targets, manifest issues and
+observed install-root omissions. Auxiliary ancestry issues add reasons without
+closing main-project coverage. `AnalysisInputPathValidator` refuses missing
+paths and explicit non-PHP regular files before discovery; diagnostics remain
+on stderr and structured stdout contains the report.
 
 The Console package is an adapter. It imports Run, Configuration, Finding, and
 Reporting contracts, parses options, configures one run, and renders
@@ -218,8 +210,8 @@ Non-payload diagnostics from `check` are written to stderr.
 
 `ConfigurationInputAdapter` resolves the configuration document for every
 command that reads it — `check`, and through `AnalysisPreflight` and
-`BaselineRun` `directives`, `debug:layer-assignment` and the `baseline:*`
-commands that measure — and answers its author there too:
+`BaselineRun` `directives`, `debug:layer-assignment`, `graph:export` and the
+four `baseline:*` commands that measure, and directly `rules` — and answers its author there too:
 `writeDiagnostics()` prints each warning about the accepted configuration on
 stderr as one `Warning:` line, after the runtime is configured, and
 `publishedDiagnostics()` gives `check`'s report the same warnings with their
@@ -247,7 +239,11 @@ Export dependency graph in DOT or JSON format.
 The command is an adapter: it obtains the graph through
 `DependencyGraphAnalyzerInterface` and renders it through Reporting's public
 `DependencyGraphProjectionInterface`. It never imports or constructs the
-internal DOT/JSON exporters.
+internal DOT/JSON exporters. Its graph profile resolves Run, Cache, Parallel,
+Coupling and memory-limit inputs after the entire document is judged, and
+passes `RunConfiguration` plus the configured finder to the analyzer. The graph
+format remains `GraphExportFormat::Dot|Json`, separate from the analysis output
+format. No Finding selection or analysis-format consumer runs on this path.
 
 **Name:** `graph:export`
 
@@ -255,7 +251,19 @@ internal DOT/JSON exporters.
 - `--output` — output file path (default: stdout)
 - `--namespace` — include an explicit `exact:`, `subtree:`, or `regex:` namespace selector (repeatable)
 - `--exclude-namespace` — exclude an explicit namespace selector (repeatable; exclusion wins)
-- `--format` — output format: `dot` (default) or `json`
+- `--format` / `-f` — output format: `dot` (default) or `json`
+- `--config`, `--preset` — shared document sources
+- `--exclude`, `--include-generated`, `--include-autoload-dev` — run discovery policy
+- `--no-cache`, `--workers` / `-w`, `--memory-limit` — run settings
+- `--direction` — DOT direction; no short alias
+
+With no path argument, graph export uses resolved document or Composer defaults.
+`rules` reads and judges the document without requesting a Run configuration or
+refusing an empty analysis tree. It includes named computed metrics and marks
+the current final `only_rules`/`disabled_rules` selection. Raw `rules` enable
+switches remain owned by Finding's rule resolution, not a second Console parser.
+`debug:layer-assignment` accepts `--preset`; all four measuring baseline commands
+share `--no-cache`, `--workers` and `--memory-limit`.
 
 **Output formats:**
 - **DOT** (Graphviz) — circular dependencies highlighted in red, clustering by namespace

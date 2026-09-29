@@ -20,7 +20,7 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason;
  * Four states: `covered` (the paths reach every declared autoload target),
  * `narrowed` (they miss some; the channels judged only on a whole-project run
  * were not judged) and `unknown` (the manifest declares no readable production
- * autoload universe, but an explicit whole root permits judgement).
+ * autoload universe, but the whole root permits judgement).
  * `unmeasured` has an incomplete or undeclared universe over a subset, or
  * inferred partial defaults; whole-project channels are withheld.
  *
@@ -28,18 +28,20 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason;
  * `unknown` the suppression channels still ask each configured value whether
  * this run reaches the place it names, and skip one it does not:
  * `suppress_paths: [tests/Legacy]` on `qmx check src/`, with `tests/` declared
- * only for development, or any namespace value on an `unknown` project, which
- * has no declared autoload to place it. `unjudgedValues` names every such
+ * only for development, or a namespace value with no accepted PSR-4 map
+ * locating it. Namespace-map usability is separate from the scope state.
+ * `unjudgedValues` names every such
  * value and `unjudgedChannels` the channels they belong to — derived from the
  * values, so the channel list cannot claim a silence no value suffered. On
- * `narrowed` the channel list is the whole family and says it alone: no value
+ * `narrowed` and `unmeasured` the channel list is the whole family: no value
  * of those channels was judged.
  *
  * A structured format publishes it where it says something about the report
  * itself: a document under a key of its own, in every state; `sarif` as a
  * notification, `github` as a notice, `html` as a banner and a human format as
  * a line, whenever {@see describe()} has something to say — every state but a
- * `covered` run that skipped no value. `gitlab` and `checkstyle` omit it:
+ * `covered` run that skipped no value and has no source reason.
+ * `gitlab` and `checkstyle` omit it:
  * their consumers count every entry as a finding, and a narrowed run is a
  * choice of the caller's, not a defect of the run to be counted.
  */
@@ -150,8 +152,7 @@ final readonly class ReportProjectScope
 
     /**
      * The sentence every non-document format uses; `null` only for a
-     * `covered` run that skipped no value, the one state that needs no
-     * explaining.
+     * `covered` run that skipped no value and has no source reason.
      */
     public function describe(): ?string
     {

@@ -6,7 +6,32 @@ Qualimetrix works out of the box with sensible defaults. A configuration file le
 
 ## Configuration File
 
-Create a file named `qmx.yaml` in your project root. Qualimetrix automatically looks for this file.
+Automatic discovery accepts exactly `qmx.yaml` or `qmx.yml` in the working
+directory. If both exist, the command refuses with exit code 3; choose one
+with `--config`. A near spelling, such as `QMX.yaml` or `qmx.yaml.dist`, is
+warned about and not loaded when neither exact name exists. An exact file
+beside a near name is loaded without that warning. `--config` selects its named
+file explicitly, independently of automatic discovery.
+
+If the working directory cannot be listed, discovery refuses with exit 3.
+
+Every command that reads the document judges all its context-free values,
+even when it consumes only some sections. The command's CLI profile does not
+hide malformed authored configuration.
+
+| Commands                                                                                                  | Document and paths                                                                                                                               | Shared CLI settings                                                                                                                  |
+| --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `check`, `directives`                                                                                     | Read the document and analyse resolved paths                                                                                                     | Their analysis options                                                                                                               |
+| `debug:layer-assignment`                                                                                  | Read the document and analyse configured paths                                                                                                   | `--config`, `--preset` and its analysis settings                                                                                     |
+| `graph:export`                                                                                            | Read the document; use resolved paths when none are given                                                                                        | `--config`, `--preset`, `--exclude`, `--include-generated`, `--include-autoload-dev`, `--no-cache`, `--workers`, `--memory-limit`    |
+| `rules`                                                                                                   | Read the document without requesting analysis paths; include named computed metrics and mark the current `only_rules`/`disabled_rules` selection | `--config`, `--preset`                                                                                                               |
+| `baseline:generate`, `baseline:update`, `baseline:cleanup`, `baseline:explain`                            | Read the document and measure resolved paths                                                                                                     | `--config`, `--preset`, rule selection, `--include-generated`, `--include-autoload-dev`, `--no-cache`, `--workers`, `--memory-limit` |
+| `baseline:rename-channels`, `hook:install`, `hook:status`, `hook:uninstall`, `help`, `list`, `completion` | Do not read the configuration document                                                                                                           | Their own command options                                                                                                            |
+
+Graph's `--format`/`-f` selects `dot` or `json` separately from the document's
+analysis `format`. Graph consumes Run, Cache, Parallel, Coupling and memory
+settings, without constructing Finding selection or the analysis output format.
+
 
 You can also specify a file explicitly:
 
@@ -20,7 +45,7 @@ vendor/bin/qmx check src/ --config=my-config.yaml
 
 ### Paths
 
-Directories to analyze:
+Directories or PHP files to analyze:
 
 ```yaml
 paths:
@@ -29,6 +54,17 @@ paths:
 
 !!! note
     If you pass paths as CLI arguments (e.g., `vendor/bin/qmx check src/ lib/`), they take precedence over the config file.
+
+Without authored paths in CLI, YAML or presets, defaults come from the
+analysed project's invocation snapshot of `composer.json`. If its selected
+autoload records are unusable, inferred defaults refuse with exit 3 rather
+than analysing unrelated paths. Accepted fragments of a damaged manifest can
+still be analysed, but inferred partial defaults do not establish a whole
+project. Explicitly selecting the whole project root permits judgement with
+state `unknown`; selecting a subset without a complete declared universe gives
+`unmeasured`. See [Project scope](../usage/output-formats.md#project-scope-in-every-format).
+A missing path or an explicitly named existing non-PHP regular file refuses
+with exit 3 in every measuring command before discovery.
 
 ### Exclude
 

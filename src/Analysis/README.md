@@ -8,6 +8,7 @@ boundaries.
 
 | Leaf                                                                   | Subject                                                                   | Read first                                              |
 | ---------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------- |
+| [`ProjectManifest`](ProjectManifest/README.md)                         | analysed Composer manifest facts and invocation snapshot                  | facts, read integrity, named consumers, and IO adapter  |
 | [`Configuration`](Configuration/README.md)                             | ordered configuration document resolution                                 | schema, stages, and feature document contributions      |
 | [`Evidence/CodeSmell`](Evidence/CodeSmell/README.md)                   | code-smell collection and rules                                           | finding groups, visitors, options, and exact DI root    |
 | [`Evidence/Cohesion`](Evidence/Cohesion/README.md)                     | class cohesion evidence and rules                                         | TCC/LCC, LCOM, and unused-private semantics             |

@@ -79,6 +79,12 @@ on one — the mode flag hides the review step that makes the split worth having
    included: `check`, `graph:export` and `debug:layer-assignment` all read the same way, and a
    boolean flag cannot grow a third representation without becoming a second option.
 
+Graph's `--direction` has no short alias: Symfony reserves `-d` for its global
+`--working-dir` option. `graph:export --format/-f` is the graph's own `dot|json`
+dictionary, independent of the analysis `format` key in the shared document.
+Commands that read the document judge it completely before consuming only their
+own values; a command profile does not make invalid authored values invisible.
+
 ### Rule CLI aliases
 
 Dynamic options generated from rule classes via the repeatable class-level attribute `#[CliAlias('alias', 'optionName')]`, read at runtime by `CliAliasReader`.
