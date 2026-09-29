@@ -12,6 +12,8 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\InvalidSelector
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelector;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelectorParser;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\InvalidLayerDefinitionException;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 
 /**
@@ -119,6 +121,14 @@ final class CarriedValueForm
                     $error->getMessage(),
                 ));
             }
+
+            return $value;
+        }
+
+        try {
+            LayerDefinition::assertValidDeclaredName($value);
+        } catch (InvalidLayerDefinitionException $error) {
+            throw $name->refusal(\sprintf('architecture.layers[%d] ("%s"): %s', $index, $value, $error->getMessage()));
         }
 
         return $value;

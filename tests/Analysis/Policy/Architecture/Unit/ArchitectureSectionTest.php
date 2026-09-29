@@ -263,6 +263,11 @@ final class ArchitectureSectionTest extends TestCase
             ['layers' => self::LAYERS],
             ['architecture', 'layers', '0', 'name'],
         ];
+        yield 'static layer name syntax' => [
+            ['layers' => [['name' => 'INVALID', 'patterns' => ['App\\Old']]]],
+            ['layers' => self::LAYERS],
+            ['architecture', 'layers', '0', 'name'],
+        ];
         yield 'pattern syntax' => [
             ['layers' => [['name' => 'old', 'patterns' => ['App\\[bad']]]],
             ['layers' => self::LAYERS],
@@ -315,6 +320,23 @@ final class ArchitectureSectionTest extends TestCase
             ['layers' => self::LAYERS],
             ['architecture', 'layers', '0', 'exclude', 'suffix'],
         ];
+        foreach ([
+            'suffix' => 'Foo{m}',
+            'attributes' => 'App\\Attr{m}',
+            'implements' => 'App\\Port{m}',
+            'extends' => 'App\\Base{m}',
+        ] as $kind => $value) {
+            yield 'static exclude ' . $kind . ' capture' => [
+                ['layers' => [['name' => 'old', 'patterns' => ['App\\Old'], 'exclude' => [$kind => [$value]]]]],
+                ['layers' => self::LAYERS],
+                ['architecture', 'layers', '0', 'exclude', $kind, '0'],
+            ];
+            yield 'template exclude ' . $kind . ' capture' => [
+                ['layers' => [['name' => 'old-{m}', 'patterns' => ['App\\{m}'], 'exclude' => [$kind => [$value]]]]],
+                ['layers' => self::LAYERS],
+                ['architecture', 'layers', '0', 'exclude', $kind, '0'],
+            ];
+        }
         yield 'allow target of the wrong shape' => [
             ['layers' => self::LAYERS, 'allow' => ['infra' => [42]]],
             ['allow' => ['infra' => ['domain']]],

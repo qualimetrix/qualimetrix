@@ -88,11 +88,12 @@ Their form is judged in every layer that writes them, before the merge —
 `ArchitectureSection` declares `LayerCriterionNormalizer::ofLayerEntry()` on a layer
 entry and `CarriedValueForm::ofAllowTarget()` on a target — so a preset's
 malformed criterion or target is refused even under a file that replaces
-`layers` or the target list. Pattern and selector syntax, match and relation
-kinds, the coverage mode and a positive expansion ceiling are also judged in
-each writing layer, using the same parsers as the resolved validators. Layer
-references, source/target capture compatibility, template bindings and cycles
-are judged on the merged value only.
+`layers` or the target list. Static-layer name grammar, fixed exclude capture
+placement, pattern and selector syntax, match and relation kinds, the coverage
+mode and a positive expansion ceiling are also judged in each writing layer,
+using the same parsers as the resolved validators. Layer references,
+source/target capture compatibility, template bindings and cycles are judged
+on the merged value only.
 An allow source name's syntax is judged even when its value is `~`. Its
 membership is judged after merging against the names the merged `layers`
 declares, in the words of its writing layer (`allow: {infrq: ~}` is refused):

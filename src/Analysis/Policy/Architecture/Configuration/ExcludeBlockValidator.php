@@ -150,7 +150,7 @@ final class ExcludeBlockValidator
      *
      * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
      */
-    private static function rejectInvalidCapturePlacements(int $index, string $layerName, array $criteria, bool $isTemplate, SectionSpot $spot): void
+    public static function rejectInvalidCapturePlacements(int $index, string $layerName, array $criteria, bool $isTemplate, SectionSpot $spot): void
     {
         if ($isTemplate) {
             self::rejectCapturesInKinds(
