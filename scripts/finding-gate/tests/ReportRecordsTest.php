@@ -542,6 +542,9 @@ final class ReportRecordsTest extends TestCase
         $records = RecordCheck::create($run);
         $this->observeRecords($run, $records, 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$kept]));
         $this->observeRecords($run, $records, 'reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$kept, $removed]));
+        $source = 'case:alpha|format:json';
+        $run->baselineEligibility->supply('candidate', [$source => array_fill_keys(array_keys(\QmxFindingGate\BaselineEligibility::groups([$kept])), true)]);
+        $run->baselineEligibility->supply('reference', [$source => array_fill_keys(array_keys(\QmxFindingGate\BaselineEligibility::groups([$kept, $removed])), true)]);
         $records->prepare('alpha');
         $baseline = '{"version":14,"entries":{"class:App\\\\A":[{"channel":"a.b","magnitudes":[3.000000]}],"class:App\\\\B":[{"channel":"c.d","magnitudes":[3]}]},"neighbour":{"spelling":1.00}}';
         $xml = '<checkstyle><file name="src/A.php"><error line="1" severity="error" source="qmx.a.b" message="M"/></file><file name="src/B.php"><error line="1" severity="error" source="qmx.c.d" message="M"/></file><file name="unused.php"></file></checkstyle>';

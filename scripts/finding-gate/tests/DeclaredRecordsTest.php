@@ -196,6 +196,10 @@ final class DeclaredRecordsTest extends TestCase
         $eligible = RecordedComparison::stageReport($tree, 'case:alpha|baseline-file');
         self::assertContains(\QmxFindingGate\FailureClass::RECORD_PROJECTION_MISMATCH, $eligible->failureClasses(), $eligible->render());
         self::assertStringContainsString('A licensed baseline source residual has no matching published entry.', $eligible->render());
+        $tree['answers']['case:alpha|check:baseline-source']['baselineEligibility'] = [];
+        $unavailable = RecordedComparison::stageReport($tree, 'case:alpha|baseline-file');
+        self::assertContains(\QmxFindingGate\FailureClass::RECORD_PROJECTION_MISMATCH, $unavailable->failureClasses(), $unavailable->render());
+        self::assertStringContainsString('no product eligibility decision', $unavailable->render());
     }
 
     #[Test]
@@ -215,6 +219,13 @@ final class DeclaredRecordsTest extends TestCase
         $records[4]['subject'] = $records[3]['subject'];
         $actual = \QmxFindingGate\BaselineEligibility::capture($root, $root, ['check', 'src', '--no-ansi', '-c', 'qmx.yaml', '-f', 'json'], $records);
         self::assertSame([false, false, true, false], array_values($actual));
+        Fs::write($this->root . '/qmx.yaml', "computed_metrics:\n  computed.probe:\n    formula: '1'\n    levels: [class]\n");
+        Fs::write($this->root . '/src/.keep', '');
+        $computed = ['subject' => 'class:Probe', 'channel' => 'computed.probe', 'occurrence' => null, 'edge' => null, 'metricValue' => 1];
+        $configured = \QmxFindingGate\BaselineEligibility::capture($root, $this->root, ['check', 'src', '--no-ansi', '-c', 'qmx.yaml', '-f', 'json'], [$computed]);
+        self::assertSame([true], array_values($configured));
+        $unconfigured = \QmxFindingGate\BaselineEligibility::capture($root, $root, ['check', 'src', '--no-ansi', '-c', 'qmx.yaml', '-f', 'json'], [$computed]);
+        self::assertSame([false], array_values($unconfigured));
     }
 
     private function intent(string $report, string $selector, string $change = 'withdrawn'): void
