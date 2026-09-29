@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
+namespace Qualimetrix\Infrastructure\DependencyInjection\ProjectManifest;
 
 use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestDecoder;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ContainerConfiguratorInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 

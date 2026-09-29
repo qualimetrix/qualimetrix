@@ -3,6 +3,17 @@
 This is the Symfony composition root. References to private declarations are
 recorded as exact manifest composition bindings and do not widen public APIs.
 
+## Subject composition
+
+`ProjectManifest/ProjectManifestConfigurator` composes the analysed Composer
+snapshot behind both exact public contracts. The existing `Configurator/`
+services compose their named subjects; `CohesionConfigurator` owns the LCOM
+resolver, store and tagged collectors. `OutputConfigurator` keeps ordinary
+services explicitly registered and autowired, with named loggers, the synthetic
+logger holder, lazy Options, factories and tagged collections bound explicitly.
+Run preparation and observed scope reasons are services; their immutable result
+records are values constructed by the operation, never container services.
+
 ## Invocation source bindings
 
 `ComposerManifestReaderInterface` and `ManifestSnapshotControlInterface` alias

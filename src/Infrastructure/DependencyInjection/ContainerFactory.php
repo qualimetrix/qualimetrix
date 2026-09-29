@@ -41,10 +41,10 @@ use Qualimetrix\Infrastructure\DependencyInjection\Configurator\MaintainabilityC
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\MeasurementConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\OutputConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ParserConfigurator;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ProjectManifestConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\RuleConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\SecurityConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\SizeConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\ProjectManifest\ProjectManifestConfigurator;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;

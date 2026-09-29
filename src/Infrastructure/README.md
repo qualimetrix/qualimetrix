@@ -114,6 +114,8 @@ Infrastructure/
 │   │   ├── DuplicationConfigurator.php
 │   │   ├── AnalysisConfigurator.php
 │   │   └── OutputConfigurator.php
+│   ├── ProjectManifest/
+│   │   └── ProjectManifestConfigurator.php # Shared invocation snapshot and exact public aliases
 │   └── CompilerPass/
 │       ├── CollectorCompilerPass.php
 │       ├── GlobalCollectorCompilerPass.php
@@ -143,6 +145,10 @@ Infrastructure/
     ├── FindingFilterOrchestrator.php # Adapts check options to the Reporting-owned FindingProjector, asks Finding's suppression-binding audit on a run wide enough to judge it — for findings and for the values it skipped, which the project scope publishes — and reports the stage results
     ├── RuntimeConfigurator.php        # Closed-profile runtime composition; graph consumes no Finding or analysis format
     ├── AnalysisPreflightProfile.php   # Positive CLI and consumer profiles for analysis and graph
+    ├── RunConfigurationPreparation.php # Resolves run/cache/parallel before runtime stores commit
+    ├── ResolvedRunConfiguration.php   # Accepted immutable run/cache/parallel values
+    ├── PreparedAnalysisRuntimeConfiguration.php # Accepted analysis values before stores commit
+    ├── ObservedProjectScopeReasons.php # Already observed manifest and install-root reasons
     ├── AnalysisInputPathValidator.php # Missing path and explicit non-PHP regular-file refusal
     ├── ProjectSourceConfigurator.php # Current manifest facts, namespace source binding and install anchor
     ├── RuntimeLoggerConfigurator.php  # Creates and publishes the logger for one console run
@@ -220,7 +226,7 @@ Creates a unified Symfony DI ContainerBuilder without parameters. Delegates conf
 - `ConfigurationConfigurator` — Analysis.Configuration pipeline and ordered document source seam
 - `DependencyModelConfigurator` — graph/traversal contracts and extraction registration
 - `ComputedMetricsConfigurator` — private root/Health implementation tree, capability-owned rule, and four public contract aliases
-- `MeasurementConfigurator` — repository, aggregation, Cohesion LCOM configuration, and worker reconstruction
+- `MeasurementConfigurator` — repository, aggregation, and worker reconstruction
 - `ParserConfigurator` — AST parser and caching
 - `CollectorConfigurator` — collector compiler-pass and parallel-class composition; it does not scan capability implementations
 - `RuleConfigurator` — rule registries, channels, selector, and compiler passes; it does not scan capability implementations
@@ -228,6 +234,8 @@ Creates a unified Symfony DI ContainerBuilder without parameters. Delegates conf
   `DesignConfigurator`, `MaintainabilityConfigurator`, `SecurityConfigurator`,
   and `SizeConfigurator` — exact owned collector roots plus lazy, non-autowired
   rule roots
+- `CohesionConfigurator` also registers the LCOM configuration resolver and
+  store, with the tagged LCOM-configurable collectors
 - `CouplingConfigurator` — the same exact collector/rule registration for
   Coupling, plus internal `CouplingAnalysis` state and the public
   `CouplingConfiguratorInterface` alias
