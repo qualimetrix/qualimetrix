@@ -50,7 +50,6 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\ConfigSchema'
         - 'Qualimetrix\Analysis\Configuration\ConfigurationRoot'
         - 'Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument'
-        - 'Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Provenance'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareNameInterface'
@@ -77,7 +76,6 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal'
         - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource'
         - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition'
-        - 'Qualimetrix\Analysis\Configuration\Discovery\ComposerReader'
         - 'Qualimetrix\Analysis\Configuration\DocumentRoots'
         - 'Qualimetrix\Analysis\Configuration\Document\AuthoredLayer'
         - 'Qualimetrix\Analysis\Configuration\Document\AuthoredNode'
@@ -431,6 +429,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceWithMetrics'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\ParallelSafeCollectorInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceSourceControlInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorCallableScope'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait'
@@ -797,15 +796,23 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Extraction\UnattachedComments'
         - 'Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter'
         - 'Qualimetrix\Analysis\Policy\Inline\ThresholdOverrideExtractionResult'
+    - name: analysis-projectmanifest
+      patterns:
+        - 'Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestDecoder'
+        - 'Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts'
+        - 'Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface'
+        - 'Qualimetrix\Analysis\ProjectManifest\Contract\ManifestIssue'
+        - 'Qualimetrix\Analysis\ProjectManifest\Contract\ManifestIssueKind'
+        - 'Qualimetrix\Analysis\ProjectManifest\Contract\ManifestReadState'
+        - 'Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface'
     - name: analysis-run
       patterns:
         - 'Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator'
         - 'Qualimetrix\Analysis\Run\Collection\CollectionPhaseFold'
         - 'Qualimetrix\Analysis\Run\Collection\FileProcessor'
+        - 'Qualimetrix\Analysis\Run\Configuration\PathsNormalizer'
         - 'Qualimetrix\Analysis\Run\Configuration\PathsSection'
         - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage'
-        - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeMeasurement'
-        - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeState'
         - 'Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput'
@@ -818,6 +825,10 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Contract\Collection\SuccessfulFileProcessing'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy'
+        - 'Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement'
+        - 'Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason'
+        - 'Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReasonKind'
+        - 'Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface'
@@ -922,13 +933,18 @@ architecture:
       patterns:
         - 'Qualimetrix\Infrastructure\Composer\ClassmapPath'
         - 'Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap'
+        - 'Qualimetrix\Infrastructure\Composer\ComposerManifestReader'
         - 'Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface'
+        - 'Qualimetrix\Infrastructure\Composer\Contract\ComposerRootOmission'
         - 'Qualimetrix\Infrastructure\Composer\DeclaredParentReader'
         - 'Qualimetrix\Infrastructure\Composer\GeneratedClassmap'
         - 'Qualimetrix\Infrastructure\Composer\InstallLocator'
+        - 'Qualimetrix\Infrastructure\Composer\LocatedComposerRoots'
     - name: infrastructure-console
       patterns:
+        - 'Qualimetrix\Infrastructure\Console\AnalysisInputPathValidator'
         - 'Qualimetrix\Infrastructure\Console\AnalysisPreflight'
+        - 'Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile'
         - 'Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition'
         - 'Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator'
         - 'Qualimetrix\Infrastructure\Console\Application'
@@ -989,6 +1005,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar'
         - 'Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator'
         - 'Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter'
+        - 'Qualimetrix\Infrastructure\Console\ProjectSourceConfigurator'
         - 'Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode'
         - 'Qualimetrix\Infrastructure\Console\Refusal\MachineReadableFormats'
         - 'Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter'
@@ -1041,6 +1058,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\MeasurementConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\OutputConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\ParserConfigurator'
+        - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\ProjectManifestConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\RuleConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\SecurityConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\SizeConfigurator'
@@ -1214,6 +1232,7 @@ architecture:
 
   allow:
     analysis-configuration:
+      - analysis-projectmanifest
       - core-neutral
       - core-path
       - external
@@ -1295,6 +1314,7 @@ architecture:
       - external
     analysis-evidence-measurement:
       - analysis-evidence-dependencymodel
+      - analysis-projectmanifest
       - core-path
       - core-profiler
       - core-symbol
@@ -1351,6 +1371,9 @@ architecture:
       - core-path
       - core-symbol
       - external
+    analysis-projectmanifest:
+      - core-path
+      - external
     analysis-run:
       - analysis-configuration
       - analysis-evidence-circulardependency
@@ -1360,6 +1383,7 @@ architecture:
       - analysis-finding
       - analysis-policy-architecture
       - analysis-policy-inline
+      - analysis-projectmanifest
       - core-neutral
       - core-path
       - core-profiler
@@ -1387,6 +1411,8 @@ architecture:
       - external
     infrastructure-composer:
       - analysis-evidence-design
+      - analysis-projectmanifest
+      - core-path
       - external
     infrastructure-console:
       - analysis-configuration
@@ -1399,6 +1425,7 @@ architecture:
       - analysis-policy-architecture
       - analysis-policy-baseline
       - analysis-policy-inline
+      - analysis-projectmanifest
       - analysis-run
       - core-neutral
       - core-path
@@ -1428,6 +1455,7 @@ architecture:
       - analysis-policy-architecture
       - analysis-policy-baseline
       - analysis-policy-inline
+      - analysis-projectmanifest
       - analysis-run
       - core-neutral
       - core-profiler
@@ -1483,6 +1511,8 @@ architecture:
       - analysis-policy-architecture
       - analysis-policy-baseline
       - analysis-policy-inline
+      - analysis-projectmanifest
+      - analysis-run
       - core-neutral
       - core-path
       - core-symbol

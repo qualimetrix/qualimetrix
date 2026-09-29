@@ -74,10 +74,12 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
                 new Reference(FileDiscoveryFactoryInterface::class),
                 new Reference(GeneratedFileFilterInterface::class),
             ]);
+        $container->register(AnalysisPreflightProfile::class)
+            ->setFactory([AnalysisPreflightProfile::class, 'analysis']);
         $container->register(self::LAYER_ASSIGNMENT_COMMAND)
             ->setArguments([
                 new Reference(AnalysisPreflight::class),
-                (new Definition(AnalysisPreflightProfile::class))->setFactory([AnalysisPreflightProfile::class, 'analysis']),
+                new Reference(AnalysisPreflightProfile::class),
                 new Reference(self::LAYER_ASSIGNMENT_RESOLVER),
                 new Reference(RefusalPresenter::class),
             ])

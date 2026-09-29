@@ -1,18 +1,18 @@
 command	options
 _complete	--api-version,--current,--input,--shell,--symfony
-baseline:cleanup	--config,--disable-rule,--force,--include-autoload-dev,--include-generated,--no-progress,--only-rule,--preset,--remove,--rule-opt
-baseline:explain	--baseline,--channel,--config,--disable-rule,--include-autoload-dev,--include-generated,--no-progress,--only-rule,--preset,--rule-opt
-baseline:generate	--config,--disable-rule,--force,--include-autoload-dev,--include-generated,--mode,--no-progress,--only-rule,--preset,--rule-opt
+baseline:cleanup	--config,--disable-rule,--force,--include-autoload-dev,--include-generated,--memory-limit,--no-cache,--no-progress,--only-rule,--preset,--remove,--rule-opt,--workers
+baseline:explain	--baseline,--channel,--config,--disable-rule,--include-autoload-dev,--include-generated,--memory-limit,--no-cache,--no-progress,--only-rule,--preset,--rule-opt,--workers
+baseline:generate	--config,--disable-rule,--force,--include-autoload-dev,--include-generated,--memory-limit,--mode,--no-cache,--no-progress,--only-rule,--preset,--rule-opt,--workers
 baseline:rename-channels	--format
-baseline:update	--config,--disable-rule,--force,--include-autoload-dev,--include-generated,--no-progress,--only-rule,--preset,--rule-opt
+baseline:update	--config,--disable-rule,--force,--include-autoload-dev,--include-generated,--memory-limit,--no-cache,--no-progress,--only-rule,--preset,--rule-opt,--workers
 check	--all,--baseline,--cache-dir,--class,--clear-cache,--config,--detail,--disable-rule,--exclude,--exclude-health,--fail-on,--format,--format-opt,--group-by,--include-autoload-dev,--include-generated,--log-file,--log-level,--memory-limit,--namespace,--no-cache,--no-progress,--no-suppression-annotations,--only-rule,--output,--preset,--profile,--profile-format,--report,--report-strict,--rule-opt,--show-resolved,--show-suppressed,--suppress-namespace,--suppress-path,--top,--workers
 completion	--debug
-debug:layer-assignment	--config,--format,--no-progress
+debug:layer-assignment	--config,--format,--no-progress,--preset
 directives	--config,--disable-rule,--format,--no-progress,--only-rule,--preset,--rule-opt,--sweep
-graph:export	--direction,--exclude-namespace,--format,--namespace,--no-clusters,--output
+graph:export	--config,--direction,--exclude,--exclude-namespace,--format,--include-autoload-dev,--include-generated,--memory-limit,--namespace,--no-cache,--no-clusters,--output,--preset,--workers
 help	--format,--raw
 hook:install	--force
 hook:status	
 hook:uninstall	--restore-backup
 list	--format,--raw,--short
-rules	--group
+rules	--config,--group,--preset

@@ -40,7 +40,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * `psr-4`, `classmap` or `files` alike — the product can judge and every one
  * of the six channels speaks, and so does every one but the namespace-valued
  * suppression channel under a manifest declaring no production autoload at
- * all, where the run's paths are the project (ADR 0084);
+ * all, when the caller selects the whole root (ADR 0089);
  * on the same tree and the same configuration under a manifest declaring a
  * production target the run never looked at, every one of the six must be
  * silent. Without the speaking half, silence would not distinguish a
@@ -201,29 +201,29 @@ final class ScopeConditionedChannelGuardTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideManifestsTheRunCovers')]
-    public function itSpeaksOnEveryScopeConditionedChannelWhenTheRunCanJudge(array $autoload, array $paths = ['src']): void
+    public function itSpeaksOnEveryScopeConditionedChannelWhenTheRunCanJudge(array $autoload, array $paths, bool $namespaceMapUsable): void
     {
         $spoke = $this->channelsOf($this->check($autoload, $paths));
 
         self::assertSame(
-            self::SCOPE_CONDITIONED,
+            $namespaceMapUsable ? self::SCOPE_CONDITIONED : array_values(array_diff(self::SCOPE_CONDITIONED, [self::UNLOCATED_WITHOUT_AUTOLOAD])),
             $spoke,
             'The fixture must be able to produce every channel, or the silent half proves nothing.',
         );
     }
 
-    /** @return iterable<string, array{array<string, mixed>}> */
+    /** @return iterable<string, array{array<string, mixed>, list<string>, bool}> */
     public static function provideManifestsTheRunCovers(): iterable
     {
-        yield 'psr-4' => [['autoload' => ['psr-4' => ['Sample\\' => 'src/']]]];
+        yield 'psr-4' => [['autoload' => ['psr-4' => ['Sample\\' => 'src/']]], ['src'], true];
 
-        yield 'classmap alone, which used to silence the row' => [['autoload' => ['classmap' => ['src/']]]];
+        yield 'classmap alone, which used to silence the row' => [['autoload' => ['classmap' => ['src/']]], ['src'], false];
 
         yield 'a files entry inside the analysed directory, beside psr-4' => [[
             'autoload' => ['psr-4' => ['Sample\\' => 'src/'], 'files' => ['src/Service.php']],
-        ]];
+        ], ['src'], true];
 
-        yield 'psr-0 alone' => [['autoload' => ['psr-0' => ['Sample_' => 'src/']]]];
+        yield 'psr-0 alone' => [['autoload' => ['psr-0' => ['Sample_' => 'src/']]], ['src'], false];
 
         // The discriminating shape: the gate opens because the run names the
         // directory holding the declared file, not because the run happens to
@@ -231,6 +231,7 @@ final class ScopeConditionedChannelGuardTest extends TestCase
         yield 'a files entry outside src, with a run that reaches it' => [
             ['autoload' => ['psr-4' => ['Sample\\' => 'src/'], 'files' => ['bootstrap/helpers.php']]],
             ['src', 'bootstrap'],
+            true,
         ];
     }
 
@@ -273,23 +274,22 @@ final class ScopeConditionedChannelGuardTest extends TestCase
 
     /**
      * The speaking half, second shape: the manifest declares no production
-     * autoload this product can read at all. There is no project beyond the
-     * paths the run names, so the paths are the whole project and the channels
-     * judge them (ADR 0084) — all but the namespace values of suppressions,
-     * which nothing locates without a declared autoload. That one channel is
-     * silent, and the report names it rather than leaving the silence to read
-     * as "nothing stale".
+     * autoload this product can read. Explicitly selecting the whole root
+     * permits judgement despite that unknown universe (ADR 0089) — all but
+     * namespace-valued suppressions when no accepted PSR-4 map locates them.
+     * Accepted development PSR-4 facts can locate a namespace independently
+     * of the production scope state; without a map the report names the silence.
      *
      * @param ?string $manifest raw `composer.json` content, or null for no manifest at all
      */
     #[Test]
     #[DataProvider('provideManifestsThatDeclareNoProductionAutoload')]
-    public function itSpeaksOnEveryScopeConditionedChannelWhenNothingDeclaresProduction(?string $manifest): void
+    public function itSpeaksOnEveryScopeConditionedChannelWhenNothingDeclaresProduction(?string $manifest, bool $namespaceMapUsable): void
     {
-        $tester = $this->checkWithRawManifest($manifest);
+        $tester = $this->checkWithRawManifest($manifest, ['.']);
 
         self::assertSame(
-            array_values(array_diff(self::SCOPE_CONDITIONED, [self::UNLOCATED_WITHOUT_AUTOLOAD])),
+            $namespaceMapUsable ? self::SCOPE_CONDITIONED : array_values(array_diff(self::SCOPE_CONDITIONED, [self::UNLOCATED_WITHOUT_AUTOLOAD])),
             $this->channelsOf($tester),
             'A run whose paths are the project judges every configured value a location can be found for.',
         );
@@ -300,16 +300,16 @@ final class ScopeConditionedChannelGuardTest extends TestCase
         self::assertIsArray($scope);
         self::assertSame('unknown', $scope['state'] ?? null);
         self::assertIsList($scope['unjudgedChannels'] ?? null);
-        self::assertContains(self::UNLOCATED_WITHOUT_AUTOLOAD, $scope['unjudgedChannels']);
+        self::assertSame($namespaceMapUsable ? [] : [self::UNLOCATED_WITHOUT_AUTOLOAD], $scope['unjudgedChannels']);
     }
 
-    /** @return iterable<string, array{?string}> */
+    /** @return iterable<string, array{?string, bool}> */
     public static function provideManifestsThatDeclareNoProductionAutoload(): iterable
     {
-        yield 'no composer.json at all' => [null];
-        yield 'a composer.json that does not parse' => ['{ "autoload": { "psr-4": '];
-        yield 'a manifest with no autoload section' => ['{"name":"acme/demo"}'];
-        yield 'only a dev section' => ['{"autoload-dev":{"psr-4":{"Sample\\\\Tests\\\\":"tests/"}}}'];
+        yield 'no composer.json at all' => [null, false];
+        yield 'a composer.json that does not parse' => ['{ "autoload": { "psr-4": ', false];
+        yield 'a manifest with no autoload section' => ['{"name":"acme/demo"}', false];
+        yield 'only a dev section' => ['{"autoload-dev":{"psr-4":{"Sample\\\\Tests\\\\":"tests/"}}}', true];
     }
 
     /**

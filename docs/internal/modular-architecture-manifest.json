@@ -21,6 +21,7 @@
     "Analysis.Policy.Architecture",
     "Analysis.Policy.Baseline",
     "Analysis.Policy.Inline",
+    "Analysis.ProjectManifest",
     "Analysis.Run",
     "Core.Neutral",
     "Core.Path",
@@ -241,39 +242,7 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRun"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\PreparedAnalysisInput"
-        }
-      ]
-    },
-    "Qualimetrix\\Analysis\\Configuration\\Contract\\Discovery\\ComposerAutoloadPathReaderInterface": {
-      "path": "src/Analysis/Configuration/Contract/Discovery/ComposerAutoloadPathReaderInterface.php",
-      "kind": "interface",
-      "owner": "Analysis.Configuration",
-      "visibility": "contract",
-      "consumers": [
-        {
-          "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeCoverage"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ConfigurationConfigurator"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\AnalysisInputPathValidator"
         }
       ]
     },
@@ -786,6 +755,10 @@
         {
           "owner": "Infrastructure.Cache",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\CacheConfigurationResolver"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeCoverage"
         }
       ]
     },
@@ -1022,6 +995,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeCoverage"
         }
       ]
     },
@@ -1088,13 +1065,6 @@
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter"
         }
       ]
-    },
-    "Qualimetrix\\Analysis\\Configuration\\Discovery\\ComposerReader": {
-      "path": "src/Analysis/Configuration/Discovery/ComposerReader.php",
-      "kind": "class",
-      "owner": "Analysis.Configuration",
-      "visibility": "internal",
-      "consumers": []
     },
     "Qualimetrix\\Analysis\\Configuration\\DocumentRoots": {
       "path": "src/Analysis/Configuration/DocumentRoots.php",
@@ -2260,6 +2230,10 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand"
         }
       ]
     },
@@ -6581,6 +6555,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleInputValidator"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand"
         }
       ]
     },
@@ -6629,6 +6607,10 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand"
         }
       ]
     },
@@ -12239,13 +12221,6 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeMeasurement": {
-      "path": "src/Analysis/Run/Configuration/ProjectScopeMeasurement.php",
-      "kind": "class",
-      "owner": "Analysis.Run",
-      "visibility": "internal",
-      "consumers": []
-    },
     "Qualimetrix\\Analysis\\Run\\Configuration\\RunConfigurationResolver": {
       "path": "src/Analysis/Run/Configuration/RunConfigurationResolver.php",
       "kind": "class",
@@ -12454,6 +12429,10 @@
         {
           "owner": "Infrastructure.Git",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Git\\GitScopeResolver"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand"
         }
       ]
     },
@@ -12546,6 +12525,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand"
         }
       ]
     },
@@ -12566,6 +12549,10 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ArchitectureConfigurator"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
         }
       ]
     },
@@ -12799,7 +12786,17 @@
       "kind": "class",
       "owner": "Analysis.Run",
       "visibility": "internal",
-      "consumers": []
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "operations": [
+            "service_reference",
+            "service_registration"
+          ]
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Run\\Discovery\\DiscoveredAnalysisFiles": {
       "path": "src/Analysis/Run/Discovery/DiscoveredAnalysisFiles.php",
@@ -12869,7 +12866,16 @@
       "kind": "class",
       "owner": "Analysis.Run",
       "visibility": "internal",
-      "consumers": []
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "operations": [
+            "service_reference"
+          ]
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeOptions": {
       "path": "src/Analysis/Run/ExcludeBinding/UnmatchedExcludeOptions.php",
@@ -13134,10 +13140,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\HashIndexBuilder"
         },
         {
-          "owner": "Analysis.Evidence.Measurement",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Namespace_\\ProjectNamespaceResolver"
-        },
-        {
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineWriter"
         },
@@ -13195,10 +13197,6 @@
         },
         {
           "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\DependencyGraphAnalyzerInterface"
-        },
-        {
-          "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Discovery\\AnalysisFileDiscovery"
         },
         {
@@ -13232,10 +13230,6 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline"
-        },
-        {
-          "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\DependencyGraphAnalyzer"
         },
         {
           "owner": "Analysis.Run",
@@ -13276,10 +13270,6 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRunContext"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand"
         },
         {
           "owner": "Infrastructure.Console",
@@ -13360,6 +13350,42 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\Contract\\GitScopeRequest"
+        },
+        {
+          "owner": "Analysis.ProjectManifest",
+          "source_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestDecoder"
+        },
+        {
+          "owner": "Analysis.ProjectManifest",
+          "source_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Analysis.ProjectManifest",
+          "source_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestReaderInterface"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\PathsNormalizer"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Composer",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\ComposerAutoloadMap"
+        },
+        {
+          "owner": "Infrastructure.Composer",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\ComposerManifestReader"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ProjectSourceConfigurator"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlProjectMetadata"
         }
       ]
     },
@@ -13391,10 +13417,6 @@
         },
         {
           "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\RunConfigurationResolver"
-        },
-        {
-          "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Discovery\\SkippedEntry"
         },
         {
@@ -13415,10 +13437,6 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ConfigurationInputAdapter"
         },
         {
@@ -13436,6 +13454,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeCoverage"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\PathsNormalizer"
         }
       ]
     },
@@ -13615,10 +13637,6 @@
         },
         {
           "owner": "Analysis.Evidence.Measurement",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Namespace_\\ProjectNamespaceResolver"
-        },
-        {
-          "owner": "Analysis.Evidence.Measurement",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\InMemoryMetricRepository"
         },
         {
@@ -13727,10 +13745,6 @@
         },
         {
           "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeCoverage"
-        },
-        {
-          "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Collection\\CollectionPhaseOutput"
         },
         {
@@ -13772,10 +13786,6 @@
         {
           "owner": "Core.Symbol",
           "source_fqcn": "Qualimetrix\\Core\\Symbol\\SymbolPath"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
         },
         {
           "owner": "Infrastructure.Git",
@@ -16252,16 +16262,20 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator"
-        },
-        {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\DesignConfigurator"
         },
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ProjectSourceConfigurator"
         }
       ]
     },
@@ -19134,18 +19148,6 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeState": {
-      "path": "src/Analysis/Run/Configuration/ProjectScopeState.php",
-      "kind": "enum",
-      "owner": "Analysis.Run",
-      "visibility": "contract",
-      "consumers": [
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver"
-        }
-      ]
-    },
     "Qualimetrix\\Analysis\\Finding\\Contract\\ChannelPublication": {
       "path": "src/Analysis/Finding/Contract/ChannelPublication.php",
       "kind": "class",
@@ -19367,6 +19369,743 @@
           ]
         }
       ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\ProjectNamespaceSourceControlInterface": {
+      "path": "src/Analysis/Evidence/Measurement/Contract/ProjectNamespaceSourceControlInterface.php",
+      "kind": "interface",
+      "owner": "Analysis.Evidence.Measurement",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ProjectSourceConfigurator"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\MeasurementConfigurator"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestDecoder": {
+      "path": "src/Analysis/ProjectManifest/Contract/ComposerManifestDecoder.php",
+      "kind": "class",
+      "owner": "Analysis.ProjectManifest",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Composer",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\ComposerManifestReader"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ProjectManifestConfigurator"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts": {
+      "path": "src/Analysis/ProjectManifest/Contract/ComposerManifestFacts.php",
+      "kind": "class",
+      "owner": "Analysis.ProjectManifest",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\ProjectNamespaceSourceControlInterface"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Namespace_\\ProjectNamespaceResolver"
+        },
+        {
+          "owner": "Infrastructure.Composer",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\ComposerManifestReader"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Pipeline\\Stage\\ComposerDiscoveryStage",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestReaderInterface"
+        },
+        {
+          "owner": "Analysis.Run",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeCoverage",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestReaderInterface"
+        },
+        {
+          "owner": "Infrastructure.Composer",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\ComposerAutoloadMap",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestReaderInterface"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestReaderInterface"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ProjectSourceConfigurator",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestReaderInterface"
+        },
+        {
+          "owner": "Reporting",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlProjectMetadata",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestReaderInterface"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestReaderInterface": {
+      "path": "src/Analysis/ProjectManifest/Contract/ComposerManifestReaderInterface.php",
+      "kind": "interface",
+      "owner": "Analysis.ProjectManifest",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Pipeline\\Stage\\ComposerDiscoveryStage"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeCoverage"
+        },
+        {
+          "owner": "Infrastructure.Composer",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\ComposerAutoloadMap"
+        },
+        {
+          "owner": "Infrastructure.Composer",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\ComposerManifestReader"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ProjectSourceConfigurator"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ProjectManifestConfigurator"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlProjectMetadata"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ManifestIssue": {
+      "path": "src/Analysis/ProjectManifest/Contract/ManifestIssue.php",
+      "kind": "class",
+      "owner": "Analysis.ProjectManifest",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeReason"
+        },
+        {
+          "owner": "Infrastructure.Composer",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\ComposerManifestReader"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\ProjectNamespaceSourceControlInterface",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Namespace_\\ProjectNamespaceResolver",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Application",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ManifestSnapshotControlInterface"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ManifestSnapshotControlInterface"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Pipeline\\Stage\\ComposerDiscoveryStage",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Analysis.Run",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeCoverage",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Infrastructure.Composer",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\ComposerAutoloadMap",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ProjectSourceConfigurator",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Reporting",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlProjectMetadata",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ManifestIssueKind": {
+      "path": "src/Analysis/ProjectManifest/Contract/ManifestIssueKind.php",
+      "kind": "enum",
+      "owner": "Analysis.ProjectManifest",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Composer",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\ComposerAutoloadMap"
+        },
+        {
+          "owner": "Infrastructure.Composer",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\ComposerManifestReader"
+        },
+        {
+          "owner": "Analysis.Run",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeReason",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ManifestIssue"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\ProjectNamespaceSourceControlInterface",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ManifestIssue"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Namespace_\\ProjectNamespaceResolver",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ManifestIssue"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Application",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ManifestIssue"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ManifestIssue"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Pipeline\\Stage\\ComposerDiscoveryStage",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ManifestIssue"
+        },
+        {
+          "owner": "Analysis.Run",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeCoverage",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ManifestIssue"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ProjectSourceConfigurator",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ManifestIssue"
+        },
+        {
+          "owner": "Reporting",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlProjectMetadata",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ManifestIssue"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ManifestReadState": {
+      "path": "src/Analysis/ProjectManifest/Contract/ManifestReadState.php",
+      "kind": "enum",
+      "owner": "Analysis.ProjectManifest",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeCoverage"
+        },
+        {
+          "owner": "Infrastructure.Composer",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\ComposerManifestReader"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\ProjectNamespaceSourceControlInterface",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Namespace_\\ProjectNamespaceResolver",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Pipeline\\Stage\\ComposerDiscoveryStage",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Infrastructure.Composer",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\ComposerAutoloadMap",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ProjectSourceConfigurator",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Reporting",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlProjectMetadata",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ManifestSnapshotControlInterface": {
+      "path": "src/Analysis/ProjectManifest/Contract/ManifestSnapshotControlInterface.php",
+      "kind": "interface",
+      "owner": "Analysis.ProjectManifest",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Composer",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\ComposerManifestReader"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Application"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ProjectManifestConfigurator"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Run\\Configuration\\PathsNormalizer": {
+      "path": "src/Analysis/Run/Configuration/PathsNormalizer.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement": {
+      "path": "src/Analysis/Run/Contract/Configuration/ProjectScopeMeasurement.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResolvedCheckScope"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeCoverage"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckResolvedConfiguration",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\RunConfiguration"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\RunConfiguration"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\RunConfiguration"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\PreparedAnalysisInput",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\RunConfiguration"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\RunConfiguration"
+        },
+        {
+          "owner": "Infrastructure.Git",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Git\\GitScopeResolver",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\RunConfiguration"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\RunConfiguration"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeReason": {
+      "path": "src/Analysis/Run/Contract/Configuration/ProjectScopeReason.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\ReportProjectScope"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResolvedCheckScope",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckResolvedConfiguration",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\PreparedAnalysisInput",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Git",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Git\\GitScopeResolver",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeReasonKind": {
+      "path": "src/Analysis/Run/Contract/Configuration/ProjectScopeReasonKind.php",
+      "kind": "enum",
+      "owner": "Analysis.Run",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
+        },
+        {
+          "owner": "Reporting",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Reporting\\ReportProjectScope",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeReason"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResolvedCheckScope",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeReason"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeReason"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckResolvedConfiguration",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeReason"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeReason"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeReason"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\PreparedAnalysisInput",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeReason"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeReason"
+        },
+        {
+          "owner": "Infrastructure.Git",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Git\\GitScopeResolver",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeReason"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeReason"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeState": {
+      "path": "src/Analysis/Run/Contract/Configuration/ProjectScopeState.php",
+      "kind": "enum",
+      "owner": "Analysis.Run",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResolvedCheckScope",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckResolvedConfiguration",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\PreparedAnalysisInput",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Git",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Git\\GitScopeResolver",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\Composer\\ComposerManifestReader": {
+      "path": "src/Infrastructure/Composer/ComposerManifestReader.php",
+      "kind": "class",
+      "owner": "Infrastructure.Composer",
+      "visibility": "internal",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ProjectManifestConfigurator",
+          "operations": [
+            "service_alias",
+            "service_registration"
+          ]
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\Composer\\Contract\\ComposerRootOmission": {
+      "path": "src/Infrastructure/Composer/Contract/ComposerRootOmission.php",
+      "kind": "class",
+      "owner": "Infrastructure.Composer",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
+          "carrier_fqcn": "Qualimetrix\\Infrastructure\\Composer\\Contract\\AnalysedInstallAnchorInterface"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ProjectSourceConfigurator",
+          "carrier_fqcn": "Qualimetrix\\Infrastructure\\Composer\\Contract\\AnalysedInstallAnchorInterface"
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\Composer\\LocatedComposerRoots": {
+      "path": "src/Infrastructure/Composer/LocatedComposerRoots.php",
+      "kind": "class",
+      "owner": "Infrastructure.Composer",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Console\\AnalysisInputPathValidator": {
+      "path": "src/Infrastructure/Console/AnalysisInputPathValidator.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "operations": [
+            "service_reference",
+            "service_registration"
+          ]
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\AnalysisPreflightProfile": {
+      "path": "src/Infrastructure/Console/AnalysisPreflightProfile.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ArchitectureConfigurator",
+          "operations": [
+            "service_reference",
+            "service_registration"
+          ]
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\ProjectSourceConfigurator": {
+      "path": "src/Infrastructure/Console/ProjectSourceConfigurator.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "operations": [
+            "service_reference",
+            "service_registration"
+          ]
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ProjectManifestConfigurator": {
+      "path": "src/Infrastructure/DependencyInjection/Configurator/ProjectManifestConfigurator.php",
+      "kind": "class",
+      "owner": "Infrastructure.DependencyInjection",
+      "visibility": "internal",
+      "consumers": []
     }
   },
   "enforcement_seams": {}
