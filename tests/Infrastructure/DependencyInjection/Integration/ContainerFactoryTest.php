@@ -159,6 +159,17 @@ final class ContainerFactoryTest extends TestCase
     }
 
     #[Test]
+    public function itSharesTheManifestReaderWithTheInvocationControl(): void
+    {
+        $container = $this->factory->create();
+        $reader = $container->get(\Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface::class);
+        $control = $container->get(\Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface::class);
+        self::assertSame($reader, $control);
+        self::assertInstanceOf(\Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface::class, $control);
+        self::assertSame([], $control->observedIssues());
+    }
+
+    #[Test]
     public function itCreatesCompiledContainer(): void
     {
         $container = $this->factory->create();

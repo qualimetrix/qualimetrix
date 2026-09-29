@@ -277,7 +277,7 @@ final class ApplicationRefusalTest extends TestCase
             use Symfony\\Component\\Console\\Output\\OutputInterface;
 
             \$errorStream = new ErrorStream();
-            \$app = new Application(\$errorStream, new RefusalPresenter(\$errorStream));
+            \$app = new Application(\$errorStream, new RefusalPresenter(\$errorStream), new \\Qualimetrix\\Infrastructure\\Composer\\ComposerManifestReader());
             \$app->setCatchErrors({$catch});
             \$app->addCommand(new class extends Command {
                 protected function configure(): void

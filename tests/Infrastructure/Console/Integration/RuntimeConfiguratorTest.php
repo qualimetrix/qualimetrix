@@ -175,7 +175,11 @@ final class RuntimeConfiguratorTest extends TestCase
             $this->cacheFactory,
             $this->parallelStore,
             new RuntimeLimitsController(),
-            new ComposerAutoloadMap(),
+            new \Qualimetrix\Infrastructure\Console\ProjectSourceConfigurator(
+                new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(),
+                new \Qualimetrix\Analysis\Evidence\Measurement\Namespace_\ProjectNamespaceResolver(),
+                new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()),
+            ),
         );
     }
 
@@ -661,7 +665,7 @@ PHP, var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true));
     {
         $root = $document->workingDirectory();
 
-        return new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: false, authoredPathExcludes: []);
+        return new RunConfiguration([], $root, GeneratedFilePolicy::Include, projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement($root, [$root], true, \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Unmeasured, [], [], [], [], false, []), authoredPathExcludes: []);
     }
 
 }

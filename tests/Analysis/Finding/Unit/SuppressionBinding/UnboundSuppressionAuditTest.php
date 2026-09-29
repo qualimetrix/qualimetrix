@@ -7,7 +7,6 @@ namespace Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
@@ -19,6 +18,7 @@ use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Core\Pattern\SelectorKind;
+use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 
 /**
  * The cases the command cannot stage: a run with no namespace tree, and the
@@ -405,7 +405,7 @@ final class UnboundSuppressionAuditTest extends TestCase
     {
         return new ValueScopeJudgement(
             $this->tempDir,
-            (new ComposerReader())->extractPsr4Roots($this->tempDir . '/composer.json'),
+            (new ComposerManifestReader())->read(\Qualimetrix\Core\Path\AbsolutePath::fromString($this->tempDir))->psr4Roots(),
             $analyzedPaths ?? [$this->tempDir . '/src'],
             projectDeclared: true,
         );

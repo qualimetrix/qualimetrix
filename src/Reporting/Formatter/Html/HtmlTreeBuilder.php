@@ -39,6 +39,7 @@ final class HtmlTreeBuilder
     public function __construct(
         private readonly DebtCalculator $debtCalculator,
         private readonly ComputedMetricDefinitionCatalogInterface $definitionCatalog,
+        private readonly HtmlProjectMetadata $projectMetadata,
     ) {
         $this->findingPartitioner = new HtmlFindingPartitioner();
         $this->metricAggregator = new HtmlMetricAggregator();
@@ -80,7 +81,7 @@ final class HtmlTreeBuilder
         $definitions = $this->buildComputedMetricDefinitions();
 
         // 7. Build project metadata
-        $project = HtmlProjectMetadata::of($scopedReporting, $projectName, $context->basePath);
+        $project = $this->projectMetadata->of($scopedReporting, $projectName, $context->basePath);
 
         return [
             'project' => $project,

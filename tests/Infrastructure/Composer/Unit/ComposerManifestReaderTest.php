@@ -2,23 +2,24 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery;
+namespace Qualimetrix\Tests\Infrastructure\Composer\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 
-#[CoversClass(ComposerReader::class)]
-final class ComposerReaderTest extends TestCase
+#[CoversClass(ComposerManifestReader::class)]
+final class ComposerManifestReaderTest extends TestCase
 {
-    private ComposerReader $reader;
+    private ComposerManifestReader $reader;
     private string $tempDir;
 
     protected function setUp(): void
     {
-        $this->reader = new ComposerReader();
+        $this->reader = new ComposerManifestReader();
         $this->tempDir = sys_get_temp_dir() . '/composer_reader_test_' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0777, true);
     }
@@ -26,6 +27,27 @@ final class ComposerReaderTest extends TestCase
     protected function tearDown(): void
     {
         $this->removeDir($this->tempDir);
+    }
+
+    #[Test]
+    public function itCachesInvalidBytesAndSymlinkAliasesWithoutConstructorReads(): void
+    {
+        self::assertSame([], $this->reader->observedIssues());
+        file_put_contents($this->tempDir . '/composer.json', '[]');
+        $root = AbsolutePath::fromString($this->tempDir);
+        $invalid = $this->reader->read($root);
+        $alias = $this->tempDir . '-alias';
+        symlink($this->tempDir, $alias);
+        try {
+            file_put_contents($this->tempDir . '/composer.json', '{"name":"fixed/project"}');
+            self::assertSame($invalid, $this->reader->read(AbsolutePath::fromString($alias)));
+            self::assertSame(\Qualimetrix\Analysis\ProjectManifest\Contract\ManifestReadState::Invalid, $invalid->state);
+            self::assertCount(1, $this->reader->observedIssues());
+            $this->reader->beginInvocation();
+            self::assertSame('fixed/project', $this->reader->read($root)->name);
+        } finally {
+            unlink($alias);
+        }
     }
 
     #[Test]
@@ -41,7 +63,7 @@ final class ComposerReaderTest extends TestCase
         ];
         $this->writeComposerJson($composerJson);
 
-        $paths = $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json');
+        $paths = $this->reader->read(AbsolutePath::fromString($this->tempDir))->productionTargets();
 
         self::assertSame(['src', 'tests'], $paths);
     }
@@ -49,7 +71,7 @@ final class ComposerReaderTest extends TestCase
     #[Test]
     public function itAnswersNullWhenTheComposerFileDoesNotExist(): void
     {
-        self::assertNull($this->reader->productionAutoloadTargets('/nonexistent/composer.json'));
+        self::assertSame([], $this->reader->read(AbsolutePath::fromString('/nonexistent'))->productionTargets());
     }
 
     #[Test]
@@ -57,7 +79,7 @@ final class ComposerReaderTest extends TestCase
     {
         $this->writeComposerJson(['name' => 'test/package']);
 
-        self::assertNull($this->reader->productionAutoloadTargets($this->tempDir . '/composer.json'));
+        self::assertSame([], $this->reader->read(AbsolutePath::fromString($this->tempDir))->productionTargets());
     }
 
     #[Test]
@@ -72,7 +94,7 @@ final class ComposerReaderTest extends TestCase
         ];
         $this->writeComposerJson($composerJson);
 
-        $paths = $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json');
+        $paths = $this->reader->read(AbsolutePath::fromString($this->tempDir))->productionTargets();
 
         self::assertSame(['src', 'lib'], $paths);
     }
@@ -89,8 +111,8 @@ final class ComposerReaderTest extends TestCase
         ];
         $this->writeComposerJson($composerJson);
 
-        self::assertNull($this->reader->productionAutoloadTargets($this->tempDir . '/composer.json'));
-        self::assertSame(['tests'], $this->reader->developmentAutoloadTargets($this->tempDir . '/composer.json'));
+        self::assertSame([], $this->reader->read(AbsolutePath::fromString($this->tempDir))->productionTargets());
+        self::assertSame(['tests'], $this->reader->read(AbsolutePath::fromString($this->tempDir))->developmentTargets());
     }
 
     #[Test]
@@ -101,7 +123,7 @@ final class ComposerReaderTest extends TestCase
             'autoload-dev' => ['psr-4' => ['Tests\\' => 'tests/']],
         ]);
 
-        self::assertSame(['src'], $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json'));
+        self::assertSame(['src'], $this->reader->read(AbsolutePath::fromString($this->tempDir))->productionTargets());
     }
 
     #[Test]
@@ -122,10 +144,10 @@ final class ComposerReaderTest extends TestCase
         ];
         $this->writeComposerJson($composerJson);
 
-        self::assertSame(['src'], $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json'));
+        self::assertSame(['src'], $this->reader->read(AbsolutePath::fromString($this->tempDir))->productionTargets());
         self::assertSame(
             ['tests', 'fixtures', 'test-data'],
-            $this->reader->developmentAutoloadTargets($this->tempDir . '/composer.json'),
+            $this->reader->read(AbsolutePath::fromString($this->tempDir))->developmentTargets(),
         );
     }
 
@@ -146,8 +168,8 @@ final class ComposerReaderTest extends TestCase
         ];
         $this->writeComposerJson($composerJson);
 
-        self::assertSame(['src'], $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json'));
-        self::assertSame(['src'], $this->reader->developmentAutoloadTargets($this->tempDir . '/composer.json'));
+        self::assertSame(['src'], $this->reader->read(AbsolutePath::fromString($this->tempDir))->productionTargets());
+        self::assertSame(['src'], $this->reader->read(AbsolutePath::fromString($this->tempDir))->developmentTargets());
     }
 
     #[Test]
@@ -163,7 +185,7 @@ final class ComposerReaderTest extends TestCase
         ];
         $this->writeComposerJson($composerJson);
 
-        $paths = $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json');
+        $paths = $this->reader->read(AbsolutePath::fromString($this->tempDir))->productionTargets();
 
         self::assertSame(['src'], $paths);
     }
@@ -180,7 +202,7 @@ final class ComposerReaderTest extends TestCase
         ];
         $this->writeComposerJson($composerJson);
 
-        $paths = $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json');
+        $paths = $this->reader->read(AbsolutePath::fromString($this->tempDir))->productionTargets();
 
         self::assertSame(['.'], $paths);
     }
@@ -197,7 +219,7 @@ final class ComposerReaderTest extends TestCase
         ];
         $this->writeComposerJson($composerJson);
 
-        $paths = $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json');
+        $paths = $this->reader->read(AbsolutePath::fromString($this->tempDir))->productionTargets();
 
         self::assertSame(['.', 'src'], $paths);
     }
@@ -214,7 +236,7 @@ final class ComposerReaderTest extends TestCase
         ];
         $this->writeComposerJson($composerJson);
 
-        $paths = $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json');
+        $paths = $this->reader->read(AbsolutePath::fromString($this->tempDir))->productionTargets();
 
         self::assertSame(['src'], $paths);
     }
@@ -237,11 +259,11 @@ final class ComposerReaderTest extends TestCase
 
         self::assertSame(
             ['modules/alpha/lib', 'modules/beta/lib', 'modules/alpha', 'modules/beta'],
-            $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json'),
+            $this->reader->read(AbsolutePath::fromString($this->tempDir))->productionTargets(),
         );
         self::assertSame(
             ['modules/alpha/lib', 'modules/beta/lib'],
-            $this->reader->developmentAutoloadTargets($this->tempDir . '/composer.json'),
+            $this->reader->read(AbsolutePath::fromString($this->tempDir))->developmentTargets(),
         );
     }
 
@@ -260,7 +282,7 @@ final class ComposerReaderTest extends TestCase
 
         self::assertSame(
             ['lib/*', 'nowhere/*'],
-            $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json'),
+            $this->reader->read(AbsolutePath::fromString($this->tempDir))->productionTargets(),
         );
     }
 
@@ -282,8 +304,8 @@ final class ComposerReaderTest extends TestCase
         $this->writeComposerJson($manifest);
 
         self::assertSame(
-            $expected,
-            $this->reader->productionAutoloadTargets($this->tempDir . '/composer.json'),
+            $expected ?? [],
+            $this->reader->read(AbsolutePath::fromString($this->tempDir))->productionTargets(),
         );
     }
 
@@ -323,7 +345,7 @@ final class ComposerReaderTest extends TestCase
     #[Test]
     public function itDeclaresNoProductionTargetsWhenTheManifestIsAbsent(): void
     {
-        self::assertNull($this->reader->productionAutoloadTargets($this->tempDir . '/nowhere.json'));
+        self::assertSame([], $this->reader->read(AbsolutePath::fromString($this->tempDir . '/nowhere'))->productionTargets());
     }
 
     #[Test]
@@ -331,7 +353,26 @@ final class ComposerReaderTest extends TestCase
     {
         file_put_contents($this->tempDir . '/composer.json', '{ this is not json');
 
-        self::assertNull($this->reader->productionAutoloadTargets($this->tempDir . '/composer.json'));
+        self::assertSame([], $this->reader->read(AbsolutePath::fromString($this->tempDir))->productionTargets());
+    }
+
+    #[Test]
+    public function itSnapshotsCanonicalRootsIncludingFailuresUntilTheNextInvocation(): void
+    {
+        $root = AbsolutePath::fromString($this->tempDir);
+        $absent = $this->reader->read($root);
+        $this->writeComposerJson(['name' => 'first/project']);
+        self::assertSame($absent, $this->reader->read($root));
+        self::assertSame($absent, $this->reader->read(AbsolutePath::fromString($this->tempDir . '/.')));
+        self::assertCount(1, $this->reader->observedIssues());
+        $this->reader->beginInvocation();
+        self::assertSame([], $this->reader->observedIssues());
+        $first = $this->reader->read($root);
+        self::assertSame('first/project', $first->name);
+        $this->writeComposerJson(['name' => 'second/project']);
+        self::assertSame($first, $this->reader->read($root));
+        $this->reader->beginInvocation();
+        self::assertSame('second/project', $this->reader->read($root)->name);
     }
 
     /**
@@ -374,7 +415,7 @@ final class ComposerReaderTest extends TestCase
 
         self::assertSame(
             ['tests', 'legacy-tests', 'tests/bootstrap.php'],
-            $this->reader->developmentAutoloadTargets($this->tempDir . '/composer.json'),
+            $this->reader->read(AbsolutePath::fromString($this->tempDir))->developmentTargets(),
         );
     }
 
@@ -383,6 +424,6 @@ final class ComposerReaderTest extends TestCase
     {
         $this->writeComposerJson(['autoload' => ['psr-4' => ['App\\' => 'src/']]]);
 
-        self::assertNull($this->reader->developmentAutoloadTargets($this->tempDir . '/composer.json'));
+        self::assertSame([], $this->reader->read(AbsolutePath::fromString($this->tempDir))->developmentTargets());
     }
 }

@@ -8,15 +8,13 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
-use Qualimetrix\Analysis\Run\Configuration\ProjectScopeMeasurement;
-use Qualimetrix\Analysis\Run\Configuration\ProjectScopeState;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
-use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
-use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 
 /**
  * The verdict a scope-conditioned channel reads before it speaks.
@@ -49,6 +47,54 @@ final class ProjectScopeCoverageTest extends TestCase
     protected function tearDown(): void
     {
         exec('rm -rf ' . escapeshellarg($this->tempDir));
+    }
+
+    #[Test]
+    public function itKeepsMetadataAndExcludedDevelopmentDamageOutOfTheProductionVerdict(): void
+    {
+        $this->writeManifest(['name' => false, 'autoload' => ['files' => ['src/A.php']], 'autoload-dev' => ['files' => [false]]]);
+        file_put_contents($this->tempDir . '/src/A.php', '<?php');
+        $root = AbsolutePath::fromString($this->tempDir);
+        $paths = [AbsolutePath::fromString($this->tempDir . '/src')];
+        $coverage = $this->coverage();
+        $production = $coverage->measure($root, $paths, AutoloadDevPolicy::Exclude, false);
+        self::assertSame(ProjectScopeState::Covered, $production->state());
+        self::assertSame([], $production->reasons);
+        self::assertSame(ProjectScopeState::Unmeasured, $coverage->measure($root, $paths, AutoloadDevPolicy::Include, false)->state());
+    }
+
+    #[Test]
+    public function itKeepsAuthoredRootDistinctFromPartialDefaultsWithTheSamePaths(): void
+    {
+        $this->writeManifest(['autoload' => ['psr-4' => ['Good\\' => '', 'Bad\\' => false]]]);
+        $root = AbsolutePath::fromString($this->tempDir);
+        $coverage = $this->coverage();
+        $defaults = $coverage->measure($root, [$root], AutoloadDevPolicy::Exclude, false);
+        $authored = $coverage->measure($root, [$root], AutoloadDevPolicy::Exclude, true);
+        self::assertSame(ProjectScopeState::Unmeasured, $defaults->state());
+        self::assertSame(ProjectScopeState::Unknown, $authored->state());
+        self::assertFalse($defaults->pathsAuthored);
+        self::assertTrue($authored->pathsAuthored);
+        self::assertNotEmpty($defaults->reasons);
+        $narrowed = ProjectScopeCoverage::narrow($defaults, [$root]);
+        self::assertFalse($narrowed->state()->coversProjectScope());
+        self::assertSame($defaults->reasons, $narrowed->reasons);
+        self::assertSame($defaults->denominator, $narrowed->denominator);
+    }
+
+    #[Test]
+    public function itNarrowsTheCapturedUniverseWithoutReadingTheManifestAgain(): void
+    {
+        $this->writeComposerJson(['src', 'lib']);
+        $root = AbsolutePath::fromString($this->tempDir);
+        $initial = $this->coverage()->measure($root, [$root], AutoloadDevPolicy::Exclude, true);
+        unlink($this->tempDir . '/composer.json');
+        $final = ProjectScopeCoverage::narrow($initial, [AbsolutePath::fromString($this->tempDir . '/src')]);
+        self::assertSame(ProjectScopeState::Narrowed, $final->state());
+        self::assertSame(['lib'], $final->uncoveredRoots);
+        self::assertSame($initial->denominator, $final->denominator);
+        self::assertSame($initial->reasons, $final->reasons);
+        self::assertFalse(ProjectScopeCoverage::narrow($final, [$root])->state()->coversProjectScope());
     }
 
     #[Test]
@@ -182,7 +228,7 @@ final class ProjectScopeCoverageTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideManifestsThatDeclareNoProductionAutoload')]
-    public function itTakesTheAnalysedPathsAsTheProjectWhenTheManifestDeclaresNone(?string $manifest): void
+    public function itWithholdsSubsetJudgementWhenTheManifestDeclaresNoUsableUniverse(?string $manifest): void
     {
         if ($manifest !== null) {
             file_put_contents($this->tempDir . '/composer.json', $manifest);
@@ -192,9 +238,9 @@ final class ProjectScopeCoverageTest extends TestCase
 
         $measurement = $this->measure($configuration);
 
-        self::assertTrue($measurement->state()->coversProjectScope());
+        self::assertFalse($measurement->state()->coversProjectScope());
         self::assertSame([], $measurement->uncoveredRoots);
-        self::assertSame(ProjectScopeState::Unknown, $measurement->state());
+        self::assertSame(ProjectScopeState::Unmeasured, $measurement->state());
     }
 
     /** Covered and Narrowed are told apart by the uncovered list, Unknown by the manifest. */
@@ -303,32 +349,26 @@ final class ProjectScopeCoverageTest extends TestCase
         $this->writeManifest(['autoload' => ['psr-4' => $map]]);
     }
 
-    private function measure(RunConfiguration $configuration): ProjectScopeMeasurement
+    /** @param array{AbsolutePath, list<AbsolutePath>, AutoloadDevPolicy} $configuration */
+    private function measure(array $configuration): ProjectScopeMeasurement
     {
-        return $this->coverage()->measure($configuration->projectRoot, $configuration->paths, $configuration->autoloadDevPolicy);
+        return $this->coverage()->measure($configuration[0], $configuration[1], $configuration[2], true);
     }
 
     private function coverage(): ProjectScopeCoverage
     {
-        return new ProjectScopeCoverage(new ComposerReader());
+        return new ProjectScopeCoverage(new ComposerManifestReader());
     }
 
-    /** @param list<string> $paths */
-    private function configuration(array $paths, AutoloadDevPolicy $autoloadDev = AutoloadDevPolicy::Exclude): RunConfiguration
+    /**
+     * @param list<string> $paths
+     *
+     * @return array{AbsolutePath, list<AbsolutePath>, AutoloadDevPolicy}
+     */
+    private function configuration(array $paths, AutoloadDevPolicy $autoloadDev = AutoloadDevPolicy::Exclude): array
     {
         $root = AbsolutePath::fromString($this->tempDir);
 
-        return new RunConfiguration(
-            paths: array_map(
-                static fn(string $path): AbsolutePath => $root->joinRelative(RelativePath::fromString($path)),
-                $paths,
-            ),
-            pathExcludes: [],
-            projectRoot: $root,
-            generatedFilePolicy: GeneratedFilePolicy::Exclude,
-            coversProjectScope: true,
-            authoredPathExcludes: [],
-            autoloadDevPolicy: $autoloadDev,
-        );
+        return [$root, array_map(static fn(string $path): AbsolutePath => $root->joinRelative(RelativePath::fromString($path)), $paths), $autoloadDev];
     }
 }

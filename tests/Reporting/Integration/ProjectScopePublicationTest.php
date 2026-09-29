@@ -63,16 +63,29 @@ final class ProjectScopePublicationTest extends TestCase
     /** The key is there in every state, with the same keys inside it. */
     #[Test]
     #[DataProvider('documentFormats')]
+    public function itPreservesSourceReasonsWhenPublishingSkippedValues(string $format): void
+    {
+        $reason = new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason(\Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReasonKind::NoDeclaredCode, ['source' => '/fixture/composer.json']);
+        $scope = ReportProjectScope::unknown()->withReasons([$reason])->withUnjudgedValues([
+            ['channel' => 'suppression.unmatched-path', 'option' => 'suppress_paths', 'pattern' => 'subtree:tests/Legacy'],
+        ]);
+        $published = self::decode($this->format($format, $scope))['projectScope'];
+        self::assertSame([$reason->toArray()], $published['reasons']);
+        self::assertSame([['option' => 'suppress_paths', 'pattern' => 'subtree:tests/Legacy']], $published['unjudgedValues']);
+    }
+
+    #[Test]
+    #[DataProvider('documentFormats')]
     public function itPublishesTheStateUnderOneKeyOfOneShape(string $format): void
     {
         $narrowed = self::decode($this->format($format, self::narrowed()))['projectScope'];
 
         self::assertSame(
-            ['state' => 'narrowed', 'uncoveredAutoloadTargets' => ['lib/'], 'unjudgedChannels' => self::CHANNELS, 'unjudgedValues' => []],
+            ['state' => 'narrowed', 'uncoveredAutoloadTargets' => ['lib/'], 'unjudgedChannels' => self::CHANNELS, 'unjudgedValues' => [], 'reasons' => []],
             $narrowed,
         );
         self::assertSame(
-            ['state' => 'covered', 'uncoveredAutoloadTargets' => [], 'unjudgedChannels' => [], 'unjudgedValues' => []],
+            ['state' => 'covered', 'uncoveredAutoloadTargets' => [], 'unjudgedChannels' => [], 'unjudgedValues' => [], 'reasons' => []],
             self::decode($this->format($format, ReportProjectScope::covered()))['projectScope'],
         );
         self::assertSame(
@@ -81,6 +94,7 @@ final class ProjectScopePublicationTest extends TestCase
                 'uncoveredAutoloadTargets' => [],
                 'unjudgedChannels' => ['suppression.unmatched-path'],
                 'unjudgedValues' => self::SKIPPED_VALUES,
+                'reasons' => [],
             ],
             self::decode($this->format($format, self::coveredWithSkippedValues()))['projectScope'],
         );
@@ -90,6 +104,7 @@ final class ProjectScopePublicationTest extends TestCase
                 'uncoveredAutoloadTargets' => [],
                 'unjudgedChannels' => self::UNKNOWN_CHANNELS,
                 'unjudgedValues' => self::UNKNOWN_VALUES,
+                'reasons' => [],
             ],
             self::decode($this->format($format, self::unknown()))['projectScope'],
         );

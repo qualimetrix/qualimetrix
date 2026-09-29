@@ -5,16 +5,19 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use LogicException;
-use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReasonKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
@@ -41,7 +44,9 @@ final readonly class FindingFilterOrchestrator
         private FindingProjector $findingProjector,
         private ErrorStream $errorStream,
         private UnboundSuppressionAudit $unboundSuppressionAudit,
-        private ComposerAutoloadPathReaderInterface $composerReader,
+        private ComposerManifestReaderInterface $composerReader,
+        private ManifestSnapshotControlInterface $manifestSnapshot,
+        private AnalysedInstallAnchorInterface $installAnchor,
     ) {}
 
     public function projectionOptions(
@@ -111,19 +116,11 @@ final readonly class FindingFilterOrchestrator
      * all. Both readers below build it from the same carried answer, so the
      * findings and the report's list of skipped values cannot part.
      *
-     * **Coverage is carried, not re-measured.** {@see CheckScopeResolver}
-     * measured it for the resolved paths — after `--report=git:...` narrowed
-     * them — and a second measurement here was one more place for the two
-     * answers to part. On a run narrowed below the project's autoload targets
-     * a value that names nothing binds nothing for a reason its author did not
-     * choose, so there is nothing to judge.
-     *
      * The PSR-4 map includes `autoload-dev` whatever the run's policy, unlike
      * the coverage denominator: it is asked where a namespace lives, not which
      * roots a whole-project run must reach, and a value naming test code is
-     * judged exactly by a run that analysed it. An `unknown` project declares
-     * no autoload to place a namespace through, so none of its namespace
-     * values is judged.
+     * judged exactly by a run that analysed it. Without accepted PSR-4 roots
+     * there is no declared map to locate namespace values, so none is judged.
      */
     private function valueScope(ResolvedCheckScope $resolvedScope): ?ValueScopeJudgement
     {
@@ -135,11 +132,9 @@ final readonly class FindingFilterOrchestrator
 
         return new ValueScopeJudgement(
             $scope->projectRoot->value(),
-            $this->composerReader->extractPsr4Roots(
-                $scope->projectRoot->joinRelative(RelativePath::fromString('composer.json'))->value(),
-            ),
+            $this->composerReader->read($scope->projectRoot)->psr4Roots(),
             array_map(static fn(AbsolutePath $path): string => $path->value(), $scope->paths),
-            projectDeclared: $resolvedScope->projectScope->state !== ReportProjectScope::UNKNOWN,
+            projectDeclared: $resolvedScope->measurement->namespaceMapUsable,
         );
     }
 
@@ -154,12 +149,22 @@ final readonly class FindingFilterOrchestrator
         FindingProjectionOptions $options,
     ): ReportProjectScope {
         $valueScope = $this->valueScope($resolvedScope);
+        $source = $this->composerReader->read($resolvedScope->measurement->projectRoot)->source();
+        $reasons = array_map(static fn($issue): ProjectScopeReason => ProjectScopeReason::manifest($issue, $issue->source !== $source), $this->manifestSnapshot->observedIssues());
+        foreach ($this->installAnchor->observedRootOmissions() as $omission) {
+            $reasons[] = new ProjectScopeReason(ProjectScopeReasonKind::OmittedComposerRoot, [
+                'cause' => $omission->cause, 'candidate' => $omission->candidate,
+                'startDirectory' => $omission->startDirectory ?? '', 'lastDirectory' => $omission->lastDirectory ?? '',
+                'visitedLevels' => $omission->visitedLevels,
+            ]);
+        }
+        $report = $resolvedScope->projectScope->withReasons($reasons);
 
         if ($valueScope === null) {
-            return $resolvedScope->projectScope;
+            return $report;
         }
 
-        return $resolvedScope->projectScope->withUnjudgedValues($this->unboundSuppressionAudit->unjudgedValues(
+        return $report->withUnjudgedValues($this->unboundSuppressionAudit->unjudgedValues(
             $options->suppressPaths,
             $options->suppressNamespaces,
             $result->namespaceTree?->getAllNamespaces(),

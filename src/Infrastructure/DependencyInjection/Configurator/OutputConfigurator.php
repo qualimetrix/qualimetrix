@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationResolverInterface;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
@@ -13,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfig
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceSourceControlInterface;
 use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface;
@@ -31,6 +31,8 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
 use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Analysis\Run\Configuration\PathsSection;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
@@ -75,6 +77,7 @@ use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\ProfileSummaryRenderer;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
 use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
+use Qualimetrix\Infrastructure\Console\ProjectSourceConfigurator;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
@@ -300,6 +303,12 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(ErrorStream::class),
             ]);
 
+        $container->register(ProjectSourceConfigurator::class)->setArguments([
+            new Reference(ComposerManifestReaderInterface::class),
+            new Reference(ProjectNamespaceSourceControlInterface::class),
+            new Reference(AnalysedInstallAnchorInterface::class),
+        ]);
+
         // RuntimeConfigurator owns cross-cutting setup and resets owner-local
         // runtime state before each configuration resolution.
         $container->register(RuntimeConfigurator::class)
@@ -312,7 +321,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(CacheFactory::class),
                 new Reference(ParallelConfigurationStoreInterface::class),
                 new Reference(RuntimeLimitsController::class),
-                new Reference(AnalysedInstallAnchorInterface::class),
+                new Reference(ProjectSourceConfigurator::class),
             ]);
 
         // ProfileSummaryRenderer (stateless, no dependencies)
@@ -388,7 +397,9 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference($findingProjector),
                 new Reference(ErrorStream::class),
                 new Reference('Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit'),
-                new Reference(ComposerAutoloadPathReaderInterface::class),
+                new Reference(ComposerManifestReaderInterface::class),
+                new Reference(ManifestSnapshotControlInterface::class),
+                new Reference(AnalysedInstallAnchorInterface::class),
             ]);
 
         // CheckCommand with all dependencies injected
@@ -411,7 +422,6 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference('Qualimetrix\\Infrastructure\\Git\\GitScopeResolver'),
                 new Reference('Qualimetrix\\Infrastructure\\Console\\ScopeWarningChecker'),
-                new Reference(ProjectScopeCoverage::class),
             ]);
         $container->register(CheckConfigurationResolvers::class)
             ->setArguments([

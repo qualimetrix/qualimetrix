@@ -31,9 +31,31 @@ final class HtmlFormatterTest extends TestCase
             new HtmlTreeBuilder(
                 new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues())),
                 self::createStub(ComputedMetricDefinitionCatalogInterface::class),
+                new \Qualimetrix\Reporting\Formatter\Html\HtmlProjectMetadata(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()),
             ),
             new HealthHintProjector(new HealthMetricCatalog()),
         );
+    }
+
+    #[Test]
+    public function itUsesTheInvocationManifestSnapshotForHtmlMetadata(): void
+    {
+        $root = sys_get_temp_dir() . '/qmx-html-snapshot-' . bin2hex(random_bytes(6));
+        mkdir($root);
+        $reader = new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader();
+        $metadata = new \Qualimetrix\Reporting\Formatter\Html\HtmlProjectMetadata($reader);
+        try {
+            file_put_contents($root . '/composer.json', '{"name":"first/project"}');
+            $reader->read(\Qualimetrix\Core\Path\AbsolutePath::fromString($root));
+            file_put_contents($root . '/composer.json', '{"name":"changed/project"}');
+            self::assertSame('first/project', $metadata->of(false, null, $root)['name']);
+            self::assertSame('authored name', $metadata->of(false, 'authored name', $root)['name']);
+            $reader->beginInvocation();
+            self::assertSame('changed/project', $metadata->of(false, null, $root)['name']);
+        } finally {
+            unlink($root . '/composer.json');
+            rmdir($root);
+        }
     }
 
     #[Test]

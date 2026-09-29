@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Html;
 
+use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Version;
 
@@ -19,16 +21,18 @@ use Qualimetrix\Core\Version;
  */
 final class HtmlProjectMetadata
 {
+    public function __construct(private readonly ComposerManifestReaderInterface $manifestReader) {}
+
     /**
      * @param ?string $projectName the `project-name` format option, when given
      * @param string $projectRoot the analysed project's root
      *
      * @return array<string, mixed>
      */
-    public static function of(bool $scopedReporting, ?string $projectName, string $projectRoot): array
+    public function of(bool $scopedReporting, ?string $projectName, string $projectRoot): array
     {
         return [
-            'name' => $projectName ?? self::analysedProjectName($projectRoot),
+            'name' => $projectName ?? $this->analysedProjectName($projectRoot),
             'generatedAt' => gmdate('c'),
             'qmxVersion' => Version::get(),
             'scopedReporting' => $scopedReporting,
@@ -45,16 +49,13 @@ final class HtmlProjectMetadata
      * loaded qmx, which under a phar, a global install or a qmx checkout is
      * qmx itself, whatever is being analysed.
      */
-    private static function analysedProjectName(string $projectRoot): string
+    private function analysedProjectName(string $projectRoot): string
     {
         if ($projectRoot === '') {
             return 'unknown';
         }
 
-        $manifest = rtrim($projectRoot, '/') . '/composer.json';
-        $contents = is_file($manifest) ? file_get_contents($manifest) : false;
-        $decoded = \is_string($contents) ? json_decode($contents, true) : null;
-        $name = \is_array($decoded) ? ($decoded['name'] ?? null) : null;
+        $name = $this->manifestReader->read(AbsolutePath::fromString($projectRoot))->name;
 
         if (\is_string($name) && $name !== '') {
             return $name;

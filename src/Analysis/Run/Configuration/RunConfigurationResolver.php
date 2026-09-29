@@ -50,11 +50,10 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
             self::refuseWrittenRootsExcluded($pathList, $root, new DirectoryPruner($root, $authoredExcludes), $writtenPaths, $excludes);
         }
 
-        $scope = $this->projectScopeCoverage->measure($root, $pathList, $autoloadDev);
+        $scope = $this->projectScopeCoverage->measure($root, $pathList, $autoloadDev, $writtenPaths !== null);
 
         return new RunConfiguration(
-            coversProjectScope: $scope->state()->coversProjectScope(),
-            paths: $pathList,
+            projectScope: $scope,
             pathExcludes: [...DirectoryPruner::builtInPatterns(), ...$authoredExcludes],
             // The same patterns without the built-in floor: what the author
             // actually asked to exclude, which is the only part of the merged

@@ -66,6 +66,42 @@ final class ApplicationTest extends TestCase
     }
 
     #[Test]
+    public function itBeginsANewManifestSnapshotAfterWorkingDirectorySelectionForEachInvocation(): void
+    {
+        $root = sys_get_temp_dir() . '/qmx-app-snapshot-' . bin2hex(random_bytes(6));
+        mkdir($root);
+        $reader = new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader();
+        $error = new ErrorStream();
+        $app = new Application($error, new RefusalPresenter($error), $reader);
+        $app->setAutoExit(false);
+        $app->addCommand(new class ($reader) extends Command {
+            public function __construct(private readonly \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface $reader)
+            {
+                parent::__construct('snapshot');
+            }
+
+            protected function execute(InputInterface $input, OutputInterface $output): int
+            {
+                $output->write($this->reader->read(\Qualimetrix\Core\Path\AbsolutePath::fromString((string) getcwd()))->name ?? 'absent');
+
+                return 0;
+            }
+        });
+        try {
+            foreach (['first/project', 'second/project'] as $name) {
+                file_put_contents($root . '/composer.json', json_encode(['name' => $name], \JSON_THROW_ON_ERROR));
+                $output = new BufferedOutput();
+                self::assertSame(0, $app->doRun(new ArrayInput(['command' => 'snapshot', '--working-dir' => $root]), $output));
+                self::assertSame($name, $output->fetch());
+            }
+        } finally {
+            chdir($this->originalCwd);
+            unlink($root . '/composer.json');
+            rmdir($root);
+        }
+    }
+
+    #[Test]
     public function itChangesTheWorkingDirectoryWhenWorkingDirIsGiven(): void
     {
         $tempDir = sys_get_temp_dir();
@@ -412,7 +448,7 @@ final class ApplicationTest extends TestCase
         // `ErrorStream`s would let the
         // presenter clear a progress frame Application never drew on, or
         // vice versa.
-        return new Application($errorStream, new RefusalPresenter($errorStream));
+        return new Application($errorStream, new RefusalPresenter($errorStream), new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
     }
 
     private static function commandThatThrows(Throwable $failure): Command

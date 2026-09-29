@@ -10,7 +10,6 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
-use Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface;
@@ -36,7 +35,7 @@ final class RuntimeConfigurator
         private readonly CacheFactory $cacheFactory,
         private readonly ParallelConfigurationStoreInterface $parallelConfigurationStore,
         private readonly RuntimeLimitsController $runtimeLimitsController,
-        private readonly AnalysedInstallAnchorInterface $analysedAutoloadMap,
+        private readonly ProjectSourceConfigurator $projectSourceConfigurator,
     ) {}
 
     /** Resets every mutable per-run seam before configuration resolution starts. */
@@ -63,15 +62,7 @@ final class RuntimeConfigurator
         InputInterface $input,
         OutputInterface $output,
     ): void {
-        // Every command that runs the pipeline passes through here, which is
-        // why the anchor lives in this call rather than at one call site: DIT's
-        // ancestor walk silently reports "no install" for any run that forgot
-        // to aim it, and `baseline:generate` forgetting it means the baseline
-        // records a magnitude `check` never produces.
-        $this->analysedAutoloadMap->pointAt(
-            (string) $runConfiguration->projectRoot,
-            array_map(static fn(object $path): string => (string) $path, $runConfiguration->paths),
-        );
+        $this->projectSourceConfigurator->configure($runConfiguration->projectRoot, $runConfiguration->paths);
 
         // Pure preflight: no store or external-effect mutation is allowed
         // until every owner has accepted its immutable value.

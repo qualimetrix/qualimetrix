@@ -100,7 +100,7 @@ final class LogFileBlankValueRefusalTest extends TestCase
         $errorStream = $container->get(ErrorStream::class);
         /** @var RefusalPresenter $refusalPresenter */
         $refusalPresenter = $container->get(RefusalPresenter::class);
-        $application = new Application($errorStream, $refusalPresenter);
+        $application = new Application($errorStream, $refusalPresenter, new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $application->setAutoExit(false);
         $application->setCommandLoader(new ContainerCommandLoader($container, ['check' => CheckCommand::class]));
 

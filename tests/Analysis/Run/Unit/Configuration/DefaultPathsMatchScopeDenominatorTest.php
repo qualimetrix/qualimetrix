@@ -11,14 +11,14 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
-use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ComposerDiscoveryStage;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
-use Qualimetrix\Analysis\Run\Configuration\ProjectScopeState;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -38,7 +38,7 @@ use SplFileInfo;
 #[CoversClass(ComposerDiscoveryStage::class)]
 #[CoversClass(RunConfigurationResolver::class)]
 #[CoversClass(ProjectScopeCoverage::class)]
-#[CoversClass(ComposerReader::class)]
+#[CoversClass(ComposerManifestReader::class)]
 final class DefaultPathsMatchScopeDenominatorTest extends TestCase
 {
     private string $root;
@@ -179,10 +179,11 @@ final class DefaultPathsMatchScopeDenominatorTest extends TestCase
         self::assertSame(['src'], $this->relativePaths($configuration));
         self::assertTrue($configuration->coversProjectScope);
 
-        $measurement = (new ProjectScopeCoverage(new ComposerReader()))->measure(
+        $measurement = (new ProjectScopeCoverage(new ComposerManifestReader()))->measure(
             $configuration->projectRoot,
             $configuration->paths,
             $configuration->autoloadDevPolicy,
+            true,
         );
         self::assertSame([], $measurement->uncoveredRoots);
         self::assertSame($expectedPruned, $measurement->prunedTargets);
@@ -206,27 +207,21 @@ final class DefaultPathsMatchScopeDenominatorTest extends TestCase
         self::assertTrue($configuration->coversProjectScope);
     }
 
-    /**
-     * A manifest whose every target lies under a pruned directory declares no
-     * project code a walk reaches: the run falls back to the working
-     * directory, as with no autoload at all, takes that directory as the
-     * project — `Unknown`, not `Covered` — and still names what it dropped.
-     */
     #[Test]
-    public function itTreatsAManifestWhoseEveryTargetIsPrunedAsDeclaringNothingAndStillNamesThem(): void
+    public function itRefusesDefaultsWhoseEveryDeclaredTargetIsPrunedAndNamesThemForAuthoredRoot(): void
     {
-        $configuration = $this->resolve(['autoload' => ['files' => ['vendor/acme/helpers.php']]], false);
-
+        $manifest = ['autoload' => ['files' => ['vendor/acme/helpers.php']]];
+        try {
+            $this->resolve($manifest, false);
+            self::fail('Unusable defaults must be refused.');
+        } catch (\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal $refusal) {
+            self::assertStringContainsString('Cannot infer analysis paths', $refusal->getMessage());
+        }
+        $configuration = $this->resolve($manifest, false, ['.']);
         self::assertSame([$this->root], array_map(static fn(AbsolutePath $path): string => $path->value(), $configuration->paths));
         self::assertTrue($configuration->coversProjectScope);
-
-        $measurement = (new ProjectScopeCoverage(new ComposerReader()))->measure(
-            $configuration->projectRoot,
-            $configuration->paths,
-            $configuration->autoloadDevPolicy,
-        );
-        self::assertSame(ProjectScopeState::Unknown, $measurement->state());
-        self::assertSame([['target' => 'vendor/acme/helpers.php', 'directory' => 'vendor']], $measurement->prunedTargets);
+        self::assertSame(ProjectScopeState::Unknown, $configuration->projectScope->state());
+        self::assertSame([['target' => 'vendor/acme/helpers.php', 'directory' => 'vendor']], $configuration->projectScope->prunedTargets);
     }
 
     /**
@@ -244,10 +239,11 @@ final class DefaultPathsMatchScopeDenominatorTest extends TestCase
             $configuration->coversProjectScope,
             'A run over the default paths must cover the scope it is judged against.',
         );
-        $measurement = (new ProjectScopeCoverage(new ComposerReader()))->measure(
+        $measurement = (new ProjectScopeCoverage(new ComposerManifestReader()))->measure(
             $configuration->projectRoot,
             $configuration->paths,
             $configuration->autoloadDevPolicy,
+            true,
         );
         self::assertSame([], $measurement->uncoveredRoots);
     }
@@ -294,7 +290,7 @@ final class DefaultPathsMatchScopeDenominatorTest extends TestCase
         file_put_contents($this->root . '/composer.json', json_encode($manifest, \JSON_THROW_ON_ERROR));
         $root = AbsolutePath::fromString($this->root);
 
-        $layer = (new ComposerDiscoveryStage(new ComposerReader()))->apply(new ConfigurationResolutionRequest($root));
+        $layer = (new ComposerDiscoveryStage(new ComposerManifestReader()))->apply(new ConfigurationResolutionRequest($root));
         self::assertNotNull($layer);
 
         $cli = [ConfigSchema::INCLUDE_AUTOLOAD_DEV => $includeAutoloadDev];
@@ -302,7 +298,7 @@ final class DefaultPathsMatchScopeDenominatorTest extends TestCase
             $cli[ConfigSchema::PATHS] = $writtenPaths;
         }
 
-        $configuration = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))->resolve(LayeredDocument::of([
+        $configuration = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerManifestReader())))->resolve(LayeredDocument::of([
             ['source' => $layer->source, 'values' => $layer->values],
             ['source' => 'cli', 'values' => $cli],
         ], $root));

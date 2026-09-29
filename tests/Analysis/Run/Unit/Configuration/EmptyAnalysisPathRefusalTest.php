@@ -8,10 +8,10 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 /**
@@ -54,7 +54,7 @@ final class EmptyAnalysisPathRefusalTest extends TestCase
     public function itStillDefaultsToTheWorkingDirectory(): void
     {
         $document = LayeredDocument::of([], AbsolutePath::fromString('/project'));
-        $resolved = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))->resolve($document);
+        $resolved = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerManifestReader())))->resolve($document);
 
         self::assertSame(['/project'], array_map(static fn($path): string => $path->value(), $resolved->paths));
     }
@@ -141,7 +141,7 @@ final class EmptyAnalysisPathRefusalTest extends TestCase
     {
         $this->expectException(ConfigurationRefusal::class);
 
-        (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))->resolve(LayeredDocument::of(
+        (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerManifestReader())))->resolve(LayeredDocument::of(
             [
                 ['source' => 'config', 'values' => ['paths' => [2024]]],
                 ['source' => 'cli', 'values' => ['paths' => ['src']]],
@@ -157,6 +157,6 @@ final class EmptyAnalysisPathRefusalTest extends TestCase
             AbsolutePath::fromString('/project'),
         );
 
-        return (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))->resolve($document);
+        return (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerManifestReader())))->resolve($document);
     }
 }

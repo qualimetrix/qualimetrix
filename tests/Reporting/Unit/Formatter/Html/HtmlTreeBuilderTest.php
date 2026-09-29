@@ -44,6 +44,7 @@ final class HtmlTreeBuilderTest extends TestCase
         $this->builder = new HtmlTreeBuilder(
             new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues())),
             $this->catalog(),
+            new \Qualimetrix\Reporting\Formatter\Html\HtmlProjectMetadata(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()),
         );
     }
 

@@ -242,7 +242,6 @@ final class CheckCommand extends Command
         }
 
         $projectRoot = $runConfiguration->projectRoot;
-        $this->warnIfComposerJsonMissing($projectRoot, $output);
         foreach ($resolvedScope->warnings as $warning) {
             $this->writeWarning($output, \sprintf('Warning: %s', $warning));
         }
@@ -266,9 +265,7 @@ final class CheckCommand extends Command
         // rebuilding this positionally lost every field added to the run
         // configuration after the call site was written, silently and once per
         // field.
-        $scopedRunConfiguration = $resolvedScope->coversProjectScope
-            ? $runConfiguration->coveringProjectScope($scopeResolution->paths)
-            : $runConfiguration->narrowedTo($scopeResolution->paths);
+        $scopedRunConfiguration = $runConfiguration->withProjectScope($resolvedScope->measurement);
         $result = $this->runAnalysis($scopedRunConfiguration, $scopeResolution->fileDiscovery);
 
         $filterResult = $this->findingFilterOrchestrator->filterAndReport(
@@ -344,19 +341,6 @@ final class CheckCommand extends Command
         }
 
         return $errors;
-    }
-
-    /**
-     * Warns when composer.json is not found in project root.
-     */
-    private function warnIfComposerJsonMissing(AbsolutePath $projectRoot, OutputInterface $output): void
-    {
-        if (!file_exists($projectRoot->value() . '/composer.json')) {
-            $this->writeWarning(
-                $output,
-                \sprintf('Warning: No composer.json found in %s. Namespace detection and coupling metrics may be inaccurate.', $projectRoot->value()),
-            );
-        }
     }
 
     /**

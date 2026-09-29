@@ -320,7 +320,7 @@ final class HookRefusalLadderTest extends TestCase
         };
 
         $errorStream = new ErrorStream();
-        $application = new Application($errorStream, new RefusalPresenter($errorStream));
+        $application = new Application($errorStream, new RefusalPresenter($errorStream), new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $application->setAutoExit(false);
         foreach ([HookInstallCommand::class, HookUninstallCommand::class, HookStatusCommand::class] as $class) {
             $application->addCommand(new $class(new GitRepositoryLocator(), $locator));

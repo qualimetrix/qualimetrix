@@ -91,7 +91,7 @@ final class ErrorStreamOwnershipTest extends TestCase
         // Symfony hands `renderThrowable()` the already-resolved error stream,
         // never the console output, which is why the owner is asked for the
         // writer it is already bound to.
-        (new Application($errorStream, new RefusalPresenter($errorStream)))->renderThrowable(
+        (new Application($errorStream, new RefusalPresenter($errorStream), new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->renderThrowable(
             new RuntimeException('a failure with the frame still up'),
             $output->getErrorOutput(),
         );
@@ -144,7 +144,7 @@ final class ErrorStreamOwnershipTest extends TestCase
         $errorStream = new ErrorStream();
         $output = new BufferedOutput();
 
-        $application = new Application($errorStream, new RefusalPresenter($errorStream));
+        $application = new Application($errorStream, new RefusalPresenter($errorStream), new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $application->setAutoExit(false);
         $application->addCommand(self::commandThatBindsThenThrows($errorStream, 'a failure with nowhere to go'));
 

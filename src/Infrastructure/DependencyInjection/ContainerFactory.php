@@ -41,6 +41,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\Configurator\MaintainabilityC
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\MeasurementConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\OutputConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ParserConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ProjectManifestConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\RuleConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\SecurityConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\SizeConfigurator;
@@ -98,6 +99,7 @@ final class ContainerFactory
         $configurators = [
             new CoreServicesConfigurator(),
             new ConfigurationConfigurator($srcDir),
+            new ProjectManifestConfigurator(),
             new ParserConfigurator(),
             new CollectorConfigurator(),
             new CodeSmellConfigurator($srcDir),

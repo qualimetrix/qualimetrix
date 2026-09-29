@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInt
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceSourceControlInterface;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -74,6 +75,8 @@ final class MeasurementConfigurator implements ContainerConfiguratorInterface
             ->setPublic(true);
         $container->setAlias(ProjectNamespaceResolverInterface::class, self::PROJECT_NAMESPACE_RESOLVER)
             ->setPublic(true);
+
+        $container->setAlias(ProjectNamespaceSourceControlInterface::class, self::PROJECT_NAMESPACE_RESOLVER);
 
         $container->register(LcomCollectionConfigurationResolver::class);
         $container->setAlias(

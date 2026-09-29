@@ -8,11 +8,11 @@ use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 use Qualimetrix\Infrastructure\Console\ScopeWarningChecker;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -31,7 +31,7 @@ final class ScopeWarningCheckerTest extends TestCase
         mkdir($this->tempDir, 0o755, true);
         $this->projectRoot = AbsolutePath::fromString($this->tempDir);
         $this->checker = new ScopeWarningChecker();
-        $this->coverage = new ProjectScopeCoverage(new ComposerReader());
+        $this->coverage = new ProjectScopeCoverage(new ComposerManifestReader());
     }
 
     protected function tearDown(): void
@@ -43,7 +43,7 @@ final class ScopeWarningCheckerTest extends TestCase
     public function itReturnsNoWarningsWhenComposerJsonIsMissing(): void
     {
         // Missing composer.json is reported by CheckCommand, not ScopeWarningChecker
-        $warnings = $this->checker->describe($this->coverage->measure($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude)->uncoveredRoots);
+        $warnings = $this->checker->describe($this->coverage->measure($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude, true)->uncoveredRoots);
 
         self::assertSame([], $warnings);
     }
@@ -60,7 +60,7 @@ final class ScopeWarningCheckerTest extends TestCase
         ]);
         mkdir($this->tempDir . '/src', 0o755, true);
 
-        $warnings = $this->checker->describe($this->coverage->measure($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude)->uncoveredRoots);
+        $warnings = $this->checker->describe($this->coverage->measure($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude, true)->uncoveredRoots);
 
         self::assertSame([], $warnings);
     }
@@ -79,7 +79,7 @@ final class ScopeWarningCheckerTest extends TestCase
         mkdir($this->tempDir . '/src', 0o755, true);
         mkdir($this->tempDir . '/lib', 0o755, true);
 
-        $warnings = $this->checker->describe($this->coverage->measure($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude)->uncoveredRoots);
+        $warnings = $this->checker->describe($this->coverage->measure($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude, true)->uncoveredRoots);
 
         self::assertCount(1, $warnings);
         self::assertSame(
@@ -107,7 +107,7 @@ final class ScopeWarningCheckerTest extends TestCase
         mkdir($this->tempDir . '/tests', 0o755, true);
 
         // Analyzing only src/ should NOT warn about missing tests/ (autoload-dev)
-        $warnings = $this->checker->describe($this->coverage->measure($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude)->uncoveredRoots);
+        $warnings = $this->checker->describe($this->coverage->measure($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude, true)->uncoveredRoots);
 
         self::assertSame([], $warnings);
     }
@@ -131,7 +131,7 @@ final class ScopeWarningCheckerTest extends TestCase
         mkdir($this->tempDir . '/tests', 0o755, true);
 
         // Passing the project root itself models the `qmx check .` invocation
-        $warnings = $this->checker->describe($this->coverage->measure($this->projectRoot, [$this->projectRoot], AutoloadDevPolicy::Exclude)->uncoveredRoots);
+        $warnings = $this->checker->describe($this->coverage->measure($this->projectRoot, [$this->projectRoot], AutoloadDevPolicy::Exclude, true)->uncoveredRoots);
 
         self::assertSame([], $warnings);
     }
@@ -150,7 +150,7 @@ final class ScopeWarningCheckerTest extends TestCase
         mkdir($this->tempDir . '/src', 0o755, true);
 
         // Analyzing src covers src; lib doesn't exist so it's skipped — no warning
-        $warnings = $this->checker->describe($this->coverage->measure($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude)->uncoveredRoots);
+        $warnings = $this->checker->describe($this->coverage->measure($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude, true)->uncoveredRoots);
 
         self::assertSame([], $warnings);
     }
@@ -171,7 +171,7 @@ final class ScopeWarningCheckerTest extends TestCase
         file_put_contents($this->tempDir . '/vendor/x/helpers.php', '<?php');
 
         // A whole-project run: nothing is uncovered, and the pruned line still speaks.
-        $measurement = $this->coverage->measure($this->projectRoot, [$this->projectRoot], AutoloadDevPolicy::Exclude);
+        $measurement = $this->coverage->measure($this->projectRoot, [$this->projectRoot], AutoloadDevPolicy::Exclude, true);
 
         self::assertSame(
             ['Autoload entries that are, or lie inside, a vendor, node_modules or .git directory are not counted as project scope,'
@@ -199,6 +199,7 @@ final class ScopeWarningCheckerTest extends TestCase
             $this->projectRoot,
             [$this->subPath('src'), $this->subPath('vendor/x/helpers.php')],
             AutoloadDevPolicy::Exclude,
+            true,
         );
         $warnings = $this->checker->describe($measurement->uncoveredRoots, $measurement->prunedTargets);
 
@@ -220,7 +221,7 @@ final class ScopeWarningCheckerTest extends TestCase
         mkdir($this->tempDir . '/lib', 0o755, true);
         mkdir($this->tempDir . '/node_modules/pkg', 0o755, true);
 
-        $measurement = $this->coverage->measure($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude);
+        $measurement = $this->coverage->measure($this->projectRoot, [$this->subPath('src')], AutoloadDevPolicy::Exclude, true);
 
         self::assertSame(
             [
@@ -240,7 +241,7 @@ final class ScopeWarningCheckerTest extends TestCase
         // Present on disk but undeclared: discovery prunes it, and the manifest never promised it.
         mkdir($this->tempDir . '/vendor/x', 0o755, true);
 
-        $measurement = $this->coverage->measure($this->projectRoot, [$this->projectRoot], AutoloadDevPolicy::Exclude);
+        $measurement = $this->coverage->measure($this->projectRoot, [$this->projectRoot], AutoloadDevPolicy::Exclude, true);
 
         self::assertSame([], $measurement->prunedTargets);
         self::assertSame([], $this->checker->describe($measurement->uncoveredRoots, $measurement->prunedTargets));

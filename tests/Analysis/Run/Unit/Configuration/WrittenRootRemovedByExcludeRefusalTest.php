@@ -11,11 +11,11 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 /**
@@ -195,7 +195,7 @@ final class WrittenRootRemovedByExcludeRefusalTest extends TestCase
     /** @param list<array{source: string, values: array<string, mixed>}> $sources */
     private function resolve(array $sources): RunConfiguration
     {
-        return (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))
+        return (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerManifestReader())))
             ->resolve(LayeredDocument::of($sources, AbsolutePath::fromString($this->root)));
     }
 }

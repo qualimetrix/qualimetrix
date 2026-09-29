@@ -9,7 +9,6 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
-use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\CliStage;
@@ -22,6 +21,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigura
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureSection;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 
 /**
  * Consumer-expectation test for the ADR 0009 §5 two-layer test discipline.
@@ -130,7 +130,7 @@ final class MaxExpandedLayersFromYamlTest extends TestCase
     {
         $loader = new YamlConfigLoader();
         $resolver = new PresetResolver();
-        $composerReader = new ComposerReader();
+        $composerReader = new ComposerManifestReader();
 
         $pipeline = new ConfigurationPipeline();
         $pipeline->addSection(new ArchitectureSection());
