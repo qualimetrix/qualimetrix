@@ -26,7 +26,11 @@ Console/
 ├── AnalysisInputPathValidator.php   # Missing path and explicit non-PHP regular-file refusal
 ├── ProjectSourceConfigurator.php    # Current manifest facts, namespace binding and DIT install anchor
 ├── RuntimeLoggerConfigurator.php    # Creates, publishes, and returns the logger for one run
-├── AnalysisRuntimeConfigurator.php  # Per-run rule, collector, cache, and feature state
+├── AnalysisRuntimeConfigurator.php  # Prepares and commits per-run rule, collector and feature state
+├── PreparedAnalysisRuntimeConfiguration.php # Accepted analysis values before stores commit
+├── RunConfigurationPreparation.php  # Resolves the run, cache and parallel values together
+├── ResolvedRunConfiguration.php     # Immutable accepted run/cache/parallel values
+├── ObservedProjectScopeReasons.php  # Projects already observed source issues and install-root omissions
 ├── CheckScopeResolver.php           # Pure transfer of the initial measurement after Git resolution
 ├── ResolvedCheckScope.php           # Resolved Git scope plus deferred warning messages
 ├── ErrorStream.php                   # The run's single error-stream owner: the progress section and every diagnostic writer
@@ -79,14 +83,15 @@ is judged only when configuring that runtime. `fail_on: false` is refused;
 
 `CheckCommand` orchestrates the shared document, runtime, rule inputs, scope
 and report adapters. `ConfigurationInputAdapter` and
-`CheckConfigurationResolvers` prepare its inputs; the command does not perform
+`CheckConfigurationResolvers` prepare its inputs through `RunConfigurationPreparation`; the command does not perform
 another manifest read.
 
 `RunConfigurationResolver` creates one initial `ProjectScopeMeasurement`.
 `CheckScopeResolver` resolves Git first, then transfers that captured evidence
-with pure `ProjectScopeCoverage::narrow()` and renders its warnings. Git
+with pure `ProjectScopeMeasurement::narrowTo()` and renders its warnings. Git
 currently preserves analysis paths; `reportScope` limits finding publication.
-The initial measurement is reused by identity when those paths are unchanged.
+`reportScope` can create a derived measurement even when analysis paths are
+unchanged; the captured `ProjectScopeUniverse` retains identity.
 Coverage is derived from that measurement rather than supplied independently
 as a boolean. `Covered` and `Unknown` permit whole-project judgement;
 `Narrowed` and `Unmeasured` withhold the eight registered whole-project channels.

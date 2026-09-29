@@ -12,9 +12,14 @@ final readonly class ProjectScopeReason
     /** @param array<string, string|int|bool|list<string>> $data */
     public function __construct(public ProjectScopeReasonKind $kind, public array $data) {}
 
-    public static function manifest(ManifestIssue $issue, bool $auxiliary): self
+    public static function mainManifest(ManifestIssue $issue): self
     {
-        return new self(ProjectScopeReasonKind::ManifestIssue, ['issueKind' => $issue->kind->value, 'source' => $issue->source, 'location' => $issue->location, 'detail' => $issue->detail, 'auxiliary' => $auxiliary]);
+        return new self(ProjectScopeReasonKind::ManifestIssue, ['issueKind' => $issue->kind->value, 'source' => $issue->source, 'location' => $issue->location, 'detail' => $issue->detail, 'auxiliary' => false]);
+    }
+
+    public static function auxiliaryManifest(ManifestIssue $issue): self
+    {
+        return new self(ProjectScopeReasonKind::ManifestIssue, ['issueKind' => $issue->kind->value, 'source' => $issue->source, 'location' => $issue->location, 'detail' => $issue->detail, 'auxiliary' => true]);
     }
 
     /** @return array<string, mixed> */

@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Pipeline\Stage;
 
+use DirectoryIterator;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic;
+
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
-
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
@@ -18,6 +20,7 @@ use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface;
 use Qualimetrix\Analysis\Configuration\Pipeline\RuleNameValidator;
+use UnexpectedValueException;
 
 /**
  * Loads configuration from config file (priority: 20).
@@ -96,8 +99,13 @@ final class ConfigFileStage implements ConfigurationStageInterface
     /** @return array{?string, list<ConfigurationDiagnostic>} */
     private function findConfigFile(string $dir): array
     {
-        $entries = @scandir($dir);
-        if ($entries === false) {
+        try {
+            $entries = [];
+            foreach (new DirectoryIterator($dir) as $entry) {
+                $entries[] = $entry->getFilename();
+            }
+            sort($entries, \SORT_STRING);
+        } catch (UnexpectedValueException) {
             throw ConfigurationRefusal::aboutConfigFileDocument(
                 $dir,
                 \sprintf('Configuration directory cannot be listed: %s', $dir),

@@ -28,9 +28,9 @@ final readonly class RunConfiguration
         public array $authoredPathExcludes,
         public AutoloadDevPolicy $autoloadDevPolicy,
     ) {
-        $sameRoot = $projectRoot->equals($projectScope->projectRoot);
-        foreach ($projectScope->pathResolutions as $resolution) {
-            $sameRoot = $sameRoot || ($projectRoot->equals($resolution['written']) && $projectScope->projectRoot->equals($resolution['path']));
+        $sameRoot = $projectRoot->equals($projectScope->universe->projectRoot);
+        foreach ($projectScope->universe->pathResolutions as $resolution) {
+            $sameRoot = $sameRoot || ($projectRoot->equals($resolution['written']) && $projectScope->universe->projectRoot->equals($resolution['path']));
         }
         if (!$sameRoot) {
             throw new LogicException('Run configuration requires the measured project root or a captured alias of it');

@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\SelectorYamlDecoder;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Discovery\DirectoryPruner;
@@ -49,7 +50,7 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
             self::refuseWrittenRootsExcluded($pathList, $root, new DirectoryPruner($root, $authoredExcludes), $writtenPaths, $excludes);
         }
 
-        $scope = $this->projectScopeCoverage->measure($root, $pathList, $autoloadDev, $writtenPaths !== null);
+        $scope = $this->projectScopeCoverage->measure($root, $pathList, $autoloadDev, $writtenPaths !== null ? PathsAuthorship::Authored : PathsAuthorship::Inferred);
 
         return new RunConfiguration(
             projectScope: $scope,

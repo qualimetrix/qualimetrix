@@ -21,7 +21,7 @@ and emits the generic
 Run/
 ├── Contract/
 │   ├── Collection/             # collection inputs and wire-safe outputs
-│   ├── Configuration/          # mandatory RunConfiguration, scope measurement, state and reasons
+│   ├── Configuration/          # mandatory RunConfiguration, captured universe, current measurement and reasons
 │   ├── Discovery/              # discovery contracts
 │   ├── Pipeline/               # analysis result and coverage contracts
 │   └── FileSetInspectionParticipantInterface.php
@@ -62,11 +62,14 @@ same `ComposerManifestReaderInterface` snapshot. Run applies its built-in
 and names removed targets as reasons. Authored directory exclusions remain a
 separate discovery policy.
 
-`measure(root, paths, autoloadDev, pathsAuthored)` returns one mandatory
-`Contract\Configuration\ProjectScopeMeasurement`: selected paths, their
-origin, root, state, captured denominator, uncovered/pruned targets, reasons,
-usable namespace-map fact and written-to-canonical resolutions. All ten
-constructor fields are required. `PathsNormalizer` applies the same
+`measure(root, paths, autoloadDev, PathsAuthorship)` captures one immutable
+`Contract\Configuration\ProjectScopeUniverse`: canonical root, initial
+paths authoredness, denominator, pruned targets, source reasons, namespace-map
+usability and written-to-canonical resolutions. Its seven constructor fields
+are mandatory. `ProjectScopeMeasurement` has four mandatory fields: that
+universe, current paths, state and uncovered targets. `narrowTo(paths)` shares
+the same universe and only closes the current verdict, using captured path
+facts without filesystem reads. `PathsNormalizer` applies the same
 `PathFactory::fromCliArgument()` normalization to authored paths and defaults.
 
 | Evidence and paths                                                       | State        | Whole-project channels |
@@ -90,7 +93,7 @@ authored subset. Missing default paths still refuse before analysis.
 `GeneratedFilePolicy`/`AutoloadDevPolicy`; its public `paths` and
 `coversProjectScope` are derived from that measurement. The root must match
 the measured root or an exact captured alias. `withProjectScope()` carries
-every other run field unchanged. Pure static `narrow(initial, finalPaths)`
+every other run field unchanged. Pure `initial->narrowTo(finalPaths)`
 preserves evidence and origin, performs no IO, and can only close coverage;
 a wider path cannot reopen an already withheld answer.
 
@@ -221,7 +224,7 @@ Run's own channel, and the only one it produces. An `--exclude` value or an
 and before the channel existed that run's report was byte-identical to one
 configured with no exclusion at all.
 
-Three pieces, in the order the run reaches them:
+The run reaches these operations in order:
 
 - `RunConfigurationResolver` records the author's entries separately, in
   `RunConfiguration::$authoredPathExcludes`. The merged `pathExcludes` cannot
@@ -241,7 +244,13 @@ Three pieces, in the order the run reaches them:
   directory that stopped the walk. Without that split the run had one answer
   for "checked, it bound" and "could not check", and the second walk covers
   tree discovery never visits, so nothing else would have said so.
-- `UnmatchedExcludeAudit` turns that answer into findings, and
+- `ExcludeBindingVerdict::unsettled()` preserves authored selector order.
+  `ExcludeBindingProbe::judgeProject()` asks the current roots first and the
+  whole project only for those unsettled selectors.
+- `UnmatchedExcludeFinding` builds the unmatched-pattern occurrence;
+  `UnjudgedExcludeFinding` retains the separate unlistable-directory vocabulary.
+  `UnmatchedExcludeAudit` applies the Options, authored-pattern and project-scope
+  gates before asking the probe, then turns its answer into findings, and
   `AnalysisFileDiscovery` asks it, so they ride out of discovery with the
   files (`DiscoveredAnalysisFiles::$unmatchedExcludeFindings`) and are
   published through `RuleExecutionInterface::publishable()` after rule

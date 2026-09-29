@@ -75,18 +75,7 @@ final class RunConfigurationResolverTest extends TestCase
         $writtenRoot = AbsolutePath::fromString('/written-project');
         $canonicalRoot = AbsolutePath::fromString('/canonical-project');
         $paths = [AbsolutePath::fromString('/written-project/src')];
-        $scope = new ProjectScopeMeasurement(
-            $canonicalRoot,
-            $paths,
-            true,
-            ProjectScopeState::Unmeasured,
-            [],
-            [],
-            [],
-            [],
-            false,
-            [['written' => $writtenRoot, 'path' => $canonicalRoot]],
-        );
+        $scope = new ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $canonicalRoot, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: false, pathResolutions: [['written' => $writtenRoot, 'path' => $canonicalRoot]]), paths: $paths, scopeState: ProjectScopeState::Unmeasured, uncoveredRoots: []);
 
         foreach ([$writtenRoot, $canonicalRoot] as $root) {
             $configuration = new RunConfiguration(

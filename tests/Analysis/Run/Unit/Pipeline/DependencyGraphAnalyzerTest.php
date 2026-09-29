@@ -206,7 +206,7 @@ PHP);
     private function configuration(): RunConfiguration
     {
         $root = AbsolutePath::fromString($this->tempDir);
-        return new RunConfiguration([], $root, GeneratedFilePolicy::Exclude, new ProjectScopeMeasurement($root, [$root], true, ProjectScopeState::Covered, [], [], [], [], true, []), [], AutoloadDevPolicy::Exclude);
+        return new RunConfiguration([], $root, GeneratedFilePolicy::Exclude, new ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: ProjectScopeState::Covered, uncoveredRoots: []), [], AutoloadDevPolicy::Exclude);
     }
 
     private function analysisFileDiscovery(): AnalysisFileDiscovery

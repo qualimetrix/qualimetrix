@@ -183,10 +183,10 @@ final class DefaultPathsMatchScopeDenominatorTest extends TestCase
             $configuration->projectRoot,
             $configuration->paths,
             $configuration->autoloadDevPolicy,
-            true,
+            \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored,
         );
         self::assertSame([], $measurement->uncoveredRoots);
-        self::assertSame($expectedPruned, $measurement->prunedTargets);
+        self::assertSame($expectedPruned, $measurement->universe->prunedTargets);
     }
 
     /**
@@ -221,7 +221,7 @@ final class DefaultPathsMatchScopeDenominatorTest extends TestCase
         self::assertSame([$this->root], array_map(static fn(AbsolutePath $path): string => $path->value(), $configuration->paths));
         self::assertTrue($configuration->coversProjectScope);
         self::assertSame(ProjectScopeState::Unknown, $configuration->projectScope->state());
-        self::assertSame([['target' => 'vendor/acme/helpers.php', 'directory' => 'vendor']], $configuration->projectScope->prunedTargets);
+        self::assertSame([['target' => 'vendor/acme/helpers.php', 'directory' => 'vendor']], $configuration->projectScope->universe->prunedTargets);
     }
 
     /**
@@ -243,7 +243,7 @@ final class DefaultPathsMatchScopeDenominatorTest extends TestCase
             $configuration->projectRoot,
             $configuration->paths,
             $configuration->autoloadDevPolicy,
-            true,
+            \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored,
         );
         self::assertSame([], $measurement->uncoveredRoots);
     }

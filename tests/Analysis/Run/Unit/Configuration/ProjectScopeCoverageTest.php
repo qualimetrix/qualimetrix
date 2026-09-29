@@ -57,10 +57,10 @@ final class ProjectScopeCoverageTest extends TestCase
         $root = AbsolutePath::fromString($this->tempDir);
         $paths = [AbsolutePath::fromString($this->tempDir . '/src')];
         $coverage = $this->coverage();
-        $production = $coverage->measure($root, $paths, AutoloadDevPolicy::Exclude, false);
+        $production = $coverage->measure($root, $paths, AutoloadDevPolicy::Exclude, \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Inferred);
         self::assertSame(ProjectScopeState::Covered, $production->state());
-        self::assertSame([], $production->reasons);
-        self::assertSame(ProjectScopeState::Unmeasured, $coverage->measure($root, $paths, AutoloadDevPolicy::Include, false)->state());
+        self::assertSame([], $production->universe->reasons);
+        self::assertSame(ProjectScopeState::Unmeasured, $coverage->measure($root, $paths, AutoloadDevPolicy::Include, \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Inferred)->state());
     }
 
     #[Test]
@@ -69,17 +69,17 @@ final class ProjectScopeCoverageTest extends TestCase
         $this->writeManifest(['autoload' => ['psr-4' => ['Good\\' => '', 'Bad\\' => false]]]);
         $root = AbsolutePath::fromString($this->tempDir);
         $coverage = $this->coverage();
-        $defaults = $coverage->measure($root, [$root], AutoloadDevPolicy::Exclude, false);
-        $authored = $coverage->measure($root, [$root], AutoloadDevPolicy::Exclude, true);
+        $defaults = $coverage->measure($root, [$root], AutoloadDevPolicy::Exclude, \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Inferred);
+        $authored = $coverage->measure($root, [$root], AutoloadDevPolicy::Exclude, \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored);
         self::assertSame(ProjectScopeState::Unmeasured, $defaults->state());
         self::assertSame(ProjectScopeState::Unknown, $authored->state());
-        self::assertFalse($defaults->pathsAuthored);
-        self::assertTrue($authored->pathsAuthored);
-        self::assertNotEmpty($defaults->reasons);
-        $narrowed = ProjectScopeCoverage::narrow($defaults, [$root]);
+        self::assertFalse($defaults->universe->pathsAuthored);
+        self::assertTrue($authored->universe->pathsAuthored);
+        self::assertNotEmpty($defaults->universe->reasons);
+        $narrowed = ($defaults)->narrowTo([$root]);
         self::assertFalse($narrowed->state()->coversProjectScope());
-        self::assertSame($defaults->reasons, $narrowed->reasons);
-        self::assertSame($defaults->denominator, $narrowed->denominator);
+        self::assertSame($defaults->universe->reasons, $narrowed->universe->reasons);
+        self::assertSame($defaults->universe->denominator, $narrowed->universe->denominator);
     }
 
     #[Test]
@@ -87,14 +87,17 @@ final class ProjectScopeCoverageTest extends TestCase
     {
         $this->writeComposerJson(['src', 'lib']);
         $root = AbsolutePath::fromString($this->tempDir);
-        $initial = $this->coverage()->measure($root, [$root], AutoloadDevPolicy::Exclude, true);
+        $initial = $this->coverage()->measure($root, [$root], AutoloadDevPolicy::Exclude, \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored);
         unlink($this->tempDir . '/composer.json');
-        $final = ProjectScopeCoverage::narrow($initial, [AbsolutePath::fromString($this->tempDir . '/src')]);
+        $final = ($initial)->narrowTo([AbsolutePath::fromString($this->tempDir . '/src')]);
         self::assertSame(ProjectScopeState::Narrowed, $final->state());
         self::assertSame(['lib'], $final->uncoveredRoots);
-        self::assertSame($initial->denominator, $final->denominator);
-        self::assertSame($initial->reasons, $final->reasons);
-        self::assertFalse(ProjectScopeCoverage::narrow($final, [$root])->state()->coversProjectScope());
+        self::assertSame($initial->universe, $final->universe);
+        self::assertSame($initial->universe->denominator, $final->universe->denominator);
+        self::assertSame($initial->universe->reasons, $final->universe->reasons);
+        $wider = $final->narrowTo([$root]);
+        self::assertFalse($wider->state()->coversProjectScope());
+        self::assertSame($initial->universe, $wider->universe);
     }
 
     #[Test]
@@ -341,7 +344,7 @@ final class ProjectScopeCoverageTest extends TestCase
     /** @param array{AbsolutePath, list<AbsolutePath>, AutoloadDevPolicy} $configuration */
     private function measure(array $configuration): ProjectScopeMeasurement
     {
-        return $this->coverage()->measure($configuration[0], $configuration[1], $configuration[2], true);
+        return $this->coverage()->measure($configuration[0], $configuration[1], $configuration[2], \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored);
     }
 
     private function coverage(): ProjectScopeCoverage

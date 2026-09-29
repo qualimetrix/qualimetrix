@@ -241,10 +241,10 @@ final class UnboundSuppressionIntegrationTest extends TestCase
     }
 
     /**
-     * A project with no readable production autoload has no PSR-4 map, so a
-     * namespace value cannot be located: `Tests` may well be declared under a
-     * directory `qmx check src` never read, and "matched nothing" would be a
-     * guess. The namespace value is left unjudged and the report names it and
+     * A project with no readable production autoload has no declared PSR-4
+     * map, so a namespace value cannot be located through its declarations.
+     * An explicitly selected whole root has unknown scope. The namespace
+     * value is left unjudged and the report names it and
      * its channel — only its channel, since no per-rule value was configured;
      * the path value beside it keeps its on-disk anchor and is still judged.
      */
@@ -253,7 +253,7 @@ final class UnboundSuppressionIntegrationTest extends TestCase
     {
         unlink($this->fixture . '/composer.json');
 
-        $tester = $this->check("suppress_namespaces:\n  - {subtree: Tests}\nsuppress_paths:\n  - {subtree: src/Gone}\n");
+        $tester = $this->check("suppress_namespaces:\n  - {subtree: Tests}\nsuppress_paths:\n  - {subtree: src/Gone}\n", paths: ['.']);
         $scope = $this->projectScope($tester);
 
         self::assertSame([], $this->onChannel($tester, UnboundSuppressionOptions::UNMATCHED_NAMESPACE));
@@ -277,6 +277,7 @@ final class UnboundSuppressionIntegrationTest extends TestCase
             $this->check(
                 "rules:\n  complexity.ccn:\n    suppress_paths: [{subtree: src/Gone}]\n    suppress_namespaces: [{subtree: Tests}]\n"
                 . "  coupling.cbo:\n    suppress_namespace_channels:\n      coupling.cbo: [{subtree: Tests}]\n",
+                paths: ['.'],
             ),
             UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER,
         );
@@ -298,7 +299,7 @@ final class UnboundSuppressionIntegrationTest extends TestCase
 
         self::assertCount(1, $this->onChannel($tester, UnboundSuppressionOptions::UNMATCHED_NAMESPACE));
         self::assertSame(
-            ['state' => 'covered', 'uncoveredAutoloadTargets' => [], 'unjudgedChannels' => [], 'unjudgedValues' => []],
+            ['state' => 'covered', 'uncoveredAutoloadTargets' => [], 'unjudgedChannels' => [], 'unjudgedValues' => [], 'reasons' => []],
             $this->projectScope($tester),
         );
     }

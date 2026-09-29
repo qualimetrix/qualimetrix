@@ -8,7 +8,6 @@ use ArgumentCountError;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
@@ -80,7 +79,7 @@ final class RunConfigurationScopeTest extends TestCase
     {
         $configuration = self::configuration();
 
-        return $configuration->withProjectScope(ProjectScopeCoverage::narrow($configuration->projectScope, $paths));
+        return $configuration->withProjectScope(($configuration->projectScope)->narrowTo($paths));
     }
 
     private static function configuration(): RunConfiguration
@@ -97,21 +96,10 @@ final class RunConfigurationScopeTest extends TestCase
 
     private static function projectScope(): ProjectScopeMeasurement
     {
-        return new ProjectScopeMeasurement(
-            projectRoot: AbsolutePath::fromString('/project'),
-            paths: [AbsolutePath::fromString('/project/src')],
-            pathsAuthored: true,
-            scopeState: ProjectScopeState::Covered,
-            denominator: [[
-                'target' => 'src/',
-                'path' => AbsolutePath::fromString('/project/src'),
-            ]],
-            uncoveredRoots: [],
-            prunedTargets: [],
-            reasons: [],
-            namespaceMapUsable: true,
-            pathResolutions: [],
-        );
+        return new ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: AbsolutePath::fromString('/project'), pathsAuthored: true, denominator: [[
+            'target' => 'src/',
+            'path' => AbsolutePath::fromString('/project/src'),
+        ]], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [AbsolutePath::fromString('/project/src')], scopeState: ProjectScopeState::Covered, uncoveredRoots: []);
     }
 
     private static function pathPattern(string $value): PathPattern

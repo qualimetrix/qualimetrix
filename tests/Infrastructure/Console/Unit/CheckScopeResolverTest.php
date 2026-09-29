@@ -171,7 +171,7 @@ final class CheckScopeResolverTest extends TestCase
 
             self::assertSame($covers, $result->coversProjectScope);
             self::assertSame($expected, array_diff_key($result->projectScope->toArray(), ['reasons' => true]));
-            self::assertSame($result->measurement->reasons, $result->projectScope->reasons);
+            self::assertSame($result->measurement->universe->reasons, $result->projectScope->reasons);
         } finally {
             rmdir($projectRoot . '/src');
             rmdir($projectRoot . '/lib');
@@ -271,7 +271,7 @@ final class CheckScopeResolverTest extends TestCase
             pathExcludes: [new PathPattern(new SelectorDefinition(SelectorKind::Subtree, 'vendor'))],
             projectRoot: $root,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
-            projectScope: (new ProjectScopeCoverage($this->reader))->measure($root, $absolutePaths, \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude, true),
+            projectScope: (new ProjectScopeCoverage($this->reader))->measure($root, $absolutePaths, \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude, \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored),
             authoredPathExcludes: [],
             autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         );

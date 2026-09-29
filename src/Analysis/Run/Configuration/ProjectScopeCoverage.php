@@ -8,13 +8,16 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestReadState;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReasonKind;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse;
 use Qualimetrix\Analysis\Run\Discovery\DirectoryPruner;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
@@ -48,18 +51,60 @@ final readonly class ProjectScopeCoverage
     public function __construct(private ComposerManifestReaderInterface $composerReader) {}
 
     /** @param list<AbsolutePath> $analyzedPaths */
-    public function measure(AbsolutePath $projectRoot, array $analyzedPaths, AutoloadDevPolicy $autoloadDev, bool $pathsAuthored): ProjectScopeMeasurement
+    public function measure(AbsolutePath $projectRoot, array $analyzedPaths, AutoloadDevPolicy $autoloadDev, PathsAuthorship $authorship): ProjectScopeMeasurement
     {
         $facts = $this->composerReader->read($projectRoot);
-        $includeDev = $autoloadDev === AutoloadDevPolicy::Include;
-        $complete = $facts->state === ManifestReadState::Read && $facts->productionComplete && (!$includeDev || $facts->developmentComplete);
         $targets = $autoloadDev->projectTargets($facts->productionTargets(), $facts->developmentTargets()) ?? [];
         [$reachable, $pruned] = self::partition($projectRoot, $targets);
-        $reasons = array_map(static fn($issue): ProjectScopeReason => ProjectScopeReason::manifest($issue, false), $facts->scopeIssues($includeDev));
+        $reasons = $this->sourceReasons($facts, $autoloadDev, $pruned);
+        $denominator = $this->resolveDenominator($reachable, $projectRoot, $reasons);
+        $this->refuseUnavailableDefaults($facts, $targets, $reachable, $autoloadDev, $authorship);
+        $root = $this->tryResolve(static fn(): AbsolutePath => $projectRoot->canonicalize()) ?? $projectRoot;
+        $this->addUniverseReason($facts, $autoloadDev, $reachable, $reasons);
+        $universe = new ProjectScopeUniverse(
+            $root,
+            $authorship === PathsAuthorship::Authored,
+            $denominator,
+            $pruned,
+            $reasons,
+            $facts->state === ManifestReadState::Read && $facts->psr4Roots() !== [],
+            $this->captureResolutions($projectRoot, $root, $analyzedPaths),
+        );
+        $uncovered = $universe->uncoveredBy($analyzedPaths);
+
+        return new ProjectScopeMeasurement($universe, $analyzedPaths, $this->initialState($facts, $universe, $analyzedPaths, $autoloadDev, $reachable), $uncovered);
+    }
+
+    private function selectedComplete(ComposerManifestFacts $facts, AutoloadDevPolicy $autoloadDev): bool
+    {
+        return $facts->state === ManifestReadState::Read && $facts->production->complete
+            && ($autoloadDev === AutoloadDevPolicy::Exclude || $facts->development->complete);
+    }
+
+    /**
+     * @param list<array{target: string, directory: string}> $pruned
+     *
+     * @return list<ProjectScopeReason>
+     */
+    private function sourceReasons(ComposerManifestFacts $facts, AutoloadDevPolicy $autoloadDev, array $pruned): array
+    {
+        $issues = $autoloadDev === AutoloadDevPolicy::Include ? $facts->allScopeIssues() : $facts->productionScopeIssues();
+        $reasons = array_map(ProjectScopeReason::mainManifest(...), $issues);
         foreach ($pruned as $target) {
             $reasons[] = new ProjectScopeReason(ProjectScopeReasonKind::PrunedTarget, $target);
         }
 
+        return $reasons;
+    }
+
+    /**
+     * @param list<string> $reachable
+     * @param list<ProjectScopeReason> $reasons
+     *
+     * @return list<array{target: string, path: AbsolutePath}>
+     */
+    private function resolveDenominator(array $reachable, AbsolutePath $projectRoot, array &$reasons): array
+    {
         $denominator = [];
         foreach ($reachable as $target) {
             $resolved = $this->tryResolve(static fn(): AbsolutePath => PathFactory::fromCliArgument($target, $projectRoot)->canonicalize());
@@ -70,101 +115,70 @@ final readonly class ProjectScopeCoverage
             }
         }
 
-        if (!$pathsAuthored && (($facts->state !== ManifestReadState::Read && $facts->state !== ManifestReadState::Absent)
-            || ($targets === [] && !$complete && $facts->state !== ManifestReadState::Absent)
-            || ($targets !== [] && $reachable === []))) {
+        return $denominator;
+    }
+
+    /**
+     * @param list<string> $targets
+     * @param list<string> $reachable
+     */
+    private function refuseUnavailableDefaults(ComposerManifestFacts $facts, array $targets, array $reachable, AutoloadDevPolicy $autoloadDev, PathsAuthorship $authorship): void
+    {
+        if ($authorship === PathsAuthorship::Authored) {
+            return;
+        }
+        if (($facts->state !== ManifestReadState::Read && $facts->state !== ManifestReadState::Absent)
+            || ($targets === [] && !$this->selectedComplete($facts, $autoloadDev) && $facts->state !== ManifestReadState::Absent)
+            || ($targets !== [] && $reachable === [])) {
             throw ConfigurationRefusal::aboutDocument(ConfigurationOrigin::of(ConfigurationSource::ComposerJson, $facts->source()), 'Cannot infer analysis paths from composer.json: its selected autoload universe is unreadable or has no usable targets. Write explicit paths to analyse.');
         }
-
-        $root = $this->tryResolve(static fn(): AbsolutePath => $projectRoot->canonicalize()) ?? $projectRoot;
-        $paths = array_map(fn(AbsolutePath $path): AbsolutePath => $this->tryResolve(static fn(): AbsolutePath => $path->canonicalize()) ?? $path, $analyzedPaths);
-        $pathResolutions = [['written' => $projectRoot, 'path' => $root]];
-        foreach ($analyzedPaths as $index => $written) {
-            $pathResolutions[] = ['written' => $written, 'path' => $paths[$index]];
-        }
-        usort($pathResolutions, static fn(array $a, array $b): int => \strlen($b['written']->value()) <=> \strlen($a['written']->value()));
-        $uncovered = self::uncovered($denominator, $paths, $root);
-        $damaged = !$complete && $facts->state !== ManifestReadState::Absent;
-        if ($damaged || $reachable === []) {
-            $reasons[] = new ProjectScopeReason($damaged ? ProjectScopeReasonKind::IncompleteUniverse : ProjectScopeReasonKind::NoDeclaredCode, ['source' => $facts->source()]);
-            $wholeRoot = self::containsRoot($paths, $root);
-            $state = $wholeRoot && (!$damaged || $pathsAuthored) ? ProjectScopeState::Unknown : ProjectScopeState::Unmeasured;
-        } else {
-            $state = $uncovered === [] ? ProjectScopeState::Covered : ProjectScopeState::Narrowed;
-        }
-
-        return new ProjectScopeMeasurement($root, $analyzedPaths, $pathsAuthored, $state, $denominator, $uncovered, $pruned, $reasons, $facts->state === ManifestReadState::Read && $facts->psr4Roots() !== [], $pathResolutions);
     }
 
     /**
-     * Pure intersection with the already measured universe. A wider final path cannot reopen a closed gate.
-     *
-     * @param list<AbsolutePath> $finalPaths
+     * @param list<string> $reachable
+     * @param list<ProjectScopeReason> $reasons
      */
-    public static function narrow(ProjectScopeMeasurement $initial, array $finalPaths): ProjectScopeMeasurement
+    private function addUniverseReason(ComposerManifestFacts $facts, AutoloadDevPolicy $autoloadDev, array $reachable, array &$reasons): void
     {
-        $resolvedPaths = array_map(static fn(AbsolutePath $path): AbsolutePath => self::resolveCaptured($path, $initial->pathResolutions), $finalPaths);
-        $uncovered = self::uncovered($initial->denominator, $resolvedPaths, $initial->projectRoot);
-        $state = $initial->state();
-        if ($state->coversProjectScope()) {
-            if ($state === ProjectScopeState::Covered && $uncovered !== []) {
-                $state = ProjectScopeState::Narrowed;
-            } elseif ($state === ProjectScopeState::Unknown && !self::containsRoot($resolvedPaths, $initial->projectRoot)) {
-                $state = ProjectScopeState::Unmeasured;
-            }
+        if (!$this->selectedComplete($facts, $autoloadDev) && $facts->state !== ManifestReadState::Absent) {
+            $reasons[] = new ProjectScopeReason(ProjectScopeReasonKind::IncompleteUniverse, ['source' => $facts->source()]);
+        } elseif ($reachable === []) {
+            $reasons[] = new ProjectScopeReason(ProjectScopeReasonKind::NoDeclaredCode, ['source' => $facts->source()]);
         }
-
-        return new ProjectScopeMeasurement($initial->projectRoot, $finalPaths, $initial->pathsAuthored, $state, $initial->denominator, $uncovered, $initial->prunedTargets, $initial->reasons, $initial->namespaceMapUsable, $initial->pathResolutions);
-    }
-
-    /** @param list<array{written: AbsolutePath, path: AbsolutePath}> $resolutions */
-    private static function resolveCaptured(AbsolutePath $path, array $resolutions): AbsolutePath
-    {
-        foreach ($resolutions as $resolution) {
-            if ($path->equals($resolution['written'])) {
-                return $resolution['path'];
-            }
-            $relative = $path->tryRelativizeTo($resolution['written']);
-            if ($relative !== null) {
-                return $resolution['path']->joinRelative($relative);
-            }
-        }
-
-        return $path;
-    }
-
-    /** @param list<AbsolutePath> $paths */
-    private static function containsRoot(array $paths, AbsolutePath $root): bool
-    {
-        foreach ($paths as $path) {
-            if ($path->equals($root)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**
-     * @param list<array{target: string, path: AbsolutePath}> $denominator
+     * @param list<AbsolutePath> $paths
+     * @param list<string> $reachable
+     */
+    private function initialState(ComposerManifestFacts $facts, ProjectScopeUniverse $universe, array $paths, AutoloadDevPolicy $autoloadDev, array $reachable): ProjectScopeState
+    {
+        $damaged = !$this->selectedComplete($facts, $autoloadDev) && $facts->state !== ManifestReadState::Absent;
+        if ($damaged || $reachable === []) {
+            if ($universe->containsProjectRoot($paths) && (!$damaged || $universe->pathsAuthored)) {
+                return ProjectScopeState::Unknown;
+            }
+
+            return ProjectScopeState::Unmeasured;
+        }
+
+        return $universe->uncoveredBy($paths) === [] ? ProjectScopeState::Covered : ProjectScopeState::Narrowed;
+    }
+
+    /**
      * @param list<AbsolutePath> $paths
      *
-     * @return list<string>
+     * @return list<array{written: AbsolutePath, path: AbsolutePath}>
      */
-    private static function uncovered(array $denominator, array $paths, AbsolutePath $root): array
+    private function captureResolutions(AbsolutePath $writtenRoot, AbsolutePath $root, array $paths): array
     {
-        $uncovered = [];
-        foreach ($denominator as $target) {
-            $covered = self::containsRoot($paths, $root);
-            foreach ($paths as $path) {
-                $covered = $covered || $target['path']->equals($path) || $target['path']->tryRelativizeTo($path) !== null;
-            }
-            if (!$covered) {
-                $uncovered[] = $target['target'];
-            }
+        $resolutions = [['written' => $writtenRoot, 'path' => $root]];
+        foreach ($paths as $path) {
+            $resolutions[] = ['written' => $path, 'path' => $this->tryResolve(static fn(): AbsolutePath => $path->canonicalize()) ?? $path];
         }
+        usort($resolutions, static fn(array $a, array $b): int => \strlen($b['written']->value()) <=> \strlen($a['written']->value()));
 
-        return $uncovered;
+        return $resolutions;
     }
 
     /**

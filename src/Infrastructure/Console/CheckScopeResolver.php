@@ -11,7 +11,7 @@ use Qualimetrix\Infrastructure\Git\GitScopeResolver;
 use Qualimetrix\Reporting\ReportProjectScope;
 use Symfony\Component\Console\Input\InputInterface;
 
-/** Reuse the initial measurement, narrowing only after Git changed the paths. */
+/** Resolve Git publication scope while retaining the captured universe across derived measurements. */
 final readonly class CheckScopeResolver
 {
     public function __construct(private GitScopeResolver $gitScopeResolver, private ScopeWarningChecker $scopeWarningChecker) {}
@@ -19,7 +19,7 @@ final readonly class CheckScopeResolver
     public function resolve(InputInterface $input, RunConfiguration $configuration): ResolvedCheckScope
     {
         $scope = $this->gitScopeResolver->resolve(CommandLineSpelling::option($input, 'report'), $configuration);
-        $measurement = $scope->reportScope === null ? $configuration->projectScope : ProjectScopeCoverage::narrow($configuration->projectScope, $scope->paths);
+        $measurement = $scope->reportScope === null ? $configuration->projectScope : ($configuration->projectScope)->narrowTo($scope->paths);
         $state = $measurement->state();
         $report = match ($state) {
             ProjectScopeState::Covered => ReportProjectScope::covered(),
@@ -30,9 +30,9 @@ final readonly class CheckScopeResolver
 
         return new ResolvedCheckScope(
             $scope,
-            $this->scopeWarningChecker->describe($measurement->uncoveredRoots, $measurement->prunedTargets),
+            $this->scopeWarningChecker->describe($measurement->uncoveredRoots, $measurement->universe->prunedTargets),
             $measurement,
-            $report->withReasons($measurement->reasons),
+            $report->withReasons($measurement->universe->reasons),
         );
     }
 }
