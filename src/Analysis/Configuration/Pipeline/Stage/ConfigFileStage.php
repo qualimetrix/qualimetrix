@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Pipeline\Stage;
 
+use Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 
@@ -46,10 +48,10 @@ final class ConfigFileStage implements ConfigurationStageInterface
 
     public function apply(ConfigurationResolutionRequest $request): ?ConfigurationLayer
     {
-        $configPath = $this->resolveConfigPath($request);
+        [$configPath, $diagnostics] = $this->resolveConfigPath($request);
 
         if ($configPath === null) {
-            return null;
+            return $diagnostics === [] ? null : new ConfigurationLayer('config_file', [], diagnostics: $diagnostics);
         }
 
         $loaded = $this->loader->read($configPath);
@@ -63,6 +65,7 @@ final class ConfigFileStage implements ConfigurationStageInterface
             $this->normalizeConfigData($loaded->values),
             authored: [new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $configPath), $loaded->authored)],
             deferredRefusals: $loaded->deferredRefusal === null ? [] : [$loaded->deferredRefusal],
+            diagnostics: $diagnostics,
         );
     }
 
@@ -71,8 +74,10 @@ final class ConfigFileStage implements ConfigurationStageInterface
      *
      * If an explicit path was provided via --config, uses that (throws on missing file).
      * Otherwise, auto-detects qmx.yaml or qmx.yml in the working directory.
+     *
+     * @return array{?string, list<ConfigurationDiagnostic>}
      */
-    private function resolveConfigPath(ConfigurationResolutionRequest $request): ?string
+    private function resolveConfigPath(ConfigurationResolutionRequest $request): array
     {
         if ($request->configFilePath !== null) {
             if (!file_exists($request->configFilePath)) {
@@ -82,22 +87,63 @@ final class ConfigFileStage implements ConfigurationStageInterface
                 );
             }
 
-            return $request->configFilePath;
+            return [$request->configFilePath, []];
         }
 
         return $this->findConfigFile($request->workingDirectory->value());
     }
 
-    private function findConfigFile(string $dir): ?string
+    /** @return array{?string, list<ConfigurationDiagnostic>} */
+    private function findConfigFile(string $dir): array
     {
-        foreach (self::CONFIG_FILE_NAMES as $fileName) {
-            $path = $dir . '/' . $fileName;
-            if (file_exists($path)) {
-                return $path;
-            }
+        $entries = @scandir($dir);
+        if ($entries === false) {
+            throw ConfigurationRefusal::aboutConfigFileDocument(
+                $dir,
+                \sprintf('Configuration directory cannot be listed: %s', $dir),
+            );
         }
 
-        return null;
+        $exact = array_values(array_intersect($entries, self::CONFIG_FILE_NAMES));
+        if (\count($exact) > 1) {
+            throw ConfigurationRefusal::aboutConfigFileDocument(
+                $dir,
+                'Both qmx.yaml and qmx.yml exist; keep exactly one configuration file.',
+            );
+        }
+
+        if ($exact !== []) {
+            return [$dir . '/' . $exact[0], []];
+        }
+
+        $diagnostics = [];
+        foreach ($entries as $entry) {
+            if (!self::isNearConfigName($entry)) {
+                continue;
+            }
+
+            $path = $dir . '/' . $entry;
+            $diagnostics[] = new ConfigurationDiagnostic(
+                \sprintf(
+                    'Ignored configuration-like filename "%s"; auto-discovery accepts only exact qmx.yaml or qmx.yml.',
+                    $entry,
+                ),
+                [new Provenance(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path), null, 0)],
+            );
+        }
+
+        return [null, $diagnostics];
+    }
+
+    private static function isNearConfigName(string $entry): bool
+    {
+        $name = strtolower($entry);
+        if ($name === 'qmx') {
+            return true;
+        }
+
+        return preg_match('/(?:^|[._-])qmx(?:[._-]|$)/', $name) === 1
+            && (str_contains($name, '.yaml') || str_contains($name, '.yml'));
     }
 
     /**
