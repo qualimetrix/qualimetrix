@@ -352,23 +352,31 @@ final class ReportRecords
                 self::scan($text, $at, $memberPath, $edits, $spans);
                 $end = $at;
                 self::space($text, $at);
-                $comma = $text[$at] === ',' ? $at++ : null;
+                $comma = $at;
+                if ($text[$at] === ',') {
+                    ++$at;
+                }
                 $members[] = [$memberStart, $end, $comma, $encoded];
                 self::space($text, $at);
                 ++$index;
             }
             ++$at;
-            foreach ($members as $i => [$memberStart, $memberEnd, $comma, $encoded]) {
-                if (\array_key_exists($encoded, $edits) && $edits[$encoded] === null) {
-                    if ($comma !== null) {
-                        $memberEnd = $comma + 1;
-                    } elseif ($i > 0) {
-                        $previous = $members[$i - 1][2];
-                        if ($previous !== null) {
-                            $memberStart = $previous;
-                        }
-                    }
-                    $spans[] = [$memberStart, $memberEnd, ''];
+            for ($i = 0, $count = \count($members); $i < $count;) {
+                if (!\array_key_exists($members[$i][3], $edits) || $edits[$members[$i][3]] !== null) {
+                    ++$i;
+                    continue;
+                }
+                $first = $i;
+                while ($i < $count && \array_key_exists($members[$i][3], $edits) && $edits[$members[$i][3]] === null) {
+                    ++$i;
+                }
+                $last = $i - 1;
+                if ($i < $count) {
+                    $spans[] = [$members[$first][0], $members[$last][2] + 1, ''];
+                } elseif ($first > 0) {
+                    $spans[] = [$members[$first - 1][2], $members[$last][1], ''];
+                } else {
+                    $spans[] = [$members[$first][0], $members[$last][1], ''];
                 }
             }
         } else {

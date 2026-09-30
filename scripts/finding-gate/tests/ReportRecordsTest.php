@@ -162,6 +162,28 @@ final class ReportRecordsTest extends TestCase
     {
         self::assertSame(['items' => [['x' => 3]]], ReportRecords::decode(ReportRecords::edit('{"items":[{"x":1},{"x":2},{"x":3}]}', ['["items",0]' => null, '["items",1]' => null])));
         self::assertSame(['items' => []], ReportRecords::decode(ReportRecords::edit('{"items":[{"x":1},{"x":2}]}', ['["items",0]' => null, '["items",1]' => null])));
+        self::assertSame('{"items":[{"x":1}]}', ReportRecords::edit('{"items":[{"x":1},{"x":2},{"x":3}]}', ['["items",1]' => null, '["items",2]' => null]));
+        self::assertSame('{"items":[]}', ReportRecords::edit('{"items":[{"x":1},{"x":2},{"x":3}]}', ['["items",0]' => null, '["items",1]' => null, '["items",2]' => null]));
+        self::assertSame('{"items":[{"x":1},{"x":3}]}', ReportRecords::edit('{"items":[{"x":1},{"x":2},{"x":3}]}', ['["items",1]' => null]));
+        self::assertSame('{"items":[{"x":2},{"x":4},{"x":5}]}', ReportRecords::edit('{"items":[{"x":1},{"x":2},{"x":3},{"x":4},{"x":5}]}', ['["items",0]' => null, '["items",2]' => null]));
+        self::assertSame('{"items":[{"x":1}]}', ReportRecords::edit('{"items":[{"x":1},{"x":1},{"x":1}]}', ['["items",1]' => null, '["items",2]' => null]));
+        self::assertSame('{"outer":{"a":"A\\/B"},"tail":1.50}' . "\r\n", ReportRecords::edit('{"outer":{"a":"A\\/B","b":1.50,"c":3},"tail":1.50}' . "\r\n", ['["outer","b"]' => null, '["outer","c"]' => null]));
+        $multiline = "{\r\n  \"items\": [\r\n    {\"x\":1},\r\n    {\"x\":2},\r\n    {\"x\":3}\r\n  ],\r\n  \"tail\": \"A\\/B\"\r\n}\r\n";
+        self::assertSame("{\r\n  \"items\": [\r\n    {\"x\":1}\r\n  ],\r\n  \"tail\": \"A\\/B\"\r\n}\r\n", ReportRecords::edit($multiline, ['["items",1]' => null, '["items",2]' => null]));
+        self::assertSame(['{"x":1.50}', '{"x":"A\\/B"}'], ReportRecords::rawRecords('{"items":[{"x":1.50},{"x":"A\\/B"}]}', 'items'));
+        self::assertSame('{"items":[]}', ReportRecords::edit('{"items":[{"x":1}]}', ['["items",0]' => '', '["items",0,"x"]' => '']));
+        foreach ([
+            ['{"items":[}', [], 'not JSON'],
+            ['{"items":[1]}', ['["items",0]' => 'oops'], 'not JSON'],
+            ['{"items":[{"x":1}]}', ['["items",0]' => '{"x":2}', '["items",0,"x"]' => '2'], 'overlap'],
+        ] as [$text, $edits, $message]) {
+            try {
+                ReportRecords::edit($text, $edits);
+                self::fail('An invalid JSON edit was accepted.');
+            } catch (GateError $error) {
+                self::assertStringContainsString($message, $error->getMessage());
+            }
+        }
     }
 
     #[Test]
