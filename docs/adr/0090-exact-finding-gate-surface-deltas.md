@@ -40,6 +40,20 @@ Ordinary comparison and the isolated trial share only their registered-stage
 invocation, preserving observable main refusals without making ordinary refusal
 paths reachable from the trial.
 
+Hidden residual selection compares raw multisets after effective semantic
+operations, rather than inferring coverage from decoded equality. Each record
+pair contributes a joint operation bundle with original endpoints, measured
+member transitions and an occurrence budget. An untouched decoded-equal
+member retains its raw tokens. Physical and ranked endpoint bindings are
+proved independently. Erasure is admissible for unique endpoints,
+raw-identical interchangeable instances with exact counts, or entire original
+decoded-equivalent cohorts uniformly covered by one complete operation.
+Partial or competing operations on raw-distinct duplicates preserve a
+remainder instead of selecting a convenient assignment. This narrows semantic
+coverage proof where provenance is ambiguous; the exact measurement remains
+precise. It reuses captured lists and effective preparation evidence without
+another form, capture or diagnostic path.
+
 The measurement includes length-framed visible bytes and the complete
 record authority. For finding projections this is independent raw physical
 and ranking identity/value multisets, including hidden records and their

@@ -498,6 +498,33 @@ final class SurfaceComparisonTest extends TestCase
         } finally {
             SyntheticTree::remove($root);
         }
+        $rawOnly = SyntheticTree::clean();
+        $rawOnlyAnswer = $answer;
+        $rawOnlyAnswer['stdout'] = $answers['case:alpha|format:json']['stdout'];
+        self::assertNotSame($answers['case:alpha|format:json']['physical']['stdout'], $rawOnlyAnswer['physical']['stdout']);
+        self::assertSame($answers['case:alpha|format:json']['stdout'], $rawOnlyAnswer['stdout']);
+        $rawOnly['candidateAnswers']['case:alpha|format:json'] = $rawOnlyAnswer;
+        $rawOnly['candidateAnswers']['case:alpha|rules'] = ['stdout' => "Changed rule listing.\n"];
+        $rawOnly['candidateDeclarations'][DeclaredExactSurfaces::INDEX] = Tsv::render(DeclaredExactSurfaces::COLUMNS, [
+            ['alpha', 'format:json', 'declared-exact-surfaces/json.diff', 'The complete physical authority changes.'],
+            ['alpha', 'rules', 'declared-exact-surfaces/rules.diff', 'Measure the independent rule listing.'],
+        ]);
+        $rawOnly['candidateDeclarations']['declared-exact-surfaces/json.diff'] = "pending json\n";
+        $rawOnly['candidateDeclarations']['declared-exact-surfaces/rules.diff'] = "pending rules\n";
+        $rawOnlyRoot = SyntheticTree::fixture($rawOnly);
+        try {
+            [$rawOnlyReport, $rawOnlyWritten] = RecordedComparison::derive($rawOnly, $rawOnlyRoot);
+            self::assertContains(FailureClass::RANKING_PROJECTION_MISMATCH, $rawOnlyReport->failureClasses(), $rawOnlyReport->render());
+            self::assertNotContains('declared-exact-surfaces/' . md5('case:alpha|format:json') . '.diff', $rawOnlyWritten, $rawOnlyReport->render());
+            self::assertSame("pending json\n", Fs::read($rawOnlyRoot . '/finding-gate/declared-exact-surfaces/json.diff'));
+            self::assertContains('declared-exact-surfaces/' . md5('case:alpha|rules') . '.diff', $rawOnlyWritten, $rawOnlyReport->render());
+            self::assertSame(
+                ['case' => 'alpha', 'surface' => 'format:json', 'file' => 'declared-exact-surfaces/json.diff', 'reason' => 'The complete physical authority changes.'],
+                Tsv::rows($rawOnlyRoot . '/finding-gate/' . DeclaredExactSurfaces::INDEX, DeclaredExactSurfaces::COLUMNS)[0],
+            );
+        } finally {
+            SyntheticTree::remove($rawOnlyRoot);
+        }
         $documentTree = SyntheticTree::clean();
         $document = $answers['case:alpha|format:json'];
         $document['stdout'] = substr_replace($document['stdout'], '"unrelatedResidual":1,', (int) strpos($document['stdout'], '{') + 1, 0);
@@ -762,6 +789,11 @@ final class SurfaceComparisonTest extends TestCase
         $tree['candidateAnswers']['case:alpha|format:metrics'] = ['stdout' => json_encode([
             'symbols' => [['type' => 'method', 'name' => 'Replay\\Alpha::run', 'file' => 'src/Alpha.php', 'line' => 1, 'metrics' => ['ccn' => 2]]],
         ], \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n"];
+        $tree['candidateAnswers']['case:alpha|format:metrics']['stdout'] = str_replace(
+            '"ccn": 2',
+            '"ccn": 2.00000000000000001',
+            $tree['candidateAnswers']['case:alpha|format:metrics']['stdout'],
+        );
         $tree['candidateDeclarations'][\QmxFindingGate\DeclaredValues::INDEX] = Tsv::render(\QmxFindingGate\DeclaredValues::COLUMNS, [
             [\QmxFindingGate\DeclaredValues::METRIC, 'ccn', '*', 'The metric value changes.'],
         ]);
@@ -787,6 +819,35 @@ final class SurfaceComparisonTest extends TestCase
             SyntheticTree::remove($root);
         }
         self::assertContains(FailureClass::DELTA_STALE, RecordedComparison::report($tree)->failureClasses());
+        $split = SyntheticTree::clean();
+        $channels = ['health.complexity', 'health.cohesion'];
+        sort($channels);
+        $split['cases']['alpha'] = array_map(static fn(string $channel): string => $channel . '@callable', $channels);
+        $split['static'] = $split['fixture'] = array_fill_keys($channels, ['callable']);
+        $split['findings']['alpha'] = $split['candidateFindings']['alpha'] = [];
+        foreach ($channels as $index => $channel) {
+            $reference = SyntheticTree::finding($split['tuple'], $channel, 'declaration:callable:Replay\\Alpha::run' . $index . '@src/Alpha.php');
+            $reference['rule'] = 'computed.health';
+            $candidate = $reference;
+            $candidate['rule'] = $channel;
+            $split['findings']['alpha'][] = $reference;
+            $split['candidateFindings']['alpha'][] = $candidate;
+            $split['maps']['channels'][] = 'computed.health#' . $channel . "\t" . $channel . '#' . $channel . "\tA declared producer movement.";
+        }
+        $split['candidateDeclarations'][DeclaredExactSurfaces::INDEX] = Tsv::render(DeclaredExactSurfaces::COLUMNS, [
+            ['alpha', 'format:json', 'declared-exact-surfaces/split.diff', 'Measure any remaining finding authority.'],
+        ]);
+        $split['candidateDeclarations']['declared-exact-surfaces/split.diff'] = "pending split\n";
+        $splitRoot = SyntheticTree::fixture($split);
+        try {
+            [$splitReport, $splitWritten] = RecordedComparison::derive($split, $splitRoot);
+            self::assertNotContains(DeclaredExactSurfaces::INDEX, $splitWritten, $splitReport->render());
+            self::assertSame("pending split\n", Fs::read($splitRoot . '/finding-gate/declared-exact-surfaces/split.diff'));
+        } finally {
+            SyntheticTree::remove($splitRoot);
+        }
+        $splitOrdinary = RecordedComparison::report($split);
+        self::assertContains(FailureClass::DELTA_STALE, $splitOrdinary->failureClasses(), $splitOrdinary->render());
     }
 
     #[Test]

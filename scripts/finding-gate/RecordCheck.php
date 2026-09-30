@@ -32,6 +32,8 @@ final class RecordCheck implements CaseCheck, RunCheck
     private array $derived = [];
     /** @var array<string,array<string,array<string,int>>> */
     private array $producerCountChanges = [];
+    /** @var array<string,array<string,list<array{candidate:?array<string,mixed>,reference:?array<string,mixed>,paths:list<list<string>>,whole:bool}>>> */
+    private array $exactOperations = [];
     private bool $deriving = false;
 
     private function __construct(private readonly RunContext $run, private readonly ValueCheck $values, private readonly RankingCheck $ranking) {}
@@ -355,9 +357,27 @@ final class RecordCheck implements CaseCheck, RunCheck
             if ($report === 'json') {
                 $this->ranking->prepareRanking($case, $view, $paired['pairs']);
             }
+            $positions = ['candidate' => [], 'reference' => []];
+            foreach (['candidate' => $left, 'reference' => $right] as $side => $pool) {
+                foreach ($pool as $index => $record) {
+                    $positions[$side][DeclaredRecords::canonical($record)][] = $index;
+                }
+            }
+            $used = ['candidate' => [], 'reference' => []];
             foreach ($paired['pairs'] as $pair) {
                 $a = $pair['candidate'];
                 $b = $pair['reference'];
+                $originalCandidate = $a;
+                $originalReference = $b;
+                $candidateKey = DeclaredRecords::canonical($a);
+                $referenceKey = DeclaredRecords::canonical($b);
+                $candidateIndex = $positions['candidate'][$candidateKey][$used['candidate'][$candidateKey] ?? 0] ?? null;
+                $referenceIndex = $positions['reference'][$referenceKey][$used['reference'][$referenceKey] ?? 0] ?? null;
+                if (!\is_int($candidateIndex) || !\is_int($referenceIndex)) {
+                    throw new GateError('A paired record has no original complete occurrence.');
+                }
+                $used['candidate'][$candidateKey] = ($used['candidate'][$candidateKey] ?? 0) + 1;
+                $used['reference'][$referenceKey] = ($used['reference'][$referenceKey] ?? 0) + 1;
                 $subject = 'case:' . $case . '|' . $view . '|record:' . $pair['key'];
                 $level = $report === 'metrics' ? MetricsRecords::level($a) : (isset($a['subject']) && \is_string($a['subject']) ? SubjectLevel::of($a['subject']) : 'file');
                 foreach (array_keys($a + $b) as $field) {
@@ -402,6 +422,20 @@ final class RecordCheck implements CaseCheck, RunCheck
                         )) {
                         unset($a[$field], $b[$field]);
                     }
+                }
+                $paths = self::changedPaths($originalCandidate, $a);
+                foreach (self::changedPaths($originalReference, $b) as $path) {
+                    if (!\in_array($path, $paths, true)) {
+                        $paths[] = $path;
+                    }
+                }
+                if ($paths !== []) {
+                    $this->exactOperations[$case][$view][] = [
+                        'candidate' => $candidate[$candidateIndex],
+                        'reference' => $reference[$referenceIndex],
+                        'paths' => $paths,
+                        'whole' => false,
+                    ];
                 }
                 $this->replacements[$case][$view]['candidate'][DeclaredRecords::canonical($pair['candidate'])] = $a;
                 $this->replacements[$case][$view]['reference'][DeclaredRecords::canonical($pair['reference'])] = $b;
@@ -459,6 +493,41 @@ final class RecordCheck implements CaseCheck, RunCheck
         $this->run->declarations->records->creditMeasurement($change, $case, $report, $view, $canonical);
         $side = $change === DeclaredRecords::INTRODUCED ? 'candidate' : 'reference';
         $this->removed[$case][$view][$side][] = $record;
+        $this->exactOperations[$case][$view][] = [
+            'candidate' => $side === 'candidate' ? $record : null,
+            'reference' => $side === 'reference' ? $record : null,
+            'paths' => [],
+            'whole' => true,
+        ];
+    }
+
+    /** @param array<string,mixed> $before
+     * @param array<string,mixed> $after
+     * @param list<string> $prefix
+     *
+     * @return list<list<string>>
+     */
+    private static function changedPaths(array $before, array $after, array $prefix = []): array
+    {
+        $paths = [];
+        foreach (array_keys($before + $after) as $field) {
+            $path = [...$prefix, $field];
+            if ($prefix === [] && $field === 'metrics'
+                && \array_key_exists($field, $before) && \array_key_exists($field, $after)
+                && \is_array($before[$field]) && \is_array($after[$field])) {
+                array_push($paths, ...self::changedPaths($before[$field], $after[$field], $path));
+            } elseif (($before[$field] ?? null) !== ($after[$field] ?? null)
+                || \array_key_exists($field, $before) !== \array_key_exists($field, $after)) {
+                $paths[] = $path;
+            }
+        }
+        return $paths;
+    }
+
+    /** @return list<array{candidate:?array<string,mixed>,reference:?array<string,mixed>,paths:list<list<string>>,whole:bool}> */
+    public function exactOperations(string $case, string $view): array
+    {
+        return $this->exactOperations[$case][$view] ?? [];
     }
 
     /**

@@ -469,10 +469,29 @@ intention. Semantic forms run first in an isolated trial. A fully explained
 surface has no exact remainder and its exact intention is stale; derive does
 not write a measurement for it.
 
+Hidden authority is compared as raw multisets after the trial's effective
+semantic operations. A measured transition can erase only its own member
+paths; a decoded-equal member retains its original tokens. An authored
+intention or another record's measurement is not an erasure licence.
+Operations from one record pair remain a joint bundle with an occurrence
+budget. Physical and ranked records establish their bindings independently.
+
+Erasure requires a unique original endpoint, raw-identical interchangeable
+instances with exact counts, or a complete decoded-equivalent cohort covered
+uniformly by the same complete operation. Partial or competing operations on
+raw-distinct duplicates leave a remainder; the trial does not choose a
+convenient assignment. This conservatively limits what semantic forms can
+prove explained in an ambiguous cohort. Such a remainder uses the exact route
+without reducing its byte precision. Fully covered operations retain every
+untouched raw member and occurrence for comparison.
+
 When semantic forms leave a residual, this last resort compares the whole
 normalized publication before semantic fields or records are removed. Records
 on that selected surface are judged by the exact delta, without cross-side
-pairing. Record-bearing surfaces also retain complete authority: independent
+pairing. The isolated trial does not credit the main run's semantic intentions.
+Retire intentions superseded only by that whole-surface measurement;
+intentions genuinely measured on another surface retain their normal credit.
+Record-bearing surfaces also retain complete authority: independent
 physical finding and ranking identity/value multisets, including hidden
 occurrences and their multiplicity. These raw sets preserve JSON scalar tokens
 through measurement without attributing occurrences through decoded floats.

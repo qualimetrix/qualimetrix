@@ -7,6 +7,7 @@ namespace QmxFindingGate\Tests;
 use PHPUnit\Framework\Attributes\{DataProvider, Group, Test};
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\{BaselineEligibility, DeclaredFields, DeclaredRecords, DeclaredValues, FailureClass, Fs, GateError, GateModes, GateReport, Options, RankingSchema, ReportRecords, SyntheticTree, Tsv, ValueCheck};
+use ReflectionMethod;
 
 /** @phpstan-import-type Specification from SyntheticTree */
 final class RankingCheckTest extends TestCase
@@ -183,12 +184,18 @@ final class RankingCheckTest extends TestCase
                 $run,
             );
             self::assertNotSame($candidate, $reference);
+            $source = 'case:alpha|format:json';
+            self::assertTrue(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $captures, $run, \QmxFindingGate\RecordCheck::create($run)));
 
             $slot = static fn(string $ranked, string $physical): \QmxFindingGate\CaptureResult => new \QmxFindingGate\CaptureResult($artifacts, ['case:alpha|format:json' => [
                 'ranked' => ['stdout' => $ranked, 'stderr' => '', 'exit' => 2],
                 'physical' => ['stdout' => $physical, 'stderr' => '', 'exit' => 2],
             ]]);
             $permutedPhysical = $document([$firstPhysical, $physicalA, $physicalB], [$firstIssue, $changedA, $changedB], false);
+            self::assertFalse(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, [
+                'candidate' => $captures['candidate'],
+                'reference' => $slot($candidateRanked, $permutedPhysical),
+            ], $run, \QmxFindingGate\RecordCheck::create($run)));
             \QmxFindingGate\RankingCheck::create($run)->checkRepeatedCaptures($captures['candidate'], $slot($candidateRanked, $permutedPhysical));
             self::assertSame([], $run->report->failureClasses(), $run->report->render());
             $rawDrift = str_replace('"impactScore":20.000000000000000002', '"impactScore":20.000000000000000003', $candidateRanked);
@@ -468,6 +475,113 @@ final class RankingCheckTest extends TestCase
         } finally {
             SyntheticTree::remove($root);
         }
+        $tokenTree = self::rankedTree($records, $issues, 2, 1);
+        $tokenTree['declarations']['cases/alpha/case.json'] = self::definition(['--detail=1', '--format-opt=violations=1']);
+        $key = 'case:alpha|format:json';
+        $replaceHiddenToken = static function (string $text, string $token): string {
+            $raw = ReportRecords::rawRecords($text, 'violations')[2];
+            $replacement = preg_replace('/("metricValue"\s*:\s*)1(?=[,}])/', '${1}' . $token, $raw, 1, $count);
+            if ($replacement === null || $count !== 1 || substr_count($text, $raw) !== 1) {
+                throw new GateError('The complete physical fixture has no unique hidden numeric token.');
+            }
+            return str_replace($raw, $replacement, $text);
+        };
+        $referenceAnswer = $tokenTree['answers'][$key];
+        $referencePhysical = $referenceAnswer['physical']['stdout'] ?? throw new GateError('The reference physical fixture is absent.');
+        $tokenTree['answers'][$key]['physical']['stdout'] = $replaceHiddenToken($referencePhysical, '1.00000000000000001');
+        $tokenTree['candidateAnswers'][$key] = $referenceAnswer;
+        $tokenTree['candidateAnswers'][$key]['physical']['stdout'] = $replaceHiddenToken($referencePhysical, '1.00000000000000002');
+        $tokenTree['candidateDeclarations'][\QmxFindingGate\DeclaredExactSurfaces::INDEX] = Tsv::render(\QmxFindingGate\DeclaredExactSurfaces::COLUMNS, [
+            ['alpha', 'format:json', 'declared-exact-surfaces/numeric.diff', 'Measure the complete hidden physical publication.'],
+        ]);
+        $tokenTree['candidateDeclarations']['declared-exact-surfaces/numeric.diff'] = "pending numeric\n";
+        $tokenRoot = SyntheticTree::fixture($tokenTree);
+        $tokenReference = SyntheticTree::fixture($tokenTree, candidate: false);
+        try {
+            $vocabulary = \QmxFindingGate\MetricVocabulary::ofTree($tokenRoot);
+            $maps = \QmxFindingGate\RenameMaps::load($tokenRoot . '/finding-gate/maps', $vocabulary);
+            $run = new \QmxFindingGate\RunContext(
+                Options::parse(['gate', '--candidate=' . $tokenRoot, '--reference=HEAD'], $tokenRoot),
+                new GateReport(),
+                \QmxFindingGate\Corpus::load($tokenRoot),
+                $maps,
+                \QmxFindingGate\ChannelSplit::of($maps),
+                $vocabulary,
+                \QmxFindingGate\Normalization::fromRules([]),
+                \QmxFindingGate\Declarations::load($tokenRoot),
+                $tokenRoot,
+            );
+            $capture = new ReflectionMethod(RecordedComparison::class, 'capture');
+            $candidateCapture = $capture->invoke(null, $tokenRoot, $run);
+            $referenceCapture = $capture->invoke(null, $tokenReference, $run);
+            self::assertInstanceOf(\QmxFindingGate\CaptureResult::class, $candidateCapture);
+            self::assertInstanceOf(\QmxFindingGate\CaptureResult::class, $referenceCapture);
+            foreach ([$candidateCapture, $referenceCapture] as $sideCapture) {
+                self::assertArrayHasKey($key, $sideCapture->artifacts);
+                self::assertArrayHasKey($key, $sideCapture->rankings);
+                self::assertNotNull($sideCapture->rankings[$key]['physical']);
+                self::assertSame($referenceAnswer['ranked']['stdout'] ?? null, $sideCapture->rankings[$key]['ranked']['stdout'] ?? null);
+            }
+            self::assertSame($candidateCapture->artifacts[$key], $referenceCapture->artifacts[$key]);
+            $candidateRaw = $candidateCapture->rankings[$key]['physical']['stdout'] ?? throw new GateError('The candidate physical authority is absent.');
+            $referenceRaw = $referenceCapture->rankings[$key]['physical']['stdout'] ?? throw new GateError('The reference physical authority is absent.');
+            self::assertNotSame($candidateRaw, $referenceRaw);
+            self::assertSame(
+                ReportRecords::decode($candidateRaw)['violations'][2]['metricValue'],
+                ReportRecords::decode($referenceRaw)['violations'][2]['metricValue'],
+            );
+            [$candidateFrame, $referenceFrame] = \QmxFindingGate\ExactSurfaceAuthority::pair(
+                new \QmxFindingGate\SurfacePair($key, 'format:json', $candidateCapture->artifacts[$key], $referenceCapture->artifacts[$key]),
+                ['candidate' => $candidateCapture, 'reference' => $referenceCapture],
+                $run,
+            );
+            self::assertNotSame($candidateFrame, $referenceFrame);
+            [$tokenReport, $tokenWritten] = RecordedComparison::derive($tokenTree, $tokenRoot);
+            $footprint = \QmxFindingGate\ExactSurfaceAuthority::footprint($key, $run);
+            self::assertCount(18, $footprint['required']);
+            foreach ($footprint['required'] as $source) {
+                self::assertTrue($tokenReport->sourceValid($source['side'], $source['key'], $source['role']), ValueCheck::value($source) . ': ' . $tokenReport->render());
+            }
+            self::assertSame([], $footprint['schemas']);
+            self::assertContains(\QmxFindingGate\DeclaredExactSurfaces::INDEX, $tokenWritten, $tokenReport->render());
+            $measuredIndex = Fs::read($tokenRoot . '/finding-gate/' . \QmxFindingGate\DeclaredExactSurfaces::INDEX);
+            $measuredFile = Tsv::rows($tokenRoot . '/finding-gate/' . \QmxFindingGate\DeclaredExactSurfaces::INDEX, \QmxFindingGate\DeclaredExactSurfaces::COLUMNS)[0]['file'];
+            $measuredDiff = Fs::read($tokenRoot . '/finding-gate/' . $measuredFile);
+            self::assertNotSame("pending numeric\n", $measuredDiff);
+            $tokenTree['candidateDeclarations'][\QmxFindingGate\DeclaredExactSurfaces::INDEX] = $measuredIndex;
+            $tokenTree['candidateDeclarations'][$measuredFile] = $measuredDiff;
+            $ordinary = RecordedComparison::reportAt($tokenTree, $tokenRoot);
+            self::assertSame([], array_values(array_filter($ordinary->raised(), static fn(array $failure): bool => \in_array($failure['class'], [FailureClass::DELTA_STALE, FailureClass::DELTA_MISMATCH], true) && $failure['scope'] === $key)), $ordinary->render());
+        } finally {
+            SyntheticTree::remove($tokenRoot);
+            SyntheticTree::remove($tokenReference);
+        }
+        $mixed = $tokenTree;
+        self::publish($mixed, 'candidateAnswers', $records, self::issues($records, [29, 20, 10]), 2, 1);
+        $mixed['candidateAnswers'][$key]['physical']['stdout'] = $replaceHiddenToken(
+            $mixed['candidateAnswers'][$key]['physical']['stdout'] ?? throw new GateError('The mixed physical authority is absent.'),
+            '1.00000000000000002',
+        );
+        $mixed['candidateDeclarations'][DeclaredValues::INDEX] = Tsv::render(DeclaredValues::COLUMNS, [['field', 'ranking.impactScore', '*', 'Measure the first ranked score.']]);
+        $mixed['candidateDeclarations']['declared-exact-surfaces/numeric.diff'] = "pending mixed\n";
+        $mixedRoot = SyntheticTree::fixture($mixed);
+        try {
+            [$mixedReport, $mixedWritten] = RecordedComparison::derive($mixed, $mixedRoot);
+            self::assertContains(\QmxFindingGate\DeclaredExactSurfaces::INDEX, $mixedWritten, $mixedReport->render());
+            self::assertContains(FailureClass::VALUE_STALE, $mixedReport->failureClasses(), $mixedReport->render());
+            $mixedIndex = Fs::read($mixedRoot . '/finding-gate/' . \QmxFindingGate\DeclaredExactSurfaces::INDEX);
+            $mixedFile = Tsv::rows($mixedRoot . '/finding-gate/' . \QmxFindingGate\DeclaredExactSurfaces::INDEX, \QmxFindingGate\DeclaredExactSurfaces::COLUMNS)[0]['file'];
+            $mixedDiff = Fs::read($mixedRoot . '/finding-gate/' . $mixedFile);
+            self::assertNotSame("pending mixed\n", $mixedDiff);
+            unset($mixed['candidateDeclarations'][DeclaredValues::INDEX]);
+            $mixed['candidateDeclarations'][\QmxFindingGate\DeclaredExactSurfaces::INDEX] = $mixedIndex;
+            $mixed['candidateDeclarations'][$mixedFile] = $mixedDiff;
+            $matched = RecordedComparison::report($mixed);
+            self::assertNotContains(FailureClass::VALUE_STALE, $matched->failureClasses(), $matched->render());
+            self::assertSame([], array_values(array_filter($matched->raised(), static fn(array $failure): bool => \in_array($failure['class'], [FailureClass::DELTA_STALE, FailureClass::DELTA_MISMATCH], true) && $failure['scope'] === $key)), $matched->render());
+        } finally {
+            SyntheticTree::remove($mixedRoot);
+        }
         foreach (['check:parallel', 'format:checkstyle'] as $surface) {
             $alias = $tree;
             if ($surface === 'check:parallel') {
@@ -566,6 +680,7 @@ final class RankingCheckTest extends TestCase
         }
         $tree['candidateDeclarations'][DeclaredValues::DERIVED] = $measured;
         self::assertContains(FailureClass::DELTA_STALE, RecordedComparison::report($tree)->failureClasses());
+
     }
 
     #[Test]

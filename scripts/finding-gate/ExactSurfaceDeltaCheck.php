@@ -76,7 +76,14 @@ final class ExactSurfaceDeltaCheck implements Derivation
             }
             $footprint = ExactSurfaceAuthority::footprint($key, $this->run);
             $result = $comparison->trialSurface($key, $candidate, $reference, $footprint['residualViews']);
-            if ($result['valid'] && ($result['visibleResidual'] || $result['authorityResidual'])) {
+            $authorityResidual = $result['authorityResidual'];
+            if ($result['valid'] && $footprint['rawSources'] !== []) {
+                $authorityResidual = false;
+                foreach ($footprint['rawSources'] as $source) {
+                    $authorityResidual = ExactSurfaceAuthority::rawResidual($source, $captures, $trial, $records) || $authorityResidual;
+                }
+            }
+            if ($result['valid'] && ($result['visibleResidual'] || $authorityResidual)) {
                 $this->run->selectExactSurface($key);
             }
         }

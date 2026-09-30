@@ -181,6 +181,365 @@ final class ExactSurfaceAuthority
         ];
     }
 
+    /** @param array{candidate:CaptureResult,reference:CaptureResult} $captures */
+    public static function rawResidual(string $source, array $captures, RunContext $run, RecordCheck $records): bool
+    {
+        $caseEnd = strpos($source, '|');
+        if (!str_starts_with($source, 'case:') || $caseEnd === false) {
+            throw new GateError('A raw authority source requires its exact case and view.');
+        }
+        $case = substr($source, 5, $caseEnd - 5);
+        $view = substr($source, $caseEnd + 1);
+        $report = match ($view) {
+            'format:metrics' => 'metrics',
+            'format:suppressed' => 'suppressed',
+            'directives' => 'directives',
+            default => 'json',
+        };
+        $bags = [];
+        foreach (['physical', 'ranking'] as $kind) {
+            if ($kind === 'ranking' && $report !== 'json') {
+                continue;
+            }
+            /** @var array<string,list<array{raw:string,decoded:array<string,mixed>}>> $rows */
+            $rows = [];
+            foreach (['candidate', 'reference'] as $side) {
+                $capture = $captures[$side];
+                if ($report === 'json') {
+                    $slot = $capture->rankings[$source] ?? throw new GateError('An exact source has no complete ranking: ' . $source);
+                    $text = $kind === 'ranking' ? $slot['ranked']['stdout'] : ($slot['physical']['stdout'] ?? $slot['ranked']['stdout']);
+                    $member = $kind === 'ranking' ? 'topIssues' : 'violations';
+                } else {
+                    $text = $capture->artifacts[$source] ?? throw new GateError('An exact source has no complete publication: ' . $source);
+                    $member = match ($report) {
+                        'metrics' => 'symbols',
+                        'suppressed' => 'suppressed',
+                        default => 'directives',
+                    };
+                }
+                foreach (ReportRecords::rawRecords($text, $member) as $raw) {
+                    $mapped = $side === 'reference' ? $run->maps->forward($raw, $view) : $raw;
+                    $canonical = self::canonical($mapped);
+                    if ($kind === 'ranking') {
+                        $members = self::objectMembers($canonical);
+                        unset($members['rank']);
+                        $canonical = self::members($members);
+                    }
+                    $rows[$side][] = ['raw' => $canonical, 'decoded' => ReportRecords::object($canonical)];
+                }
+            }
+            $operations = $records->exactOperations($case, $view);
+            $allowed = self::admissible($rows, $operations, $kind, $report);
+            foreach (['candidate', 'reference'] as $side) {
+                $rows[$side] = self::erase($rows[$side] ?? [], $operations, $side, $kind, $report, $view, $case, $run, $allowed);
+                $bags[$kind][$side] = array_column($rows[$side], 'raw');
+                sort($bags[$kind][$side], \SORT_STRING);
+            }
+            if ($bags[$kind]['candidate'] !== $bags[$kind]['reference']) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** @param array<string,string> $members */
+    private static function members(array $members): string
+    {
+        ksort($members, \SORT_STRING);
+        $parts = [];
+        foreach ($members as $name => $value) {
+            $parts[] = json_encode($name, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES) . ':' . $value;
+        }
+        return '{' . implode(',', $parts) . '}';
+    }
+
+    /** @param array<string,mixed> $endpoint
+     * @return array<string,mixed>
+     */
+    private static function endpoint(array $endpoint, string $kind): array
+    {
+        if ($kind !== 'ranking') {
+            return RankingSchema::physical($endpoint);
+        }
+        $ranked = array_intersect_key($endpoint, array_flip(RankingSchema::PROJECTION));
+        if (\array_key_exists('techDebtMinutes', $endpoint)) {
+            $ranked['debtMinutes'] = $endpoint['techDebtMinutes'];
+        }
+        foreach (RankingSchema::VALUES as $field) {
+            if (\array_key_exists('ranking.' . $field, $endpoint)) {
+                $ranked[$field] = $endpoint['ranking.' . $field];
+            }
+        }
+        return $ranked;
+    }
+
+    /** @param list<string> $path
+     * @return list<string>
+     */
+    private static function pathFor(array $path, string $kind): array
+    {
+        $field = $path[0] ?? '';
+        if ($kind !== 'ranking') {
+            return str_starts_with($field, 'ranking.') ? [] : $path;
+        }
+        if (str_starts_with($field, 'ranking.')) {
+            return [substr($field, 8)];
+        }
+        if ($field === 'techDebtMinutes') {
+            return ['debtMinutes'];
+        }
+        return \in_array($field, RankingSchema::PROJECTION, true) ? $path : [];
+    }
+
+    /** @param array<string,list<array{raw:string,decoded:array<string,mixed>}>> $rows
+     * @param list<array{candidate:?array<string,mixed>,reference:?array<string,mixed>,paths:list<list<string>>,whole:bool}> $operations
+     *
+     * @return array<string,true>
+     */
+    private static function admissible(array $rows, array $operations, string $kind, string $report): array
+    {
+        $allowed = [];
+        foreach (['candidate', 'reference'] as $side) {
+            $indicesByDecoded = [];
+            foreach ($rows[$side] ?? [] as $index => $row) {
+                $indicesByDecoded[self::decodedKey($row['decoded'])][] = $index;
+            }
+            $cohorts = [];
+            foreach ($operations as $operation) {
+                $endpoint = $operation[$side];
+                if ($endpoint === null) {
+                    continue;
+                }
+                $paths = self::operationPaths($operation, $kind);
+                if ($paths === [] && !$operation['whole']) {
+                    continue;
+                }
+                $expected = $report === 'json' ? self::endpoint($endpoint, $kind) : $endpoint;
+                $cohort = self::decodedKey($expected);
+                $signature = self::operationKey($operation, $kind, $report);
+                $cohorts[$cohort]['signatures'][$signature] = ($cohorts[$cohort]['signatures'][$signature] ?? 0) + 1;
+            }
+            foreach ($cohorts as $cohort => $group) {
+                $indices = $indicesByDecoded[$cohort] ?? [];
+                $raws = array_unique(array_map(static fn(int $index): string => $rows[$side][$index]['raw'], $indices));
+                $counts = $group['signatures'];
+                $count = array_sum($counts);
+                if ($indices === [] || $count > \count($indices)
+                    || (\count($raws) > 1 && (\count($counts) !== 1 || $count !== \count($indices)))) {
+                    continue;
+                }
+                foreach (array_keys($counts) as $signature) {
+                    $allowed[$side][$signature] = true;
+                }
+            }
+        }
+        $shared = [];
+        foreach ($operations as $operation) {
+            $signature = self::operationKey($operation, $kind, $report);
+            $candidateNeeded = $operation['candidate'] !== null && ($operation['whole'] || self::operationPaths($operation, $kind) !== []);
+            $referenceNeeded = $operation['reference'] !== null && ($operation['whole'] || self::operationPaths($operation, $kind) !== []);
+            if ((!$candidateNeeded || isset($allowed['candidate'][$signature]))
+                && (!$referenceNeeded || isset($allowed['reference'][$signature]))) {
+                $shared[$signature] = true;
+            }
+        }
+        return $shared;
+    }
+
+    /** @param array{candidate:?array<string,mixed>,reference:?array<string,mixed>,paths:list<list<string>>,whole:bool} $operation
+     * @return list<list<string>>
+     */
+    private static function operationPaths(array $operation, string $kind): array
+    {
+        $paths = [];
+        foreach ($operation['paths'] as $path) {
+            $candidate = $operation['candidate'];
+            $reference = $operation['reference'];
+            if ($candidate === null || $reference === null
+                || (self::present($candidate, $path) === self::present($reference, $path)
+                    && self::at($candidate, $path) === self::at($reference, $path))) {
+                continue;
+            }
+            $mapped = self::pathFor($path, $kind);
+            if ($mapped !== []) {
+                $paths[] = $mapped;
+            }
+        }
+        return $paths;
+    }
+
+    /** @param array{candidate:?array<string,mixed>,reference:?array<string,mixed>,paths:list<list<string>>,whole:bool} $operation */
+    private static function operationKey(array $operation, string $kind, string $report): string
+    {
+        if ($kind !== 'ranking' || $report !== 'json') {
+            return DeclaredRecords::canonical($operation);
+        }
+        $transitions = [];
+        foreach ($operation['paths'] as $path) {
+            $transition = ['path' => $path];
+            foreach (['candidate', 'reference'] as $side) {
+                $endpoint = $operation[$side];
+                $present = $endpoint !== null && self::present($endpoint, $path);
+                $transition[$side] = ['present' => $present, 'value' => $present ? self::at($endpoint, $path) : null];
+            }
+            $transitions[] = $transition;
+        }
+        return self::decodedKey([
+            'candidate' => $operation['candidate'] === null ? null : self::endpoint($operation['candidate'], $kind),
+            'reference' => $operation['reference'] === null ? null : self::endpoint($operation['reference'], $kind),
+            'transitions' => $transitions,
+            'whole' => $operation['whole'],
+        ]);
+    }
+
+    /** @param list<array{raw:string,decoded:array<string,mixed>}> $rows
+     * @param list<array{candidate:?array<string,mixed>,reference:?array<string,mixed>,paths:list<list<string>>,whole:bool}> $operations
+     * @param array<string,true> $allowed
+     *
+     * @return list<array{raw:string,decoded:array<string,mixed>}>
+     */
+    private static function erase(array $rows, array $operations, string $side, string $kind, string $report, string $view, string $case, RunContext $run, array $allowed): array
+    {
+        $indicesByDecoded = [];
+        foreach ($rows as $index => $row) {
+            $indicesByDecoded[self::decodedKey($row['decoded'])][] = $index;
+        }
+        $groups = [];
+        foreach ($operations as $operation) {
+            $endpoint = $side === 'candidate' ? $operation['candidate'] : $operation['reference'];
+            if ($endpoint === null) {
+                continue;
+            }
+            $expected = $report === 'json' ? self::endpoint($endpoint, $kind) : $endpoint;
+            $paths = self::operationPaths($operation, $kind);
+            if ($paths === [] && !$operation['whole']) {
+                continue;
+            }
+            $cohort = self::decodedKey($expected);
+            $signature = self::operationKey($operation, $kind, $report);
+            if (!isset($allowed[$signature])) {
+                continue;
+            }
+            $groups[$cohort][$signature]['expected'] = $expected;
+            $groups[$cohort][$signature]['paths'] = $paths;
+            $groups[$cohort][$signature]['whole'] = $operation['whole'];
+            $groups[$cohort][$signature]['count'] = ($groups[$cohort][$signature]['count'] ?? 0) + 1;
+        }
+        foreach ($groups as $cohort => $signatures) {
+            $indices = $indicesByDecoded[$cohort] ?? [];
+            if ($indices === []) {
+                continue;
+            }
+            $raws = array_unique(array_map(static fn(int $index): string => $rows[$index]['raw'], $indices));
+            $count = array_sum(array_column($signatures, 'count'));
+            if ($count > \count($indices) || (\count($raws) > 1 && (\count($signatures) !== 1 || $count !== \count($indices)))) {
+                continue;
+            }
+            $next = 0;
+            foreach ($signatures as $bundle) {
+                for ($number = 0; $number < $bundle['count']; ++$number) {
+                    $index = $indices[$next++] ?? null;
+                    if ($index === null || !isset($rows[$index])) {
+                        break;
+                    }
+                    if ($bundle['whole']) {
+                        unset($rows[$index]);
+                        continue;
+                    }
+                    $edits = [];
+                    foreach ($bundle['paths'] as $path) {
+                        if (self::present($rows[$index]['decoded'], $path)) {
+                            $edits[ValueCheck::value($path)] = null;
+                        }
+                    }
+                    if ($edits !== []) {
+                        $row = $rows[$index];
+                        $row['raw'] = self::canonical(ReportRecords::edit($row['raw'], $edits));
+                        $rows[$index] = $row;
+                    }
+                }
+            }
+        }
+        $schema = $report === 'suppressed' ? [] : $run->declarations->fields->changes($kind === 'ranking' ? 'json' : $report, $kind === 'ranking' ? 'ranking' : $view);
+        if ($schema !== []) {
+            $supplied = [];
+            foreach ($run->declarations->fields->requiredPublications($case) as $publication) {
+                if ($publication['report'] === ($kind === 'ranking' ? 'json' : $report)
+                    && $publication['view'] === ($kind === 'ranking' ? 'ranking' : $view)
+                    && $publication['supplied']) {
+                    $supplied[$publication['side']] = true;
+                }
+            }
+            if (isset($supplied['candidate'], $supplied['reference'])) {
+                foreach ($rows as &$row) {
+                    $edits = [];
+                    foreach (array_keys($schema) as $field) {
+                        if (\array_key_exists($field, $row['decoded'])) {
+                            $edits[ValueCheck::value([$field])] = null;
+                        }
+                    }
+                    if ($edits !== []) {
+                        $row['raw'] = self::canonical(ReportRecords::edit($row['raw'], $edits));
+                    }
+                }
+                unset($row);
+            }
+        }
+        return array_values($rows);
+    }
+
+    /** @param array<string,mixed> $record
+     * @param list<string> $path
+     */
+    private static function present(array $record, array $path): bool
+    {
+        $current = $record;
+        foreach ($path as $index => $field) {
+            if (!\is_array($current) || !\array_key_exists($field, $current)) {
+                return false;
+            }
+            $current = $current[$field];
+        }
+        return true;
+    }
+
+    /** @param array<string,mixed> $record
+     * @param list<string> $path
+     */
+    private static function at(array $record, array $path): mixed
+    {
+        $current = $record;
+        foreach ($path as $field) {
+            if (!\is_array($current) || !\array_key_exists($field, $current)) {
+                return null;
+            }
+            $current = $current[$field];
+        }
+        return $current;
+    }
+
+    private static function decodedKey(mixed $value): string
+    {
+        if (\is_array($value)) {
+            if (!array_is_list($value)) {
+                ksort($value, \SORT_STRING);
+            }
+            $value = array_map(static fn(mixed $member): mixed => \is_array($member) ? self::ordered($member) : $member, $value);
+        }
+        return ValueCheck::value($value);
+    }
+
+    /** @param array<array-key,mixed> $value
+     * @return array<array-key,mixed>
+     */
+    private static function ordered(array $value): array
+    {
+        if (!array_is_list($value)) {
+            ksort($value, \SORT_STRING);
+        }
+        return array_map(static fn(mixed $member): mixed => \is_array($member) ? self::ordered($member) : $member, $value);
+    }
+
     private static function source(string $surface, string $case): ?string
     {
         if (\in_array($surface, ['baseline-file', 'baseline:cleanup:file', 'baseline:rename-channels:file', 'baseline:update:file'], true)) {
