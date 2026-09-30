@@ -110,6 +110,7 @@ case:rule-exclusion-ledger|format:json	declared-delta/case-rule-exclusion-ledger
 case:rule-exclusion-ledger|format:metrics	declared-delta/case-rule-exclusion-ledger-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
 case:rule-exclusion-ledger|format:suppressed	declared-delta/case-rule-exclusion-ledger-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
 case:scoped-layers|check:baseline	declared-delta/case-scoped-layers-check-baseline.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:scoped-layers|check:baseline-source	declared-delta/case-scoped-layers-check-baseline-source.diff	After exact project finding withdrawals, the source report publishes unmeasured scope, typed reasons and its corresponding summary.
 case:scoped-layers|check:output:file	declared-delta/case-scoped-layers-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
 case:scoped-layers|format:json	declared-delta/case-scoped-layers-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
 case:scoped-layers|format:metrics	declared-delta/case-scoped-layers-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
