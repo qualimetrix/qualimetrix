@@ -121,8 +121,10 @@ use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
+use Qualimetrix\Infrastructure\Console\RunConfigurationPreparation;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\DependencyInjection\Registration\EvidenceRegistration;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface;
@@ -141,6 +143,7 @@ use ReflectionProperty;
 use SplFileInfo;
 
 #[CoversClass(ContainerFactory::class)]
+#[CoversClass(EvidenceRegistration::class)]
 final class ContainerFactoryTest extends TestCase
 {
     private ContainerFactory $factory;
@@ -156,6 +159,17 @@ final class ContainerFactoryTest extends TestCase
     protected function tearDown(): void
     {
         $this->removeDirectory($this->tempDir);
+    }
+
+    #[Test]
+    public function itSharesTheManifestReaderWithTheInvocationControl(): void
+    {
+        $container = $this->factory->create();
+        $reader = $container->get(\Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface::class);
+        $control = $container->get(\Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface::class);
+        self::assertSame($reader, $control);
+        self::assertInstanceOf(\Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface::class, $control);
+        self::assertSame([], $control->observedIssues());
     }
 
     #[Test]
@@ -470,7 +484,7 @@ PHP;
         self::assertNotNull($baselineRunConstructor);
         self::assertNotNull($measuredFindingSetConstructor);
         self::assertCount(9, $checkConstructor->getParameters());
-        self::assertCount(8, $baselineRunConstructor->getParameters());
+        self::assertCount(6, $baselineRunConstructor->getParameters());
         self::assertCount(3, $measuredFindingSetConstructor->getParameters());
         $pipelineConstructor = (new ReflectionClass(AnalysisPipeline::class))->getConstructor();
         self::assertNotNull($pipelineConstructor);
@@ -544,17 +558,19 @@ PHP;
         );
         $configurationResolvers = (new ReflectionProperty(CheckCommand::class, 'configurationResolvers'))->getValue($command);
         self::assertInstanceOf(CheckConfigurationResolvers::class, $configurationResolvers);
+        $runPreparation = (new ReflectionProperty(CheckConfigurationResolvers::class, 'runConfigurationPreparation'))->getValue($configurationResolvers);
+        self::assertInstanceOf(RunConfigurationPreparation::class, $runPreparation);
         self::assertInstanceOf(
             RunConfigurationResolverInterface::class,
-            (new ReflectionProperty(CheckConfigurationResolvers::class, 'runConfigurationResolver'))->getValue($configurationResolvers),
+            (new ReflectionProperty(RunConfigurationPreparation::class, 'runConfigurationResolver'))->getValue($runPreparation),
         );
         self::assertInstanceOf(
             CacheConfigurationResolverInterface::class,
-            (new ReflectionProperty(CheckConfigurationResolvers::class, 'cacheConfigurationResolver'))->getValue($configurationResolvers),
+            (new ReflectionProperty(RunConfigurationPreparation::class, 'cacheConfigurationResolver'))->getValue($runPreparation),
         );
         self::assertInstanceOf(
             ParallelConfigurationResolverInterface::class,
-            (new ReflectionProperty(CheckConfigurationResolvers::class, 'parallelConfigurationResolver'))->getValue($configurationResolvers),
+            (new ReflectionProperty(RunConfigurationPreparation::class, 'parallelConfigurationResolver'))->getValue($runPreparation),
         );
         self::assertInstanceOf(
             ConfiguredFindingExclusionsResolverInterface::class,

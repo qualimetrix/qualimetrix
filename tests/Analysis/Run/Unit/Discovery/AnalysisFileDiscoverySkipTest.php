@@ -148,12 +148,12 @@ final class AnalysisFileDiscoverySkipTest extends TestCase
             $filter,
             new UnmatchedExcludeAudit(new UnmatchedExcludeOptions(), new ExcludeBindingProbe()),
         ))->discover(new RunConfiguration(
-            paths: [AbsolutePath::fromString($this->root . '/src')],
             pathExcludes: [],
             projectRoot: AbsolutePath::fromString($this->root),
             generatedFilePolicy: GeneratedFilePolicy::Include,
-            coversProjectScope: true,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: AbsolutePath::fromString($this->root), pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [AbsolutePath::fromString($this->root . '/src')], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
             authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         ));
     }
 

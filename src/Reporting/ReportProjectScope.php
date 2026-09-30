@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting;
 
 use LogicException;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason;
 
 /**
  * What the run's paths were, measured against the project's `composer.json`
@@ -16,28 +17,31 @@ use LogicException;
  * nor a machine format keeps; without this a CI pipeline could not tell "no
  * stale configuration" from "not judged on this run".
  *
- * Three states: `covered` (the paths reach every declared autoload target),
+ * Four states: `covered` (the paths reach every declared autoload target),
  * `narrowed` (they miss some; the channels judged only on a whole-project run
  * were not judged) and `unknown` (the manifest declares no readable production
- * autoload, so the analysed paths were taken as the whole project and those
- * channels judged them).
+ * autoload universe, but the whole root permits judgement).
+ * `unmeasured` has an incomplete or undeclared universe over a subset, or
+ * inferred partial defaults; whole-project channels are withheld.
  *
  * **A run that judges is not a run that judged every value.** On `covered` and
  * `unknown` the suppression channels still ask each configured value whether
  * this run reaches the place it names, and skip one it does not:
  * `suppress_paths: [tests/Legacy]` on `qmx check src/`, with `tests/` declared
- * only for development, or any namespace value on an `unknown` project, which
- * has no declared autoload to place it. `unjudgedValues` names every such
+ * only for development, or a namespace value with no accepted PSR-4 map
+ * locating it. Namespace-map usability is separate from the scope state.
+ * `unjudgedValues` names every such
  * value and `unjudgedChannels` the channels they belong to — derived from the
  * values, so the channel list cannot claim a silence no value suffered. On
- * `narrowed` the channel list is the whole family and says it alone: no value
+ * `narrowed` and `unmeasured` the channel list is the whole family: no value
  * of those channels was judged.
  *
  * A structured format publishes it where it says something about the report
  * itself: a document under a key of its own, in every state; `sarif` as a
  * notification, `github` as a notice, `html` as a banner and a human format as
  * a line, whenever {@see describe()} has something to say — every state but a
- * `covered` run that skipped no value. `gitlab` and `checkstyle` omit it:
+ * `covered` run that skipped no value and has no source reason.
+ * `gitlab` and `checkstyle` omit it:
  * their consumers count every entry as a finding, and a narrowed run is a
  * choice of the caller's, not a defect of the run to be counted.
  */
@@ -49,10 +53,12 @@ final readonly class ReportProjectScope
     public const string COVERED = 'covered';
     public const string NARROWED = 'narrowed';
     public const string UNKNOWN = 'unknown';
+    public const string UNMEASURED = 'unmeasured';
 
     /**
      * @param list<string> $uncoveredAutoloadTargets
      * @param list<string> $unjudgedChannels
+     * @param list<ProjectScopeReason> $reasons
      * @param list<array{option: string, pattern: string}> $unjudgedValues
      */
     private function __construct(
@@ -60,6 +66,7 @@ final readonly class ReportProjectScope
         public array $uncoveredAutoloadTargets,
         public array $unjudgedChannels,
         public array $unjudgedValues = [],
+        public array $reasons = [],
     ) {}
 
     public static function covered(): self
@@ -81,6 +88,23 @@ final readonly class ReportProjectScope
         return new self(self::NARROWED, $uncoveredAutoloadTargets, $unjudgedChannels);
     }
 
+    /** @param list<string> $unjudgedChannels */
+    public static function unmeasured(array $unjudgedChannels): self
+    {
+        return new self(self::UNMEASURED, [], $unjudgedChannels);
+    }
+
+    /** @param list<ProjectScopeReason> $reasons */
+    public function withReasons(array $reasons): self
+    {
+        $unique = [];
+        foreach ([...$this->reasons, ...$reasons] as $reason) {
+            $unique[serialize($reason->toArray())] = $reason;
+        }
+
+        return new self($this->state, $this->uncoveredAutoloadTargets, $this->unjudgedChannels, $this->unjudgedValues, array_values($unique));
+    }
+
     /**
      * This scope with the values a judging run skipped, each under the
      * channel that would have reported it; the channel list becomes the
@@ -93,7 +117,7 @@ final readonly class ReportProjectScope
      */
     public function withUnjudgedValues(array $values): self
     {
-        if ($this->state === self::NARROWED) {
+        if ($this->state === self::NARROWED || $this->state === self::UNMEASURED) {
             throw new LogicException('A narrowed run judges no configured value, so it has none to skip.');
         }
 
@@ -105,6 +129,7 @@ final readonly class ReportProjectScope
             $this->uncoveredAutoloadTargets,
             $channels,
             array_map(static fn(array $value): array => ['option' => $value['option'], 'pattern' => $value['pattern']], $values),
+            $this->reasons,
         );
     }
 
@@ -112,7 +137,7 @@ final readonly class ReportProjectScope
      * One shape in every state, so a consumer reads the same keys whether the
      * run was narrowed or not.
      *
-     * @return array{state: string, uncoveredAutoloadTargets: list<string>, unjudgedChannels: list<string>, unjudgedValues: list<array{option: string, pattern: string}>}
+     * @return array<string, mixed>
      */
     public function toArray(): array
     {
@@ -121,31 +146,37 @@ final readonly class ReportProjectScope
             'uncoveredAutoloadTargets' => $this->uncoveredAutoloadTargets,
             'unjudgedChannels' => $this->unjudgedChannels,
             'unjudgedValues' => $this->unjudgedValues,
+            'reasons' => array_map(static fn(ProjectScopeReason $reason): array => $reason->toArray(), $this->reasons),
         ];
     }
 
     /**
      * The sentence every non-document format uses; `null` only for a
-     * `covered` run that skipped no value, the one state that needs no
-     * explaining.
+     * `covered` run that skipped no value and has no source reason.
      */
     public function describe(): ?string
     {
-        return match ($this->state) {
+        $description = match ($this->state) {
+            self::UNMEASURED => 'Project scope unmeasured: the selected autoload universe is incomplete or undeclared and these paths do not establish the whole project; whole-project channels were not judged: ' . implode(', ', $this->unjudgedChannels) . '.',
             self::NARROWED => \sprintf(
                 'Project scope narrowed: the analysed paths do not cover autoload target(s) %s, so these channels,'
                 . ' judged only on a whole-project run, were not judged: %s.',
                 implode(', ', $this->uncoveredAutoloadTargets),
                 implode(', ', $this->unjudgedChannels),
             ),
-            self::UNKNOWN => 'Project scope unknown: composer.json declares no production autoload a walk of the project reaches,'
-                . ' so the analysed paths were taken as the whole project and whole-project channels judged them.'
-                . ($this->unjudgedValues === [] ? '' : ' Without a declared autoload a configured namespace has no location.'
+            self::UNKNOWN => 'Project scope unknown: composer.json does not establish a complete production autoload universe,'
+                . ' so the selected whole project root is judged from the analysed paths.'
+                . ($this->unjudgedValues === [] ? '' : ' Some configured values have no analysed location.'
                     . $this->describeUnjudgedValues()),
             default => $this->unjudgedValues === []
                 ? null
                 : 'Project scope covered: the analysed paths cover every autoload target.' . $this->describeUnjudgedValues(),
         };
+        if ($this->reasons !== []) {
+            $description = ($description ?? 'Project scope covered.') . ' Source reasons: ' . implode('; ', array_map(static fn(ProjectScopeReason $reason): string => (string) json_encode($reason->toArray(), \JSON_UNESCAPED_SLASHES), $this->reasons)) . '.';
+        }
+
+        return $description;
     }
 
     private function describeUnjudgedValues(): string

@@ -97,9 +97,9 @@ final class NarrowedRunDeclarationVerdictIntegrationTest extends TestCase
     }
 
     /**
-     * Without a manifest there is no project beyond the paths the user named,
-     * so the paths are judged as the project: a typo in a layer is an error
-     * again, and the document says the scope was taken from the paths.
+     * Without a manifest, an explicitly selected whole root is judged with
+     * unknown scope: a typo in a layer is an error again. A subset would
+     * withhold project-wide judgement.
      */
     #[Test]
     public function itJudgesAProjectWithoutAManifestAgainstTheAnalysedPaths(): void
@@ -107,7 +107,7 @@ final class NarrowedRunDeclarationVerdictIntegrationTest extends TestCase
         unlink($this->fixture . '/composer.json');
         $yaml = str_replace("'Sample\Web\**'", "'Sample\Webb\**'", self::CONFIG);
 
-        $tester = $this->check($yaml, ['src']);
+        $tester = $this->check($yaml, ['.']);
 
         $unreachable = $this->findingsOn($tester, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
         self::assertCount(1, $unreachable);

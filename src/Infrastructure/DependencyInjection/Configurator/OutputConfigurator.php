@@ -4,12 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
-use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
-use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationResolverInterface;
-use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
-use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
@@ -17,11 +12,8 @@ use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
-use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
@@ -37,14 +29,14 @@ use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
+use Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery;
+use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
 use Qualimetrix\Core\Ast\FileParserInterface;
-use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
-use Qualimetrix\Infrastructure\Cache\CacheFactory;
-use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
-use Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface;
+use Qualimetrix\Infrastructure\Console\AnalysisInputPathValidator;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\CheckConfigurationResolvers;
@@ -71,28 +63,25 @@ use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
 use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
 use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
 use Qualimetrix\Infrastructure\Console\MemoryLimitSection;
+use Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons;
 use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\ProfileSummaryRenderer;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
-use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
+use Qualimetrix\Infrastructure\Console\ProjectSourceConfigurator;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuleListingPresenter;
+use Qualimetrix\Infrastructure\Console\RunConfigurationPreparation;
 use Qualimetrix\Infrastructure\Console\RunningBinaryLocator;
 use Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\RuntimeLimitsController;
+use Qualimetrix\Infrastructure\Console\RuntimeLoggerConfigurator;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
-use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
-use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
-use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface;
-use Qualimetrix\Infrastructure\Profiler\Contract\ProfileReportInterface;
-use Qualimetrix\Infrastructure\Profiler\Contract\ProfileSessionControlInterface;
-use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Reporting\Configuration\OutputFormatResolver;
 use Qualimetrix\Reporting\Configuration\OutputFormatSection;
@@ -103,7 +92,6 @@ use Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclu
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
-use Qualimetrix\Reporting\Health\SummaryEnricher;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -221,16 +209,21 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
 
     private function registerCli(ContainerBuilder $container): void
     {
-        $runtimeLoggerConfigurator = 'Qualimetrix\\Infrastructure\\Console\\RuntimeLoggerConfigurator';
-        $suppressionFilter = 'Qualimetrix\\Analysis\\Policy\\Inline\\Suppression\\SuppressionFilter';
-        $gitScopeQuery = 'Qualimetrix\\Infrastructure\\Git\\ReportingGitScopeQuery';
-        $findingProjector = 'Qualimetrix\\Reporting\\FindingProjection\\FindingProjector';
+        $this->registerRunInputs($container);
+        $this->registerFindingProjection($container);
+        $this->registerRuntimePreparation($container);
+        $this->registerCheckDelivery($container);
+        $this->registerHookDelivery($container);
+        $this->registerAuditAndGraphDelivery($container);
+        $this->registerBaselineCommands($container);
+    }
 
+    private function registerRunInputs(ContainerBuilder $container): void
+    {
         $container->register(FindingConfigurationResolver::class);
         $container->setAlias(FindingConfigurationResolverInterface::class, FindingConfigurationResolver::class);
         $container->register(ConfigurationInputAdapter::class)
-            ->setArgument('$configurationPipeline', new Reference(ConfigurationPipelineInterface::class))
-            ->setArgument('$errorStream', new Reference(ErrorStream::class));
+            ->setAutowired(true);
         $container->register(ExitPolicySection::class)->setAutoconfigured(true);
         $container->register(MemoryLimitSection::class)->setAutoconfigured(true);
         $container->register(PathsSection::class)->setAutoconfigured(true);
@@ -238,19 +231,26 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArgument('$projectScopeCoverage', new Reference(ProjectScopeCoverage::class));
         $container->setAlias(RunConfigurationResolverInterface::class, RunConfigurationResolver::class);
         $container->register(OutputFormatVocabulary::class)
-            ->setArguments([new Reference(FormatterRegistryInterface::class)]);
+            ->setAutowired(true);
         $container->register(OutputFormatSection::class)
-            ->setAutoconfigured(true)
-            ->setArguments([new Reference(OutputFormatVocabulary::class)]);
+            ->setAutowired(true)
+            ->setAutoconfigured(true);
         $container->register(OutputFormatResolver::class)
-            ->setAutoconfigured(true)
-            ->setArguments([new Reference(OutputFormatVocabulary::class)]);
+            ->setAutowired(true)
+            ->setAutoconfigured(true);
         $container->setAlias(OutputFormatResolverInterface::class, OutputFormatResolver::class);
         $container->register(ConfiguredFindingExclusionsResolver::class);
         $container->setAlias(
             ConfiguredFindingExclusionsResolverInterface::class,
             ConfiguredFindingExclusionsResolver::class,
         );
+    }
+
+    private function registerFindingProjection(ContainerBuilder $container): void
+    {
+        $suppressionFilter = 'Qualimetrix\\Analysis\\Policy\\Inline\\Suppression\\SuppressionFilter';
+        $gitScopeQuery = 'Qualimetrix\\Infrastructure\\Git\\ReportingGitScopeQuery';
+        $findingProjector = 'Qualimetrix\\Reporting\\FindingProjection\\FindingProjector';
 
         $container->register($suppressionFilter);
         $container->setAlias(AnnotationSuppressionInterface::class, $suppressionFilter)
@@ -276,44 +276,29 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         // measures. The pipeline runs its stages; baseline commands ask it
         // for the set directly.
         $container->register(MeasuredFindingSet::class)
-            ->setArguments([
-                new Reference(AnalysisPipelineInterface::class),
-                new Reference($findingProjector),
-                new Reference(FileDiscoveryFactoryInterface::class),
-            ]);
+            ->setAutowired(true);
+    }
+
+    private function registerRuntimePreparation(ContainerBuilder $container): void
+    {
+        $container->register(RunConfigurationPreparation::class)->setAutowired(true);
+        $container->register(ObservedProjectScopeReasons::class)->setAutowired(true);
 
         $container->register(AnalysisRuntimeConfigurator::class)
-            ->setArguments([
-                new Reference(RuleConfigurationInterface::class),
-                new Reference(LcomCollectionConfigurationResolverInterface::class),
-                new Reference(LcomCollectionConfigurationStoreInterface::class),
-                new Reference(ArchitecturePolicyConfiguratorInterface::class),
-                new Reference(ComputedMetricConfiguratorInterface::class),
-                new Reference(CouplingConfiguratorInterface::class),
-                new Reference(RuleInputValidator::class),
-            ]);
+            ->setAutowired(true);
 
-        $container->register($runtimeLoggerConfigurator, $runtimeLoggerConfigurator)
-            ->setArguments([
-                new Reference(LoggerFactoryInterface::class),
-                new Reference(LoggerHolder::class),
-                new Reference(ErrorStream::class),
-            ]);
+        $container->register(RuntimeLoggerConfigurator::class)
+            ->setAutowired(true)
+            ->setArgument('$loggerHolder', new Reference(LoggerHolder::class));
+
+        $container->register(ProjectSourceConfigurator::class)
+            ->setAutowired(true);
 
         // RuntimeConfigurator owns cross-cutting setup and resets owner-local
         // runtime state before each configuration resolution.
         $container->register(RuntimeConfigurator::class)
-            ->setPublic(true)
-            ->setArguments([
-                new Reference($runtimeLoggerConfigurator),
-                new Reference(ProgressConfigurator::class),
-                new Reference(ProfileSessionControlInterface::class),
-                new Reference(AnalysisRuntimeConfigurator::class),
-                new Reference(CacheFactory::class),
-                new Reference(ParallelConfigurationStoreInterface::class),
-                new Reference(RuntimeLimitsController::class),
-                new Reference(AnalysedInstallAnchorInterface::class),
-            ]);
+            ->setAutowired(true)
+            ->setPublic(true);
 
         // ProfileSummaryRenderer (stateless, no dependencies)
         $container->register(ProfileSummaryRenderer::class);
@@ -331,38 +316,24 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         // fetches this exact instance to hand `Application`; a second,
         // container-invisible instance would create a second diagnostic dialect.
         $container->register(RefusalPresenter::class)
-            ->setPublic(true)
-            ->setArguments([
-                new Reference(ErrorStream::class),
-            ]);
+            ->setAutowired(true)
+            ->setPublic(true);
 
         $container->register(ProgressConfigurator::class)
-            ->setArguments([
-                new Reference(SwitchableProgressReporter::class),
-                new Reference(ErrorStream::class),
-            ]);
+            ->setAutowired(true);
         $container->register(RuntimeLimitsController::class);
         $container->register(RuleInputValidator::class)
-            ->setArguments([
-                new Reference(RuleRegistryInterface::class),
-                new Reference(RuleSelector::class),
-                new Reference(FindingConfigurationResolverInterface::class),
-                new Reference(RuleChannelSnapshotFactoryInterface::class),
-            ]);
+            ->setAutowired(true);
 
         // ProfilePresenter for profiling output
         $container->register(ProfilePresenter::class)
-            ->setArguments([
-                new Reference(ProfileReportInterface::class),
-                new Reference(ErrorStream::class),
-                new Reference(ProfileSummaryRenderer::class),
-            ]);
+            ->setAutowired(true);
 
         $container->register(FormatterContextFactory::class)
-            ->setArguments([new Reference(FormatterRegistryInterface::class)]);
+            ->setAutowired(true);
 
         $container->register(ExitCodeResolver::class)
-            ->setArguments([new Reference(ChannelDeclarationRegistryInterface::class)]);
+            ->setAutowired(true);
 
         // What --namespace/--class selects; ResultPresenter and the autowired
         // formatter sections both resolve it from here.
@@ -370,27 +341,15 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
 
         // ResultPresenter for formatting/output of analysis results
         $container->register(ResultPresenter::class)
-            ->setArguments([
-                new Reference(FormatterRegistryInterface::class),
-                new Reference(ProfilerInterface::class),
-                new Reference(SummaryEnricher::class),
-                new Reference(ProfilePresenter::class),
-                new Reference(ExitCodeResolver::class),
-                new Reference(FindingFilter::class),
-                new Reference(FormatterContextFactory::class),
-                new Reference(RuleConfigurationInterface::class),
-                new Reference(ErrorStream::class),
-            ]);
+            ->setAutowired(true);
 
         // FindingFilterOrchestrator
         $container->register(FindingFilterOrchestrator::class)
-            ->setArguments([
-                new Reference($findingProjector),
-                new Reference(ErrorStream::class),
-                new Reference('Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit'),
-                new Reference(ComposerAutoloadPathReaderInterface::class),
-            ]);
+            ->setAutowired(true);
+    }
 
+    private function registerCheckDelivery(ContainerBuilder $container): void
+    {
         // CheckCommand with all dependencies injected
         $container->register(
             'Qualimetrix\\Infrastructure\\Git\\GitScopeResolver',
@@ -411,16 +370,9 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference('Qualimetrix\\Infrastructure\\Git\\GitScopeResolver'),
                 new Reference('Qualimetrix\\Infrastructure\\Console\\ScopeWarningChecker'),
-                new Reference(ProjectScopeCoverage::class),
             ]);
         $container->register(CheckConfigurationResolvers::class)
-            ->setArguments([
-                new Reference(RunConfigurationResolverInterface::class),
-                new Reference(CacheConfigurationResolverInterface::class),
-                new Reference(ParallelConfigurationResolverInterface::class),
-                new Reference(ConfiguredFindingExclusionsResolverInterface::class),
-                new Reference(OutputFormatResolverInterface::class),
-            ]);
+            ->setAutowired(true);
 
         $container->register(CheckCommand::class)
             ->setArguments([
@@ -435,9 +387,10 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(RefusalPresenter::class),
             ])
             ->setPublic(true);
+    }
 
-        $this->registerBaselineCommands($container);
-
+    private function registerHookDelivery(ContainerBuilder $container): void
+    {
         // GitRepositoryLocator (shared by hook commands)
         $container->register(GitRepositoryLocator::class);
         $container->setAlias(GitRepositoryLocatorInterface::class, GitRepositoryLocator::class);
@@ -469,21 +422,17 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(RunningBinaryLocator::class),
             ])
             ->setPublic(true);
+    }
 
+    private function registerAuditAndGraphDelivery(ContainerBuilder $container): void
+    {
         // DirectivesCommand. It reads the pipeline's *second* contract — the
         // audit — and never AnalysisPipelineInterface: analysing and auditing
         // are two questions, and the four consumers of the first do not ask
         // the second.
+        $container->register(AnalysisInputPathValidator::class);
         $container->register(AnalysisPreflight::class)
-            ->setArguments([
-                new Reference(RuntimeConfigurator::class),
-                new Reference(ConfigurationInputAdapter::class),
-                new Reference(RunConfigurationResolverInterface::class),
-                new Reference(CacheConfigurationResolverInterface::class),
-                new Reference(ParallelConfigurationResolverInterface::class),
-                new Reference(RuleInputValidator::class),
-                new Reference(FileDiscoveryFactoryInterface::class),
-            ]);
+            ->setAutowired(true);
         $container->register(DirectivesCommand::class)
             ->setArguments([
                 new Reference(DirectiveAuditInterface::class),
@@ -501,12 +450,21 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(RuleChannelRegistryInterface::class),
                 new Reference(ChannelDeclarationRegistryInterface::class),
                 new Reference(RuleListingPresenter::class),
+                new Reference(ConfigurationInputAdapter::class),
+                new Reference(FindingConfigurationResolverInterface::class),
+                new Reference(ComputedMetricConfiguratorInterface::class),
             ])
             ->setPublic(true);
 
-        $container->register(self::DEPENDENCY_GRAPH_ANALYZER, self::DEPENDENCY_GRAPH_ANALYZER_CLASS)
+        $container->register(AnalysisFileDiscovery::class)
             ->setArguments([
                 new Reference(FileDiscoveryInterface::class),
+                new Reference(GeneratedFileFilterInterface::class),
+                new Reference(UnmatchedExcludeAudit::class),
+            ]);
+        $container->register(self::DEPENDENCY_GRAPH_ANALYZER, self::DEPENDENCY_GRAPH_ANALYZER_CLASS)
+            ->setArguments([
+                new Reference(AnalysisFileDiscovery::class),
                 new Reference(FileParserInterface::class),
                 new Reference(DependencyTraversalParticipantInterface::class),
                 new Reference(DependencyGraphBuilderInterface::class),
@@ -519,6 +477,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(DependencyGraphAnalyzerInterface::class),
                 new Reference('Qualimetrix\\Reporting\\GraphProjection\\Contract\\DependencyGraphProjectionInterface'),
+                new Reference(AnalysisPreflight::class),
                 new Reference(ErrorStream::class),
                 new Reference(RefusalPresenter::class),
                 new Reference(DelegatingLogger::class),
@@ -537,16 +496,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
     private function registerBaselineCommands(ContainerBuilder $container): void
     {
         $container->register(BaselineRun::class)
-            ->setArguments([
-                new Reference(RuntimeConfigurator::class),
-                new Reference(MeasuredFindingSet::class),
-                new Reference(RuleInputValidator::class),
-                new Reference(ConfigurationInputAdapter::class),
-                new Reference(RunConfigurationResolverInterface::class),
-                new Reference(ConfiguredFindingExclusionsResolverInterface::class),
-                new Reference(CacheConfigurationResolverInterface::class),
-                new Reference(ParallelConfigurationResolverInterface::class),
-            ]);
+            ->setAutowired(true);
 
         $container->setAlias(BaselineRunInterface::class, BaselineRun::class);
 

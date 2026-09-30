@@ -425,12 +425,25 @@ final class NamespaceFoldCountsEachDeclarationOnceTest extends TestCase
         $pipeline = $container->get(AnalysisPipelineInterface::class);
 
         $result = $pipeline->analyze(new RunConfiguration(
-            [AbsolutePath::fromString($root)],
-            [],
-            AbsolutePath::fromString((string) getcwd()),
-            GeneratedFilePolicy::Include,
-            coversProjectScope: true,
+            pathExcludes: [],
+            projectRoot: AbsolutePath::fromString((string) getcwd()),
+            generatedFilePolicy: GeneratedFilePolicy::Include,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(
+                universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(
+                    projectRoot: AbsolutePath::fromString((string) getcwd()),
+                    pathsAuthored: true,
+                    denominator: [],
+                    prunedTargets: [],
+                    reasons: [],
+                    namespaceMapUsable: true,
+                    pathResolutions: [],
+                ),
+                paths: [AbsolutePath::fromString($root)],
+                scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered,
+                uncoveredRoots: [],
+            ),
             authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         ));
 
         self::removeDirectory($root);

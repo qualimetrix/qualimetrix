@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Run\Unit\Configuration;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
-use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 final class RunConfigurationResolverTest extends TestCase
@@ -22,7 +26,7 @@ final class RunConfigurationResolverTest extends TestCase
     #[Test]
     public function itResolvesOwnerDefaultsAndLastPathContributionAgainstTheInvocationRoot(): void
     {
-        $configuration = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))->resolve(LayeredDocument::of([
+        $configuration = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerManifestReader())))->resolve(LayeredDocument::of([
             ['source' => 'composer', 'values' => ['paths' => ['lib'], 'excludes' => [['subtree' => 'build']]]],
             ['source' => 'cli', 'values' => ['paths' => ['src'], 'include_generated' => true]],
         ], AbsolutePath::fromString(sys_get_temp_dir())));
@@ -51,7 +55,7 @@ final class RunConfigurationResolverTest extends TestCase
             ], AbsolutePath::fromString($rootA));
             chdir($rootB);
 
-            $configuration = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))->resolve($document);
+            $configuration = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerManifestReader())))->resolve($document);
 
             self::assertSame($rootA, $configuration->projectRoot->value());
             self::assertSame([$rootA . '/src'], array_map(
@@ -63,6 +67,39 @@ final class RunConfigurationResolverTest extends TestCase
             rmdir($rootA);
             rmdir($rootB);
         }
+    }
+
+    #[Test]
+    public function itUsesTheMeasuredPathsAndRejectsAnUnrelatedProjectRoot(): void
+    {
+        $writtenRoot = AbsolutePath::fromString('/written-project');
+        $canonicalRoot = AbsolutePath::fromString('/canonical-project');
+        $paths = [AbsolutePath::fromString('/written-project/src')];
+        $scope = new ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $canonicalRoot, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: false, pathResolutions: [['written' => $writtenRoot, 'path' => $canonicalRoot]]), paths: $paths, scopeState: ProjectScopeState::Unmeasured, uncoveredRoots: []);
+
+        foreach ([$writtenRoot, $canonicalRoot] as $root) {
+            $configuration = new RunConfiguration(
+                pathExcludes: [],
+                projectRoot: $root,
+                generatedFilePolicy: GeneratedFilePolicy::Exclude,
+                projectScope: $scope,
+                authoredPathExcludes: [],
+                autoloadDevPolicy: AutoloadDevPolicy::Exclude,
+            );
+            self::assertSame($paths, $configuration->paths);
+            self::assertSame($scope, $configuration->projectScope);
+            self::assertFalse($configuration->coversProjectScope);
+        }
+
+        $this->expectException(LogicException::class);
+        new RunConfiguration(
+            pathExcludes: [],
+            projectRoot: AbsolutePath::fromString('/unrelated-project'),
+            generatedFilePolicy: GeneratedFilePolicy::Exclude,
+            projectScope: $scope,
+            authoredPathExcludes: [],
+            autoloadDevPolicy: AutoloadDevPolicy::Exclude,
+        );
     }
 
     /** @return iterable<string, array{list<array{source: string, values: array<string, mixed>}>, list<string>, AutoloadDevPolicy}> */
@@ -105,7 +142,7 @@ final class RunConfigurationResolverTest extends TestCase
     public function itTakesDefaultPathsAndThePolicyFromTheSameFlag(array $sources, array $expectedPaths, AutoloadDevPolicy $expectedPolicy): void
     {
         $root = sys_get_temp_dir();
-        $configuration = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))
+        $configuration = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerManifestReader())))
             ->resolve(LayeredDocument::of($sources, AbsolutePath::fromString($root)));
 
         self::assertSame(

@@ -3,6 +3,12 @@
 **Date:** 2026-09-29
 **Status:** Accepted
 
+The atomic section and format decisions remain current. The scope-measurement
+construction described here is amended by
+[ADR 0089](0089-composer-manifest-facts-and-project-scope-reasons.md): one
+mandatory captured measurement now derives Run's paths and coverage, preserves
+authoredness and reasons, and transfers without another manifest read.
+
 ## Context
 
 [ADR 0086](0086-one-configuration-document-merged-by-declared-policy.md)

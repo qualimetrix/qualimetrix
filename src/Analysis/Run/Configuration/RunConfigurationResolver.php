@@ -15,14 +15,22 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\SelectorYamlDecoder;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Discovery\DirectoryPruner;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
 
+/**
+ * @qmx-threshold coupling.cbo warning=21 -- Raw CBO 20 (Ce=19, Ca=1). Initial
+ * path pruning belongs to ProjectScopePaths; this resolver still needs
+ * ProjectScopeCoverage for the measured verdict. Extracting the shared
+ * operation adds one named dependency without adding a policy or read.
+ * The inclusive warning bound reports the next distinct coupling; the
+ * configured error bound remains unchanged.
+ */
 final class RunConfigurationResolver implements RunConfigurationResolverInterface
 {
     public function __construct(
@@ -38,8 +46,8 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
             ? AutoloadDevPolicy::Include
             : AutoloadDevPolicy::Exclude;
         $writtenPaths = self::list($resolved->get(ConfigSchema::PATHS));
-        $pathList = array_map(
-            static fn(string $path): AbsolutePath => PathFactory::fromCliArgument($path, $root),
+        $pathList = PathsNormalizer::normalize(
+            $root,
             $writtenPaths === null ? self::defaultPaths($this->discoveredPaths($document, $autoloadDev)) : PathsSection::read($writtenPaths),
         );
 
@@ -50,11 +58,10 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
             self::refuseWrittenRootsExcluded($pathList, $root, new DirectoryPruner($root, $authoredExcludes), $writtenPaths, $excludes);
         }
 
-        $scope = $this->projectScopeCoverage->measure($root, $pathList, $autoloadDev);
+        $scope = $this->projectScopeCoverage->measure($root, $pathList, $autoloadDev, $writtenPaths !== null ? PathsAuthorship::Authored : PathsAuthorship::Inferred);
 
         return new RunConfiguration(
-            coversProjectScope: $scope->state()->coversProjectScope(),
-            paths: $pathList,
+            projectScope: $scope,
             pathExcludes: [...DirectoryPruner::builtInPatterns(), ...$authoredExcludes],
             // The same patterns without the built-in floor: what the author
             // actually asked to exclude, which is the only part of the merged
@@ -178,7 +185,7 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
     /**
      * The targets composer discovery contributed, taken under the run's
      * policy and kept to the ones a walk of the project reaches, through the
-     * same two questions {@see ProjectScopeCoverage} asks of the
+     * same two questions {@see ProjectScopePaths} asks of the
      * denominator. They are only the default — a `paths` any source wrote
      * replaces them, flag or no flag, and is never pruned here.
      *
@@ -186,7 +193,7 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
      */
     private function discoveredPaths(ConfigurationDocument $document, AutoloadDevPolicy $autoloadDev): array
     {
-        return ProjectScopeCoverage::reachableTargets(
+        return ProjectScopePaths::reachableTargets(
             $document->workingDirectory(),
             $autoloadDev->projectTargets(
                 $document->discoveredProductionAutoloadTargets(),

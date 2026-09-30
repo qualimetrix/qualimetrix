@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace QmxFindingGateControls;
 
+use QmxFindingGate\CaseDefinition;
 use QmxFindingGate\Corpus;
 use QmxFindingGate\DeclaredDelta;
 use QmxFindingGate\FailureClass;
@@ -17,6 +18,9 @@ use RuntimeException;
  */
 final class ChannelRenamePlants
 {
+    /** @var array<string, bool> Actual source case directory => published catalogue. */
+    private static array $caseRules = [];
+
     /**
      * The map a control declares: every row the step tracks, plus the control's
      * own.
@@ -130,11 +134,49 @@ final class ChannelRenamePlants
         $required = [];
         foreach (Corpus::load($root)->cases as $case) {
             $surface = 'case:' . $case->id . '|rules';
-            if ($case->id !== $alreadyCoveredCase && !\in_array($surface, $declared, true)) {
+            if ($case->id !== $alreadyCoveredCase && !\in_array($surface, $declared, true)
+                && self::casePublishesRules($case, $root)) {
                 $required[] = new Expectation(FailureClass::SURFACE_MISMATCH, $surface, exactScope: true);
             }
         }
         return $required;
+    }
+
+    private static function casePublishesRules(CaseDefinition $case, string $root): bool
+    {
+        if (\array_key_exists($case->directory, self::$caseRules)) {
+            return self::$caseRules[$case->directory];
+        }
+
+        $child = Shell::start([\PHP_BINARY, $root . '/bin/qmx', 'rules', '--no-ansi'], $case->directory);
+        while (!$child->settled()) {
+            Shell::poll();
+            if ($child->age() > 30.0) {
+                Shell::terminateAll();
+                throw new RuntimeException('The source rules listing timed out for case ' . $case->id . '.');
+            }
+        }
+
+        return self::$caseRules[$case->directory] = self::publishedRules($case->id, $child->result());
+    }
+
+    /** @param array{stdout: string, stderr: string, exit: int} $result */
+    private static function publishedRules(string $case, array $result): bool
+    {
+        if ($result['exit'] === 0 && trim($result['stdout']) !== '') {
+            return true;
+        }
+        if ($result['exit'] === 3 && $result['stdout'] === '' && $result['stderr'] !== '') {
+            return false;
+        }
+
+        throw new RuntimeException(\sprintf(
+            'Cannot classify the source rules listing for case %s (exit %d, stdout %d bytes, stderr %d bytes).',
+            $case,
+            $result['exit'],
+            \strlen($result['stdout']),
+            \strlen($result['stderr']),
+        ));
     }
 
     /**

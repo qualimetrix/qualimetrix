@@ -56,13 +56,11 @@ final class ProjectScopeReadersTest extends TestCase
             'src/Analysis/Finding/Contract/Rule/AnalysisContext.php' => [],
             'src/Analysis/Policy/Inline/Directive/Audit/ThresholdDirectiveAudit.php' => [],
             'src/Analysis/Run/Configuration/ProjectScopeCoverage.php' => [],
-            'src/Analysis/Run/Configuration/ProjectScopeMeasurement.php' => [],
-            'src/Analysis/Run/Configuration/ProjectScopeState.php' => [],
-            'src/Analysis/Run/Configuration/RunConfigurationResolver.php' => [],
+            'src/Analysis/Run/Contract/Configuration/ProjectScopeMeasurement.php' => [],
+            'src/Analysis/Run/Contract/Configuration/ProjectScopeState.php' => [],
             'src/Analysis/Run/Contract/Configuration/RunConfiguration.php' => [],
             'src/Analysis/Run/Pipeline/AnalysisPipeline.php' => [],
             'src/Infrastructure/Console/CheckScopeResolver.php' => [],
-            'src/Infrastructure/Console/Command/CheckCommand.php' => [],
             'src/Infrastructure/Console/ResolvedCheckScope.php' => [],
         ];
     }

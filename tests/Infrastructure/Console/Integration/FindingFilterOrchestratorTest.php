@@ -7,7 +7,6 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Integration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
@@ -70,6 +69,44 @@ final class FindingFilterOrchestratorTest extends TestCase
             if (file_exists($file)) {
                 unlink($file);
             }
+        }
+    }
+
+    #[Test]
+    public function itRetainsLateAuxiliaryCausesAndRootOmissionsOnAWithheldRun(): void
+    {
+        $root = sys_get_temp_dir() . '/qmx-late-manifest-' . bin2hex(random_bytes(6));
+        mkdir($root . '/src', 0777, true);
+        mkdir($root . '/dependency');
+        file_put_contents($root . '/composer.json', '{"autoload":{"files":["src/A.php"]}}');
+        file_put_contents($root . '/src/A.php', '<?php');
+        file_put_contents($root . '/dependency/composer.json', '[]');
+        try {
+            $reader = new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader();
+            $anchor = new \Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap($reader);
+            $anchor->pointAt($root, ['/qmx-missing-' . bin2hex(random_bytes(6)) . '/src']);
+            $measurement = (new \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage($reader))->measure(AbsolutePath::fromString($root), [AbsolutePath::fromString($root . '/dependency')], \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude, \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored);
+            $reader->read(AbsolutePath::fromString($root . '/dependency'));
+            $scope = new GitScopeResolution($measurement->paths, self::createStub(FileDiscoveryInterface::class), null, null, AbsolutePath::fromString($root));
+            $report = $this->createOrchestrator($reader, $anchor)->projectScope(new ResolvedCheckScope($scope, [], $measurement, ReportProjectScope::narrowed(['src/A.php'], \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS)), $this->createAnalysisResult(), new FindingProjectionOptions());
+            self::assertSame('narrowed', $report->state);
+            self::assertCount(8, $report->unjudgedChannels);
+            $reasons = array_map(static fn($reason): array => $reason->toArray(), $report->reasons);
+            self::assertCount(2, $reasons);
+            self::assertSame('manifest-issue', $reasons[0]['kind']);
+            self::assertSame('invalid-root', $reasons[0]['issueKind']);
+            self::assertTrue($reasons[0]['auxiliary']);
+            self::assertSame(realpath($root . '/dependency/composer.json'), $reasons[0]['source']);
+            self::assertSame('omitted-composer-root', $reasons[1]['kind']);
+            self::assertSame('unresolvable', $reasons[1]['cause']);
+            self::assertSame($report->reasons, $report->withReasons($report->reasons)->reasons);
+        } finally {
+            unlink($root . '/src/A.php');
+            unlink($root . '/composer.json');
+            unlink($root . '/dependency/composer.json');
+            rmdir($root . '/src');
+            rmdir($root . '/dependency');
+            rmdir($root);
         }
     }
 
@@ -377,15 +414,17 @@ final class FindingFilterOrchestratorTest extends TestCase
             $output,
             // Not a whole-project run, so the suppression-binding audit is not
             // asked: it is not this file's subject.
-            new ResolvedCheckScope($scopeResolution, [], false, ReportProjectScope::narrowed([], [])),
+            new ResolvedCheckScope($scopeResolution, [], (new \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->measure($scopeResolution->projectRoot, $scopeResolution->paths, \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude, \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored), ReportProjectScope::narrowed([], [])),
             new FindingProjectionOptions(
                 baselinePath: \is_string($baselinePath) && $baselinePath !== '' ? $baselinePath : null,
             ),
         );
     }
 
-    private function createOrchestrator(): FindingFilterOrchestrator
+    private function createOrchestrator(?\Qualimetrix\Infrastructure\Composer\ComposerManifestReader $reader = null, ?\Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap $anchor = null): FindingFilterOrchestrator
     {
+        $reader ??= new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader();
+        $anchor ??= new \Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap($reader);
         $declarations = StubChannelDeclarationRegistry::withDefaults();
 
         $pipeline = new FindingProjector(
@@ -400,12 +439,7 @@ final class FindingFilterOrchestratorTest extends TestCase
             },
         );
 
-        return new FindingFilterOrchestrator(
-            $pipeline,
-            new ErrorStream(),
-            self::silentSuppressionAudit(),
-            self::createStub(ComposerAutoloadPathReaderInterface::class),
-        );
+        return new FindingFilterOrchestrator($pipeline, new ErrorStream(), self::silentSuppressionAudit(), $reader, new \Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons($reader, $anchor));
     }
 
     /**

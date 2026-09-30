@@ -412,7 +412,7 @@ final class CheckCommandInputValidationTest extends TestCase
         $container = (new ContainerFactory())->create();
         /** @var RefusalPresenter $refusalPresenter */
         $refusalPresenter = $container->get(RefusalPresenter::class);
-        $app = new Application(new ErrorStream(), $refusalPresenter);
+        $app = new Application(new ErrorStream(), $refusalPresenter, new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $app->setAutoExit(false);
         $app->setCatchExceptions(false);
 
@@ -474,7 +474,7 @@ final class CheckCommandInputValidationTest extends TestCase
         $command = $container->get(CheckCommand::class);
         /** @var RefusalPresenter $refusalPresenter */
         $refusalPresenter = $container->get(RefusalPresenter::class);
-        $application = new Application(new ErrorStream(), $refusalPresenter);
+        $application = new Application(new ErrorStream(), $refusalPresenter, new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $application->addCommand($command);
 
         return new CommandTester($command);

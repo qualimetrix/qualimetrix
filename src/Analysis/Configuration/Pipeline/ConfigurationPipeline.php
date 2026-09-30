@@ -46,6 +46,7 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
         $documents = [];
         $authored = [];
         $deferred = [];
+        $diagnostics = [];
         foreach ($this->stages() as $stage) {
             $layer = $stage->apply($request);
             if ($layer === null) {
@@ -54,6 +55,7 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
 
             $authored = [...$authored, ...$layer->authored];
             $deferred = [...$deferred, ...$layer->deferredRefusals];
+            $diagnostics = [...$diagnostics, ...$layer->diagnostics];
 
             if ($layer->documents === []) {
                 $documents[] = ['source' => $layer->source, 'values' => $layer->values];
@@ -70,7 +72,7 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
             throw $deferred[0];
         }
 
-        return new ConfigurationDocument($documents, $request->workingDirectory, $resolved);
+        return new ConfigurationDocument($documents, $request->workingDirectory, $resolved, $diagnostics);
     }
 
     public function addSection(DocumentSectionSchemaInterface $section): void

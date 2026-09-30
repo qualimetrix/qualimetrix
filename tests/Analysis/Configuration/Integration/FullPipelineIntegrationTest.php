@@ -10,7 +10,6 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
-use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\CliStage;
@@ -24,6 +23,7 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 use Qualimetrix\Reporting\Configuration\OutputFormatResolver;
 use Qualimetrix\Reporting\Configuration\OutputFormatSection;
 use Qualimetrix\Reporting\Configuration\OutputFormatVocabulary;
@@ -65,7 +65,7 @@ final class FullPipelineIntegrationTest extends TestCase
 
         $document = $this->resolve(['paths' => ['app'], 'format' => 'json'], ['strict']);
 
-        $run = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))->resolve($document);
+        $run = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerManifestReader())))->resolve($document);
         $finding = (new FindingConfigurationResolver())->resolve($document, new FindingCliOverrides());
 
         self::assertSame([$this->directory . '/app'], array_map(
@@ -90,7 +90,7 @@ final class FullPipelineIntegrationTest extends TestCase
         $loader = new YamlConfigLoader();
         $pipeline = new ConfigurationPipeline([...LayeredDocument::standaloneSections(), new OutputFormatSection(new OutputFormatVocabulary(self::formatterRegistry()))]);
         $pipeline->addStage(new DefaultsStage());
-        $pipeline->addStage(new ComposerDiscoveryStage(new ComposerReader()));
+        $pipeline->addStage(new ComposerDiscoveryStage(new ComposerManifestReader()));
         $pipeline->addStage(new PresetStage($loader, new PresetResolver()));
         $pipeline->addStage(new ConfigFileStage($loader));
         $pipeline->addStage(new CliStage());

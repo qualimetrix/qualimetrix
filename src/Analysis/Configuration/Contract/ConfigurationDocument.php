@@ -24,6 +24,8 @@ final readonly class ConfigurationDocument
         private array $sources,
         private AbsolutePath $workingDirectory,
         ?ResolvedDocument $resolved = null,
+        /** @var list<ConfigurationDiagnostic> */
+        private array $sourceDiagnostics = [],
     ) {
         $this->resolved = $resolved ?? ResolvedDocument::empty();
     }
@@ -37,7 +39,7 @@ final readonly class ConfigurationDocument
     /** @return list<ConfigurationDiagnostic> */
     public function diagnostics(): array
     {
-        return $this->resolved->diagnostics();
+        return [...$this->resolved->diagnostics(), ...$this->sourceDiagnostics];
     }
 
     /** @return list<mixed> Ordered raw `rules:` values, pending Finding's resolved-rule migration. */

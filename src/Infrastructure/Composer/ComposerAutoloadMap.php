@@ -6,7 +6,10 @@ namespace Qualimetrix\Infrastructure\Composer;
 
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface;
+use Qualimetrix\Infrastructure\Composer\Contract\ComposerRootOmission;
 
 /**
  * Where the analysed project's install says its classes live.
@@ -27,12 +30,16 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
 
     private bool $loaded = false;
 
+    /** @var list<ComposerRootOmission> */
+    private array $omissions = [];
+
     /** @var list<string> */
     private array $roots = [];
 
     private readonly GeneratedClassmap $generatedClassmap;
 
     public function __construct(
+        private readonly ComposerManifestReaderInterface $manifestReader,
         private readonly InstallLocator $locator = new InstallLocator(),
         ?GeneratedClassmap $generatedClassmap = null,
         private readonly LoggerInterface $logger = new NullLogger(),
@@ -48,10 +55,17 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
      */
     public function pointAt(string $projectRoot, array $analysedPaths): void
     {
-        $this->roots = $this->locator->rootsFor($projectRoot, $analysedPaths);
+        $located = $this->locator->rootsFor($projectRoot, $analysedPaths);
+        $this->roots = $located->roots;
+        $this->omissions = $located->omissions;
         $this->psr4 = [];
         $this->classmap = [];
         $this->loaded = false;
+    }
+
+    public function observedRootOmissions(): array
+    {
+        return $this->omissions;
     }
 
     public function isConfigured(): bool
@@ -135,11 +149,15 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
 
     private function readProject(string $root): void
     {
-        $manifest = $this->decode($root . '/composer.json');
-        $vendor = $root . '/' . ($manifest['config']['vendor-dir'] ?? 'vendor');
+        $manifest = $this->manifestReader->read(AbsolutePath::fromString($root));
+        foreach ($manifest->issues as $issue) {
+            if ($issue->kind !== \Qualimetrix\Analysis\ProjectManifest\Contract\ManifestIssueKind::Absent) {
+                $this->logger->warning(\sprintf('Cannot use "%s": %s. Classes rejected by the manifest are treated as external.', $issue->source, $issue->kind->value === 'invalid-json' ? 'invalid JSON — ' . $issue->detail : $issue->detail));
+            }
+        }
+        $vendor = str_starts_with($manifest->vendorDirectory, '/') ? $manifest->vendorDirectory : $root . '/' . $manifest->vendorDirectory;
 
-        $this->addPsr4($manifest['autoload']['psr-4'] ?? null, $root);
-        $this->addPsr4($manifest['autoload-dev']['psr-4'] ?? null, $root);
+        $this->addPsr4($manifest->psr4Roots(), $root);
         $this->readInstalledPackages($vendor);
 
         foreach ($this->generatedClassmap->read($root, $vendor) as $fqcn => $file) {

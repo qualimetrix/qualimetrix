@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
+use Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile;
 use Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
@@ -76,6 +77,7 @@ final class LayerAssignmentCommand extends Command
 
     public function __construct(
         private readonly AnalysisPreflight $preflight,
+        private readonly AnalysisPreflightProfile $preflightProfile,
         private readonly LayerAssignmentResolver $layerAssignmentResolver,
         private readonly RefusalPresenter $refusalPresenter,
     ) {
@@ -168,7 +170,7 @@ final class LayerAssignmentCommand extends Command
         $normalized = $this->fqnFor($symbol);
 
         try {
-            $prepared = $this->preflight->resolve($input, $output);
+            $prepared = $this->preflight->resolve($input, $output, $this->preflightProfile);
             $configuration = $prepared->runConfiguration;
             $paths = array_map(static fn($path): string => $path->value(), $configuration->paths);
             $resolution = $configuration->generatedFilePolicy === GeneratedFilePolicy::Include

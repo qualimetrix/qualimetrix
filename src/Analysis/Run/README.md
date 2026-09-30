@@ -21,14 +21,16 @@ and emits the generic
 Run/
 ├── Contract/
 │   ├── Collection/             # collection inputs and wire-safe outputs
+│   ├── Configuration/          # mandatory RunConfiguration, captured universe, current measurement and reasons
 │   ├── Discovery/              # discovery contracts
 │   ├── Pipeline/               # analysis result and coverage contracts
 │   └── FileSetInspectionParticipantInterface.php
 ├── Collection/                 # orchestration and per-file processing;
 │                               # CollectionPhaseFold assembles per-file
 │                               # results into the phase output
-├── Configuration/              # run configuration resolution, PathsSection
-│                               # and project scope coverage
+├── Configuration/              # run resolution, PathsSection, PathsNormalizer,
+│                               # ProjectScopePaths, ProjectScopeDefaults,
+│                               # and one project scope measurement
 ├── Discovery/                  # discovery coordination and implementations
 ├── ExcludeBinding/             # what the run's exclude patterns bound to, and
 │                               # the `discovery.unmatched-exclude` producer
@@ -52,65 +54,79 @@ Measurement aggregation -> ComputedMetrics evaluation -> CircularDependency
 preparation -> FileSet inspection -> Rule execution -> result projection
 ```
 
-`ProjectScopeCoverage` answers whether a run looked at the whole project or at
-a slice of it: its denominator is every production autoload target of
-`composer.json` — `psr-4` and `psr-0` roots, `classmap` and `files` entries
-alike — so `check src/` on a project autoloading `src/` covers the project
-while `check src/Foo/` does not. `autoload-dev` joins the denominator only
-under `AutoloadDevPolicy::Include` (`include_autoload_dev`). The denominator
-and a run's default paths are one answer: Composer discovery supplies the same
-whole-manifest production and development target facts the denominator reads (a
-`classmap` `*` expanded to its directories). `RunConfigurationResolver` reads
-those non-authored facts through
-`discoveredProductionAutoloadTargets()` and
-`discoveredDevelopmentAutoloadTargets()`, and both it and
-`ProjectScopeCoverage` take them through `AutoloadDevPolicy::projectTargets()`,
-so a run with no `paths` covers what it is judged against in every autoload
-form. Both then keep only the targets a walk of the project reaches, through
-`ProjectScopeCoverage::reachableTargets()` and
-`DirectoryPruner::prunedAncestor()` over the built-in `vendor`,
-`node_modules` and `.git` floor — the rule discovery itself applies. A target
-under one of them is neither a default path nor in the denominator, and
-`ProjectScopeMeasurement::$prunedTargets` names it for the scope warning. The
-author's `exclude:` is not asked: written paths are never pruned there. The
-policy travels on `RunConfiguration::$autoloadDevPolicy`, so a run
-narrowed later is judged against the same project. A `classmap` or `files`
-entry may name a single file, which changes nothing: discovery analyses the
-file, and the denominator's question is containment. A declared target
-missing on disk is skipped by the denominator, and as a default path it is
-refused by the path check before analysis, as a stale PSR-4 root always was.
-`ProjectScopeCoverage::measure()` is the single measurement operation.
-Callers read `state()->coversProjectScope()` and `uncoveredRoots` from its
-result; the former convenience operations are removed.
-`ProjectScopeMeasurement` carries both halves of one measurement — the
-uncovered targets the console warns about, and the `ProjectScopeState` a
-channel reads, beside the pruned targets. There are three states: `Covered`
-(every counted target analysed), `Narrowed` (some left out) and `Unknown` (a
-manifest declaring no readable production autoload at all — absent,
-unparseable, or without a production section). `Unknown` names no uncovered
-target and covers the project: with nothing declared, the analysed paths are
-the project, so the whole-project channels judge them. Only `Narrowed`
-silences them, and `ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS` lists the
-channels it silences — the console publishes the state, the uncovered targets
-and that list in every report format with a place for it, and
-`ProjectScopeReadersTest` fails when a reader of the predicate appears whose
-channels the list does not name. On `Unknown` the suppression channels judge
-path values only, since nothing locates a namespace without a declared
-autoload. Which values went unjudged is not a fact of this capability: the
-suppression audit in `Analysis\Finding` lists them, and the report derives the
-channels it names from that list. The answer travels on
-`RunConfiguration::$coversProjectScope` because it is a fact about that
-configuration's paths: `RunConfigurationResolver` fills it, `CheckCommand`
-refills it from `CheckScopeResolver` when a Git report scope narrows the run
-after resolution, and `AnalysisPipeline` copies it onto
-`AnalysisContext::$coversProjectScope` for the rules. The console's
-incomplete-scope warning is rendered from the same single measurement, so the
-warning and the findings cannot disagree about whether the run was a slice. The
-field has no default: every site that narrows a run states its own answer. A rule that reports a configured value as
-having bound to nothing must read it first: "bound nothing" is a fact about the
-pair (configuration, run scope), and a slice cannot carry the configuration's
-denominator. The predicate sees narrowing by path only, and answers "covers"
-when there is no composer manifest to be a denominator (`Unknown`).
+`ProjectScopeCoverage` measures paths against the selected Composer autoload
+universe. Production `psr-4`, `psr-0`, `classmap` and `files` targets form
+the denominator; development targets join it only with
+`AutoloadDevPolicy::Include`. Configuration discovery and Run consume the
+same `ComposerManifestReaderInterface` snapshot. Run applies its built-in
+`vendor`, `node_modules` and `.git` floor to defaults and the denominator,
+and names removed targets as reasons. Authored directory exclusions remain a
+separate discovery policy.
+
+`ProjectScopePaths` captures initial path pruning, canonicalization,
+denominator and written-path resolutions. `ProjectScopeDefaults` judges
+selected manifest completeness and refuses inferred paths with no usable
+universe. `ProjectScopeCoverage` keeps the initial verdict and source reasons;
+these operations use the same snapshot and preserve their evaluation order.
+Report-facing reasons name the analysed manifest as `composer.json`; auxiliary
+manifest issues retain their full dependency path so that the source remains
+identifiable. Manifest reading and main-versus-auxiliary classification use
+physical paths before those reasons are published.
+This separation adds one named dependency to `RunConfigurationResolver`:
+it asks `ProjectScopePaths` for initial pruning while retaining
+`ProjectScopeCoverage` for the verdict. Its raw class CBO is 20, so a point
+warning boundary of 21 accepts the transferred edge and still reports the
+next distinct coupling; the configured error boundary of 30 is unchanged.
+
+`measure(root, paths, autoloadDev, PathsAuthorship)` captures one immutable
+`Contract\Configuration\ProjectScopeUniverse`: canonical root, initial
+paths authoredness, denominator, pruned targets, source reasons, namespace-map
+usability and written-to-canonical resolutions. Its seven constructor fields
+are mandatory. `ProjectScopeMeasurement` has four mandatory fields: that
+universe, current paths, state and uncovered targets. `narrowTo(paths)` shares
+the same universe and only closes the current verdict, using captured path
+facts without filesystem reads. `PathsNormalizer` applies the same
+`PathFactory::fromCliArgument()` normalization to authored paths and defaults.
+
+| Evidence and paths                                                       | State        | Whole-project channels |
+| ------------------------------------------------------------------------ | ------------ | ---------------------- |
+| Intact selected autoload; every counted target reached                   | `Covered`    | judge                  |
+| Intact selected autoload; a counted target omitted                       | `Narrowed`   | withhold               |
+| Damaged selected universe; authored whole root                           | `Unknown`    | judge                  |
+| Damaged selected universe; subset or inferred partial defaults           | `Unmeasured` | withhold               |
+| Absent/no-declared-code manifest; whole root including fallback defaults | `Unknown`    | judge                  |
+| Absent/no-declared-code manifest; subset                                 | `Unmeasured` | withhold               |
+
+Unusable damaged defaults refuse before discovery; write explicit paths.
+Valid sibling records survive partial manifest damage without turning those
+inferred fragments into a complete project. Metadata errors alone do not
+damage the selected code universe. A declared target missing on disk remains
+outside the denominator and is named as a `MissingTarget` reason; an intact
+all-missing manifest can therefore leave an empty denominator and cover an
+authored subset. Missing default paths still refuse before analysis.
+
+`RunConfiguration` requires a measurement and explicit
+`GeneratedFilePolicy`/`AutoloadDevPolicy`; its public `paths` and
+`coversProjectScope` are derived from that measurement. The root must match
+the measured root or an exact captured alias. `withProjectScope()` carries
+every other run field unchanged. Pure `initial->narrowTo(finalPaths)`
+preserves evidence and origin, performs no IO, and can only close coverage;
+a wider path cannot reopen an already withheld answer.
+
+`CheckScopeResolver` reuses this initial measurement. The current Git scope
+keeps analysis paths unchanged and limits finding publication through
+`reportScope`; it does not reread the manifest. `AnalysisPipeline` copies
+the derived coverage answer to `AnalysisContext`.
+`WHOLE_PROJECT_CHANNELS` names the eight readers withheld on `Narrowed` and
+`Unmeasured`, and the existing reader registration test holds that list to
+its consumers.
+
+Namespace location depends on accepted PSR-4 facts, separately from the enum.
+Finding owns the per-value suppression audit and names skipped values;
+Reporting preserves those values and the scope reasons. Auxiliary manifest
+issues and install-root omissions explain degraded ancestry evidence without
+closing main-project coverage. See ADR 0089 for source lifetime, the measured
+price and the scope limits.
 
 `AnalysisFileDiscovery` coordinates the default or explicit discovery strategy,
 deduplicates overlapping roots by project-relative path, and applies
@@ -224,7 +240,7 @@ Run's own channel, and the only one it produces. An `--exclude` value or an
 and before the channel existed that run's report was byte-identical to one
 configured with no exclusion at all.
 
-Three pieces, in the order the run reaches them:
+The run reaches these operations in order:
 
 - `RunConfigurationResolver` records the author's entries separately, in
   `RunConfiguration::$authoredPathExcludes`. The merged `pathExcludes` cannot
@@ -244,7 +260,13 @@ Three pieces, in the order the run reaches them:
   directory that stopped the walk. Without that split the run had one answer
   for "checked, it bound" and "could not check", and the second walk covers
   tree discovery never visits, so nothing else would have said so.
-- `UnmatchedExcludeAudit` turns that answer into findings, and
+- `ExcludeBindingVerdict::unsettled()` preserves authored selector order.
+  `ExcludeBindingProbe::judgeProject()` asks the current roots first and the
+  whole project only for those unsettled selectors.
+- `UnmatchedExcludeFinding` builds the unmatched-pattern occurrence;
+  `UnjudgedExcludeFinding` retains the separate unlistable-directory vocabulary.
+  `UnmatchedExcludeAudit` applies the Options, authored-pattern and project-scope
+  gates before asking the probe, then turns its answer into findings, and
   `AnalysisFileDiscovery` asks it, so they ride out of discovery with the
   files (`DiscoveredAnalysisFiles::$unmatchedExcludeFindings`) and are
   published through `RuleExecutionInterface::publishable()` after rule
@@ -266,6 +288,16 @@ The channel is silent on a run narrowed below the project's autoload
 targets (`RunConfiguration::$coversProjectScope`): there a pattern binds
 nothing because of the path the caller chose, not because of anything the
 author wrote.
+
+## Graph discovery
+
+`DependencyGraphAnalyzerInterface::analyze()` receives mandatory
+`RunConfiguration` and `FileDiscoveryInterface`. It uses `AnalysisFileDiscovery::discoverEligible()`, so graph export applies the resolved path exclusions
+and `GeneratedFilePolicy`, and its coverage counts excluded generated files.
+The graph path preserves the shared discovery's skipped entries and collects
+dependency evidence without calling the Finding-backed exclude audit or
+constructing Finding or Reporting configuration. Console resolves Coupling's framework namespaces for
+this run before requesting the graph.
 
 ## The two entry points
 

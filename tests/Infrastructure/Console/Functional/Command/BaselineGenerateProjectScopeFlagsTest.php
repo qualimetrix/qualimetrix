@@ -5,12 +5,18 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional\Command;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCommandDefinition;
+use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
+use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use ReflectionProperty;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -117,6 +123,63 @@ final class BaselineGenerateProjectScopeFlagsTest extends TestCase
             } else {
                 self::assertNotContains(self::CHANNEL, self::capturedChannels($this->baselinePath));
             }
+        }
+    }
+
+    /** @return iterable<string, array{class-string<Command>, array<string, mixed>}> */
+    public static function provideMeasuringBaselineCommands(): iterable
+    {
+        yield 'generate' => [BaselineGenerateCommand::class, ['baseline' => 'new.json']];
+        yield 'update' => [BaselineUpdateCommand::class, ['baseline' => 'baseline.json']];
+        yield 'cleanup' => [BaselineCleanupCommand::class, ['baseline' => 'baseline.json']];
+        yield 'explain' => [BaselineExplainCommand::class, ['subject' => 'declaration:method:Fixture::run@tests/Fixture.php']];
+    }
+
+    /**
+     * @param class-string<Command> $commandClass
+     * @param array<string, mixed> $arguments
+     */
+    #[Test]
+    #[DataProvider('provideMeasuringBaselineCommands')]
+    public function itConsumesSharedRuntimeFlagsAtEveryMeasuringBaselineCommand(string $commandClass, array $arguments): void
+    {
+        file_put_contents($this->tempDir . '/qmx.yaml', "cache: {dir: cache, enabled: true}\nparallel: {workers: 2}\n");
+        $previous = getcwd();
+        self::assertNotFalse($previous);
+        $limit = (string) \ini_get('memory_limit');
+        chdir($this->tempDir);
+        try {
+            $container = (new ContainerFactory())->create();
+            $generate = $container->get(BaselineGenerateCommand::class);
+            self::assertInstanceOf(BaselineGenerateCommand::class, $generate);
+            self::assertSame(0, (new CommandTester($generate))->execute([
+                'baseline' => 'baseline.json', '--include-autoload-dev' => true,
+                '--only-rule' => [self::CHANNEL], '--workers' => '0', '--no-cache' => true,
+            ]));
+            if ($commandClass === BaselineExplainCommand::class) {
+                $baseline = json_decode((string) file_get_contents($this->baselinePath), true, flags: \JSON_THROW_ON_ERROR);
+                self::assertNotEmpty($baseline['entries']);
+                $arguments['subject'] = array_key_first($baseline['entries']);
+            }
+            $command = $container->get($commandClass);
+            self::assertInstanceOf($commandClass, $command);
+            $tester = new CommandTester($command);
+            self::assertSame(0, $tester->execute([
+                ...$arguments, '--include-autoload-dev' => true, '--only-rule' => [self::CHANNEL],
+                '--no-cache' => true, '--workers' => '0', '--memory-limit' => '768M',
+            ]), $tester->getDisplay());
+            self::assertSame('768M', \ini_get('memory_limit'));
+            self::assertDirectoryDoesNotExist($this->tempDir . '/cache');
+            $runtime = $container->get(RuntimeConfigurator::class);
+            self::assertInstanceOf(RuntimeConfigurator::class, $runtime);
+            $parallel = (new ReflectionProperty(RuntimeConfigurator::class, 'parallelConfigurationStore'))->getValue($runtime);
+            self::assertSame(0, $parallel->current()->workers);
+            $cacheFactory = (new ReflectionProperty(RuntimeConfigurator::class, 'cacheFactory'))->getValue($runtime);
+            $store = (new ReflectionProperty($cacheFactory, 'configurationStore'))->getValue($cacheFactory);
+            self::assertFalse($store->current()->enabled);
+        } finally {
+            chdir($previous);
+            ini_set('memory_limit', $limit);
         }
     }
 

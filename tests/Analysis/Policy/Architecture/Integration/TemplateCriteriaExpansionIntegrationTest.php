@@ -139,12 +139,12 @@ final class TemplateCriteriaExpansionIntegrationTest extends TestCase
 
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
         $pipeline->analyze(new RunConfiguration(
-            [$root],
-            [],
-            $root,
-            GeneratedFilePolicy::Include,
-            coversProjectScope: true,
+            pathExcludes: [],
+            projectRoot: $root,
+            generatedFilePolicy: GeneratedFilePolicy::Include,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
             authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         ));
 
         $prepared = $holder->getPreparedConfiguration();

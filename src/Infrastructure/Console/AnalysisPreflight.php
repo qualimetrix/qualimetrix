@@ -4,11 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
-use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
-use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -41,29 +37,32 @@ final readonly class AnalysisPreflight
     public function __construct(
         private RuntimeConfigurator $runtimeConfigurator,
         private ConfigurationInputAdapter $configurationInputAdapter,
-        private RunConfigurationResolverInterface $runConfigurationResolver,
-        private CacheConfigurationResolverInterface $cacheConfigurationResolver,
-        private ParallelConfigurationResolverInterface $parallelConfigurationResolver,
+        private RunConfigurationPreparation $runConfigurationPreparation,
         private RuleInputValidator $ruleInputValidator,
         private FileDiscoveryFactoryInterface $fileDiscoveryFactory,
+        private AnalysisInputPathValidator $pathValidator = new AnalysisInputPathValidator(),
     ) {}
 
-    public function resolve(InputInterface $input, OutputInterface $output): PreparedAnalysisInput
+    public function resolve(InputInterface $input, OutputInterface $output, ?AnalysisPreflightProfile $profile = null): PreparedAnalysisInput
     {
+        $profile ??= AnalysisPreflightProfile::analysis();
         $this->runtimeConfigurator->resetRunState();
 
-        $document = $this->configurationInputAdapter->resolve($input);
-        $runConfiguration = $this->runConfigurationResolver->resolve($document);
-        $findingConfiguration = $this->ruleInputValidator->resolve($document, $input);
+        $document = $this->configurationInputAdapter->resolve($input, $profile);
+        $run = $this->runConfigurationPreparation->resolve($document);
+        $runConfiguration = $run->runConfiguration;
+        $this->pathValidator->validate($runConfiguration->paths, $document);
+        $findingConfiguration = $profile->requiresFindingConfiguration
+            ? $this->ruleInputValidator->resolve($document, $input)
+            : null;
 
         $this->runtimeConfigurator->configure(
             $document,
-            $runConfiguration,
+            $run,
             $findingConfiguration,
-            $this->cacheConfigurationResolver->resolve($document, $runConfiguration->projectRoot),
-            $this->parallelConfigurationResolver->resolve($document),
             $input,
             $output,
+            $profile,
         );
         $this->configurationInputAdapter->writeDiagnostics($document, $output);
 
@@ -71,29 +70,7 @@ final readonly class AnalysisPreflight
             $runConfiguration,
             $findingConfiguration,
             $this->fileDiscoveryFactory->create($runConfiguration->projectRoot, $runConfiguration->pathExcludes),
-            $document,
         );
     }
 
-    /**
-     * Refuses a run over a path that does not exist, naming every such path —
-     * a user who mistyped two should learn both from one run — and the layer
-     * that wrote them.
-     *
-     * @throws ConfigurationRefusal
-     */
-    public static function refuseMissingPaths(PreparedAnalysisInput $prepared): void
-    {
-        $errors = [];
-
-        foreach ($prepared->runConfiguration->paths as $path) {
-            if (!$path->exists()) {
-                $errors[] = \sprintf("Error: path '%s' does not exist", $path->value());
-            }
-        }
-
-        if ($errors !== []) {
-            throw ConfigurationInputAdapter::pathsRefusal($prepared->document, implode("\n", $errors));
-        }
-    }
 }

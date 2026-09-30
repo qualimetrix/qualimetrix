@@ -4,16 +4,21 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Run\Unit\Configuration;
 
+use ArgumentCountError;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Core\Pattern\SelectorKind;
+use ReflectionClass;
 
 /**
  * The narrowing transfer, which exists because the positional rebuild it
@@ -26,7 +31,7 @@ final class RunConfigurationScopeTest extends TestCase
     public function itCarriesEveryFieldExceptTheScopeItIsGiven(): void
     {
         $root = AbsolutePath::fromString('/project');
-        $narrowed = self::configuration()->narrowedTo(
+        $narrowed = self::narrowedTo(
             [$root->joinRelative(RelativePath::fromString('src/Domain'))],
         );
 
@@ -40,36 +45,61 @@ final class RunConfigurationScopeTest extends TestCase
         );
         self::assertSame($root->value(), $narrowed->projectRoot->value());
         self::assertSame(GeneratedFilePolicy::Include, $narrowed->generatedFilePolicy);
+        self::assertSame(AutoloadDevPolicy::Include, $narrowed->autoloadDevPolicy);
     }
 
-    /**
-     * The verdict is the choice of method, not a flag on one. A transfer that
-     * took only the paths would leave the wider run's `true` in place, which
-     * is the silent inheritance the field has no default to prevent.
-     */
     #[Test]
     public function itTakesTheCoverageAnswerFromTheCallerRatherThanInheritingIt(): void
     {
         self::assertTrue(self::configuration()->coversProjectScope);
         self::assertFalse(
-            self::configuration()->narrowedTo([AbsolutePath::fromString('/project/src/Domain')])->coversProjectScope,
+            self::narrowedTo([AbsolutePath::fromString('/project/src/Domain')])->coversProjectScope,
         );
         self::assertTrue(
-            self::configuration()->narrowedTo([AbsolutePath::fromString('/project/src')])
-                ->coveringProjectScope([AbsolutePath::fromString('/project/src')])->coversProjectScope,
+            self::narrowedTo([AbsolutePath::fromString('/project/src')])->coversProjectScope,
         );
+    }
+
+    #[Test]
+    public function itRequiresAnExplicitAutoloadDevPolicy(): void
+    {
+        self::expectException(ArgumentCountError::class);
+
+        (new ReflectionClass(RunConfiguration::class))->newInstanceArgs([
+            [],
+            AbsolutePath::fromString('/project'),
+            GeneratedFilePolicy::Include,
+            self::projectScope(),
+            [],
+        ]);
+    }
+
+    /** @param list<AbsolutePath> $paths */
+    private static function narrowedTo(array $paths): RunConfiguration
+    {
+        $configuration = self::configuration();
+
+        return $configuration->withProjectScope(($configuration->projectScope)->narrowTo($paths));
     }
 
     private static function configuration(): RunConfiguration
     {
         return new RunConfiguration(
-            paths: [AbsolutePath::fromString('/project/src')],
             pathExcludes: [self::pathPattern('vendor'), self::pathPattern('Legacy')],
             projectRoot: AbsolutePath::fromString('/project'),
             generatedFilePolicy: GeneratedFilePolicy::Include,
-            coversProjectScope: true,
+            projectScope: self::projectScope(),
             authoredPathExcludes: [self::pathPattern('Legacy')],
+            autoloadDevPolicy: AutoloadDevPolicy::Include,
         );
+    }
+
+    private static function projectScope(): ProjectScopeMeasurement
+    {
+        return new ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: AbsolutePath::fromString('/project'), pathsAuthored: true, denominator: [[
+            'target' => 'src/',
+            'path' => AbsolutePath::fromString('/project/src'),
+        ]], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [AbsolutePath::fromString('/project/src')], scopeState: ProjectScopeState::Covered, uncoveredRoots: []);
     }
 
     private static function pathPattern(string $value): PathPattern

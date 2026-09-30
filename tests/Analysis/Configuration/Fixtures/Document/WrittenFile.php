@@ -25,7 +25,7 @@ final class WrittenFile
     /** @throws ConfigurationRefusal */
     public static function compose(string $path): ResolvedDocument
     {
-        $loaded = (new YamlConfigLoader())->read($path);
+        $loaded = (new YamlConfigLoader())->read($path, $path);
         $document = DocumentComposer::compose(
             new DocumentSchema(DocumentRoots::completing(LayeredDocument::standaloneSections())),
             [new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path), $loaded->authored)],
@@ -48,7 +48,7 @@ final class WrittenFile
      */
     public static function foldedValues(string $path): array
     {
-        $loaded = (new YamlConfigLoader())->read($path);
+        $loaded = (new YamlConfigLoader())->read($path, $path);
         if ($loaded->deferredRefusal !== null) {
             throw $loaded->deferredRefusal;
         }

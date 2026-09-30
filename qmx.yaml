@@ -50,7 +50,6 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\ConfigSchema'
         - 'Qualimetrix\Analysis\Configuration\ConfigurationRoot'
         - 'Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument'
-        - 'Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Provenance'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareNameInterface'
@@ -77,7 +76,6 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal'
         - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource'
         - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition'
-        - 'Qualimetrix\Analysis\Configuration\Discovery\ComposerReader'
         - 'Qualimetrix\Analysis\Configuration\DocumentRoots'
         - 'Qualimetrix\Analysis\Configuration\Document\AuthoredLayer'
         - 'Qualimetrix\Analysis\Configuration\Document\AuthoredNode'
@@ -431,6 +429,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceWithMetrics'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\ParallelSafeCollectorInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceSourceControlInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorCallableScope'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait'
@@ -797,15 +796,26 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Extraction\UnattachedComments'
         - 'Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter'
         - 'Qualimetrix\Analysis\Policy\Inline\ThresholdOverrideExtractionResult'
+    - name: analysis-projectmanifest
+      patterns:
+        - 'Qualimetrix\Analysis\ProjectManifest\Contract\ComposerAutoloadSection'
+        - 'Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestDecoder'
+        - 'Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts'
+        - 'Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface'
+        - 'Qualimetrix\Analysis\ProjectManifest\Contract\ManifestIssue'
+        - 'Qualimetrix\Analysis\ProjectManifest\Contract\ManifestIssueKind'
+        - 'Qualimetrix\Analysis\ProjectManifest\Contract\ManifestReadState'
+        - 'Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface'
     - name: analysis-run
       patterns:
         - 'Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator'
         - 'Qualimetrix\Analysis\Run\Collection\CollectionPhaseFold'
         - 'Qualimetrix\Analysis\Run\Collection\FileProcessor'
+        - 'Qualimetrix\Analysis\Run\Configuration\PathsNormalizer'
         - 'Qualimetrix\Analysis\Run\Configuration\PathsSection'
         - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage'
-        - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeMeasurement'
-        - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeState'
+        - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeDefaults'
+        - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopePaths'
         - 'Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput'
@@ -818,6 +828,12 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Contract\Collection\SuccessfulFileProcessing'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy'
+        - 'Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship'
+        - 'Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement'
+        - 'Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason'
+        - 'Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReasonKind'
+        - 'Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState'
+        - 'Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface'
@@ -848,6 +864,7 @@ architecture:
         - 'Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeBindingVerdict'
         - 'Qualimetrix\Analysis\Run\ExcludeBinding\UnjudgedExcludeFinding'
         - 'Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit'
+        - 'Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeFinding'
         - 'Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeOptions'
         - 'Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeRule'
         - 'Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite'
@@ -922,13 +939,18 @@ architecture:
       patterns:
         - 'Qualimetrix\Infrastructure\Composer\ClassmapPath'
         - 'Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap'
+        - 'Qualimetrix\Infrastructure\Composer\ComposerManifestReader'
         - 'Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface'
+        - 'Qualimetrix\Infrastructure\Composer\Contract\ComposerRootOmission'
         - 'Qualimetrix\Infrastructure\Composer\DeclaredParentReader'
         - 'Qualimetrix\Infrastructure\Composer\GeneratedClassmap'
         - 'Qualimetrix\Infrastructure\Composer\InstallLocator'
+        - 'Qualimetrix\Infrastructure\Composer\LocatedComposerRoots'
     - name: infrastructure-console
       patterns:
+        - 'Qualimetrix\Infrastructure\Console\AnalysisInputPathValidator'
         - 'Qualimetrix\Infrastructure\Console\AnalysisPreflight'
+        - 'Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile'
         - 'Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition'
         - 'Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator'
         - 'Qualimetrix\Infrastructure\Console\Application'
@@ -982,21 +1004,26 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\MeasuredAnalysisRun'
         - 'Qualimetrix\Infrastructure\Console\MeasuredFindingSet'
         - 'Qualimetrix\Infrastructure\Console\MemoryLimitSection'
+        - 'Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons'
         - 'Qualimetrix\Infrastructure\Console\OutputHelper'
         - 'Qualimetrix\Infrastructure\Console\PreparedAnalysisInput'
+        - 'Qualimetrix\Infrastructure\Console\PreparedAnalysisRuntimeConfiguration'
         - 'Qualimetrix\Infrastructure\Console\ProfilePresenter'
         - 'Qualimetrix\Infrastructure\Console\ProfileSummaryRenderer'
         - 'Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar'
         - 'Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator'
         - 'Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter'
+        - 'Qualimetrix\Infrastructure\Console\ProjectSourceConfigurator'
         - 'Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode'
         - 'Qualimetrix\Infrastructure\Console\Refusal\MachineReadableFormats'
         - 'Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter'
         - 'Qualimetrix\Infrastructure\Console\ReportCoverageProjection'
         - 'Qualimetrix\Infrastructure\Console\ResolvedCheckScope'
+        - 'Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration'
         - 'Qualimetrix\Infrastructure\Console\ResultPresenter'
         - 'Qualimetrix\Infrastructure\Console\RuleInputValidator'
         - 'Qualimetrix\Infrastructure\Console\RuleListingPresenter'
+        - 'Qualimetrix\Infrastructure\Console\RunConfigurationPreparation'
         - 'Qualimetrix\Infrastructure\Console\RunningBinaryLocator'
         - 'Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface'
         - 'Qualimetrix\Infrastructure\Console\RuntimeConfigurator'
@@ -1045,6 +1072,8 @@ architecture:
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\SecurityConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\SizeConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory'
+        - 'Qualimetrix\Infrastructure\DependencyInjection\ProjectManifest\ProjectManifestConfigurator'
+        - 'Qualimetrix\Infrastructure\DependencyInjection\Registration\EvidenceRegistration'
     - name: infrastructure-git
       patterns:
         - 'Qualimetrix\Infrastructure\Git\ChangeStatus'
@@ -1214,6 +1243,7 @@ architecture:
 
   allow:
     analysis-configuration:
+      - analysis-projectmanifest
       - core-neutral
       - core-path
       - external
@@ -1295,6 +1325,7 @@ architecture:
       - external
     analysis-evidence-measurement:
       - analysis-evidence-dependencymodel
+      - analysis-projectmanifest
       - core-path
       - core-profiler
       - core-symbol
@@ -1351,6 +1382,9 @@ architecture:
       - core-path
       - core-symbol
       - external
+    analysis-projectmanifest:
+      - core-path
+      - external
     analysis-run:
       - analysis-configuration
       - analysis-evidence-circulardependency
@@ -1360,6 +1394,7 @@ architecture:
       - analysis-finding
       - analysis-policy-architecture
       - analysis-policy-inline
+      - analysis-projectmanifest
       - core-neutral
       - core-path
       - core-profiler
@@ -1387,6 +1422,8 @@ architecture:
       - external
     infrastructure-composer:
       - analysis-evidence-design
+      - analysis-projectmanifest
+      - core-path
       - external
     infrastructure-console:
       - analysis-configuration
@@ -1399,6 +1436,7 @@ architecture:
       - analysis-policy-architecture
       - analysis-policy-baseline
       - analysis-policy-inline
+      - analysis-projectmanifest
       - analysis-run
       - core-neutral
       - core-path
@@ -1428,6 +1466,7 @@ architecture:
       - analysis-policy-architecture
       - analysis-policy-baseline
       - analysis-policy-inline
+      - analysis-projectmanifest
       - analysis-run
       - core-neutral
       - core-profiler
@@ -1483,6 +1522,8 @@ architecture:
       - analysis-policy-architecture
       - analysis-policy-baseline
       - analysis-policy-inline
+      - analysis-projectmanifest
+      - analysis-run
       - core-neutral
       - core-path
       - core-symbol
@@ -1675,6 +1716,12 @@ rules:
       # The section declaration language is built by each owner; its reach
       # reflects those consumers and its declaration vocabulary.
       - exact: src/Analysis/Configuration/Contract/Document/Schema/NodeSchema.php
+      # Provenance is read by document owners and refusal adapters: inbound Ca=17,
+      # CBO=20. The exact carrier's readership is its contract responsibility.
+      - exact: src/Analysis/Configuration/Contract/Document/Provenance.php
+      # RunConfiguration is the shared run-policy carrier: inbound Ca=17, CBO=21.
+      # Its exact declaration deliberately serves those named run consumers.
+      - exact: src/Analysis/Run/Contract/Configuration/RunConfiguration.php
       # AST visitors depend on many php-parser node types (not actionable coupling).
       # Exact capability roots preserve the visitor exclusion without enrolling
       # a future Analysis/Evidence sibling.
@@ -1813,6 +1860,15 @@ rules:
       # The shared document port has A=0.40, I=0.09524 and Distance 0.50476;
       # its stable owner readership is intentional, with no new concrete types.
       - exact: 'Qualimetrix\Analysis\Configuration\Contract\Document'
+      # Shared manifest ports and immutable facts form a stable concrete hub;
+      # exact Contract distance is 0.604167 (A=0.333333, I=0.062500).
+      - exact: 'Qualimetrix\Analysis\ProjectManifest\Contract'
+      # The parent contains the same eight Contract declarations and no own
+      # implementation; its aggregate distance is also 0.604167.
+      - exact: 'Qualimetrix\Analysis\ProjectManifest'
+      # Shared run policies and scope records deliberately have many consumers;
+      # exact Contract configuration distance is 0.684615 (A=0.20, I=0.115385).
+      - exact: 'Qualimetrix\Analysis\Run\Contract\Configuration'
     max_distance_warning: 0.5
     max_distance_error: 0.7
 
@@ -1840,6 +1896,16 @@ rules:
         # and is read back only by the console and the container, and a
         # namespace channel is not addressable by `@qmx-threshold`.
         - exact: 'Qualimetrix\Analysis\Finding\SuppressionBinding'
+        # Ca=3 / Ce=32 (I=0.914286). Scope checking and two composition
+        # adapters read this internal group of four run configuration operations;
+        # one additional incoming edge alone would put I below 0.9.
+        - exact: 'Qualimetrix\Analysis\Run\Configuration'
+        # Ca=2 / Ce=20 (I=0.909091). This discovery audit reads the run and
+        # finding vocabularies; two orchestration readers do not make it a hub.
+        - exact: 'Qualimetrix\Analysis\Run\ExcludeBinding'
+        # Ca=2 / Ce=171 (I=0.988439). Composition adapters name their exact
+        # services; moving one incoming edge cannot reduce that responsibility.
+        - exact: 'Qualimetrix\Infrastructure\DependencyInjection\Configurator'
     suppress_paths:
       # Note: visitors and DI configurators are NOT listed here. They are indeed
       # inherently unstable, but `min_afferent: 2` below already filters them out

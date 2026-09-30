@@ -2,16 +2,17 @@
 
 ## Navigation
 
-| Task                        | Document                                                                        |
-| --------------------------- | ------------------------------------------------------------------------------- |
-| **Getting started**         | [CLAUDE.md](../CLAUDE.md) — rules, structure, commands                          |
-| **New collector**           | [Analysis capability index](../src/Analysis/README.md#current-leaves)           |
-| **New rule**                | [Analysis capability index](../src/Analysis/README.md#current-leaves)           |
-| **Understanding contracts** | [src/Core/README.md](../src/Core/README.md)                                     |
-| **Analysis pipeline**       | [src/Analysis/README.md](../src/Analysis/README.md)                             |
-| **Formatters**              | [src/Reporting/README.md](../src/Reporting/README.md)                           |
-| **Configuration**           | [src/Analysis/Configuration/README.md](../src/Analysis/Configuration/README.md) |
-| **DI, cache, CLI**          | [src/Infrastructure/README.md](../src/Infrastructure/README.md)                 |
+| Task                        | Document                                                                            |
+| --------------------------- | ----------------------------------------------------------------------------------- |
+| **Getting started**         | [CLAUDE.md](../CLAUDE.md) — rules, structure, commands                              |
+| **New collector**           | [Analysis capability index](../src/Analysis/README.md#current-leaves)               |
+| **New rule**                | [Analysis capability index](../src/Analysis/README.md#current-leaves)               |
+| **Understanding contracts** | [src/Core/README.md](../src/Core/README.md)                                         |
+| **Analysis pipeline**       | [src/Analysis/README.md](../src/Analysis/README.md)                                 |
+| **Formatters**              | [src/Reporting/README.md](../src/Reporting/README.md)                               |
+| **Project manifest**        | [src/Analysis/ProjectManifest/README.md](../src/Analysis/ProjectManifest/README.md) |
+| **Configuration**           | [src/Analysis/Configuration/README.md](../src/Analysis/Configuration/README.md)     |
+| **DI, cache, CLI**          | [src/Infrastructure/README.md](../src/Infrastructure/README.md)                     |
 
 ---
 
@@ -80,6 +81,16 @@ Only Finding's three named temporary reads for `rules`, `only_rules` and
 `disabled_rules` retain ordered raw contributions until Finding declares that
 subtree. Mutable state remains only inside the owner that needs a
 per-container store.
+
+`Analysis\ProjectManifest` owns the analysed Composer source facts and their
+typed integrity issues. Its Infrastructure adapter provides one canonical-root
+snapshot per invocation, shared by discovery, Run scope, namespace attribution,
+external ancestry and HTML metadata. Run derives paths and coverage from one
+mandatory measurement over an immutable captured universe. Pure narrowing keeps
+that universe and can only close the current verdict; Reporting preserves four
+states and their source reasons.
+Console's command profiles restrict consumers without hiding context-free
+document invalidity. See [ADR 0089](adr/0089-composer-manifest-facts-and-project-scope-reasons.md).
 
 ### 2. Five-Phase Pipeline
 

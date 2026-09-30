@@ -30,7 +30,7 @@ Reporting/
 ├── Report.php                              # Report aggregate (with health scores, worst offenders, tech debt)
 ├── ReportBuilder.php                       # Builder for creating reports
 ├── ReportCoverage.php                      # Reporting-safe coverage projection
-├── ReportProjectScope.php                  # Covered / narrowed / unknown project scope, the targets left out, the channels and suppression values left unjudged
+├── ReportProjectScope.php                  # Covered / narrowed / unknown / unmeasured scope, unjudged values and typed source reasons
 ├── Configuration/                          # OutputFormatSection, OutputFormatVocabulary and OutputFormatResolver
 ├── CoverageFailure.php                     # One projected parse/processing failure
 ├── FormatterContext.php                    # Context passed to formatters (color, grouping, filters, options)
@@ -109,7 +109,7 @@ Reporting/
     │   ├── HtmlFormatter.php              # Interactive HTML report with D3 treemap
     │   ├── HtmlTreeBuilder.php            # Builds namespace tree from MetricRepository
     │   ├── HtmlTreeNode.php               # Internal VO for tree construction
-    │   ├── HtmlDebtCalculator.php         # Computes and aggregates technical debt for HTML reports
+    │   ├── HtmlDebtCalculator.php         # Completes own debt and bottom-up totals for HTML trees
     │   ├── HtmlMetricAggregator.php       # Bottom-up metric aggregation for HTML tree
     │   ├── HtmlProjectMetadata.php        # The report's `project` object: analysed project's name, version, docs addresses
     │   └── HtmlFindingPartitioner.php   # Puts every finding on exactly one tree node (root at the latest)
@@ -498,7 +498,21 @@ and three commands outside `check` (`directives`,
 
 **`outOfScope`:** always present. `null` without `--namespace`/`--class`; under a selection, `{violationCount, errorCount, warningCount, infoCount}` of the run's findings the selection left out, zeroes when it left none. The exit code is resolved over `summary` and `outOfScope` together. `metrics` publishes the same key in its own vocabulary; `sarif`, `github` and `html` add one diagnostic entry under `drill-down.out-of-scope` only when something lies outside (see `DrillDown\OutOfScopeFindings`). `gitlab` and `checkstyle` have no entry that is not a finding to their consumer, so `OutOfScopeFindings::FORMATS_WITHOUT_A_PLACE` names them and the command line refuses a selection under them. `suppressed` has none: a selection does not narrow it.
 
-**`projectScope`:** always present, and of one shape: `{state, uncoveredAutoloadTargets, unjudgedChannels, unjudgedValues}`, `state` being `covered`, `narrowed` or `unknown` (see `ReportProjectScope`). `uncoveredAutoloadTargets` is empty unless the run was narrowed below the project's autoload targets; `unjudgedChannels` then names the channels judged only on a whole-project run, and `unjudgedValues` is empty. On `covered` and `unknown` `unjudgedValues` lists each configured suppression value the run skipped as `{option, pattern}`, and `unjudgedChannels` is derived from them. `metrics` and `suppressed` publish the same object; `sarif` (`QMX-RUN-PROJECT-SCOPE`), `github` (`run.project-scope`), `html` and the human formats add an entry whenever `describe()` has a sentence: `narrowed`, `unknown`, and a `covered` run that skipped a value. `gitlab` and `checkstyle` publish nothing: every entry there is a finding to its consumer, and a narrowed run is the caller's choice, not a defect — unlike a selection, it is not refused.
+**`projectScope`:** always present with one shape:
+`{state, uncoveredAutoloadTargets, unjudgedChannels, unjudgedValues, reasons}`.
+`state` is `covered`, `narrowed`, `unknown` or `unmeasured`.
+`narrowed` and `unmeasured` withhold the eight whole-project channels and
+have no individually judged values. `covered` and `unknown` list skipped
+suppression values as `{option, pattern}` and derive their unjudged channels
+from those values. Namespace location uses accepted PSR-4 facts independently
+of the enum. Each reason is a flat object with `kind` and its named fields,
+retained even on a covered run or a run already withholding judgement.
+`metrics` and `suppressed` publish the same object. SARIF
+(`QMX-RUN-PROJECT-SCOPE`), GitHub (`run.project-scope`), HTML and human formats
+add a diagnostic whenever `describe()` has a sentence, including a covered
+run with reasons. `gitlab` and `checkstyle` omit it because every entry is a
+finding to their consumers. Auxiliary install issues explain ancestry limits
+without changing main-project coverage. See ADR 0089.
 
 **`configurationDiagnostics`:** always present, `[]` when the configuration drew no warning. Each entry is `{message, source}`: the warning as `check` also prints it on stderr, and `source` every layer it is about, lowest precedence first, each as the refusal envelope's `source` entries are — `{kind, name, imported_by}`. The entries arrive already published (`Infrastructure\Console\ConfigurationInputAdapter::publishedDiagnostics()`), so `Reporting` does not read the configuration document.
 
@@ -768,7 +782,7 @@ $report->techDebtMinutes  // int — total remediation time
 $report->debtPer1kLoc     // ?float — debt density (minutes per 1K LOC)
 $report->topIssues        // list<RankedIssue> — top findings by impact score
 $report->coverage         // ?ReportCoverage — discovered/analyzed/generated/failed verdict
-$report->projectScope     // ?ReportProjectScope — covered/narrowed/unknown against composer.json autoload
+$report->projectScope     // ?ReportProjectScope — covered/narrowed/unknown/unmeasured with source reasons
 $report->configurationDiagnostics // list<{message, source}> — warnings about the accepted configuration
 ```
 
@@ -913,7 +927,11 @@ plus `docs` and `llmsTxt` from `Core\ProductIdentity`). `name` is
 `--format-opt=project-name`, else the `name` of the analysed project's
 `composer.json`, else its root directory's name — never the Composer runtime's
 root package, which under a phar, a global install or a qmx checkout is qmx
-itself. The browser program's
+itself. It reads metadata through the same invocation
+`ComposerManifestReaderInterface` as configuration and scope, including absent
+or invalid snapshots; it does not decode the file independently.
+`HtmlTreeBuilder` receives an instance of `HtmlProjectMetadata`.
+The browser program's
 footer reads this object and renders `docs` and `llmsTxt` as links beside the
 existing generated-date and version line, so the same values that reach every
 other output channel also reach the HTML report — JavaScript cannot read a PHP

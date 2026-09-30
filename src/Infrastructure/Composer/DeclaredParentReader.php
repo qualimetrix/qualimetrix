@@ -35,6 +35,11 @@ final class DeclaredParentReader implements AnalysedInstallAnchorInterface, Exte
         $this->parser = $parser ?? (new ParserFactory())->createForHostVersion();
     }
 
+    public function observedRootOmissions(): array
+    {
+        return $this->map->observedRootOmissions();
+    }
+
     /**
      * Aiming a run clears what the last one learned. Without this a second run
      * in the same process -- a test suite, or a command that analyses twice --

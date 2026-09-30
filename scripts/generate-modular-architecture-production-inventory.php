@@ -647,7 +647,7 @@ function lifecycleMethods(array $methods): string
 {
     $selected = array_values(array_filter(
         $methods,
-        static fn(string $method): bool => preg_match('/^(reset|clear|set|bind|prepare|execute|detect|collect|configure|build|add|register)/i', $method) === 1,
+        static fn(string $method): bool => $method === 'beginInvocation' || preg_match('/^(reset|clear|set|bind|prepare|execute|detect|collect|configure|build|add|register)/i', $method) === 1,
     ));
     sort($selected, SORT_STRING);
 
@@ -677,6 +677,9 @@ function stateScope(array $row): string
     if (str_starts_with($row['path'], 'src/Analysis/Evidence/Measurement/Repository/')) {
         return 'analysis-run repository';
     }
+    if ($row['fqcn'] === 'Qualimetrix\\Infrastructure\\Composer\\ComposerManifestReader') {
+        return 'invocation snapshot cache';
+    }
     if (str_starts_with($row['path'], 'src/Infrastructure/')) {
         return 'adapter session or cache';
     }
@@ -693,6 +696,8 @@ function stateScope(array $row): string
 function phaseParticipants(): array
 {
     return [
+        ['phase' => 'invocation metadata', 'participant' => 'ComposerManifestReaderInterface and ManifestSnapshotControlInterface', 'inputs' => 'AbsolutePath', 'outputs' => 'ComposerManifestFacts and observed issues', 'state_owner' => 'Infrastructure.Composer', 'dependency' => 'Application begins the invocation before the first canonical-root read; consumers share cached facts', 'source' => 'src/Infrastructure/Composer/ComposerManifestReader.php'],
+        ['phase' => 'namespace source binding', 'participant' => 'ProjectNamespaceSourceControlInterface', 'inputs' => 'ComposerManifestFacts', 'outputs' => 'accepted namespace prefixes', 'state_owner' => 'Analysis.Evidence.Measurement', 'dependency' => 'Console binds before collection; worker bootstrap receives captured prefixes', 'source' => 'src/Analysis/Evidence/Measurement/Contract/ProjectNamespaceSourceControlInterface.php'],
         ['phase' => 'configuration', 'participant' => '5 ConfigurationStageInterface implementations', 'inputs' => 'ConfigurationContext', 'outputs' => '?ConfigurationLayer', 'state_owner' => 'Analysis.Configuration', 'dependency' => 'priority 0,10,15,20,30; sequential merge', 'source' => 'src/Analysis/Configuration/Pipeline/Stage'],
         ['phase' => 'runtime setup', 'participant' => 'ArchitecturePolicyConfiguratorInterface', 'inputs' => 'ConfigurationDocument', 'outputs' => 'configured policy state and warnings', 'state_owner' => 'Analysis.Policy.Architecture', 'dependency' => 'Console configures after its logger is available', 'source' => 'src/Analysis/Policy/Architecture/Contract/ArchitecturePolicyConfiguratorInterface.php'],
         ['phase' => 'discovery', 'participant' => 'FileDiscoveryInterface implementation', 'inputs' => 'AbsolutePath|list<AbsolutePath>', 'outputs' => 'iterable<AbsolutePath,SplFileInfo>', 'state_owner' => 'Analysis.Run', 'dependency' => 'first run phase; generated filter follows', 'source' => 'src/Analysis/Run/Contract/Discovery/FileDiscoveryInterface.php'],
@@ -2414,9 +2419,11 @@ function documentationDisposition(string $path): array
         'docs/adr/0086-one-configuration-document-merged-by-declared-policy.md' => 'Analysis.Configuration',
         'docs/adr/0087-the-finding-gate-declares-measured-changes.md' => 'Architecture.Governance',
         'docs/adr/0088-atomic-section-declarations-and-format-vocabulary.md' => 'Analysis.Configuration',
+        'docs/adr/0089-composer-manifest-facts-and-project-scope-reasons.md' => 'Analysis.ProjectManifest',
         'docs/adr/0090-exact-finding-gate-surface-deltas.md' => 'Architecture.Governance',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
+        'src/Analysis/ProjectManifest/README.md' => 'Analysis.ProjectManifest',
         'src/Analysis/Evidence/CircularDependency/README.md' => 'Analysis.Evidence.CircularDependency',
         'src/Analysis/Evidence/ComputedMetrics/README.md' => 'Analysis.Evidence.ComputedMetrics',
         'src/Analysis/Evidence/DependencyModel/README.md' => 'Analysis.Evidence.DependencyModel',

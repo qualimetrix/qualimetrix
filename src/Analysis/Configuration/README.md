@@ -23,7 +23,6 @@ Configuration/
 ├── Contract/
 │   ├── ConfigurationDocument.php # resolved document, named temporary Finding reads,
 │   │                              # and Composer's non-authored target facts
-│   ├── Discovery/                # Composer autoload-path reader
 │   ├── Document/                 # the resolved document: provenance, diagnostics and read-only
 │   │                             # Resolved{Map,List,Opaque,BareName}Interface forms
 │   │   └── Schema/               # the port an owner declares its section through
@@ -34,7 +33,6 @@ Configuration/
 │                                  # refusal by user input, and its origin/position vocabulary;
 │                                  # per-source shorthands (atResolvedKey, aboutCommandLineInput, …)
 │                                  # let a throw site name its source without importing the vocabulary
-├── Discovery/          # Composer metadata reader
 ├── Document/           # the engine composing written layers into the resolved document
 │   └── Resolved/       # internal concrete resolved forms, including ResolvedScalar
 ├── Loader/             # each source as a written layer for the engine (YAML file or preset →
@@ -104,6 +102,23 @@ transports feature-specific deferred warnings. Cache, Coupling, Console,
 Parallel, Run and Reporting likewise resolve only their declared values; this
 does not turn the document into a cross-owner runtime DTO.
 
+## Configuration-file discovery
+
+Automatic discovery compares directory entries byte for byte with `qmx.yaml`
+and `qmx.yml`. Both exact names together refuse with exit 3; specify one through
+`--config`. With neither exact name, a near name produces a document diagnostic
+rather than being loaded. An exact name beside a near name is loaded without
+that warning. Explicit `--config` selects its named file directly.
+An unlistable search directory refuses instead of inferring that no config exists.
+The loader reads the physical file while auto-discovered `qmx.yaml` or
+`qmx.yml` is named by its filename in authored origins, diagnostics and
+refusals. An explicit `--config` keeps the supplied path as its source name;
+presets keep their resolved file path. Directory discovery refusals name `.`
+and near-file diagnostics name the observed directory entry.
+Every document-reading command uses this same stage and judges the complete
+context-free document before consuming its own values. Console's closed
+preflight profile controls CLI ingress and actual consumers, not the schema.
+
 ## Document engine
 
 `Document/DocumentComposer` composes the layers, lowest precedence first, into
@@ -172,7 +187,11 @@ precedence index within this composed document).
   resolved document (`ConfigurationDocument::diagnostics()`). Every command
   that resolves the document prints them on stderr, and `check`'s JSON report
   publishes them under `configurationDiagnostics`; both are written by
-  `Infrastructure\Console\ConfigurationInputAdapter`.
+  `Infrastructure\Console\ConfigurationInputAdapter`. Source-resolution
+  warnings, including a near configuration filename, are retained by
+  `ConfigurationLayer`, collected by `ConfigurationPipeline`, and joined to
+  the engine's diagnostics by `ConfigurationDocument::diagnostics()`; authored
+  merge warnings are preserved.
 
 The author-facing table of every node's policy, `~` and empty value is
 generated from these declarations — the sections the container registers,
@@ -189,6 +208,14 @@ Reporting and FindingProjection read their declared resolved values. Finding's
 narrow rule boundary alone retains the three named raw reads
 `ruleContributions()`, `onlyRuleContributions()` and
 `disabledRuleContributions()` until Finding declares its rule subtree. `rules` remains an undeclared root.
+Composer discovery uses the invocation facts supplied by
+`Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface`.
+Infrastructure's Composer adapter alone reads, decodes and caches the analysed
+`composer.json`; Configuration, Run, Measurement, Design's install adapters and
+HTML metadata share that root snapshot. Configuration owns neither the reader
+nor a second decoder. Invalid records retain typed issues beside accepted
+fragments; Run owns whether those fragments establish a project universe.
+
 Composer discovery is not an authored layer: its production and development
 targets are available only through `discoveredProductionAutoloadTargets()` and
 `discoveredDevelopmentAutoloadTargets()`, while Run owns the decision whether

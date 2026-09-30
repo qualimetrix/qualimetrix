@@ -51,6 +51,19 @@ final class FinderFileDiscoveryTest extends TestCase
     }
 
     #[Test]
+    public function itRefusesAnExplicitExistingNonPhpFile(): void
+    {
+        $file = $this->createFile('readme.txt', 'not php');
+
+        try {
+            iterator_to_array($this->discovery()->discover(AbsolutePath::fromString($file)), false);
+            self::fail('An explicit existing non-PHP file must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringStartsWith(\sprintf('"%s" is not a PHP file', $file), $refusal->summary());
+        }
+    }
+
+    #[Test]
     public function itDiscoversFilesInDirectory(): void
     {
         $this->createFile('A.php', '<?php class A {}');

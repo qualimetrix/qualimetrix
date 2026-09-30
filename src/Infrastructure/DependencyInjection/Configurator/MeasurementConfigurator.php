@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Evidence\Cohesion\Configuration\LcomCollectionConfigurationResolver;
-use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationResolverInterface;
-use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
-use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedMetricExtractorInterface;
@@ -16,8 +12,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInt
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceSourceControlInterface;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
-use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
@@ -75,13 +71,7 @@ final class MeasurementConfigurator implements ContainerConfiguratorInterface
         $container->setAlias(ProjectNamespaceResolverInterface::class, self::PROJECT_NAMESPACE_RESOLVER)
             ->setPublic(true);
 
-        $container->register(LcomCollectionConfigurationResolver::class);
-        $container->setAlias(
-            LcomCollectionConfigurationResolverInterface::class,
-            LcomCollectionConfigurationResolver::class,
-        );
-        $container->register(LcomCollectionConfigurationStore::class)
-            ->setArgument('$collectors', new TaggedIteratorArgument('qmx.cohesion.lcom_configurable_collector'));
-        $container->setAlias(LcomCollectionConfigurationStoreInterface::class, LcomCollectionConfigurationStore::class);
+        $container->setAlias(ProjectNamespaceSourceControlInterface::class, self::PROJECT_NAMESPACE_RESOLVER);
+
     }
 }

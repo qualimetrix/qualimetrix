@@ -48,7 +48,7 @@ final class PresetStageTest extends TestCase
     #[Test]
     public function itSplitsAndDeduplicatesPresetNamesWhileRetainingOrderedDocuments(): void
     {
-        $this->loader->expects(self::exactly(2))->method('read')->willReturnOnConsecutiveCalls(
+        $loaded = [
             new LoadedDocument(
                 AuthoredNode::fromPlain(['format' => 'text']),
                 ['format' => 'text', 'rules' => ['size.loc' => ['warning' => 1000]]],
@@ -57,6 +57,19 @@ final class PresetStageTest extends TestCase
                 AuthoredNode::fromPlain(['fail-on' => 'error']),
                 ['failOn' => 'error', 'rules' => ['size.loc' => ['error' => 2000]]],
             ),
+        ];
+        $paths = [
+            (new PresetResolver())->resolve('strict', '/project'),
+            (new PresetResolver())->resolve('ci', '/project'),
+        ];
+        $index = 0;
+        $this->loader->expects(self::exactly(2))->method('read')->willReturnCallback(
+            static function (string $physicalPath, string $sourceName) use ($loaded, $paths, &$index): LoadedDocument {
+                self::assertSame($paths[$index], $physicalPath);
+                self::assertSame($physicalPath, $sourceName);
+
+                return $loaded[$index++];
+            },
         );
 
         $layer = $this->stage()->apply(
@@ -98,7 +111,8 @@ final class PresetStageTest extends TestCase
     #[Test]
     public function itTrimsWhitespaceAroundAPresetName(): void
     {
-        $this->loader->expects(self::once())->method('read')->willReturn(
+        $path = (new PresetResolver())->resolve('strict', '/project');
+        $this->loader->expects(self::once())->method('read')->with($path, $path)->willReturn(
             new LoadedDocument(AuthoredNode::fromPlain(['format' => 'json']), ['format' => 'json']),
         );
 

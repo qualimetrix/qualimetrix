@@ -61,7 +61,7 @@ final readonly class UnmatchedExcludeOptions implements RuleOptionsInterface
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
-            'enabled' => RuleOptionShape::boolean()->orNull(),
+            RuleOptionKey::ENABLED => RuleOptionShape::boolean()->orNull(),
         ]);
     }
 }

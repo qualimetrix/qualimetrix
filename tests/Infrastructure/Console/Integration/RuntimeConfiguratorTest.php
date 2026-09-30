@@ -175,7 +175,11 @@ final class RuntimeConfiguratorTest extends TestCase
             $this->cacheFactory,
             $this->parallelStore,
             new RuntimeLimitsController(),
-            new ComposerAutoloadMap(),
+            new \Qualimetrix\Infrastructure\Console\ProjectSourceConfigurator(
+                new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(),
+                new \Qualimetrix\Analysis\Evidence\Measurement\Namespace_\ProjectNamespaceResolver(),
+                new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()),
+            ),
         );
     }
 
@@ -604,15 +608,7 @@ PHP, var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true));
         $this->configurator->resetRunState();
 
         $document = $this->customDocument();
-        $this->configurator->configure(
-            $document,
-            $this->runConfigurationFor($document),
-            (new FindingConfigurationResolver())->resolve($document, new FindingCliOverrides([])),
-            (new CacheConfigurationResolver())->resolve($document, AbsolutePath::fromString($this->projectRoot)),
-            (new ParallelConfigurationResolver())->resolve($document),
-            $input,
-            $output,
-        );
+        $this->configurator->configure($document, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, AbsolutePath::fromString($this->projectRoot)), (new ParallelConfigurationResolver())->resolve($document)), (new FindingConfigurationResolver())->resolve($document, new FindingCliOverrides([])), $input, $output);
     }
 
     private function configure(
@@ -621,15 +617,7 @@ PHP, var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true));
         ArrayInput $input,
         BufferedOutput $output,
     ): void {
-        $this->configurator->configure(
-            $document,
-            $this->runConfigurationFor($document),
-            (new FindingConfigurationResolver())->resolve($document, new FindingCliOverrides([])),
-            (new CacheConfigurationResolver())->resolve($document, $projectRoot),
-            (new ParallelConfigurationResolver())->resolve($document),
-            $input,
-            $output,
-        );
+        $this->configurator->configure($document, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $projectRoot), (new ParallelConfigurationResolver())->resolve($document)), (new FindingConfigurationResolver())->resolve($document, new FindingCliOverrides([])), $input, $output);
     }
 
     private function customDocument(): ConfigurationDocument
@@ -661,7 +649,14 @@ PHP, var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true));
     {
         $root = $document->workingDirectory();
 
-        return new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: false, authoredPathExcludes: []);
+        return new RunConfiguration(
+            [],
+            $root,
+            GeneratedFilePolicy::Include,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: false, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Unmeasured, uncoveredRoots: []),
+            authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
+        );
     }
 
 }

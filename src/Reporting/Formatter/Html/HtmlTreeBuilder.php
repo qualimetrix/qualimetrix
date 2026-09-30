@@ -39,6 +39,7 @@ final class HtmlTreeBuilder
     public function __construct(
         private readonly DebtCalculator $debtCalculator,
         private readonly ComputedMetricDefinitionCatalogInterface $definitionCatalog,
+        private readonly HtmlProjectMetadata $projectMetadata,
     ) {
         $this->findingPartitioner = new HtmlFindingPartitioner();
         $this->metricAggregator = new HtmlMetricAggregator();
@@ -66,21 +67,18 @@ final class HtmlTreeBuilder
         );
         $this->findingPartitioner->attach($nodesByPath, $findingsByNode, $context);
 
-        // 3. Compute debt per node
-        $this->htmlDebtCalculator->computeDebt($findingsByNode, $nodesByPath);
+        // 3. Complete debt and finding totals; every finding is attached,
+        // so the root's totals are the report's.
+        $this->htmlDebtCalculator->calculate($root, $findingsByNode, $nodesByPath);
 
-        // 4. Compute violationCountTotal and aggregate debt bottom-up; every
-        // finding is attached, so the root's totals are the report's.
-        $this->htmlDebtCalculator->aggregateBottomUp($root);
-
-        // 5. Build summary
+        // 4. Build summary
         $summary = $this->buildSummary($report, $root, $nodesByPath);
 
-        // 6. Build computed metric definitions
+        // 5. Build computed metric definitions
         $definitions = $this->buildComputedMetricDefinitions();
 
-        // 7. Build project metadata
-        $project = HtmlProjectMetadata::of($scopedReporting, $projectName, $context->basePath);
+        // 6. Build project metadata
+        $project = $this->projectMetadata->of($scopedReporting, $projectName, $context->basePath);
 
         return [
             'project' => $project,

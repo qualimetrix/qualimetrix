@@ -10,7 +10,6 @@ use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry;
 use Qualimetrix\Analysis\Run\Contract\Discovery\SkipReportingDiscoveryInterface;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
@@ -49,8 +48,23 @@ final readonly class AnalysisFileDiscovery
         RunConfiguration $configuration,
         ?FileDiscoveryInterface $override = null,
     ): DiscoveredAnalysisFiles {
+        $selection = $this->discoverEligible($configuration, $override);
+
+        return DiscoveredAnalysisFiles::fromDiscovery(
+            $selection->eligibleFiles,
+            $selection->generatedExcludedFiles,
+            $selection->discoveredCount,
+            $this->unmatchedExcludeAudit->findings($configuration),
+            $selection->skippedEntries,
+        );
+    }
+
+    /** Selects files without consulting analysis-only finding state. */
+    public function discoverEligible(
+        RunConfiguration $configuration,
+        ?FileDiscoveryInterface $override = null,
+    ): DiscoveredAnalysisFiles {
         $projectRoot = $configuration->projectRoot;
-        $unmatchedExcludes = $this->unmatchedExcludeAudit->findings($configuration);
 
         $discovery = $override ?? $this->defaultDiscovery;
         // preserve_keys=false: discover() may yield AbsolutePath object keys.
@@ -94,7 +108,7 @@ final readonly class AnalysisFileDiscovery
             $eligible,
             $excluded,
             \count($filesByPath),
-            $unmatchedExcludes,
+            [],
             array_values($skipsByPath),
         );
     }
@@ -116,13 +130,12 @@ final readonly class AnalysisFileDiscovery
             return null;
         }
 
-        return new SkippedEntry(
-            AbsolutePath::fromString($file->getPathname()),
-            $file->isDir()
-                ? AnalysisFailureKind::DirectorySymlink
-                : AnalysisFailureKind::NotRegularFile,
-            'Discovered entry is not a regular file',
-        );
+        $path = AbsolutePath::fromString($file->getPathname());
+        $detail = 'Discovered entry is not a regular file';
+
+        return $file->isDir()
+            ? SkippedEntry::directorySymlink($path, $detail)
+            : SkippedEntry::nonRegular($path, $detail);
     }
 
     /**

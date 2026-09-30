@@ -8,6 +8,7 @@ use ArrayIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
@@ -106,6 +107,28 @@ final class AnalysisFileDiscoveryTest extends TestCase
         self::assertSame([], $result->generatedExcludedFiles);
     }
 
+    #[Test]
+    public function itSelectsEligibleFilesWithoutReadingFindingOptions(): void
+    {
+        $file = new SplFileInfo('/project/src/A.php');
+        $default = self::createStub(FileDiscoveryInterface::class);
+        $default->method('discover')->willReturn(new ArrayIterator([$file]));
+        $filter = self::createStub(GeneratedFileFilterInterface::class);
+        $filter->method('filter')->willReturn([$file]);
+        $options = $this->createMock(RuleOptionsInterface::class);
+        $options->expects(self::never())->method('isEnabled');
+
+        $result = (new AnalysisFileDiscovery(
+            $default,
+            $filter,
+            new UnmatchedExcludeAudit($options, new ExcludeBindingProbe()),
+        ))->discoverEligible(self::configuration(['/project/src'], GeneratedFilePolicy::Exclude));
+
+        self::assertSame([$file], $result->eligibleFiles);
+        self::assertSame(1, $result->discoveredCount);
+        self::assertSame([], $result->unmatchedExcludeFindings);
+    }
+
     private function discovery(FileDiscoveryInterface $default): AnalysisFileDiscovery
     {
         $filter = self::createStub(GeneratedFileFilterInterface::class);
@@ -118,12 +141,12 @@ final class AnalysisFileDiscoveryTest extends TestCase
     private static function configuration(array $paths, GeneratedFilePolicy $policy): RunConfiguration
     {
         return new RunConfiguration(
-            paths: array_map(AbsolutePath::fromString(...), $paths),
             pathExcludes: [],
             projectRoot: AbsolutePath::fromString('/project'),
             generatedFilePolicy: $policy,
-            coversProjectScope: true,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: AbsolutePath::fromString('/project'), pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: array_map(AbsolutePath::fromString(...), $paths), scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
             authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         );
     }
 

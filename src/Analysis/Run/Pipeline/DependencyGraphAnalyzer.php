@@ -13,16 +13,16 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilde
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarInterface;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\SkipReportingDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
+use Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Exception\ParseException;
-use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -37,17 +37,18 @@ use Throwable;
 final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerInterface
 {
     public function __construct(
-        private FileDiscoveryInterface $fileDiscovery,
+        private AnalysisFileDiscovery $analysisFileDiscovery,
         private FileParserInterface $fileParser,
         private DependencyTraversalParticipantInterface $dependencyVisitor,
         private DependencyGraphBuilderInterface $graphBuilder,
         private DeclarationRegistrarFactory $declarationRegistrarFactory,
     ) {}
 
-    public function analyze(array $paths, AbsolutePath $projectRoot): DependencyGraphAnalysisResult
+    public function analyze(RunConfiguration $configuration, FileDiscoveryInterface $fileDiscovery): DependencyGraphAnalysisResult
     {
-        $projectRoot = $projectRoot->canonicalize();
-        $files = iterator_to_array($this->fileDiscovery->discover($paths), false);
+        $projectRoot = $configuration->projectRoot->canonicalize();
+        $discovery = $this->analysisFileDiscovery->discoverEligible($configuration, $fileDiscovery);
+        $files = $discovery->eligibleFiles;
         $analyzedFiles = [];
         $failures = [];
         /** @var list<Dependency> $dependencies */
@@ -77,19 +78,17 @@ final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerI
             }
         }
 
-        $coverage = new AnalysisCoverage($analyzedFiles, [], $failures);
+        $coverage = new AnalysisCoverage($analyzedFiles, $discovery->generatedExcludedFiles, $failures);
 
         // The graph export answers the same question about its own input as a
         // check run does: an entry discovery refused is a hole in the graph,
         // and `graph:export` already refuses to publish an incomplete one.
-        if ($this->fileDiscovery instanceof SkipReportingDiscoveryInterface) {
-            foreach ($this->fileDiscovery->skippedEntries() as $skip) {
-                $coverage = $coverage->withSkipped(
-                    $skip->relativeTo($projectRoot),
-                    $skip->reason,
-                    $skip->detail,
-                );
-            }
+        foreach ($discovery->skippedEntries as $skip) {
+            $coverage = $coverage->withSkipped(
+                $skip->relativeTo($projectRoot),
+                $skip->reason,
+                $skip->detail,
+            );
         }
 
         return new DependencyGraphAnalysisResult(

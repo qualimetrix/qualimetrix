@@ -10,8 +10,8 @@ use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
-use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Infrastructure\Console\AnalysisInputPathValidator;
 use Qualimetrix\Infrastructure\Console\CheckConfigurationResolvers;
 use Qualimetrix\Infrastructure\Console\CheckScopeResolver;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
@@ -197,9 +197,7 @@ final class CheckCommand extends Command
         $this->resultPresenter->assertOutputIsWritable($input);
         $namespacePattern = $this->resultPresenter->bindOutputOptions($input);
         $resolved = $this->configurationResolvers->resolve($document);
-        $runConfiguration = $resolved->runConfiguration;
-        $cacheConfiguration = $resolved->cacheConfiguration;
-        $parallelConfiguration = $resolved->parallelConfiguration;
+        $runConfiguration = $resolved->run->runConfiguration;
         $findingConfiguration = $this->ruleInputValidator->resolve($document, $input);
         $findingExclusions = $resolved->findingExclusions;
         $outputFormat = $resolved->outputFormat;
@@ -209,10 +207,8 @@ final class CheckCommand extends Command
         // Configure runtime using resolved config
         $this->runtimeConfigurator->configure(
             $document,
-            $runConfiguration,
+            $resolved->run,
             $findingConfiguration,
-            $cacheConfiguration,
-            $parallelConfiguration,
             $input,
             $output,
         );
@@ -236,13 +232,9 @@ final class CheckCommand extends Command
         $resolvedScope = $this->checkScopeResolver->resolve($input, $runConfiguration);
         $scopeResolution = $resolvedScope->scope;
 
-        $pathErrors = $this->validatePaths($scopeResolution->paths);
-        if ($pathErrors !== []) {
-            throw ConfigurationInputAdapter::pathsRefusal($document, implode(' ', $pathErrors));
-        }
+        (new AnalysisInputPathValidator())->validate($scopeResolution->paths, $document);
 
         $projectRoot = $runConfiguration->projectRoot;
-        $this->warnIfComposerJsonMissing($projectRoot, $output);
         foreach ($resolvedScope->warnings as $warning) {
             $this->writeWarning($output, \sprintf('Warning: %s', $warning));
         }
@@ -266,9 +258,7 @@ final class CheckCommand extends Command
         // rebuilding this positionally lost every field added to the run
         // configuration after the call site was written, silently and once per
         // field.
-        $scopedRunConfiguration = $resolvedScope->coversProjectScope
-            ? $runConfiguration->coveringProjectScope($scopeResolution->paths)
-            : $runConfiguration->narrowedTo($scopeResolution->paths);
+        $scopedRunConfiguration = $runConfiguration->withProjectScope($resolvedScope->measurement);
         $result = $this->runAnalysis($scopedRunConfiguration, $scopeResolution->fileDiscovery);
 
         $filterResult = $this->findingFilterOrchestrator->filterAndReport(
@@ -325,38 +315,6 @@ final class CheckCommand extends Command
     private function runAnalysis(RunConfiguration $configuration, \Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface $fileDiscovery): \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult
     {
         return $this->analyzer->analyze($configuration, $fileDiscovery);
-    }
-
-    /**
-     * Validates that all provided paths exist.
-     *
-     * @param list<AbsolutePath> $paths
-     *
-     * @return list<string> Error messages (empty if all valid)
-     */
-    private function validatePaths(array $paths): array
-    {
-        $errors = [];
-        foreach ($paths as $path) {
-            if (!$path->exists()) {
-                $errors[] = \sprintf("Error: path '%s' does not exist", $path->value());
-            }
-        }
-
-        return $errors;
-    }
-
-    /**
-     * Warns when composer.json is not found in project root.
-     */
-    private function warnIfComposerJsonMissing(AbsolutePath $projectRoot, OutputInterface $output): void
-    {
-        if (!file_exists($projectRoot->value() . '/composer.json')) {
-            $this->writeWarning(
-                $output,
-                \sprintf('Warning: No composer.json found in %s. Namespace detection and coupling metrics may be inaccurate.', $projectRoot->value()),
-            );
-        }
     }
 
     /**

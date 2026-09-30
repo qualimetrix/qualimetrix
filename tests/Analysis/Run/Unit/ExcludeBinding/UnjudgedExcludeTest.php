@@ -145,12 +145,12 @@ final class UnjudgedExcludeTest extends TestCase
 
         return (new UnmatchedExcludeAudit(new UnmatchedExcludeOptions(), new ExcludeBindingProbe()))->findings(
             new RunConfiguration(
-                paths: [$root],
                 pathExcludes: [$authored],
                 projectRoot: $root,
                 generatedFilePolicy: GeneratedFilePolicy::Include,
-                coversProjectScope: true,
+                projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
                 authoredPathExcludes: [$authored],
+                autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
             ),
         );
     }

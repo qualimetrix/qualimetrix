@@ -242,7 +242,7 @@ final class HookInstallCommandTest extends TestCase
     {
         $command = new HookInstallCommand(new GitRepositoryLocator(), $this->locator($binary));
         $errorStream = new ErrorStream();
-        $application = new Application($errorStream, new RefusalPresenter($errorStream));
+        $application = new Application($errorStream, new RefusalPresenter($errorStream), new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $application->setAutoExit(false);
         $application->addCommand($command);
 

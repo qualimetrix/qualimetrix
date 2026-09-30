@@ -42,6 +42,7 @@
             <directory>tests/Analysis/Evidence/Security/Unit</directory>
             <directory>tests/Analysis/Evidence/Size/Unit</directory>
             <directory>tests/Analysis/Configuration/Unit</directory>
+            <directory>tests/Analysis/ProjectManifest/Unit</directory>
             <directory>tests/Analysis/Evidence/Duplication/Unit</directory>
             <directory>tests/Analysis/Evidence/DependencyModel/Unit</directory>
             <directory>tests/Analysis/Evidence/Measurement/Unit</directory>

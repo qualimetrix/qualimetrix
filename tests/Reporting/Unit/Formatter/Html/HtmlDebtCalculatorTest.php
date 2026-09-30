@@ -39,7 +39,7 @@ final class HtmlDebtCalculatorTest extends TestCase
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
-        $this->calculator->computeDebt([], ['App\\Service' => $node]);
+        $this->calculator->calculate($node, [], ['App\\Service' => $node]);
 
         self::assertSame(0, $node->debtMinutes);
     }
@@ -60,7 +60,8 @@ final class HtmlDebtCalculatorTest extends TestCase
             metricValue: 10,
         );
 
-        $this->calculator->computeDebt(
+        $this->calculator->calculate(
+            $node,
             ['App\\Service' => [$finding]],
             ['App\\Service' => $node],
         );
@@ -84,7 +85,8 @@ final class HtmlDebtCalculatorTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $this->calculator->computeDebt(
+        $this->calculator->calculate(
+            $node,
             ['App\\Other' => [$finding]],
             ['App\\Service' => $node],
         );
@@ -102,7 +104,7 @@ final class HtmlDebtCalculatorTest extends TestCase
         ];
         $node->debtMinutes = 60;
 
-        $total = $this->calculator->aggregateBottomUp($node);
+        $total = $this->calculator->calculate($node, [], []);
 
         self::assertSame(2, $total);
         self::assertSame(2, $node->violationCountTotal);
@@ -129,7 +131,7 @@ final class HtmlDebtCalculatorTest extends TestCase
 
         $root->children = [$childA, $childB];
 
-        $total = $this->calculator->aggregateBottomUp($root);
+        $total = $this->calculator->calculate($root, [], []);
 
         self::assertSame(3, $total);
         self::assertSame(3, $root->violationCountTotal);
@@ -164,7 +166,7 @@ final class HtmlDebtCalculatorTest extends TestCase
         $ns->children = [$classA, $classB];
         $root->children = [$ns];
 
-        $total = $this->calculator->aggregateBottomUp($root);
+        $total = $this->calculator->calculate($root, [], []);
 
         self::assertSame(3, $total);
         self::assertSame(3, $root->violationCountTotal);

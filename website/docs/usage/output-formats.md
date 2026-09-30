@@ -229,7 +229,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
         "debtPer1kLoc": 2.1
     },
     "outOfScope": null,
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": [], "reasons": []},
     "configurationDiagnostics": [],
     "health": {
         "complexity": {
@@ -523,7 +523,7 @@ Raw metric values for every symbol (file, class, namespace, method, function, pr
             }
         }
     ],
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": [], "reasons": []},
     "summary": {
         "filesAnalyzed": 45,
         "filesSkipped": 0,
@@ -925,7 +925,7 @@ a finding back, and the identity leads to the finding's own record.
         "failed": 0,
         "failures": []
     },
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": [], "reasons": []},
     "mechanisms": [
         "suppression",
         "path-suppression",
@@ -1097,67 +1097,68 @@ incomplete.
 
 ## Project scope in every format {#project-scope-in-every-format}
 
-Some channels say that a configured value matches nothing in the project — a
-layer no class belongs to, an `exclude:` that removed no directory, a
-suppression that names nothing. A run over part of the project cannot say
-that about code it did not analyse, so those channels speak only when the
-analysed paths cover everything `composer.json` declares under `autoload`
-(and under `autoload-dev` with
-[`--include-autoload-dev`](cli-options.md#--include-autoload-dev)). The report
-says which of three states the run was in:
+Some channels say that a configured value matches nothing in the project:
+a layer, a directory exclusion or a suppression. A subset cannot establish
+that claim about code it did not analyse. The report names the evidence
+behind its answer:
 
-| State      | When                                                                                                                       | Whole-project channels                                                                                                               |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `covered`  | the analysed paths contain every declared autoload target                                                                  | judged                                                                                                                               |
-| `narrowed` | some declared target lies outside the analysed paths                                                                       | not judged; the report names them and the targets left out                                                                           |
-| `unknown`  | `composer.json` is missing, does not parse, or declares no production autoload outside `vendor`, `node_modules` and `.git` | judged, taking the analysed paths as the whole project — except namespace values of the suppression channels, which the report names |
+| State        | When                                                                      | Whole-project channels |
+| ------------ | ------------------------------------------------------------------------- | ---------------------- |
+| `covered`    | Every counted target of the intact selected Composer autoload is reached  | judged                 |
+| `narrowed`   | A counted target lies outside the analysed paths                          | withheld               |
+| `unknown`    | No complete declared universe, but the whole project root is selected     | judged                 |
+| `unmeasured` | No complete declared universe over a subset, or inferred partial defaults | withheld               |
 
-The channels judged only on a whole-project run are
+Production targets are selected by default; `--include-autoload-dev` adds
+development targets. An absent manifest or intact document without declared
+code falls back to the whole root when paths are omitted. A damaged manifest
+requires authored paths to establish a whole-root `unknown` run.
+Unusable damaged defaults refuse with exit 3 before analysis.
+
+An intact declaration whose targets are all missing on disk can still leave
+an empty denominator and report `covered` on an authored subset.
+`missing-target` reasons name this existing limit; the state does not prove
+that every declared target exists.
+
+The whole-project channels are
 `architecture.unreachable-layer`, `architecture.empty-template`,
 `architecture.unmatched-exclude`, `coupling.unmatched-framework-namespace`,
 `discovery.unmatched-exclude`, `suppression.unmatched-path`,
-`suppression.unmatched-namespace` and `suppression.unmatched-rule-ledger`. A
-narrowed report lists all of them, whether or not this run enabled them.
+`suppression.unmatched-namespace` and `suppression.unmatched-rule-ledger`.
+Both withheld states list the entire family, whether enabled or not.
 
-`covered` is a statement about the autoload targets, not about every configured
-value. The suppression channels also judge each value against the place it
-names, and a value naming a place outside the analysed paths is skipped:
-`suppress_paths: [{subtree: tests/Legacy}]` on `qmx check src/`, with `tests/`
-declared only under `autoload-dev`, is not judged on that `covered` run. The
-report names every skipped value in `unjudgedValues`, and its channel in
-`unjudgedChannels`, so "judged and bound" and "not looked at" read differently.
-See [Suppression rules](../rules/suppression.md#scope-and-severity).
+Coverage does not establish that every suppression value was judged.
+A value outside the analysed location is skipped, for example
+`suppress_paths: [{subtree: tests/Legacy}]` when only production code was
+analysed. Namespace values need an accepted PSR-4 location map; that fact is
+independent of the state enum. The report names skipped values and their
+channels. See [Suppression rules](../rules/suppression.md#scope-and-severity).
 
-On an `unknown` project, run the check over all of its code: a narrower run
-there is judged as if it were the whole project, and a layer whose classes lie
-outside the paths you named is reported as matching nothing. Namespace values
-of the global `suppress_namespaces` and of per-rule `suppress_namespaces` and
-`suppress_namespace_channels` are the exception: with no declared autoload a namespace
-has no location, so they are not judged on any run of such a project, and the
-report lists each such value in `unjudgedValues` and its channel —
-`suppression.unmatched-namespace` or `suppression.unmatched-rule-ledger` — in
-`unjudgedChannels`.
+| Format                                      | Project scope representation                                    |
+| ------------------------------------------- | --------------------------------------------------------------- |
+| `json`, `metrics`, `suppressed`             | Top-level `projectScope` object in every document               |
+| `sarif`                                     | Invocation notification with descriptor `QMX-RUN-PROJECT-SCOPE` |
+| `github`                                    | `::notice title=run.project-scope::` line                       |
+| `html`                                      | Banner above the report                                         |
+| `summary`, `text`, `text-verbose`, `health` | A `Project scope …` line                                        |
+| `gitlab`, `checkstyle`                      | No scope entry: every entry is a finding to their consumers     |
 
-| Format                                      | Project scope representation                                                                                                       |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `json`, `metrics`, `suppressed`             | Top-level `projectScope` object in every document: `state`, `uncoveredAutoloadTargets[]`, `unjudgedChannels[]`, `unjudgedValues[]` |
-| `sarif`                                     | A `note` in `runs[0].invocations[0].toolExecutionNotifications[]` with descriptor `QMX-RUN-PROJECT-SCOPE`                          |
-| `github`                                    | A `::notice title=run.project-scope::` line                                                                                        |
-| `html`                                      | A banner above the report                                                                                                          |
-| `summary`, `text`, `text-verbose`, `health` | A `Project scope …` line beside the coverage sentence                                                                              |
-| `gitlab`, `checkstyle`                      | Nothing: their consumers count every entry as a finding, and narrowing the run is not a defect of it                               |
+The object has the same five fields in every state:
+`state`, `uncoveredAutoloadTargets[]`, `unjudgedChannels[]`,
+`unjudgedValues[]` and `reasons[]`.
+Targets are empty except on `narrowed`.
+On `narrowed` and `unmeasured`, no whole-project value is judged,
+so `unjudgedValues` is empty. Otherwise each skipped value is
+`{option, pattern}`, and its channel contributes to `unjudgedChannels`.
 
-`projectScope` has the same keys in every state. `uncoveredAutoloadTargets`
-is empty unless the state is `narrowed`. `unjudgedValues` lists every
-configured suppression value a `covered` or `unknown` run skipped, each as
-`{"option", "pattern"}` — `option` is `suppress_paths`, `suppress_namespaces`
-or `rules.<rule>.<option>`, the key to look under, and `pattern` the authored
-selector (`subtree:tests/Legacy`). `unjudgedChannels` names every
-whole-project channel for `narrowed`, where no value was judged and
-`unjudgedValues` is empty, and otherwise the channels of the skipped values.
-Every other format adds its entry for `narrowed`, for `unknown`, and for a
-`covered` run that skipped a value. The console also prints a warning on
-stderr naming the autoload targets a narrowed run left out.
+Each reason is an object with `kind` and named cause fields.
+Kinds are `manifest-issue`, `no-declared-code`, `incomplete-universe`,
+`pruned-target`, `missing-target` and `omitted-composer-root`.
+Manifest issues retain source, location and detail. Auxiliary manifest issues
+and root omissions explain degraded ancestry evidence and do not close
+main-project coverage. Reasons survive suppression-value projection.
+Formats with a diagnostic place add an entry for either withheld state,
+`unknown`, or a covered run with skipped values or reasons.
 
 ## Comparison table
 

@@ -331,7 +331,7 @@ final class RuleOptionKeyDoorSymmetryTest extends TestCase
         self::assertInstanceOf(CheckCommand::class, $command);
         $refusalPresenter = $container->get(RefusalPresenter::class);
         self::assertInstanceOf(RefusalPresenter::class, $refusalPresenter);
-        (new Application(new ErrorStream(), $refusalPresenter))->addCommand($command);
+        (new Application(new ErrorStream(), $refusalPresenter, new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->addCommand($command);
 
         return new CommandTester($command);
     }

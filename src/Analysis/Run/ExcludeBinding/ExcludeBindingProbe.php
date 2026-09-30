@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Run\ExcludeBinding;
 
 use FilesystemIterator;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Discovery\DirectoryPruner;
 use Qualimetrix\Analysis\Run\Discovery\DirectoryWalk;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -18,6 +19,20 @@ use UnexpectedValueException;
 /** Measures authored directory selectors through the same pruner as discovery. */
 final readonly class ExcludeBindingProbe
 {
+    /** Measures current roots, then only their unsettled selectors against the whole project. */
+    public function judgeProject(RunConfiguration $configuration): ExcludeBindingVerdict
+    {
+        $pruner = new DirectoryPruner($configuration->projectRoot, $configuration->pathExcludes);
+        $inRun = $this->judge($configuration->paths, $configuration->authoredPathExcludes, $pruner);
+        $unsettled = $inRun->unsettled($configuration->authoredPathExcludes);
+
+        // A pattern that binds outside this run is not stale. Ask the whole
+        // tree only for the selectors the current roots could not settle.
+        return $unsettled === []
+            ? new ExcludeBindingVerdict([], [])
+            : $this->judge([$configuration->projectRoot], $unsettled, $pruner);
+    }
+
     /**
      * Selectors no directory in these roots matched.
      *

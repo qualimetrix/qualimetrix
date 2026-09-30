@@ -128,7 +128,15 @@ final class FinderFileDiscovery implements FileDiscoveryInterface, SkipReporting
                 continue;
             }
 
-            if ($this->acceptRegularPhpFile(new SplFileInfo($path->value()), 'Explicit path is not a regular file')) {
+            $entry = new SplFileInfo($path->value());
+            if ($entry->isFile() && $entry->getExtension() !== 'php') {
+                throw ConfigurationRefusal::aboutResolvedInput(
+                    \sprintf('"%s" is not a PHP file, so it cannot be analysed as an explicit path.', $path->value()),
+                    ConfigSchema::PATHS,
+                );
+            }
+
+            if ($this->acceptRegularPhpFile($entry, 'Explicit path is not a regular file')) {
                 $files[] = $path;
             }
         }
@@ -264,11 +272,8 @@ final class FinderFileDiscovery implements FileDiscoveryInterface, SkipReporting
             return true;
         }
 
-        $this->record(
-            AbsolutePath::fromString($entry->getPathname()),
-            AnalysisFailureKind::NotRegularFile,
-            $detail,
-        );
+        $path = AbsolutePath::fromString($entry->getPathname());
+        $this->skippedEntries[$path->value()] ??= SkippedEntry::nonRegular($path, $detail);
 
         return false;
     }
@@ -287,9 +292,8 @@ final class FinderFileDiscovery implements FileDiscoveryInterface, SkipReporting
             // files a run measures and could leave the project root entirely,
             // while a cycle would not terminate. What is said instead is that
             // this subtree was not read.
-            $this->record(
+            $this->skippedEntries[$path->value()] ??= SkippedEntry::directorySymlink(
                 $path,
-                AnalysisFailureKind::DirectorySymlink,
                 'Symbolic link to a directory is not traversed',
             );
 

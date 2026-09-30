@@ -9,7 +9,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
-use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\CliStage;
@@ -17,6 +16,7 @@ use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ComposerDiscoveryStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 #[CoversClass(ConfigurationPipeline::class)]
@@ -78,7 +78,7 @@ final class ConfigurationPipelineIntegrationTest extends TestCase
         $pipeline->addStage(new CliStage());
         $pipeline->addStage(new ConfigFileStage(new YamlConfigLoader()));
         $pipeline->addStage(new DefaultsStage());
-        $pipeline->addStage(new ComposerDiscoveryStage(new ComposerReader()));
+        $pipeline->addStage(new ComposerDiscoveryStage(new ComposerManifestReader()));
 
         return $pipeline;
     }

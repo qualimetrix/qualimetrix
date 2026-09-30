@@ -9,10 +9,16 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
+use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
+use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineRun;
+use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
 use Qualimetrix\Infrastructure\Console\Command\DirectivesCommand;
+use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
+use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Reporting\Formatter\Json\JsonFormatter;
@@ -53,9 +59,6 @@ final class ConfigurationDiagnosticsChannelTest extends TestCase
     }
 
     /**
-     * `debug:layer-assignment` resolves through the same preflight as
-     * `directives`, and takes no `--preset` to draw this warning with.
-     *
      * @return iterable<string, array{class-string<Command>, array<string, mixed>}>
      */
     public static function provideDocumentReadingCommands(): iterable
@@ -63,6 +66,12 @@ final class ConfigurationDiagnosticsChannelTest extends TestCase
         yield 'check' => [CheckCommand::class, ['paths' => ['src']]];
         yield 'directives' => [DirectivesCommand::class, ['paths' => ['src']]];
         yield 'baseline:generate' => [BaselineGenerateCommand::class, ['baseline' => 'baseline.json', 'paths' => ['src']]];
+        yield 'rules' => [RulesCommand::class, []];
+        yield 'graph' => [GraphExportCommand::class, ['paths' => ['src']]];
+        yield 'debug' => [LayerAssignmentCommand::class, ['fqn' => 'App\\Sample']];
+        yield 'baseline:update' => [BaselineUpdateCommand::class, ['baseline' => 'baseline.json', 'paths' => ['src']]];
+        yield 'baseline:cleanup' => [BaselineCleanupCommand::class, ['baseline' => 'baseline.json', 'paths' => ['src']]];
+        yield 'baseline:explain' => [BaselineExplainCommand::class, ['subject' => 'declaration:class:App\\Sample@src/Sample.php', 'paths' => ['src']]];
     }
 
     /**
@@ -98,6 +107,27 @@ final class ConfigurationDiagnosticsChannelTest extends TestCase
         );
     }
 
+    #[Test]
+    public function itWritesAnIgnoredNearConfigFilenameWarningToTheErrorStream(): void
+    {
+        unlink($this->directory . '/qmx.yaml');
+        file_put_contents($this->directory . '/qmx.yaml.bak', "paths: [src]\n");
+        $command = (new ContainerFactory())->create()->get(CheckCommand::class);
+        self::assertInstanceOf(Command::class, $command);
+
+        $previous = getcwd();
+        chdir($this->directory);
+        try {
+            $tester = new CommandTester($command);
+            $tester->execute(['paths' => ['src']], ['capture_stderr_separately' => true]);
+        } finally {
+            chdir($previous === false ? '/' : $previous);
+        }
+
+        self::assertStringContainsString('Ignored configuration-like filename "qmx.yaml.bak"', $tester->getErrorOutput());
+        self::assertStringNotContainsString('Ignored configuration-like filename', $tester->getDisplay());
+    }
+
     /**
      * @param class-string<Command> $commandClass
      * @param array<string, mixed> $arguments
@@ -110,6 +140,12 @@ final class ConfigurationDiagnosticsChannelTest extends TestCase
         $previous = getcwd();
         chdir($this->directory);
         try {
+            file_put_contents($this->directory . '/qmx.yaml', "paths: [src]\nonly_rules: []\ncache: {enabled: false}\nparallel: {workers: 0}\n");
+            if ($commandClass === BaselineUpdateCommand::class || $commandClass === BaselineCleanupCommand::class) {
+                $generate = (new ContainerFactory())->create()->get(BaselineGenerateCommand::class);
+                self::assertInstanceOf(BaselineGenerateCommand::class, $generate);
+                self::assertSame(0, (new CommandTester($generate))->execute(['baseline' => 'baseline.json', 'paths' => ['src']]));
+            }
             $tester = new CommandTester($command);
             $tester->execute(
                 [...$arguments, '--config' => 'qmx.yaml', '--preset' => [$this->directory . '/focused.yaml']],

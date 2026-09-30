@@ -187,6 +187,22 @@ YAML);
     }
 
     #[Test]
+    public function itReportsTheChosenSourceNameForMalformedPhysicalYaml(): void
+    {
+        $path = $this->tempDir . '/qmx.yaml';
+        file_put_contents($path, "rules: [\n");
+
+        try {
+            $this->loader->read($path, 'qmx.yaml');
+            self::fail('Malformed YAML must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString('Failed to parse configuration file qmx.yaml', $refusal->summary());
+            self::assertStringNotContainsString($this->tempDir, $refusal->summary());
+            self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
+        }
+    }
+
+    #[Test]
     public function itThrowsForScalarValue(): void
     {
         $path = $this->tempDir . '/scalar.yaml';
@@ -222,7 +238,7 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, "rules: 5\nFail_On: error\n");
 
-        $loaded = $this->loader->read($path);
+        $loaded = $this->loader->read($path, $path);
 
         self::assertSame(['rules' => 5, 'Fail_On' => 'error'], $loaded->authored->plain());
         self::assertSame([], $loaded->values);

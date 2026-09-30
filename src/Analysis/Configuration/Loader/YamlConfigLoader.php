@@ -17,12 +17,12 @@ final class YamlConfigLoader implements ConfigLoaderInterface
 {
     private const array SUPPORTED_EXTENSIONS = ['yaml', 'yml'];
 
-    public function read(string $path): LoadedDocument
+    public function read(string $physicalPath, string $sourceName): LoadedDocument
     {
-        $parsed = $this->parse($path);
+        $parsed = $this->parse($physicalPath, $sourceName);
 
         try {
-            return new LoadedDocument(AuthoredNode::fromPlain($parsed), $this->normalize($parsed, $path));
+            return new LoadedDocument(AuthoredNode::fromPlain($parsed), $this->normalize($parsed, $sourceName));
         } catch (ConfigurationRefusal $refusal) {
             return new LoadedDocument(AuthoredNode::fromPlain($parsed), [], $refusal);
         }
@@ -38,28 +38,29 @@ final class YamlConfigLoader implements ConfigLoaderInterface
      *
      * @return array<string|int, mixed>
      */
-    private function parse(string $path): array
+    private function parse(string $physicalPath, string $sourceName): array
     {
-        if (!file_exists($path)) {
+        if (!file_exists($physicalPath)) {
             throw ConfigurationRefusal::aboutConfigFileDocument(
-                $path,
-                \sprintf('Configuration file not found: %s', $path),
+                $sourceName,
+                \sprintf('Configuration file not found: %s', $sourceName),
             );
         }
 
-        if (!is_readable($path)) {
+        if (!is_readable($physicalPath)) {
             throw ConfigurationRefusal::aboutConfigFileDocument(
-                $path,
-                \sprintf('Configuration file is not readable: %s', $path),
+                $sourceName,
+                \sprintf('Configuration file is not readable: %s', $sourceName),
             );
         }
 
         try {
-            $content = Yaml::parseFile($path);
+            $content = Yaml::parseFile($physicalPath);
         } catch (ParseException $e) {
+            $e->setParsedFile($sourceName);
             throw ConfigurationRefusal::aboutConfigFileDocument(
-                $path,
-                \sprintf('Failed to parse configuration file %s: %s', $path, $e->getMessage()),
+                $sourceName,
+                \sprintf('Failed to parse configuration file %s: %s', $sourceName, $e->getMessage()),
                 $e,
             );
         }
@@ -70,15 +71,15 @@ final class YamlConfigLoader implements ConfigLoaderInterface
                 return [];
             }
             throw ConfigurationRefusal::aboutConfigFileDocument(
-                $path,
-                \sprintf('Configuration file %s is not valid %s format', $path, 'YAML'),
+                $sourceName,
+                \sprintf('Configuration file %s is not valid %s format', $sourceName, 'YAML'),
             );
         }
 
         $keyMap = $this->buildRootKeyMap($content);
         RetiredSuppressionOptions::refuseRootKey(
             array_values(array_diff(array_keys($keyMap), ConfigSchema::allowedRootKeys())),
-            $path,
+            $sourceName,
             $keyMap,
         );
 

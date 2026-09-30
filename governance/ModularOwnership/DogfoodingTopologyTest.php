@@ -8,7 +8,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
-use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\CliStage;
@@ -25,6 +24,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 
 #[CoversClass(ArchitectureConfigurationFactory::class)]
 #[CoversClass(ConfigurationPipeline::class)]
@@ -185,7 +185,7 @@ final class DogfoodingTopologyTest extends TestCase
         $loader = new YamlConfigLoader();
         $pipeline = new ConfigurationPipeline([new ArchitectureSection()]);
         $pipeline->addStage(new DefaultsStage());
-        $pipeline->addStage(new ComposerDiscoveryStage(new ComposerReader()));
+        $pipeline->addStage(new ComposerDiscoveryStage(new ComposerManifestReader()));
         $pipeline->addStage(new PresetStage($loader, new PresetResolver()));
         $pipeline->addStage(new ConfigFileStage($loader));
         $pipeline->addStage(new CliStage());

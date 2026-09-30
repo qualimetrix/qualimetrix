@@ -296,7 +296,7 @@ final class HookStatusCommandTest extends TestCase
     private static function throughLadder(Command $command): ApplicationTester
     {
         $errorStream = new ErrorStream();
-        $application = new QualimetrixApplication($errorStream, new RefusalPresenter($errorStream));
+        $application = new QualimetrixApplication($errorStream, new RefusalPresenter($errorStream), new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $application->setAutoExit(false);
         $application->addCommand($command);
 

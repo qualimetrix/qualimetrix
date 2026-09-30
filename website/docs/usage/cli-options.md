@@ -20,6 +20,12 @@ bin/qmx check src/ lib/
 bin/qmx check src/Service/UserService.php
 ```
 
+A missing resolved path or an explicitly named existing regular file whose
+extension is not `.php` is refused with exit code 3 before discovery. This
+applies to CLI, YAML and preset paths in `check`, `directives`, `graph:export`,
+`debug:layer-assignment` and all four measuring baseline commands. Directories
+are discovered normally; an empty PHP tree remains a separate analysis refusal.
+
 A path you name that is itself a `vendor`, `node_modules` or `.git` directory (`bin/qmx check lib/vendor`) stops the run with a configuration error: Qualimetrix never walks into one, so the run would analyse nothing. Name a file or a directory inside it instead (`bin/qmx check vendor/acme/`); a `vendor` directory inside a path you name is still skipped.
 
 A directory you name — here or under `paths:` in `qmx.yaml` — that your own `exclude:` or `--exclude` removes stops the run with a configuration error (exit code 3) before analysis starts, naming the path and the selector that removes it: the run would otherwise succeed without having looked inside it. `directives`, `baseline:generate`, `baseline:update`, `baseline:cleanup` and `baseline:explain` refuse it the same way. A file you name inside an excluded directory is still analysed, and so is a directory below one that an `exact:` selector removes, because `exact:` does not reach below the directory it names. A path detected from `composer.json` that you exclude is skipped without a word: there the exclusion is doing what it was written for.
@@ -495,7 +501,7 @@ bin/qmx baseline:explain  <symbol> [<paths>...] [--baseline=BASELINE] [--channel
 bin/qmx baseline:rename-channels <baseline> <map> [--format=FORMAT]
 ```
 
-The first four commands accept `--config=CONFIG`, `--preset=PRESET`, `--disable-rule=DISABLE-RULE`, `--only-rule=ONLY-RULE`, and `--rule-opt=RULE-OPT`. They do not accept any exclusion or suppression option. `baseline:rename-channels` accepts none of them: it runs no analysis, so there is no measured set for them to define.
+The first four commands accept `--config=CONFIG`, `--preset=PRESET`, `--disable-rule=DISABLE-RULE`, `--only-rule=ONLY-RULE`, and `--rule-opt=RULE-OPT`. All four also accept `--include-generated`, `--include-autoload-dev`, `--no-cache`, `--workers`/`-w` and `--memory-limit`. They do not accept any exclusion or suppression option. `baseline:rename-channels` accepts none of them: it runs no analysis, so there is no measured set for them to define.
 
 - `baseline:generate` captures the current measured findings. `--mode=ratchet` is the default; `--mode=suppress` records unconditional acceptance for captured identities. Its `--force` overwrites an existing file.
 - `baseline:update` tightens existing entries only. Its `--force` overrides the recorded-scope coverage guard.
@@ -1008,6 +1014,11 @@ bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
 
 ### debug:layer-assignment
 
+`--preset=PRESET` applies a named or file preset and can be repeated.
+Configured paths receive the same existence and PHP-file checks as the other
+measuring commands.
+
+
 Report which architecture layer a class is assigned to, and every other layer whose criteria would also have matched it (a potential shadow source). See [Inspecting layer assignment for a single class](../rules/architecture.md#debug-layer-assignment) for the full walkthrough.
 
 ```bash
@@ -1115,6 +1126,15 @@ On error, `--format=json` prints `{"error": "...", "exit_code": N, "position": .
 
 ### graph:export
 
+The command reads the shared configuration document. Without path arguments,
+it uses configured or Composer defaults and applies `exclude` and the
+`@generated` filter. It accepts `--config`, `--preset`, `--exclude`,
+`--include-generated`, `--include-autoload-dev`, `--no-cache`, `--workers`/`-w`
+and `--memory-limit`. `--format`/`-f` selects only `dot` or `json`, independently
+of the document's analysis `format`. `--direction` has no short alias; global
+`-d` changes the working directory.
+
+
 Export the dependency graph for visualization:
 
 ```bash
@@ -1141,7 +1161,7 @@ bin/qmx graph:export src/ --no-clusters
 | ------------------------------ | ---------------------------------------------------------------------------------- |
 | `-o`, `--output=FILE`          | Output file (default: stdout)                                                      |
 | `-f`, `--format=FORMAT`        | `dot` (default) or `json`                                                          |
-| `-d`, `--direction=DIR`        | Graph direction: `LR`, `TB`, `RL`, `BT` (default: `LR`)                            |
+| `--direction=DIR`              | Graph direction: `LR`, `TB`, `RL`, `BT` (default: `LR`)                            |
 | `--no-clusters`                | Do not group nodes by namespace                                                    |
 | `--namespace=SELECTOR`         | Include only namespaces selected by `exact:`, `subtree:`, or `regex:` (repeatable) |
 | `--exclude-namespace=SELECTOR` | Exclude namespaces using the same explicit forms (repeatable)                      |
@@ -1191,6 +1211,14 @@ bin/qmx hook:uninstall --restore-backup
 ```
 
 ### rules
+
+Accepts `--config=FILE` and repeatable `--preset=PRESET`, judges the complete
+document and includes named computed metrics. It marks rules disabled by the
+current final `only_rules`/`disabled_rules` selection. It requests no analysis
+paths, so an empty PHP tree does not prevent listing rules. An invalid document
+refuses with exit 3. No separate Console parser of `rules: false` or
+`enabled: false` drives this mark; those switches belong to rule resolution.
+
 
 List all available rules with their descriptions and CLI options:
 

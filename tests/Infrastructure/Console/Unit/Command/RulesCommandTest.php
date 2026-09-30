@@ -7,10 +7,17 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Unit\Command;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
@@ -20,6 +27,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
+use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
@@ -28,9 +36,12 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
 use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
+use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\RuleListingPresenter;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -68,6 +79,31 @@ final class RulesCommandTest extends TestCase
 
         self::assertSame(0, $tester->getStatusCode());
         self::assertStringContainsString('No rules found', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itMarksFinalOnlyAndDisabledSelectorsFromTheDocument(): void
+    {
+        $tester = new CommandTester($this->createCommand(
+            [$this->createRuleMock('complexity.ccn', 'Cyclomatic complexity')],
+            selection: new RuleSelection(['complexity.*'], ['size.class-count']),
+        ));
+        $tester->execute([]);
+
+        self::assertStringContainsString('Only selected by configuration: complexity.*', $tester->getDisplay());
+        self::assertStringContainsString('Disabled by configuration: size.class-count', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itListsNamedComputedMetricsResolvedFromTheDocument(): void
+    {
+        $tester = new CommandTester($this->createCommand(
+            [],
+            definitions: [new ComputedMetricDefinition('computed.delivery-risk', ['class' => '1'], 'Delivery risk', [SymbolLevel::Class_])],
+        ));
+        $tester->execute([]);
+
+        self::assertStringContainsString('Computed metrics: computed.delivery-risk', $tester->getDisplay());
     }
 
     /**
@@ -355,9 +391,10 @@ final class RulesCommandTest extends TestCase
      * mapped to an empty list is declared, produced, and judges no metric.
      *
      * @param list<RuleInterface> $rules
+     * @param list<ComputedMetricDefinition> $definitions
      * @param array<string, array<string, list<string>>> $judged rule name => channel code => judged metric keys
      */
-    private function createCommand(array $rules, array $judged = []): RulesCommand
+    private function createCommand(array $rules, array $judged = [], ?RuleSelection $selection = null, array $definitions = []): RulesCommand
     {
         $metadata = array_map(
             static fn(RuleInterface $rule): RuleMetadata => new RuleMetadata(
@@ -397,7 +434,26 @@ final class RulesCommandTest extends TestCase
             static fn(FindingChannel $channel): ?ChannelDeclaration => $declarationByCode[$channel->code] ?? null,
         );
 
-        return new RulesCommand($execution, $channels, $registry, new RuleListingPresenter());
+        $pipeline = self::createStub(ConfigurationPipelineInterface::class);
+        $pipeline->method('resolve')->willReturn(new ConfigurationDocument([], AbsolutePath::fromString('/project')));
+
+        $findingConfigurationResolver = self::createStub(FindingConfigurationResolverInterface::class);
+        $findingConfigurationResolver->method('resolve')->willReturn(
+            FindingConfiguration::none()->withSelection($selection ?? new RuleSelection()),
+        );
+
+        $computedMetrics = self::createStub(ComputedMetricConfiguratorInterface::class);
+        $computedMetrics->method('resolve')->willReturn(new ResolvedComputedMetricDefinitions($definitions));
+
+        return new RulesCommand(
+            $execution,
+            $channels,
+            $registry,
+            new RuleListingPresenter(),
+            new ConfigurationInputAdapter($pipeline, new ErrorStream()),
+            $findingConfigurationResolver,
+            $computedMetrics,
+        );
     }
 
     private function createCyclomaticRuleWithAlias(): RuleInterface

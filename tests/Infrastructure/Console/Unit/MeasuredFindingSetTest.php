@@ -164,15 +164,15 @@ final class MeasuredFindingSetTest extends TestCase
     {
         $root = AbsolutePath::fromString(sys_get_temp_dir());
         $configuration = new RunConfiguration(
-            [$root],
-            array_map(
+            pathExcludes: array_map(
                 static fn(string $value): PathPattern => new PathPattern(new SelectorDefinition(SelectorKind::Subtree, $value)),
                 ['vendor', 'node_modules', '.git', 'generated'],
             ),
-            $root,
-            GeneratedFilePolicy::Exclude,
-            coversProjectScope: true,
+            projectRoot: $root,
+            generatedFilePolicy: GeneratedFilePolicy::Exclude,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
             authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         );
         $discovery = self::createStub(FileDiscoveryInterface::class);
         $factory = self::createMock(FileDiscoveryFactoryInterface::class);
@@ -262,7 +262,14 @@ final class MeasuredFindingSetTest extends TestCase
     {
         $root = AbsolutePath::fromString(sys_get_temp_dir());
 
-        return new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Exclude, coversProjectScope: true, authoredPathExcludes: []);
+        return new RunConfiguration(
+            pathExcludes: [],
+            projectRoot: $root,
+            generatedFilePolicy: GeneratedFilePolicy::Exclude,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
+            authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
+        );
     }
 
     private static function finding(string $file, string $namespace, string $class): Finding

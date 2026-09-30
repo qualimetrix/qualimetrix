@@ -44,6 +44,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ParserConfigurat
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\RuleConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\SecurityConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\SizeConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\ProjectManifest\ProjectManifestConfigurator;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -98,6 +99,7 @@ final class ContainerFactory
         $configurators = [
             new CoreServicesConfigurator(),
             new ConfigurationConfigurator($srcDir),
+            new ProjectManifestConfigurator(),
             new ParserConfigurator(),
             new CollectorConfigurator(),
             new CodeSmellConfigurator($srcDir),

@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
 use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
-use Symfony\Component\Config\FileLocator;
+use Qualimetrix\Infrastructure\DependencyInjection\Registration\EvidenceRegistration;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Definition;
-use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 
 /** Registers Coupling through its public configuration contract and exact roots. */
 final class CouplingConfigurator implements ContainerConfiguratorInterface
@@ -21,14 +19,14 @@ final class CouplingConfigurator implements ContainerConfiguratorInterface
 
     public function configure(ContainerBuilder $container): void
     {
-        $loader = new PhpFileLoader($container, new FileLocator($this->srcDir));
+        $loader = EvidenceRegistration::loader($container, $this->srcDir);
         $loader->registerClasses(
-            (new Definition())->setAutoconfigured(true)->setAutowired(true),
+            EvidenceRegistration::collectors(),
             self::NAMESPACE,
             $this->srcDir . '/Analysis/Evidence/Coupling/**/*Collector.php',
         );
         $loader->registerClasses(
-            (new Definition())->setAutoconfigured(true)->setAutowired(false)->setLazy(true),
+            EvidenceRegistration::rules(),
             self::NAMESPACE,
             $this->srcDir . '/Analysis/Evidence/Coupling/**/*Rule.php',
         );

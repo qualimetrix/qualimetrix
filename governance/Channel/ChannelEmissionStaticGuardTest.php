@@ -431,12 +431,12 @@ final class ChannelEmissionStaticGuardTest extends TestCase
                 'Reached from LayerDeclarationValidator, like DeclaredLayerReachability above.',
             'src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php' =>
                 'A configuration validator, like the one above.',
-            'src/Analysis/Run/ExcludeBinding/UnmatchedExcludeAudit.php' =>
+            'src/Analysis/Run/ExcludeBinding/UnmatchedExcludeFinding.php' =>
                 'UnmatchedExcludeRule names the channel but cannot emit it: what an exclude pattern bound to is'
                 . ' known during file discovery, before rules run, so the finding is assembled here and no rule'
                 . ' class chain leads to this construction.',
             'src/Analysis/Run/ExcludeBinding/UnjudgedExcludeFinding.php' =>
-                'The second shape of the same channel, for the pattern the walk could not judge; the audit above'
+                'The second shape of the same channel, for the pattern the walk could not judge; the audit'
                 . ' delegates to it, and it is off the rule chain for the same reason the audit is.',
             'src/Analysis/Finding/SuppressionBinding/UnboundSuppressionAudit.php' =>
                 'UnboundSuppressionRule names the three channels but cannot emit them: whether a suppression'

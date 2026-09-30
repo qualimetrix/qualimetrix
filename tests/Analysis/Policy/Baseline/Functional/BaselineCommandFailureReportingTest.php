@@ -200,16 +200,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
             ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml'),
             'qmx.yaml was not found',
         ));
-        $baselineRun = new BaselineRun(
-            $runtime,
-            self::withoutConstructor(MeasuredFindingSet::class),
-            self::ruleInputValidator(self::createStub(RuleRegistryInterface::class)),
-            self::configurationInputAdapter($pipeline),
-            self::createStub(RunConfigurationResolverInterface::class),
-            self::createStub(ConfiguredFindingExclusionsResolverInterface::class),
-            self::createStub(CacheConfigurationResolverInterface::class),
-            self::createStub(ParallelConfigurationResolverInterface::class),
-        );
+        $baselineRun = new BaselineRun($runtime, self::withoutConstructor(MeasuredFindingSet::class), self::ruleInputValidator(self::createStub(RuleRegistryInterface::class)), self::configurationInputAdapter($pipeline), new \Qualimetrix\Infrastructure\Console\RunConfigurationPreparation(self::createStub(RunConfigurationResolverInterface::class), self::createStub(CacheConfigurationResolverInterface::class), self::createStub(ParallelConfigurationResolverInterface::class)), self::createStub(ConfiguredFindingExclusionsResolverInterface::class));
 
         try {
             $baselineRun->measure(new ArrayInput([]), new BufferedOutput());
@@ -300,7 +291,11 @@ final class BaselineCommandFailureReportingTest extends TestCase
             new CacheFactory($cacheStore),
             $parallelStore,
             new RuntimeLimitsController(),
-            new ComposerAutoloadMap(),
+            new \Qualimetrix\Infrastructure\Console\ProjectSourceConfigurator(
+                new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(),
+                new \Qualimetrix\Analysis\Evidence\Measurement\Namespace_\ProjectNamespaceResolver(),
+                new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()),
+            ),
         );
     }
 

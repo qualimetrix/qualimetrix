@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
@@ -27,8 +26,6 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
     private const string PRESET_RESOLVER_CLASS = 'Qualimetrix\\Analysis\\Configuration\\Preset\\PresetResolver';
     private const string YAML_CONFIG_LOADER = 'qmx.configuration.yaml_config_loader';
     private const string YAML_CONFIG_LOADER_CLASS = 'Qualimetrix\\Analysis\\Configuration\\Loader\\YamlConfigLoader';
-    private const string COMPOSER_AUTOLOAD_READER = 'qmx.configuration.composer_autoload_reader';
-    private const string COMPOSER_AUTOLOAD_READER_CLASS = 'Qualimetrix\\Analysis\\Configuration\\Discovery\\ComposerReader';
 
     public function __construct(
         private readonly string $srcDir,
@@ -48,11 +45,6 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
     private function registerConfigurationPipeline(ContainerBuilder $container): void
     {
         $loader = new PhpFileLoader($container, new FileLocator($this->srcDir));
-
-        // Register ComposerReader (required by ComposerDiscoveryStage)
-        $container->register(self::COMPOSER_AUTOLOAD_READER, self::COMPOSER_AUTOLOAD_READER_CLASS)
-            ->setAutowired(true);
-        $container->setAlias(ComposerAutoloadPathReaderInterface::class, self::COMPOSER_AUTOLOAD_READER);
 
         // Register PresetResolver (required by PresetStage)
         $container->register(self::PRESET_RESOLVER, self::PRESET_RESOLVER_CLASS)

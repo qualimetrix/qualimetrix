@@ -26,12 +26,12 @@ final class GitScopeResolverTest extends TestCase
         $projectRoot = AbsolutePath::fromString(\dirname(__DIR__, 4)); // repo root
 
         $resolved = new RunConfiguration(
-            paths: [AbsolutePath::fromString($projectRoot->value() . '/src')],
             pathExcludes: self::patterns('vendor', 'node_modules', '.git'),
             projectRoot: $projectRoot,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
-            coversProjectScope: true,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $projectRoot, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [AbsolutePath::fromString($projectRoot->value() . '/src')], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
             authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         );
 
         // HEAD is a branch-independent scope: this wiring test must also pass
@@ -52,12 +52,12 @@ final class GitScopeResolverTest extends TestCase
     {
         $projectRoot = AbsolutePath::fromString('/some/project');
         $resolved = new RunConfiguration(
-            paths: [AbsolutePath::fromString('/some/project/src')],
             pathExcludes: self::patterns('vendor', 'node_modules', '.git'),
             projectRoot: $projectRoot,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
-            coversProjectScope: true,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $projectRoot, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [AbsolutePath::fromString('/some/project/src')], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
             authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         );
 
         $resolver = new GitScopeResolver(new FileDiscoveryFactory());
@@ -77,12 +77,12 @@ final class GitScopeResolverTest extends TestCase
         $projectRoot = AbsolutePath::fromString($root);
 
         $resolved = new RunConfiguration(
-            paths: [AbsolutePath::fromString($projectRoot->value() . '/src')],
             pathExcludes: self::patterns('vendor', 'tests'),
             projectRoot: $projectRoot,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
-            coversProjectScope: true,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $projectRoot, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [AbsolutePath::fromString($projectRoot->value() . '/src')], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
             authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         );
 
         try {
@@ -105,12 +105,12 @@ final class GitScopeResolverTest extends TestCase
     {
         $projectRoot = AbsolutePath::fromString('/some/project');
         $resolved = new RunConfiguration(
-            paths: [AbsolutePath::fromString('/some/project/src')],
             pathExcludes: self::patterns('vendor', 'node_modules', '.git'),
             projectRoot: $projectRoot,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
-            coversProjectScope: true,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $projectRoot, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [AbsolutePath::fromString('/some/project/src')], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
             authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         );
 
         $resolver = new GitScopeResolver(new FileDiscoveryFactory());

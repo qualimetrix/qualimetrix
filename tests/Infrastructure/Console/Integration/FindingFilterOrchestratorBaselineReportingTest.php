@@ -7,7 +7,6 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Integration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
@@ -306,7 +305,7 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
             $output,
             // Not a whole-project run, so the suppression-binding audit is not
             // asked: it is not this file's subject.
-            new ResolvedCheckScope($scopeResolution, [], false, ReportProjectScope::narrowed([], [])),
+            new ResolvedCheckScope($scopeResolution, [], (new \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->measure($scopeResolution->projectRoot, $scopeResolution->paths, \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude, \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored), ReportProjectScope::narrowed([], [])),
             new FindingProjectionOptions(
                 baselinePath: \is_string($baselinePath) && $baselinePath !== '' ? $baselinePath : null,
             ),
@@ -329,12 +328,7 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
             },
         );
 
-        return new FindingFilterOrchestrator(
-            $pipeline,
-            new ErrorStream(),
-            self::silentSuppressionAudit(),
-            self::createStub(ComposerAutoloadPathReaderInterface::class),
-        );
+        return new FindingFilterOrchestrator($pipeline, new ErrorStream(), self::silentSuppressionAudit(), new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(), new \Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(), new \Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())));
     }
 
     /**

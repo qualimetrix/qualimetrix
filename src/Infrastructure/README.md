@@ -39,6 +39,9 @@ Infrastructure/
 │   ├── CacheKeyGenerator.php
 │   └── CacheWriteException.php      # Cache write failure exception
 ├── Composer/
+│   ├── ComposerManifestReader.php  # One typed manifest snapshot per analysed root and invocation
+│   ├── LocatedComposerRoots.php     # Bounded install roots plus observed omissions
+│   ├── ComposerRootOmission.php     # A named unresolvable, filesystem-root or walk-limit omission
 │   ├── ClassmapPath.php              # Resolves generated classmap path expressions without executing them
 │   ├── ComposerAutoloadMap.php       # Places classes from the analysed project's Composer roots
 │   ├── DeclaredParentReader.php      # Reads external inheritance declarations for Design DIT
@@ -111,6 +114,10 @@ Infrastructure/
 │   │   ├── DuplicationConfigurator.php
 │   │   ├── AnalysisConfigurator.php
 │   │   └── OutputConfigurator.php
+│   ├── ProjectManifest/
+│   │   └── ProjectManifestConfigurator.php # Shared invocation snapshot and exact public aliases
+│   ├── Registration/
+│   │   └── EvidenceRegistration.php   # Fresh evidence loaders and registration prototypes
 │   └── CompilerPass/
 │       ├── CollectorCompilerPass.php
 │       ├── GlobalCollectorCompilerPass.php
@@ -138,7 +145,14 @@ Infrastructure/
     ├── OutputHelper.php               # Helper for large text output (line-by-line flush)
     ├── MeasuredFindingSet.php       # The one definition of the set a baseline measures: paths + resolved config in, findings at the baseline stage's input out (no InputInterface)
     ├── FindingFilterOrchestrator.php # Adapts check options to the Reporting-owned FindingProjector, asks Finding's suppression-binding audit on a run wide enough to judge it — for findings and for the values it skipped, which the project scope publishes — and reports the stage results
-    ├── RuntimeConfigurator.php        # Runtime DI configuration; applies the ConfigurationDocument to Coupling every run
+    ├── RuntimeConfigurator.php        # Closed-profile runtime composition; graph consumes no Finding or analysis format
+    ├── AnalysisPreflightProfile.php   # Positive CLI and consumer profiles for analysis and graph
+    ├── RunConfigurationPreparation.php # Resolves run/cache/parallel before runtime stores commit
+    ├── ResolvedRunConfiguration.php   # Accepted immutable run/cache/parallel values
+    ├── PreparedAnalysisRuntimeConfiguration.php # Accepted analysis values before stores commit
+    ├── ObservedProjectScopeReasons.php # Already observed manifest and install-root reasons
+    ├── AnalysisInputPathValidator.php # Missing path and explicit non-PHP regular-file refusal
+    ├── ProjectSourceConfigurator.php # Current manifest facts, namespace source binding and install anchor
     ├── RuntimeLoggerConfigurator.php  # Creates and publishes the logger for one console run
     ├── ErrorStream.php               # Sole owner of the run's error stream: progress section plus every diagnostic writer
     ├── RuleInputValidator.php        # Fails closed on unknown selectors and option owners
@@ -214,7 +228,7 @@ Creates a unified Symfony DI ContainerBuilder without parameters. Delegates conf
 - `ConfigurationConfigurator` — Analysis.Configuration pipeline and ordered document source seam
 - `DependencyModelConfigurator` — graph/traversal contracts and extraction registration
 - `ComputedMetricsConfigurator` — private root/Health implementation tree, capability-owned rule, and four public contract aliases
-- `MeasurementConfigurator` — repository, aggregation, Cohesion LCOM configuration, and worker reconstruction
+- `MeasurementConfigurator` — repository, aggregation, and worker reconstruction
 - `ParserConfigurator` — AST parser and caching
 - `CollectorConfigurator` — collector compiler-pass and parallel-class composition; it does not scan capability implementations
 - `RuleConfigurator` — rule registries, channels, selector, and compiler passes; it does not scan capability implementations
@@ -222,6 +236,8 @@ Creates a unified Symfony DI ContainerBuilder without parameters. Delegates conf
   `DesignConfigurator`, `MaintainabilityConfigurator`, `SecurityConfigurator`,
   and `SizeConfigurator` — exact owned collector roots plus lazy, non-autowired
   rule roots
+- `CohesionConfigurator` also registers the LCOM configuration resolver and
+  store, with the tagged LCOM-configurable collectors
 - `CouplingConfigurator` — the same exact collector/rule registration for
   Coupling, plus internal `CouplingAnalysis` state and the public
   `CouplingConfiguratorInterface` alias
@@ -230,6 +246,10 @@ Creates a unified Symfony DI ContainerBuilder without parameters. Delegates conf
 - `DuplicationConfigurator` — internal Duplication detector/provider wiring and capability-owned rule registration; the detector is autoconfigured as a Run-owned FileSet participant
 - `AnalysisConfigurator` — Run pipeline, discovery, collection, and strategies
 - `OutputConfigurator` — formatters, GraphProjection, and exact composition for Reporting finding projection, Inline annotation suppression, and the Git query adapter
+
+`Registration/EvidenceRegistration` supplies fresh loader and collector/rule
+prototypes to Cohesion, Complexity, Coupling, Maintainability and Size. Each
+configurator retains its literal exact resource roots and special bindings.
 
 **Method:**
 - `create(): ContainerBuilder` — runs all configurators and returns a compiled container
